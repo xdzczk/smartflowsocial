@@ -1,6 +1,6 @@
 # Failure Semantics & Retry Strategy
 
-**Last Updated:** 2025-01-02  
+**Last Updated:** 2026-01-19  
 **Status:** Active
 
 This document defines what failures mean, when retries happen, and when events become permanently
@@ -12,6 +12,29 @@ failed.
 
 **Failures are not all equal.** Some are temporary (network blip), some are permanent (invalid
 signature). We retry temporary failures, but stop retrying permanent ones.
+
+---
+
+## Two Layers of Reliability (Outbox vs Queue)
+
+This system has **two distinct retry boundaries**:
+
+1. **Outbox retry (DB-backed enqueue/cancel step)**
+   - Purpose: reliably translate domain changes into queue operations (enqueue/cancel).
+   - Storage: `OutboxEvent` row in Postgres.
+   - Retry decision: based on error classification + bounded retry policy.
+   - Terminal outcome: `deadLetteredAt` set on the outbox event.
+
+2. **Queue retry (BullMQ job execution step)**
+   - Purpose: reliably publish to relays once a job is enqueued.
+   - Storage: Redis/BullMQ job state + DB idempotency + publish lease.
+   - Terminal outcome: `DeadLetterJob` entry + domain state transitions (e.g. `FAILED`).
+
+These layers address different failure modes. A publish can fail because:
+
+- The outbox couldn't enqueue/cancel (Redis down, transient infra error) — **outbox retry**.
+- The queue job ran but publishing failed (relay/network issues, validation issues) — **queue
+  retry**.
 
 ---
 
@@ -78,6 +101,38 @@ configuration.
 
 - `SCHEDULED` → `PUBLISHING` → `FAILED` (immediately)
 - `FAILED` → `SCHEDULED` (only if user fixes and retries)
+
+---
+
+## Outbox Failure Semantics (DB-backed)
+
+### OutboxEvent lifecycle
+
+- **Pending**: `processedAt = null` and `deadLetteredAt = null`
+- **Eligible / Ready**: pending and `scheduledFor <= now` and `nextAttemptAt <= now` and lock free
+- **Claimed**: `processingLockId` + `processingLockExpiresAt` set (prevents double-processing)
+- **Succeeded**: `processedAt` set, retry/lock fields cleared
+- **Retrying**: `attempts` incremented, `nextAttemptAt` set, `lastError` recorded
+- **Dead-lettered**: `deadLetteredAt` set (terminal)
+
+### Outbox retry policy
+
+Default policy (enqueue/cancel step):
+
+- Max attempts: **5**
+- Base delay: **2s**
+- Multiplier: **2** (exponential)
+- Jitter: **±15%**
+- Max delay: **10 minutes**
+
+### Outbox terminal outcomes
+
+Outbox events are dead-lettered when:
+
+1. **Non-retryable error** (e.g. invalid payload / schema/version failures)
+2. **Max attempts reached** (bounded retries exhausted)
+
+Outbox dead-lettering is recorded on the `OutboxEvent` row (not in `DeadLetterJob`).
 
 ---
 
@@ -224,6 +279,24 @@ configuration.
 
 - No automatic cleanup (user must act)
 - Consider retention policy (e.g., 90 days)
+
+---
+
+## Trace Keys (Logs + Sentry + Metrics)
+
+To make failures debuggable, logs/Sentry spans should consistently include:
+
+- `correlationId`: end-to-end operation identifier (enqueue → publish)
+- `publishAttemptId`: idempotency identifier for publish attempts
+- `postId`, `userId`: domain identifiers
+- `outboxEventId`, `eventType`: outbox identifiers
+- `queueName`, `jobId`, `attemptsMade`: queue identifiers
+
+These keys allow answering questions like:
+
+- “Which publish attempt succeeded?” (`publishAttemptId`)
+- “Did outbox enqueue fail or did the publish job fail?” (`outboxEventId` + `queueName`)
+- “How many retries occurred?” (`attemptsMade` / outbox `attempts`)
 
 ---
 
@@ -449,6 +522,7 @@ configuration.
 ## Revision History
 
 - **2025-01-02**: Initial failure semantics document created
+- **2026-01-19**: Documented outbox retry + dead-letter semantics and standardized trace keys
 
 ---
 

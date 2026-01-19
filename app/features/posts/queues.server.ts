@@ -37,6 +37,7 @@ import {
   recordPostPublishFailed,
 } from "~/lib/metrics/business-metrics.server";
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
+import { buildObsContext } from "~/lib/observability-context.server";
 import { prisma } from "~/lib/prisma.server";
 import {
   recordJobMetrics,
@@ -591,9 +592,14 @@ async function runScheduledPostJob(input: {
   const isAlreadyPosted = existingPost.currentState === "PUBLISHED";
   if (isAlreadyPosted) {
     logInfo("Post already posted, skipping duplicate job", {
-      postId,
-      userId,
-      correlationId,
+      ...buildObsContext({
+        postId,
+        userId,
+        correlationId,
+        queueName,
+        jobId: String(job.id ?? "unknown"),
+        attemptsMade: job.attemptsMade + 1,
+      }),
     });
     recordJobSkipped(queueName, "already_published");
     addBreadcrumb({
@@ -617,10 +623,15 @@ async function runScheduledPostJob(input: {
   input.ctx.lease = lease;
   if (!lease) {
     logInfo("Publish lease held by another worker, skipping duplicate job", {
-      postId,
-      userId,
-      publishAttemptId,
-      correlationId,
+      ...buildObsContext({
+        postId,
+        userId,
+        correlationId,
+        publishAttemptId,
+        queueName,
+        jobId: String(job.id ?? "unknown"),
+        attemptsMade: job.attemptsMade + 1,
+      }),
     });
     recordJobSkipped(queueName, "publish_lease_held");
     addBreadcrumb({
@@ -703,15 +714,28 @@ async function runScheduledPostJob(input: {
   }
 
   logInfo("Post published successfully from queue", {
-    postId,
-    userId,
-    correlationId,
+    ...buildObsContext({
+      postId,
+      userId,
+      correlationId,
+      publishAttemptId,
+      queueName,
+      jobId: String(job.id ?? "unknown"),
+      attemptsMade: job.attemptsMade + 1,
+    }),
   });
   addBreadcrumb({
     message: "scheduled_post_job_succeeded",
     category: "worker",
     level: "info",
-    data: { queue: queueName, postId, userId, correlationId },
+    data: {
+      queue: queueName,
+      postId,
+      userId,
+      correlationId,
+      publishAttemptId,
+      jobId: String(job.id ?? "unknown"),
+    },
   });
 
   return { success: true, postId };
@@ -742,9 +766,14 @@ async function runScheduledLongFormPostJob(input: {
   const isAlreadyPublished = existingPost.currentState === "PUBLISHED";
   if (isAlreadyPublished) {
     logInfo("Longform post already published, skipping duplicate job", {
-      postId,
-      userId,
-      correlationId,
+      ...buildObsContext({
+        postId,
+        userId,
+        correlationId,
+        queueName,
+        jobId: String(job.id ?? "unknown"),
+        attemptsMade: job.attemptsMade + 1,
+      }),
     });
     recordJobSkipped(queueName, "already_published");
     addBreadcrumb({
@@ -771,10 +800,15 @@ async function runScheduledLongFormPostJob(input: {
     logInfo(
       "Publish lease held by another worker, skipping duplicate longform job",
       {
-        postId,
-        userId,
-        publishAttemptId,
-        correlationId,
+        ...buildObsContext({
+          postId,
+          userId,
+          correlationId,
+          publishAttemptId,
+          queueName,
+          jobId: String(job.id ?? "unknown"),
+          attemptsMade: job.attemptsMade + 1,
+        }),
       }
     );
     recordJobSkipped(queueName, "publish_lease_held");
@@ -845,15 +879,28 @@ async function runScheduledLongFormPostJob(input: {
 
   recordJobMetrics(queueName, nowMillis() - input.startTime, true);
   logInfo("Longform post published successfully from queue", {
-    postId,
-    userId,
-    correlationId,
+    ...buildObsContext({
+      postId,
+      userId,
+      correlationId,
+      publishAttemptId,
+      queueName,
+      jobId: String(job.id ?? "unknown"),
+      attemptsMade: job.attemptsMade + 1,
+    }),
   });
   addBreadcrumb({
     message: "scheduled_longform_job_succeeded",
     category: "worker",
     level: "info",
-    data: { queue: queueName, postId, userId, correlationId },
+    data: {
+      queue: queueName,
+      postId,
+      userId,
+      correlationId,
+      publishAttemptId,
+      jobId: String(job.id ?? "unknown"),
+    },
   });
 
   return { success: true, postId };

@@ -22,7 +22,11 @@ vi.mock("~/lib/prisma.server", () => ({
 
 vi.mock("~/infra/outbox/outbox.server", () => ({
   getUnprocessedOutboxEvents: vi.fn(),
-  markOutboxEventProcessed: vi.fn(),
+  claimOutboxEvent: vi.fn(),
+  markOutboxEventSucceeded: vi.fn(),
+  markOutboxEventFailed: vi.fn(),
+  deadLetterOutboxEvent: vi.fn(),
+  getOutboxBacklogCounts: vi.fn(),
 }));
 
 vi.mock("~/infra/queue/queue-client.server", () => ({
@@ -49,6 +53,9 @@ vi.mock("~/lib/error-logger.server", () => ({
 
 vi.mock("~/lib/metrics/business-metrics.server", () => ({
   recordOutboxEventProcessed: vi.fn(),
+  recordOutboxEventRetried: vi.fn(),
+  recordOutboxEventDeadLettered: vi.fn(),
+  setOutboxBacklog: vi.fn(),
 }));
 
 vi.mock("~/lib/metrics/performance-metrics.server", () => ({
@@ -58,15 +65,42 @@ vi.mock("~/lib/metrics/performance-metrics.server", () => ({
 import { processOutboxEvents } from "~/infra/outbox/outbox-worker.server";
 import {
   getUnprocessedOutboxEvents,
-  markOutboxEventProcessed,
+  claimOutboxEvent,
+  markOutboxEventSucceeded,
+  markOutboxEventFailed,
+  deadLetterOutboxEvent,
+  getOutboxBacklogCounts,
 } from "~/infra/outbox/outbox.server";
 import { queueClient } from "~/infra/queue/queue-client.server";
 import { processPayloadWithVersion } from "~/infra/queue/version-handler.server";
-import { recordOutboxEventProcessed } from "~/lib/metrics/business-metrics.server";
+import {
+  recordOutboxEventProcessed,
+  recordOutboxEventRetried,
+  recordOutboxEventDeadLettered,
+} from "~/lib/metrics/business-metrics.server";
+
+const ANY_DATE = expect.any(Date) as unknown as Date;
+const ANY_STRING = expect.any(String) as unknown as string;
+const stringContaining = (value: string): string =>
+  expect.stringContaining(value) as unknown as string;
 
 describe("Outbox Worker", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (claimOutboxEvent as ReturnType<typeof vi.fn>).mockResolvedValue({
+      lockId: "lock-1",
+      expiresAt: new Date(Date.now() + 30000),
+    });
+    (markOutboxEventSucceeded as ReturnType<typeof vi.fn>).mockResolvedValue(
+      true
+    );
+    (markOutboxEventFailed as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    (deadLetterOutboxEvent as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    (getOutboxBacklogCounts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      pending: 0,
+      ready: 0,
+      deadLettered: 0,
+    });
   });
 
   describe("processOutboxEvents", () => {
@@ -88,6 +122,7 @@ describe("Outbox Worker", () => {
         createdAt: new Date(),
         processedAt: null,
         processingError: null,
+        attempts: 0,
       };
 
       (
@@ -101,9 +136,6 @@ describe("Outbox Worker", () => {
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
       });
-      (markOutboxEventProcessed as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
-      );
 
       const result = await processOutboxEvents();
 
@@ -121,7 +153,9 @@ describe("Outbox Worker", () => {
           jobId: "post-1",
         })
       );
-      expect(markOutboxEventProcessed).toHaveBeenCalledWith("event-1");
+      expect(markOutboxEventSucceeded).toHaveBeenCalledWith(
+        expect.objectContaining({ eventId: "event-1", lockId: "lock-1" })
+      );
       expect(recordOutboxEventProcessed).toHaveBeenCalledWith(
         "POST_SCHEDULED",
         true
@@ -146,6 +180,7 @@ describe("Outbox Worker", () => {
         createdAt: new Date(),
         processedAt: null,
         processingError: null,
+        attempts: 0,
       };
 
       (
@@ -159,9 +194,6 @@ describe("Outbox Worker", () => {
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
       });
-      (markOutboxEventProcessed as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
-      );
 
       const result = await processOutboxEvents();
 
@@ -179,6 +211,7 @@ describe("Outbox Worker", () => {
           jobId: "longform-1",
         })
       );
+      expect(markOutboxEventSucceeded).toHaveBeenCalled();
     });
 
     it("should process POST_CANCELLED event successfully", async () => {
@@ -193,6 +226,7 @@ describe("Outbox Worker", () => {
         createdAt: new Date(),
         processedAt: null,
         processingError: null,
+        attempts: 0,
       };
 
       (
@@ -200,9 +234,6 @@ describe("Outbox Worker", () => {
       ).mockResolvedValue([mockEvent]);
       (queueClient.cancelByData as ReturnType<typeof vi.fn>).mockResolvedValue(
         true
-      );
-      (markOutboxEventProcessed as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
       );
 
       const result = await processOutboxEvents();
@@ -214,6 +245,7 @@ describe("Outbox Worker", () => {
         "postId",
         "post-1"
       );
+      expect(markOutboxEventSucceeded).toHaveBeenCalled();
     });
 
     it("should process LONGFORM_CANCELLED event successfully", async () => {
@@ -228,6 +260,7 @@ describe("Outbox Worker", () => {
         createdAt: new Date(),
         processedAt: null,
         processingError: null,
+        attempts: 0,
       };
 
       (
@@ -235,9 +268,6 @@ describe("Outbox Worker", () => {
       ).mockResolvedValue([mockEvent]);
       (queueClient.cancelByData as ReturnType<typeof vi.fn>).mockResolvedValue(
         true
-      );
-      (markOutboxEventProcessed as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
       );
 
       const result = await processOutboxEvents();
@@ -249,6 +279,7 @@ describe("Outbox Worker", () => {
         "postId",
         "longform-1"
       );
+      expect(markOutboxEventSucceeded).toHaveBeenCalled();
     });
 
     it("should update read models for read model events", async () => {
@@ -263,15 +294,12 @@ describe("Outbox Worker", () => {
         createdAt: new Date(),
         processedAt: null,
         processingError: null,
+        attempts: 0,
       };
 
       (
         getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
       ).mockResolvedValue([mockEvent]);
-      (markOutboxEventProcessed as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
-      );
-
       const { updateReadModels } =
         await import("~/infra/outbox/read-model-worker.server");
       // Mock updateReadModels to resolve successfully (it's called with void, so errors are non-blocking)
@@ -292,8 +320,9 @@ describe("Outbox Worker", () => {
       // POST_CREATED events are processed (marked as processed) but don't enqueue jobs
       expect(result.processed).toBe(1);
       expect(result.errors).toBe(0);
-      // markOutboxEventProcessed is called with just the event ID when successful (no error)
-      expect(markOutboxEventProcessed).toHaveBeenCalledWith("event-5");
+      expect(markOutboxEventSucceeded).toHaveBeenCalledWith(
+        expect.objectContaining({ eventId: "event-5", lockId: "lock-1" })
+      );
     });
 
     it("should handle processing errors", async () => {
@@ -314,6 +343,7 @@ describe("Outbox Worker", () => {
         createdAt: new Date(),
         processedAt: null,
         processingError: null,
+        attempts: 0,
       };
 
       (
@@ -323,17 +353,17 @@ describe("Outbox Worker", () => {
         success: false,
         error: "Invalid payload",
       });
-      (markOutboxEventProcessed as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
-      );
 
       const result = await processOutboxEvents();
 
       expect(result.processed).toBe(0);
       expect(result.errors).toBe(1);
-      expect(markOutboxEventProcessed).toHaveBeenCalledWith(
-        "event-6",
-        expect.stringContaining("Invalid payload")
+      expect(deadLetterOutboxEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ eventId: "event-6", lockId: "lock-1" })
+      );
+      expect(recordOutboxEventDeadLettered).toHaveBeenCalledWith(
+        "POST_SCHEDULED",
+        "non_retryable"
       );
       expect(recordOutboxEventProcessed).toHaveBeenCalledWith(
         "POST_SCHEDULED",
@@ -359,6 +389,7 @@ describe("Outbox Worker", () => {
         createdAt: new Date(),
         processedAt: null,
         processingError: null,
+        attempts: 0,
       };
 
       (
@@ -373,18 +404,210 @@ describe("Outbox Worker", () => {
         success: false,
         error: "Queue full",
       });
-      (markOutboxEventProcessed as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
-      );
 
       const result = await processOutboxEvents();
 
       expect(result.processed).toBe(0);
       expect(result.errors).toBe(1);
-      expect(markOutboxEventProcessed).toHaveBeenCalledWith(
-        "event-7",
-        expect.any(String)
+      expect(markOutboxEventFailed).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventId: "event-7",
+          lockId: "lock-1",
+          errorMessage: ANY_STRING,
+          nextAttemptAt: ANY_DATE,
+        })
       );
+      expect(recordOutboxEventRetried).toHaveBeenCalledWith("POST_SCHEDULED");
+    });
+
+    it("should dead-letter when max outbox attempts reached", async () => {
+      const mockEvent = {
+        id: "event-max",
+        eventType: "POST_SCHEDULED" as const,
+        aggregateId: "post-1",
+        aggregateType: "Post",
+        payload: {
+          postId: "post-1",
+          userId: "user-1",
+          signedEvent: { id: "event-123" },
+          scheduledFor: 1234567890,
+          schemaVersion: "1.0",
+        },
+        scheduledFor: new Date(1234567890000),
+        correlationId: null,
+        createdAt: new Date(),
+        processedAt: null,
+        processingError: null,
+        attempts: 4, // next failure => 5 => maxAttempts
+      };
+
+      (
+        getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
+      ).mockResolvedValue([mockEvent]);
+      (processPayloadWithVersion as ReturnType<typeof vi.fn>).mockReturnValue({
+        success: true,
+        payload: mockEvent.payload,
+        version: "1.0",
+      });
+      (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
+        success: false,
+        error: "Queue full",
+      });
+
+      await processOutboxEvents();
+
+      expect(deadLetterOutboxEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ eventId: "event-max", lockId: "lock-1" })
+      );
+      expect(recordOutboxEventDeadLettered).toHaveBeenCalledWith(
+        "POST_SCHEDULED",
+        "max_attempts"
+      );
+    });
+
+    it("should treat deterministic jobId collision as idempotent success", async () => {
+      const mockEvent = {
+        id: "event-dup",
+        eventType: "POST_SCHEDULED" as const,
+        aggregateId: "post-1",
+        aggregateType: "Post",
+        payload: {
+          postId: "post-1",
+          userId: "user-1",
+          signedEvent: { id: "event-123" },
+          scheduledFor: 1234567890,
+          schemaVersion: "1.0",
+        },
+        scheduledFor: new Date(1234567890000),
+        correlationId: null,
+        createdAt: new Date(),
+        processedAt: null,
+        processingError: null,
+        attempts: 0,
+      };
+
+      (
+        getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
+      ).mockResolvedValue([mockEvent]);
+      (processPayloadWithVersion as ReturnType<typeof vi.fn>).mockReturnValue({
+        success: true,
+        payload: mockEvent.payload,
+        version: "1.0",
+      });
+      (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
+        success: false,
+        error: "Job already exists",
+      });
+
+      const result = await processOutboxEvents();
+
+      expect(result.processed).toBe(1);
+      expect(result.errors).toBe(0);
+      expect(markOutboxEventSucceeded).toHaveBeenCalledWith(
+        expect.objectContaining({ eventId: "event-dup", lockId: "lock-1" })
+      );
+      expect(deadLetterOutboxEvent).not.toHaveBeenCalled();
+    });
+
+    it("should retry on transient failure and succeed on a later run", async () => {
+      const baseEvent = {
+        id: "event-retry",
+        eventType: "POST_SCHEDULED" as const,
+        aggregateId: "post-1",
+        aggregateType: "Post",
+        payload: {
+          postId: "post-1",
+          userId: "user-1",
+          signedEvent: { id: "event-123" },
+          scheduledFor: 1234567890,
+          schemaVersion: "1.0",
+        },
+        scheduledFor: new Date(1234567890000),
+        correlationId: null,
+        createdAt: new Date(),
+        processedAt: null,
+        processingError: null,
+      };
+
+      (processPayloadWithVersion as ReturnType<typeof vi.fn>).mockReturnValue({
+        success: true,
+        payload: baseEvent.payload,
+        version: "1.0",
+      });
+
+      // First run fails => schedules retry
+      (
+        getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce([{ ...baseEvent, attempts: 0 }]);
+      (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        success: false,
+        error: "Queue full",
+      });
+
+      const first = await processOutboxEvents();
+      expect(first.processed).toBe(0);
+      expect(first.errors).toBe(1);
+      expect(markOutboxEventFailed).toHaveBeenCalled();
+
+      // Second run succeeds
+      (
+        getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce([{ ...baseEvent, attempts: 1 }]);
+      (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        success: true,
+      });
+
+      const second = await processOutboxEvents();
+      expect(second.processed).toBe(1);
+      expect(second.errors).toBe(0);
+      expect(markOutboxEventSucceeded).toHaveBeenCalled();
+    });
+
+    it("should only allow one concurrent claim to enqueue a given event", async () => {
+      const mockEvent = {
+        id: "event-concurrent",
+        eventType: "POST_SCHEDULED" as const,
+        aggregateId: "post-1",
+        aggregateType: "Post",
+        payload: {
+          postId: "post-1",
+          userId: "user-1",
+          signedEvent: { id: "event-123" },
+          scheduledFor: 1234567890,
+          schemaVersion: "1.0",
+        },
+        scheduledFor: new Date(1234567890000),
+        correlationId: null,
+        createdAt: new Date(),
+        processedAt: null,
+        processingError: null,
+        attempts: 0,
+      };
+
+      (
+        getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
+      ).mockResolvedValue([mockEvent]);
+      (processPayloadWithVersion as ReturnType<typeof vi.fn>).mockReturnValue({
+        success: true,
+        payload: mockEvent.payload,
+        version: "1.0",
+      });
+      (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
+        success: true,
+      });
+
+      // Only the first claim succeeds; all subsequent claims fail.
+      let claimed = false;
+      (claimOutboxEvent as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        if (claimed) return null;
+        claimed = true;
+        return { lockId: "lock-1", expiresAt: new Date(Date.now() + 30000) };
+      });
+
+      await Promise.all([processOutboxEvents(), processOutboxEvents()]);
+
+      expect(queueClient.enqueue).toHaveBeenCalledTimes(1);
+      expect(markOutboxEventSucceeded).toHaveBeenCalledTimes(1);
     });
 
     it("should process multiple events", async () => {
@@ -406,6 +629,7 @@ describe("Outbox Worker", () => {
           createdAt: new Date(),
           processedAt: null,
           processingError: null,
+          attempts: 0,
         },
         {
           id: "event-2",
@@ -418,6 +642,7 @@ describe("Outbox Worker", () => {
           createdAt: new Date(),
           processedAt: null,
           processingError: null,
+          attempts: 0,
         },
       ];
 
@@ -434,9 +659,6 @@ describe("Outbox Worker", () => {
       });
       (queueClient.cancelByData as ReturnType<typeof vi.fn>).mockResolvedValue(
         true
-      );
-      (markOutboxEventProcessed as ReturnType<typeof vi.fn>).mockResolvedValue(
-        {}
       );
 
       const result = await processOutboxEvents();
@@ -458,23 +680,24 @@ describe("Outbox Worker", () => {
         createdAt: new Date(),
         processedAt: null,
         processingError: null,
+        attempts: 0,
       };
 
       (
         getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
       ).mockResolvedValue([mockEvent]);
-      (markOutboxEventProcessed as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
-      );
-
       const result = await processOutboxEvents();
 
       expect(result.processed).toBe(0);
       expect(result.errors).toBe(1);
-      expect(markOutboxEventProcessed).toHaveBeenCalledWith(
-        "event-8",
-        expect.stringContaining("Unknown event type")
+      expect(deadLetterOutboxEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventId: "event-8",
+          lockId: "lock-1",
+          errorMessage: stringContaining("Unknown event type"),
+        })
       );
+      expect(recordOutboxEventDeadLettered).toHaveBeenCalled();
     });
   });
 });

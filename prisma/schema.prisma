@@ -323,18 +323,32 @@ enum SubscriptionStatus {
 
 // Outbox pattern for transactional job enqueueing
 model OutboxEvent {
-  id              String    @id @default(cuid())
-  eventType       String // "POST_SCHEDULED", "LONGFORM_SCHEDULED", "POST_CANCELLED", etc.
-  aggregateId     String // postId or longFormPostId
-  aggregateType   String // "Post" or "LongFormPost"
-  payload         Json // Job payload data
-  scheduledFor    DateTime? // When job should run (UTC)
-  idempotencyKey  String?   @unique
-  correlationId   String? // For request tracking and observability
+  id             String    @id @default(cuid())
+  eventType      String // "POST_SCHEDULED", "LONGFORM_SCHEDULED", "POST_CANCELLED", etc.
+  aggregateId    String // postId or longFormPostId
+  aggregateType  String // "Post" or "LongFormPost"
+  payload        Json // Job payload data
+  scheduledFor   DateTime? // When job should run (UTC)
+  idempotencyKey String?   @unique
+  correlationId  String? // For request tracking and observability
+
+  // Processing lifecycle
   processedAt     DateTime?
-  processingError String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  processingError String? // Back-compat: last error seen while processing (even if retried)
+
+  // Retry metadata (outbox is retryable; events are only marked processed on success)
+  attempts       Int       @default(0)
+  lastAttemptAt  DateTime?
+  nextAttemptAt  DateTime?
+  lastError      String?
+  deadLetteredAt DateTime?
+
+  // Concurrency guard for multi-worker deployments
+  processingLockId        String?
+  processingLockExpiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Prevent duplicate events for same aggregate + event type + scheduled time
   @@unique([eventType, aggregateId, scheduledFor])
@@ -342,6 +356,9 @@ model OutboxEvent {
   @@index([scheduledFor, processedAt])
   @@index([aggregateId, eventType])
   @@index([correlationId]) // For tracing requests
+  @@index([processedAt, nextAttemptAt])
+  @@index([deadLetteredAt])
+  @@index([processingLockExpiresAt])
 }
 
 // State machine for post lifecycle

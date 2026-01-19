@@ -13,7 +13,9 @@ import { SchedulePostUseCase } from "~/features/posts/use-cases/schedule-post.us
 import {
   createOutboxEvent,
   getUnprocessedOutboxEvents,
-  markOutboxEventProcessed,
+  claimOutboxEvent,
+  markOutboxEventSucceeded,
+  markOutboxEventFailed,
   type PostScheduledPayload,
 } from "~/infra/outbox/outbox.server";
 import { prisma } from "~/lib/prisma.server";
@@ -171,7 +173,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-1",
           "Post",
           payload,
-          new Date(payload.scheduledFor * 1000)
+          // Important: OutboxEvent.scheduledFor controls when the outbox worker should enqueue.
+          // Use "now" so the event is eligible to be drained immediately.
+          new Date()
         );
 
         const unprocessedEvents = await getUnprocessedOutboxEvents(10);
@@ -182,7 +186,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         expect(event?.processedAt).toBeNull();
       });
 
-      it("should mark event as processed", async () => {
+      it("should claim and mark event as processed (success)", async () => {
         const payload: PostScheduledPayload = {
           postId: "post-2",
           userId,
@@ -204,10 +208,15 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-2",
           "Post",
           payload,
-          new Date(payload.scheduledFor * 1000)
+          new Date()
         );
 
-        await markOutboxEventProcessed(event.id);
+        const lock = await claimOutboxEvent({ eventId: event.id });
+        expect(lock).not.toBeNull();
+        await markOutboxEventSucceeded({
+          eventId: event.id,
+          lockId: lock!.lockId,
+        });
 
         const updatedEvent = await prisma.outboxEvent.findUnique({
           where: { id: event.id },
@@ -217,7 +226,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         expect(updatedEvent?.processingError).toBeNull();
       });
 
-      it("should mark event as processed with error", async () => {
+      it("should mark event failed and schedule a retry", async () => {
         const payload: PostScheduledPayload = {
           postId: "post-3",
           userId,
@@ -239,17 +248,108 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-3",
           "Post",
           payload,
-          new Date(payload.scheduledFor * 1000)
+          new Date()
         );
 
-        await markOutboxEventProcessed(event.id, "Processing failed");
+        const lock = await claimOutboxEvent({ eventId: event.id });
+        expect(lock).not.toBeNull();
+        await markOutboxEventFailed({
+          eventId: event.id,
+          lockId: lock!.lockId,
+          errorMessage: "Processing failed",
+          nextAttemptAt: new Date(Date.now() + 5000),
+        });
 
         const updatedEvent = await prisma.outboxEvent.findUnique({
           where: { id: event.id },
         });
 
-        expect(updatedEvent?.processedAt).not.toBeNull();
+        expect(updatedEvent?.processedAt).toBeNull();
         expect(updatedEvent?.processingError).toBe("Processing failed");
+        expect(updatedEvent?.attempts).toBeGreaterThan(0);
+        expect(updatedEvent?.nextAttemptAt).not.toBeNull();
+      });
+
+      it("should only allow one concurrent claim for the same outbox event", async () => {
+        const payload: PostScheduledPayload = {
+          postId: "post-concurrent",
+          userId,
+          signedEvent: {
+            id: "event-concurrent",
+            pubkey: "test-pubkey",
+            created_at: Math.floor(Date.now() / 1000),
+            kind: 1,
+            content: "test",
+            tags: [],
+            sig: "test-sig",
+          },
+          scheduledFor: Math.floor(Date.now() / 1000) + 3600,
+          schemaVersion: "1.0",
+        };
+
+        const event = await createOutboxEvent(
+          "POST_SCHEDULED",
+          "post-concurrent",
+          "Post",
+          payload,
+          new Date()
+        );
+
+        const [a, b] = await Promise.all([
+          claimOutboxEvent({ eventId: event.id }),
+          claimOutboxEvent({ eventId: event.id }),
+        ]);
+
+        const claimedCount = [a, b].filter((x) => x !== null).length;
+        expect(claimedCount).toBe(1);
+      });
+
+      it("should not return events before nextAttemptAt, then return after", async () => {
+        const payload: PostScheduledPayload = {
+          postId: "post-retry-window",
+          userId,
+          signedEvent: {
+            id: "event-retry-window",
+            pubkey: "test-pubkey",
+            created_at: Math.floor(Date.now() / 1000),
+            kind: 1,
+            content: "test",
+            tags: [],
+            sig: "test-sig",
+          },
+          scheduledFor: Math.floor(Date.now() / 1000) + 3600,
+          schemaVersion: "1.0",
+        };
+
+        const event = await createOutboxEvent(
+          "POST_SCHEDULED",
+          "post-retry-window",
+          "Post",
+          payload,
+          new Date()
+        );
+
+        const lock = await claimOutboxEvent({ eventId: event.id });
+        expect(lock).not.toBeNull();
+
+        await markOutboxEventFailed({
+          eventId: event.id,
+          lockId: lock!.lockId,
+          errorMessage: "Processing failed",
+          nextAttemptAt: new Date(Date.now() + 60_000),
+        });
+
+        const notReady = await getUnprocessedOutboxEvents(50);
+        expect(notReady.find((e) => e.id === event.id)).toBeUndefined();
+
+        // Force it ready (simulate time passing)
+        await prisma.outboxEvent.update({
+          where: { id: event.id },
+          data: { nextAttemptAt: new Date(Date.now() - 1000) },
+        });
+
+        const ready = await getUnprocessedOutboxEvents(50);
+        expect(ready.find((e) => e.id === event.id)).toBeDefined();
       });
 
       it("should only retrieve unprocessed events", async () => {
@@ -274,11 +374,15 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-4",
           "Post",
           payload,
-          new Date(payload.scheduledFor * 1000)
+          new Date()
         );
 
-        // Mark as processed
-        await markOutboxEventProcessed(event.id);
+        const lock = await claimOutboxEvent({ eventId: event.id });
+        expect(lock).not.toBeNull();
+        await markOutboxEventSucceeded({
+          eventId: event.id,
+          lockId: lock!.lockId,
+        });
 
         // Should not appear in unprocessed events
         const unprocessedEvents = await getUnprocessedOutboxEvents(10);

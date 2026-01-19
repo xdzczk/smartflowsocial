@@ -46,6 +46,15 @@ export async function createDeadLetterEntry(
   correlationId?: string
 ): Promise<void> {
   try {
+    const postId =
+      typeof jobData === "object" && "postId" in jobData
+        ? String((jobData as unknown as { postId?: unknown }).postId ?? "")
+        : undefined;
+    const userId =
+      typeof jobData === "object" && "userId" in jobData
+        ? String((jobData as unknown as { userId?: unknown }).userId ?? "")
+        : undefined;
+
     // Store in database for persistence and querying
     await prisma.deadLetterJob.create({
       data: {
@@ -71,6 +80,8 @@ export async function createDeadLetterEntry(
       attemptsMade,
       error: error.message,
       correlationId,
+      ...(postId && { postId }),
+      ...(userId && { userId }),
     });
   } catch (dbError) {
     // Log but don't fail - dead letter queue is best effort

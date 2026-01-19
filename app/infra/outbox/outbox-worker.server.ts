@@ -10,17 +10,37 @@ import {
   CURRENT_VERSION,
   getPayloadVersion,
 } from "~/infra/queue/version-handler.server";
+import {
+  classifyError,
+  ErrorCategory,
+  isRetryableErrorEnhanced,
+  getRetryDelayForError,
+} from "~/lib/error-classification.server";
 import { logError, logInfo } from "~/lib/error-logger.server";
-import { recordOutboxEventProcessed } from "~/lib/metrics/business-metrics.server";
+import {
+  recordOutboxEventDeadLettered,
+  recordOutboxEventProcessed,
+  recordOutboxEventRetried,
+  setOutboxBacklog,
+} from "~/lib/metrics/business-metrics.server";
 import { recordOutboxProcessingDuration } from "~/lib/metrics/performance-metrics.server";
+import { buildObsContext } from "~/lib/observability-context.server";
 import { recordJobMetrics, recordJobStarted } from "~/lib/queue-metrics.server";
 
 import { queueClient } from "../queue/queue-client.server";
 import type { PostJobData, LongFormPostJobData } from "../queue/queue-types";
 
 import {
+  computeNextAttemptAt,
+  getOutboxRetryPolicy,
+} from "./outbox-retry-policy.server";
+import {
   getUnprocessedOutboxEvents,
-  markOutboxEventProcessed,
+  claimOutboxEvent,
+  markOutboxEventSucceeded,
+  markOutboxEventFailed,
+  deadLetterOutboxEvent,
+  getOutboxBacklogCounts,
   type PostScheduledPayload,
   type LongFormPostScheduledPayload,
   type OutboxEventType,
@@ -29,6 +49,34 @@ import { updateReadModels } from "./read-model-worker.server";
 
 const BATCH_SIZE = 50;
 const POLL_INTERVAL_MS = 5000; // 5 seconds
+const OUTBOX_LOCK_TTL_MS = 30_000;
+
+const QUEUE_SCHEDULED_POSTS = "scheduled-posts" as const;
+const QUEUE_SCHEDULED_LONGFORM_POSTS = "scheduled-longform-posts" as const;
+const JOB_PUBLISH_POST = "publish-post" as const;
+const JOB_PUBLISH_LONGFORM_POST = "publish-longform-post" as const;
+
+function isDuplicateJobIdError(message: string | undefined | null): boolean {
+  if (!message) return false;
+  const m = message.toLowerCase();
+  // BullMQ jobId collision errors vary by version/driver; keep matching broad.
+  return (
+    m.includes("job") &&
+    (m.includes("already exists") ||
+      m.includes("exists already") ||
+      m.includes("duplicat"))
+  );
+}
+
+function isDefinitelyNonRetryableOutboxError(error: Error): boolean {
+  const msg = error.message.toLowerCase();
+  return (
+    msg.includes("unknown event type") ||
+    msg.includes("failed to process payload version") ||
+    msg.includes("payload version") ||
+    msg.includes("schema version")
+  );
+}
 
 /**
  * Process a single outbox event
@@ -65,7 +113,16 @@ async function processEvent(event: {
 
       // Log version if different from current
       if (versionResult.version && versionResult.version !== CURRENT_VERSION) {
-        logInfo("Processed payload with version migration", {
+        logInfo(
+          "Processed payload with version migration",
+          buildObsContext({
+            postId: payload.postId,
+            outboxEventId: event.id,
+            correlationId: payload.correlationId ?? correlationId,
+            eventType: event.eventType,
+          })
+        );
+        logInfo("Outbox payload schema migration details", {
           postId: payload.postId,
           eventId: event.id,
           originalVersion: getPayloadVersion(event.payload),
@@ -74,8 +131,8 @@ async function processEvent(event: {
       }
 
       const result = await queueClient.enqueue<PostJobData>(
-        "scheduled-posts",
-        "publish-post",
+        QUEUE_SCHEDULED_POSTS,
+        JOB_PUBLISH_POST,
         {
           postId: payload.postId,
           userId: payload.userId,
@@ -89,13 +146,34 @@ async function processEvent(event: {
       );
 
       if (!result.success) {
-        throw new Error(result.error ?? "Failed to enqueue post job");
+        const errorMessage = result.error ?? "Failed to enqueue post job";
+        if (isDuplicateJobIdError(errorMessage)) {
+          // Treat deterministic jobId collisions as idempotent success.
+          logInfo(
+            "Post job already enqueued; treating outbox as idempotent",
+            buildObsContext({
+              postId: payload.postId,
+              outboxEventId: event.id,
+              correlationId: payload.correlationId ?? correlationId,
+              eventType: event.eventType,
+              queueName: QUEUE_SCHEDULED_POSTS,
+              jobId: payload.postId,
+            })
+          );
+          break;
+        }
+        throw new Error(errorMessage);
       }
 
       logInfo("Enqueued post job from outbox", {
-        postId: payload.postId,
-        eventId: event.id,
-        correlationId: payload.correlationId ?? correlationId,
+        ...buildObsContext({
+          postId: payload.postId,
+          outboxEventId: event.id,
+          correlationId: payload.correlationId ?? correlationId,
+          eventType: event.eventType,
+          queueName: QUEUE_SCHEDULED_POSTS,
+          jobId: payload.postId,
+        }),
         schemaVersion: versionResult.version,
       });
       break;
@@ -120,7 +198,16 @@ async function processEvent(event: {
 
       // Log version if different from current
       if (versionResult.version && versionResult.version !== CURRENT_VERSION) {
-        logInfo("Processed payload with version migration", {
+        logInfo(
+          "Processed payload with version migration",
+          buildObsContext({
+            postId: payload.postId,
+            outboxEventId: event.id,
+            correlationId: payload.correlationId ?? correlationId,
+            eventType: event.eventType,
+          })
+        );
+        logInfo("Outbox payload schema migration details", {
           postId: payload.postId,
           eventId: event.id,
           originalVersion: getPayloadVersion(event.payload),
@@ -129,8 +216,8 @@ async function processEvent(event: {
       }
 
       const result = await queueClient.enqueue<LongFormPostJobData>(
-        "scheduled-longform-posts",
-        "publish-longform-post",
+        QUEUE_SCHEDULED_LONGFORM_POSTS,
+        JOB_PUBLISH_LONGFORM_POST,
         {
           postId: payload.postId,
           userId: payload.userId,
@@ -144,13 +231,34 @@ async function processEvent(event: {
       );
 
       if (!result.success) {
-        throw new Error(result.error ?? "Failed to enqueue longform post job");
+        const errorMessage =
+          result.error ?? "Failed to enqueue longform post job";
+        if (isDuplicateJobIdError(errorMessage)) {
+          logInfo(
+            "Longform job already enqueued; treating outbox as idempotent",
+            buildObsContext({
+              postId: payload.postId,
+              outboxEventId: event.id,
+              correlationId: payload.correlationId ?? correlationId,
+              eventType: event.eventType,
+              queueName: QUEUE_SCHEDULED_LONGFORM_POSTS,
+              jobId: payload.postId,
+            })
+          );
+          break;
+        }
+        throw new Error(errorMessage);
       }
 
       logInfo("Enqueued longform post job from outbox", {
-        postId: payload.postId,
-        eventId: event.id,
-        correlationId: payload.correlationId ?? correlationId,
+        ...buildObsContext({
+          postId: payload.postId,
+          outboxEventId: event.id,
+          correlationId: payload.correlationId ?? correlationId,
+          eventType: event.eventType,
+          queueName: QUEUE_SCHEDULED_LONGFORM_POSTS,
+          jobId: payload.postId,
+        }),
         schemaVersion: versionResult.version,
       });
       break;
@@ -161,17 +269,22 @@ async function processEvent(event: {
       // Cancel job in BullMQ
       const cancelled = await queueClient.cancelByData(
         event.eventType === "POST_CANCELLED"
-          ? "scheduled-posts"
-          : "scheduled-longform-posts",
+          ? QUEUE_SCHEDULED_POSTS
+          : QUEUE_SCHEDULED_LONGFORM_POSTS,
         "postId",
         event.aggregateId
       );
 
       if (cancelled) {
-        logInfo("Cancelled job from outbox", {
-          postId: event.aggregateId,
-          eventId: event.id,
-        });
+        logInfo(
+          "Cancelled job from outbox",
+          buildObsContext({
+            postId: event.aggregateId,
+            outboxEventId: event.id,
+            correlationId,
+            eventType: event.eventType,
+          })
+        );
       }
       break;
     }
@@ -202,11 +315,21 @@ export async function processOutboxEvents(): Promise<{
   processed: number;
   errors: number;
 }> {
-  const events = await getUnprocessedOutboxEvents(BATCH_SIZE);
+  const events = await getUnprocessedOutboxEvents(BATCH_SIZE, new Date());
   let processed = 0;
   let errors = 0;
 
   for (const event of events) {
+    const lock = await claimOutboxEvent({
+      eventId: event.id,
+      ttlMs: OUTBOX_LOCK_TTL_MS,
+      now: new Date(),
+    });
+    if (!lock) {
+      // Another worker may have claimed it, or it's no longer eligible.
+      continue;
+    }
+
     const startTime = Date.now();
     recordJobStarted("outbox");
     try {
@@ -218,7 +341,11 @@ export async function processOutboxEvents(): Promise<{
         scheduledFor: event.scheduledFor,
         correlationId: event.correlationId ?? undefined,
       });
-      await markOutboxEventProcessed(event.id);
+      await markOutboxEventSucceeded({
+        eventId: event.id,
+        lockId: lock.lockId,
+        now: new Date(),
+      });
       processed++;
 
       // Update read models for read model events
@@ -262,28 +389,81 @@ export async function processOutboxEvents(): Promise<{
       recordJobMetrics("outbox", duration, true);
     } catch (error) {
       errors++;
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      await markOutboxEventProcessed(event.id, errorMessage);
+      const err = error instanceof Error ? error : new Error(String(error));
+
+      // Determine retryability
+      const classification = classifyError(err);
+      const shouldRetryByClassification =
+        isRetryableErrorEnhanced(err) ||
+        classification.category === ErrorCategory.UNKNOWN;
+      const shouldRetry =
+        !isDefinitelyNonRetryableOutboxError(err) &&
+        shouldRetryByClassification;
+
+      const attemptsSoFar = event.attempts;
+      const attemptsAfterIncrement = attemptsSoFar + 1;
+      const policy = getOutboxRetryPolicy();
 
       const duration = Date.now() - startTime;
       recordOutboxEventProcessed(event.eventType, false);
       recordOutboxProcessingDuration(event.eventType, duration, false);
-      recordJobMetrics(
-        "outbox",
-        duration,
-        false,
-        error instanceof Error ? error : new Error(errorMessage)
-      );
+      recordJobMetrics("outbox", duration, false, err);
 
-      logError(error instanceof Error ? error : new Error(errorMessage), {
+      if (!shouldRetry) {
+        await deadLetterOutboxEvent({
+          eventId: event.id,
+          lockId: lock.lockId,
+          errorMessage: err.message,
+        });
+        recordOutboxEventDeadLettered(event.eventType, "non_retryable");
+      } else if (attemptsAfterIncrement >= policy.maxAttempts) {
+        await deadLetterOutboxEvent({
+          eventId: event.id,
+          lockId: lock.lockId,
+          errorMessage: err.message,
+        });
+        recordOutboxEventDeadLettered(event.eventType, "max_attempts");
+      } else {
+        const suggestedDelayMs = getRetryDelayForError(err) ?? 0;
+        const nextAttemptAt = computeNextAttemptAt({
+          now: new Date(),
+          attemptsAfterIncrement,
+          policy,
+          minimumDelayMs: suggestedDelayMs,
+        });
+        await markOutboxEventFailed({
+          eventId: event.id,
+          lockId: lock.lockId,
+          errorMessage: err.message,
+          nextAttemptAt,
+        });
+        recordOutboxEventRetried(event.eventType);
+      }
+
+      logError(err, {
         eventId: event.id,
-        eventType: event.eventType,
         aggregateId: event.aggregateId,
-        correlationId: event.correlationId ?? undefined,
         message: "Failed to process outbox event",
+        attemptsAfterIncrement,
+        retryable: shouldRetry,
+        ...buildObsContext({
+          outboxEventId: event.id,
+          correlationId: event.correlationId ?? undefined,
+          eventType: event.eventType,
+          postId: event.aggregateId,
+        }),
       });
     }
+  }
+
+  // Update backlog gauges (best-effort)
+  try {
+    const counts = await getOutboxBacklogCounts(new Date());
+    setOutboxBacklog("pending", counts.pending);
+    setOutboxBacklog("ready", counts.ready);
+    setOutboxBacklog("dead_letter", counts.deadLettered);
+  } catch {
+    // Best-effort: never fail outbox processing due to metrics.
   }
 
   return { processed, errors };

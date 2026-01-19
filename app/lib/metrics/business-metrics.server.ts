@@ -175,6 +175,48 @@ export const outboxEventsProcessedCounter = getOrCreateMetric(
 );
 
 /**
+ * Outbox events retried counter
+ * Tracks outbox events that were scheduled for retry (not dead-lettered)
+ */
+export const outboxEventsRetriedCounter = getOrCreateMetric(
+  "outbox_events_retried_total",
+  () =>
+    new promClient.Counter({
+      name: "outbox_events_retried_total",
+      help: "Total number of outbox events scheduled for retry",
+      labelNames: ["event_type"],
+    })
+);
+
+/**
+ * Outbox events dead-lettered counter
+ * Tracks outbox events that were moved to dead-letter
+ */
+export const outboxEventsDeadLetteredCounter = getOrCreateMetric(
+  "outbox_events_dead_lettered_total",
+  () =>
+    new promClient.Counter({
+      name: "outbox_events_dead_lettered_total",
+      help: "Total number of outbox events moved to dead-letter",
+      labelNames: ["event_type", "reason"], // reason: "non_retryable" | "max_attempts"
+    })
+);
+
+/**
+ * Outbox backlog gauge
+ * Tracks current outbox backlog sizes
+ */
+export const outboxBacklogGauge = getOrCreateMetric(
+  "outbox_backlog",
+  () =>
+    new promClient.Gauge({
+      name: "outbox_backlog",
+      help: "Current number of outbox events by state",
+      labelNames: ["state"], // state: "pending" | "ready" | "dead_letter"
+    })
+);
+
+/**
  * Record post creation
  */
 export function recordPostCreated(
@@ -279,4 +321,25 @@ export function recordOutboxEventProcessed(
     event_type: eventType,
     status: success ? "success" : "error",
   });
+}
+
+export function recordOutboxEventRetried(eventType: string): void {
+  outboxEventsRetriedCounter.inc({ event_type: eventType });
+}
+
+export function recordOutboxEventDeadLettered(
+  eventType: string,
+  reason: "non_retryable" | "max_attempts"
+): void {
+  outboxEventsDeadLetteredCounter.inc({
+    event_type: eventType,
+    reason,
+  });
+}
+
+export function setOutboxBacklog(
+  state: "pending" | "ready" | "dead_letter",
+  count: number
+): void {
+  outboxBacklogGauge.set({ state }, count);
 }

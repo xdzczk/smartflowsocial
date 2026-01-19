@@ -18,6 +18,7 @@ import {
   recordPostPublishFailed,
 } from "~/lib/metrics/business-metrics.server";
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
+import { buildObsContext } from "~/lib/observability-context.server";
 import { nowMillis } from "~/lib/temporal";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 import { getPostById } from "~/models/post.queries.server";
@@ -34,11 +35,14 @@ export class PublishNowUseCase {
     // Get or create correlation ID for this operation
     const correlationId = getCorrelationId(input.correlationId);
 
-    logInfo("PublishNowUseCase: Starting immediate publish", {
-      postId: input.postId,
-      userId: input.userId,
-      correlationId,
-    });
+    logInfo(
+      "PublishNowUseCase: Starting immediate publish",
+      buildObsContext({
+        postId: input.postId,
+        userId: input.userId,
+        correlationId,
+      })
+    );
 
     // Verify post exists and not already posted
     const post = await getPostById({ id: input.postId, userId: input.userId });
@@ -126,9 +130,12 @@ export class PublishNowUseCase {
       recordPublishLatency(post.postType, "immediate", publishLatency);
 
       logInfo("PublishNowUseCase: Post published successfully", {
-        postId: input.postId,
-        userId: input.userId,
-        correlationId,
+        ...buildObsContext({
+          postId: input.postId,
+          userId: input.userId,
+          correlationId,
+          publishAttemptId,
+        }),
       });
     } catch (error) {
       const publishLatency = nowMillis() - publishStartTime;
@@ -164,9 +171,12 @@ export class PublishNowUseCase {
       recordPublishLatency(post.postType, "immediate", publishLatency);
 
       logErrorUtil(error instanceof Error ? error : new Error(String(error)), {
-        postId: input.postId,
-        userId: input.userId,
-        correlationId,
+        ...buildObsContext({
+          postId: input.postId,
+          userId: input.userId,
+          correlationId,
+          publishAttemptId,
+        }),
         message: "PublishNowUseCase: Failed to publish post",
       });
       throw error;

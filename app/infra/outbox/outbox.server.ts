@@ -5,6 +5,8 @@
  * Ensures that domain changes and job enqueueing are atomic.
  */
 
+import { randomUUID } from "node:crypto";
+
 import type { Prisma } from "@prisma/client";
 
 import type { SignedEvent } from "~/features/nostr/types";
@@ -42,6 +44,13 @@ export interface LongFormPostScheduledPayload {
   schemaVersion: string;
   correlationId?: string; // For request tracking
 }
+
+export interface OutboxProcessingLock {
+  lockId: string;
+  expiresAt: Date;
+}
+
+export const DEFAULT_OUTBOX_LOCK_TTL_MS = 30_000;
 
 /**
  * Create an outbox event within a transaction
@@ -98,11 +107,26 @@ export async function createOutboxEventInTransaction(
 /**
  * Get unprocessed outbox events
  */
-export async function getUnprocessedOutboxEvents(limit = 50) {
+export async function getUnprocessedOutboxEvents(
+  limit = 50,
+  now: Date = new Date()
+) {
   return prisma.outboxEvent.findMany({
     where: {
       processedAt: null,
-      OR: [{ scheduledFor: null }, { scheduledFor: { lte: new Date() } }],
+      deadLetteredAt: null,
+      OR: [{ scheduledFor: null }, { scheduledFor: { lte: now } }],
+      AND: [
+        {
+          OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }],
+        },
+        {
+          OR: [
+            { processingLockExpiresAt: null },
+            { processingLockExpiresAt: { lt: now } },
+          ],
+        },
+      ],
     },
     take: limit,
     orderBy: { createdAt: "asc" },
@@ -110,17 +134,157 @@ export async function getUnprocessedOutboxEvents(limit = 50) {
 }
 
 /**
- * Mark an outbox event as processed
+ * Claim an outbox event for processing (DB-backed lock).
+ *
+ * Returns a lock token that must be provided to finalize processing.
  */
-export async function markOutboxEventProcessed(
-  eventId: string,
-  error?: string
-) {
-  return prisma.outboxEvent.update({
-    where: { id: eventId },
+export async function claimOutboxEvent(input: {
+  eventId: string;
+  ttlMs?: number;
+  now?: Date;
+}): Promise<OutboxProcessingLock | null> {
+  const now = input.now ?? new Date();
+  const ttlMs = input.ttlMs ?? DEFAULT_OUTBOX_LOCK_TTL_MS;
+  const lockId = randomUUID();
+  const expiresAt = new Date(now.getTime() + ttlMs);
+
+  const updated = await prisma.outboxEvent.updateMany({
+    where: {
+      id: input.eventId,
+      processedAt: null,
+      deadLetteredAt: null,
+      OR: [{ scheduledFor: null }, { scheduledFor: { lte: now } }],
+      AND: [
+        {
+          OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }],
+        },
+        {
+          OR: [
+            { processingLockExpiresAt: null },
+            { processingLockExpiresAt: { lt: now } },
+          ],
+        },
+      ],
+    },
     data: {
-      processedAt: new Date(),
-      processingError: error ?? null,
+      processingLockId: lockId,
+      processingLockExpiresAt: expiresAt,
     },
   });
+
+  if (updated.count !== 1) return null;
+  return { lockId, expiresAt };
+}
+
+export async function markOutboxEventSucceeded(input: {
+  eventId: string;
+  lockId: string;
+  now?: Date;
+}): Promise<boolean> {
+  const now = input.now ?? new Date();
+  const updated = await prisma.outboxEvent.updateMany({
+    where: {
+      id: input.eventId,
+      processingLockId: input.lockId,
+    },
+    data: {
+      processedAt: now,
+      processingError: null,
+      lastError: null,
+      nextAttemptAt: null,
+      deadLetteredAt: null,
+      processingLockId: null,
+      processingLockExpiresAt: null,
+    },
+  });
+  return updated.count === 1;
+}
+
+export async function markOutboxEventFailed(input: {
+  eventId: string;
+  lockId: string;
+  errorMessage: string;
+  nextAttemptAt: Date;
+  now?: Date;
+}): Promise<boolean> {
+  const now = input.now ?? new Date();
+  const updated = await prisma.outboxEvent.updateMany({
+    where: {
+      id: input.eventId,
+      processingLockId: input.lockId,
+      processedAt: null,
+      deadLetteredAt: null,
+    },
+    data: {
+      attempts: { increment: 1 },
+      lastAttemptAt: now,
+      nextAttemptAt: input.nextAttemptAt,
+      lastError: input.errorMessage,
+      // Keep legacy field aligned for backward compatibility / dashboards.
+      processingError: input.errorMessage,
+      processingLockId: null,
+      processingLockExpiresAt: null,
+    },
+  });
+  return updated.count === 1;
+}
+
+export async function deadLetterOutboxEvent(input: {
+  eventId: string;
+  lockId: string;
+  errorMessage: string;
+  now?: Date;
+}): Promise<boolean> {
+  const now = input.now ?? new Date();
+  const updated = await prisma.outboxEvent.updateMany({
+    where: {
+      id: input.eventId,
+      processingLockId: input.lockId,
+      processedAt: null,
+    },
+    data: {
+      attempts: { increment: 1 },
+      deadLetteredAt: now,
+      lastAttemptAt: now,
+      lastError: input.errorMessage,
+      processingError: input.errorMessage,
+      nextAttemptAt: null,
+      processingLockId: null,
+      processingLockExpiresAt: null,
+    },
+  });
+  return updated.count === 1;
+}
+
+export async function getOutboxBacklogCounts(now: Date = new Date()): Promise<{
+  pending: number;
+  ready: number;
+  deadLettered: number;
+}> {
+  const [pending, ready, deadLettered] = await Promise.all([
+    prisma.outboxEvent.count({
+      where: { processedAt: null, deadLetteredAt: null },
+    }),
+    prisma.outboxEvent.count({
+      where: {
+        processedAt: null,
+        deadLetteredAt: null,
+        OR: [{ scheduledFor: null }, { scheduledFor: { lte: now } }],
+        AND: [
+          { OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }] },
+          {
+            OR: [
+              { processingLockExpiresAt: null },
+              { processingLockExpiresAt: { lt: now } },
+            ],
+          },
+        ],
+      },
+    }),
+    prisma.outboxEvent.count({
+      where: { deadLetteredAt: { not: null } },
+    }),
+  ]);
+
+  return { pending, ready, deadLettered };
 }

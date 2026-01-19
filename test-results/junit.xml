@@ -1,37 +1,79 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="16" failures="0" errors="0" time="0.003141542">
-    <testsuite name="tests/security/security-headers.test.ts" timestamp="2026-01-18T20:09:26.440Z" hostname="Ivans-MacBook-Pro.local" tests="16" failures="0" errors="0" skipped="0" time="0.003141542">
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: Configuration &gt; should configure Content-Security-Policy" time="0.001051833">
+<testsuites name="vitest tests" tests="34" failures="0" errors="0" time="0.019447875">
+    <testsuite name="tests/unit/outbox/outbox-retry-policy.test.ts" timestamp="2026-01-19T07:21:25.982Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001880583">
+        <testcase classname="tests/unit/outbox/outbox-retry-policy.test.ts" name="Outbox retry policy &gt; computes deterministic delays when jitter disabled" time="0.000887625">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: Configuration &gt; should configure X-Frame-Options to DENY" time="0.000149083">
+        <testcase classname="tests/unit/outbox/outbox-retry-policy.test.ts" name="Outbox retry policy &gt; applies minimumDelayMs for error-classification hints" time="0.000222666">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: Configuration &gt; should configure X-Content-Type-Options to nosniff" time="0.000103792">
+    </testsuite>
+    <testsuite name="tests/unit/outbox/outbox-worker.server.test.ts" timestamp="2026-01-19T07:21:25.983Z" hostname="Ivans-MacBook-Pro.local" tests="13" failures="0" errors="0" skipped="0" time="0.007317833">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process POST_SCHEDULED event successfully" time="0.002873416">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: Configuration &gt; should configure Referrer-Policy" time="0.000073375">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process LONGFORM_SCHEDULED event successfully" time="0.000384792">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: Configuration &gt; should configure HSTS with appropriate settings" time="0.000120459">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process POST_CANCELLED event successfully" time="0.000253458">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: Configuration &gt; should configure Permissions-Policy to disable sensitive features" time="0.000189542">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process LONGFORM_CANCELLED event successfully" time="0.000200792">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: CSP Directives &gt; should allow &apos;self&apos; for default sources" time="0.000076083">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should update read models for read model events" time="0.000330416">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: CSP Directives &gt; should allow unsafe-inline for scripts (Remix requirement)" time="0.000055333">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should handle processing errors" time="0.00047075">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: CSP Directives &gt; should allow unsafe-inline for styles (Remix requirement)" time="0.000061292">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should handle enqueue failures" time="0.000400958">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: CSP Directives &gt; should allow WebSocket connections for Nostr" time="0.000078084">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should dead-letter when max outbox attempts reached" time="0.000181125">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: CSP Directives &gt; should deny frame embedding" time="0.000072667">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should treat deterministic jobId collision as idempotent success" time="0.000281041">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: CSP Directives &gt; should allow data URIs for images" time="0.000059333">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should retry on transient failure and succeed on a later run" time="0.000523958">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: CSP Directives &gt; should restrict object sources to none" time="0.000064875">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should only allow one concurrent claim to enqueue a given event" time="0.000191459">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: CSP Directives &gt; should restrict form actions to self" time="0.000050667">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process multiple events" time="0.000135875">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: Environment-Specific Configuration &gt; should include unsafe-eval only in development" time="0.000108459">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should throw error for unknown event type" time="0.000298375">
         </testcase>
-        <testcase classname="tests/security/security-headers.test.ts" name="Security Headers: Environment-Specific Configuration &gt; should enable upgradeInsecureRequests in production" time="0.000044375">
+    </testsuite>
+    <testsuite name="tests/unit/outbox/outbox.server.test.ts" timestamp="2026-01-19T07:21:25.984Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.005579709">
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; createOutboxEvent &gt; should create an outbox event successfully" time="0.0016945">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; createOutboxEvent &gt; should create event without optional fields" time="0.000263625">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; createOutboxEventInTransaction &gt; should create an outbox event in transaction" time="0.000266917">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; getUnprocessedOutboxEvents &gt; should get unprocessed events" time="0.00031025">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; getUnprocessedOutboxEvents &gt; should use default limit if not provided" time="0.000714125">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; claimOutboxEvent &gt; should claim event when eligible" time="0.000346916">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; claimOutboxEvent &gt; should return null when claim fails" time="0.000082458">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; markOutboxEventSucceeded &gt; should mark event as processed and clear retry/lock fields" time="0.00032725">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; markOutboxEventFailed &gt; should increment attempts and schedule nextAttemptAt" time="0.000269458">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; deadLetterOutboxEvent &gt; should dead-letter and increment attempts" time="0.000236916">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; getOutboxBacklogCounts &gt; should return pending/ready/dead-letter counts" time="0.000180792">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/outbox/read-model-worker.server.test.ts" timestamp="2026-01-19T07:21:25.985Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.00466975">
+        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should update scheduled post read model for POST_CREATED" time="0.001972208">
+        </testcase>
+        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should remove from scheduled read model if post is not scheduled" time="0.000396417">
+        </testcase>
+        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should move post to published read model for POST_PUBLISHED" time="0.00036125">
+        </testcase>
+        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should delete post from all read models for POST_DELETED" time="0.000308042">
+        </testcase>
+        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should skip longform events" time="0.000144916">
+        </testcase>
+        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should handle post not found gracefully" time="0.000090334">
+        </testcase>
+        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should handle errors gracefully without throwing" time="0.000562">
+        </testcase>
+        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should ignore job-related events" time="0.000071375">
         </testcase>
     </testsuite>
 </testsuites>

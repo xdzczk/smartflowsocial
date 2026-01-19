@@ -11,11 +11,16 @@ const { mockPrisma } = vi.hoisted(() => {
     outboxEvent: {
       create: vi.fn(),
       findMany: vi.fn(),
-      update: vi.fn(),
+      updateMany: vi.fn(),
+      count: vi.fn(),
     },
   };
   return { mockPrisma };
 });
+
+vi.mock("node:crypto", () => ({
+  randomUUID: () => "lock-1",
+}));
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
@@ -25,10 +30,18 @@ import {
   createOutboxEvent,
   createOutboxEventInTransaction,
   getUnprocessedOutboxEvents,
-  markOutboxEventProcessed,
+  claimOutboxEvent,
+  markOutboxEventSucceeded,
+  markOutboxEventFailed,
+  deadLetterOutboxEvent,
+  getOutboxBacklogCounts,
   type PostScheduledPayload,
 } from "~/infra/outbox/outbox.server";
 import { prisma } from "~/lib/prisma.server";
+
+const ANY_DATE = expect.any(Date) as unknown as Date;
+const objectContainingRecord = (value: Record<string, unknown>) =>
+  expect.objectContaining(value) as unknown as Record<string, unknown>;
 
 describe("Outbox Server Functions", () => {
   beforeEach(() => {
@@ -200,6 +213,7 @@ describe("Outbox Server Functions", () => {
 
   describe("getUnprocessedOutboxEvents", () => {
     it("should get unprocessed events", async () => {
+      const now = new Date("2024-01-01T12:00:00Z");
       const mockEvents = [
         {
           id: "event-1",
@@ -209,6 +223,7 @@ describe("Outbox Server Functions", () => {
           payload: { postId: "post-1" },
           scheduledFor: null,
           processedAt: null,
+          deadLetteredAt: null,
           createdAt: new Date("2024-01-01T10:00:00Z"),
         },
         {
@@ -219,6 +234,7 @@ describe("Outbox Server Functions", () => {
           payload: { postId: "post-2" },
           scheduledFor: new Date("2024-01-01T11:00:00Z"),
           processedAt: null,
+          deadLetteredAt: null,
           createdAt: new Date("2024-01-01T10:30:00Z"),
         },
       ];
@@ -227,16 +243,22 @@ describe("Outbox Server Functions", () => {
         prisma.outboxEvent.findMany as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockEvents);
 
-      const result = await getUnprocessedOutboxEvents(50);
+      const result = await getUnprocessedOutboxEvents(50, now);
 
       expect(result).toEqual(mockEvents);
       expect(prisma.outboxEvent.findMany).toHaveBeenCalledWith({
         where: {
           processedAt: null,
-          OR: [
-            { scheduledFor: null },
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-            { scheduledFor: { lte: expect.any(Date) } },
+          deadLetteredAt: null,
+          OR: [{ scheduledFor: null }, { scheduledFor: { lte: now } }],
+          AND: [
+            { OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }] },
+            {
+              OR: [
+                { processingLockExpiresAt: null },
+                { processingLockExpiresAt: { lt: now } },
+              ],
+            },
           ],
         },
         take: 50,
@@ -259,56 +281,158 @@ describe("Outbox Server Functions", () => {
     });
   });
 
-  describe("markOutboxEventProcessed", () => {
-    it("should mark event as processed without error", async () => {
-      const mockEvent = {
-        id: "event-1",
-        processedAt: new Date(),
-        processingError: null,
-      };
+  describe("claimOutboxEvent", () => {
+    it("should claim event when eligible", async () => {
+      (
+        prisma.outboxEvent.updateMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
 
-      (prisma.outboxEvent.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
-      );
-
-      const result = await markOutboxEventProcessed("event-1");
-
-      expect(result).toEqual(mockEvent);
-      expect(prisma.outboxEvent.update).toHaveBeenCalledWith({
-        where: { id: "event-1" },
-        data: {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-          processedAt: expect.any(Date),
-          processingError: null,
-        },
+      const now = new Date("2024-01-01T12:00:00Z");
+      const result = await claimOutboxEvent({
+        eventId: "event-1",
+        now,
+        ttlMs: 1000,
       });
+
+      expect(result).toEqual({
+        lockId: "lock-1",
+        expiresAt: new Date(now.getTime() + 1000),
+      });
+      expect(prisma.outboxEvent.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: objectContainingRecord({
+            id: "event-1",
+            processedAt: null,
+            deadLetteredAt: null,
+          }),
+          data: objectContainingRecord({
+            processingLockId: "lock-1",
+            processingLockExpiresAt: ANY_DATE,
+          }),
+        })
+      );
     });
 
-    it("should mark event as processed with error", async () => {
-      const mockEvent = {
-        id: "event-1",
-        processedAt: new Date(),
-        processingError: "Failed to process",
-      };
+    it("should return null when claim fails", async () => {
+      (
+        prisma.outboxEvent.updateMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 0 });
+      const result = await claimOutboxEvent({ eventId: "event-1" });
+      expect(result).toBeNull();
+    });
+  });
 
-      (prisma.outboxEvent.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockEvent
-      );
+  describe("markOutboxEventSucceeded", () => {
+    it("should mark event as processed and clear retry/lock fields", async () => {
+      (
+        prisma.outboxEvent.updateMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
 
-      const result = await markOutboxEventProcessed(
-        "event-1",
-        "Failed to process"
-      );
-
-      expect(result).toEqual(mockEvent);
-      expect(prisma.outboxEvent.update).toHaveBeenCalledWith({
-        where: { id: "event-1" },
-        data: {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-          processedAt: expect.any(Date),
-          processingError: "Failed to process",
-        },
+      const ok = await markOutboxEventSucceeded({
+        eventId: "event-1",
+        lockId: "lock-1",
       });
+      expect(ok).toBe(true);
+      expect(prisma.outboxEvent.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "event-1", processingLockId: "lock-1" },
+          data: objectContainingRecord({
+            processedAt: ANY_DATE,
+            processingError: null,
+            lastError: null,
+            nextAttemptAt: null,
+            deadLetteredAt: null,
+            processingLockId: null,
+            processingLockExpiresAt: null,
+          }),
+        })
+      );
+    });
+  });
+
+  describe("markOutboxEventFailed", () => {
+    it("should increment attempts and schedule nextAttemptAt", async () => {
+      (
+        prisma.outboxEvent.updateMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
+
+      const now = new Date("2024-01-01T12:00:00Z");
+      const nextAttemptAt = new Date("2024-01-01T12:00:05Z");
+      const ok = await markOutboxEventFailed({
+        eventId: "event-1",
+        lockId: "lock-1",
+        errorMessage: "Queue full",
+        nextAttemptAt,
+        now,
+      });
+      expect(ok).toBe(true);
+      expect(prisma.outboxEvent.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: objectContainingRecord({
+            id: "event-1",
+            processingLockId: "lock-1",
+            processedAt: null,
+            deadLetteredAt: null,
+          }),
+          data: objectContainingRecord({
+            attempts: { increment: 1 },
+            lastAttemptAt: now,
+            nextAttemptAt,
+            lastError: "Queue full",
+            processingError: "Queue full",
+            processingLockId: null,
+            processingLockExpiresAt: null,
+          }),
+        })
+      );
+    });
+  });
+
+  describe("deadLetterOutboxEvent", () => {
+    it("should dead-letter and increment attempts", async () => {
+      (
+        prisma.outboxEvent.updateMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
+
+      const ok = await deadLetterOutboxEvent({
+        eventId: "event-1",
+        lockId: "lock-1",
+        errorMessage: "Invalid payload",
+      });
+      expect(ok).toBe(true);
+      expect(prisma.outboxEvent.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: objectContainingRecord({
+            id: "event-1",
+            processingLockId: "lock-1",
+            processedAt: null,
+          }),
+          data: objectContainingRecord({
+            attempts: { increment: 1 },
+            deadLetteredAt: ANY_DATE,
+            lastError: "Invalid payload",
+            processingError: "Invalid payload",
+            nextAttemptAt: null,
+            processingLockId: null,
+            processingLockExpiresAt: null,
+          }),
+        })
+      );
+    });
+  });
+
+  describe("getOutboxBacklogCounts", () => {
+    it("should return pending/ready/dead-letter counts", async () => {
+      (prisma.outboxEvent.count as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(3)
+        .mockResolvedValueOnce(2);
+
+      const result = await getOutboxBacklogCounts(
+        new Date("2024-01-01T12:00:00Z")
+      );
+      expect(result).toEqual({ pending: 10, ready: 3, deadLettered: 2 });
+      expect(prisma.outboxEvent.count).toHaveBeenCalledTimes(3);
     });
   });
 });

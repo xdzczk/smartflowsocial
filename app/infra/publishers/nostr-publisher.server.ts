@@ -148,6 +148,8 @@ export class DefaultNostrPublisher implements NostrPublisher {
       logWarning("All relays filtered out by health, using original list", {
         originalRelays: relaysToUse,
         correlationId,
+        eventId: event.id,
+        kind: event.kind,
       });
       // Fallback to original relays if all are filtered
       prioritizedRelays.push(...relaysToUse);
@@ -204,6 +206,8 @@ export class DefaultNostrPublisher implements NostrPublisher {
           {
             correlationId,
             relayCount: prioritizedRelays.length,
+            eventId: event.id,
+            kind: event.kind,
           }
         );
         return { results: [] };
