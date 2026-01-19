@@ -1,6 +1,7 @@
 import { useLocation } from "@remix-run/react";
 import { generateSecretKey } from "nostr-tools";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import QRCode from "react-qr-code";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -137,6 +138,7 @@ export default function NostrLoginPanel() {
   const [relayList, setRelayList] = useState(DEFAULT_RELAYS);
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
   const nip46CancelRef = useRef<{ cancel: () => void } | null>(null);
+  const [copyOk, setCopyOk] = useState(false);
 
   const cleanup = useCallback(async () => {
     nip46CancelRef.current?.cancel();
@@ -156,9 +158,21 @@ export default function NostrLoginPanel() {
     setSigner(null);
     setPubkey(null);
     setNostrConnectUri(null);
+    setCopyOk(false);
     setError(null);
     setState("signer_selection");
   }, [cleanup]);
+
+  const copyNostrConnectUri = useCallback(async () => {
+    if (!nostrConnectUri) return;
+    try {
+      await navigator.clipboard.writeText(nostrConnectUri);
+      setCopyOk(true);
+      window.setTimeout(() => setCopyOk(false), 1500);
+    } catch {
+      // ignore
+    }
+  }, [nostrConnectUri]);
 
   useEffect(() => {
     return () => {
@@ -460,6 +474,35 @@ export default function NostrLoginPanel() {
             Approve the connection in your remote signer. If you switch
             profiles, you switch identity and must re-authenticate.
           </div>
+          {nostrConnectUri ? (
+            <div className="space-y-3 pt-2">
+              <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
+                <div className="flex justify-center rounded-md border bg-white p-3 dark:bg-gray-950/30">
+                  <QRCode value={nostrConnectUri} size={168} />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">nostrconnect URI</div>
+                  <textarea
+                    readOnly
+                    className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
+                    value={nostrConnectUri}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void copyNostrConnectUri()}
+                    >
+                      {copyOk ? "Copied" : "Copy"}
+                    </Button>
+                    <div className="text-muted-foreground text-xs">
+                      Scan or paste into your remote signer to approve.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="flex gap-2">
             <Button
               type="button"
