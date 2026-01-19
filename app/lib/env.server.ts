@@ -52,6 +52,11 @@ interface EnvConfig {
   // Metrics endpoint security
   METRICS_TOKEN?: string; // Token required to access /metrics endpoint
   METRICS_ALLOWED_IPS?: string; // Comma-separated list of allowed IPs for metrics endpoint
+
+  // Feature flags
+  // NOTE: These are optional and are parsed as booleans by feature-flags.server.ts
+  NOSTR_AUTH_V2_ENABLED?: string; // Enable /auth/nostr/challenge + /auth/nostr/verify
+  ENFORCE_NOSTR_SESSION_PUBKEY?: string; // Enforce session pubkey === signed event pubkey
 }
 
 interface ValidationError {
@@ -157,6 +162,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "ALLOWED_ORIGINS",
     "METRICS_TOKEN",
     "METRICS_ALLOWED_IPS",
+    "NOSTR_AUTH_V2_ENABLED",
+    "ENFORCE_NOSTR_SESSION_PUBKEY",
   ];
 
   optionalVars.forEach((key) => {

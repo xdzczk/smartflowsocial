@@ -179,6 +179,23 @@ Standard Nostr event structure and relay communication.
      - `signedEvent.pubkey` matches declared `pubkey`
    - Server creates a DB-backed session bound to the pubkey and sets a cookie
 
+### Rollout / feature flags
+
+SmartFlowSocial supports staged rollout and emergency toggles via environment variables:
+
+- **`NOSTR_AUTH_V2_ENABLED`** (default: `true`)
+  - When disabled, the server will return `404` for:
+    - `POST /auth/nostr/challenge`
+    - `POST /auth/nostr/verify`
+- **`ENFORCE_NOSTR_SESSION_PUBKEY`** (default: `true`)
+  - When enabled, the server rejects any incoming signed event where the event `pubkey` does not
+    match the authenticated session pubkey, returning a `PROFILE_MISMATCH` error.
+
+### Legacy endpoint
+
+The legacy authentication endpoint **`POST /nostr-auth` has been removed**. Clients must sign in via
+`/login` using the challenge/verify endpoints above.
+
 ### Supported signers
 
 - **Alby** - Popular with Lightning wallet integration

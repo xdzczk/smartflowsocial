@@ -231,7 +231,6 @@ all major features and user flows.
 
 - `/` - Landing page
 - `/login` - Login page
-- `/nostr-auth` - Nostr authentication
 
 ## Best Practices Maintained
 

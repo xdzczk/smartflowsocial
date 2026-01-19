@@ -109,6 +109,10 @@ pnpm install
 cp example.env .env
 # Edit .env with your configuration
 
+# Optional: Feature flags for staged rollout / emergency toggles
+# - NOSTR_AUTH_V2_ENABLED (default true): enable /auth/nostr/challenge + /auth/nostr/verify
+# - ENFORCE_NOSTR_SESSION_PUBKEY (default true): enforce session pubkey === signed event pubkey
+
 # Start services (Docker)
 pnpm docker  # Starts PostgreSQL and Redis
 

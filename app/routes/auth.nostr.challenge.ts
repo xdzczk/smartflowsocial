@@ -5,6 +5,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { issueLoginChallenge } from "~/features/auth";
 import { withCSRFProtection } from "~/lib/csrf";
+import { featureFlags } from "~/lib/feature-flags.server";
 
 const PURPOSE_LOGIN = "login";
 const CHALLENGE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -14,6 +15,20 @@ export const action = withCSRFProtection(
     try {
       if (request.method !== "POST") {
         return json({ error: "Method not allowed" }, { status: 405 });
+      }
+
+      if (!featureFlags.nostrAuthV2Enabled) {
+        return json(
+          {
+            success: false,
+            error: {
+              code: "FEATURE_DISABLED",
+              message:
+                "Nostr auth is disabled on this server (NOSTR_AUTH_V2_ENABLED=false).",
+            },
+          },
+          { status: 404 }
+        );
       }
 
       const nonce = randomBytes(32).toString("hex");

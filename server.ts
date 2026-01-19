@@ -447,7 +447,7 @@ async function run() {
 
   // Auth endpoints get the strictest limits
   app.use("/login", authLimiter);
-  app.use("/nostr-auth", authLimiter);
+  app.use("/auth/nostr", authLimiter);
 
   // Rate limiting for post creation endpoints
   // Bulk posts: More lenient (5 requests per minute) since they're expensive but legitimate

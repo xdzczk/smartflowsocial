@@ -1,4 +1,5 @@
 import { ProfileMismatchError, ValidationError } from "~/lib/errors";
+import { featureFlags } from "~/lib/feature-flags.server";
 
 export function assertSignedEventMatchesSessionPubkey(input: {
   sessionPubkey: string;
@@ -10,6 +11,11 @@ export function assertSignedEventMatchesSessionPubkey(input: {
   if (!eventPubkey) {
     throw new ValidationError("Missing signed event pubkey", input.context);
   }
+
+  if (!featureFlags.enforceNostrSessionPubkey) {
+    return;
+  }
+
   if (eventPubkey !== input.sessionPubkey) {
     throw new ProfileMismatchError(undefined, {
       sessionPubkey: input.sessionPubkey,

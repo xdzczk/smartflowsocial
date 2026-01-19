@@ -41,7 +41,7 @@ export {
   issueLoginChallenge,
   getLoginChallengeForVerify,
   consumeLoginChallengeAndCreateSession,
-} from "./services/nostr-login.server";
+} from "./services/nostr-auth.server";
 
 // ============================================================================
 // Components (Public API)

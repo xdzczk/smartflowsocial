@@ -10,6 +10,7 @@ import { getCompleteProfile } from "~/features/auth/profile.server";
 import { getSession, sessionStorage } from "~/features/auth/session.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { AuthenticationError, ValidationError } from "~/lib/errors";
+import { featureFlags } from "~/lib/feature-flags.server";
 import { safeRedirect } from "~/lib/remix-utils";
 
 const PURPOSE_LOGIN = "login";
@@ -39,6 +40,20 @@ export const action = withCSRFProtection(
     try {
       if (request.method !== "POST") {
         return json({ error: "Method not allowed" }, { status: 405 });
+      }
+
+      if (!featureFlags.nostrAuthV2Enabled) {
+        return json(
+          {
+            success: false,
+            error: {
+              code: "FEATURE_DISABLED",
+              message:
+                "Nostr auth is disabled on this server (NOSTR_AUTH_V2_ENABLED=false).",
+            },
+          },
+          { status: 404 }
+        );
       }
 
       let bodyRaw: unknown;
