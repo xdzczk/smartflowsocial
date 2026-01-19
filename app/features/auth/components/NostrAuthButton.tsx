@@ -80,10 +80,8 @@ export default function NostrAuthButton() {
   const user = useOptionalUser() ?? null;
   const location = useLocation();
 
-  const redirectTo = useMemo(() => {
-    const current = `${location.pathname}${location.search}`;
-    return encodeURIComponent(current);
-  }, [location.pathname, location.search]);
+  // Always land in the app after sign-in (not back on marketing pages).
+  const redirectTo = useMemo(() => encodeURIComponent("/dashboard"), []);
 
   const isLoginPage = location.pathname.startsWith("/login");
 
