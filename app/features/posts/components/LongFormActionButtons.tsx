@@ -3,6 +3,7 @@ interface LongFormActionButtonsProps {
   fetcherState: "idle" | "submitting" | "loading";
   isFormValid: boolean;
   hasScheduledFor: boolean;
+  isSigning?: boolean;
   onPreview: () => void;
   onSchedule: () => void;
   onPublish: () => void;
@@ -12,11 +13,12 @@ export function LongFormActionButtons({
   fetcherState,
   isFormValid,
   hasScheduledFor,
+  isSigning = false,
   onPreview,
   onSchedule,
   onPublish,
 }: LongFormActionButtonsProps) {
-  const isDisabled = fetcherState !== "idle" || !isFormValid;
+  const isDisabled = fetcherState !== "idle" || !isFormValid || isSigning;
 
   return (
     <div className="border-t border-gray-200 pt-6 dark:border-gray-700">
@@ -68,7 +70,11 @@ export function LongFormActionButtons({
             disabled={isDisabled}
             className="flex-1 bg-blue-600 px-8 font-medium text-white hover:bg-blue-700"
           >
-            {fetcherState !== "idle" ? "Scheduling..." : "Sign and Schedule"}
+            {isSigning
+              ? "Waiting for signer…"
+              : fetcherState !== "idle"
+                ? "Scheduling..."
+                : "Sign and Schedule"}
           </Button>
         ) : (
           <Button
@@ -77,7 +83,11 @@ export function LongFormActionButtons({
             disabled={isDisabled}
             className="flex-1 bg-green-600 px-8 font-medium text-white hover:bg-green-700"
           >
-            {fetcherState !== "idle" ? "Publishing..." : "Publish Now"}
+            {isSigning
+              ? "Waiting for signer…"
+              : fetcherState !== "idle"
+                ? "Publishing..."
+                : "Publish Now"}
           </Button>
         )}
       </div>

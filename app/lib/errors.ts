@@ -87,6 +87,19 @@ export class ProfileMismatchError extends AppError {
 }
 
 /**
+ * Remote signer timeout/unavailable (408)
+ * Used when a NIP-46 remote signer doesn't respond in time (often because the signer app is closed/backgrounded).
+ */
+export class RemoteSignerTimeoutError extends AppError {
+  constructor(
+    message = "Remote signer did not respond. Open your signer app and try again.",
+    context?: Record<string, unknown>
+  ) {
+    super(message, 408, "REMOTE_SIGNER_TIMEOUT", true, context);
+  }
+}
+
+/**
  * Authorization errors (403)
  */
 export class AuthorizationError extends AppError {

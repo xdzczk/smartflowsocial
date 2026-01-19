@@ -139,6 +139,8 @@ export function EditPostModal({
         user,
       });
 
+      // Signing complete; proceed to submit
+      setIsSigningEvent(false);
       setIsUploadingImages(false);
       fetcher.submit(formData, { method: "post" });
     } catch (error: unknown) {
@@ -294,6 +296,12 @@ export function EditPostModal({
                   </div>
                 </div>
               </div>
+              {isSigningEvent ? (
+                <div className="rounded-lg border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+                  Waiting for signer approval… If you’re using a remote signer,
+                  open it to approve the request.
+                </div>
+              ) : null}
 
               {/* Error display */}
               {(fetcher.data?.error ?? signingError) ? (

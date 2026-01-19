@@ -241,7 +241,7 @@ export default function LongFormPost({
     }
   };
 
-  const { handleSchedule } = useLongFormSubmission({
+  const { handleSchedule, isSigning, signingError } = useLongFormSubmission({
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
     title: title ?? "",
     summary: summary ?? "",
@@ -353,6 +353,7 @@ export default function LongFormPost({
           fetcherState={fetcher.state}
           isFormValid={isFormValid}
           hasScheduledFor={!!scheduledFor}
+          isSigning={isSigning}
           onPreview={() => {
             if (onPreview) {
               onPreview({
@@ -366,6 +367,18 @@ export default function LongFormPost({
           onSchedule={() => void handleSchedule("schedule")}
           onPublish={() => void handleSchedule("publish")}
         />
+
+        {isSigning ? (
+          <div className="mt-3 rounded-md border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+            Waiting for signer approval… If you’re using a remote signer, open
+            it to approve the request.
+          </div>
+        ) : null}
+        {signingError ? (
+          <div className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+            {signingError}
+          </div>
+        ) : null}
 
         {/* Asset Browser Modal */}
         {showAssetBrowser ? (

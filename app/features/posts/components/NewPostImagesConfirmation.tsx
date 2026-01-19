@@ -1,4 +1,5 @@
 import { useFetcher } from "@remix-run/react";
+import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -183,6 +184,8 @@ export default function NewPostImagesConfirmation({
 }: NewPostImagesConfirmationProps) {
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state !== "idle";
+  const [isSigning, setIsSigning] = useState(false);
+  const [signingError, setSigningError] = useState<string | null>(null);
   const user = useOptionalUser();
 
   // Calculate addTags for display
@@ -195,6 +198,7 @@ export default function NewPostImagesConfirmation({
 
   const handleSignAndSubmit = async (isImmediate: boolean) => {
     try {
+      setSigningError(null);
       const queueType = getQueueTypeFromEvent(events);
       const effectiveHashtags = await fetchEffectiveHashtags(
         user?.id,
@@ -226,6 +230,7 @@ export default function NewPostImagesConfirmation({
         tags: tagArray,
       };
 
+      setIsSigning(true);
       const { signedEvent, nostrEvent } =
         await nostrAdapter.signEvent(eventData);
 
@@ -280,6 +285,13 @@ export default function NewPostImagesConfirmation({
         },
         false
       ); // Don't show toast, let component handle it
+      setSigningError(
+        error instanceof Error
+          ? error.message
+          : "Failed to sign post. Please try again."
+      );
+    } finally {
+      setIsSigning(false);
     }
   };
 
@@ -340,6 +352,18 @@ export default function NewPostImagesConfirmation({
             Review your post before publishing or scheduling
           </p>
         </div>
+
+        {isSigning ? (
+          <div className="mx-auto mb-4 max-w-2xl rounded-md border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+            Waiting for signer approval… If you’re using a remote signer, open
+            it to approve the request.
+          </div>
+        ) : null}
+        {signingError ? (
+          <div className="mx-auto mb-4 max-w-2xl rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+            {signingError}
+          </div>
+        ) : null}
 
         {/* Post Card */}
         <div className="mx-auto max-w-2xl">
@@ -473,30 +497,32 @@ export default function NewPostImagesConfirmation({
           <button
             onClick={onCancel}
             className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSigning}
           >
             ← Back to Edit
           </button>
           <button
             onClick={handleSaveAsDraft}
             className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSigning}
           >
             💾 Save as Draft
           </button>
           <button
             onClick={() => void handleSignAndSubmit(true)}
             className="rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-green-600 hover:to-green-700 hover:shadow-xl disabled:cursor-not-allowed disabled:from-green-300 disabled:to-green-400"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSigning}
           >
-            🚀 Post Now
+            {isSigning ? "Waiting for signer…" : "🚀 Post Now"}
           </button>
           <button
             onClick={() => void handleSignAndSubmit(false)}
             className="rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-blue-600 hover:to-blue-700 hover:shadow-xl disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSigning}
           >
-            {isSubmitting ? (
+            {isSigning ? (
+              "Waiting for signer…"
+            ) : isSubmitting ? (
               <span className="flex items-center gap-2">
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
                   <circle

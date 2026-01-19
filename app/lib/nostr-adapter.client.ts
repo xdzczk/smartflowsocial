@@ -18,10 +18,34 @@ import type {
   NostrEventData,
   LongFormEventData,
 } from "~/features/nostr/types";
+import { RemoteSignerTimeoutError } from "~/lib/errors";
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+const ACTIVE_SIGNER_CONNECT_TIMEOUT_MS = 15_000;
+const ACTIVE_SIGNER_SIGN_TIMEOUT_MS = 30_000;
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  onTimeoutMessage: string
+): Promise<T> {
+  let timeoutReject!: (reason?: unknown) => void;
+  const timer = new Promise<never>((_resolve, reject) => {
+    timeoutReject = reject;
+  });
+  const timeoutId = globalThis.setTimeout(() => {
+    timeoutReject(new RemoteSignerTimeoutError(onTimeoutMessage));
+  }, timeoutMs);
+
+  try {
+    return await Promise.race([promise, timer]);
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
+}
 
 function buildLongFormEventTags(eventData: LongFormEventData): string[][] {
   const eventTags: string[][] = [];
@@ -91,20 +115,46 @@ async function signEventWithRetryLogic(
 
   while (retries < maxRetries) {
     // Prefer an explicitly selected signer (e.g. NIP-46) if configured.
+    let prefersRemoteSigner = false;
     try {
       // @ts-ignore - Dynamic imports work in client-side Remix bundles
       const signerManager = await import("~/lib/nostr-signer-manager.client");
-      const activeSigner = await signerManager.getActiveSigner();
+      const cfg =
+        typeof signerManager.getActiveSignerConfig === "function"
+          ? signerManager.getActiveSignerConfig()
+          : null;
+      prefersRemoteSigner = !!cfg && cfg.type === "nip46";
+
+      const activeSigner = prefersRemoteSigner
+        ? await withTimeout(
+            signerManager.getActiveSigner(),
+            ACTIVE_SIGNER_CONNECT_TIMEOUT_MS,
+            "Connecting to remote signer took too long. Open your signer app and try again."
+          )
+        : await signerManager.getActiveSigner();
+
       if (activeSigner) {
-        const signResult = await activeSigner.signEvent(nostrEvent);
+        const signPromise = Promise.resolve(activeSigner.signEvent(nostrEvent));
+        const signResult =
+          activeSigner.type === "nip46"
+            ? await withTimeout(
+                signPromise,
+                ACTIVE_SIGNER_SIGN_TIMEOUT_MS,
+                "Remote signer did not respond. Open your signer app (e.g. Primal) and approve the request."
+              )
+            : await signPromise;
         return normalizeSignResult(signResult, nostrEvent);
       }
-    } catch {
-      // Ignore signer manager errors and fall back to window.nostr retries.
+    } catch (err) {
+      // If a remote signer is configured, surface the error to the caller.
+      // Otherwise, ignore and fall back to window.nostr retries.
+      if (prefersRemoteSigner) {
+        throw err;
+      }
     }
 
     // @ts-ignore - window.nostr is injected by browser extensions at runtime
-    if (window.nostr) {
+    if (typeof window !== "undefined" && window.nostr) {
       // @ts-ignore - window.nostr is injected by browser extensions at runtime
       const signResult = await window.nostr.signEvent(nostrEvent);
       return normalizeSignResult(signResult, nostrEvent);

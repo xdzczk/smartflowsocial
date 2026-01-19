@@ -3,6 +3,8 @@
  * Extracts the complex submission logic from LongFormPost component
  */
 
+import { useState } from "react";
+
 import {
   convertEditorJSToMarkdown,
   generateArticleIdentifier,
@@ -44,12 +46,16 @@ export function useLongFormSubmission({
   useHashtagPresets,
   selectedHashtags,
 }: UseLongFormSubmissionProps) {
+  const [isSigning, setIsSigning] = useState(false);
+  const [signingError, setSigningError] = useState<string | null>(null);
+
   const handleSchedule = async (actionType: "schedule" | "publish") => {
     if (!title.trim() || !content.trim()) {
       return;
     }
 
     try {
+      setSigningError(null);
       let markdownContent;
       try {
         const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
@@ -147,6 +153,7 @@ export function useLongFormSubmission({
           actionType === "publish" ? nowSeconds() : scheduledTimestamp,
       };
 
+      setIsSigning(true);
       const { nostrEvent, signedEvent } =
         await nostrAdapter.signLongFormEvent(eventData);
 
@@ -193,8 +200,15 @@ export function useLongFormSubmission({
         },
         false
       ); // Don't show toast, let component handle it
+      setSigningError(
+        error instanceof Error
+          ? error.message
+          : "Failed to sign article. Please try again."
+      );
+    } finally {
+      setIsSigning(false);
     }
   };
 
-  return { handleSchedule };
+  return { handleSchedule, isSigning, signingError };
 }

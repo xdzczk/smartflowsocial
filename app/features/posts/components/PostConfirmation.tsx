@@ -1,4 +1,5 @@
 import { useFetcher } from "@remix-run/react";
+import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { logClientError } from "~/lib/error-handler.client";
@@ -104,41 +105,67 @@ export default function PostConfirmation({
 }: PostConfirmationProps) {
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state !== "idle";
+  const [isSigning, setIsSigning] = useState(false);
+  const [signingError, setSigningError] = useState<string | null>(null);
+  const [signingProgress, setSigningProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
   const handleSignAndSubmit = async () => {
     try {
-      const signed = await Promise.all(
-        preparedEvents.map(async (eventData: PreparedEvent, index: number) => {
-          try {
-            const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
-              eventData.events
-            );
+      setSigningError(null);
+      setIsSigning(true);
+      setSigningProgress({ current: 0, total: preparedEvents.length });
 
-            return {
-              nostrEvent,
-              signedEvent,
-              fileUrl: eventData.fileUrl,
-              caption: eventData.caption,
-              queueType: eventData.queueType,
-              isRecyclable: eventData.isRecyclable,
-              originalPostId: eventData.originalPostId,
-            };
-          } catch (eventError) {
-            const { handleAsyncError } =
-              await import("~/lib/error-handler.client");
-            handleAsyncError(
-              eventError,
-              {
-                component: "PostConfirmation",
-                action: "signEvent",
-                eventIndex: index,
-              },
-              false
-            ); // Don't show toast, throw to outer catch
-            throw eventError;
-          }
-        })
-      );
+      // Sign sequentially to avoid flooding remote signers with concurrent requests
+      const signed: Array<{
+        nostrEvent: unknown;
+        signedEvent: unknown;
+        fileUrl: unknown;
+        caption: unknown;
+        queueType: string;
+        isRecyclable: boolean;
+        originalPostId: string | null | undefined;
+      }> = [];
+
+      for (let index = 0; index < preparedEvents.length; index++) {
+        const eventData = preparedEvents[index];
+        if (!eventData) {
+          throw new Error("Missing prepared event data");
+        }
+        try {
+          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+            eventData.events
+          );
+          signed.push({
+            nostrEvent,
+            signedEvent,
+            fileUrl: eventData.fileUrl,
+            caption: eventData.caption,
+            queueType: eventData.queueType,
+            isRecyclable: eventData.isRecyclable,
+            originalPostId: eventData.originalPostId,
+          });
+          setSigningProgress({
+            current: index + 1,
+            total: preparedEvents.length,
+          });
+        } catch (eventError) {
+          const { handleAsyncError } =
+            await import("~/lib/error-handler.client");
+          handleAsyncError(
+            eventError,
+            {
+              component: "PostConfirmation",
+              action: "signEvent",
+              eventIndex: index,
+            },
+            false
+          ); // Don't show toast, throw to outer catch
+          throw eventError;
+        }
+      }
 
       const finalFormData = new FormData();
       signed.forEach((data) => {
@@ -174,6 +201,14 @@ export default function PostConfirmation({
         },
         false
       ); // Don't show toast, let component handle it
+      setSigningError(
+        error instanceof Error
+          ? error.message
+          : "Failed to sign posts. Please try again."
+      );
+    } finally {
+      setIsSigning(false);
+      setSigningProgress(null);
     }
   };
 
@@ -214,6 +249,23 @@ export default function PostConfirmation({
             Review your {postsCount} posts before scheduling them
           </p>
         </div>
+
+        {isSigning ? (
+          <div className="mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+            Waiting for signer approval…
+            {signingProgress ? (
+              <span className="text-muted-foreground ml-2">
+                ({signingProgress.current}/{signingProgress.total})
+              </span>
+            ) : null}{" "}
+            If you’re using a remote signer, open it to approve the request.
+          </div>
+        ) : null}
+        {signingError ? (
+          <div className="mx-auto mb-4 max-w-3xl rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+            {signingError}
+          </div>
+        ) : null}
 
         {/* Posts Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -396,23 +448,25 @@ export default function PostConfirmation({
           <button
             onClick={() => window.history.back()}
             className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSigning}
           >
             ← Back to Edit
           </button>
           <button
             onClick={handleSaveAsDraft}
             className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSigning}
           >
             💾 Save as Draft
           </button>
           <button
             onClick={() => void handleSignAndSubmit()}
             className="rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-blue-600 hover:to-blue-700 hover:shadow-xl disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isSigning}
           >
-            {isSubmitting ? (
+            {isSigning ? (
+              <>Waiting for signer…</>
+            ) : isSubmitting ? (
               <span className="flex items-center gap-2">
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
                   <circle

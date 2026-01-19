@@ -39,6 +39,8 @@ export default function TextPost({
 }: TextPostProps) {
   const fetcher = useFetcher();
   const user = useOptionalUser();
+  const [isSigning, setIsSigning] = React.useState(false);
+  const [signingError, setSigningError] = React.useState<string | null>(null);
   // Note: User doesn't have hashTags property - this would need to come from hashTagPresets relation
   const tags: string[] = [];
   const [showAssetBrowser, setShowAssetBrowser] = React.useState(false);
@@ -152,6 +154,7 @@ export default function TextPost({
     }
 
     try {
+      setSigningError(null);
       const userTimezone = user?.timezone ?? "UTC";
       const scheduledTime =
         submitType === "post-text"
@@ -221,6 +224,7 @@ export default function TextPost({
         ? `${data.content}\n${effectiveHashtags}`
         : data.content;
 
+      setIsSigning(true);
       const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
         content: contentToSign,
         created_at: scheduledForUnix,
@@ -254,6 +258,13 @@ export default function TextPost({
         },
         false
       ); // Don't show toast, let component handle it
+      setSigningError(
+        error instanceof Error
+          ? error.message
+          : "Failed to sign post. Please try again."
+      );
+    } finally {
+      setIsSigning(false);
     }
   });
 
@@ -305,20 +316,31 @@ export default function TextPost({
         void handleSubmit(e);
       }}
     >
+      {isSigning ? (
+        <div className="mb-3 rounded-md border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+          Waiting for signer approval… If you’re using a remote signer, open it
+          to approve the request.
+        </div>
+      ) : null}
+      {signingError ? (
+        <div className="mb-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+          {signingError}
+        </div>
+      ) : null}
       <div className="relative">
         <Textarea
           {...form.register("content")}
           className={form.formState.errors.content ? "border-red-500" : ""}
           placeholder="Start writing your post here..."
           rows={6}
-          disabled={fetcher.state !== "idle"}
+          disabled={fetcher.state !== "idle" || isSigning}
         />
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={() => setShowAssetBrowser(true)}
-          disabled={fetcher.state !== "idle"}
+          disabled={fetcher.state !== "idle" || isSigning}
           className="absolute top-2 right-2"
         >
           <svg
@@ -352,7 +374,7 @@ export default function TextPost({
             queueTypes={queueTypes}
             selectedQueue={selectedQueue}
             onQueueChange={setSelectedQueue}
-            disabled={fetcher.state !== "idle"}
+            disabled={fetcher.state !== "idle" || isSigning}
             className="mb-2"
           />
 
@@ -378,7 +400,7 @@ export default function TextPost({
               type="checkbox"
               id="isRecyclable"
               {...form.register("isRecyclable")}
-              disabled={fetcher.state !== "idle"}
+              disabled={fetcher.state !== "idle" || isSigning}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <Label
@@ -395,13 +417,13 @@ export default function TextPost({
                 type="datetime-local"
                 id="scheduledFor"
                 {...form.register("scheduledFor")}
-                disabled={fetcher.state !== "idle"}
+                disabled={fetcher.state !== "idle" || isSigning}
               />
               <Button
                 type="submit"
                 value="schedule-text"
                 name="_action"
-                disabled={fetcher.state !== "idle"}
+                disabled={fetcher.state !== "idle" || isSigning}
                 className="text-white"
               >
                 <svg
@@ -416,9 +438,11 @@ export default function TextPost({
                     clipRule="evenodd"
                   />
                 </svg>
-                {fetcher.state !== "idle"
-                  ? "Scheduling..."
-                  : "Sign and Schedule"}
+                {isSigning
+                  ? "Waiting for signer…"
+                  : fetcher.state !== "idle"
+                    ? "Scheduling..."
+                    : "Sign and Schedule"}
               </Button>
             </div>
             <SchedulingSection
@@ -436,7 +460,7 @@ export default function TextPost({
               onCalculateNextSlot={() => {
                 void calculateQueueScheduleTime(selectedQueue);
               }}
-              disabled={fetcher.state !== "idle"}
+              disabled={fetcher.state !== "idle" || isSigning}
               showTimeInput={false}
             />
           </div>
@@ -447,7 +471,7 @@ export default function TextPost({
             value="draft-text"
             name="_action"
             variant="outline"
-            disabled={fetcher.state !== "idle"}
+            disabled={fetcher.state !== "idle" || isSigning}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -469,7 +493,7 @@ export default function TextPost({
             value="post-text"
             name="_action"
             className="bg-green-600 text-white hover:bg-green-700"
-            disabled={fetcher.state !== "idle"}
+            disabled={fetcher.state !== "idle" || isSigning}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -483,7 +507,11 @@ export default function TextPost({
                 clipRule="evenodd"
               />
             </svg>
-            {fetcher.state !== "idle" ? "Posting..." : "Post Now"}
+            {isSigning
+              ? "Waiting for signer…"
+              : fetcher.state !== "idle"
+                ? "Posting..."
+                : "Post Now"}
           </Button>
         </div>
       </div>

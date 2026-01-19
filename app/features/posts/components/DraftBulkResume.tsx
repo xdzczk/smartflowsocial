@@ -37,6 +37,7 @@ export default function DraftBulkResume({
       ? user.scheduleInterval
       : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signingError, setSigningError] = useState<string | null>(null);
 
   // State for bulk operations similar to bulkposts
   const [posts, setPosts] = useState(
@@ -369,6 +370,7 @@ export default function DraftBulkResume({
 
   const handleSignAndResume = async () => {
     setIsSubmitting(true);
+    setSigningError(null);
     try {
       // First, collect unique queue types and fetch hashtags in batch
       // This prevents making one API call per post, which can be very slow for bulk operations
@@ -497,7 +499,11 @@ export default function DraftBulkResume({
           action: "signDrafts",
         }
       );
-      alert("Error signing drafts. Please try again.");
+      setSigningError(
+        error instanceof Error
+          ? error.message
+          : "Error signing drafts. Please try again."
+      );
       setIsSubmitting(false);
     }
   };
@@ -543,6 +549,18 @@ export default function DraftBulkResume({
             Configure and sign {posts.length} draft posts before scheduling
           </p>
         </div>
+
+        {isSubmitting ? (
+          <div className="mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+            Signing drafts… If you’re using a remote signer, keep it open to
+            approve requests.
+          </div>
+        ) : null}
+        {signingError ? (
+          <div className="mx-auto mb-4 max-w-3xl rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+            {signingError}
+          </div>
+        ) : null}
 
         {/* Schedule Interval Buttons */}
         {posts.length > 0 ? (
