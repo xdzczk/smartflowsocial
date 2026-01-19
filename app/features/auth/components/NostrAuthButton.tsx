@@ -85,6 +85,11 @@ export default function NostrAuthButton() {
     return encodeURIComponent(current);
   }, [location.pathname, location.search]);
 
+  const isLoginPage = location.pathname.startsWith("/login");
+
+  // Avoid rendering a redundant "Sign in" CTA on the login page itself.
+  if (!user && isLoginPage) return null;
+
   return (
     <>
       {user ? (

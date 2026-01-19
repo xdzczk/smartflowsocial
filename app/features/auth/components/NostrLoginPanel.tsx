@@ -5,6 +5,7 @@ import QRCode from "react-qr-code";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { NostrEvent } from "~/features/nostr/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -33,8 +34,18 @@ type LoginState =
   | "authenticated"
   | "failed";
 
+type RelayCheckStatus = "checking" | "connected" | "failed";
+
+interface RelayStatus {
+  url: string;
+  status: RelayCheckStatus;
+  checkedAt: number;
+  error?: string;
+}
+
 type LoginError =
   | "SIGNER_NOT_FOUND"
+  | "SIGNER_CONNECTION_DROPPED"
   | "PERMISSION_DENIED"
   | "PROFILE_NOT_APPROVED"
   | "SIGNER_TIMEOUT"
@@ -59,23 +70,123 @@ function formatNpubShort(pubkeyHex?: string | null): string {
   return `${npub.slice(0, 12)}...${npub.slice(-8)}`;
 }
 
-function normalizeError(err: unknown): { code: LoginError; message: string } {
-  const fallback = { code: "UNKNOWN" as const, message: "Login failed" };
+function getErrorTitle(code: LoginError): string {
+  switch (code) {
+    case "SIGNER_NOT_FOUND":
+      return "No signer detected";
+    case "SIGNER_CONNECTION_DROPPED":
+      return "Couldn’t connect to remote signer";
+    case "SIGNER_TIMEOUT":
+      return "Approval timed out";
+    case "PERMISSION_DENIED":
+      return "Permission denied";
+    case "PROFILE_MISMATCH":
+      return "Wrong signer profile";
+    case "CHALLENGE_EXPIRED":
+      return "Login expired";
+    case "SIGNATURE_INVALID":
+      return "Signature invalid";
+    default:
+      return "Sign-in failed";
+  }
+}
+
+function getErrorSuggestions(code: LoginError): string[] {
+  switch (code) {
+    case "SIGNER_NOT_FOUND":
+      return [
+        "Install/enable a NIP-07 browser extension, or use Remote Signer (NIP-46).",
+      ];
+    case "SIGNER_CONNECTION_DROPPED":
+      return [
+        "Try again.",
+        "Remove unreachable relays or add alternatives in the relay list.",
+        "If your signer supports it, try the bunker input method instead.",
+      ];
+    case "SIGNER_TIMEOUT":
+      return [
+        "Approve the request in your remote signer, then try again.",
+        "If approval gets stuck, update your relay list and retry.",
+      ];
+    case "PERMISSION_DENIED":
+      return [
+        "Approve the permission request in your signer/extension, then try again.",
+      ];
+    case "PROFILE_MISMATCH":
+      return [
+        "Switch to the expected signer profile in your signer, then try again.",
+      ];
+    case "CHALLENGE_EXPIRED":
+      return ["Try again to fetch a new login challenge."];
+    case "SIGNATURE_INVALID":
+      return [
+        "Make sure you approved the signature request in the correct signer profile, then try again.",
+      ];
+    default:
+      return ["Try again, or go back and select a different sign-in method."];
+  }
+}
+
+function getRelayStatusLabel(status: RelayCheckStatus): string {
+  switch (status) {
+    case "checking":
+      return "Checking…";
+    case "connected":
+      return "Connected";
+    case "failed":
+      return "Failed";
+  }
+}
+
+function normalizeError(err: unknown): {
+  code: LoginError;
+  message: string;
+  details?: string;
+} {
+  const fallback = {
+    code: "UNKNOWN" as const,
+    message: "Login failed",
+    details: undefined,
+  };
   if (err instanceof Error) {
     const msg = err.message || fallback.message;
+    const msgLower = msg.toLowerCase();
+    // Common NIP-46 / websocket failure modes from relay/pool libraries.
+    if (
+      msgLower.includes("subscription closed") ||
+      msgLower.includes("websocket") ||
+      msgLower.includes("closing") ||
+      msgLower.includes("closed state")
+    ) {
+      return {
+        code: "SIGNER_CONNECTION_DROPPED",
+        message:
+          "Connection to the remote signer was closed before approval completed. Try again, or update your relay list.",
+        details: msg,
+      };
+    }
     if (msg.includes("SIGNER_NOT_FOUND")) {
-      return { code: "SIGNER_NOT_FOUND", message: "No Nostr signer detected" };
+      return {
+        code: "SIGNER_NOT_FOUND",
+        message: "No Nostr signer detected",
+        details: msg,
+      };
     }
     if (msg.includes("SIGNER_TIMEOUT")) {
       return {
         code: "SIGNER_TIMEOUT",
         message: "No approval received in time",
+        details: msg,
       };
     }
-    if (msg.toLowerCase().includes("denied")) {
-      return { code: "PERMISSION_DENIED", message: "Access denied" };
+    if (msgLower.includes("denied")) {
+      return {
+        code: "PERMISSION_DENIED",
+        message: "Access denied",
+        details: msg,
+      };
     }
-    return { code: "UNKNOWN", message: msg };
+    return { code: "UNKNOWN", message: msg, details: msg };
   }
   return fallback;
 }
@@ -129,6 +240,7 @@ export default function NostrLoginPanel() {
   const [error, setError] = useState<{
     code: LoginError;
     message: string;
+    details?: string;
   } | null>(null);
   const [signer, setSigner] = useState<NostrSigner | null>(null);
   const [pubkey, setPubkey] = useState<string | null>(null);
@@ -139,6 +251,156 @@ export default function NostrLoginPanel() {
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
   const nip46CancelRef = useRef<{ cancel: () => void } | null>(null);
   const [copyOk, setCopyOk] = useState(false);
+  const nip46AttemptIdRef = useRef(0);
+  const errorRegionRef = useRef<HTMLDivElement | null>(null);
+  const relayCheckAttemptIdRef = useRef(0);
+  const relaySocketsRef = useRef<Map<string, WebSocket>>(new Map());
+  const [relayStatuses, setRelayStatuses] = useState<
+    Record<string, RelayStatus>
+  >({});
+  const [lastFailureOrigin, setLastFailureOrigin] = useState<
+    "nip07_init" | "nip46_init" | "verify" | null
+  >(null);
+
+  const relayUrls = useMemo(() => parseRelayList(relayList), [relayList]);
+
+  const closeRelaySockets = useCallback(() => {
+    relayCheckAttemptIdRef.current += 1;
+    relaySocketsRef.current.forEach((ws) => {
+      try {
+        ws.close();
+      } catch {
+        // ignore
+      }
+    });
+    relaySocketsRef.current.clear();
+  }, []);
+
+  const startRelayChecks = useCallback((relays: string[]) => {
+    if (typeof window === "undefined") return;
+    const attemptId = (relayCheckAttemptIdRef.current += 1);
+
+    // Close any previous checks before starting a new run.
+    relaySocketsRef.current.forEach((ws) => {
+      try {
+        ws.close();
+      } catch {
+        // ignore
+      }
+    });
+    relaySocketsRef.current.clear();
+
+    const now = Date.now();
+    setRelayStatuses(
+      Object.fromEntries(
+        relays.map((url) => [
+          url,
+          { url, status: "checking", checkedAt: now } satisfies RelayStatus,
+        ])
+      )
+    );
+
+    const timeoutMs = 2500;
+
+    for (const url of relays) {
+      try {
+        const ws = new WebSocket(url);
+        relaySocketsRef.current.set(url, ws);
+
+        let opened = false;
+        let closedByUs = false;
+
+        const timeout = window.setTimeout(() => {
+          if (attemptId !== relayCheckAttemptIdRef.current) return;
+          if (opened) return;
+          setRelayStatuses((prev) => ({
+            ...prev,
+            [url]: {
+              url,
+              status: "failed",
+              checkedAt: Date.now(),
+              error: "Timed out while connecting",
+            },
+          }));
+          try {
+            closedByUs = true;
+            ws.close();
+          } catch {
+            // ignore
+          }
+        }, timeoutMs);
+
+        ws.onopen = () => {
+          opened = true;
+          window.clearTimeout(timeout);
+          if (attemptId !== relayCheckAttemptIdRef.current) {
+            try {
+              closedByUs = true;
+              ws.close();
+            } catch {
+              // ignore
+            }
+            return;
+          }
+          setRelayStatuses((prev) => ({
+            ...prev,
+            [url]: { url, status: "connected", checkedAt: Date.now() },
+          }));
+          // We only need a connectivity check; close immediately to avoid extra open sockets.
+          try {
+            closedByUs = true;
+            ws.close();
+          } catch {
+            // ignore
+          }
+        };
+
+        ws.onerror = () => {
+          window.clearTimeout(timeout);
+          if (attemptId !== relayCheckAttemptIdRef.current) return;
+          setRelayStatuses((prev) => ({
+            ...prev,
+            [url]: {
+              url,
+              status: "failed",
+              checkedAt: Date.now(),
+              error: "Connection error",
+            },
+          }));
+        };
+
+        ws.onclose = (ev) => {
+          window.clearTimeout(timeout);
+          if (attemptId !== relayCheckAttemptIdRef.current) return;
+          if (opened) return;
+          if (closedByUs) return;
+          const reason = ev.reason ? ` (${ev.reason})` : "";
+          setRelayStatuses((prev) => ({
+            ...prev,
+            [url]: {
+              url,
+              status: "failed",
+              checkedAt: Date.now(),
+              error: `Closed before connect (code ${ev.code})${reason}`,
+            },
+          }));
+        };
+      } catch (e) {
+        if (attemptId !== relayCheckAttemptIdRef.current) return;
+        const msg =
+          e instanceof Error ? e.message : "Failed to create WebSocket";
+        setRelayStatuses((prev) => ({
+          ...prev,
+          [url]: {
+            url,
+            status: "failed",
+            checkedAt: Date.now(),
+            error: msg,
+          },
+        }));
+      }
+    }
+  }, []);
 
   const cleanup = useCallback(async () => {
     nip46CancelRef.current?.cancel();
@@ -148,7 +410,11 @@ export default function NostrLoginPanel() {
     }
   }, [signer]);
 
-  const reset = useCallback(async () => {
+  const resetToSelection = useCallback(async () => {
+    // Invalidate any in-flight NIP-46 attempts immediately (before awaiting cleanup)
+    nip46AttemptIdRef.current += 1;
+    closeRelaySockets();
+    setRelayStatuses({});
     try {
       await cleanup();
     } catch {
@@ -160,8 +426,9 @@ export default function NostrLoginPanel() {
     setNostrConnectUri(null);
     setCopyOk(false);
     setError(null);
+    setLastFailureOrigin(null);
     setState("signer_selection");
-  }, [cleanup]);
+  }, [cleanup, closeRelaySockets]);
 
   const copyNostrConnectUri = useCallback(async () => {
     if (!nostrConnectUri) return;
@@ -180,8 +447,45 @@ export default function NostrLoginPanel() {
     };
   }, [cleanup]);
 
+  useEffect(() => {
+    // Only perform relay health checks when the user is working with the NIP-46
+    // nostrconnect method (either configuring relays or waiting for approval).
+    if (typeof window === "undefined") return;
+    const shouldCheck =
+      nip46Tab === "nostrconnect" &&
+      (state === "signer_initializing" ||
+        state === "awaiting_profile_selection");
+    if (!shouldCheck) {
+      closeRelaySockets();
+      setRelayStatuses({});
+      return;
+    }
+
+    if (relayUrls.length === 0) {
+      closeRelaySockets();
+      setRelayStatuses({});
+      return;
+    }
+
+    // Debounce while user edits the relay list.
+    const t = window.setTimeout(() => {
+      startRelayChecks(relayUrls);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(t);
+    };
+  }, [closeRelaySockets, nip46Tab, relayUrls, startRelayChecks, state]);
+
+  useEffect(() => {
+    if (state === "failed" && errorRegionRef.current) {
+      errorRegionRef.current.focus();
+    }
+  }, [state]);
+
   const initNip07 = useCallback(async () => {
     setError(null);
+    setLastFailureOrigin(null);
     setState("signer_initializing");
     try {
       const s = new Nip07Signer();
@@ -191,6 +495,7 @@ export default function NostrLoginPanel() {
           code: "PROFILE_MISMATCH",
           message: PROFILE_MISMATCH_MESSAGE,
         });
+        setLastFailureOrigin("nip07_init");
         setState("failed");
         return;
       }
@@ -201,12 +506,15 @@ export default function NostrLoginPanel() {
     } catch (e) {
       const n = normalizeError(e);
       setError(n);
+      setLastFailureOrigin("nip07_init");
       setState("failed");
     }
   }, [expectedPubkey]);
 
   const initNip46 = useCallback(async () => {
+    const attemptId = (nip46AttemptIdRef.current += 1);
     setError(null);
+    setLastFailureOrigin(null);
     setState("awaiting_profile_selection");
 
     const timeoutMs = 2 * 60 * 1000; // 2 minutes
@@ -221,11 +529,13 @@ export default function NostrLoginPanel() {
             clientSecretKey,
             timeoutMs,
           });
+        if (attemptId !== nip46AttemptIdRef.current) return;
         if (expectedPubkey && pk !== expectedPubkey) {
           setError({
             code: "PROFILE_MISMATCH",
             message: PROFILE_MISMATCH_MESSAGE,
           });
+          setLastFailureOrigin("nip46_init");
           setState("failed");
           return;
         }
@@ -245,11 +555,15 @@ export default function NostrLoginPanel() {
         relays,
         appName: "SmartFlowSocial",
       });
+      if (attemptId !== nip46AttemptIdRef.current) return;
       setNostrConnectUri(created.uri);
 
       // Allow cancel by closing relay connections used by the pool.
+      let didCancel = false;
       nip46CancelRef.current = {
         cancel: () => {
+          if (didCancel) return;
+          didCancel = true;
           try {
             created.pool.close(created.relays);
           } catch {
@@ -266,12 +580,14 @@ export default function NostrLoginPanel() {
           timeoutMs,
           relaysToCloseOnCancel: created.relays,
         });
+      if (attemptId !== nip46AttemptIdRef.current) return;
 
       if (expectedPubkey && pk !== expectedPubkey) {
         setError({
           code: "PROFILE_MISMATCH",
           message: PROFILE_MISMATCH_MESSAGE,
         });
+        setLastFailureOrigin("nip46_init");
         setState("failed");
         return;
       }
@@ -286,17 +602,22 @@ export default function NostrLoginPanel() {
       });
       setState("requesting_signature");
     } catch (e) {
+      if (attemptId !== nip46AttemptIdRef.current) return;
       const n = normalizeError(e);
       setError(n);
+      setLastFailureOrigin("nip46_init");
       setState("failed");
     } finally {
-      nip46CancelRef.current = null;
+      if (attemptId === nip46AttemptIdRef.current) {
+        nip46CancelRef.current = null;
+      }
     }
   }, [expectedPubkey, nip46Input, nip46Tab, relayList]);
 
   const performLogin = useCallback(async () => {
     if (!signer || !pubkey) return;
     setError(null);
+    setLastFailureOrigin(null);
     setState("requesting_signature");
 
     try {
@@ -343,15 +664,37 @@ export default function NostrLoginPanel() {
         setError({
           code: "CHALLENGE_EXPIRED",
           message: "Login challenge expired",
+          details: n.details,
         });
       } else if (n.message.toLowerCase().includes("invalid signature")) {
-        setError({ code: "SIGNATURE_INVALID", message: "Signature invalid" });
+        setError({
+          code: "SIGNATURE_INVALID",
+          message: "Signature invalid",
+          details: n.details,
+        });
       } else {
         setError(n);
       }
+      setLastFailureOrigin("verify");
       setState("failed");
     }
   }, [pubkey, redirectTo, signer]);
+
+  const handleTryAgain = useCallback(() => {
+    if (lastFailureOrigin === "nip46_init") {
+      void initNip46();
+      return;
+    }
+    if (lastFailureOrigin === "nip07_init") {
+      void initNip07();
+      return;
+    }
+    if (lastFailureOrigin === "verify") {
+      void performLogin();
+      return;
+    }
+    void resetToSelection();
+  }, [initNip07, initNip46, lastFailureOrigin, performLogin, resetToSelection]);
 
   return (
     <div className="space-y-4">
@@ -400,8 +743,10 @@ export default function NostrLoginPanel() {
 
             <TabsContent value="bunker" className="space-y-3">
               <div className="space-y-1">
-                <div className="text-sm font-medium">Bunker input</div>
+                <Label htmlFor="nip46BunkerInput">Bunker input</Label>
                 <Input
+                  id="nip46BunkerInput"
+                  name="nip46BunkerInput"
                   value={nip46Input}
                   onChange={(e) => setNip46Input(e.target.value)}
                   placeholder="bunker://..."
@@ -418,7 +763,7 @@ export default function NostrLoginPanel() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => void reset()}
+                  onClick={() => void resetToSelection()}
                 >
                   Cancel
                 </Button>
@@ -427,18 +772,60 @@ export default function NostrLoginPanel() {
 
             <TabsContent value="nostrconnect" className="space-y-3">
               <div className="space-y-1">
-                <div className="text-sm font-medium">Relays</div>
+                <Label htmlFor="nip46Relays">Relays</Label>
                 <textarea
+                  id="nip46Relays"
+                  name="nip46Relays"
+                  aria-describedby="nip46RelaysHelp"
                   className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                   value={relayList}
                   onChange={(e) => setRelayList(e.target.value)}
                 />
+                <div
+                  id="nip46RelaysHelp"
+                  className="text-muted-foreground text-xs"
+                >
+                  If approval gets stuck, try removing unreachable relays or add
+                  alternatives.
+                </div>
+                {relayUrls.length > 0 ? (
+                  <div className="space-y-1 pt-1 text-xs">
+                    <div className="text-muted-foreground">
+                      Relay status (best-effort connectivity check):
+                    </div>
+                    <div className="grid gap-1">
+                      {relayUrls.map((url) => {
+                        const s = relayStatuses[url];
+                        const status: RelayCheckStatus =
+                          s?.status ?? "checking";
+                        const color =
+                          status === "connected"
+                            ? "text-green-700 dark:text-green-300"
+                            : status === "failed"
+                              ? "text-red-700 dark:text-red-300"
+                              : "text-gray-600 dark:text-gray-400";
+                        return (
+                          <div
+                            key={url}
+                            className="flex items-start justify-between gap-2"
+                          >
+                            <div className="truncate">{url}</div>
+                            <div className={`shrink-0 ${color}`}>
+                              {getRelayStatusLabel(status)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               {nostrConnectUri ? (
                 <div className="space-y-1">
-                  <div className="text-sm font-medium">nostrconnect URI</div>
+                  <Label htmlFor="nip46NostrConnectUri">nostrconnect URI</Label>
                   <textarea
+                    id="nip46NostrConnectUri"
                     readOnly
                     className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
                     value={nostrConnectUri}
@@ -457,7 +844,7 @@ export default function NostrLoginPanel() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => void reset()}
+                  onClick={() => void resetToSelection()}
                 >
                   Cancel
                 </Button>
@@ -468,12 +855,71 @@ export default function NostrLoginPanel() {
       ) : null}
 
       {state === "awaiting_profile_selection" ? (
-        <div className="space-y-2 rounded-md border bg-white/50 p-4 text-sm dark:bg-gray-900/30">
-          <div className="font-medium">Waiting for approval…</div>
+        <div
+          className="space-y-2 rounded-md border bg-white/50 p-4 text-sm dark:bg-gray-900/30"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="flex items-center gap-2 font-medium">
+            <svg
+              className="h-4 w-4 animate-spin"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
+            Waiting for approval…
+          </div>
           <div className="text-muted-foreground">
             Approve the connection in your remote signer. If you switch
             profiles, you switch identity and must re-authenticate.
           </div>
+          {relayUrls.length > 0 ? (
+            <div className="rounded-md border bg-white/60 p-3 text-xs dark:bg-gray-950/20">
+              <div className="mb-1 font-medium">Relay status</div>
+              <div className="grid gap-1">
+                {relayUrls.map((url) => {
+                  const s = relayStatuses[url];
+                  const status: RelayCheckStatus = s?.status ?? "checking";
+                  const color =
+                    status === "connected"
+                      ? "text-green-700 dark:text-green-300"
+                      : status === "failed"
+                        ? "text-red-700 dark:text-red-300"
+                        : "text-gray-600 dark:text-gray-400";
+                  return (
+                    <div
+                      key={url}
+                      className="flex items-start justify-between gap-2"
+                    >
+                      <div className="truncate">{url}</div>
+                      <div className={`shrink-0 ${color}`}>
+                        {getRelayStatusLabel(status)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-muted-foreground mt-2">
+                If any relays fail, remove them from the list and click Try
+                again.
+              </div>
+            </div>
+          ) : null}
           {nostrConnectUri ? (
             <div className="space-y-3 pt-2">
               <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
@@ -481,8 +927,11 @@ export default function NostrLoginPanel() {
                   <QRCode value={nostrConnectUri} size={168} />
                 </div>
                 <div className="space-y-2">
-                  <div className="text-sm font-medium">nostrconnect URI</div>
+                  <Label htmlFor="nip46NostrConnectUriWaiting">
+                    nostrconnect URI
+                  </Label>
                   <textarea
+                    id="nip46NostrConnectUriWaiting"
                     readOnly
                     className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
                     value={nostrConnectUri}
@@ -507,7 +956,7 @@ export default function NostrLoginPanel() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => void reset()}
+              onClick={() => void resetToSelection()}
             >
               Cancel
             </Button>
@@ -535,7 +984,7 @@ export default function NostrLoginPanel() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => void reset()}
+              onClick={() => void resetToSelection()}
             >
               Back
             </Button>
@@ -544,27 +993,48 @@ export default function NostrLoginPanel() {
       ) : null}
 
       {state === "failed" && error ? (
-        <div className="space-y-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
-          <div className="font-medium">Sign-in failed</div>
+        <div
+          ref={errorRegionRef}
+          tabIndex={-1}
+          role="alert"
+          aria-live="assertive"
+          className="space-y-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 focus:outline-none dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+        >
+          <div className="font-medium">{getErrorTitle(error.code)}</div>
           <div>{error.message}</div>
+          <ul className="list-disc space-y-1 pl-5 text-xs">
+            {getErrorSuggestions(error.code).map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ul>
+          {error.details ? (
+            <details className="text-xs">
+              <summary className="cursor-pointer select-none">
+                Technical details
+              </summary>
+              <pre className="mt-2 rounded bg-black/5 p-2 whitespace-pre-wrap dark:bg-white/10">
+                {error.details}
+              </pre>
+            </details>
+          ) : null}
           <div className="flex gap-2">
             {error.code === "SIGNER_NOT_FOUND" ? (
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => void reset()}
+                onClick={() => void resetToSelection()}
               >
                 Back
               </Button>
             ) : (
               <>
-                <Button type="button" onClick={() => void reset()}>
+                <Button type="button" onClick={handleTryAgain}>
                   Try again
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => void reset()}
+                  onClick={() => void resetToSelection()}
                 >
                   Back
                 </Button>
