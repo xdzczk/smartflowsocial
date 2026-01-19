@@ -17,6 +17,10 @@ vi.mock("~/features/user", () => ({
 
 vi.mock("~/models/payment.server", () => ({
   createRenewalPayment: vi.fn(),
+  getOwnerNwcWithRelayOverrides: vi.fn((ownerNwc: string) => ({
+    credentials: ownerNwc,
+    relays: [],
+  })),
   updateUserSubscription: vi.fn(),
 }));
 

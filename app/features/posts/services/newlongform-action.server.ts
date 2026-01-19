@@ -23,6 +23,7 @@ import {
   sanitizeMarkdown,
   generateSummary,
 } from "~/lib/markdown-sanitizer.server";
+import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import {
   newLongformPostActionSchema,
   validateFormDataOrRespond,
@@ -273,7 +274,8 @@ async function handlePublish(
   hashTagPresetId: string | null,
   hashTagPresetTags: string,
   showHashTagsinPosts: boolean,
-  sanitizedRelays: string[]
+  sanitizedRelays: string[],
+  sessionPubkey: string
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -363,6 +365,12 @@ async function handlePublish(
     tags: string[][];
   };
 
+  assertSignedEventMatchesSessionPubkey({
+    sessionPubkey,
+    eventPubkey: signedEventJson.pubkey,
+    context: { feature: "newlongform", action: "publish" },
+  });
+
   // Use CreateLongFormPostUseCase for post creation
   const createLongFormPostUseCase = new CreateLongFormPostUseCase();
   const result = await createLongFormPostUseCase.execute({
@@ -407,6 +415,7 @@ async function handleScheduleLongform(
   hashTagPresetId: string | null,
   hashTagPresetTags: string,
   showHashTagsinPosts: boolean,
+  sessionPubkey: string,
   _correlationId?: string
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
@@ -497,6 +506,12 @@ async function handleScheduleLongform(
     tags: string[][];
   };
 
+  assertSignedEventMatchesSessionPubkey({
+    sessionPubkey,
+    eventPubkey: signedEventJson.pubkey,
+    context: { feature: "newlongform", action: "schedule" },
+  });
+
   // Extract published_at from NOSTR event tags for scheduling
   let scheduledForTimestamp: number | undefined = undefined;
 
@@ -543,6 +558,7 @@ export async function handleNewLongFormAction(
     return new Response("User not found", { status: 404 });
   }
   const { userRelays, showHashTagsinPosts } = user;
+  const sessionPubkey = user.npub;
   const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
 
   const contentType = request.headers.get("Content-Type") ?? "";
@@ -614,7 +630,8 @@ export async function handleNewLongFormAction(
       finalHashTagPresetId,
       hashTagPresetTags,
       showHashTagsinPosts,
-      sanitizedRelays
+      sanitizedRelays,
+      sessionPubkey
     );
   }
 
@@ -625,7 +642,8 @@ export async function handleNewLongFormAction(
       queueType,
       finalHashTagPresetId,
       hashTagPresetTags,
-      showHashTagsinPosts
+      showHashTagsinPosts,
+      sessionPubkey
     );
   }
 

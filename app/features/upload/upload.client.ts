@@ -159,10 +159,14 @@ async function createBlossomUploader(
   primaryServerUrl: string;
   servers: string[];
 }> {
-  // Check if NOSTR is available
-  if (!window.nostr) {
+  // Resolve active signer (NIP-07 or NIP-46) for Blossom auth
+  // @ts-ignore - Dynamic imports work in client-side Remix bundles
+  const { getWindowNostrLikeSigner } =
+    await import("~/lib/nostr-signer-manager.client");
+  const signer = await getWindowNostrLikeSigner();
+  if (!signer) {
     throw new Error(
-      "NOSTR extension not available. Please install a NOSTR browser extension like Alby, Amber, or nos2x."
+      "Nostr signer not available. Please connect a Nostr signer (NIP-07 extension or NIP-46 remote signer)."
     );
   }
 
@@ -232,7 +236,7 @@ async function createBlossomUploader(
   // Create uploader with NOSTR signer and all servers
   const uploader = new BlossomUploader({
     servers: servers,
-    signer: window.nostr,
+    signer,
   });
 
   return { uploader, primaryServerUrl, servers };

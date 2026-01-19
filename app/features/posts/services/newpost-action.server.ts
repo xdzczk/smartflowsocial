@@ -44,6 +44,7 @@ export async function handleNewPostAction(
     return new Response("User not found", { status: 404 });
   }
   const { userRelays, showHashTagsinPosts } = user;
+  const sessionPubkey = user.npub;
   const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
 
   // Check content type before parsing
@@ -119,6 +120,7 @@ export async function handleNewPostAction(
   // Common handler parameters
   const handlerParams = {
     userId,
+    sessionPubkey,
     formData,
     hashTagPresetTags,
     showHashTagsinPosts,

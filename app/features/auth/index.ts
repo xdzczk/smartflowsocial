@@ -18,8 +18,11 @@
 export {
   getUser,
   getUserId,
+  getSessionId,
+  getSessionPubkey,
   requireUserId,
   requireUser,
+  requireSession,
   logout,
   createUserSession,
 } from "./session.server";
@@ -31,10 +34,14 @@ export {
 export { updateUserProfile } from "~/features/user";
 
 // ============================================================================
-// Nostr Authentication
+// Nostr Login (Challenge / Verify)
 // ============================================================================
 
-export { authenticateNostrUser } from "./services/nostr-auth.server";
+export {
+  issueLoginChallenge,
+  getLoginChallengeForVerify,
+  consumeLoginChallengeAndCreateSession,
+} from "./services/nostr-login.server";
 
 // ============================================================================
 // Components (Public API)

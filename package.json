@@ -139,7 +139,6 @@
     "marked": "^17.0.1",
     "morgan": "^1.10.1",
     "nostr-fetch": "^0.17.0",
-    "nostr-login": "^1.7.12",
     "nostr-relaypool": "^0.6.30",
     "nostr-tools": "^2.19.4",
     "pg": "^8.16.3",

@@ -10,6 +10,7 @@ import {
   enqueuePostJob as schedulePost,
 } from "~/infra/queue";
 import { logWarning } from "~/lib/error-logger.server";
+import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import {
   calendarRescheduleSchema,
   calendarRescheduleLongformSchema,
@@ -27,7 +28,8 @@ import { getPostById } from "~/models/post.queries.server";
  */
 export async function handleCalendarReschedule(
   formData: FormData,
-  userId: string
+  userId: string,
+  sessionPubkey: string
 ) {
   const result = validateFormDataOrRespond(formData, calendarRescheduleSchema);
   if (!result.success) {
@@ -88,6 +90,12 @@ export async function handleCalendarReschedule(
 
   // If we have a newly signed event, update the post with it and schedule the job
   if (parsedSignedEvent && parsedNostrEvent) {
+    assertSignedEventMatchesSessionPubkey({
+      sessionPubkey,
+      eventPubkey: parsedSignedEvent.pubkey,
+      context: { feature: "calendar", action: "reschedule", postId },
+    });
+
     // Update post with new signed event
     const finalPost = await reschedulePost({
       id: postId,
@@ -113,7 +121,8 @@ export async function handleCalendarReschedule(
  */
 export async function handleCalendarRescheduleLongform(
   formData: FormData,
-  userId: string
+  userId: string,
+  sessionPubkey: string
 ) {
   const result = validateFormDataOrRespond(
     formData,
@@ -163,6 +172,14 @@ export async function handleCalendarRescheduleLongform(
     }
   }
 
+  if (parsedSignedEvent) {
+    assertSignedEventMatchesSessionPubkey({
+      sessionPubkey,
+      eventPubkey: parsedSignedEvent.pubkey,
+      context: { feature: "calendar", action: "rescheduleLongform", postId },
+    });
+  }
+
   // Update longform post in database
   const updatedPost = await updateLongFormPost({
     id: postId,
@@ -182,15 +199,19 @@ export async function handleCalendarRescheduleLongform(
 /**
  * Handle calendar actions (routes to appropriate handler)
  */
-export async function handleCalendarAction(formData: FormData, userId: string) {
+export async function handleCalendarAction(
+  formData: FormData,
+  userId: string,
+  sessionPubkey: string
+) {
   const actionType = formData.get("action");
 
   if (actionType === "reschedule") {
-    return handleCalendarReschedule(formData, userId);
+    return handleCalendarReschedule(formData, userId, sessionPubkey);
   }
 
   if (actionType === "rescheduleLongform") {
-    return handleCalendarRescheduleLongform(formData, userId);
+    return handleCalendarRescheduleLongform(formData, userId, sessionPubkey);
   }
 
   return json({ error: "Invalid action" }, { status: 400 });

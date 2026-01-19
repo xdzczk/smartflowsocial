@@ -6,6 +6,7 @@
 import { redirect } from "@remix-run/node";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
 import { CreatePostUseCase } from "../../../use-cases/create-post.use-case.server";
@@ -17,6 +18,7 @@ const ERROR_INVALID_SIGNED_EVENT_FORMAT =
 
 interface TextHandlerParams {
   userId: string;
+  sessionPubkey: string;
   formData: FormData;
   hashTagPresetTags: string;
   showHashTagsinPosts: boolean;
@@ -34,6 +36,7 @@ interface TextHandlerParams {
  */
 export async function handleDraftText({
   userId,
+  sessionPubkey: _sessionPubkey,
   formData,
   hashTagPresetTags,
   showHashTagsinPosts,
@@ -78,6 +81,7 @@ export async function handleDraftText({
  */
 export async function handlePostOrScheduleText({
   userId,
+  sessionPubkey,
   formData,
   hashTagPresetTags,
   showHashTagsinPosts,
@@ -109,6 +113,12 @@ export async function handlePostOrScheduleText({
   const signedEvent: SignedEvent = signedEventRaw;
   const nostrEvent: NostrEvent = nostrEventRaw;
   const signedEventJson = signedEvent;
+
+  assertSignedEventMatchesSessionPubkey({
+    sessionPubkey,
+    eventPubkey: signedEvent.pubkey,
+    context: { feature: "newpost", action },
+  });
 
   // Apply hashtags
   const contentWithHashtags = applyHashtags(

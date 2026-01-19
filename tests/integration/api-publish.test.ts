@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/features/auth", () => ({
+  requireSession: vi.fn(),
   requireUserId: vi.fn(),
 }));
 
@@ -17,14 +18,18 @@ vi.mock("~/features/nostr/server", () => ({
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
-import { requireUserId } from "~/features/auth";
+import { requireSession } from "~/features/auth";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
 import { action } from "~/routes/api.publish";
 
 describe("API: Publish", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
+    (requireSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userId: TEST_USER_ID,
+      pubkey: "test-pubkey",
+      sessionId: "session-1",
+    });
     (publishSignedEventToRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
@@ -34,6 +39,7 @@ describe("API: Publish", () => {
     it("should publish event via feature service", async () => {
       const mockEvent = {
         id: "event-123",
+        pubkey: "test-pubkey",
         kind: 1,
         content: "Test post",
       };
@@ -65,7 +71,7 @@ describe("API: Publish", () => {
             })
           : {};
 
-      expect(requireUserId).toHaveBeenCalledWith(request);
+      expect(requireSession).toHaveBeenCalledWith(request);
       expect(publishSignedEventToRelays).toHaveBeenCalledWith({
         signedEvent: mockEvent,
         relays: mockRelays,
@@ -74,7 +80,7 @@ describe("API: Publish", () => {
     });
 
     it("should allow missing relays (defaults handled by publisher)", async () => {
-      const mockEvent = { id: "event-123" };
+      const mockEvent = { id: "event-123", pubkey: "test-pubkey" };
 
       const request = new Request("http://localhost:3000/api/publish", {
         method: "POST",
@@ -139,12 +145,12 @@ describe("API: Publish", () => {
     });
 
     it("should require authentication", async () => {
-      // requireUserId throws a Response (redirect), not an Error
+      // requireSession throws a Response (redirect), not an Error
       const redirectResponse = new Response(null, {
         status: 302,
         headers: { Location: "/login" },
       });
-      (requireUserId as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      (requireSession as ReturnType<typeof vi.fn>).mockImplementation(() => {
         throw redirectResponse;
       });
 
@@ -153,7 +159,7 @@ describe("API: Publish", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           relays: ["wss://relay1.com"],
-          event: { id: "event-123" },
+          event: { id: "event-123", pubkey: "test-pubkey" },
         }),
       });
 

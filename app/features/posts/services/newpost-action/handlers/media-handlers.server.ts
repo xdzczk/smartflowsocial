@@ -6,6 +6,7 @@
 import { redirect } from "@remix-run/node";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
 import { CreatePostUseCase } from "../../../use-cases/create-post.use-case.server";
@@ -18,6 +19,7 @@ const ERROR_INVALID_SIGNED_EVENT_FORMAT =
 
 interface MediaHandlerParams {
   userId: string;
+  sessionPubkey: string;
   formData: FormData;
   hashTagPresetTags: string;
   showHashTagsinPosts: boolean;
@@ -34,6 +36,7 @@ interface MediaHandlerParams {
  */
 export async function handlePostImages({
   userId,
+  sessionPubkey,
   formData,
   hashTagPresetTags,
   showHashTagsinPosts,
@@ -65,6 +68,12 @@ export async function handlePostImages({
 
   const signedEvent: SignedEvent = signedEventRaw;
   const nostrEvent: NostrEvent = nostrEventRaw;
+
+  assertSignedEventMatchesSessionPubkey({
+    sessionPubkey,
+    eventPubkey: signedEvent.pubkey,
+    context: { feature: "newpost", action: "post-images" },
+  });
 
   // Parse fileUrl JSON string to array for video detection
   const fileUrlArray = fileUrl ? (JSON.parse(fileUrl) as string[]) : [];
@@ -112,6 +121,7 @@ export async function handlePostImages({
  */
 export async function handleScheduleImages({
   userId,
+  sessionPubkey,
   formData,
   hashTagPresetTags,
   showHashTagsinPosts,
@@ -139,6 +149,12 @@ export async function handleScheduleImages({
   } catch {
     throw new Error(ERROR_INVALID_SIGNED_EVENT_FORMAT);
   }
+
+  assertSignedEventMatchesSessionPubkey({
+    sessionPubkey,
+    eventPubkey: signedEvent.pubkey,
+    context: { feature: "newpost", action: "schedule-images" },
+  });
 
   // Parse fileUrl JSON string to array for video detection
   const fileUrlArray = fileUrl ? (JSON.parse(fileUrl) as string[]) : [];
@@ -172,6 +188,7 @@ export async function handleScheduleImages({
  */
 export async function handleDraftImages({
   userId,
+  sessionPubkey: _sessionPubkey,
   formData,
   hashTagPresetTags,
   showHashTagsinPosts,

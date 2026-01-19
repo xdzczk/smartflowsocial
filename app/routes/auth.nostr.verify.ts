@@ -1,0 +1,176 @@
+import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@remix-run/node";
+import { validateEvent } from "nostr-tools";
+
+import {
+  consumeLoginChallengeAndCreateSession,
+  getLoginChallengeForVerify,
+} from "~/features/auth";
+import { getCompleteProfile } from "~/features/auth/profile.server";
+import { getSession, sessionStorage } from "~/features/auth/session.server";
+import { withCSRFProtection } from "~/lib/csrf";
+import { AuthenticationError, ValidationError } from "~/lib/errors";
+import { safeRedirect } from "~/lib/remix-utils";
+
+const PURPOSE_LOGIN = "login";
+const LOGIN_EVENT_KIND = 27235;
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const PROFILE_REFRESH_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+function isHexPubkey(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{64}$/i.test(value.trim());
+}
+
+function canonicalLoginMessage(input: {
+  nonce: string;
+  expiresAtIso: string;
+}): string {
+  return [
+    "SmartFlowSocial login",
+    "",
+    `Nonce: ${input.nonce}`,
+    "Purpose: login",
+    `Expires: ${input.expiresAtIso}`,
+  ].join("\n");
+}
+
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      if (request.method !== "POST") {
+        return json({ error: "Method not allowed" }, { status: 405 });
+      }
+
+      let bodyRaw: unknown;
+      try {
+        bodyRaw = await request.json();
+      } catch (error) {
+        throw new ValidationError("Invalid JSON in request body", {
+          originalError: error instanceof Error ? error.message : String(error),
+        });
+      }
+
+      const body =
+        typeof bodyRaw === "object" && bodyRaw !== null
+          ? (bodyRaw as {
+              challengeId?: unknown;
+              pubkey?: unknown;
+              signedEvent?: unknown;
+              redirectTo?: unknown;
+            })
+          : {};
+
+      const challengeId =
+        typeof body.challengeId === "string" ? body.challengeId : "";
+      const redirectTo = safeRedirect(
+        typeof body.redirectTo === "string" ? body.redirectTo : undefined,
+        "/dashboard"
+      );
+
+      if (!challengeId) {
+        throw new ValidationError("Missing challengeId");
+      }
+      if (!isHexPubkey(body.pubkey)) {
+        throw new ValidationError("Missing or invalid pubkey");
+      }
+      if (body.signedEvent === null || body.signedEvent === undefined) {
+        throw new ValidationError("Missing signedEvent");
+      }
+
+      const pubkey = body.pubkey.trim();
+
+      // Load challenge
+      const challenge = await getLoginChallengeForVerify({ id: challengeId });
+
+      if (challenge?.purpose !== PURPOSE_LOGIN) {
+        throw new ValidationError("Challenge not found");
+      }
+      if (challenge.consumedAt) {
+        throw new ValidationError("Challenge already consumed");
+      }
+      if (challenge.expiresAt.getTime() <= Date.now()) {
+        throw new ValidationError("Challenge expired");
+      }
+
+      // Verify signed event
+      const signedEventUnknown: unknown = body.signedEvent;
+      if (
+        typeof signedEventUnknown !== "object" ||
+        signedEventUnknown === null
+      ) {
+        throw new ValidationError("Invalid signedEvent");
+      }
+      const signedEvent = signedEventUnknown as Record<string, unknown>;
+
+      const eventPubkey =
+        typeof signedEvent["pubkey"] === "string" ? signedEvent["pubkey"] : "";
+      const eventKind =
+        typeof signedEvent["kind"] === "number"
+          ? signedEvent["kind"]
+          : undefined;
+      const eventContent =
+        typeof signedEvent["content"] === "string"
+          ? signedEvent["content"]
+          : "";
+
+      if (eventPubkey !== pubkey) {
+        throw new AuthenticationError("Pubkey mismatch", {
+          pubkey,
+          eventPubkey,
+        });
+      }
+      if (eventKind !== LOGIN_EVENT_KIND) {
+        throw new AuthenticationError("Invalid event kind", { eventKind });
+      }
+
+      const expectedContent = canonicalLoginMessage({
+        nonce: challenge.nonce,
+        expiresAtIso: challenge.expiresAt.toISOString(),
+      });
+
+      if (eventContent !== expectedContent) {
+        throw new AuthenticationError("Invalid signature content");
+      }
+
+      const isValid = validateEvent(signedEvent);
+      if (!isValid) {
+        throw new AuthenticationError("Invalid signature");
+      }
+
+      // Fetch profile outside the DB transaction (network-bound, best-effort)
+      const { nostrProfile } = await getCompleteProfile({ npub: pubkey });
+      const profileJson = JSON.stringify(nostrProfile);
+
+      // Consume challenge (race-safe) + create session in a transaction
+      const sessionId = await consumeLoginChallengeAndCreateSession({
+        challengeId,
+        pubkey,
+        profileJson,
+        sessionTtlMs: SESSION_TTL_MS,
+        profileRefreshTtlMs: PROFILE_REFRESH_TTL_MS,
+      });
+
+      const cookieSession = await getSession(request);
+      cookieSession.set("sessionId", sessionId);
+
+      return json(
+        {
+          success: true,
+          redirectTo,
+          sessionId,
+          pubkey,
+        },
+        {
+          headers: {
+            "Set-Cookie": await sessionStorage.commitSession(cookieSession, {
+              maxAge: Math.floor(SESSION_TTL_MS / 1000),
+            }),
+          },
+        }
+      );
+    } catch (error) {
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
+    }
+  }
+);

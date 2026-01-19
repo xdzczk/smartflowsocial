@@ -345,7 +345,7 @@ async function run() {
           scriptSrc: [
             "'self'",
             "'unsafe-inline'", // Required for Remix's generated scripts
-            "'unsafe-eval'", // Required for libraries like nostr-login that use eval()
+            "'unsafe-eval'", // Required for some third-party client libraries
           ],
           styleSrc: [
             "'self'",

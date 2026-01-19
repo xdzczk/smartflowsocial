@@ -1,11 +1,12 @@
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
-import { requireUserId } from "~/features/auth";
+import { requireSession } from "~/features/auth";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
 import type { SignedEvent } from "~/features/nostr/types";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
+import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 
 type AssertFunction = (
   condition: boolean,
@@ -23,9 +24,6 @@ export const action = withCSRFProtection(
       assert(request.method === "POST", "Method not allowed", {
         method: request.method,
       });
-
-      // Ensure user is authenticated
-      await requireUserId(request);
 
       // Parse and validate request body
       let bodyRaw: unknown;
@@ -48,6 +46,9 @@ export const action = withCSRFProtection(
         hasEvent: event !== null && event !== undefined,
       });
 
+      // Ensure user is authenticated (after basic request validation)
+      const session = await requireSession(request);
+
       const relaysArray = Array.isArray(relays) ? relays : [];
       const sanitizedRelays = relaysArray
         .map((relay: unknown) =>
@@ -55,8 +56,15 @@ export const action = withCSRFProtection(
         )
         .filter((relay) => relay.length > 0);
 
+      const eventObj = event as SignedEvent;
+      assertSignedEventMatchesSessionPubkey({
+        sessionPubkey: session.pubkey,
+        eventPubkey: eventObj.pubkey,
+        context: { route: "/api/publish" },
+      });
+
       await publishSignedEventToRelays({
-        signedEvent: event as SignedEvent,
+        signedEvent: eventObj,
         relays: sanitizedRelays,
       });
 

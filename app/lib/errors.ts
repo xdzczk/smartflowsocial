@@ -74,6 +74,19 @@ export class AuthenticationError extends AppError {
 }
 
 /**
+ * Profile/pubkey mismatch errors (401)
+ * Used when the active session identity does not match the signer identity.
+ */
+export class ProfileMismatchError extends AppError {
+  constructor(
+    message = "Different signer profile detected — re-authentication required",
+    context?: Record<string, unknown>
+  ) {
+    super(message, 401, "PROFILE_MISMATCH", true, context);
+  }
+}
+
+/**
  * Authorization errors (403)
  */
 export class AuthorizationError extends AppError {

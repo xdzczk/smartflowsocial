@@ -57,47 +57,11 @@ export default function AccountSwitcher() {
 
   const handleSwitch = async (childNpub: string) => {
     try {
-      const { init } = await import("nostr-login");
-      await init({
-        methods: ["connect", "extension"],
-        noBanner: true,
-        onAuth: () => {
-          void (async () => {
-            if (window.nostr) {
-              const randomKeys = () => Math.random().toString(36).slice(2, 12);
-              const contentSign = `Switch account ${randomKeys()}`;
-              const event = {
-                kind: 27235,
-                created_at: Math.floor(Date.now() / 1000),
-                tags: [] as string[][],
-                content: contentSign,
-              };
-
-              const signedEvent = await window.nostr.signEvent(event);
-              if (signedEvent.pubkey !== childNpub) {
-                alert(
-                  "Please sign with the selected child's keys in your Nostr extension."
-                );
-                return;
-              }
-
-              const formData = new FormData();
-              formData.append("pubkey", signedEvent.pubkey);
-              formData.append("signature", signedEvent.sig);
-              formData.append("event", JSON.stringify(signedEvent));
-              formData.append("contentSign", contentSign);
-              formData.append("redirectTo", "/dashboard");
-
-              fetcher.submit(formData, {
-                method: "post",
-                action: "/nostr-auth",
-              });
-            }
-          })();
-        },
-      });
-
-      document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
+      // Switching accounts is an identity change: logout + re-authenticate.
+      await fetch("/logout", { method: "POST", credentials: "same-origin" });
+      window.location.assign(
+        `/login?redirectTo=${encodeURIComponent("/dashboard")}&expectedPubkey=${encodeURIComponent(childNpub)}`
+      );
     } catch (e) {
       const { handleErrorSafely } =
         require("~/lib/error-handler.client") as unknown as {

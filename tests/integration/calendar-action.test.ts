@@ -48,6 +48,8 @@ import {
 import { reschedulePost } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
 
+const TEST_SESSION_PUBKEY = "pk-123";
+
 describe("Calendar Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,7 +68,11 @@ describe("Calendar Action Handler", () => {
         newTime: String(Math.floor(Date.now() / 1000) + 3600),
       });
 
-      const result = await handleCalendarAction(formData, TEST_USER_ID);
+      const result = await handleCalendarAction(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       expect(getPostById).toHaveBeenCalled();
       const responseObj =
@@ -103,7 +109,11 @@ describe("Calendar Action Handler", () => {
         newTime: String(Math.floor(Date.now() / 1000) + 3600),
       });
 
-      const result = await handleCalendarAction(formData, TEST_USER_ID);
+      const result = await handleCalendarAction(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       expect(getLongFormPost).toHaveBeenCalled();
       const responseObj =
@@ -130,7 +140,11 @@ describe("Calendar Action Handler", () => {
         action: "invalidAction",
       });
 
-      const result = await handleCalendarAction(formData, TEST_USER_ID);
+      const result = await handleCalendarAction(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       const responseObj =
         result instanceof Response
@@ -168,7 +182,11 @@ describe("Calendar Action Handler", () => {
         overrideQueue: "false",
       });
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       expect(getPostById).toHaveBeenCalledWith({
         id: TEST_POST_ID,
@@ -237,7 +255,11 @@ describe("Calendar Action Handler", () => {
         nostrEvent: JSON.stringify(nostrEvent),
       });
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       expect(reschedulePost).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -287,7 +309,11 @@ describe("Calendar Action Handler", () => {
         overrideQueue: "true",
       });
 
-      await handleCalendarReschedule(formData, TEST_USER_ID);
+      await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       expect(reschedulePost).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -301,7 +327,11 @@ describe("Calendar Action Handler", () => {
         newTime: String(Math.floor(Date.now() / 1000) + 3600),
       });
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       const responseObj =
         result instanceof Response
@@ -331,7 +361,11 @@ describe("Calendar Action Handler", () => {
         postId: TEST_POST_ID,
       });
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       const responseObj =
         result instanceof Response
@@ -364,7 +398,11 @@ describe("Calendar Action Handler", () => {
         newTime: String(Math.floor(Date.now() / 1000) + 3600),
       });
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       const responseObj =
         result instanceof Response
@@ -401,7 +439,11 @@ describe("Calendar Action Handler", () => {
         nostrEvent: "invalid-json",
       });
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       // Should still succeed but without signed events
       const responseObj =
@@ -445,7 +487,8 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
       );
 
       expect(getLongFormPost).toHaveBeenCalledWith({
@@ -518,7 +561,8 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
       );
 
       expect(updateLongFormPost).toHaveBeenCalledWith({
@@ -557,7 +601,8 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
       );
 
       const responseObj =
@@ -590,7 +635,8 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
       );
 
       const responseObj =
@@ -626,7 +672,8 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
       );
 
       const responseObj =
@@ -669,7 +716,8 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
       );
 
       // Should still succeed but without signed events

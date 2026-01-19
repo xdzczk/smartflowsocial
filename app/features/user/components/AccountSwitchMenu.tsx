@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import type { NostrEvent, ProfileData } from "~/features/nostr/types";
+import type { ProfileData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -134,40 +134,10 @@ export default function AccountSwitchMenu() {
 
   const onSwitch = async (childNpub: string) => {
     try {
-      const { init } = await import("nostr-login");
-      await init({
-        methods: ["connect", "extension"],
-        noBanner: true,
-        onAuth: () => {
-          void (async () => {
-            if (window.nostr) {
-              const contentSign = `Switch account ${Math.random().toString(36).slice(2, 12)}`;
-              const event: NostrEvent = {
-                kind: 27235,
-                created_at: Math.floor(Date.now() / 1000),
-                tags: [],
-                content: contentSign,
-              };
-              const signedEvent = await window.nostr.signEvent(event);
-              if (signedEvent.pubkey !== childNpub) {
-                // Silent no-op on mismatch
-                return;
-              }
-              const formData = new FormData();
-              formData.append("pubkey", signedEvent.pubkey);
-              formData.append("signature", signedEvent.sig);
-              formData.append("event", JSON.stringify(signedEvent));
-              formData.append("contentSign", contentSign);
-              formData.append("redirectTo", "/dashboard");
-              fetcher.submit(formData, {
-                method: "post",
-                action: "/nostr-auth",
-              });
-            }
-          })();
-        },
-      });
-      document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
+      await fetch("/logout", { method: "POST", credentials: "same-origin" });
+      window.location.assign(
+        `/login?redirectTo=${encodeURIComponent("/dashboard")}&expectedPubkey=${encodeURIComponent(childNpub)}`
+      );
     } catch (e) {
       const { handleErrorSafely } = require("~/lib/error-handler.client") as {
         handleErrorSafely: (
@@ -185,40 +155,10 @@ export default function AccountSwitchMenu() {
   const onSwitchParent = async () => {
     if (!parentNpub) return;
     try {
-      const { init } = await import("nostr-login");
-      await init({
-        methods: ["connect", "extension"],
-        noBanner: true,
-        onAuth: () => {
-          void (async () => {
-            if (window.nostr) {
-              const contentSign = `Switch parent ${Math.random().toString(36).slice(2, 12)}`;
-              const event: NostrEvent = {
-                kind: 27235,
-                created_at: Math.floor(Date.now() / 1000),
-                tags: [],
-                content: contentSign,
-              };
-              const signedEvent = await window.nostr.signEvent(event);
-              if (signedEvent.pubkey !== parentNpub) {
-                // Silent no-op on mismatch
-                return;
-              }
-              const formData = new FormData();
-              formData.append("pubkey", signedEvent.pubkey);
-              formData.append("signature", signedEvent.sig);
-              formData.append("event", JSON.stringify(signedEvent));
-              formData.append("contentSign", contentSign);
-              formData.append("redirectTo", "/dashboard");
-              fetcher.submit(formData, {
-                method: "post",
-                action: "/nostr-auth",
-              });
-            }
-          })();
-        },
-      });
-      document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
+      await fetch("/logout", { method: "POST", credentials: "same-origin" });
+      window.location.assign(
+        `/login?redirectTo=${encodeURIComponent("/dashboard")}&expectedPubkey=${encodeURIComponent(parentNpub)}`
+      );
     } catch (e) {
       const { handleErrorSafely } = require("~/lib/error-handler.client") as {
         handleErrorSafely: (

@@ -32,6 +32,7 @@ describe("Schedule Longform Action", () => {
     // Mock getUserById - required by handleNewLongFormAction
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
+      npub: "test-pubkey",
       userRelays: ["wss://relay1.com"],
       showHashTagsinPosts: false,
     });
@@ -62,9 +63,14 @@ describe("Schedule Longform Action", () => {
     const mockSignedEvent = {
       id: "event-123",
       kind: 30023,
+      pubkey: "test-pubkey",
       tags: [["published_at", "1704067200"]],
     };
-    const mockNostrEvent = { id: "event-123", kind: 30023 };
+    const mockNostrEvent = {
+      id: "event-123",
+      kind: 30023,
+      pubkey: "test-pubkey",
+    };
 
     const formData = createMockFormData({
       _action: "schedule-longform",

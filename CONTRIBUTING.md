@@ -239,11 +239,11 @@ async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 async function action({ request }: ActionFunctionArgs) {
-  const userId = await requireUserId(request);
+  const { userId, pubkey } = await requireSession(request);
   const formData = await request.formData();
 
   // Use service layer function from features
-  return handleCalendarAction(formData, userId);
+  return handleCalendarAction(formData, userId, pubkey);
 }
 
 // ❌ Bad: Direct model imports in routes

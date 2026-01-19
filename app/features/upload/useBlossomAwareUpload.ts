@@ -86,9 +86,13 @@ export function useBlossomAwareUpload() {
   const createBlossomAuthHeaders = async (
     provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR"
   ) => {
-    if (!window.nostr) {
+    // @ts-ignore - Dynamic imports work in client-side Remix bundles
+    const { getWindowNostrLikeSigner } =
+      await import("~/lib/nostr-signer-manager.client");
+    const signer = await getWindowNostrLikeSigner();
+    if (!signer) {
       throw new Error(
-        "NOSTR extension not found. Please install Alby, Amber, or another NOSTR extension to upload to Blossom."
+        "Nostr signer not found. Please connect a signer (NIP-07 extension or NIP-46 remote signer) to upload to Blossom."
       );
     }
 
@@ -131,7 +135,7 @@ export function useBlossomAwareUpload() {
           }
 
           toast.loading(
-            `Signing upload request with NOSTR extension for ${providerName}...`,
+            `Signing upload request with Nostr signer for ${providerName}...`,
             {
               id: TOAST_ID_BLOSSOM_AUTH,
             }

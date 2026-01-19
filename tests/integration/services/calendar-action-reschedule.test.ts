@@ -40,6 +40,8 @@ import { validateFormDataOrRespond } from "~/lib/validation";
 import { reschedulePost } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
 
+const TEST_SESSION_PUBKEY = "pk-123";
+
 describe("Calendar Action Reschedule", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -96,7 +98,11 @@ describe("Calendar Action Reschedule", () => {
       formData.append("postId", TEST_POST_ID);
       formData.append("newTime", "1704110400");
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       expect(getPostById).toHaveBeenCalledWith({
         id: TEST_POST_ID,
@@ -132,7 +138,11 @@ describe("Calendar Action Reschedule", () => {
       formData.append("postId", TEST_POST_ID);
       formData.append("newTime", "1704110400");
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       const responseObj =
         result instanceof Response
@@ -159,7 +169,11 @@ describe("Calendar Action Reschedule", () => {
       const formData = new FormData();
       // Missing required fields
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       expect(result).toBeInstanceOf(Response);
       const responseObj = result;
@@ -194,7 +208,11 @@ describe("Calendar Action Reschedule", () => {
       formData.append("postId", TEST_POST_ID);
       formData.append("newTime", "1704110400");
 
-      const result = await handleCalendarReschedule(formData, TEST_USER_ID);
+      const result = await handleCalendarReschedule(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
 
       expect(mockCancelPostJob).toHaveBeenCalled();
       expect(reschedulePost).toHaveBeenCalled();

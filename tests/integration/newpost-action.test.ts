@@ -62,6 +62,7 @@ describe("New Post Action Handler", () => {
 
     // Default mocks
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      npub: "test-pubkey",
       userRelays: ["wss://relay1.com", "wss://relay2.com"],
       showHashTagsinPosts: true,
     });
@@ -141,6 +142,7 @@ describe("New Post Action Handler", () => {
 
     it("should apply hashtag preset tags when showHashTagsinPosts is true", async () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        npub: "test-pubkey",
         userRelays: ["wss://relay1.com"],
         showHashTagsinPosts: true,
       });
@@ -169,6 +171,7 @@ describe("New Post Action Handler", () => {
 
     it("should not apply hashtag preset tags when showHashTagsinPosts is false", async () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        npub: "test-pubkey",
         userRelays: ["wss://relay1.com"],
         showHashTagsinPosts: false,
       });

@@ -1,22 +1,23 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
-import { authenticateNostrUser } from "~/features/auth";
 import { withCSRFProtection } from "~/lib/csrf";
-import { safeRedirect } from "~/lib/remix-utils";
 
 export const action = withCSRFProtection(
-  async ({ request }: ActionFunctionArgs) => {
+  async ({ request: _request }: ActionFunctionArgs) => {
     try {
-      const formData = await request.formData();
-      const event = formData.get("event") as string | null;
-      const contentSign = formData.get("contentSign") as string | null;
-      const redirectTo = safeRedirect(formData.get("redirectTo"), `/dashboard`);
-
-      return authenticateNostrUser(
-        event ?? "",
-        contentSign,
-        redirectTo,
-        request
+      // Deprecated legacy endpoint (client-generated challenge).
+      // Use POST /auth/nostr/challenge + POST /auth/nostr/verify instead.
+      return json(
+        {
+          success: false,
+          error: {
+            code: "DEPRECATED",
+            message:
+              "This endpoint is deprecated. Please sign in via /login (NIP-07 or NIP-46) using /auth/nostr/challenge and /auth/nostr/verify.",
+          },
+        },
+        { status: 410 }
       );
     } catch (error) {
       // If error is a Response (e.g., redirect from requireUserId), return it

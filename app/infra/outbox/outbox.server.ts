@@ -109,10 +109,14 @@ export async function createOutboxEventInTransaction(
  */
 export async function getUnprocessedOutboxEvents(
   limit = 50,
-  now: Date = new Date()
+  now: Date = new Date(),
+  options?: { correlationId?: string }
 ) {
   return prisma.outboxEvent.findMany({
     where: {
+      ...(options?.correlationId
+        ? { correlationId: options.correlationId }
+        : {}),
       processedAt: null,
       deadLetteredAt: null,
       OR: [{ scheduledFor: null }, { scheduledFor: { lte: now } }],

@@ -29,6 +29,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
   "Outbox Pattern Integration",
   () => {
     let userId: string;
+    let outboxCorrelationId: string;
 
     beforeEach(async () => {
       // Create a test user with a unique npub to avoid collisions
@@ -41,17 +42,21 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         },
       });
       userId = user.id;
+      outboxCorrelationId = `outbox-test-${userId}`;
     });
 
     afterEach(async () => {
       // Clean up test data
+      const postIds = await prisma.post
+        .findMany({ where: { userId }, select: { id: true } })
+        .then((posts) => posts.map((p) => p.id));
+
       await prisma.outboxEvent.deleteMany({
         where: {
-          aggregateId: {
-            in: await prisma.post
-              .findMany({ where: { userId }, select: { id: true } })
-              .then((posts) => posts.map((p) => p.id)),
-          },
+          OR: [
+            { correlationId: outboxCorrelationId },
+            { aggregateId: { in: postIds } },
+          ],
         },
       });
       await prisma.postStateTransition.deleteMany({
@@ -175,10 +180,18 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           payload,
           // Important: OutboxEvent.scheduledFor controls when the outbox worker should enqueue.
           // Use "now" so the event is eligible to be drained immediately.
-          new Date()
+          new Date(),
+          undefined,
+          outboxCorrelationId
         );
 
-        const unprocessedEvents = await getUnprocessedOutboxEvents(10);
+        const unprocessedEvents = await getUnprocessedOutboxEvents(
+          10,
+          new Date(),
+          {
+            correlationId: outboxCorrelationId,
+          }
+        );
 
         expect(unprocessedEvents.length).toBeGreaterThan(0);
         const event = unprocessedEvents.find((e) => e.aggregateId === "post-1");
@@ -208,7 +221,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-2",
           "Post",
           payload,
-          new Date()
+          new Date(),
+          undefined,
+          outboxCorrelationId
         );
 
         const lock = await claimOutboxEvent({ eventId: event.id });
@@ -248,7 +263,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-3",
           "Post",
           payload,
-          new Date()
+          new Date(),
+          undefined,
+          outboxCorrelationId
         );
 
         const lock = await claimOutboxEvent({ eventId: event.id });
@@ -292,7 +309,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-concurrent",
           "Post",
           payload,
-          new Date()
+          new Date(),
+          undefined,
+          outboxCorrelationId
         );
 
         const [a, b] = await Promise.all([
@@ -326,7 +345,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-retry-window",
           "Post",
           payload,
-          new Date()
+          undefined,
+          undefined,
+          outboxCorrelationId
         );
 
         const lock = await claimOutboxEvent({ eventId: event.id });
@@ -339,16 +360,27 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           nextAttemptAt: new Date(Date.now() + 60_000),
         });
 
-        const notReady = await getUnprocessedOutboxEvents(50);
+        const notReady = await getUnprocessedOutboxEvents(5000, new Date(), {
+          correlationId: outboxCorrelationId,
+        });
         expect(notReady.find((e) => e.id === event.id)).toBeUndefined();
 
         // Force it ready (simulate time passing)
         await prisma.outboxEvent.update({
           where: { id: event.id },
-          data: { nextAttemptAt: new Date(Date.now() - 1000) },
+          data: {
+            nextAttemptAt: new Date(Date.now() - 1000),
+            // Ensure the event is eligible even if a lock wasn't cleared
+            processingLockId: null,
+            processingLockExpiresAt: null,
+          },
         });
 
-        const ready = await getUnprocessedOutboxEvents(50);
+        const ready = await getUnprocessedOutboxEvents(
+          5000,
+          new Date(Date.now() + 5_000),
+          { correlationId: outboxCorrelationId }
+        );
         expect(ready.find((e) => e.id === event.id)).toBeDefined();
       });
 
@@ -374,7 +406,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-4",
           "Post",
           payload,
-          new Date()
+          new Date(),
+          undefined,
+          outboxCorrelationId
         );
 
         const lock = await claimOutboxEvent({ eventId: event.id });
@@ -385,7 +419,13 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         });
 
         // Should not appear in unprocessed events
-        const unprocessedEvents = await getUnprocessedOutboxEvents(10);
+        const unprocessedEvents = await getUnprocessedOutboxEvents(
+          10,
+          new Date(),
+          {
+            correlationId: outboxCorrelationId,
+          }
+        );
         const foundEvent = unprocessedEvents.find((e) => e.id === event.id);
         expect(foundEvent).toBeUndefined();
       });
@@ -413,11 +453,19 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           "post-5",
           "Post",
           payload,
-          futureDate
+          futureDate,
+          undefined,
+          outboxCorrelationId
         );
 
         // Event with future scheduledFor should not appear in unprocessed events
-        const unprocessedEvents = await getUnprocessedOutboxEvents(10);
+        const unprocessedEvents = await getUnprocessedOutboxEvents(
+          10,
+          new Date(),
+          {
+            correlationId: outboxCorrelationId,
+          }
+        );
         const foundEvent = unprocessedEvents.find(
           (e) => e.aggregateId === "post-5"
         );

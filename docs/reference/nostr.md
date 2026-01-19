@@ -7,7 +7,7 @@ event handling, and relay management.
 
 - [Overview](#overview)
 - [NIP Implementations](#nip-implementations)
-- [Authentication (NIP-07)](#authentication-nip-07)
+- [Authentication (NIP-07 + NIP-46)](#authentication-nip-07--nip-46)
 - [Event Types](#event-types)
 - [Event Signing](#event-signing)
 - [Relay Management](#relay-management)
@@ -22,7 +22,7 @@ event handling, and relay management.
 SmartFlowSocial integrates with the Nostr protocol to enable decentralized social media management.
 The application uses Nostr for:
 
-- **Authentication**: NIP-07 browser extension authentication
+- **Authentication**: NIP-07 (browser extensions) and NIP-46 (remote signer / Nostr Connect)
 - **Publishing**: Posting content to Nostr relays
 - **Profile Management**: Fetching and caching user profiles
 - **Engagement**: Tracking replies, mentions, and interactions
@@ -36,7 +36,7 @@ The application uses Nostr for:
 
 **Status**: ✅ **Fully Implemented**
 
-SmartFlowSocial uses NIP-07 for client-side authentication and event signing.
+SmartFlowSocial supports NIP-07 for client-side signing (and login via extensions).
 
 **Implementation:**
 
@@ -46,9 +46,24 @@ SmartFlowSocial uses NIP-07 for client-side authentication and event signing.
 
 **Code Location:**
 
-- `app/lib/nostr.ts` - Event signing functions
-- `app/features/auth/components/NostrAuthButton.tsx` - Authentication UI
-- `app/routes/nostr-auth.tsx` - Authentication handler
+- `app/lib/nostr-adapter.client.ts` - Canonical client-side signing adapter
+- `app/features/auth/components/NostrLoginPanel.tsx` - Login UI (NIP-07 + NIP-46)
+- `app/routes/auth.nostr.challenge.ts` - Login challenge endpoint
+- `app/routes/auth.nostr.verify.ts` - Login verification endpoint
+
+### NIP-46: Remote signing (Nostr Connect)
+
+**Status**: ✅ **Implemented (login + signing)**
+
+NIP-46 enables SmartFlowSocial to use a remote signer (“bunker”) instead of a browser extension.
+
+**Profile semantics:** each approved identity is a **pubkey**. Switching profiles means switching
+identity and requires re-authentication.
+
+**Code Location:**
+
+- `app/features/auth/nostr-signer.client.ts` - NIP-46 signer wrapper (nostr-tools `BunkerSigner`)
+- `app/lib/nostr-signer-manager.client.ts` - Persist/recover the active signer for app-wide signing
 
 ### NIP-19: bech32-encoded entities
 
@@ -71,7 +86,8 @@ const hexKey = data as string;
 
 **Code Location:**
 
-- `app/lib/nostr.ts` - `hexToNpub()`, `npubToHex()`
+- `app/lib/nostr-adapter.client.ts` - `encodeNpub()`, `decodeNpub()`
+- `app/lib/nostr-adapter.server.ts` - `encodeNpub()`, `decodeNpub()`
 - `app/lib/nostr-conversion.ts` - Conversion utilities
 
 ### NIP-23: Long-form Content
@@ -107,7 +123,7 @@ SmartFlowSocial supports NIP-23 for publishing long-form articles.
 
 **Code Location:**
 
-- `app/lib/nostr.ts` - `signLongFormEvent()`
+- `app/lib/nostr-adapter.client.ts` - `signLongFormEvent()`
 - `app/features/posts/services/newlongform-action.server.ts` - Long-form creation
 - `app/models/longformpost.server.ts` - Long-form post model
 
@@ -124,43 +140,52 @@ Standard Nostr event structure and relay communication.
 
 ---
 
-## Authentication (NIP-07)
+## Authentication (NIP-07 + NIP-46)
 
 ### How It Works
 
-1. **User Clicks Login**
-   - Application requests Nostr extension access
-   - Extension prompts user for permission
+1. **User starts sign-in**
+   - User navigates to `/login`
+   - User explicitly chooses **Browser Extension (NIP-07)** or **Remote Signer (NIP-46)**
 
-2. **Get Public Key**
+2. **Resolve identity pubkey**
+   - NIP-07: `window.nostr.getPublicKey()`
+   - NIP-46: connect/approve in the remote signer, then `getPublicKey()`
 
    ```typescript
    const pubkey = await window.nostr.getPublicKey();
    ```
 
-3. **Sign Challenge**
+3. **Request server challenge**
+   - `POST /auth/nostr/challenge` returns `{ challengeId, nonce, expiresAt }`
+
+4. **Sign canonical login message (kind 27235)**
+   - Client builds a deterministic message and signs it with the chosen signer
 
    ```typescript
    const event = {
-     kind: 1,
-     content: "Login challenge",
+     kind: 27235,
+     content: canonicalLoginMessage({ nonce, expiresAt }),
      created_at: Math.floor(Date.now() / 1000),
      tags: [],
    };
-   const signedEvent = await window.nostr.signEvent(event);
+   const signedEvent = await signer.signEvent(event);
    ```
 
-4. **Server Verification**
-   - Server verifies signature
-   - Creates session
-   - Returns authenticated user
+5. **Server verification**
+   - `POST /auth/nostr/verify` verifies:
+     - challenge exists, not expired, not consumed
+     - signature is valid
+     - `signedEvent.pubkey` matches declared `pubkey`
+   - Server creates a DB-backed session bound to the pubkey and sets a cookie
 
-### Supported Extensions
+### Supported signers
 
 - **Alby** - Popular with Lightning wallet integration
 - **nos2x** - Lightweight Nostr signer
 - **Amber** - Mobile Nostr signer
 - **Any NIP-07 compatible extension**
+- **NIP-46 remote signers** (“bunkers”)
 
 ### Code Example
 
@@ -522,6 +547,7 @@ const thread = await fetchThreadView(eventId);
 | ------ | ------ | ---------------------- |
 | NIP-01 | ✅     | Basic protocol flow    |
 | NIP-07 | ✅     | Browser extension auth |
+| NIP-46 | ✅     | Remote signer auth     |
 | NIP-19 | ✅     | bech32 encoding        |
 | NIP-23 | ✅     | Long-form content      |
 

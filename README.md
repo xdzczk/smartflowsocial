@@ -30,7 +30,8 @@ enterprise-level features.
 
 ### Why SmartFlowSocial?
 
-- 🔐 **Privacy-first**: Your keys never leave your browser (client-side signing via NIP-07)
+- 🔐 **Privacy-first**: Your keys never touch SmartFlow servers (signing via NIP-07 extensions or
+  NIP-46 remote signers)
 - 📅 **Advanced scheduling**: Calendar view, queues, intervals, and bulk upload
 - 🎨 **Beautiful UI**: Modern, intuitive interface built with Remix and TailwindCSS
 - 🔓 **Open source**: ELv2 licensed, fully auditable code
@@ -84,7 +85,8 @@ enterprise-level features.
 **Start managing your Nostr presence in 30 seconds:**
 
 1. Go to [smartflow.social](https://smartflow.social)
-2. Log in with a NIP-07 compatible Nostr extension (Alby / nos2x / Amber)
+2. Log in with a NIP-07 compatible Nostr extension (Alby / nos2x / Amber) **or** a NIP-46 remote
+   signer
 3. Create your first scheduled post
 
 **Next steps:**
@@ -178,7 +180,7 @@ See [Architecture Documentation](./docs/getting-started/architecture.md) for det
 
 **Your privacy is protected regardless of hosting choice:**
 
-- 🔐 **Client-side signing** — Private keys never leave your browser (NIP-07)
+- 🔐 **Client-side / remote signing** — Private keys never touch SmartFlow servers (NIP-07 / NIP-46)
 - 🔒 **No key storage** — We never see or store your private keys
 - 🛡️ **Transparent code** — Verify our security practices yourself (ELv2 licensed)
 - 🔓 **No vendor lock-in** — Self-host anytime, export your data, stay in control

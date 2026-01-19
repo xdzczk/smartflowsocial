@@ -42,8 +42,37 @@ model User {
   queueTypes     QueueType[]
   Subscription   Subscription?
   templates      Template[]
+  sessions       Session[]
 
   @@index([parentNpub])
+}
+
+model LoginChallenge {
+  id         String   @id @default(cuid())
+  nonce      String
+  purpose    String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  pubkey     String?
+  createdAt  DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([consumedAt])
+  @@index([pubkey])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  pubkey    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([pubkey])
+  @@index([expiresAt])
 }
 
 model QueueType {

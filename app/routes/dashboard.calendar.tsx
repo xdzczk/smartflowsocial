@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 
-import { requireUserId } from "~/features/auth";
+import { requireSession, requireUserId } from "~/features/auth";
 import {
   requireFeatureAccess,
   requireAnySubscription,
@@ -43,9 +43,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
-      const userId = await requireUserId(request);
+      const { userId, pubkey } = await requireSession(request);
       const formData = await request.formData();
-      return handleCalendarAction(formData, userId);
+      return handleCalendarAction(formData, userId, pubkey);
     } catch (error) {
       // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {

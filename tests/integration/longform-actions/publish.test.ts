@@ -32,6 +32,7 @@ describe("Publish Action", () => {
     // Mock getUserById - required by handleNewLongFormAction
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
+      npub: "test-pubkey",
       userRelays: ["wss://relay1.com"],
       showHashTagsinPosts: false,
     });
@@ -63,8 +64,16 @@ describe("Publish Action", () => {
     ).mockResolvedValue({
       id: "queue-1",
     });
-    const mockSignedEvent = { id: "event-123", kind: 30023 };
-    const mockNostrEvent = { id: "event-123", kind: 30023 };
+    const mockSignedEvent = {
+      id: "event-123",
+      kind: 30023,
+      pubkey: "test-pubkey",
+    };
+    const mockNostrEvent = {
+      id: "event-123",
+      kind: 30023,
+      pubkey: "test-pubkey",
+    };
 
     const formData = createMockFormData({
       _action: "publish",
@@ -208,6 +217,7 @@ describe("Publish Action", () => {
     // Mock getUserById with showHashTagsinPosts: true
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
+      npub: "test-pubkey",
       userRelays: ["wss://relay1.com"],
       showHashTagsinPosts: true, // Enable hashtags
     });
@@ -222,8 +232,16 @@ describe("Publish Action", () => {
       },
     ]);
 
-    const mockSignedEvent = { id: "event-123", kind: 30023 };
-    const mockNostrEvent = { id: "event-123", kind: 30023 };
+    const mockSignedEvent = {
+      id: "event-123",
+      kind: 30023,
+      pubkey: "test-pubkey",
+    };
+    const mockNostrEvent = {
+      id: "event-123",
+      kind: 30023,
+      pubkey: "test-pubkey",
+    };
 
     const formData = createMockFormData({
       _action: "publish",
@@ -262,8 +280,16 @@ describe("Publish Action", () => {
       statusText: "Internal Server Error",
     });
 
-    const mockSignedEvent = { id: "event-123", kind: 30023 };
-    const mockNostrEvent = { id: "event-123", kind: 30023 };
+    const mockSignedEvent = {
+      id: "event-123",
+      kind: 30023,
+      pubkey: "test-pubkey",
+    };
+    const mockNostrEvent = {
+      id: "event-123",
+      kind: 30023,
+      pubkey: "test-pubkey",
+    };
 
     const formData = createMockFormData({
       _action: "publish",

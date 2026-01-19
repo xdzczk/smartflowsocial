@@ -84,10 +84,13 @@ export function SmartUploadButton({
       _provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR"
     ): Promise<string> => {
       try {
-        // Check if NOSTR extension is available
-        if (!window.nostr) {
+        // @ts-ignore - Dynamic imports work in client-side Remix bundles
+        const { getWindowNostrLikeSigner } =
+          await import("~/lib/nostr-signer-manager.client");
+        const signer = await getWindowNostrLikeSigner();
+        if (!signer) {
           throw new Error(
-            "NOSTR extension not found. Please install Alby, Amber, or another NOSTR extension to upload to Blossom."
+            "Nostr signer not found. Please connect a signer (NIP-07 extension or NIP-46 remote signer) to upload to Blossom."
           );
         }
 

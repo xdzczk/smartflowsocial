@@ -29,6 +29,7 @@ import {
   sanitizeMarkdown,
   generateSummary,
 } from "~/lib/markdown-sanitizer.server";
+import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import {
   newLongformPostActionSchema,
   validateFormDataOrRespond,
@@ -276,7 +277,8 @@ async function handlePublish(
   effectiveHashtags: string,
   showHashTagsinPosts: boolean,
   sanitizedRelays: string[],
-  request: Request
+  request: Request,
+  sessionPubkey: string
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -364,6 +366,12 @@ async function handlePublish(
     content: string;
     tags: string[][];
   };
+
+  assertSignedEventMatchesSessionPubkey({
+    sessionPubkey,
+    eventPubkey: signedEventJson.pubkey,
+    context: { feature: "longform_edit", action: "publish", postId },
+  });
 
   // Update the post first
   // Note: Flag fields (isPublished) have been removed. State machine will handle state transition.
@@ -406,7 +414,8 @@ async function handleScheduleLongform(
   queueType: string,
   hashTagPresetId: string | null,
   effectiveHashtags: string,
-  showHashTagsinPosts: boolean
+  showHashTagsinPosts: boolean,
+  sessionPubkey: string
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -494,6 +503,12 @@ async function handleScheduleLongform(
     content: string;
     tags: string[][];
   };
+
+  assertSignedEventMatchesSessionPubkey({
+    sessionPubkey,
+    eventPubkey: signedEventJson.pubkey,
+    context: { feature: "longform_edit", action: "schedule", postId },
+  });
 
   // Extract published_at from NOSTR event tags for scheduling
   let scheduledForTimestamp: number | undefined = undefined;
@@ -554,6 +569,7 @@ export async function handleLongFormEditAction(
     return new Response("User not found", { status: 404 });
   }
   const { userRelays, showHashTagsinPosts } = user;
+  const sessionPubkey = user.npub;
   const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
 
   const contentType = request.headers.get("Content-Type") ?? "";
@@ -629,7 +645,8 @@ export async function handleLongFormEditAction(
       effectiveHashtags,
       showHashTagsinPosts,
       sanitizedRelays,
-      request
+      request,
+      sessionPubkey
     );
   }
 
@@ -641,7 +658,8 @@ export async function handleLongFormEditAction(
       queueType,
       hashTagPresetId,
       effectiveHashtags,
-      showHashTagsinPosts
+      showHashTagsinPosts,
+      sessionPubkey
     );
   }
 

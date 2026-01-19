@@ -90,6 +90,19 @@ async function signEventWithRetryLogic(
   let retries = 0;
 
   while (retries < maxRetries) {
+    // Prefer an explicitly selected signer (e.g. NIP-46) if configured.
+    try {
+      // @ts-ignore - Dynamic imports work in client-side Remix bundles
+      const signerManager = await import("~/lib/nostr-signer-manager.client");
+      const activeSigner = await signerManager.getActiveSigner();
+      if (activeSigner) {
+        const signResult = await activeSigner.signEvent(nostrEvent);
+        return normalizeSignResult(signResult, nostrEvent);
+      }
+    } catch {
+      // Ignore signer manager errors and fall back to window.nostr retries.
+    }
+
     // @ts-ignore - window.nostr is injected by browser extensions at runtime
     if (window.nostr) {
       // @ts-ignore - window.nostr is injected by browser extensions at runtime

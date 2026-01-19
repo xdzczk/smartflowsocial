@@ -212,6 +212,7 @@ describe("Longform Edit Action Handler", () => {
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      npub: "pk1",
       userRelays: ["wss://relay1.com", "wss://relay2.com"],
       showHashTagsinPosts: true,
     });
@@ -460,8 +461,8 @@ describe("Longform Edit Action Handler", () => {
     });
 
     it("should publish updated post", async () => {
-      const mockSignedEvent = { id: "event-123", kind: 30023 };
-      const mockNostrEvent = { id: "event-123", kind: 30023 };
+      const mockSignedEvent = { id: "event-123", kind: 30023, pubkey: "pk1" };
+      const mockNostrEvent = { id: "event-123", kind: 30023, pubkey: "pk1" };
 
       const formData = createMockFormData({
         _action: "publish",
@@ -595,8 +596,8 @@ describe("Longform Edit Action Handler", () => {
         },
       ]);
 
-      const mockSignedEvent = { id: "event-123", kind: 30023 };
-      const mockNostrEvent = { id: "event-123", kind: 30023 };
+      const mockSignedEvent = { id: "event-123", kind: 30023, pubkey: "pk1" };
+      const mockNostrEvent = { id: "event-123", kind: 30023, pubkey: "pk1" };
 
       const formData = createMockFormData({
         _action: "publish",

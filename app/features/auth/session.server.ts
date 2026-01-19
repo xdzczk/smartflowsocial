@@ -3,9 +3,15 @@ import invariant from "tiny-invariant";
 
 import { getUserById } from "~/features/user";
 import type { User } from "~/features/user";
+import { prisma } from "~/lib/prisma.server";
 invariant(process.env["SESSION_SECRET"], "SESSION_SECRET must be set");
 
-export const sessionStorage = createCookieSessionStorage({
+interface CookieSessionData {
+  sessionId?: string;
+  userId?: string;
+}
+
+export const sessionStorage = createCookieSessionStorage<CookieSessionData>({
   cookie: {
     name: "__session",
     httpOnly: true,
@@ -16,18 +22,75 @@ export const sessionStorage = createCookieSessionStorage({
   },
 });
 
-const USER_SESSION_KEY = "userId";
+const SESSION_ID_KEY: keyof CookieSessionData = "sessionId";
+const LEGACY_USER_SESSION_KEY: keyof CookieSessionData = "userId";
 
 export async function getSession(request: Request) {
   const cookie = request.headers.get("Cookie");
   return sessionStorage.getSession(cookie);
 }
 
+export async function getSessionId(
+  request: Request
+): Promise<string | undefined> {
+  const session = await getSession(request);
+  const sessionId = session.get(SESSION_ID_KEY);
+  return typeof sessionId === "string" && sessionId.length > 0
+    ? sessionId
+    : undefined;
+}
+
+export async function getSessionPubkey(
+  request: Request
+): Promise<string | undefined> {
+  const session = await getSession(request);
+  const sessionId = session.get(SESSION_ID_KEY);
+
+  if (typeof sessionId === "string" && sessionId.length > 0) {
+    const dbSession = await prisma.session.findUnique({
+      where: { id: sessionId },
+      select: { pubkey: true, revokedAt: true, expiresAt: true },
+    });
+
+    if (!dbSession) return undefined;
+    if (dbSession.revokedAt) return undefined;
+    if (dbSession.expiresAt.getTime() <= Date.now()) return undefined;
+    return dbSession.pubkey;
+  }
+
+  // Legacy compatibility: derive pubkey from the legacy userId session cookie
+  const legacyUserId = session.get(LEGACY_USER_SESSION_KEY);
+  if (typeof legacyUserId === "string" && legacyUserId.length > 0) {
+    const user = await getUserById(legacyUserId);
+    return user?.npub;
+  }
+
+  return undefined;
+}
+
 export async function getUserId(
   request: Request
 ): Promise<User["id"] | undefined> {
   const session = await getSession(request);
-  return session.get(USER_SESSION_KEY) as User["id"] | undefined;
+  const sessionId = session.get(SESSION_ID_KEY);
+
+  if (typeof sessionId === "string" && sessionId.length > 0) {
+    const dbSession = await prisma.session.findUnique({
+      where: { id: sessionId },
+      select: { userId: true, revokedAt: true, expiresAt: true },
+    });
+
+    if (!dbSession) return undefined;
+    if (dbSession.revokedAt) return undefined;
+    if (dbSession.expiresAt.getTime() <= Date.now()) return undefined;
+    return dbSession.userId;
+  }
+
+  // Legacy compatibility
+  const legacyUserId = session.get(LEGACY_USER_SESSION_KEY);
+  return typeof legacyUserId === "string" && legacyUserId.length > 0
+    ? legacyUserId
+    : undefined;
 }
 
 export async function getUser(request: Request) {
@@ -40,15 +103,58 @@ export async function getUser(request: Request) {
   throw await logout(request);
 }
 
+export async function requireSession(
+  request: Request,
+  redirectTo: string = new URL(request.url).pathname
+): Promise<{ userId: User["id"]; pubkey: string; sessionId: string }> {
+  const session = await getSession(request);
+  const sessionId = session.get(SESSION_ID_KEY);
+
+  if (typeof sessionId === "string" && sessionId.length > 0) {
+    const dbSession = await prisma.session.findUnique({
+      where: { id: sessionId },
+      select: {
+        id: true,
+        userId: true,
+        pubkey: true,
+        revokedAt: true,
+        expiresAt: true,
+      },
+    });
+
+    if (
+      !dbSession ||
+      dbSession.revokedAt ||
+      dbSession.expiresAt.getTime() <= Date.now()
+    ) {
+      const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
+      throw redirect(`/login?${searchParams.toString()}`);
+    }
+
+    return {
+      userId: dbSession.userId,
+      pubkey: dbSession.pubkey,
+      sessionId: dbSession.id,
+    };
+  }
+
+  // Legacy compatibility: allow old cookie sessions during rollout
+  const legacyUserId = session.get(LEGACY_USER_SESSION_KEY);
+  if (typeof legacyUserId === "string" && legacyUserId.length > 0) {
+    const user = await getUserById(legacyUserId);
+    if (!user) throw await logout(request);
+    return { userId: legacyUserId, pubkey: user.npub, sessionId: "legacy" };
+  }
+
+  const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
+  throw redirect(`/login?${searchParams.toString()}`);
+}
+
 export async function requireUserId(
   request: Request,
   redirectTo: string = new URL(request.url).pathname
 ) {
-  const userId = await getUserId(request);
-  if (!userId) {
-    const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-    throw redirect(`/login?${searchParams.toString()}`);
-  }
+  const { userId } = await requireSession(request, redirectTo);
   return userId;
 }
 
@@ -73,7 +179,29 @@ export async function createUserSession({
   redirectTo: string;
 }) {
   const session = await getSession(request);
-  session.set(USER_SESSION_KEY, userId);
+
+  const user = await getUserById(userId);
+  if (!user) {
+    throw await logout(request);
+  }
+
+  // DB-backed session bound to pubkey
+  const expiresAt = new Date(
+    Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000)
+  );
+  const dbSession = await prisma.session.create({
+    data: {
+      userId,
+      pubkey: user.npub,
+      expiresAt,
+    },
+    select: { id: true },
+  });
+
+  session.set(SESSION_ID_KEY, dbSession.id);
+  // Explicitly clear legacy key (defense-in-depth)
+  session.unset(LEGACY_USER_SESSION_KEY);
+
   return redirect(redirectTo, {
     headers: {
       "Set-Cookie": await sessionStorage.commitSession(session, {
@@ -87,6 +215,15 @@ export async function createUserSession({
 
 export async function logout(request: Request) {
   const session = await getSession(request);
+
+  const sessionId = session.get(SESSION_ID_KEY);
+  if (typeof sessionId === "string" && sessionId.length > 0) {
+    await prisma.session.updateMany({
+      where: { id: sessionId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
   return redirect("/", {
     headers: {
       "Set-Cookie": await sessionStorage.destroySession(session),

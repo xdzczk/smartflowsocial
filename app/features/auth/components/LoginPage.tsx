@@ -2,7 +2,7 @@ import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 import { Card, CardContent } from "~/components/ui/card";
 
-import NostrAuthButton from "./NostrAuthButton";
+import NostrLoginPanel from "./NostrLoginPanel";
 
 export default function LoginPage() {
   return (
@@ -40,7 +40,7 @@ export default function LoginPage() {
               </header>
 
               <div className="space-y-6">
-                <NostrAuthButton />
+                <NostrLoginPanel />
               </div>
             </CardContent>
 
