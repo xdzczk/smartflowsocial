@@ -19,6 +19,7 @@ import type {
   LongFormEventData,
 } from "~/features/nostr/types";
 import { RemoteSignerTimeoutError } from "~/lib/errors";
+import { emitRemoteSignerTimeoutEvent } from "~/lib/remote-signer-reconnect.client";
 
 // ============================================================================
 // Helper Functions
@@ -107,6 +108,64 @@ function normalizeSignResult(
   };
 }
 
+async function resetSignerCacheBestEffort(): Promise<void> {
+  try {
+    // @ts-ignore - Dynamic imports work in client-side Remix bundles
+    const signerManager = await import("~/lib/nostr-signer-manager.client");
+    if (typeof signerManager.resetCachedSigner === "function") {
+      signerManager.resetCachedSigner();
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function trySignWithConfiguredSigner(
+  nostrEvent: NostrEvent
+): Promise<SignedEvent | null> {
+  let prefersRemoteSigner = false;
+  try {
+    // @ts-ignore - Dynamic imports work in client-side Remix bundles
+    const signerManager = await import("~/lib/nostr-signer-manager.client");
+    const cfg =
+      typeof signerManager.getActiveSignerConfig === "function"
+        ? signerManager.getActiveSignerConfig()
+        : null;
+    prefersRemoteSigner = !!cfg && cfg.type === "nip46";
+
+    const activeSigner = prefersRemoteSigner
+      ? await withTimeout(
+          signerManager.getActiveSigner(),
+          ACTIVE_SIGNER_CONNECT_TIMEOUT_MS,
+          "Connecting to remote signer took too long. Open your signer app and try again."
+        )
+      : await signerManager.getActiveSigner();
+
+    if (!activeSigner) return null;
+
+    const signPromise = Promise.resolve(activeSigner.signEvent(nostrEvent));
+    const signResult =
+      activeSigner.type === "nip46"
+        ? await withTimeout(
+            signPromise,
+            ACTIVE_SIGNER_SIGN_TIMEOUT_MS,
+            "Remote signer did not respond. Open your signer app (e.g. Primal) and approve the request."
+          )
+        : await signPromise;
+
+    return normalizeSignResult(signResult, nostrEvent);
+  } catch (err) {
+    if (prefersRemoteSigner) {
+      if (err instanceof RemoteSignerTimeoutError) {
+        emitRemoteSignerTimeoutEvent({ message: err.message });
+        await resetSignerCacheBestEffort();
+      }
+      throw err;
+    }
+    return null;
+  }
+}
+
 async function signEventWithRetryLogic(
   nostrEvent: NostrEvent,
   maxRetries = 5
@@ -114,44 +173,8 @@ async function signEventWithRetryLogic(
   let retries = 0;
 
   while (retries < maxRetries) {
-    // Prefer an explicitly selected signer (e.g. NIP-46) if configured.
-    let prefersRemoteSigner = false;
-    try {
-      // @ts-ignore - Dynamic imports work in client-side Remix bundles
-      const signerManager = await import("~/lib/nostr-signer-manager.client");
-      const cfg =
-        typeof signerManager.getActiveSignerConfig === "function"
-          ? signerManager.getActiveSignerConfig()
-          : null;
-      prefersRemoteSigner = !!cfg && cfg.type === "nip46";
-
-      const activeSigner = prefersRemoteSigner
-        ? await withTimeout(
-            signerManager.getActiveSigner(),
-            ACTIVE_SIGNER_CONNECT_TIMEOUT_MS,
-            "Connecting to remote signer took too long. Open your signer app and try again."
-          )
-        : await signerManager.getActiveSigner();
-
-      if (activeSigner) {
-        const signPromise = Promise.resolve(activeSigner.signEvent(nostrEvent));
-        const signResult =
-          activeSigner.type === "nip46"
-            ? await withTimeout(
-                signPromise,
-                ACTIVE_SIGNER_SIGN_TIMEOUT_MS,
-                "Remote signer did not respond. Open your signer app (e.g. Primal) and approve the request."
-              )
-            : await signPromise;
-        return normalizeSignResult(signResult, nostrEvent);
-      }
-    } catch (err) {
-      // If a remote signer is configured, surface the error to the caller.
-      // Otherwise, ignore and fall back to window.nostr retries.
-      if (prefersRemoteSigner) {
-        throw err;
-      }
-    }
+    const configured = await trySignWithConfiguredSigner(nostrEvent);
+    if (configured) return configured;
 
     // @ts-ignore - window.nostr is injected by browser extensions at runtime
     if (typeof window !== "undefined" && window.nostr) {

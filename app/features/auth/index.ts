@@ -49,3 +49,4 @@ export {
 
 export { default as NostrAuthButton } from "./components/NostrAuthButton";
 export { default as LoginPage } from "./components/LoginPage";
+export { RemoteSignerReconnectController } from "./components/RemoteSignerReconnectController";

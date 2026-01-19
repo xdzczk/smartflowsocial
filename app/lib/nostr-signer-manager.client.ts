@@ -29,6 +29,14 @@ const STORAGE_KEY = "__smartflow_active_nostr_signer_v1";
 let cachedSigner: NostrSigner | null = null;
 let cachedConfigJson: string | null = null;
 
+/**
+ * Clear the in-memory signer cache without removing persisted config.
+ * Useful when a NIP-46 remote signer connection becomes stale.
+ */
+export function resetCachedSigner(): void {
+  cachedSigner = null;
+}
+
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, "0"))

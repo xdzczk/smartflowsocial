@@ -14,6 +14,7 @@ import {
 } from "@remix-run/react";
 import { Toaster } from "react-hot-toast";
 
+import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
 import { getUser } from "~/features/auth/session.server";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
@@ -110,6 +111,7 @@ export default function App() {
       <body className="h-full">
         <QueryProvider>
           <Toaster position="top-right" />
+          <RemoteSignerReconnectController />
           <Outlet />
           <ScrollRestoration />
           <Scripts />
