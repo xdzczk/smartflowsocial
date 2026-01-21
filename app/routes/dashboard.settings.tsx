@@ -32,6 +32,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return handleLoaderError(error, {
       timezone: "Etc/GMT",
       relays: [],
+      managedRelays: [],
+      relayAcks: {},
       giveawayBlacklist: [],
       scheduleIntervals: [],
       queueTypes: [],

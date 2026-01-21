@@ -12,8 +12,12 @@ import { Worker, type Job } from "bullmq";
 import type { SignedEvent } from "~/features/nostr/types";
 import { LongFormPostStateMachine } from "~/features/posts/state-machine/longform-post-state-machine.server";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
-import { getUserById } from "~/features/user";
-import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
+import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import {
+  getNostrPublisher,
+  type NostrPublishResult,
+} from "~/infra/publishers/nostr-publisher.server";
 import type { PublishLease } from "~/infra/publishing/publish-lease.server";
 import {
   acquireLongFormPostPublishLease,
@@ -245,23 +249,10 @@ interface WorkerSuccessResult {
   skipped?: boolean;
 }
 
-function sanitizeRelayStrings(relays: unknown): string[] {
-  if (!Array.isArray(relays)) return [];
-  return relays
-    .map((relay) => {
-      const relayStr = typeof relay === "string" ? relay : String(relay);
-      return relayStr.trim();
-    })
-    .filter((r) => r.length > 0);
-}
-
 async function getSanitizedUserRelays(userId: string): Promise<string[]> {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new Error(`User ${userId} not found`);
-  }
-  const userRelays = (user as unknown as { userRelays?: unknown }).userRelays;
-  return sanitizeRelayStrings(userRelays);
+  // Canonical publishing relays (managed + direct intent).
+  // Note: we keep this helper name for minimal churn in worker logic.
+  return await resolveExecutionRelays(userId);
 }
 
 function computeScheduledForUnix(
@@ -278,10 +269,13 @@ async function publishWithQueueSpan(input: {
   event: SignedEvent;
   relays: string[];
   correlationId?: string;
-}): Promise<{ publishLatencyMs: number }> {
+}): Promise<{
+  publishLatencyMs: number;
+  publishResult: NostrPublishResult;
+}> {
   const publisher = getNostrPublisher();
   const publishStartTime = nowMillis();
-  await withSentrySpan(
+  const publishResult = await withSentrySpan(
     {
       name: SENTRY_QUEUE_PUBLISH_NAME,
       op: SENTRY_QUEUE_PUBLISH_OP,
@@ -290,7 +284,7 @@ async function publishWithQueueSpan(input: {
     async () =>
       await publisher.publish(input.event, input.relays, input.correlationId)
   );
-  return { publishLatencyMs: nowMillis() - publishStartTime };
+  return { publishLatencyMs: nowMillis() - publishStartTime, publishResult };
 }
 
 function computeWillRetry(input: {
@@ -661,7 +655,7 @@ async function runScheduledPostJob(input: {
     validateSignedEventCryptographically(signedEvent);
   const sanitizedRelays = await getSanitizedUserRelays(userId);
 
-  const { publishLatencyMs } = await publishWithQueueSpan({
+  const { publishLatencyMs, publishResult } = await publishWithQueueSpan({
     queueName,
     attributes: {
       queue: queueName,
@@ -675,6 +669,28 @@ async function runScheduledPostJob(input: {
     relays: sanitizedRelays,
     correlationId,
   });
+
+  // Persist per-relay outcomes for observability (best-effort).
+  try {
+    await persistPublishRelayAcks({
+      publishAttemptId,
+      userId,
+      eventId: validatedSignedEvent.id,
+      results: publishResult.results,
+    });
+  } catch (ackError) {
+    logError(
+      ackError instanceof Error ? ackError : new Error(String(ackError)),
+      {
+        queue: queueName,
+        postId,
+        userId,
+        correlationId,
+        publishAttemptId,
+        message: "Scheduled posts worker: Failed to persist publish ACKs",
+      }
+    );
+  }
 
   try {
     await stateMachine.transition(
@@ -836,7 +852,7 @@ async function runScheduledLongFormPostJob(input: {
 
   const sanitizedRelays = await getSanitizedUserRelays(userId);
 
-  await publishWithQueueSpan({
+  const { publishResult } = await publishWithQueueSpan({
     queueName,
     attributes: {
       queue: queueName,
@@ -850,6 +866,28 @@ async function runScheduledLongFormPostJob(input: {
     relays: sanitizedRelays,
     correlationId,
   });
+
+  // Persist per-relay outcomes for observability (best-effort).
+  try {
+    await persistPublishRelayAcks({
+      publishAttemptId,
+      userId,
+      eventId: validatedSignedEvent.id,
+      results: publishResult.results,
+    });
+  } catch (ackError) {
+    logError(
+      ackError instanceof Error ? ackError : new Error(String(ackError)),
+      {
+        queue: queueName,
+        longFormPostId: postId,
+        userId,
+        correlationId,
+        publishAttemptId,
+        message: "Scheduled longform worker: Failed to persist publish ACKs",
+      }
+    );
+  }
 
   try {
     await stateMachine.transition(

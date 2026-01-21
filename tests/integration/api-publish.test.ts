@@ -16,10 +16,20 @@ vi.mock("~/features/nostr/server", () => ({
   publishSignedEventToRelays: vi.fn(),
 }));
 
+vi.mock("~/features/relays/relay-resolution.server", () => ({
+  resolveExecutionRelays: vi.fn(),
+}));
+
+vi.mock("~/features/relays/publish-relay-acks.server", () => ({
+  persistPublishRelayAcks: vi.fn(),
+}));
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireSession } from "~/features/auth";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
+import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { action } from "~/routes/api.publish";
 
 describe("API: Publish", () => {
@@ -30,9 +40,15 @@ describe("API: Publish", () => {
       pubkey: "test-pubkey",
       sessionId: "session-1",
     });
-    (publishSignedEventToRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
+    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue([
+      "wss://resolved.example.com",
+    ]);
+    (persistPublishRelayAcks as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
+    (publishSignedEventToRelays as ReturnType<typeof vi.fn>).mockResolvedValue({
+      results: [],
+    });
   });
 
   describe("Successful Requests", () => {
@@ -74,7 +90,13 @@ describe("API: Publish", () => {
       expect(requireSession).toHaveBeenCalledWith(request);
       expect(publishSignedEventToRelays).toHaveBeenCalledWith({
         signedEvent: mockEvent,
-        relays: mockRelays,
+        relays: ["wss://resolved.example.com"],
+      });
+      expect(persistPublishRelayAcks).toHaveBeenCalledWith({
+        publishAttemptId: "api:event-123",
+        userId: TEST_USER_ID,
+        eventId: "event-123",
+        results: [],
       });
       expect(data).toEqual({ success: true });
     });
@@ -108,7 +130,13 @@ describe("API: Publish", () => {
 
       expect(publishSignedEventToRelays).toHaveBeenCalledWith({
         signedEvent: mockEvent,
-        relays: [],
+        relays: ["wss://resolved.example.com"],
+      });
+      expect(persistPublishRelayAcks).toHaveBeenCalledWith({
+        publishAttemptId: "api:event-123",
+        userId: TEST_USER_ID,
+        eventId: "event-123",
+        results: [],
       });
       expect(data).toEqual({ success: true });
     });

@@ -47,7 +47,7 @@ export const updateRelaysSchema = z.object({
   relays: z
     .string()
     .transform((val) => val.split("\n").filter((relay) => relay.trim()))
-    .pipe(z.array(relayUrlSchema).min(0)),
+    .pipe(z.array(relayUrlSchema).min(1, "At least one relay is required")),
 });
 
 /**

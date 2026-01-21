@@ -9,6 +9,11 @@ import type {
   QueueType,
   ScheduleConfig,
 } from "~/features/posts/types";
+import type { ManagedRelay } from "~/features/relays/relay-resolution.server";
+import {
+  getEffectiveWriteRelays,
+  getRelayIntent,
+} from "~/features/relays/relay-resolution.server";
 import {
   getConfirmedChildrenForParent,
   getGiveawayBlacklist,
@@ -25,10 +30,10 @@ import {
   getUserMirrorUploadUrls,
   getUserMutedList,
   getUserNWC,
-  getUserRelays,
   getUserTimezone,
   getUserUploadProvider,
 } from "~/features/user";
+import { prisma } from "~/lib/prisma.server";
 import {
   getAllPlans,
   getUserPaymentHistory,
@@ -58,6 +63,11 @@ export interface MutedList {
 export interface SettingsLoaderData {
   timezone: string | null;
   relays: string[];
+  managedRelays: ManagedRelay[];
+  relayAcks: Record<
+    string,
+    { status: string; createdAt: string; receivedAt: string | null }
+  >;
   showHashTagsInPosts: boolean;
   giveawayBlacklist: string[];
   scheduleIntervals: string[];
@@ -136,7 +146,8 @@ export async function loadSettingsData(
   // Load all settings data in parallel
   const [
     timezone,
-    relays,
+    relayIntent,
+    effectiveWriteRelays,
     giveawayBlacklist,
     showHashTagsInPosts,
     scheduleIntervals,
@@ -151,7 +162,8 @@ export async function loadSettingsData(
     hidePostsFromLowTrustUsers,
   ] = await Promise.all([
     getUserTimezone(userId),
-    getUserRelays(userId),
+    getRelayIntent(userId),
+    getEffectiveWriteRelays(userId),
     getGiveawayBlacklist(userId),
     getShowHashTagsInPosts(userId),
     getScheduleInterval(userId),
@@ -165,6 +177,44 @@ export async function loadSettingsData(
     getUserFilterMuted(userId),
     getUserHidePostsFromLowTrustUsers(userId),
   ]);
+
+  const relays = relayIntent.writeRelays;
+  const managedRelays = effectiveWriteRelays.managed;
+
+  // Latest ACK per relay (best-effort). Include managed relay URL even if disabled.
+  const ackRelayUrls = Array.from(
+    new Set([...relays, ...managedRelays.map((m) => m.relayUrl)])
+  );
+  let ackRows: Array<{
+    relayUrl: string;
+    status: string;
+    createdAt: Date;
+    receivedAt: Date | null;
+  }> = [];
+  if (ackRelayUrls.length > 0) {
+    try {
+      ackRows = await prisma.publishRelayAck.findMany({
+        where: { userId, relayUrl: { in: ackRelayUrls } },
+        orderBy: { createdAt: "desc" },
+        distinct: ["relayUrl"],
+      });
+    } catch {
+      // Best-effort: if the ACK table isn't available yet (e.g. migrations not applied),
+      // do not break the settings page.
+      ackRows = [];
+    }
+  }
+
+  const relayAcks: SettingsLoaderData["relayAcks"] = Object.fromEntries(
+    ackRows.map((row) => [
+      row.relayUrl,
+      {
+        status: row.status,
+        createdAt: row.createdAt.toISOString(),
+        receivedAt: row.receivedAt ? row.receivedAt.toISOString() : null,
+      },
+    ])
+  );
 
   // Accounts data
   let accounts: SettingsLoaderData["accounts"];
@@ -214,6 +264,8 @@ export async function loadSettingsData(
   return {
     timezone,
     relays,
+    managedRelays,
+    relayAcks,
     showHashTagsInPosts,
     giveawayBlacklist,
     scheduleIntervals,

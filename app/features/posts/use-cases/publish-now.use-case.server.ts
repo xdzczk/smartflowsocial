@@ -4,6 +4,7 @@
  * Publishes a post immediately to Nostr relays.
  */
 
+import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import {
   acquirePostPublishLease,
@@ -100,13 +101,36 @@ export class PublishNowUseCase {
     try {
       // Publish to Nostr (flags will be set by state machine transition)
       const publisher = getNostrPublisher();
-      await publisher.publish(
+      const publishResult = await publisher.publish(
         validatedSignedEvent,
         input.relays,
         correlationId
       );
 
       const publishLatency = nowMillis() - publishStartTime;
+
+      // Persist per-relay outcomes for observability (best-effort).
+      try {
+        await persistPublishRelayAcks({
+          publishAttemptId,
+          userId: input.userId,
+          eventId: validatedSignedEvent.id,
+          results: publishResult.results,
+        });
+      } catch (ackError) {
+        logErrorUtil(
+          ackError instanceof Error ? ackError : new Error(String(ackError)),
+          {
+            ...buildObsContext({
+              postId: input.postId,
+              userId: input.userId,
+              correlationId,
+              publishAttemptId,
+            }),
+            message: "PublishNowUseCase: Failed to persist publish ACKs",
+          }
+        );
+      }
 
       // Transition to PUBLISHED and atomically persist publish metadata.
       await this.stateMachine.transition(

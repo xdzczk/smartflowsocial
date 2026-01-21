@@ -1,4 +1,4 @@
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
 import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
@@ -179,11 +179,101 @@ function parseMutedList(mutedListRaw: unknown): {
   return { npubs: [], lastSynced: new Date().toISOString() };
 }
 
+interface ManagedRelay {
+  id: string;
+  role: string;
+  enabled: boolean;
+  relayUrl: string;
+}
+
+interface RelayAck {
+  status: string;
+  createdAt: string;
+  receivedAt: string | null;
+}
+
+function asBoolean(value: unknown, fallback = false): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function asStringOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function asStringOrUndefined(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === "string");
+}
+
+function toIsoStringOrNow(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") return value;
+  return new Date().toISOString();
+}
+
+function toIsoStringOrNull(value: unknown): string | null {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") return value;
+  return null;
+}
+
+function parseManagedRelays(value: unknown): ManagedRelay[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((v) => {
+      if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+      const obj = v as Record<string, unknown>;
+      const id = typeof obj["id"] === "string" ? obj["id"] : null;
+      const role = typeof obj["role"] === "string" ? obj["role"] : null;
+      const enabled =
+        typeof obj["enabled"] === "boolean" ? obj["enabled"] : null;
+      const relayUrl =
+        typeof obj["relayUrl"] === "string" ? obj["relayUrl"] : null;
+      if (!id || !role || enabled === null || !relayUrl) return null;
+      return { id, role, enabled, relayUrl } satisfies ManagedRelay;
+    })
+    .filter((v): v is ManagedRelay => v !== null);
+}
+
+function parseRelayAcksMap(value: unknown): Record<string, RelayAck> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, RelayAck>;
+}
+
+function getSettingsDefaultTab(input: {
+  tabParam: string | null;
+  isChild: boolean;
+  hasAccountsAccess: boolean;
+}): string {
+  const requested = input.tabParam ?? "general";
+  if (input.isChild && requested === "subscription") return "general";
+  if (!input.hasAccountsAccess && requested === "accounts") return "general";
+  return requested;
+}
+
+function getTabsGridColsClass(input: {
+  isChild: boolean;
+  hasAccountsAccess: boolean;
+}): string {
+  // Matches previous behavior:
+  // - 6 cols only when user can access accounts and isn't a child.
+  return input.isChild || !input.hasAccountsAccess
+    ? "grid-cols-5"
+    : "grid-cols-6";
+}
+
 export default function SettingsPage() {
   const loaderDataRaw = useLoaderData<unknown>();
+  const [searchParams] = useSearchParams();
   const data = loaderDataRaw as {
     timezone?: unknown;
     relays?: unknown;
+    managedRelays?: unknown;
+    relayAcks?: unknown;
     giveawayBlacklist?: unknown;
     scheduleIntervals?: unknown;
     queueTypes?: unknown;
@@ -208,6 +298,8 @@ export default function SettingsPage() {
   const {
     timezone,
     relays,
+    managedRelays,
+    relayAcks,
     giveawayBlacklist,
     scheduleIntervals,
     queueTypes: queueTypesRaw,
@@ -237,17 +329,32 @@ export default function SettingsPage() {
   const paymentHistory = validatePaymentHistory(paymentHistoryRaw);
   const mutedList = parseMutedList(mutedListRaw);
 
-  // Get tab from URL search params
-  const searchParams = new URLSearchParams(
-    typeof window !== "undefined" ? window.location.search : ""
-  );
-  let defaultTab = searchParams.get("tab") ?? "general";
-  if (
-    (isChild && defaultTab === "subscription") ||
-    (!hasAccountsAccess && defaultTab === "accounts")
-  ) {
-    defaultTab = "general";
-  }
+  const isChildBool = asBoolean(isChild);
+  const hasAccountsAccessBool = asBoolean(hasAccountsAccess);
+  const defaultTab = getSettingsDefaultTab({
+    tabParam: searchParams.get("tab"),
+    isChild: isChildBool,
+    hasAccountsAccess: hasAccountsAccessBool,
+  });
+  const tabsGridColsClass = getTabsGridColsClass({
+    isChild: isChildBool,
+    hasAccountsAccess: hasAccountsAccessBool,
+  });
+
+  const timezoneValue = asStringOrNull(timezone);
+  const relaysList = asStringArray(relays);
+  const managedRelaysList = parseManagedRelays(managedRelays);
+  const relayAcksMap = parseRelayAcksMap(relayAcks);
+  const giveawayBlacklistList = asStringArray(giveawayBlacklist);
+  const scheduleIntervalsList = asStringArray(scheduleIntervals);
+  const uploadProviderValue = asStringOrUndefined(uploadProvider) ?? "";
+  const enableMirrorBlossomValue = asBoolean(enableMirrorBlossom);
+  const mirrorUploadUrlsList = asStringArray(mirrorUploadUrls);
+  const nwcEnabledValue = asBoolean(nwcEnabled);
+  const maskedNwcStringValue = asStringOrUndefined(maskedNwcString);
+  const nwcLastUsedValue = toIsoStringOrNull(nwcLastUsed);
+  const filterMutedValue = asBoolean(filterMuted);
+  const hidePostsFromLowTrustUsersValue = asBoolean(hidePostsFromLowTrustUsers);
 
   return (
     <div className="container mx-auto p-6">
@@ -259,32 +366,24 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList
-          className={`grid w-full ${!hasAccountsAccess && !isChild ? "grid-cols-5" : isChild ? "grid-cols-5" : "grid-cols-6"}`}
-        >
+        <TabsList className={`grid w-full ${tabsGridColsClass}`}>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
-          {hasAccountsAccess ? (
+          {hasAccountsAccessBool ? (
             <TabsTrigger value="accounts">Accounts</TabsTrigger>
           ) : null}
           <TabsTrigger value="network">Network</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
-          {!isChild ? (
+          {!isChildBool ? (
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
           ) : null}
         </TabsList>
 
         <TabsContent value="general" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <TimezoneSettings
-              timezone={(timezone as string | null | undefined) ?? null}
-            />
+            <TimezoneSettings timezone={timezoneValue} />
             <ScheduleIntervalsSettings
-              scheduleIntervals={
-                Array.isArray(scheduleIntervals)
-                  ? (scheduleIntervals as string[])
-                  : []
-              }
+              scheduleIntervals={scheduleIntervalsList}
             />
           </div>
         </TabsContent>
@@ -297,18 +396,8 @@ export default function SettingsPage() {
                 name: p.name,
                 tags: p.tags,
                 description: p.description ?? null,
-                createdAt:
-                  p.createdAt instanceof Date
-                    ? p.createdAt.toISOString()
-                    : typeof p.createdAt === "string"
-                      ? p.createdAt
-                      : new Date().toISOString(),
-                updatedAt:
-                  p.updatedAt instanceof Date
-                    ? p.updatedAt.toISOString()
-                    : typeof p.updatedAt === "string"
-                      ? p.updatedAt
-                      : new Date().toISOString(),
+                createdAt: toIsoStringOrNow(p.createdAt),
+                updatedAt: toIsoStringOrNow(p.updatedAt),
               }))}
             />
             <QueueTypesSettings
@@ -326,52 +415,32 @@ export default function SettingsPage() {
         <TabsContent value="network" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
             <RelaysSettings
-              relays={Array.isArray(relays) ? (relays as string[]) : []}
+              relays={relaysList}
+              managedRelays={managedRelaysList}
+              relayAcks={relayAcksMap}
             />
             <GiveawayBlacklistSettings
-              giveawayBlacklist={
-                Array.isArray(giveawayBlacklist)
-                  ? (giveawayBlacklist as string[])
-                  : []
-              }
+              giveawayBlacklist={giveawayBlacklistList}
             />
             <MutedListSettings
               mutedList={mutedList}
-              filterMuted={
-                typeof filterMuted === "boolean" ? filterMuted : false
-              }
-              hidePostsFromLowTrustUsers={
-                typeof hidePostsFromLowTrustUsers === "boolean"
-                  ? hidePostsFromLowTrustUsers
-                  : false
-              }
+              filterMuted={filterMutedValue}
+              hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
             />
           </div>
         </TabsContent>
 
         <TabsContent value="storage" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <UploadProviderSettings
-              uploadProvider={
-                typeof uploadProvider === "string" ? uploadProvider : ""
-              }
-            />
+            <UploadProviderSettings uploadProvider={uploadProviderValue} />
             <BlossomMediaMirrorsSettings
-              enableMirrorBlossom={
-                typeof enableMirrorBlossom === "boolean"
-                  ? enableMirrorBlossom
-                  : false
-              }
-              mirrorUploadUrls={
-                Array.isArray(mirrorUploadUrls)
-                  ? (mirrorUploadUrls as string[])
-                  : []
-              }
+              enableMirrorBlossom={enableMirrorBlossomValue}
+              mirrorUploadUrls={mirrorUploadUrlsList}
             />
           </div>
         </TabsContent>
 
-        {!isChild ? (
+        {!isChildBool ? (
           <TabsContent value="subscription" className="mt-6 space-y-6">
             <div className="grid gap-6 md:grid-cols-1">
               <SubscriptionSettings
@@ -380,25 +449,15 @@ export default function SettingsPage() {
                 paymentHistory={paymentHistory}
               />
               <NWCSettings
-                nwcEnabled={
-                  typeof nwcEnabled === "boolean" ? nwcEnabled : false
-                }
-                maskedNwcString={
-                  (maskedNwcString as string | null | undefined) ?? undefined
-                }
-                nwcLastUsed={
-                  nwcLastUsed instanceof Date
-                    ? nwcLastUsed.toISOString()
-                    : typeof nwcLastUsed === "string"
-                      ? nwcLastUsed
-                      : null
-                }
+                nwcEnabled={nwcEnabledValue}
+                maskedNwcString={maskedNwcStringValue}
+                nwcLastUsed={nwcLastUsedValue}
               />
             </div>
           </TabsContent>
         ) : null}
 
-        {hasAccountsAccess ? (
+        {hasAccountsAccessBool ? (
           <TabsContent value="accounts" className="mt-6 space-y-6">
             <div className="grid gap-6 md:grid-cols-1">
               {accounts ? (

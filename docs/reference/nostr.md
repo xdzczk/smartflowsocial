@@ -351,27 +351,52 @@ When posts are rescheduled:
 
 ### User Relay Configuration
 
-Users can configure their preferred relays in settings.
+Users can configure their preferred **write relays** (relay intent) in settings.
+
+Relay intent is persisted in `User.userRelays` and is **not** mutated by execution-time health
+logic.
 
 **Default Relays:**
 
+- `wss://relay.bullishbounty.com`
+- `wss://relay.snort.social`
 - `wss://relay.primal.net`
 - `wss://relay.damus.io`
 - `wss://relay.nostr.band`
-- `wss://relay.snort.social`
 
 **Code Location:**
 
 - `app/components/settings/RelaysSettings.tsx` - Relay settings UI
-- `app/lib/relays.ts` - Relay utilities
+- `app/lib/relays.ts` - Relay defaults + constants
+- `app/features/relays/relay-resolution.server.ts` - Canonical relay resolution (direct intent +
+  managed relays)
+
+### Managed Relays (Blastr)
+
+SmartFlowSocial may include a **managed fan-out relay** (Blastr) during publishing.
+
+- **Not persisted** as a string in `User.userRelays`
+- **Feature-gated** via `Plan.enableRelayBlast` (active subscription required)
+- **Resolved server-side** by the canonical relay resolver
+
+### Canonical Relay Resolution (required)
+
+All publishing entrypoints must resolve relays server-side via:
+
+- `getRelayIntent(userId)` (persisted intent; defaults if empty)
+- `getEffectiveWriteRelays(userId)` (direct intent + managed relays)
+- `resolveExecutionRelays(userId)` (flattened list for publishing)
 
 ### Relay Selection
 
 When publishing:
 
-1. User's configured relays are used
-2. If no relays configured, defaults are used
-3. Events are published to all specified relays
+1. Server resolves **effective relays** (managed + direct intent)
+2. Publisher performs **ephemeral execution planning** (health-based ordering/circuit breakers)
+3. Events are published to the execution relay list
+
+**Important:** `/api/publish` derives relays server-side; client-provided relay lists are ignored by
+default.
 
 ### Relay Health
 
@@ -380,6 +405,17 @@ Monitor relay health:
 - Check connection status
 - Track publish success rates
 - Fallback to alternative relays if needed
+
+**Code Location:**
+
+- `app/infra/relays/relay-health.server.ts` - Health scoring + circuit breaker
+- `app/infra/publishers/nostr-publisher.server.ts` - Applies health-aware execution planning
+
+### Relay ACK Persistence
+
+Per-relay publish outcomes are persisted for observability in:
+
+- `PublishRelayAck` (keyed by `publishAttemptId` + `relayUrl`)
 
 ---
 

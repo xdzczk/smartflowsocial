@@ -52,6 +52,14 @@ vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
+vi.mock("~/features/relays/relay-resolution.server", () => ({
+  resolveExecutionRelays: vi.fn(),
+}));
+
+vi.mock("~/features/relays/publish-relay-acks.server", () => ({
+  persistPublishRelayAcks: vi.fn(),
+}));
+
 vi.mock("~/infra/queue", () => ({
   getQueueInstance: vi.fn(() => ({
     add: vi.fn(),
@@ -164,6 +172,8 @@ vi.mock("~/lib/prisma.server", () => ({
 
 import { TEST_USER_ID, createValidSignedEvent } from "../utils/test-helpers";
 
+import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { getUserById } from "~/features/user";
 import { enqueuePostJob } from "~/infra/queue";
 import { prisma } from "~/lib/prisma.server";
@@ -187,6 +197,13 @@ describe("Queue Workers", () => {
     longFormPostStateMap.clear();
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
+
+    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
+      systemDefaultRelays
+    );
+    (persistPublishRelayAcks as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined
+    );
 
     // Publish-lease mocks (acquire/release use updateMany)
     (prisma.post.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -309,15 +326,12 @@ describe("Queue Workers", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      const mockUser = {
-        id: TEST_USER_ID,
-        userRelays: ["wss://relay1.com", "wss://relay2.com"],
-      };
-
       // Initialize post state
       postStateMap.set("post-123", "SCHEDULED");
 
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (
+        resolveExecutionRelays as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(["wss://relay1.com", "wss://relay2.com"]);
       // State transitions now use PostStateMachine, not updatePostStatus
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -330,7 +344,7 @@ describe("Queue Workers", () => {
       const result = await scheduledPostsWorker.process(mockJob);
 
       // State transitions now use PostStateMachine, not updatePostStatus
-      expect(getUserById).toHaveBeenCalledWith(TEST_USER_ID);
+      expect(resolveExecutionRelays).toHaveBeenCalledWith(TEST_USER_ID);
       // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
       expect(global.fetch).toHaveBeenCalled();
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
@@ -371,12 +385,11 @@ describe("Queue Workers", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      const mockUser = {
-        id: TEST_USER_ID,
-        userRelays: ["  wss://relay1.com  ", "  wss://relay2.com  "],
-      };
-
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      // Sanitization happens inside relay resolution; this test verifies that the
+      // worker uses the resolved relays for publishing.
+      (
+        resolveExecutionRelays as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(["wss://relay1.com", "wss://relay2.com"]);
       // State transitions now use PostStateMachine, not updatePostStatus
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -424,7 +437,9 @@ describe("Queue Workers", () => {
       // Initialize post state
       postStateMap.set("post-123", "SCHEDULED");
 
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        resolveExecutionRelays as ReturnType<typeof vi.fn>
+      ).mockRejectedValueOnce(new Error(`User ${TEST_USER_ID} not found`));
 
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
@@ -445,12 +460,10 @@ describe("Queue Workers", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      const mockUser = {
-        id: TEST_USER_ID,
-        userRelays: [],
-      };
-
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      // If the resolver returns an empty list, the publisher falls back to its own defaults.
+      (
+        resolveExecutionRelays as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce([]);
       // State transitions now use PostStateMachine, not updatePostStatus
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -567,13 +580,9 @@ describe("Queue Workers", () => {
 
       // Initialize longform post state
       longFormPostStateMap.set("longform-123", "SCHEDULED");
-
-      const mockUser = {
-        id: TEST_USER_ID,
-        userRelays: ["wss://relay1.com"],
-      };
-
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (
+        resolveExecutionRelays as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(["wss://relay1.com"]);
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,
@@ -599,7 +608,9 @@ describe("Queue Workers", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        resolveExecutionRelays as ReturnType<typeof vi.fn>
+      ).mockRejectedValueOnce(new Error(`User ${TEST_USER_ID} not found`));
 
       if (!scheduledLongFormPostsWorker?.process) {
         throw new Error("scheduledLongFormPostsWorker.process is not defined");

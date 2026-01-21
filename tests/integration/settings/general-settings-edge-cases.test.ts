@@ -123,8 +123,9 @@ describe("General Settings Action Handler - Edge Cases", () => {
           ? (jsonResultRaw as { success?: boolean; error?: string })
           : {};
 
-      expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, []);
-      expect(jsonResult).toEqual({ success: true });
+      expect(updateUserRelays).not.toHaveBeenCalled();
+      expect(result instanceof Response ? result.status : 200).toBe(400);
+      expect(String(jsonResult.error)).toBeTruthy();
     });
   });
 

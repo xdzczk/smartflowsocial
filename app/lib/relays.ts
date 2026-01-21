@@ -29,4 +29,19 @@ export const relaysArray: string[] = [
   "wss://nostr.semisol.dev",
 ];
 
+/**
+ * Canonical default write relays for a user (relay intent defaults).
+ *
+ * IMPORTANT:
+ * - This is intentionally kept in sync with the Prisma default for `User.userRelays`.
+ * - This is NOT the same as `relaysArray` (which is a broader system list).
+ */
+export const DEFAULT_USER_WRITE_RELAYS: string[] = [
+  "wss://relay.bullishbounty.com",
+  "wss://relay.snort.social",
+  "wss://relay.primal.net",
+  "wss://relay.damus.io",
+  "wss://relay.nostr.band",
+];
+
 export const blastrRelay = "wss://blastr.smartflowsocial.com";

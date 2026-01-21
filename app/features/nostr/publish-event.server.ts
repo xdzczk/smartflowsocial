@@ -1,4 +1,7 @@
-import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
+import {
+  getNostrPublisher,
+  type NostrPublishResult,
+} from "~/infra/publishers/nostr-publisher.server";
 import { withSentrySpan } from "~/lib/sentry.server";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 
@@ -15,11 +18,11 @@ export async function publishSignedEventToRelays(input: {
   signedEvent: SignedEvent;
   relays: string[];
   correlationId?: string;
-}): Promise<void> {
+}): Promise<NostrPublishResult> {
   const validated = validateSignedEventCryptographically(input.signedEvent);
   const publisher = getNostrPublisher();
 
-  await withSentrySpan(
+  return await withSentrySpan(
     {
       name: "nostr.publish",
       op: "nostr.publish",

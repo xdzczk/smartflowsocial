@@ -22,6 +22,16 @@ import {
 
 interface RelaysSettingsProps {
   relays: string[];
+  managedRelays: Array<{
+    id: string;
+    role: string;
+    enabled: boolean;
+    relayUrl: string;
+  }>;
+  relayAcks: Record<
+    string,
+    { status: string; createdAt: string; receivedAt: string | null }
+  >;
 }
 
 interface FetcherData {
@@ -29,7 +39,22 @@ interface FetcherData {
   error?: string;
 }
 
-export function RelaysSettings({ relays }: RelaysSettingsProps) {
+function formatAck(
+  ack:
+    | { status: string; createdAt: string; receivedAt: string | null }
+    | undefined
+): string {
+  if (!ack) return "—";
+  const status = ack.status.toLowerCase();
+  const at = ack.createdAt ? new Date(ack.createdAt).toLocaleString() : "";
+  return at ? `${status} (${at})` : status;
+}
+
+export function RelaysSettings({
+  relays,
+  managedRelays,
+  relayAcks,
+}: RelaysSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
   const form = useZodForm(updateRelaysClientSchema, {
     defaultValues: {
@@ -52,6 +77,13 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
   const onSubmit = form.handleSubmit((data) => {
     // Filter out empty strings and validate
     const filteredRelays = data.relays.filter((relay: string) => relay.trim());
+    if (filteredRelays.length === 0) {
+      form.setError("relays", {
+        type: "manual",
+        message: "At least one relay is required",
+      });
+      return;
+    }
 
     // Validate all non-empty relays
     const invalidRelays = filteredRelays.filter((relay: string) => {
@@ -85,10 +117,45 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
       <CardHeader>
         <CardTitle>Nostr Relays</CardTitle>
         <CardDescription>
-          Manage your Nostr relay connections for publishing posts
+          Manage your relay intent for publishing posts. Managed relays (like
+          SmartFlowSocial fan-out) are shown separately.
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {managedRelays.length > 0 ? (
+          <div className="mb-6 space-y-3">
+            <div className="text-sm font-medium">Managed relays</div>
+            {managedRelays.map((mr) => {
+              const ack = relayAcks[mr.relayUrl];
+              return (
+                <div
+                  key={mr.id}
+                  className="flex items-start justify-between gap-3 rounded-md border p-3"
+                >
+                  <div className="min-w-0">
+                    <div className="font-mono text-sm break-all">
+                      {mr.relayUrl}
+                    </div>
+                    <div className="text-muted-foreground mt-1 text-xs">
+                      SmartFlowSocial propagation relay ({mr.role})
+                    </div>
+                    <div className="text-muted-foreground mt-1 text-xs">
+                      Last ACK: {formatAck(ack)}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-sm">
+                    {mr.enabled ? (
+                      <span className="text-green-600">Enabled</span>
+                    ) : (
+                      <span className="text-muted-foreground">Disabled</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -117,6 +184,15 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
                         : ""
                     }
                   />
+                  {(() => {
+                    const relayValue = watchedRelays[index] ?? "";
+                    const ack = relayAcks[relayValue];
+                    return relayValue ? (
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        Last ACK: {formatAck(ack)}
+                      </p>
+                    ) : null;
+                  })()}
                   {form.formState.errors.relays?.[index] ? (
                     <p className="text-destructive mt-1 text-sm">
                       {form.formState.errors.relays[index].message}
@@ -128,7 +204,7 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
                   variant="destructive"
                   size="icon"
                   onClick={() => remove(index)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || fields.length <= 1}
                 >
                   <X className="h-4 w-4" />
                 </Button>

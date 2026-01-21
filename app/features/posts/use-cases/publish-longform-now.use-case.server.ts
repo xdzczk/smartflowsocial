@@ -4,6 +4,7 @@
  * Publishes a long form post immediately to Nostr relays.
  */
 
+import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import {
   acquireLongFormPostPublishLease,
@@ -84,11 +85,33 @@ export class PublishLongFormNowUseCase {
     const publisher = getNostrPublisher();
     const publishStartTime = nowMillis();
     try {
-      await publisher.publish(
+      const publishResult = await publisher.publish(
         validatedSignedEvent,
         input.relays,
         correlationId
       );
+
+      // Persist per-relay outcomes for observability (best-effort).
+      try {
+        await persistPublishRelayAcks({
+          publishAttemptId,
+          userId: input.userId,
+          eventId: validatedSignedEvent.id,
+          results: publishResult.results,
+        });
+      } catch (ackError) {
+        logError(
+          ackError instanceof Error ? ackError : new Error(String(ackError)),
+          {
+            postId: input.postId,
+            userId: input.userId,
+            correlationId,
+            publishAttemptId,
+            message:
+              "PublishLongFormNowUseCase: Failed to persist publish ACKs",
+          }
+        );
+      }
 
       // Transition to PUBLISHED and atomically persist publish metadata.
       await this.stateMachine.transition(

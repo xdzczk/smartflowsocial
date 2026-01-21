@@ -1,7 +1,6 @@
 import type { User } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
-import { blastrRelay } from "~/lib/relays";
 
 export type UserWithHashTagPresets = User & {
   hashTagPresets: Array<{
@@ -34,7 +33,10 @@ export function updateUserProfile({
 
 /**
  * Gets a user by ID with hashtag presets included
- * Also includes blastrRelay if user has Premium/Founder subscription
+ *
+ * NOTE:
+ * This returns persisted user data only. Managed relays (e.g. Blastr) are
+ * resolved separately by the canonical relay resolver.
  */
 export async function getUserById(
   id: string
@@ -48,44 +50,6 @@ export async function getUserById(
 
   if (!user) {
     return null;
-  }
-
-  // Check if user has Premium or Founder subscription
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId: id },
-    include: {
-      Plan: true,
-    },
-  });
-
-  // Include blastrRelay if user has Premium or Founder plan with ACTIVE status
-  if (
-    subscription &&
-    typeof subscription === "object" &&
-    "status" in subscription &&
-    subscription.status === "ACTIVE" &&
-    "Plan" in subscription &&
-    subscription.Plan &&
-    typeof subscription.Plan === "object" &&
-    "name" in subscription.Plan &&
-    subscription.Plan.name &&
-    typeof subscription.Plan.name === "string" &&
-    (subscription.Plan.name.toLowerCase() === "premium" ||
-      subscription.Plan.name.toLowerCase() === "founder")
-  ) {
-    // Add blastrRelay if not already present
-    const userRelays =
-      typeof user === "object" &&
-      "userRelays" in user &&
-      Array.isArray(user.userRelays)
-        ? user.userRelays
-        : [];
-    if (!userRelays.includes(blastrRelay)) {
-      return {
-        ...user,
-        userRelays: [...userRelays, blastrRelay],
-      };
-    }
   }
 
   return user;

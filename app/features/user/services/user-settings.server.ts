@@ -2,7 +2,6 @@ import type { User, UploadProvider } from "@prisma/client";
 
 import type { MutedListData } from "~/features/engagement/types";
 import { prisma } from "~/lib/prisma.server";
-import { blastrRelay } from "~/lib/relays";
 
 /**
  * Updates user's timezone
@@ -38,7 +37,7 @@ export async function getUserTimezone(userId: string): Promise<string | null> {
 
 /**
  * Updates user's Nostr relays
- * Note: Premium/Founder users automatically get blastrRelay added via getUserRelays
+ * Note: This is persisted relay intent only; managed relays are resolved separately.
  */
 export function updateUserRelays(
   userId: string,
@@ -55,7 +54,10 @@ export function updateUserRelays(
 }
 
 /**
- * Gets user's relays, including blastrRelay for Premium/Founder users
+ * Gets user's persisted relay intent (write relays only).
+ *
+ * Managed relays (e.g. Blastr) are NOT injected here; callers that need publish
+ * relays must use the canonical resolver in `app/features/relays/relay-resolution.server.ts`.
  */
 export async function getUserRelays(userId: string): Promise<string[]> {
   const user = await prisma.user.findUnique({
@@ -67,30 +69,7 @@ export async function getUserRelays(userId: string): Promise<string[]> {
     },
   });
 
-  const userRelays = user?.userRelays ?? [];
-
-  // Check if user has Premium or Founder subscription
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId },
-    include: {
-      Plan: true,
-    },
-  });
-
-  // Include blastrRelay if user has Premium or Founder plan with ACTIVE status
-  if (
-    subscription?.status === "ACTIVE" &&
-    subscription.Plan?.name &&
-    (subscription.Plan.name.toLowerCase() === "premium" ||
-      subscription.Plan.name.toLowerCase() === "founder")
-  ) {
-    // Add blastrRelay if not already present
-    if (!userRelays.includes(blastrRelay)) {
-      return [...userRelays, blastrRelay];
-    }
-  }
-
-  return userRelays;
+  return user?.userRelays ?? [];
 }
 
 /**

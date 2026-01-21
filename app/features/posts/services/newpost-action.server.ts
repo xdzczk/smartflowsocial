@@ -9,6 +9,7 @@ import {
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { createUploadHandler } from "~/features/upload/s3.server";
 import { getUserById } from "~/features/user";
 import { extractCorrelationId } from "~/lib/correlation-context.server";
@@ -43,9 +44,9 @@ export async function handleNewPostAction(
   if (!user) {
     return new Response("User not found", { status: 404 });
   }
-  const { userRelays, showHashTagsinPosts } = user;
+  const { showHashTagsinPosts } = user;
   const sessionPubkey = user.npub;
-  const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
+  const sanitizedRelays = await resolveExecutionRelays(userId);
 
   // Check content type before parsing
   const contentType = request.headers.get("Content-Type") ?? "";

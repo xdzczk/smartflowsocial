@@ -43,6 +43,7 @@ model User {
   Subscription   Subscription?
   templates      Template[]
   sessions       Session[]
+  publishRelayAcks PublishRelayAck[]
 
   @@index([parentNpub])
 }
@@ -350,6 +351,12 @@ enum SubscriptionStatus {
   INACTIVE
 }
 
+enum PublishRelayAckStatus {
+  ACCEPTED
+  FAILED
+  TIMEOUT
+}
+
 // Outbox pattern for transactional job enqueueing
 model OutboxEvent {
   id             String    @id @default(cuid())
@@ -414,6 +421,24 @@ model LongFormPostStateTransition {
   longFormPost   LongFormPost @relation(fields: [longFormPostId], references: [id], onDelete: Cascade)
 
   @@index([longFormPostId, createdAt])
+}
+
+// Per-relay publish outcomes (execution observability), keyed by publish attempt.
+model PublishRelayAck {
+  id              String                @id @default(cuid())
+  publishAttemptId String
+  userId          String
+  eventId         String
+  relayUrl        String
+  status          PublishRelayAckStatus
+  receivedAt      DateTime?
+  createdAt       DateTime              @default(now())
+
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([publishAttemptId, relayUrl])
+  @@index([userId, relayUrl, createdAt])
+  @@index([eventId, createdAt])
 }
 
 model DeadLetterJob {

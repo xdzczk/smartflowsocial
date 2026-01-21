@@ -18,10 +18,6 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
-vi.mock("~/lib/relays", () => ({
-  blastrRelay: "wss://relay.example.com",
-}));
-
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
 import {
@@ -119,64 +115,16 @@ describe("User Settings", () => {
       expect(result).toEqual(["wss://relay1.com"]);
     });
 
-    it("should add blastrRelay for Premium users", async () => {
+    it("should not inject managed relays into persisted user relays", async () => {
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
+      // Even if a subscription exists, managed relays are resolved elsewhere.
       (
         prisma.subscription.findUnique as ReturnType<typeof vi.fn>
       ).mockResolvedValue({
         status: "ACTIVE",
-        Plan: { name: "Premium" },
-      });
-
-      const result = await getUserRelays(TEST_USER_ID);
-
-      expect(result).toContain("wss://relay.example.com");
-      expect(result).toContain("wss://relay1.com");
-    });
-
-    it("should add blastrRelay for Founder users", async () => {
-      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        userRelays: ["wss://relay1.com"],
-      });
-      (
-        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
-      ).mockResolvedValue({
-        status: "ACTIVE",
-        Plan: { name: "Founder" },
-      });
-
-      const result = await getUserRelays(TEST_USER_ID);
-
-      expect(result).toContain("wss://relay.example.com");
-    });
-
-    it("should not add blastrRelay if already present", async () => {
-      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        userRelays: ["wss://relay.example.com"],
-      });
-      (
-        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
-      ).mockResolvedValue({
-        status: "ACTIVE",
-        Plan: { name: "Premium" },
-      });
-
-      const result = await getUserRelays(TEST_USER_ID);
-
-      expect(result).toEqual(["wss://relay.example.com"]);
-    });
-
-    it("should not add blastrRelay for inactive subscription", async () => {
-      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        userRelays: ["wss://relay1.com"],
-      });
-      (
-        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
-      ).mockResolvedValue({
-        status: "CANCELLED",
-        Plan: { name: "Premium" },
+        Plan: { name: "Premium", enableRelayBlast: true },
       });
 
       const result = await getUserRelays(TEST_USER_ID);
