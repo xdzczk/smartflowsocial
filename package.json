@@ -86,7 +86,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.965.0",
     "@editorjs/code": "^2.9.4",
-    "@editorjs/editorjs": "^2.31.0",
+    "@editorjs/editorjs": "^2.31.1",
     "@editorjs/embed": "^2.8.0",
     "@editorjs/header": "^2.8.8",
     "@editorjs/image": "^2.10.3",
