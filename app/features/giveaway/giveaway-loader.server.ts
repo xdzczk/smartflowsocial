@@ -6,6 +6,7 @@
 import { calculateTrustScore } from "~/features/engagement/trust-score";
 import type { User } from "~/features/engagement/trust-score";
 import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
+import { getPostStats } from "~/features/posts/stats.server";
 import type { PostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import {
@@ -13,6 +14,8 @@ import {
   getUserById,
   getQueueTypes,
 } from "~/features/user";
+import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
+import { logError } from "~/lib/error-logger.server";
 import { convertToHex } from "~/lib/helpers";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import { getRecentPostedPosts } from "~/models/post.queries.server";
@@ -148,162 +151,6 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
 }
 
 /**
- * Fetch post stats from Primal cache
- */
-async function fetchPostStats(eventIds: string[]): Promise<
-  Record<
-    string,
-    {
-      likes: number;
-      replies: number;
-      mentions: number;
-      reposts: number;
-      zaps: number;
-      satszapped: number;
-    }
-  >
-> {
-  if (eventIds.length === 0) {
-    return {};
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    // Fetch stats for each event ID
-    const statsPromises = eventIds.map(async (eventId) => {
-      // Read directly from process.env to support test environment changes
-      const primalUrl = process.env["PRIMAL_CACHING_URL"];
-      if (!primalUrl) {
-        throw new Error("PRIMAL_CACHING_URL environment variable is not set");
-      }
-      const response = await fetch(primalUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          requestType: "thread_view",
-          params: {
-            event_id: eventId,
-          },
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch stats");
-      }
-
-      const data = (await response.json()) as PrimalEvent[];
-      // Find the stats event in the response array
-      const statsEvent = data.find((event: PrimalEvent) => {
-        if (!Array.isArray(event) || event[0] !== "EVENT") return false;
-        const eventData = event[2];
-        if (typeof eventData !== "object" || Array.isArray(eventData))
-          return false;
-        const eventTyped = eventData as { kind?: number; content?: string };
-        return (
-          eventTyped.kind === 10000100 &&
-          eventTyped.content &&
-          typeof eventTyped.content === "string" &&
-          eventTyped.content.includes(eventId)
-        );
-      });
-
-      if (
-        statsEvent &&
-        Array.isArray(statsEvent) &&
-        typeof statsEvent[2] === "object" &&
-        !Array.isArray(statsEvent[2])
-      ) {
-        const eventData = statsEvent[2] as { kind?: number; content?: string };
-        if (eventData.content && typeof eventData.content === "string") {
-          const content = JSON.parse(eventData.content) as {
-            likes?: number;
-            replies?: number;
-            mentions?: number;
-            reposts?: number;
-            zaps?: number;
-            satszapped?: number;
-          };
-          return {
-            [eventId]: {
-              likes: content.likes ?? 0,
-              replies: content.replies ?? 0,
-              mentions: content.mentions ?? 0,
-              reposts: content.reposts ?? 0,
-              zaps: content.zaps ?? 0,
-              satszapped: content.satszapped ?? 0,
-            },
-          };
-        }
-      }
-
-      return {
-        [eventId]: {
-          likes: 0,
-          replies: 0,
-          mentions: 0,
-          reposts: 0,
-          zaps: 0,
-          satszapped: 0,
-        },
-      };
-    });
-
-    const statsResults = await Promise.all(statsPromises);
-    const stats = statsResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
-    clearTimeout(timeoutId);
-    return stats;
-  } catch (error) {
-    // Use centralized error handling but provide safe defaults
-    const { ExternalServiceError } = await import("~/lib/errors");
-    const { logError } = await import("~/lib/error-logger.server");
-
-    // Log the error but continue with empty stats
-    const serviceError = new ExternalServiceError(
-      "Failed to fetch stats from Primal cache",
-      502,
-      {
-        service: "PrimalCache",
-        eventIdsCount: eventIds.length,
-        originalError: error instanceof Error ? error.message : String(error),
-      }
-    );
-
-    logError(serviceError, { eventIdsCount: eventIds.length, userId: "" });
-
-    // Initialize empty stats object with 0 values for each post
-    return eventIds.reduce(
-      (acc, eventId) => {
-        acc[eventId] = {
-          likes: 0,
-          replies: 0,
-          mentions: 0,
-          reposts: 0,
-          zaps: 0,
-          satszapped: 0,
-        };
-        return acc;
-      },
-      ((): Record<
-        string,
-        {
-          likes: number;
-          replies: number;
-          mentions: number;
-          reposts: number;
-          zaps: number;
-          satszapped: number;
-        }
-      > => ({}))()
-    );
-  }
-}
-
-/**
  * Filter and process giveaway participants
  */
 async function processGiveawayParticipants(
@@ -354,106 +201,158 @@ async function processGiveawayParticipants(
   // Filter relatedEvents to only include users with valid lud16 address and totalZapped > 5
   const filteredRelatedEvents: RelatedEvent[] = [];
 
-  // Process events in parallel with Promise.all
-  const profilePromises = uniqueRelatedEvents.map(async (event) => {
-    try {
-      // Skip blacklisted pubkeys
-      if (blacklistedSet.has(event.pubkey)) {
+  // Process profiles in batches to limit concurrency and use caching
+  const PROFILE_BATCH_SIZE = 10;
+  const profileBatches: Array<typeof uniqueRelatedEvents> = [];
+  for (let i = 0; i < uniqueRelatedEvents.length; i += PROFILE_BATCH_SIZE) {
+    profileBatches.push(uniqueRelatedEvents.slice(i, i + PROFILE_BATCH_SIZE));
+  }
+
+  // Process batches sequentially, but items within batch concurrently
+  for (const batch of profileBatches) {
+    const batchPromises = batch.map(async (event) => {
+      try {
+        // Skip blacklisted pubkeys
+        if (blacklistedSet.has(event.pubkey)) {
+          return null;
+        }
+
+        // Skip muted pubkeys
+        if (mutedSet.has(event.pubkey)) {
+          return null;
+        }
+
+        // Fetch user profile data using cached version
+        const userProfileResponse = await getUserProfileWithCache(event.pubkey);
+
+        // Find user profile event (kind 0)
+        const userProfile = (userProfileResponse as PrimalEvent[]).find(
+          (data: PrimalEvent) => {
+            if (!Array.isArray(data) || data[0] !== "EVENT") return false;
+            const eventData = data[2];
+            if (typeof eventData !== "object" || Array.isArray(eventData))
+              return false;
+            const eventTyped = eventData as { kind?: number };
+            return eventTyped.kind === 0;
+          }
+        );
+
+        // Find stats event (kind 10000105)
+        const statsEvent = (userProfileResponse as PrimalEvent[]).find(
+          (data: PrimalEvent) => {
+            if (!Array.isArray(data) || data[0] !== "EVENT") return false;
+            const eventData = data[2];
+            if (typeof eventData !== "object" || Array.isArray(eventData))
+              return false;
+            const eventTyped = eventData as { kind?: number };
+            return eventTyped.kind === 10000105;
+          }
+        );
+
+        let lud16 = null;
+        let totalZapped = 0;
+
+        // Extract lud16 from profile
+        if (userProfile && Array.isArray(userProfile)) {
+          const profileEvent = userProfile[2] as { content?: string };
+          if (
+            profileEvent.content &&
+            typeof profileEvent.content === "string"
+          ) {
+            const profileContent = JSON.parse(profileEvent.content) as {
+              lud16?: string;
+            };
+            lud16 = profileContent.lud16 ?? null;
+          }
+        }
+
+        // Extract zap stats
+        if (statsEvent && Array.isArray(statsEvent)) {
+          const statsEventData = statsEvent[2] as { content?: string };
+          if (
+            statsEventData.content &&
+            typeof statsEventData.content === "string"
+          ) {
+            const stats = JSON.parse(statsEventData.content) as {
+              total_zap_count?: number;
+            };
+            totalZapped = stats.total_zap_count ?? 0;
+          }
+        }
+
+        // Only include users with valid lud16 and totalZapped > 5
+        if (lud16 && totalZapped > 5) {
+          return event;
+        }
+        return null;
+      } catch (error) {
+        // Individual failures don't block others
+        logError(error instanceof Error ? error : new Error(String(error)), {
+          message: "Failed to process giveaway participant",
+          pubkey: event.pubkey,
+        });
         return null;
       }
+    });
 
-      // Skip muted pubkeys
-      if (mutedSet.has(event.pubkey)) {
-        return null;
+    const batchResults = await Promise.allSettled(batchPromises);
+    batchResults.forEach((result) => {
+      if (result.status === "fulfilled" && result.value !== null) {
+        filteredRelatedEvents.push(result.value);
       }
-
-      // Fetch user profile data
-      const userProfileResponse = await connectToPrimalCache("user_profile", {
-        pubkey: event.pubkey,
-      });
-
-      // Find user profile event (kind 0)
-      const userProfile = (userProfileResponse as PrimalEvent[]).find(
-        (data: PrimalEvent) => {
-          if (!Array.isArray(data) || data[0] !== "EVENT") return false;
-          const eventData = data[2];
-          if (typeof eventData !== "object" || Array.isArray(eventData))
-            return false;
-          const eventTyped = eventData as { kind?: number };
-          return eventTyped.kind === 0;
-        }
-      );
-
-      // Find stats event (kind 10000105)
-      const statsEvent = (userProfileResponse as PrimalEvent[]).find(
-        (data: PrimalEvent) => {
-          if (!Array.isArray(data) || data[0] !== "EVENT") return false;
-          const eventData = data[2];
-          if (typeof eventData !== "object" || Array.isArray(eventData))
-            return false;
-          const eventTyped = eventData as { kind?: number };
-          return eventTyped.kind === 10000105;
-        }
-      );
-
-      let lud16 = null;
-      let totalZapped = 0;
-
-      // Extract lud16 from profile
-      if (userProfile && Array.isArray(userProfile)) {
-        const profileEvent = userProfile[2] as { content?: string };
-        if (profileEvent.content && typeof profileEvent.content === "string") {
-          const profileContent = JSON.parse(profileEvent.content) as {
-            lud16?: string;
-          };
-          lud16 = profileContent.lud16 ?? null;
-        }
-      }
-
-      // Extract zap stats
-      if (statsEvent && Array.isArray(statsEvent)) {
-        const statsEventData = statsEvent[2] as { content?: string };
-        if (
-          statsEventData.content &&
-          typeof statsEventData.content === "string"
-        ) {
-          const stats = JSON.parse(statsEventData.content) as {
-            total_zap_count?: number;
-          };
-          totalZapped = stats.total_zap_count ?? 0;
-        }
-      }
-
-      // Only include users with valid lud16 and totalZapped > 5
-      if (lud16 && totalZapped > 5) {
-        return event;
-      }
-      return null;
-    } catch (_error) {
-      return null;
-    }
-  });
-
-  // Wait for all promises to resolve and filter out null results
-  const results = await Promise.all(profilePromises);
-  filteredRelatedEvents.push(...results.filter((result) => result !== null));
+    });
+  }
 
   // Filter by trust score if hidePostsFromLowTrustUsers is enabled
   if (user["hidePostsFromLowTrustUsers"]) {
-    // Fetch trust scores for all participants
-    const trustScorePromises = filteredRelatedEvents.map(async (event) => {
-      const userProfile = await fetchUserProfile(event.pubkey);
-      if (userProfile) {
-        const trustScore = calculateTrustScore(userProfile);
-        return { event, trustScore };
-      }
-      return { event, trustScore: 0 }; // Default to 0 if profile fetch fails
-    });
+    // Fetch trust scores for all participants with batching
+    const TRUST_SCORE_BATCH_SIZE = 10;
+    const trustScoreBatches: Array<typeof filteredRelatedEvents> = [];
+    for (
+      let i = 0;
+      i < filteredRelatedEvents.length;
+      i += TRUST_SCORE_BATCH_SIZE
+    ) {
+      trustScoreBatches.push(
+        filteredRelatedEvents.slice(i, i + TRUST_SCORE_BATCH_SIZE)
+      );
+    }
 
-    const trustScoreResults = await Promise.all(trustScorePromises);
+    const allTrustScoreResults: Array<{
+      event: RelatedEvent;
+      trustScore: number;
+    }> = [];
+
+    // Process batches sequentially, but items within batch concurrently
+    for (const batch of trustScoreBatches) {
+      const batchPromises = batch.map(async (event) => {
+        try {
+          const userProfile = await fetchUserProfile(event.pubkey);
+          if (userProfile) {
+            const trustScore = calculateTrustScore(userProfile);
+            return { event, trustScore };
+          }
+          return { event, trustScore: 0 }; // Default to 0 if profile fetch fails
+        } catch (error) {
+          // Individual failures don't block others
+          logError(error instanceof Error ? error : new Error(String(error)), {
+            message: "Failed to fetch trust score",
+            pubkey: event.pubkey,
+          });
+          return { event, trustScore: 0 };
+        }
+      });
+
+      const batchResults = await Promise.allSettled(batchPromises);
+      batchResults.forEach((result) => {
+        if (result.status === "fulfilled") {
+          allTrustScoreResults.push(result.value);
+        }
+      });
+    }
 
     // Filter out users with trust score < 40
-    return trustScoreResults
+    return allTrustScoreResults
       .filter(({ trustScore }) => trustScore >= 40)
       .map(({ event }) => event);
   }
@@ -492,8 +391,8 @@ export async function loadGiveawayData(
       return signedEvent.id;
     });
 
-  // Fetch stats
-  const stats = await fetchPostStats(eventIds);
+  // Fetch stats using optimized getPostStats with Redis caching
+  const stats = await getPostStats(eventIds);
 
   // Convert PostWithQueueType[] to PostData[] first
   const postsData: PostData[] = posts.map((post) => {

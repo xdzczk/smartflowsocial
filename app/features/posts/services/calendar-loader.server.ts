@@ -25,17 +25,17 @@ import { filterPostsByQueueType } from "./post-filtering.server";
 
 /**
  * Load calendar data for main calendar route
- * Includes scheduled and past posts (90 days back)
+ * Includes scheduled and past posts (30 days back)
  */
 export async function loadCalendarData(userId: string, queueType: string) {
-  // Calculate date range for past posts (90 days back for better history)
+  // Calculate date range for past posts (30 days back for better performance)
   // Use Temporal for date arithmetic
   const nowZoned = nowUTC();
-  const ninetyDaysAgoZoned = addDays(nowZoned, -90);
+  const thirtyDaysAgoZoned = addDays(nowZoned, -30);
   const now = toPrismaDate(nowZoned);
-  const ninetyDaysAgo = toPrismaDate(ninetyDaysAgoZoned);
+  const thirtyDaysAgo = toPrismaDate(thirtyDaysAgoZoned);
 
-  if (!now || !ninetyDaysAgo) {
+  if (!now || !thirtyDaysAgo) {
     throw new Error("Failed to convert Temporal dates to Date");
   }
 
@@ -49,8 +49,8 @@ export async function loadCalendarData(userId: string, queueType: string) {
   ] = await Promise.all([
     getScheduledPosts({ userId }),
     getScheduledLongFormPosts({ userId }),
-    getPastPosts({ userId, startDate: ninetyDaysAgo, endDate: now }),
-    getPastLongFormPosts({ userId, startDate: ninetyDaysAgo, endDate: now }),
+    getPastPosts({ userId, startDate: thirtyDaysAgo, endDate: now }),
+    getPastLongFormPosts({ userId, startDate: thirtyDaysAgo, endDate: now }),
     getUserById(userId),
     getQueueTypes(userId),
   ]);

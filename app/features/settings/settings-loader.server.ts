@@ -10,22 +10,17 @@ import type {
   ScheduleConfig,
 } from "~/features/posts/types";
 import type { ManagedRelay } from "~/features/relays/relay-resolution.server";
-import {
-  getEffectiveWriteRelays,
-  getRelayIntent,
-} from "~/features/relays/relay-resolution.server";
+import { getEffectiveWriteRelays } from "~/features/relays/relay-resolution.server";
 import {
   getConfirmedChildrenForParent,
   getGiveawayBlacklist,
   getPendingChildrenForParent,
-  getQueueTypes,
   getScheduleInterval,
   getShowHashTagsInPosts,
   getUserBasicInfo,
   getUserByNpubWithProfile,
   getUserEnableMirrorBlossom,
   getUserFilterMuted,
-  getUserHashTagPresets,
   getUserHidePostsFromLowTrustUsers,
   getUserMirrorUploadUrls,
   getUserMutedList,
@@ -33,6 +28,11 @@ import {
   getUserTimezone,
   getUserUploadProvider,
 } from "~/features/user";
+import {
+  getRelayIntentCached,
+  getQueueTypesCached,
+  getHashTagPresetsCached,
+} from "~/features/user/services/user-cache.server";
 import { prisma } from "~/lib/prisma.server";
 import {
   getAllPlans,
@@ -144,6 +144,7 @@ export async function loadSettingsData(
     isChild || planName === "Founder" || planName === "Premium";
 
   // Load all settings data in parallel
+  // Use cached versions for rarely-changing data (queue types, hashtag presets, relay intent)
   const [
     timezone,
     relayIntent,
@@ -162,16 +163,16 @@ export async function loadSettingsData(
     hidePostsFromLowTrustUsers,
   ] = await Promise.all([
     getUserTimezone(userId),
-    getRelayIntent(userId),
+    getRelayIntentCached(userId),
     getEffectiveWriteRelays(userId),
     getGiveawayBlacklist(userId),
     getShowHashTagsInPosts(userId),
     getScheduleInterval(userId),
-    getQueueTypes(userId),
+    getQueueTypesCached(userId),
     getUserUploadProvider(userId),
     getUserEnableMirrorBlossom(userId),
     getUserMirrorUploadUrls(userId),
-    getUserHashTagPresets(userId),
+    getHashTagPresetsCached(userId),
     getUserNWC(userId),
     getUserMutedList(userId),
     getUserFilterMuted(userId),

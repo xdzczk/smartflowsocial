@@ -7,6 +7,7 @@ import { nip19 } from "nostr-tools";
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import type { NostrEvent } from "~/features/nostr/types";
+import { getPostStats, type PostStats } from "~/features/posts/stats.server";
 import { logError } from "~/lib/error-logger.server";
 /**
  * Extended NostrEvent with pubkey and id (from Primal cache)
@@ -107,59 +108,21 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
 }
 
 /**
- * Fetch engagement stats for an event
+ * Fetch engagement stats for an event using cached getPostStats
  */
-async function fetchEventStats(eventId: string): Promise<{
-  likes: number;
-  replies: number;
-  mentions: number;
-  reposts: number;
-  zaps: number;
-  satszapped: number;
-}> {
-  let stats = {
-    likes: 0,
-    replies: 0,
-    mentions: 0,
-    reposts: 0,
-    zaps: 0,
-    satszapped: 0,
-  };
-
+async function fetchEventStats(eventId: string): Promise<PostStats> {
   try {
-    const threadResponses = await connectToPrimalCache("thread_view", {
-      event_id: eventId,
-    });
-
-    const statsEvent = threadResponses.find(
-      (res): res is [string, string, NostrEventWithMetadata] =>
-        Array.isArray(res) &&
-        res[0] === "EVENT" &&
-        res[2] !== undefined &&
-        (res[2] as NostrEventWithMetadata).kind === 10000100 &&
-        typeof (res[2] as NostrEventWithMetadata).content === "string" &&
-        (res[2] as NostrEventWithMetadata).content.includes(eventId)
+    const stats = await getPostStats([eventId]);
+    return (
+      stats[eventId] ?? {
+        likes: 0,
+        replies: 0,
+        mentions: 0,
+        reposts: 0,
+        zaps: 0,
+        satszapped: 0,
+      }
     );
-
-    if (statsEvent?.[2]) {
-      const event = statsEvent[2];
-      const content = JSON.parse(event.content) as {
-        likes?: number;
-        replies?: number;
-        mentions?: number;
-        reposts?: number;
-        zaps?: number;
-        satszapped?: number;
-      };
-      stats = {
-        likes: content.likes ?? 0,
-        replies: content.replies ?? 0,
-        mentions: content.mentions ?? 0,
-        reposts: content.reposts ?? 0,
-        zaps: content.zaps ?? 0,
-        satszapped: content.satszapped ?? 0,
-      };
-    }
   } catch (error) {
     // Log but continue - stats are optional
     const { logWarning } = await import("~/lib/error-logger.server");
@@ -167,9 +130,16 @@ async function fetchEventStats(eventId: string): Promise<{
       eventId,
       error: error instanceof Error ? error.message : String(error),
     });
+    // Return empty stats on error
+    return {
+      likes: 0,
+      replies: 0,
+      mentions: 0,
+      reposts: 0,
+      zaps: 0,
+      satszapped: 0,
+    };
   }
-
-  return stats;
 }
 
 /**

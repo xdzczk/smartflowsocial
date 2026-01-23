@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
-import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import { getThreadViewWithCache } from "~/features/cache/thread-view-cache.server";
 import { ExternalServiceError } from "~/lib/errors";
 
 /**
@@ -26,12 +26,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const eventId = eventIdParam;
 
-    // Fetch thread view data using centralized cache utility
-    let threadViewData: unknown;
+    // Fetch thread view data using cached version with Redis caching
+    let threadViewData: unknown[];
     try {
-      threadViewData = await connectToPrimalCache("thread_view", {
-        event_id: eventId,
-      });
+      threadViewData = await getThreadViewWithCache(eventId);
     } catch (error) {
       throw new ExternalServiceError(
         "Failed to fetch thread view data from cache",

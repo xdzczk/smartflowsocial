@@ -4,6 +4,7 @@
  */
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import { getThreadViewWithCache } from "~/features/cache/thread-view-cache.server";
 import type { SignedEvent } from "~/features/nostr/types";
 import { toPostDTOArray } from "~/features/posts/dtos";
 import type { PostData, QueueType } from "~/features/posts/types";
@@ -125,27 +126,12 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
 }
 
 /**
- * Fetch thread view with timeout
- */
-async function fetchThreadViewWithTimeout(eventId: string, timeout = 5000) {
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("Request timeout")), timeout)
-  );
-
-  const fetchPromise = connectToPrimalCache("thread_view", {
-    event_id: eventId,
-  });
-
-  return Promise.race([fetchPromise, timeoutPromise]);
-}
-
-/**
  * Process batch of event IDs to get stats and notifications
  */
 async function processEventBatch(batchIds: string[], userNpub: string) {
   const notificationPromises = batchIds.map(async (eventId) => {
     try {
-      const threadViewData = await fetchThreadViewWithTimeout(eventId);
+      const threadViewData = await getThreadViewWithCache(eventId);
       const notifications = parseThreadViewNotifications(
         Array.isArray(threadViewData) ? threadViewData : [],
         eventId,
@@ -380,7 +366,7 @@ export async function loadEngagementFeedData(
       allNotifications = filterMutedNotifications(allNotifications, mutedNpubs);
     }
 
-    // Fetch user profiles and calculate trust scores
+    // Fetch user profiles and calculate trust scores with concurrency limiting
     const uniquePubkeys = Array.from(
       new Set(
         allNotifications.map((notification) =>
@@ -391,16 +377,34 @@ export async function loadEngagementFeedData(
       )
     );
 
-    const profilePromises = uniquePubkeys.map(async (pubkey) => {
-      const userProfile = await fetchUserProfile(pubkey);
-      if (userProfile) {
-        userProfilesMap.set(pubkey, userProfile);
-        const trustScore = calculateTrustScore(userProfile);
-        trustScoresMap.set(pubkey, trustScore);
-      }
-    });
+    // Process profiles in batches to limit concurrency
+    const PROFILE_BATCH_SIZE = 10;
+    const profileBatches: string[][] = [];
+    for (let i = 0; i < uniquePubkeys.length; i += PROFILE_BATCH_SIZE) {
+      profileBatches.push(uniquePubkeys.slice(i, i + PROFILE_BATCH_SIZE));
+    }
 
-    await Promise.all(profilePromises);
+    // Process batches sequentially, but items within batch concurrently
+    for (const batch of profileBatches) {
+      const batchPromises = batch.map(async (pubkey) => {
+        try {
+          const userProfile = await fetchUserProfile(pubkey);
+          if (userProfile) {
+            userProfilesMap.set(pubkey, userProfile);
+            const trustScore = calculateTrustScore(userProfile);
+            trustScoresMap.set(pubkey, trustScore);
+          }
+        } catch (error) {
+          // Individual failures don't block others
+          logError(error instanceof Error ? error : new Error(String(error)), {
+            message: "Failed to fetch user profile",
+            pubkey,
+          });
+        }
+      });
+
+      await Promise.allSettled(batchPromises);
+    }
 
     // Filter out low trust users if enabled
     if (userHidePostsFromLowTrustUsers) {

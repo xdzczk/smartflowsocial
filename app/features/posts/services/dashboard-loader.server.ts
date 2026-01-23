@@ -3,11 +3,11 @@
  * Centralized data fetching for dashboard index page
  */
 
+import { getUserById } from "~/features/user";
 import {
-  getUserById,
-  getQueueTypes,
-  getUserHashTagPresets,
-} from "~/features/user";
+  getQueueTypesCached,
+  getHashTagPresetsCached,
+} from "~/features/user/services/user-cache.server";
 import {
   validateSignedEvent,
   validateNostrEvent,
@@ -39,8 +39,8 @@ export async function loadDashboardData(userId: string, queueType: string) {
     getScheduledLongFormPosts({ userId }),
     getPostStatistics({ userId }),
     getUserById(userId),
-    getQueueTypes(userId),
-    getUserHashTagPresets(userId),
+    getQueueTypesCached(userId),
+    getHashTagPresetsCached(userId),
   ]);
 
   const [
