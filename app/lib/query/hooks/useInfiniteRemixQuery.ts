@@ -97,25 +97,54 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
             return `${pathname}${cleanSearch}${separator}page=${String(pageParam)}`;
           })();
 
-      if (url) {
-        fetcher.load(url);
+      if (!url) {
+        return Promise.reject(new Error("No URL provided"));
       }
+
+      // Load the URL
+      fetcher.load(url);
 
       // Wait for fetcher to complete
       return new Promise<TData>((resolve, reject) => {
+        let hasSeenLoading = false;
+        const maxWaitTime = 10000; // 10 second timeout
+        const startTime = Date.now();
+
         const checkFetcher = () => {
-          if (fetcher.state === "idle") {
+          const elapsed = Date.now() - startTime;
+          if (elapsed > maxWaitTime) {
+            reject(new Error("Fetcher timeout"));
+            return;
+          }
+
+          // Track when we see loading state (ensures new request started)
+          if (fetcher.state === "loading") {
+            hasSeenLoading = true;
+            setTimeout(checkFetcher, 50);
+            return;
+          }
+
+          // Once we've seen loading and now idle, check for new data
+          if (hasSeenLoading && fetcher.state === "idle") {
             const fetcherData = fetcher.data;
             if (fetcherData) {
+              // Resolve with new data (even if it's the same object, it's from the new request)
               resolve(fetcherData as TData);
             } else {
               reject(new Error("No data received from fetcher"));
             }
-          } else if (fetcher.state === "loading") {
-            setTimeout(checkFetcher, 50);
-          } else {
-            reject(new Error("Failed to fetch data"));
+            return;
           }
+
+          // If idle but haven't seen loading yet, might be stale state - wait a bit
+          if (fetcher.state === "idle" && !hasSeenLoading) {
+            // Give it a moment to start loading
+            setTimeout(checkFetcher, 100);
+            return;
+          }
+
+          // Continue polling
+          setTimeout(checkFetcher, 50);
         };
         checkFetcher();
       });
