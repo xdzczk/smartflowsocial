@@ -165,6 +165,8 @@ export { usePostedPosts } from "./usePostedPosts";
 export {
   usePostedPostsQuery,
   usePostedPostsData,
+  usePostedPostsInfiniteQuery,
+  usePostedPostsInfiniteData,
   useBulkDeletePostsMutation,
   postedPostsKeys,
 } from "./hooks/usePostedPostsQuery";
@@ -172,18 +174,24 @@ export type { PostedPostsLoaderData } from "~/lib/validation/schemas/loader-resp
 export {
   useDashboardQuery,
   useDashboardData,
+  useDashboardInfiniteQuery,
+  useDashboardInfiniteData,
   dashboardKeys,
 } from "./hooks/useDashboardQuery";
 export type { DashboardLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useScheduledPostsQuery,
   useScheduledPostsData,
+  useScheduledPostsInfiniteQuery,
+  useScheduledPostsInfiniteData,
   scheduledPostsKeys,
 } from "./hooks/useScheduledPostsQuery";
 export type { ScheduledPostsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useDraftsQuery,
   useDraftsData,
+  useDraftsInfiniteQuery,
+  useDraftsInfiniteData,
   draftsKeys,
 } from "./hooks/useDraftsQuery";
 export type { DraftsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
@@ -205,11 +213,14 @@ export {
   useBulkDeleteMutation,
   useReschedulePostMutation,
 } from "./hooks/usePostMutations";
+export { useEditPostMutation } from "./hooks/useEditPostMutation";
 export { useRecyclablesState } from "./hooks/useRecyclablesState";
 export type { IndividualRepostFetcherData } from "./hooks/useRecyclablesState";
 export {
   useRecyclablesQuery,
   useRecyclablesData,
+  useRecyclablesInfiniteQuery,
+  useRecyclablesInfiniteData,
   recyclablesKeys,
 } from "./hooks/useRecyclablesQuery";
 export type { RecyclablesLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";

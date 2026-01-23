@@ -11,6 +11,7 @@ import type { PostData, QueueType } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
 import { getUserById } from "~/features/user";
+import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
 import { logError } from "~/lib/error-logger.server";
 import { getPostedPosts } from "~/models/post.queries.server";
 
@@ -33,11 +34,11 @@ import type {
 } from "../types";
 
 /**
- * Fetches user profile data from Primal API and converts to User type for trust scoring
+ * Fetches user profile data using cached version and converts to User type for trust scoring
  */
 async function fetchUserProfile(pubkey: string): Promise<User | null> {
   try {
-    const profileData = await connectToPrimalCache("user_profile", { pubkey });
+    const profileData = await getUserProfileWithCache(pubkey);
 
     if (!Array.isArray(profileData)) {
       return null;
@@ -252,7 +253,7 @@ function filterLowTrustNotifications(
 export async function loadEngagementFeedData(
   userId: string,
   page = 1,
-  limit = 50
+  limit = 20
 ) {
   const [{ posts }, userResult] = await Promise.all([
     getPostedPosts({
@@ -331,6 +332,12 @@ export async function loadEngagementFeedData(
       trustScores: {},
     };
   }
+
+  // Start get_notifications call early (parallel with event processing)
+  const notificationsPromise = connectToPrimalCache("get_notifications", {
+    pubkey: userNpub,
+    limit: 100,
+  });
 
   try {
     // Batch fetch notifications and stats
@@ -498,14 +505,11 @@ export async function loadEngagementFeedData(
     ),
   };
 
-  // Fetch quote reposts using get_notifications
+  // Fetch quote reposts using get_notifications (await the promise started earlier)
   let quoteRepostNotifications: Notification[] = [];
   let groupedQuoteReposts: GroupedNotification[] = [];
   try {
-    const notificationsData = await connectToPrimalCache("get_notifications", {
-      pubkey: userNpub,
-      limit: 100,
-    });
+    const notificationsData = await notificationsPromise;
 
     // Extract quote reposts (kind 1 events with mention tags)
     if (Array.isArray(notificationsData)) {

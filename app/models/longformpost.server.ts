@@ -504,20 +504,47 @@ export async function publishLongFormPost({
 
 export async function getDraftLongFormPosts({
   userId,
+  page = 1,
+  limit = 20,
 }: {
   userId: User["id"];
+  page?: number;
+  limit?: number;
 }) {
-  return prisma.longFormPost.findMany({
-    where: {
-      userId,
-      // Use currentState as single source of truth
-      currentState: "DRAFT",
+  const skip = (page - 1) * limit;
+
+  const [posts, total] = await Promise.all([
+    prisma.longFormPost.findMany({
+      where: {
+        userId,
+        // Use currentState as single source of truth
+        currentState: "DRAFT",
+      },
+      include: {
+        queueType: true,
+      },
+      orderBy: { updatedAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.longFormPost.count({
+      where: {
+        userId,
+        // Use currentState as single source of truth
+        currentState: "DRAFT",
+      },
+    }),
+  ]);
+
+  return {
+    posts,
+    pagination: {
+      currentPage: page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
     },
-    include: {
-      queueType: true,
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+  };
 }
 
 export async function getPublishedLongFormPosts({
@@ -564,27 +591,62 @@ export async function getPublishedLongFormPosts({
 
 export async function getScheduledLongFormPosts({
   userId,
+  page = 1,
+  limit = 20,
 }: {
   userId: User["id"];
+  page?: number;
+  limit?: number;
 }) {
   try {
-    return await prisma.longFormPost.findMany({
-      where: {
-        userId,
-        // Use currentState as single source of truth
-        currentState: "SCHEDULED",
+    const skip = (page - 1) * limit;
+
+    const [posts, total] = await Promise.all([
+      prisma.longFormPost.findMany({
+        where: {
+          userId,
+          // Use currentState as single source of truth
+          currentState: "SCHEDULED",
+        },
+        include: {
+          queueType: true,
+        },
+        orderBy: { scheduledAtUtc: "asc" },
+        skip,
+        take: limit,
+      }),
+      prisma.longFormPost.count({
+        where: {
+          userId,
+          // Use currentState as single source of truth
+          currentState: "SCHEDULED",
+        },
+      }),
+    ]);
+
+    return {
+      posts,
+      pagination: {
+        currentPage: page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
       },
-      include: {
-        queueType: true,
-      },
-      orderBy: { scheduledAtUtc: "asc" },
-    });
+    };
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       message: "Error fetching scheduled longform posts",
       userId,
     });
-    return [];
+    return {
+      posts: [],
+      pagination: {
+        currentPage: 1,
+        limit,
+        total: 0,
+        pages: 0,
+      },
+    };
   }
 }
 

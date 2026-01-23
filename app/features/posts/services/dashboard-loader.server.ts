@@ -33,10 +33,15 @@ import { filterPostsByQueueType } from "./post-filtering.server";
 /**
  * Load dashboard data
  */
-export async function loadDashboardData(userId: string, queueType: string) {
+export async function loadDashboardData(
+  userId: string,
+  queueType: string,
+  page = 1,
+  limit = 20
+) {
   const results = await Promise.allSettled([
-    getScheduledPosts({ userId, queueType }),
-    getScheduledLongFormPosts({ userId }),
+    getScheduledPosts({ userId, queueType, page, limit }),
+    getScheduledLongFormPosts({ userId, page, limit }),
     getPostStatistics({ userId }),
     getUserById(userId),
     getQueueTypesCached(userId),
@@ -52,14 +57,24 @@ export async function loadDashboardData(userId: string, queueType: string) {
     hashTagPresetsResult,
   ] = results;
 
+  // Extract posts and pagination from paginated result
   const scheduledPosts =
     scheduledPostsResult.status === "fulfilled"
-      ? scheduledPostsResult.value
+      ? scheduledPostsResult.value.posts
       : [];
+  const scheduledPostsPagination =
+    scheduledPostsResult.status === "fulfilled"
+      ? scheduledPostsResult.value.pagination
+      : { total: 0, pages: 0, currentPage: 1, limit: 20 };
+  // Extract posts and pagination from paginated result
   const allLongformPosts =
     allLongformPostsResult.status === "fulfilled"
-      ? allLongformPostsResult.value
+      ? allLongformPostsResult.value.posts
       : [];
+  const longformPostsPagination =
+    allLongformPostsResult.status === "fulfilled"
+      ? allLongformPostsResult.value.pagination
+      : { total: 0, pages: 0, currentPage: 1, limit: 20 };
   const postStatistics =
     postStatisticsResult.status === "fulfilled"
       ? postStatisticsResult.value
@@ -121,5 +136,7 @@ export async function loadDashboardData(userId: string, queueType: string) {
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,
     hashTagPresets,
+    pagination: scheduledPostsPagination, // Use posts pagination as primary
+    longformPagination: longformPostsPagination,
   };
 }

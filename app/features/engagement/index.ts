@@ -68,6 +68,8 @@ export { useEngagementState } from "./hooks/useEngagementState";
 export {
   useEngagementQuery,
   useEngagementData,
+  useEngagementInfiniteQuery,
+  useEngagementInfiniteData,
   engagementKeys,
 } from "./hooks/useEngagementQuery";
 export type { EngagementLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";

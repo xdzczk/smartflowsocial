@@ -7,7 +7,8 @@
 import { json } from "@remix-run/node";
 
 import type { UserWithHashTagPresets } from "~/features/user";
-import { getUserById, getQueueTypes } from "~/features/user";
+import { getUserById } from "~/features/user";
+import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import { nowSeconds } from "~/lib/temporal";
 import {
   recyclableActionSchema,
@@ -39,7 +40,7 @@ export async function getRecyclableDashboardData({
   url: URL;
 }) {
   const page = parseInt(url.searchParams.get("page") ?? "1");
-  const limit = 50;
+  const limit = 20;
   const queueType = params.queueType ?? "all";
 
   const [{ posts, pagination }, userResult, queueTypesResult] =
@@ -51,7 +52,7 @@ export async function getRecyclableDashboardData({
         queueType,
       }),
       getUserById(userId),
-      getQueueTypes(userId),
+      getQueueTypesCached(userId),
     ]);
 
   if (!userResult) {

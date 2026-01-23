@@ -24,13 +24,26 @@ import { convertPrismaQueueTypeToQueueType } from "../types";
 /**
  * Load drafts data
  */
-export async function loadDraftsData(userId: string, queueType: string) {
-  const [posts, allLongformPosts, user, queueTypes] = await Promise.all([
-    getDraftPosts({ userId, queueType }),
-    getDraftLongFormPosts({ userId }),
-    getUserById(userId),
-    getQueueTypes(userId),
-  ]);
+export async function loadDraftsData(
+  userId: string,
+  queueType: string,
+  page = 1,
+  limit = 20
+) {
+  const [postsResult, allLongformPostsResult, user, queueTypes] =
+    await Promise.all([
+      getDraftPosts({ userId, queueType, page, limit }),
+      getDraftLongFormPosts({ userId, page, limit }),
+      getUserById(userId),
+      getQueueTypes(userId),
+    ]);
+
+  // Extract posts and pagination from paginated result
+  const posts = postsResult.posts;
+  const postsPagination = postsResult.pagination;
+  // Extract posts and pagination from paginated result
+  const allLongformPosts = allLongformPostsResult.posts;
+  const longformPostsPagination = allLongformPostsResult.pagination;
 
   // Filter longform posts by queue type if specific queue is selected
   const longformPosts =
@@ -80,5 +93,7 @@ export async function loadDraftsData(userId: string, queueType: string) {
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,
+    pagination: postsPagination, // Use posts pagination as primary
+    longformPagination: longformPostsPagination,
   };
 }

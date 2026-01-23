@@ -30,15 +30,32 @@ import { filterPostsByQueueType } from "./post-filtering.server";
 /**
  * Load scheduled dashboard data
  */
-export async function loadScheduledData(userId: string, queueType: string) {
-  const [posts, allLongformPosts, user, queueTypes, hashTagPresets] =
-    await Promise.all([
-      getScheduledPosts({ userId, queueType }),
-      getScheduledLongFormPosts({ userId }),
-      getUserById(userId),
-      getQueueTypes(userId),
-      getUserHashTagPresets(userId),
-    ]);
+export async function loadScheduledData(
+  userId: string,
+  queueType: string,
+  page = 1,
+  limit = 20
+) {
+  const [
+    postsResult,
+    allLongformPostsResult,
+    user,
+    queueTypes,
+    hashTagPresets,
+  ] = await Promise.all([
+    getScheduledPosts({ userId, queueType, page, limit }),
+    getScheduledLongFormPosts({ userId, page, limit }),
+    getUserById(userId),
+    getQueueTypes(userId),
+    getUserHashTagPresets(userId),
+  ]);
+
+  // Extract posts and pagination from paginated result
+  const posts = postsResult.posts;
+  const postsPagination = postsResult.pagination;
+  // Extract posts and pagination from paginated result
+  const allLongformPosts = allLongformPostsResult.posts;
+  const longformPostsPagination = allLongformPostsResult.pagination;
 
   // Filter longform posts by queue type if specific queue is selected
   const longformPosts = filterPostsByQueueType(allLongformPosts, queueType);
@@ -87,5 +104,7 @@ export async function loadScheduledData(userId: string, queueType: string) {
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,
     hashTagPresets,
+    pagination: postsPagination, // Use posts pagination as primary
+    longformPagination: longformPostsPagination,
   };
 }

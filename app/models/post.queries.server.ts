@@ -18,12 +18,18 @@ import type {
 
 export async function getScheduledPosts({
   userId,
+  page = 1,
+  limit = 20,
   queueType,
 }: {
   userId: string;
+  page?: number;
+  limit?: number;
   queueType?: string;
-}): Promise<PostWithQueueType[]> {
+}): Promise<PostsWithPagination> {
   try {
+    const skip = (page - 1) * limit;
+
     const whereClause: Prisma.PostWhereInput = {
       // Use currentState as single source of truth
       currentState: "SCHEDULED",
@@ -37,17 +43,34 @@ export async function getScheduledPosts({
       };
     }
 
-    return await prisma.post.findMany({
-      where: whereClause,
-      include: {
-        queueType: true,
-        hashTagPreset: true,
-        template: true,
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where: whereClause,
+        include: {
+          queueType: true,
+          hashTagPreset: true,
+          template: true,
+        },
+        orderBy: {
+          scheduledAtUtc: "asc",
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.post.count({
+        where: whereClause,
+      }),
+    ]);
+
+    return {
+      posts,
+      pagination: {
+        total,
+        pages: Math.ceil(total / limit),
+        currentPage: page,
+        limit,
       },
-      orderBy: {
-        scheduledAtUtc: "asc",
-      },
-    });
+    };
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     logError(err, {
@@ -59,13 +82,19 @@ export async function getScheduledPosts({
   }
 }
 
-export function getDraftPosts({
+export async function getDraftPosts({
   userId,
+  page = 1,
+  limit = 20,
   queueType,
 }: {
   userId: string;
+  page?: number;
+  limit?: number;
   queueType?: string;
-}): Promise<PostWithQueueType[]> {
+}): Promise<PostsWithPagination> {
+  const skip = (page - 1) * limit;
+
   const whereClause: Prisma.PostWhereInput = {
     // Use currentState as single source of truth
     currentState: "DRAFT",
@@ -79,17 +108,34 @@ export function getDraftPosts({
     };
   }
 
-  return prisma.post.findMany({
-    where: whereClause,
-    include: {
-      queueType: true,
-      hashTagPreset: true,
-      template: true,
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where: whereClause,
+      include: {
+        queueType: true,
+        hashTagPreset: true,
+        template: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+    prisma.post.count({
+      where: whereClause,
+    }),
+  ]);
+
+  return {
+    posts,
+    pagination: {
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: page,
+      limit,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  };
 }
 
 export function getCronDueScheduledPosts(): Promise<Post[]> {

@@ -1,4 +1,5 @@
 import { useSearchParams } from "@remix-run/react";
+import { useEffect } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
@@ -16,8 +17,9 @@ import {
   ScheduledPostsTable,
   SimpleRescheduleModal,
   useScheduledState,
-  useScheduledPostsData,
+  useScheduledPostsInfiniteData,
 } from "~/features/posts/ui";
+import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 import {
   extractLongFormPostData,
   extractPostData,
@@ -25,7 +27,7 @@ import {
 import { validateUserData } from "~/lib/validation/user-data";
 
 export default function ScheduledPostsPage() {
-  // Use TanStack Query for data fetching with caching
+  // Use infinite query for data fetching with infinite scroll
   const {
     posts,
     longformPosts,
@@ -34,12 +36,52 @@ export default function ScheduledPostsPage() {
     queueTypes,
     hashTagPresets,
     isLoading: _isDataLoading,
-  } = useScheduledPostsData();
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useScheduledPostsInfiniteData();
 
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") ?? "all";
+
+  // Set up intersection observer for infinite scroll
+  const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
+    threshold: 0.8,
+  });
+
+  // Prefetch sentinel - triggers earlier (70% threshold) to prefetch next page
+  const { ref: prefetchSentinelRef, isIntersecting: isPrefetchIntersecting } =
+    useIntersectionObserver({
+      threshold: 0.7,
+    });
+
+  // Prefetch next page when user is 70% down (earlier than actual fetch at 80%)
+  useEffect(() => {
+    if (
+      isPrefetchIntersecting &&
+      hasNextPage &&
+      !isFetchingNextPage &&
+      !isIntersecting
+    ) {
+      // Prefetch by calling fetchNextPage early
+      void fetchNextPage();
+    }
+  }, [
+    isPrefetchIntersecting,
+    hasNextPage,
+    isFetchingNextPage,
+    isIntersecting,
+    fetchNextPage,
+  ]);
+
+  // Fetch next page when sentinel becomes visible (backup in case prefetch didn't trigger)
+  useEffect(() => {
+    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const {
     sortConfig,
@@ -206,6 +248,19 @@ export default function ScheduledPostsPage() {
           }
         />
       )}
+
+      {/* Scroll sentinel for infinite scroll */}
+      {/* Prefetch sentinel - triggers at 70% to prefetch next page */}
+      <div ref={prefetchSentinelRef} className="h-4 w-full" />
+      {/* Main sentinel - triggers at 80% to ensure next page is loaded */}
+      <div ref={sentinelRef} className="h-4 w-full" />
+
+      {/* Loading indicator for next page */}
+      {isFetchingNextPage ? (
+        <div className="mt-4 text-center text-sm text-gray-500">
+          Loading more posts...
+        </div>
+      ) : null}
 
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (

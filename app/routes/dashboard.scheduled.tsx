@@ -30,8 +30,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     await requireFeatureAccess(userId, "scheduled");
 
     const queueType = params["queueType"] ?? "all";
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+    const limit = 20;
 
-    const data = await loadScheduledData(userId, queueType);
+    const data = await loadScheduledData(userId, queueType, page, limit);
 
     // Validate loader response with Zod schema
     return validateLoaderResponse(data, scheduledPostsLoaderDataSchema);

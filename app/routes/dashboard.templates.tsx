@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("search") ?? "";
   const page = parseInt(url.searchParams.get("page") ?? "1");
-  const limit = 100;
+  const limit = 20;
 
   const data = await loadTemplatesData(userId, searchTerm, page, limit);
 

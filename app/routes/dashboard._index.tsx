@@ -32,8 +32,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Get queueType from URL params (query string) or route params, default to "all"
     const queueType =
       url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
+    const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+    const limit = 20;
 
-    const data = await loadDashboardData(userId, queueType);
+    const data = await loadDashboardData(userId, queueType, page, limit);
 
     // Add URL params to data before validation
     const dataWithParams = {

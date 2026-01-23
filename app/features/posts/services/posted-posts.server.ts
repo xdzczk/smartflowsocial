@@ -6,7 +6,8 @@
 
 import type { Prisma } from "@prisma/client";
 
-import { getUserById, getQueueTypes } from "~/features/user";
+import { getUserById } from "~/features/user";
+import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import {
   validateSignedEvent,
   validateNostrEvent,
@@ -36,7 +37,7 @@ export async function getPostedDashboardData({
   url: URL;
 }) {
   const page = parseInt(url.searchParams.get("page") ?? "1");
-  const limit = 50;
+  const limit = 20;
   const queueType = params.queueType ?? "all";
 
   const [{ posts, pagination }, allLongformResultRaw, user, queueTypesRaw] =
@@ -49,7 +50,7 @@ export async function getPostedDashboardData({
       }),
       getPublishedLongFormPosts({ userId, page, limit }),
       getUserById(userId),
-      getQueueTypes(userId),
+      getQueueTypesCached(userId),
     ]);
 
   /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */

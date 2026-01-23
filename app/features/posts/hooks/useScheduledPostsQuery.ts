@@ -11,6 +11,7 @@ import {
 } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
 import { validateHashTagPresets } from "~/lib/validation/hashtag-presets";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
@@ -99,6 +100,53 @@ export function useScheduledPostsQuery() {
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
     refetchOnMount: false,
+  });
+}
+
+/**
+ * Hook to fetch scheduled posts with infinite scroll support
+ */
+export function useScheduledPostsInfiniteQuery() {
+  const params = useParams();
+  const [searchParams] = useSearchParams();
+  const queueType = params["queueType"] ?? "all";
+  const currentTab = searchParams.get("tab") ?? "all";
+
+  const loaderDataRaw = useLoaderData();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    scheduledPostsLoaderDataSchema
+  );
+
+  if (!validatedLoaderData) {
+    throw new Error("Invalid loader data");
+  }
+
+  return useInfiniteRemixQuery<ScheduledPostsLoaderData>({
+    queryKey: scheduledPostsKeys.list(queueType, currentTab),
+    initialData: validatedLoaderData,
+    getNextPageParam: (lastPage) => {
+      const pagination =
+        "pagination" in lastPage ? lastPage.pagination : undefined;
+      if (
+        pagination &&
+        typeof pagination === "object" &&
+        "currentPage" in pagination &&
+        "pages" in pagination &&
+        typeof pagination.currentPage === "number" &&
+        typeof pagination.pages === "number" &&
+        pagination.currentPage < pagination.pages
+      ) {
+        return pagination.currentPage + 1;
+      }
+      return;
+    },
+    buildUrl: (pageParam) =>
+      `/dashboard/scheduled${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}`,
+    staleTime: 30 * 1000, // 30 seconds
+    maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
   });
 }
 
@@ -224,5 +272,172 @@ export function useScheduledPostsData() {
     hashTagPresets,
     isLoading,
     error,
+  };
+}
+
+/**
+ * Hook to get processed scheduled posts data from infinite query
+ * Flattens posts and longform posts across all pages
+ */
+export function useScheduledPostsInfiniteData() {
+  const query = useScheduledPostsInfiniteQuery();
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    query;
+
+  if (data.pages.length === 0) {
+    return {
+      posts: [] as PostData[],
+      longformPosts: [] as LongFormPostData[],
+      allContent: [] as CombinedContent[],
+      user: null as UserData | null,
+      queueTypes: [] as QueueType[],
+      hashTagPresets: [] as HashTagPreset[],
+      isLoading,
+      isFetchingNextPage,
+      hasNextPage: false,
+      fetchNextPage,
+      error: null,
+    };
+  }
+
+  // Flatten all pages
+  const allPages = data.pages;
+  const allPosts: PostData[] = [];
+  const allLongformPosts: LongFormPostData[] = [];
+
+  // Process each page
+  for (const pageData of allPages) {
+    const pagePostsRaw =
+      "posts" in pageData && Array.isArray(pageData.posts)
+        ? pageData.posts
+        : [];
+    const pageLongformPostsRaw =
+      "longformPosts" in pageData && Array.isArray(pageData.longformPosts)
+        ? pageData.longformPosts
+        : [];
+
+    const pagePosts: PostData[] = Array.isArray(pagePostsRaw)
+      ? fromPostDTOArray(pagePostsRaw as unknown as PostDTO[])
+      : [];
+    const pageLongformPosts: LongFormPostData[] = Array.isArray(
+      pageLongformPostsRaw
+    )
+      ? fromLongFormPostDTOArray(
+          pageLongformPostsRaw as unknown as LongFormPostDTO[]
+        )
+      : [];
+
+    allPosts.push(...pagePosts);
+    allLongformPosts.push(...pageLongformPosts);
+  }
+
+  // Reconstruct allContent from flattened posts
+  const allContent: CombinedContent[] = combineContent(
+    allPosts,
+    allLongformPosts,
+    "scheduledFor",
+    "asc"
+  );
+
+  // Get other data from last page
+  const lastPage = allPages[allPages.length - 1];
+  if (!lastPage) {
+    return {
+      posts: [] as PostData[],
+      longformPosts: [] as LongFormPostData[],
+      allContent: [] as CombinedContent[],
+      user: null as UserData | null,
+      queueTypes: [] as QueueType[],
+      hashTagPresets: [] as HashTagPreset[],
+      isLoading,
+      isFetchingNextPage,
+      hasNextPage: false,
+      fetchNextPage,
+    };
+  }
+
+  const userRaw = "user" in lastPage ? lastPage.user : null;
+  const queueTypesRaw =
+    "queueTypes" in lastPage && Array.isArray(lastPage.queueTypes)
+      ? lastPage.queueTypes
+      : [];
+  const hashTagPresetsRaw =
+    "hashTagPresets" in lastPage && Array.isArray(lastPage.hashTagPresets)
+      ? lastPage.hashTagPresets
+      : [];
+
+  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
+    ? queueTypesRaw
+        .map((qt: unknown) => {
+          if (
+            qt &&
+            typeof qt === "object" &&
+            !Array.isArray(qt) &&
+            "id" in qt &&
+            "name" in qt
+          ) {
+            const q = qt as {
+              id?: unknown;
+              name?: unknown;
+              color?: unknown;
+              scheduleType?: unknown;
+              scheduleConfig?: unknown;
+              isEnabled?: unknown;
+              userId?: unknown;
+            };
+            const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
+            const name =
+              typeof q.name === "string" ? q.name : String(q.name ?? "");
+            const color =
+              q.color !== null && q.color !== undefined
+                ? typeof q.color === "string"
+                  ? q.color
+                  : String(q.color)
+                : null;
+            const scheduleType =
+              typeof q.scheduleType === "string" &&
+              (q.scheduleType === "INTERVAL" ||
+                q.scheduleType === "FIXED_SLOTS")
+                ? q.scheduleType
+                : undefined;
+            const scheduleConfig = convertJsonValueToScheduleConfig(
+              q.scheduleConfig
+            );
+            const isEnabled =
+              typeof q.isEnabled === "boolean"
+                ? q.isEnabled
+                : q.isEnabled !== false;
+            const userId = typeof q.userId === "string" ? q.userId : "";
+            const queueType: QueueType = {
+              id,
+              name,
+              color,
+              description: undefined,
+              scheduleType,
+              scheduleConfig,
+              isEnabled,
+              userId,
+            };
+            return queueType;
+          }
+          return null;
+        })
+        .filter((qt): qt is QueueType => qt !== null)
+    : [];
+  const hashTagPresets: HashTagPreset[] =
+    validateHashTagPresets(hashTagPresetsRaw);
+
+  return {
+    posts: allPosts,
+    longformPosts: allLongformPosts,
+    allContent,
+    user: userRaw,
+    queueTypes,
+    hashTagPresets,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error: null,
   };
 }

@@ -268,7 +268,7 @@ async function getSinglePostStats(eventId: string): Promise<PostStats> {
  */
 async function fetchStatsWithConcurrencyLimit(
   eventIds: string[],
-  concurrency = 10
+  concurrency = 20
 ): Promise<Record<string, PostStats>> {
   const stats: Record<string, PostStats> = {};
   const batches: string[][] = [];
@@ -324,10 +324,10 @@ export async function getPostStats(
   });
 
   try {
-    // Fetch stats with concurrency limiting
+    // Fetch stats with concurrency limiting (increased to 20 for faster first loads)
     const fetchedStats = await fetchStatsWithConcurrencyLimit(
       uniqueEventIds,
-      10
+      20
     );
 
     // Map results back to all eventIds (including duplicates)

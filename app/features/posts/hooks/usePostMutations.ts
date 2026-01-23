@@ -102,9 +102,10 @@ export function useBulkDeleteMutation() {
 }
 
 /**
- * Hook for reschedule mutation with automatic query invalidation
+ * Hook for reschedule mutation with optimistic updates
  */
 export function useReschedulePostMutation() {
+  const queryClient = useQueryClient();
   const invalidateAll = useInvalidatePostQueries();
 
   return useMutation({
@@ -140,6 +141,164 @@ export function useReschedulePostMutation() {
       }
 
       return response.json();
+    },
+    onMutate: async ({ postId, scheduledFor, queueTypeId }) => {
+      // Cancel outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: dashboardKeys.all });
+      await queryClient.cancelQueries({ queryKey: scheduledPostsKeys.all });
+      await queryClient.cancelQueries({ queryKey: calendarKeys.all });
+
+      // Snapshot previous values for rollback
+      const previousQueries: Array<{
+        queryKey: readonly unknown[];
+        data: unknown;
+      }> = [];
+
+      // Helper to update post in array
+      const updatePostInArray = (posts: unknown[]): unknown[] => {
+        return posts.map((post) => {
+          if (
+            post &&
+            typeof post === "object" &&
+            "id" in post &&
+            typeof post.id === "string" &&
+            post.id === postId
+          ) {
+            return {
+              ...post,
+              scheduledAtUtc: new Date(
+                parseInt(scheduledFor, 10) * 1000
+              ).toISOString(),
+              queueTypeId:
+                queueTypeId ?? (post as { queueTypeId?: string }).queueTypeId,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return post;
+        });
+      };
+
+      // Helper to update query data (handles both regular and infinite queries)
+      const updateQueryData = (queryKey: readonly unknown[], data: unknown) => {
+        if (!data) return;
+
+        // Handle infinite query structure (has pages array)
+        if (
+          typeof data === "object" &&
+          "pages" in data &&
+          Array.isArray((data as { pages: unknown[] }).pages)
+        ) {
+          const infiniteData = data as {
+            pages: unknown[];
+            pageParams: unknown[];
+          };
+          const updatedPages = infiniteData.pages.map((page) => {
+            if (!page || typeof page !== "object") return page;
+            const pageObj = page as Record<string, unknown>;
+            const updated: Record<string, unknown> = { ...pageObj };
+
+            // Update scheduledPosts array
+            if (Array.isArray(pageObj["scheduledPosts"])) {
+              updated["scheduledPosts"] = updatePostInArray(
+                pageObj["scheduledPosts"] as unknown[]
+              );
+            }
+            // Update posts array
+            if (Array.isArray(pageObj["posts"])) {
+              updated["posts"] = updatePostInArray(
+                pageObj["posts"] as unknown[]
+              );
+            }
+            // Update longformPosts array
+            if (Array.isArray(pageObj["longformPosts"])) {
+              updated["longformPosts"] = updatePostInArray(
+                pageObj["longformPosts"] as unknown[]
+              );
+            }
+
+            return updated;
+          });
+
+          queryClient.setQueryData(queryKey, {
+            ...infiniteData,
+            pages: updatedPages,
+          });
+        } else {
+          // Handle regular query structure
+          const queryData = data as Record<string, unknown>;
+          const updated: Record<string, unknown> = { ...queryData };
+
+          // Update scheduledPosts array
+          if (Array.isArray(queryData["scheduledPosts"])) {
+            updated["scheduledPosts"] = updatePostInArray(
+              queryData["scheduledPosts"] as unknown[]
+            );
+          }
+          // Update posts array
+          if (Array.isArray(queryData["posts"])) {
+            updated["posts"] = updatePostInArray(
+              queryData["posts"] as unknown[]
+            );
+          }
+          // Update longformPosts array
+          if (Array.isArray(queryData["longformPosts"])) {
+            updated["longformPosts"] = updatePostInArray(
+              queryData["longformPosts"] as unknown[]
+            );
+          }
+
+          queryClient.setQueryData(queryKey, updated);
+        }
+      };
+
+      // Update all dashboard queries
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: dashboardKeys.all })
+        .forEach((query) => {
+          const previousData = query.state.data;
+          previousQueries.push({
+            queryKey: query.queryKey,
+            data: previousData,
+          });
+          updateQueryData(query.queryKey, previousData);
+        });
+
+      // Update all scheduled posts queries
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: scheduledPostsKeys.all })
+        .forEach((query) => {
+          const previousData = query.state.data;
+          previousQueries.push({
+            queryKey: query.queryKey,
+            data: previousData,
+          });
+          updateQueryData(query.queryKey, previousData);
+        });
+
+      // Update calendar queries
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: calendarKeys.all })
+        .forEach((query) => {
+          const previousData = query.state.data;
+          previousQueries.push({
+            queryKey: query.queryKey,
+            data: previousData,
+          });
+          updateQueryData(query.queryKey, previousData);
+        });
+
+      return { previousQueries };
+    },
+    onError: (_error, _variables, context) => {
+      // Rollback optimistic updates on error
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(({ queryKey, data }) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
     },
     onSuccess: () => {
       invalidateAll();

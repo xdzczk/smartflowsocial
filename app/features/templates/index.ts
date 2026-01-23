@@ -50,6 +50,8 @@ export { useTemplatesState } from "./hooks/useTemplatesState";
 export {
   useTemplatesQuery,
   useTemplatesData,
+  useTemplatesInfiniteQuery,
+  useTemplatesInfiniteData,
   templatesKeys,
 } from "./hooks/useTemplatesQuery";
 export type { TemplatesLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";

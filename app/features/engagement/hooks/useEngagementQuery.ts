@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
 import type { PostData } from "~/features/posts/types";
+import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   engagementLoaderDataSchema,
@@ -80,6 +81,51 @@ export function useEngagementQuery() {
     initialData: validatedLoaderData,
     staleTime: 30 * 1000, // 30 seconds
     refetchOnMount: false,
+  });
+}
+
+/**
+ * Hook to fetch engagement data with infinite scroll support
+ */
+export function useEngagementInfiniteQuery() {
+  const loaderDataRaw = useLoaderData();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    engagementLoaderDataSchema
+  );
+
+  if (!validatedLoaderData) {
+    throw new Error("Invalid loader data");
+  }
+
+  return useInfiniteRemixQuery<EngagementLoaderData>({
+    queryKey: engagementKeys.list(),
+    initialData: validatedLoaderData,
+    getNextPageParam: (lastPage, allPages) => {
+      // Engagement loader doesn't return pagination metadata
+      // Check if last page has fewer posts than limit (20) to determine if there's more data
+      const posts = Array.isArray(lastPage.posts) ? lastPage.posts : [];
+      const limit = 20;
+
+      // If we got fewer posts than the limit, there's no more data
+      if (posts.length < limit) {
+        return;
+      }
+
+      // Otherwise, continue to next page (simple increment)
+      // maxPages limit is handled by useInfiniteRemixQuery wrapper
+      return allPages.length + 1;
+    },
+    buildUrl: (pageParam) => `/dashboard/engagement/feed?page=${pageParam}`,
+    staleTime: 30 * 1000, // 30 seconds
+    maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
+    // Keep previous data visible during refetches for smoother UX
+    placeholderData: (previousData) => previousData,
+    // Background refetching to keep engagement feed fresh
+    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchIntervalInBackground: true, // Continue refetching when tab is inactive
   });
 }
 
@@ -166,5 +212,133 @@ export function useEngagementData() {
     trustScores,
     isLoading: query.isLoading,
     rawData,
+  };
+}
+
+/**
+ * Processed engagement data from infinite query
+ * Aggregates notifications across all pages
+ */
+export function useEngagementInfiniteData() {
+  const query = useEngagementInfiniteQuery();
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    query;
+
+  if (data.pages.length === 0) {
+    const emptyPosts: PostData[] = [];
+    const emptyStats: Record<string, EventStats> = {};
+    const emptyGroupedNotifications: {
+      replies: GroupedNotification[];
+      quotes: GroupedNotification[];
+    } = {
+      replies: [],
+      quotes: [],
+    };
+    const emptyTrustScores: Record<string, number> = {};
+    return {
+      posts: emptyPosts,
+      stats: emptyStats,
+      user: null,
+      groupedNotifications: emptyGroupedNotifications,
+      trustScores: emptyTrustScores,
+      isLoading,
+      isFetchingNextPage,
+      hasNextPage: false,
+      fetchNextPage,
+      rawData: null,
+    };
+  }
+
+  // Flatten and aggregate across all pages
+  const allPages = data.pages;
+  const allPosts: PostData[] = [];
+  const allStats: Record<string, EventStats> = {};
+  const allReplies: GroupedNotification[] = [];
+  const allQuotes: GroupedNotification[] = [];
+  const allTrustScores: Record<string, number> = {};
+
+  // Process each page
+  for (const pageData of allPages) {
+    // Aggregate posts
+    const pagePosts: PostData[] = Array.isArray(pageData.posts)
+      ? fromPostDTOArray(pageData.posts as unknown as PostDTO[])
+      : [];
+    allPosts.push(...pagePosts);
+
+    // Aggregate stats
+    if (typeof pageData.stats === "object" && !Array.isArray(pageData.stats)) {
+      Object.assign(allStats, pageData.stats);
+    }
+
+    // Aggregate notifications
+    const replies = Array.isArray(pageData.groupedNotifications.replies)
+      ? (pageData.groupedNotifications
+          .replies as unknown as GroupedNotification[])
+      : [];
+    const quotes = Array.isArray(pageData.groupedNotifications.quotes)
+      ? (pageData.groupedNotifications
+          .quotes as unknown as GroupedNotification[])
+      : [];
+    allReplies.push(...replies);
+    allQuotes.push(...quotes);
+
+    // Aggregate trust scores
+    if (
+      typeof pageData.trustScores === "object" &&
+      !Array.isArray(pageData.trustScores)
+    ) {
+      Object.assign(
+        allTrustScores,
+        Object.fromEntries(
+          Object.entries(pageData.trustScores).map(([key, value]) => [
+            key,
+            typeof value === "number" ? value : 0,
+          ])
+        )
+      );
+    }
+  }
+
+  // Get user from last page
+  const lastPage = allPages[allPages.length - 1];
+  if (!lastPage) {
+    return {
+      posts: allPosts,
+      stats: allStats,
+      user: null,
+      groupedNotifications: {
+        replies: allReplies,
+        quotes: allQuotes,
+      },
+      trustScores: allTrustScores,
+      isLoading,
+      isFetchingNextPage,
+      hasNextPage: false,
+      fetchNextPage,
+      rawData: null,
+    };
+  }
+
+  const user =
+    lastPage.user &&
+    typeof lastPage.user === "object" &&
+    !Array.isArray(lastPage.user)
+      ? lastPage.user
+      : null;
+
+  return {
+    posts: allPosts,
+    stats: allStats,
+    user,
+    groupedNotifications: {
+      replies: allReplies,
+      quotes: allQuotes,
+    },
+    trustScores: allTrustScores,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    rawData: lastPage,
   };
 }

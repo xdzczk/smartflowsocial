@@ -9,11 +9,8 @@ import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
 import { getPostStats } from "~/features/posts/stats.server";
 import type { PostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
-import {
-  getGiveawayBlacklist,
-  getUserById,
-  getQueueTypes,
-} from "~/features/user";
+import { getGiveawayBlacklist, getUserById } from "~/features/user";
+import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
 import { logError } from "~/lib/error-logger.server";
 import { convertToHex } from "~/lib/helpers";
@@ -375,7 +372,7 @@ export async function loadGiveawayData(
       queueType,
     }),
     getUserById(userId),
-    getQueueTypes(userId),
+    getQueueTypesCached(userId),
   ]);
 
   // Get event IDs from signedEvent.id

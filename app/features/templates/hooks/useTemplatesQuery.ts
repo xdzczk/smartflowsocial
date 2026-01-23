@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { Asset } from "~/features/assets/types";
 import type { User as _User } from "~/features/user";
+import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   templatesLoaderDataSchema,
@@ -86,6 +87,41 @@ export function useTemplatesQuery() {
 }
 
 /**
+ * Hook to fetch templates with infinite scroll support
+ */
+export function useTemplatesInfiniteQuery() {
+  const [searchParams] = useSearchParams();
+  const searchTerm = searchParams.get("search") ?? "";
+
+  const loaderDataRaw = useLoaderData();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    templatesLoaderDataSchema
+  );
+
+  if (!validatedLoaderData) {
+    throw new Error("Invalid loader data");
+  }
+
+  return useInfiniteRemixQuery<TemplatesLoaderData>({
+    queryKey: templatesKeys.list(searchTerm),
+    initialData: validatedLoaderData,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.currentPage < lastPage.totalPages) {
+        return lastPage.currentPage + 1;
+      }
+      return;
+    },
+    buildUrl: (pageParam) =>
+      `/dashboard/templates?search=${encodeURIComponent(searchTerm)}&page=${pageParam}`,
+    staleTime: 30 * 1000, // 30 seconds
+    maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
+  });
+}
+
+/**
  * Processed templates data
  */
 export function useTemplatesData() {
@@ -134,5 +170,95 @@ export function useTemplatesData() {
       typeof rawData.searchTerm === "string" ? rawData.searchTerm : "",
     isLoading: query.isLoading,
     rawData,
+  };
+}
+
+/**
+ * Processed templates data from infinite query
+ * Flattens assets across all pages
+ */
+export function useTemplatesInfiniteData() {
+  const query = useTemplatesInfiniteQuery();
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    query;
+
+  if (data.pages.length === 0) {
+    return {
+      templates: [] as Template[],
+      user: null,
+      assets: [] as Asset[],
+      totalCount: 0,
+      totalPages: 0,
+      currentPage: 1,
+      searchTerm: "",
+      isLoading,
+      isFetchingNextPage,
+      hasNextPage: false,
+      fetchNextPage,
+      rawData: null,
+    };
+  }
+
+  // Flatten assets across all pages
+  const allPages = data.pages;
+  const allAssets: Asset[] = [];
+
+  for (const pageData of allPages) {
+    const pageAssets = Array.isArray(pageData.assets)
+      ? pageData.assets.map((asset) => ({
+          ...asset,
+          createdAt:
+            asset.createdAt instanceof Date
+              ? asset.createdAt
+              : typeof asset.createdAt === "string"
+                ? new Date(asset.createdAt)
+                : new Date(),
+          updatedAt:
+            asset.updatedAt instanceof Date
+              ? asset.updatedAt
+              : typeof asset.updatedAt === "string"
+                ? new Date(asset.updatedAt)
+                : new Date(),
+        }))
+      : [];
+    allAssets.push(...pageAssets);
+  }
+
+  // Get other data from last page
+  const lastPage = allPages[allPages.length - 1];
+  if (!lastPage) {
+    return {
+      templates: [],
+      user: null,
+      assets: allAssets,
+      totalCount: 0,
+      totalPages: 0,
+      currentPage: 1,
+      searchTerm: "",
+      isLoading,
+      isFetchingNextPage,
+      hasNextPage: false,
+      fetchNextPage,
+      rawData: null,
+    };
+  }
+
+  return {
+    templates: Array.isArray(lastPage.templates) ? lastPage.templates : [],
+    user: lastPage.user ?? null,
+    assets: allAssets,
+    totalCount:
+      typeof lastPage.totalCount === "number" ? lastPage.totalCount : 0,
+    totalPages:
+      typeof lastPage.totalPages === "number" ? lastPage.totalPages : 0,
+    currentPage:
+      typeof lastPage.currentPage === "number" ? lastPage.currentPage : 1,
+    searchTerm:
+      typeof lastPage.searchTerm === "string" ? lastPage.searchTerm : "",
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    rawData: lastPage,
   };
 }

@@ -71,6 +71,22 @@ export function usePostStatsQuery(posts: PostData[]) {
   // Only fetch if we have event IDs
   const enabled = eventIds.length > 0;
 
+  // Start with empty stats for all event IDs
+  const initialStats = useMemo(() => {
+    const stats: Record<string, PostStats> = {};
+    eventIds.forEach((eventId) => {
+      stats[eventId] = {
+        likes: 0,
+        replies: 0,
+        mentions: 0,
+        reposts: 0,
+        zaps: 0,
+        satszapped: 0,
+      };
+    });
+    return stats;
+  }, [eventIds]);
+
   const query = useQuery({
     queryKey: postStatsKeys.list(eventIds),
     queryFn: () => fetchPostStats(eventIds),
@@ -81,33 +97,15 @@ export function usePostStatsQuery(posts: PostData[]) {
     refetchOnMount: false, // Don't refetch on mount if data is fresh
     retry: 1, // Retry once on failure
     retryDelay: 1000, // Wait 1 second before retry
+    // Use select to only return merged stats, preventing re-renders when other query data changes
+    select: (data: Record<string, PostStats>) => {
+      // Merge fetched stats with initial empty stats
+      return { ...initialStats, ...data };
+    },
   });
 
-  // Merge fetched stats with initial empty stats
-  const mergedStats = useMemo(() => {
-    // Start with empty stats for all event IDs
-    const initialStats: Record<string, PostStats> = {};
-    eventIds.forEach((eventId) => {
-      initialStats[eventId] = {
-        likes: 0,
-        replies: 0,
-        mentions: 0,
-        reposts: 0,
-        zaps: 0,
-        satszapped: 0,
-      };
-    });
-
-    // Merge with fetched stats if available
-    if (query.data) {
-      return { ...initialStats, ...query.data };
-    }
-
-    return initialStats;
-  }, [eventIds, query.data]);
-
   return {
-    stats: mergedStats,
+    stats: query.data ?? initialStats,
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,

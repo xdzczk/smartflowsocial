@@ -56,7 +56,14 @@ export async function getScheduledPostsFromReadModel({
 
     // @ts-ignore - Dynamic imports work at runtime in CommonJS
     const queriesModule = await import("./post.queries.server");
-    const posts = await queriesModule.getScheduledPosts({ userId, queueType });
+    const postsResult = await queriesModule.getScheduledPosts({
+      userId,
+      queueType,
+    });
+    const posts =
+      "posts" in postsResult && Array.isArray(postsResult.posts)
+        ? postsResult.posts
+        : [];
 
     return posts.map((post: (typeof posts)[0]) => ({
       id: post.id,

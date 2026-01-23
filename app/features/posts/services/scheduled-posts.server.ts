@@ -53,14 +53,30 @@ export async function getScheduledDashboardData({
   userId: string;
   queueType: string;
 }) {
-  const [posts, allLongformPosts, user, queueTypesRaw, hashTagPresetsRaw] =
-    await Promise.all([
-      getScheduledPosts({ userId, queueType }),
-      getScheduledLongFormPosts({ userId }),
-      getUserById(userId),
-      getQueueTypes(userId),
-      getUserHashTagPresets(userId),
-    ]);
+  const [
+    postsResult,
+    allLongformPostsResult,
+    user,
+    queueTypesRaw,
+    hashTagPresetsRaw,
+  ] = await Promise.all([
+    getScheduledPosts({ userId, queueType }),
+    getScheduledLongFormPosts({ userId }),
+    getUserById(userId),
+    getQueueTypes(userId),
+    getUserHashTagPresets(userId),
+  ]);
+
+  // Extract posts arrays from pagination results
+  const posts =
+    "posts" in postsResult && Array.isArray(postsResult.posts)
+      ? postsResult.posts
+      : [];
+  const allLongformPosts =
+    "posts" in allLongformPostsResult &&
+    Array.isArray(allLongformPostsResult.posts)
+      ? allLongformPostsResult.posts
+      : [];
 
   const queueTypes = Array.isArray(queueTypesRaw) ? queueTypesRaw : [];
   const hashTagPresets = Array.isArray(hashTagPresetsRaw)

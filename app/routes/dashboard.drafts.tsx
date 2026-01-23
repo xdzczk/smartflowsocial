@@ -32,8 +32,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const url = new URL(request.url);
     const queueType =
       url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
+    const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+    const limit = 20;
 
-    const data = await loadDraftsData(userId, queueType);
+    const data = await loadDraftsData(userId, queueType, page, limit);
 
     // Validate loader response with Zod schema
     return validateLoaderResponse(data, draftsLoaderDataSchema);

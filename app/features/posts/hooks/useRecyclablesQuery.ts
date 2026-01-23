@@ -7,6 +7,7 @@ import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
+import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   recyclablesLoaderDataSchema,
@@ -88,7 +89,45 @@ export function useRecyclablesQuery() {
 }
 
 /**
+ * Hook to fetch recyclable posts with infinite scroll support
+ * Uses Remix loader data as initial data and enables infinite pagination
+ */
+export function useRecyclablesInfiniteQuery() {
+  const params = useParams();
+  const queueType = params["queueType"] ?? "all";
+
+  const loaderDataRaw = useLoaderData();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    recyclablesLoaderDataSchema
+  );
+
+  if (!validatedLoaderData) {
+    throw new Error("Invalid loader data");
+  }
+
+  return useInfiniteRemixQuery<RecyclablesLoaderData>({
+    queryKey: recyclablesKeys.list(queueType),
+    initialData: validatedLoaderData,
+    getNextPageParam: (lastPage) => {
+      const { pagination } = lastPage;
+      if (pagination.currentPage < pagination.pages) {
+        return pagination.currentPage + 1;
+      }
+      return;
+    },
+    buildUrl: (pageParam) =>
+      `/dashboard/recyclables${queueType !== "all" ? `/${queueType}` : ""}?page=${pageParam}`,
+    staleTime: 30 * 1000, // 30 seconds
+    maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
+  });
+}
+
+/**
  * Processed recyclables data with deserialized DTOs
+ * Works with both regular and infinite queries
  */
 export function useRecyclablesData() {
   const query = useRecyclablesQuery();
@@ -178,5 +217,132 @@ export function useRecyclablesData() {
     selectedQueueType: rawData.selectedQueueType || "all",
     isLoading: query.isLoading,
     rawData,
+  };
+}
+
+/**
+ * Processed recyclables data from infinite query
+ * Flattens pages and aggregates stats across all pages
+ */
+export function useRecyclablesInfiniteData() {
+  const query = useRecyclablesInfiniteQuery();
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    query;
+
+  if (data.pages.length === 0) {
+    const emptyPosts: PostData[] = [];
+    const emptyStats: Record<
+      string,
+      {
+        likes?: number;
+        replies?: number;
+        mentions?: number;
+        reposts?: number;
+        zaps?: number;
+        satszapped?: number;
+      }
+    > = {};
+    const emptyQueueTypes: QueueType[] = [];
+    return {
+      posts: emptyPosts,
+      pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
+      stats: emptyStats,
+      user: null,
+      queueTypes: emptyQueueTypes,
+      selectedQueueType: "all",
+      isLoading,
+      isFetchingNextPage,
+      hasNextPage: false,
+      fetchNextPage,
+      rawData: null,
+    };
+  }
+
+  // Flatten all pages into a single posts array
+  const allPages = data.pages;
+  const allPosts: PostData[] = [];
+  const allStats: Record<
+    string,
+    {
+      likes?: number;
+      replies?: number;
+      mentions?: number;
+      reposts?: number;
+      zaps?: number;
+      satszapped?: number;
+    }
+  > = {};
+
+  // Process each page
+  for (const pageData of allPages) {
+    // Deserialize DTOs
+    const pagePosts: PostData[] = Array.isArray(pageData.posts)
+      ? fromPostDTOArray(pageData.posts as unknown as PostDTO[])
+      : [];
+    allPosts.push(...pagePosts);
+
+    // Aggregate stats (merge stats from all pages)
+    if (typeof pageData.stats === "object" && !Array.isArray(pageData.stats)) {
+      Object.assign(allStats, pageData.stats);
+    }
+  }
+
+  // Get pagination from the last page
+  const lastPage = allPages[allPages.length - 1];
+  if (!lastPage) {
+    return {
+      posts: allPosts,
+      pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
+      stats: allStats,
+      user: null,
+      queueTypes: [],
+      selectedQueueType: "all",
+      isLoading,
+      isFetchingNextPage,
+      hasNextPage: false,
+      fetchNextPage,
+      rawData: null,
+    };
+  }
+
+  const pagination =
+    typeof lastPage.pagination === "object" &&
+    !Array.isArray(lastPage.pagination) &&
+    "total" in lastPage.pagination &&
+    "pages" in lastPage.pagination &&
+    "currentPage" in lastPage.pagination &&
+    "limit" in lastPage.pagination
+      ? {
+          total:
+            typeof lastPage.pagination.total === "number"
+              ? lastPage.pagination.total
+              : 0,
+          pages:
+            typeof lastPage.pagination.pages === "number"
+              ? lastPage.pagination.pages
+              : 0,
+          currentPage:
+            typeof lastPage.pagination.currentPage === "number"
+              ? lastPage.pagination.currentPage
+              : 1,
+          limit:
+            typeof lastPage.pagination.limit === "number"
+              ? lastPage.pagination.limit
+              : 20,
+        }
+      : { total: 0, pages: 0, currentPage: 1, limit: 20 };
+
+  return {
+    posts: allPosts,
+    pagination,
+    stats: allStats,
+    user: lastPage.user,
+    queueTypes: Array.isArray(lastPage.queueTypes) ? lastPage.queueTypes : [],
+    selectedQueueType: lastPage.selectedQueueType || "all",
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    rawData: lastPage,
   };
 }

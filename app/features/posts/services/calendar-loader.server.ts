@@ -10,6 +10,7 @@ import {
   getPastLongFormPosts,
 } from "~/models/longformpost.server";
 import { getScheduledPosts, getPastPosts } from "~/models/post.queries.server";
+import type { PostWithQueueType } from "~/models/post.types";
 
 import { combineContent as _combineContent } from "../combined.server";
 import {
@@ -55,24 +56,43 @@ export async function loadCalendarData(userId: string, queueType: string) {
     getQueueTypes(userId),
   ]);
 
+  // Extract posts arrays from pagination results
+  const scheduledPostsArray =
+    "posts" in allScheduledPosts && Array.isArray(allScheduledPosts.posts)
+      ? allScheduledPosts.posts
+      : [];
+  const scheduledLongFormPostsArray =
+    "posts" in allScheduledLongFormPosts &&
+    Array.isArray(allScheduledLongFormPosts.posts)
+      ? allScheduledLongFormPosts.posts
+      : [];
+  const pastPostsArray =
+    "posts" in allPastPosts && Array.isArray(allPastPosts.posts)
+      ? allPastPosts.posts
+      : [];
+  const pastLongFormPostsArray =
+    "posts" in allPastLongFormPosts && Array.isArray(allPastLongFormPosts.posts)
+      ? allPastLongFormPosts.posts
+      : [];
+
   // Filter posts by queue type if specific queue is selected
   const filteredScheduledPosts = filterPostsByQueueType(
-    allScheduledPosts,
+    scheduledPostsArray,
     queueType
   );
   const filteredScheduledLongFormPosts = filterPostsByQueueType(
-    allScheduledLongFormPosts as Array<{
+    scheduledLongFormPostsArray as Array<{
       queueType?: { name?: string | null } | null;
     }>,
     queueType
-  ) as typeof allScheduledLongFormPosts;
-  const filteredPastPosts = filterPostsByQueueType(allPastPosts, queueType);
+  ) as typeof scheduledLongFormPostsArray;
+  const filteredPastPosts = filterPostsByQueueType(pastPostsArray, queueType);
   const filteredPastLongFormPosts = filterPostsByQueueType(
-    allPastLongFormPosts as Array<{
+    pastLongFormPostsArray as Array<{
       queueType?: { name?: string | null } | null;
     }>,
     queueType
-  ) as typeof allPastLongFormPosts;
+  ) as typeof pastLongFormPostsArray;
 
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const scheduledPostsData: PostData[] = filteredScheduledPosts.map((post) => {
@@ -107,7 +127,9 @@ export async function loadCalendarData(userId: string, queueType: string) {
     };
     return result;
   });
-  const pastPostsData: PostData[] = filteredPastPosts.map((post) => {
+  const pastPostsData: PostData[] = (
+    filteredPastPosts as PostWithQueueType[]
+  ).map((post) => {
     const { queueType, ...rest } = post;
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {
@@ -141,96 +163,118 @@ export async function loadCalendarData(userId: string, queueType: string) {
   });
 
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
-  const scheduledLongFormPostsData: LongFormPostData[] =
-    filteredScheduledLongFormPosts.map((post) => {
-      const { queueType, ...rest } = post;
-      const convertedQueueType: QueueType | undefined = queueType
+  const scheduledLongFormPostsData: LongFormPostData[] = (
+    filteredScheduledLongFormPosts as Array<{
+      queueType?: {
+        id: string;
+        name: string;
+        scheduleType?: "INTERVAL" | "FIXED_SLOTS" | null;
+        scheduleConfig?: unknown;
+        isEnabled?: boolean | null;
+        color?: string | null;
+        description?: string | null;
+        userId?: string | null;
+      } | null;
+      signedEvent?: unknown;
+      nostrEvent?: unknown;
+      [key: string]: unknown;
+    }>
+  ).map((post) => {
+    const queueType = post.queueType;
+    const { queueType: _queueType, ...rest } = post;
+    const convertedQueueType: QueueType | undefined = queueType
+      ? ((): QueueType => {
+          const scheduleTypeValue: "INTERVAL" | "FIXED_SLOTS" | undefined =
+            queueType.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined;
+          return {
+            id: queueType.id,
+            name: queueType.name,
+            color: queueType.color ?? null,
+            description: queueType.description ?? null,
+            scheduleType: scheduleTypeValue,
+            scheduleConfig: convertJsonValueToScheduleConfig(
+              queueType.scheduleConfig
+            ),
+            isEnabled: queueType.isEnabled ?? false,
+            userId: queueType.userId ?? "",
+          };
+        })()
+      : undefined;
+    const signedEventValue: LongFormPostData["signedEvent"] =
+      post.signedEvent as LongFormPostData["signedEvent"];
+    const nostrEventValue: LongFormPostData["nostrEvent"] =
+      post.nostrEvent as LongFormPostData["nostrEvent"];
+    const result: LongFormPostData = {
+      ...(rest as unknown as LongFormPostData),
+      queueType: convertedQueueType,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return result;
+  });
+  const pastLongFormPostsData: LongFormPostData[] = (
+    filteredPastLongFormPosts as Array<{
+      queueType?: {
+        id: string;
+        name: string;
+        scheduleType?: "INTERVAL" | "FIXED_SLOTS" | null;
+        scheduleConfig?: unknown;
+        isEnabled?: boolean | null;
+        color?: string | null;
+        description?: string | null;
+        userId?: string | null;
+      } | null;
+      signedEvent?: unknown;
+      nostrEvent?: unknown;
+      [key: string]: unknown;
+    }>
+  ).map((post) => {
+    const queueType = post.queueType;
+    const convertedQueueType: QueueType | undefined =
+      queueType &&
+      typeof queueType === "object" &&
+      "id" in queueType &&
+      "name" in queueType
         ? ((): QueueType => {
-            const scheduleTypeValue: "INTERVAL" | "FIXED_SLOTS" | undefined =
-              queueType.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined;
+            const idValue: string = queueType.id;
+            const nameValue: string = queueType.name;
+            const colorValue: string | null | undefined =
+              "color" in queueType ? queueType.color : undefined;
+            const descriptionValue: string | null | undefined =
+              "description" in queueType ? queueType.description : undefined;
+            const scheduleTypeValue: "INTERVAL" | "FIXED_SLOTS" | undefined = (
+              "scheduleType" in queueType ? queueType.scheduleType : undefined
+            ) as "INTERVAL" | "FIXED_SLOTS" | undefined;
+            const isEnabledValue: boolean | undefined = (
+              "isEnabled" in queueType ? queueType.isEnabled : undefined
+            ) as boolean | undefined;
+            const userIdValue: string | undefined = (
+              "userId" in queueType ? queueType.userId : undefined
+            ) as string | undefined;
             return {
-              id: queueType.id,
-              name: queueType.name,
-              color: queueType.color,
-              description: queueType.description,
+              id: idValue,
+              name: nameValue,
+              color: colorValue ?? null,
+              description: descriptionValue ?? null,
               scheduleType: scheduleTypeValue,
               scheduleConfig: convertJsonValueToScheduleConfig(
-                queueType.scheduleConfig
+                "scheduleConfig" in queueType
+                  ? queueType.scheduleConfig
+                  : undefined
               ),
-              isEnabled: queueType.isEnabled,
-              userId: queueType.userId,
+              isEnabled: isEnabledValue ?? false,
+              userId: userIdValue ?? "",
             };
           })()
         : undefined;
-      const signedEventValue: LongFormPostData["signedEvent"] =
-        post.signedEvent as LongFormPostData["signedEvent"];
-      const nostrEventValue: LongFormPostData["nostrEvent"] =
-        post.nostrEvent as LongFormPostData["nostrEvent"];
-      const result: LongFormPostData = {
-        ...rest,
-        queueType: convertedQueueType,
-        signedEvent: signedEventValue,
-        nostrEvent: nostrEventValue,
-      };
-      return result;
-    });
-  const pastLongFormPostsData: LongFormPostData[] =
-    filteredPastLongFormPosts.map((post) => {
-      const convertedQueueType: QueueType | undefined =
-        "queueType" in post &&
-        post.queueType &&
-        typeof post.queueType === "object" &&
-        "id" in post.queueType &&
-        "name" in post.queueType
-          ? ((): QueueType => {
-              const idValue: string = post.queueType.id as string;
-              const nameValue: string = post.queueType.name as string;
-              const colorValue: string | null | undefined = (
-                "color" in post.queueType ? post.queueType.color : undefined
-              ) as string | null | undefined;
-              const descriptionValue: string | null | undefined = (
-                "description" in post.queueType
-                  ? post.queueType.description
-                  : undefined
-              ) as string | null | undefined;
-              const scheduleTypeValue: "INTERVAL" | "FIXED_SLOTS" | undefined =
-                (
-                  "scheduleType" in post.queueType
-                    ? post.queueType.scheduleType
-                    : undefined
-                ) as "INTERVAL" | "FIXED_SLOTS" | undefined;
-              const isEnabledValue: boolean | undefined = (
-                "isEnabled" in post.queueType
-                  ? post.queueType.isEnabled
-                  : undefined
-              ) as boolean | undefined;
-              const userIdValue: string | undefined = (
-                "userId" in post.queueType ? post.queueType.userId : undefined
-              ) as string | undefined;
-              return {
-                id: idValue,
-                name: nameValue,
-                color: colorValue,
-                description: descriptionValue,
-                scheduleType: scheduleTypeValue,
-                scheduleConfig: convertJsonValueToScheduleConfig(
-                  "scheduleConfig" in post.queueType
-                    ? post.queueType.scheduleConfig
-                    : undefined
-                ),
-                isEnabled: isEnabledValue,
-                userId: userIdValue,
-              };
-            })()
-          : undefined;
-      const result: LongFormPostData = {
-        ...post,
-        queueType: convertedQueueType,
-        signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
-        nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
-      };
-      return result;
-    });
+    const result: LongFormPostData = {
+      ...(post as unknown as LongFormPostData),
+      queueType: convertedQueueType,
+      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
+      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
+    };
+    return result;
+  });
 
   // Serialize Date objects to strings for Remix loader response
   // Note: allContent/allPastContent are removed - reconstruct on client from posts
@@ -260,14 +304,24 @@ export async function loadCalendarData(userId: string, queueType: string) {
  * Simplified version for queue-specific views
  */
 export async function loadCalendarQueueData(userId: string, queueType: string) {
-  const [allScheduledPosts, user, queueTypes] = await Promise.all([
+  const [allScheduledPostsResult, user, queueTypes] = await Promise.all([
     getScheduledPosts({ userId }),
     getUserById(userId),
     getQueueTypes(userId),
   ]);
 
+  // Extract posts array from pagination result
+  const allScheduledPostsArray =
+    "posts" in allScheduledPostsResult &&
+    Array.isArray(allScheduledPostsResult.posts)
+      ? allScheduledPostsResult.posts
+      : [];
+
   // Filter posts by queue type if specific queue is selected
-  const scheduledPosts = filterPostsByQueueType(allScheduledPosts, queueType);
+  const scheduledPosts = filterPostsByQueueType(
+    allScheduledPostsArray,
+    queueType
+  );
 
   // Convert PostWithQueueType[] to PostData[] and serialize
   const scheduledPostsData: PostData[] = scheduledPosts.map((post) => {
