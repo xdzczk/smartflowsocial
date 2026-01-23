@@ -10,7 +10,6 @@ import {
   getPastLongFormPosts,
 } from "~/models/longformpost.server";
 import { getScheduledPosts, getPastPosts } from "~/models/post.queries.server";
-import type { PostWithQueueType } from "~/models/post.types";
 
 import { combineContent as _combineContent } from "../combined.server";
 import {
@@ -66,14 +65,11 @@ export async function loadCalendarData(userId: string, queueType: string) {
     Array.isArray(allScheduledLongFormPosts.posts)
       ? allScheduledLongFormPosts.posts
       : [];
-  const pastPostsArray =
-    "posts" in allPastPosts && Array.isArray(allPastPosts.posts)
-      ? allPastPosts.posts
-      : [];
-  const pastLongFormPostsArray =
-    "posts" in allPastLongFormPosts && Array.isArray(allPastLongFormPosts.posts)
-      ? allPastLongFormPosts.posts
-      : [];
+  // getPastPosts and getPastLongFormPosts return arrays directly, not paginated objects
+  const pastPostsArray = Array.isArray(allPastPosts) ? allPastPosts : [];
+  const pastLongFormPostsArray = Array.isArray(allPastLongFormPosts)
+    ? allPastLongFormPosts
+    : [];
 
   // Filter posts by queue type if specific queue is selected
   const filteredScheduledPosts = filterPostsByQueueType(
@@ -127,9 +123,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
     };
     return result;
   });
-  const pastPostsData: PostData[] = (
-    filteredPastPosts as PostWithQueueType[]
-  ).map((post) => {
+  const pastPostsData: PostData[] = filteredPastPosts.map((post) => {
     const { queueType, ...rest } = post;
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {

@@ -277,6 +277,8 @@ export const draftsLoaderDataSchema = z.object({
   user: userSchema.nullable(),
   queueTypes: z.array(queueTypeSchema),
   selectedQueueType: z.string(),
+  pagination: paginationSchema,
+  longformPagination: paginationSchema.optional(),
 });
 
 export type DraftsLoaderData = z.infer<typeof draftsLoaderDataSchema>;
@@ -477,6 +479,8 @@ export const scheduledPostsLoaderDataSchema = z.object({
   queueTypes: z.array(queueTypeSchema),
   selectedQueueType: z.string(),
   hashTagPresets: z.array(hashTagPresetSchema),
+  pagination: paginationSchema,
+  longformPagination: paginationSchema.optional(),
 });
 
 export type ScheduledPostsLoaderData = z.infer<
@@ -502,6 +506,8 @@ export const dashboardLoaderDataSchema = z.object({
   selectedQueueType: z.string(),
   planActivated: z.string().nullable().optional(),
   successMessage: z.string().nullable().optional(),
+  pagination: paginationSchema,
+  longformPagination: paginationSchema.optional(),
 });
 
 export type DashboardLoaderData = z.infer<typeof dashboardLoaderDataSchema>;
