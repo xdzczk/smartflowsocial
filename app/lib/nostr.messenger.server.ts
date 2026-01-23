@@ -306,19 +306,53 @@ export async function sendNostrDirectMessage(
       };
     }
 
+    // Build headers
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    // Add API token if configured
+    const apiToken = process.env["NOSTR_PUBLISHER_API_TOKEN"];
+    if (apiToken) {
+      headers["API-TOKEN"] = apiToken;
+    }
+
     const response = await fetch(publisherUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         relays: relaysToUse.length > 0 ? relaysToUse : relaysArray,
         event: signedEvent,
+        // Note: returnPerRelayResults is no longer needed - new publisher always returns results
       }),
     });
 
     if (!response.ok) {
       const errorText = await readResponseTextSafe(response);
+
+      // Handle specific error codes
+      if (response.status === 409) {
+        return {
+          success: false,
+          status: response.status,
+          error: `Event already published (replay protection): ${errorText}`,
+          event: signedEvent,
+        };
+      }
+
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("Retry-After");
+        const retryMsg = retryAfter
+          ? ` Retry after ${retryAfter} seconds.`
+          : "";
+        return {
+          success: false,
+          status: response.status,
+          error: `Rate limit exceeded.${retryMsg} ${errorText}`,
+          event: signedEvent,
+        };
+      }
+
       return {
         success: false,
         status: response.status,

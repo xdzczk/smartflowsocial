@@ -19,6 +19,7 @@ interface EnvConfig {
   DATABASE_URL: string;
   SESSION_SECRET: string;
   NOSTR_PUBLISHER_URL: string;
+  NOSTR_PUBLISHER_API_TOKEN?: string; // Optional API token for publisher authentication
   REDIS_URL: string;
 
   // Storage (required if any storage var is set)
@@ -148,6 +149,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "OWNER_NWC_RELAY",
     "OWNER_NWC_RELAYS",
     "NOSTR_NSEC",
+    "NOSTR_PUBLISHER_API_TOKEN",
     "SENTRY_DSN",
     "RELAY_HEALTH_STORE",
     "PORT",
