@@ -145,10 +145,8 @@ export async function getPostStats(
   }
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
     // Fetch stats for each event ID
+    // Note: fetchJsonWithRetry handles timeouts internally, no need for outer AbortController
     const statsPromises = eventIds.map(async (eventId) => {
       // Read directly from process.env to support test environment changes
       const primalUrl =
@@ -177,7 +175,6 @@ export async function getPostStats(
 
     const statsResults = await Promise.all(statsPromises);
     stats = statsResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
-    clearTimeout(timeoutId);
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       message: "Error fetching stats",
