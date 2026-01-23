@@ -5,6 +5,7 @@
 
 import { useFetcher } from "@remix-run/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 
 // PageData is a flexible type that allows any data structure
 // Some loaders have pagination, others don't - we make it optional
@@ -64,6 +65,8 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
   refetchIntervalInBackground?: boolean;
 }) {
   const fetcher = useFetcher<TData>();
+  // Track the URL we're currently loading to verify we get the right response
+  const loadingUrlRef = useRef<string | null>(null);
 
   // Wrap getNextPageParam to respect maxPages limit
   const wrappedGetNextPageParam = (
@@ -101,45 +104,143 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         return Promise.reject(new Error("No URL provided"));
       }
 
-      // Load the URL
+      // Wait for fetcher to be idle before starting new request (avoid race conditions)
+      // If fetcher is already loading, wait for it to complete first
+      const currentFetcherState = fetcher.state;
+      if (currentFetcherState !== "idle") {
+        // Wait for current request to finish before starting new one
+        await new Promise<void>((resolve) => {
+          const checkState = () => {
+            const state: string = fetcher.state;
+            if (state === "idle") {
+              resolve();
+            } else {
+              setTimeout(checkState, 50);
+            }
+          };
+          checkState();
+        });
+      }
+
+      // Store initial data to detect when new data arrives
+      const initialData = fetcher.data;
+
+      // Set the URL we're expecting to load
+      loadingUrlRef.current = url;
+
+      // Load the URL - this will trigger a new request
       fetcher.load(url);
 
-      // Wait for fetcher to complete
+      // Wait for fetcher to complete with new data
       return new Promise<TData>((resolve, reject) => {
         let hasSeenLoading = false;
         const maxWaitTime = 10000; // 10 second timeout
         const startTime = Date.now();
 
-        const checkFetcher = () => {
-          const elapsed = Date.now() - startTime;
-          if (elapsed > maxWaitTime) {
-            reject(new Error("Fetcher timeout"));
+        // Helper to verify pagination matches requested page
+        const verifyPageData = (data: unknown): boolean => {
+          if (
+            typeof data === "object" &&
+            data !== null &&
+            "pagination" in data
+          ) {
+            const pagination = (data as { pagination?: unknown }).pagination;
+            if (
+              pagination &&
+              typeof pagination === "object" &&
+              "currentPage" in pagination &&
+              typeof pagination.currentPage === "number"
+            ) {
+              return pagination.currentPage === pageParam;
+            }
+          }
+          return true; // No pagination to verify, accept data
+        };
+
+        // Helper to resolve with cleanup
+        const resolveWithCleanup = (data: TData) => {
+          loadingUrlRef.current = null;
+          resolve(data);
+        };
+
+        // Helper to reject with cleanup
+        const rejectWithCleanup = (error: Error) => {
+          loadingUrlRef.current = null;
+          reject(error);
+        };
+
+        // Helper to handle idle state with data
+        const handleIdleWithData = (data: unknown) => {
+          if (!data) {
+            rejectWithCleanup(new Error("No data received from fetcher"));
             return;
           }
 
+          if (verifyPageData(data)) {
+            resolveWithCleanup(data as TData);
+          } else {
+            // Extract page number for error message
+            let pageNum = pageParam;
+            const dataObj = data as {
+              pagination?: { currentPage?: number };
+            } | null;
+            if (dataObj && "pagination" in dataObj) {
+              const pagination = dataObj.pagination;
+              if (typeof pagination?.currentPage === "number") {
+                pageNum = pagination.currentPage;
+              }
+            }
+            rejectWithCleanup(
+              new Error(
+                `Received data for page ${pageNum} but requested page ${pageParam}`
+              )
+            );
+          }
+        };
+
+        const checkFetcher = () => {
+          const elapsed = Date.now() - startTime;
+          if (elapsed > maxWaitTime) {
+            rejectWithCleanup(new Error(`Fetcher timeout after ${elapsed}ms`));
+            return;
+          }
+
+          const currentState = fetcher.state;
+          const currentData = fetcher.data;
+
           // Track when we see loading state (ensures new request started)
-          if (fetcher.state === "loading") {
+          if (currentState === "loading") {
             hasSeenLoading = true;
             setTimeout(checkFetcher, 50);
             return;
           }
 
-          // Once we've seen loading and now idle, check for new data
-          if (hasSeenLoading && fetcher.state === "idle") {
-            const fetcherData = fetcher.data;
-            if (fetcherData) {
-              // Resolve with new data (even if it's the same object, it's from the new request)
-              resolve(fetcherData as TData);
-            } else {
-              reject(new Error("No data received from fetcher"));
-            }
+          // Once we've seen loading and now idle, verify we got the correct page data
+          if (hasSeenLoading && currentState === "idle") {
+            handleIdleWithData(currentData);
             return;
           }
 
-          // If idle but haven't seen loading yet, might be stale state - wait a bit
-          if (fetcher.state === "idle" && !hasSeenLoading) {
-            // Give it a moment to start loading
-            setTimeout(checkFetcher, 100);
+          // If idle but haven't seen loading yet, wait for loading to start
+          if (currentState === "idle" && !hasSeenLoading) {
+            // If data changed from initial, loading might have happened very quickly
+            if (currentData && currentData !== initialData) {
+              // For page 2+, verify the data matches
+              if (pageParam > 1) {
+                if (verifyPageData(currentData)) {
+                  resolveWithCleanup(currentData as TData);
+                } else {
+                  // Wrong page, wait a bit more
+                  setTimeout(checkFetcher, 100);
+                }
+              } else {
+                // Page 1 - accept the data
+                resolveWithCleanup(currentData as TData);
+              }
+            } else {
+              // Give it a moment to start loading
+              setTimeout(checkFetcher, 100);
+            }
             return;
           }
 
