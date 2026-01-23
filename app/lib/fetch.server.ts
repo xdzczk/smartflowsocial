@@ -129,16 +129,20 @@ const DEFAULT_OPTIONS: Required<
 /**
  * Creates an AbortController that aborts after the specified timeout
  * Returns both the controller and the timeout ID so it can be cleared
+ * Also returns a flag to track if response was received
  */
 function createTimeoutController(timeout: number): {
   controller: AbortController;
   timeoutId: NodeJS.Timeout;
+  responseReceived: { current: boolean };
 } {
   const controller = new AbortController();
+  const responseReceived = { current: false };
   const timeoutId = setTimeout(() => {
     try {
       // Only abort if the signal hasn't already been aborted
-      if (!controller.signal.aborted) {
+      // and if we haven't received a response yet
+      if (!controller.signal.aborted && !responseReceived.current) {
         controller.abort();
       }
     } catch (_error) {
@@ -148,7 +152,7 @@ function createTimeoutController(timeout: number): {
     }
   }, timeout);
 
-  return { controller, timeoutId };
+  return { controller, timeoutId, responseReceived };
 }
 
 /**
@@ -300,21 +304,42 @@ async function handleFetchError(
 function createAbortControllerWithTimeout(
   timeout: number,
   originalSignal?: AbortSignal
-): { controller: AbortController; timeoutId: NodeJS.Timeout } {
-  const { controller: timeoutController, timeoutId } =
-    createTimeoutController(timeout);
+): {
+  controller: AbortController;
+  timeoutId: NodeJS.Timeout;
+  responseReceived: { current: boolean };
+} {
+  const {
+    controller: timeoutController,
+    timeoutId,
+    responseReceived,
+  } = createTimeoutController(timeout);
   const abortController = new AbortController();
 
   if (originalSignal) {
     originalSignal.addEventListener("abort", () => {
-      abortController.abort();
+      try {
+        if (!abortController.signal.aborted && !responseReceived.current) {
+          abortController.abort();
+        }
+      } catch (_error) {
+        // Ignore errors when aborting (e.g., stream already has a reader)
+        // The abort signal has served its purpose
+      }
     });
   }
   timeoutController.signal.addEventListener("abort", () => {
-    abortController.abort();
+    try {
+      if (!abortController.signal.aborted && !responseReceived.current) {
+        abortController.abort();
+      }
+    } catch (_error) {
+      // Ignore errors when aborting (e.g., stream already has a reader)
+      // The timeout has served its purpose (preventing hanging requests)
+    }
   });
 
-  return { controller: abortController, timeoutId };
+  return { controller: abortController, timeoutId, responseReceived };
 }
 
 async function makeFetchRequest(
@@ -524,14 +549,19 @@ export async function fetchWithRetry(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     let timeoutId: NodeJS.Timeout | undefined;
+    let responseReceived: { current: boolean } | undefined;
     try {
       // Create abort controller with timeout
-      const { controller: abortController, timeoutId: tid } =
-        createAbortControllerWithTimeout(
-          timeout,
-          fetchOptions.signal ?? undefined
-        );
+      const {
+        controller: abortController,
+        timeoutId: tid,
+        responseReceived: rr,
+      } = createAbortControllerWithTimeout(
+        timeout,
+        fetchOptions.signal ?? undefined
+      );
       timeoutId = tid;
+      responseReceived = rr;
 
       // Make the fetch request
       const response = await makeFetchRequest(
@@ -539,6 +569,12 @@ export async function fetchWithRetry(
         { ...fetchOptions, signal: abortController.signal },
         correlationId
       );
+
+      // Mark that we've received a response
+      // This prevents the timeout from trying to abort a stream that's being consumed
+      if (responseReceived) {
+        responseReceived.current = true;
+      }
 
       // Clear the timeout since we got a response
       // This prevents the timeout from firing and trying to abort
