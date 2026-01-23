@@ -139,12 +139,13 @@ function createTimeoutController(timeout: number): {
   const controller = new AbortController();
   const responseReceived = { current: false };
   const timeoutId = setTimeout(() => {
+    // Check flag synchronously before attempting abort
+    if (responseReceived.current || controller.signal.aborted) {
+      return; // Response already received or already aborted, don't abort
+    }
+
     try {
-      // Only abort if the signal hasn't already been aborted
-      // and if we haven't received a response yet
-      if (!controller.signal.aborted && !responseReceived.current) {
-        controller.abort();
-      }
+      controller.abort();
     } catch (_error) {
       // Ignore errors when aborting (e.g., stream already has a reader)
       // This can happen if the response is already being consumed
@@ -316,28 +317,25 @@ function createAbortControllerWithTimeout(
   } = createTimeoutController(timeout);
   const abortController = new AbortController();
 
-  if (originalSignal) {
-    originalSignal.addEventListener("abort", () => {
-      try {
-        if (!abortController.signal.aborted && !responseReceived.current) {
-          abortController.abort();
-        }
-      } catch (_error) {
-        // Ignore errors when aborting (e.g., stream already has a reader)
-        // The abort signal has served its purpose
-      }
-    });
-  }
-  timeoutController.signal.addEventListener("abort", () => {
+  // Safe abort function that checks flag and handles errors
+  const safeAbort = (): void => {
+    // Check flag synchronously - if response received, don't abort
+    if (responseReceived.current || abortController.signal.aborted) {
+      return;
+    }
+
     try {
-      if (!abortController.signal.aborted && !responseReceived.current) {
-        abortController.abort();
-      }
+      abortController.abort();
     } catch (_error) {
       // Ignore errors when aborting (e.g., stream already has a reader)
-      // The timeout has served its purpose (preventing hanging requests)
+      // This can happen if the response stream is already being consumed
     }
-  });
+  };
+
+  if (originalSignal) {
+    originalSignal.addEventListener("abort", safeAbort);
+  }
+  timeoutController.signal.addEventListener("abort", safeAbort);
 
   return { controller: abortController, timeoutId, responseReceived };
 }
@@ -570,11 +568,10 @@ export async function fetchWithRetry(
         correlationId
       );
 
-      // Mark that we've received a response
+      // Mark that we've received a response IMMEDIATELY
       // This prevents the timeout from trying to abort a stream that's being consumed
-      if (responseReceived) {
-        responseReceived.current = true;
-      }
+      // Set this before clearing timeout to ensure the flag is set synchronously
+      responseReceived.current = true;
 
       // Clear the timeout since we got a response
       // This prevents the timeout from firing and trying to abort

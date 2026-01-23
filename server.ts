@@ -55,6 +55,31 @@ if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
 }
 installGlobals();
 
+// Handle uncaught exceptions from stream cancellation errors
+// These can occur when aborting fetch requests whose response streams are already locked
+process.on("uncaughtException", (error: Error) => {
+  // Ignore stream cancellation errors - these are expected when aborting
+  // requests whose response streams are already being consumed
+  if (
+    error.message.includes(
+      "Cannot cancel a stream that already has a reader"
+    ) ||
+    (error.name === "TypeError" &&
+      error.message.includes("stream") &&
+      error.message.includes("reader"))
+  ) {
+    // Log but don't crash - this is a known issue with aborting locked streams
+    logWarning("Stream cancellation error (ignored)", {
+      error: error.message,
+      stack: error.stack,
+    });
+    return;
+  }
+
+  // Re-throw other uncaught exceptions to maintain normal error handling
+  throw error;
+});
+
 // Suppress DEP0169 deprecation warning from @opentelemetry/instrumentation-http
 // This is a transitive dependency of @sentry/remix that uses url.parse()
 // The warning is harmless and will be fixed when the dependency is updated
