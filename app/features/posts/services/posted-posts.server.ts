@@ -20,7 +20,7 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "../dtos";
-import { getPostStats } from "../stats.server";
+import type { PostStats } from "../stats.server";
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 /**
@@ -177,7 +177,20 @@ export async function getPostedDashboardData({
       return "";
     })
     .filter((id) => id !== "");
-  const stats = await getPostStats(eventIds);
+
+  // Return empty stats immediately to prevent blocking page load
+  // Stats will be fetched client-side after page load
+  const stats: Record<string, PostStats> = {};
+  eventIds.forEach((eventId) => {
+    stats[eventId] = {
+      likes: 0,
+      replies: 0,
+      mentions: 0,
+      reposts: 0,
+      zaps: 0,
+      satszapped: 0,
+    };
+  });
 
   // Serialize Date objects to strings for Remix loader response
   // Note: allContent is removed - reconstruct on client from posts/longformPosts

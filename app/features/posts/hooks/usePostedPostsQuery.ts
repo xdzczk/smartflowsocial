@@ -73,10 +73,20 @@ export function usePostedPostsQuery() {
       const url = `/dashboard/posted${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${page}`;
       fetcher.load(url);
 
-      // Wait for fetcher to complete
+      // Wait for fetcher to complete using a more efficient approach
       return new Promise<PostedPostsLoaderData>((resolve, reject) => {
+        // Set a maximum timeout to prevent hanging
+        const timeoutId = setTimeout(() => {
+          if (validatedLoaderData) {
+            resolve(validatedLoaderData);
+          } else {
+            reject(new Error("Fetcher timeout - using initial data"));
+          }
+        }, 5000); // 5 second max timeout
+
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
+            clearTimeout(timeoutId);
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
@@ -84,6 +94,9 @@ export function usePostedPostsQuery() {
               );
               if (validated) {
                 resolve(validated);
+              } else if (validatedLoaderData) {
+                // Fallback to initial data if validation fails
+                resolve(validatedLoaderData);
               } else {
                 reject(new Error("Invalid data received from fetcher"));
               }
@@ -93,9 +106,18 @@ export function usePostedPostsQuery() {
               reject(new Error("Invalid loader data"));
             }
           } else if (fetcher.state === "loading") {
-            setTimeout(checkFetcher, 50);
+            // Use requestAnimationFrame for more efficient polling
+            requestAnimationFrame(() => {
+              setTimeout(checkFetcher, 100); // Check every 100ms instead of 50ms
+            });
           } else {
-            reject(new Error("Failed to fetch data"));
+            clearTimeout(timeoutId);
+            // If fetcher failed, fallback to initial data
+            if (validatedLoaderData) {
+              resolve(validatedLoaderData);
+            } else {
+              reject(new Error("Failed to fetch data"));
+            }
           }
         };
         checkFetcher();
@@ -104,7 +126,7 @@ export function usePostedPostsQuery() {
     initialData: validatedLoaderData,
     staleTime: 30 * 1000, // 30 seconds - data is fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache for 5 minutes
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Disable to prevent unnecessary refetches
     refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 }

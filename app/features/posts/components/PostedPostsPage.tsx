@@ -2,12 +2,14 @@ import { useParams } from "@remix-run/react";
 import { useMemo } from "react";
 
 import Toast from "~/components/ui/Toast";
+import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import type {
   PostData,
   CombinedContent,
   LongFormPostData,
   PostFetcher,
 } from "~/features/posts/server";
+import type { PostStats } from "~/features/posts/stats.server";
 import {
   AllContentListing,
   LongFormDetailsModal,
@@ -119,11 +121,23 @@ export default function PostedPostsPage() {
     allContent,
     user,
     queueTypes,
-    stats,
+    stats: initialStats,
     isLoading: _isLoading,
   } = usePostedPostsData();
 
   const _params = useParams();
+
+  // Fetch stats client-side after page load (non-blocking)
+  const { stats: fetchedStats } = usePostStatsQuery(posts);
+
+  // Merge initial stats (empty) with fetched stats
+  const stats = useMemo<Record<string, PostStats>>(() => {
+    const initial: Record<string, PostStats> =
+      typeof initialStats === "object" && !Array.isArray(initialStats)
+        ? (initialStats as Record<string, PostStats>)
+        : {};
+    return { ...initial, ...fetchedStats };
+  }, [initialStats, fetchedStats]);
 
   // Use TanStack Query mutation for bulk delete with optimistic updates
   const bulkDeleteMutation = useBulkDeletePostsMutation();
@@ -165,9 +179,7 @@ export default function PostedPostsPage() {
     return sortPosts(
       posts,
       sortConfig,
-      typeof stats === "object" && !Array.isArray(stats)
-        ? (stats as Record<string, unknown>)
-        : undefined
+      stats as Record<string, unknown> | undefined
     );
   }, [posts, sortConfig, stats]);
 
@@ -262,9 +274,7 @@ export default function PostedPostsPage() {
         <PostedPostsTable
           filteredPosts={filteredPosts}
           selectedPosts={selectedPosts}
-          stats={
-            typeof stats === "object" && !Array.isArray(stats) ? stats : {}
-          }
+          stats={stats}
           sortConfig={sortConfig}
           toggleSelectAll={() =>
             toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
