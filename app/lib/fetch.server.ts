@@ -128,16 +128,27 @@ const DEFAULT_OPTIONS: Required<
 
 /**
  * Creates an AbortController that aborts after the specified timeout
+ * Returns both the controller and the timeout ID so it can be cleared
  */
-function createTimeoutController(timeout: number): AbortController {
+function createTimeoutController(timeout: number): {
+  controller: AbortController;
+  timeoutId: NodeJS.Timeout;
+} {
   const controller = new AbortController();
-  setTimeout(() => {
-    controller.abort();
+  const timeoutId = setTimeout(() => {
+    try {
+      // Only abort if the signal hasn't already been aborted
+      if (!controller.signal.aborted) {
+        controller.abort();
+      }
+    } catch (_error) {
+      // Ignore errors when aborting (e.g., stream already has a reader)
+      // This can happen if the response is already being consumed
+      // The timeout has served its purpose (preventing hanging requests)
+    }
   }, timeout);
 
-  // Note: The timeout will fire and abort the request if it takes too long
-  // If the request completes before timeout, the abort signal will be ignored
-  return controller;
+  return { controller, timeoutId };
 }
 
 /**
@@ -196,11 +207,102 @@ function shouldRetryResponse(
 // Helper Functions for Retry Logic
 // ============================================================================
 
+/**
+ * Handles retryable response status codes (429, 5xx)
+ * Returns true if retry was handled and we should continue the loop
+ */
+async function handleRetryableResponse(
+  response: Response,
+  attempt: number,
+  maxRetries: number,
+  retryOn5xx: boolean,
+  retryDelay: number,
+  correlationId: string,
+  url: string | URL
+): Promise<boolean> {
+  // Handle rate limiting
+  if (response.status === 429) {
+    await handleRateLimitRetry(
+      response,
+      attempt,
+      maxRetries,
+      retryDelay,
+      correlationId,
+      url
+    );
+    return true;
+  }
+
+  // Retry on 5xx errors
+  if (retryOn5xx && response.status >= 500 && response.status < 600) {
+    await handle5xxRetry(
+      response,
+      attempt,
+      maxRetries,
+      retryDelay,
+      correlationId,
+      url
+    );
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Handles fetch errors and determines if we should continue retrying
+ * Returns true if error was handled and we should continue the loop
+ */
+async function handleFetchError(
+  error: unknown,
+  attempt: number,
+  maxRetries: number,
+  timeout: number,
+  retryOnNetworkError: boolean,
+  retryDelay: number,
+  correlationId: string,
+  url: string | URL
+): Promise<boolean> {
+  const errorObj = error instanceof Error ? error : new Error(String(error));
+
+  // Handle AbortError (timeout)
+  if (errorObj.name === "AbortError") {
+    await handleTimeoutError(
+      errorObj,
+      attempt,
+      maxRetries,
+      timeout,
+      retryOnNetworkError,
+      retryDelay,
+      correlationId,
+      url
+    );
+    return true;
+  }
+
+  // Handle network errors
+  if (isNetworkError(error)) {
+    await handleNetworkError(
+      errorObj,
+      attempt,
+      maxRetries,
+      retryOnNetworkError,
+      retryDelay,
+      correlationId,
+      url
+    );
+    return true;
+  }
+
+  return false;
+}
+
 function createAbortControllerWithTimeout(
   timeout: number,
   originalSignal?: AbortSignal
-): AbortController {
-  const timeoutController = createTimeoutController(timeout);
+): { controller: AbortController; timeoutId: NodeJS.Timeout } {
+  const { controller: timeoutController, timeoutId } =
+    createTimeoutController(timeout);
   const abortController = new AbortController();
 
   if (originalSignal) {
@@ -212,7 +314,7 @@ function createAbortControllerWithTimeout(
     abortController.abort();
   });
 
-  return abortController;
+  return { controller: abortController, timeoutId };
 }
 
 async function makeFetchRequest(
@@ -421,12 +523,15 @@ export async function fetchWithRetry(
   let lastResponse: Response | undefined;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    let timeoutId: NodeJS.Timeout | undefined;
     try {
       // Create abort controller with timeout
-      const abortController = createAbortControllerWithTimeout(
-        timeout,
-        fetchOptions.signal ?? undefined
-      );
+      const { controller: abortController, timeoutId: tid } =
+        createAbortControllerWithTimeout(
+          timeout,
+          fetchOptions.signal ?? undefined
+        );
+      timeoutId = tid;
 
       // Make the fetch request
       const response = await makeFetchRequest(
@@ -435,7 +540,12 @@ export async function fetchWithRetry(
         correlationId
       );
 
-      // Check if we should retry
+      // Clear the timeout since we got a response
+      // This prevents the timeout from firing and trying to abort
+      // a stream that might already be locked (e.g., when response.json() is called)
+      clearTimeout(timeoutId);
+
+      // Check if we should retry this response
       if (
         shouldRetryResponse(
           response,
@@ -447,29 +557,18 @@ export async function fetchWithRetry(
       ) {
         lastResponse = response;
 
-        // Handle rate limiting
-        if (response.status === 429) {
-          await handleRateLimitRetry(
-            response,
-            attempt,
-            maxRetries,
-            retryDelay,
-            correlationId,
-            url
-          );
-          continue;
-        }
+        // Handle retryable responses (429, 5xx)
+        const shouldContinue = await handleRetryableResponse(
+          response,
+          attempt,
+          maxRetries,
+          retryOn5xx,
+          retryDelay,
+          correlationId,
+          url
+        );
 
-        // Retry on 5xx errors
-        if (response.status >= 500 && response.status < 600) {
-          await handle5xxRetry(
-            response,
-            attempt,
-            maxRetries,
-            retryDelay,
-            correlationId,
-            url
-          );
+        if (shouldContinue) {
           continue;
         }
       }
@@ -477,34 +576,26 @@ export async function fetchWithRetry(
       // Success or non-retryable error
       return response;
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      // Handle AbortError (timeout)
-      if (error instanceof Error && error.name === "AbortError") {
-        await handleTimeoutError(
-          error,
-          attempt,
-          maxRetries,
-          timeout,
-          retryOnNetworkError,
-          retryDelay,
-          correlationId,
-          url
-        );
-        continue;
+      // Clear timeout on error to prevent it from firing later
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
 
-      // Handle network errors
-      if (isNetworkError(error)) {
-        await handleNetworkError(
-          error instanceof Error ? error : new Error(String(error)),
-          attempt,
-          maxRetries,
-          retryOnNetworkError,
-          retryDelay,
-          correlationId,
-          url
-        );
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Handle retryable errors (timeout, network)
+      const shouldContinue = await handleFetchError(
+        error,
+        attempt,
+        maxRetries,
+        timeout,
+        retryOnNetworkError,
+        retryDelay,
+        correlationId,
+        url
+      );
+
+      if (shouldContinue) {
         continue;
       }
 
