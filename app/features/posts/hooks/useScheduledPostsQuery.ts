@@ -284,6 +284,7 @@ export function useScheduledPostsInfiniteData() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     query;
 
+  // data.pages always exists due to initialData, so we process it directly
   if (data.pages.length === 0) {
     return {
       posts: [] as PostData[],

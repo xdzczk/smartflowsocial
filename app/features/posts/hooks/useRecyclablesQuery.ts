@@ -113,7 +113,11 @@ export function useRecyclablesInfiniteQuery() {
     initialData: validatedLoaderData,
     getNextPageParam: (lastPage) => {
       const { pagination } = lastPage;
-      if (pagination.currentPage < pagination.pages) {
+      if (
+        typeof pagination.currentPage === "number" &&
+        typeof pagination.pages === "number" &&
+        pagination.currentPage < pagination.pages
+      ) {
         return pagination.currentPage + 1;
       }
       return;
@@ -229,6 +233,7 @@ export function useRecyclablesInfiniteData() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     query;
 
+  // data.pages always exists due to initialData, so we process it directly
   if (data.pages.length === 0) {
     const emptyPosts: PostData[] = [];
     const emptyStats: Record<
