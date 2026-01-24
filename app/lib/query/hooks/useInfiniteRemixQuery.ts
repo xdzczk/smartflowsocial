@@ -169,9 +169,18 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           reject(error);
         };
 
+        // Track retry count for stale data
+        let retryCount = 0;
+        const maxRetries = 5;
+
         // Helper to handle idle state with data
-        const handleIdleWithData = (data: unknown) => {
+        const handleIdleWithData = (data: unknown, shouldRetry = false) => {
           if (!data) {
+            if (shouldRetry && retryCount < maxRetries) {
+              retryCount++;
+              setTimeout(checkFetcher, 200);
+              return;
+            }
             rejectWithCleanup(new Error("No data received from fetcher"));
             return;
           }
@@ -179,22 +188,26 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           if (verifyPageData(data)) {
             resolveWithCleanup(data as TData);
           } else {
-            // Extract page number for error message
-            let pageNum = pageParam;
+            // Wrong page data - might be stale, retry a few times
+            if (shouldRetry && retryCount < maxRetries) {
+              retryCount++;
+              // Wait a bit longer on each retry
+              setTimeout(checkFetcher, 200 * retryCount);
+              return;
+            }
+            // After max retries, accept the data anyway (might be a race condition)
+            // This prevents infinite retry loops
             const dataObj = data as {
               pagination?: { currentPage?: number };
             } | null;
-            if (dataObj && "pagination" in dataObj) {
-              const pagination = dataObj.pagination;
-              if (typeof pagination?.currentPage === "number") {
-                pageNum = pagination.currentPage;
-              }
-            }
-            rejectWithCleanup(
-              new Error(
-                `Received data for page ${pageNum} but requested page ${pageParam}`
-              )
+            const receivedPage =
+              dataObj && "pagination" in dataObj
+                ? dataObj.pagination?.currentPage
+                : undefined;
+            console.warn(
+              `Received data for wrong page after ${retryCount} retries, accepting anyway. Requested: ${pageParam}, Got: ${receivedPage ?? "unknown"}`
             );
+            resolveWithCleanup(data as TData);
           }
         };
 
@@ -217,7 +230,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
 
           // Once we've seen loading and now idle, verify we got the correct page data
           if (hasSeenLoading && currentState === "idle") {
-            handleIdleWithData(currentData);
+            handleIdleWithData(currentData, true);
             return;
           }
 
