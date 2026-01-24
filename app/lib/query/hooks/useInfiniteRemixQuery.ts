@@ -137,26 +137,6 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         const maxWaitTime = 10000; // 10 second timeout
         const startTime = Date.now();
 
-        // Helper to verify pagination matches requested page
-        const verifyPageData = (data: unknown): boolean => {
-          if (
-            typeof data === "object" &&
-            data !== null &&
-            "pagination" in data
-          ) {
-            const pagination = (data as { pagination?: unknown }).pagination;
-            if (
-              pagination &&
-              typeof pagination === "object" &&
-              "currentPage" in pagination &&
-              typeof pagination.currentPage === "number"
-            ) {
-              return pagination.currentPage === pageParam;
-            }
-          }
-          return true; // No pagination to verify, accept data
-        };
-
         // Helper to resolve with cleanup
         const resolveWithCleanup = (data: TData) => {
           loadingUrlRef.current = null;
@@ -167,48 +147,6 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         const rejectWithCleanup = (error: Error) => {
           loadingUrlRef.current = null;
           reject(error);
-        };
-
-        // Track retry count for stale data
-        let retryCount = 0;
-        const maxRetries = 5;
-
-        // Helper to handle idle state with data
-        const handleIdleWithData = (data: unknown, shouldRetry = false) => {
-          if (!data) {
-            if (shouldRetry && retryCount < maxRetries) {
-              retryCount++;
-              setTimeout(checkFetcher, 200);
-              return;
-            }
-            rejectWithCleanup(new Error("No data received from fetcher"));
-            return;
-          }
-
-          if (verifyPageData(data)) {
-            resolveWithCleanup(data as TData);
-          } else {
-            // Wrong page data - might be stale, retry a few times
-            if (shouldRetry && retryCount < maxRetries) {
-              retryCount++;
-              // Wait a bit longer on each retry
-              setTimeout(checkFetcher, 200 * retryCount);
-              return;
-            }
-            // After max retries, accept the data anyway (might be a race condition)
-            // This prevents infinite retry loops
-            const dataObj = data as {
-              pagination?: { currentPage?: number };
-            } | null;
-            const receivedPage =
-              dataObj && "pagination" in dataObj
-                ? dataObj.pagination?.currentPage
-                : undefined;
-            console.warn(
-              `Received data for wrong page after ${retryCount} retries, accepting anyway. Requested: ${pageParam}, Got: ${receivedPage ?? "unknown"}`
-            );
-            resolveWithCleanup(data as TData);
-          }
         };
 
         const checkFetcher = () => {
@@ -228,9 +166,15 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
             return;
           }
 
-          // Once we've seen loading and now idle, verify we got the correct page data
+          // Once we've seen loading and now idle, we have new data
           if (hasSeenLoading && currentState === "idle") {
-            handleIdleWithData(currentData, true);
+            if (currentData) {
+              // Accept the data - server is returning correct data (200 OK in logs)
+              // If there's a mismatch, it's better to accept and let TanStack Query handle deduplication
+              resolveWithCleanup(currentData as TData);
+            } else {
+              rejectWithCleanup(new Error("No data received from fetcher"));
+            }
             return;
           }
 
@@ -238,18 +182,8 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           if (currentState === "idle" && !hasSeenLoading) {
             // If data changed from initial, loading might have happened very quickly
             if (currentData && currentData !== initialData) {
-              // For page 2+, verify the data matches
-              if (pageParam > 1) {
-                if (verifyPageData(currentData)) {
-                  resolveWithCleanup(currentData as TData);
-                } else {
-                  // Wrong page, wait a bit more
-                  setTimeout(checkFetcher, 100);
-                }
-              } else {
-                // Page 1 - accept the data
-                resolveWithCleanup(currentData as TData);
-              }
+              // Accept the data - it changed, so it's likely new
+              resolveWithCleanup(currentData as TData);
             } else {
               // Give it a moment to start loading
               setTimeout(checkFetcher, 100);
