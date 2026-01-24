@@ -122,8 +122,17 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         });
       }
 
-      // Store initial data to detect when new data arrives
-      const initialData = fetcher.data;
+      // Store initial pagination page to detect when new data arrives
+      const initialPaginationPage =
+        fetcher.data &&
+        typeof fetcher.data === "object" &&
+        "pagination" in fetcher.data &&
+        fetcher.data.pagination &&
+        typeof fetcher.data.pagination === "object" &&
+        "currentPage" in fetcher.data.pagination &&
+        typeof fetcher.data.pagination.currentPage === "number"
+          ? fetcher.data.pagination.currentPage
+          : null;
 
       // Set the URL we're expecting to load
       loadingUrlRef.current = url;
@@ -137,6 +146,22 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         const maxWaitTime = 10000; // 10 second timeout
         const startTime = Date.now();
 
+        // Helper to extract pagination page from data
+        const getPaginationPage = (data: unknown): number | null => {
+          if (
+            data &&
+            typeof data === "object" &&
+            "pagination" in data &&
+            data.pagination &&
+            typeof data.pagination === "object" &&
+            "currentPage" in data.pagination &&
+            typeof data.pagination.currentPage === "number"
+          ) {
+            return data.pagination.currentPage;
+          }
+          return null;
+        };
+
         // Helper to resolve with cleanup
         const resolveWithCleanup = (data: TData) => {
           loadingUrlRef.current = null;
@@ -147,6 +172,59 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         const rejectWithCleanup = (error: Error) => {
           loadingUrlRef.current = null;
           reject(error);
+        };
+
+        // Handle case where loading completed and we have new data
+        const handleLoadingComplete = (data: TData) => {
+          const currentPaginationPage = getPaginationPage(data);
+
+          // If pagination exists, verify it matches (but don't reject if it doesn't - might be edge case)
+          if (
+            currentPaginationPage !== null &&
+            currentPaginationPage !== pageParam
+          ) {
+            console.warn(
+              `Page mismatch: expected page ${pageParam}, got page ${currentPaginationPage}, but accepting data since loading completed`
+            );
+          }
+
+          // Accept the data since we've seen the loading transition
+          resolveWithCleanup(data);
+        };
+
+        // Handle case where idle but haven't seen loading (cached or fast response)
+        const handleIdleWithoutLoading = (
+          data: TData,
+          elapsed: number
+        ): boolean => {
+          const currentPaginationPage = getPaginationPage(data);
+
+          // If page number changed, this is definitely new data
+          if (
+            currentPaginationPage !== null &&
+            currentPaginationPage !== initialPaginationPage
+          ) {
+            resolveWithCleanup(data);
+            return true;
+          }
+
+          // If page is the same as requested and different from initial, accept it
+          if (
+            currentPaginationPage === pageParam &&
+            currentPaginationPage !== initialPaginationPage
+          ) {
+            resolveWithCleanup(data);
+            return true;
+          }
+
+          // If we've waited a while and still no loading state, might be cached
+          // Accept the data if it's for the right page
+          if (elapsed > 500 && currentPaginationPage === pageParam) {
+            resolveWithCleanup(data);
+            return true;
+          }
+
+          return false;
         };
 
         const checkFetcher = () => {
@@ -168,24 +246,25 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
 
           // Once we've seen loading and now idle, we have new data
           if (hasSeenLoading && currentState === "idle") {
-            if (currentData) {
-              // Accept the data - server is returning correct data (200 OK in logs)
-              // If there's a mismatch, it's better to accept and let TanStack Query handle deduplication
-              resolveWithCleanup(currentData as TData);
-            } else {
+            if (!currentData) {
               rejectWithCleanup(new Error("No data received from fetcher"));
+              return;
             }
+            handleLoadingComplete(currentData);
             return;
           }
 
-          // If idle but haven't seen loading yet, wait for loading to start
+          // If idle but haven't seen loading yet, check if data changed
+          // This handles cases where loading happened very quickly or data was cached
           if (currentState === "idle" && !hasSeenLoading) {
-            // If data changed from initial, loading might have happened very quickly
-            if (currentData && currentData !== initialData) {
-              // Accept the data - it changed, so it's likely new
-              resolveWithCleanup(currentData as TData);
-            } else {
+            if (!currentData) {
               // Give it a moment to start loading
+              setTimeout(checkFetcher, 100);
+              return;
+            }
+
+            if (!handleIdleWithoutLoading(currentData, elapsed)) {
+              // Otherwise, give it a moment to start loading
               setTimeout(checkFetcher, 100);
             }
             return;
