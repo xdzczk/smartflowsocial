@@ -122,7 +122,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         });
       }
 
-      // Store initial pagination page to detect when new data arrives
+      // Store initial pagination page and data snapshot to detect when new data arrives
       const initialPaginationPage =
         fetcher.data &&
         typeof fetcher.data === "object" &&
@@ -133,6 +133,26 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         typeof fetcher.data.pagination.currentPage === "number"
           ? fetcher.data.pagination.currentPage
           : null;
+
+      // Create a snapshot of initial data to detect changes
+      // Use a simple hash based on pagination and data length
+      const initialDataHash = fetcher.data
+        ? JSON.stringify({
+            page: initialPaginationPage,
+            postsCount:
+              typeof fetcher.data === "object" &&
+              "posts" in fetcher.data &&
+              Array.isArray(fetcher.data["posts"])
+                ? fetcher.data["posts"].length
+                : 0,
+            longformCount:
+              typeof fetcher.data === "object" &&
+              "longformPosts" in fetcher.data &&
+              Array.isArray(fetcher.data["longformPosts"])
+                ? fetcher.data["longformPosts"].length
+                : 0,
+          })
+        : null;
 
       // Set the URL we're expecting to load
       loadingUrlRef.current = url;
@@ -162,9 +182,17 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           return null;
         };
 
-        // Helper to resolve with cleanup
+        // Helper to resolve with cleanup and validation
         const resolveWithCleanup = (data: TData) => {
           loadingUrlRef.current = null;
+          // Validate data structure before resolving
+          // TData extends PageData which is an object, so we only need to check type
+          if (typeof data !== "object") {
+            rejectWithCleanup(
+              new Error(`Invalid data structure received for page ${pageParam}`)
+            );
+            return;
+          }
           resolve(data);
         };
 
@@ -199,6 +227,35 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         ): boolean => {
           const currentPaginationPage = getPaginationPage(data);
 
+          // Create hash of current data to compare with initial
+          const currentDataHash = JSON.stringify({
+            page: currentPaginationPage,
+            postsCount:
+              typeof data === "object" &&
+              "posts" in data &&
+              Array.isArray(data["posts"])
+                ? data["posts"].length
+                : 0,
+            longformCount:
+              typeof data === "object" &&
+              "longformPosts" in data &&
+              Array.isArray(data["longformPosts"])
+                ? data["longformPosts"].length
+                : 0,
+          });
+
+          // If data hash changed, this is new data
+          if (currentDataHash !== initialDataHash) {
+            // Verify it's for the right page
+            if (
+              currentPaginationPage === pageParam ||
+              currentPaginationPage === null
+            ) {
+              resolveWithCleanup(data);
+              return true;
+            }
+          }
+
           // If page number changed, this is definitely new data
           if (
             currentPaginationPage !== null &&
@@ -218,8 +275,12 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           }
 
           // If we've waited a while and still no loading state, might be cached
-          // Accept the data if it's for the right page
-          if (elapsed > 500 && currentPaginationPage === pageParam) {
+          // Accept the data if it's for the right page and data changed
+          if (
+            elapsed > 500 &&
+            currentPaginationPage === pageParam &&
+            currentDataHash !== initialDataHash
+          ) {
             resolveWithCleanup(data);
             return true;
           }
@@ -250,7 +311,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
               rejectWithCleanup(new Error("No data received from fetcher"));
               return;
             }
-            handleLoadingComplete(currentData);
+            handleLoadingComplete(currentData as TData);
             return;
           }
 
@@ -263,7 +324,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
               return;
             }
 
-            if (!handleIdleWithoutLoading(currentData, elapsed)) {
+            if (!handleIdleWithoutLoading(currentData as TData, elapsed)) {
               // Otherwise, give it a moment to start loading
               setTimeout(checkFetcher, 100);
             }

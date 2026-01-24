@@ -10,6 +10,7 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import type { User as _User } from "~/features/user";
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
@@ -346,47 +347,6 @@ function createEmptyPostedPostsData<TFetchNextPage>(
 }
 
 /**
- * Helper to process a single page and extract posts, longform posts, and stats
- */
-function processPageData(
-  pageData: PostedPostsLoaderData,
-  allPosts: PostData[],
-  allLongformPosts: LongFormPostData[],
-  allStats: Record<string, PostStats>
-) {
-  const pagePostsRaw =
-    "posts" in pageData && Array.isArray(pageData.posts) ? pageData.posts : [];
-  const pageLongformPostsRaw =
-    "longformPosts" in pageData && Array.isArray(pageData.longformPosts)
-      ? pageData.longformPosts
-      : [];
-
-  const pagePosts: PostData[] = Array.isArray(pagePostsRaw)
-    ? fromPostDTOArray(pagePostsRaw as unknown as PostDTO[])
-    : [];
-  const pageLongformPosts: LongFormPostData[] = Array.isArray(
-    pageLongformPostsRaw
-  )
-    ? fromLongFormPostDTOArray(
-        pageLongformPostsRaw as unknown as LongFormPostDTO[]
-      )
-    : [];
-
-  allPosts.push(...pagePosts);
-  allLongformPosts.push(...pageLongformPosts);
-
-  // Aggregate stats
-  const pageStatsRaw = "stats" in pageData ? pageData.stats : undefined;
-  if (
-    pageStatsRaw &&
-    typeof pageStatsRaw === "object" &&
-    !Array.isArray(pageStatsRaw)
-  ) {
-    Object.assign(allStats, pageStatsRaw);
-  }
-}
-
-/**
  * Helper to process queue types from raw data
  */
 function processQueueTypes(queueTypesRaw: unknown[]): QueueType[] {
@@ -468,7 +428,104 @@ export function usePostedPostsInfiniteData() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     query;
 
-  // data.pages always exists due to initialData, so we process it directly
+  // Memoize the flattened data to prevent unnecessary recalculations
+  // Must be called unconditionally (before any early returns) to follow React Hooks rules
+  const { allPosts, allLongformPosts, allStats, allContent } = useMemo(() => {
+    // Handle empty pages case
+    if (data.pages.length === 0) {
+      const emptyStats: Record<string, PostStats> = {};
+      return {
+        allPosts: [] as PostData[],
+        allLongformPosts: [] as LongFormPostData[],
+        allStats: emptyStats,
+        allContent: [] as CombinedContent[],
+      };
+    }
+    const allPages = data.pages;
+    const posts: PostData[] = [];
+    const longformPosts: LongFormPostData[] = [];
+    const stats: Record<string, PostStats> = {};
+    const seenPostIds = new Set<string>();
+    const seenLongformIds = new Set<string>();
+
+    // Process each page and deduplicate
+    for (const pageData of allPages) {
+      const pagePostsRaw =
+        "posts" in pageData && Array.isArray(pageData.posts)
+          ? pageData.posts
+          : [];
+      const pageLongformPostsRaw =
+        "longformPosts" in pageData && Array.isArray(pageData.longformPosts)
+          ? pageData.longformPosts
+          : [];
+
+      const pagePosts: PostData[] = Array.isArray(pagePostsRaw)
+        ? fromPostDTOArray(pagePostsRaw as unknown as PostDTO[])
+        : [];
+      const pageLongformPosts: LongFormPostData[] = Array.isArray(
+        pageLongformPostsRaw
+      )
+        ? fromLongFormPostDTOArray(
+            pageLongformPostsRaw as unknown as LongFormPostDTO[]
+          )
+        : [];
+
+      // Deduplicate posts by ID and ensure valid structure
+      for (const post of pagePosts) {
+        if (
+          typeof post === "object" &&
+          post.id &&
+          typeof post.id === "string" &&
+          post.id.trim() !== "" &&
+          !seenPostIds.has(post.id)
+        ) {
+          seenPostIds.add(post.id);
+          posts.push(post);
+        }
+      }
+
+      // Deduplicate longform posts by ID and ensure valid structure
+      for (const longform of pageLongformPosts) {
+        if (
+          typeof longform === "object" &&
+          longform.id &&
+          typeof longform.id === "string" &&
+          longform.id.trim() !== "" &&
+          !seenLongformIds.has(longform.id)
+        ) {
+          seenLongformIds.add(longform.id);
+          longformPosts.push(longform);
+        }
+      }
+
+      // Aggregate stats
+      const pageStatsRaw = "stats" in pageData ? pageData.stats : undefined;
+      if (
+        pageStatsRaw &&
+        typeof pageStatsRaw === "object" &&
+        !Array.isArray(pageStatsRaw)
+      ) {
+        Object.assign(stats, pageStatsRaw);
+      }
+    }
+
+    // Reconstruct allContent from flattened posts
+    const content: CombinedContent[] = combineContent(
+      posts,
+      longformPosts,
+      "postedAt",
+      "desc"
+    );
+
+    return {
+      allPosts: posts,
+      allLongformPosts: longformPosts,
+      allStats: stats,
+      allContent: content,
+    };
+  }, [data.pages]);
+
+  // Handle empty pages case after memoization
   if (data.pages.length === 0) {
     return createEmptyPostedPostsData(
       isLoading,
@@ -478,35 +535,9 @@ export function usePostedPostsInfiniteData() {
     );
   }
 
-  // Flatten all pages
-  const allPages = data.pages;
-  const allPosts: PostData[] = [];
-  const allLongformPosts: LongFormPostData[] = [];
-  const allStats: Record<string, PostStats> = {};
-
-  // Process each page
-  for (const pageData of allPages) {
-    processPageData(pageData, allPosts, allLongformPosts, allStats);
-  }
-
-  // Reconstruct allContent from flattened posts
-  const allContent: CombinedContent[] = combineContent(
-    allPosts,
-    allLongformPosts,
-    "postedAt",
-    "desc"
-  );
-
   // Get pagination and other data from last page
-  const lastPage = allPages[allPages.length - 1];
-  if (!lastPage) {
-    return createEmptyPostedPostsData(
-      isLoading,
-      isFetchingNextPage,
-      false,
-      fetchNextPage
-    );
-  }
+  // data.pages.length > 0 is guaranteed at this point due to check above
+  const lastPage = data.pages[data.pages.length - 1]!;
 
   const userRaw = "user" in lastPage ? lastPage.user : null;
   const user: UserData | null = userRaw ? validateUserData(userRaw) : null;
