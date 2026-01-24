@@ -122,34 +122,36 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         });
       }
 
-      // Store initial pagination page and data snapshot to detect when new data arrives
+      // Store initial data BEFORE making the request to detect changes
+      // We need to capture what the fetcher currently has so we can detect when NEW data arrives
+      const initialFetcherData = fetcher.data;
       const initialPaginationPage =
-        fetcher.data &&
-        typeof fetcher.data === "object" &&
-        "pagination" in fetcher.data &&
-        fetcher.data.pagination &&
-        typeof fetcher.data.pagination === "object" &&
-        "currentPage" in fetcher.data.pagination &&
-        typeof fetcher.data.pagination.currentPage === "number"
-          ? fetcher.data.pagination.currentPage
+        initialFetcherData &&
+        typeof initialFetcherData === "object" &&
+        "pagination" in initialFetcherData &&
+        initialFetcherData.pagination &&
+        typeof initialFetcherData.pagination === "object" &&
+        "currentPage" in initialFetcherData.pagination &&
+        typeof initialFetcherData.pagination.currentPage === "number"
+          ? initialFetcherData.pagination.currentPage
           : null;
 
       // Create a snapshot of initial data to detect changes
       // Use a simple hash based on pagination and data length
-      const initialDataHash = fetcher.data
+      const initialDataHash = initialFetcherData
         ? JSON.stringify({
             page: initialPaginationPage,
             postsCount:
-              typeof fetcher.data === "object" &&
-              "posts" in fetcher.data &&
-              Array.isArray(fetcher.data["posts"])
-                ? fetcher.data["posts"].length
+              typeof initialFetcherData === "object" &&
+              "posts" in initialFetcherData &&
+              Array.isArray(initialFetcherData["posts"])
+                ? initialFetcherData["posts"].length
                 : 0,
             longformCount:
-              typeof fetcher.data === "object" &&
-              "longformPosts" in fetcher.data &&
-              Array.isArray(fetcher.data["longformPosts"])
-                ? fetcher.data["longformPosts"].length
+              typeof initialFetcherData === "object" &&
+              "longformPosts" in initialFetcherData &&
+              Array.isArray(initialFetcherData["longformPosts"])
+                ? initialFetcherData["longformPosts"].length
                 : 0,
           })
         : null;
@@ -206,17 +208,44 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         const handleLoadingComplete = (data: TData) => {
           const currentPaginationPage = getPaginationPage(data);
 
-          // If pagination exists, verify it matches (but don't reject if it doesn't - might be edge case)
+          // CRITICAL: Verify this is actually NEW data, not the same as initial
+          // Check if this is different from what we started with
+          const isNewData = data !== initialFetcherData;
+
+          // If pagination exists, verify it matches the requested page
           if (
             currentPaginationPage !== null &&
             currentPaginationPage !== pageParam
           ) {
             console.warn(
-              `Page mismatch: expected page ${pageParam}, got page ${currentPaginationPage}, but accepting data since loading completed`
+              `[useInfiniteRemixQuery] Page mismatch: expected page ${pageParam}, got page ${currentPaginationPage}`
             );
+            // Still accept if it's new data (might be a server-side pagination issue)
+            if (!isNewData) {
+              // This is the same data we started with - reject it
+              rejectWithCleanup(
+                new Error(
+                  `Received same data for page ${pageParam} (got page ${currentPaginationPage})`
+                )
+              );
+              return;
+            }
           }
 
-          // Accept the data since we've seen the loading transition
+          // If data reference is the same, it's definitely stale
+          if (!isNewData && initialFetcherData !== null) {
+            console.warn(
+              `[useInfiniteRemixQuery] Received same data reference for page ${pageParam}, waiting for new data...`
+            );
+            // Continue polling - might be a very fast response
+            setTimeout(checkFetcher, 100);
+            return;
+          }
+
+          // Accept the data since we've seen the loading transition and it's new
+          console.info(
+            `[useInfiniteRemixQuery] Successfully loaded page ${pageParam} (detected page ${currentPaginationPage ?? "unknown"})`
+          );
           resolveWithCleanup(data);
         };
 
@@ -226,6 +255,15 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           elapsed: number
         ): boolean => {
           const currentPaginationPage = getPaginationPage(data);
+
+          // CRITICAL: Check if this is actually different data
+          const isNewData = data !== initialFetcherData;
+
+          // If data reference is the same, it's definitely stale
+          if (!isNewData && initialFetcherData !== null) {
+            // Same data reference - not new data yet
+            return false;
+          }
 
           // Create hash of current data to compare with initial
           const currentDataHash = JSON.stringify({
@@ -244,23 +282,30 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
                 : 0,
           });
 
-          // If data hash changed, this is new data
-          if (currentDataHash !== initialDataHash) {
+          // If data hash changed AND it's a new data reference, this is new data
+          if (currentDataHash !== initialDataHash && isNewData) {
             // Verify it's for the right page
             if (
               currentPaginationPage === pageParam ||
               currentPaginationPage === null
             ) {
+              console.info(
+                `[useInfiniteRemixQuery] Fast response detected for page ${pageParam} (detected page ${currentPaginationPage ?? "unknown"})`
+              );
               resolveWithCleanup(data);
               return true;
             }
           }
 
-          // If page number changed, this is definitely new data
+          // If page number changed from initial, this is definitely new data
           if (
             currentPaginationPage !== null &&
-            currentPaginationPage !== initialPaginationPage
+            currentPaginationPage !== initialPaginationPage &&
+            isNewData
           ) {
+            console.info(
+              `[useInfiniteRemixQuery] Page changed from ${initialPaginationPage ?? "unknown"} to ${currentPaginationPage ?? "unknown"} for request ${pageParam}`
+            );
             resolveWithCleanup(data);
             return true;
           }
@@ -268,8 +313,12 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           // If page is the same as requested and different from initial, accept it
           if (
             currentPaginationPage === pageParam &&
-            currentPaginationPage !== initialPaginationPage
+            currentPaginationPage !== initialPaginationPage &&
+            isNewData
           ) {
+            console.info(
+              `[useInfiniteRemixQuery] Page ${pageParam} loaded (was ${initialPaginationPage ?? "unknown"})`
+            );
             resolveWithCleanup(data);
             return true;
           }
@@ -279,8 +328,12 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           if (
             elapsed > 500 &&
             currentPaginationPage === pageParam &&
-            currentDataHash !== initialDataHash
+            currentDataHash !== initialDataHash &&
+            isNewData
           ) {
+            console.info(
+              `[useInfiniteRemixQuery] Accepting cached response for page ${pageParam} after ${elapsed}ms`
+            );
             resolveWithCleanup(data);
             return true;
           }
@@ -301,6 +354,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           // Track when we see loading state (ensures new request started)
           if (currentState === "loading") {
             hasSeenLoading = true;
+            // Reset data check - we're now loading, so any data we see after this should be new
             setTimeout(checkFetcher, 50);
             return;
           }
