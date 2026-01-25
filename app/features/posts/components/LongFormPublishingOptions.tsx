@@ -111,7 +111,12 @@ export function LongFormPublishingOptions({
               );
             })}
         </div>
-        <input type="hidden" name="queueType" value={selectedQueueType} />
+        <input
+          type="hidden"
+          id="longform-queue-type-hidden"
+          name="queueType"
+          value={selectedQueueType}
+        />
       </div>
 
       {/* Hashtag Preset Toggle */}
@@ -141,11 +146,13 @@ export function LongFormPublishingOptions({
       {/* Hidden hashtag preset inputs */}
       <input
         type="hidden"
+        id="longform-use-hashtag-presets-hidden"
         name="useHashtagPresets"
         value={useHashtagPresets.toString()}
       />
       <input
         type="hidden"
+        id="longform-hashtag-preset-id-hidden"
         name="hashTagPresetId"
         value={selectedHashtagPresetId ?? ""}
       />

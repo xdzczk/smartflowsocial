@@ -112,6 +112,9 @@ export function useCalendarData() {
       user: null as UserData | null,
       queueTypes: [] as QueueType[],
       selectedQueueType: "all",
+      totalPostsCount: 0,
+      totalLongformCount: 0,
+      totalContentCount: 0,
       isLoading,
       error,
     };
@@ -211,6 +214,32 @@ export function useCalendarData() {
   const selectedQueueType =
     typeof selectedQueueTypeRaw === "string" ? selectedQueueTypeRaw : "all";
 
+  // Extract pagination totals for display
+  const scheduledPostsPaginationRaw =
+    "scheduledPostsPagination" in typedData
+      ? typedData.scheduledPostsPagination
+      : undefined;
+  const scheduledLongFormPostsPaginationRaw =
+    "scheduledLongFormPostsPagination" in typedData
+      ? typedData.scheduledLongFormPostsPagination
+      : undefined;
+
+  const totalPostsCount =
+    scheduledPostsPaginationRaw &&
+    typeof scheduledPostsPaginationRaw === "object" &&
+    "total" in scheduledPostsPaginationRaw &&
+    typeof scheduledPostsPaginationRaw.total === "number"
+      ? scheduledPostsPaginationRaw.total
+      : scheduledPosts.length;
+  const totalLongformCount =
+    scheduledLongFormPostsPaginationRaw &&
+    typeof scheduledLongFormPostsPaginationRaw === "object" &&
+    "total" in scheduledLongFormPostsPaginationRaw &&
+    typeof scheduledLongFormPostsPaginationRaw.total === "number"
+      ? scheduledLongFormPostsPaginationRaw.total
+      : scheduledLongFormPosts.length;
+  const totalContentCount = totalPostsCount + totalLongformCount;
+
   return {
     scheduledPosts,
     scheduledLongFormPosts,
@@ -220,6 +249,9 @@ export function useCalendarData() {
     user,
     queueTypes,
     selectedQueueType,
+    totalPostsCount,
+    totalLongformCount,
+    totalContentCount,
     isLoading,
     error,
   };

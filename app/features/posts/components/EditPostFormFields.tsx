@@ -96,6 +96,7 @@ export function EditPostFormFields({
           >
             <input
               id="edit-post-file-input"
+              name="edit-post-files"
               type="file"
               className="hidden"
               accept="image/*,video/*"
@@ -117,6 +118,7 @@ export function EditPostFormFields({
         </label>
         <textarea
           id="edit-post-caption"
+          name="edit-post-caption"
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           rows={4}
@@ -145,6 +147,7 @@ export function EditPostFormFields({
           </label>
           <input
             id="edit-post-hashtags"
+            name="edit-post-hashtags"
             type="text"
             value={manualHashtags}
             onChange={(e) => setManualHashtags(e.target.value)}
@@ -163,6 +166,7 @@ export function EditPostFormFields({
         </label>
         <select
           id="edit-post-queue-type"
+          name="edit-post-queue-type"
           value={selectedQueueType}
           onChange={(e) => setSelectedQueueType(e.target.value)}
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"

@@ -329,6 +329,7 @@ export default function TextPost({
       ) : null}
       <div className="relative">
         <Textarea
+          id="content"
           {...form.register("content")}
           className={form.formState.errors.content ? "border-red-500" : ""}
           placeholder="Start writing your post here..."

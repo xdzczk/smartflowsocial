@@ -35,6 +35,7 @@ export function GiveawayFilters({
             <input
               type="date"
               id="from-date"
+              name="from-date"
               value={dateRange.from}
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, from: e.target.value })
@@ -49,6 +50,7 @@ export function GiveawayFilters({
             <input
               type="date"
               id="to-date"
+              name="to-date"
               value={dateRange.to}
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, to: e.target.value })

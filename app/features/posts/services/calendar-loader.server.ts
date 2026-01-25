@@ -55,16 +55,38 @@ export async function loadCalendarData(userId: string, queueType: string) {
     getQueueTypes(userId),
   ]);
 
-  // Extract posts arrays from pagination results
+  // Extract posts arrays and pagination from pagination results
   const scheduledPostsArray =
     "posts" in allScheduledPosts && Array.isArray(allScheduledPosts.posts)
       ? allScheduledPosts.posts
       : [];
+  const scheduledPostsPagination =
+    "pagination" in allScheduledPosts &&
+    typeof allScheduledPosts.pagination === "object" &&
+    "total" in allScheduledPosts.pagination
+      ? allScheduledPosts.pagination
+      : {
+          total: scheduledPostsArray.length,
+          pages: 1,
+          currentPage: 1,
+          limit: 20,
+        };
   const scheduledLongFormPostsArray =
     "posts" in allScheduledLongFormPosts &&
     Array.isArray(allScheduledLongFormPosts.posts)
       ? allScheduledLongFormPosts.posts
       : [];
+  const scheduledLongFormPostsPagination =
+    "pagination" in allScheduledLongFormPosts &&
+    typeof allScheduledLongFormPosts.pagination === "object" &&
+    "total" in allScheduledLongFormPosts.pagination
+      ? allScheduledLongFormPosts.pagination
+      : {
+          total: scheduledLongFormPostsArray.length,
+          pages: 1,
+          currentPage: 1,
+          limit: 20,
+        };
   // getPastPosts and getPastLongFormPosts return arrays directly, not paginated objects
   const pastPostsArray = Array.isArray(allPastPosts) ? allPastPosts : [];
   const pastLongFormPostsArray = Array.isArray(allPastLongFormPosts)
@@ -290,6 +312,43 @@ export async function loadCalendarData(userId: string, queueType: string) {
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,
     scheduleIntervals: user?.scheduleInterval ?? [],
+    // Pagination totals for display
+    scheduledPostsPagination: {
+      total:
+        typeof scheduledPostsPagination.total === "number"
+          ? scheduledPostsPagination.total
+          : scheduledPostsArray.length,
+      pages:
+        typeof scheduledPostsPagination.pages === "number"
+          ? scheduledPostsPagination.pages
+          : 1,
+      currentPage:
+        typeof scheduledPostsPagination.currentPage === "number"
+          ? scheduledPostsPagination.currentPage
+          : 1,
+      limit:
+        typeof scheduledPostsPagination.limit === "number"
+          ? scheduledPostsPagination.limit
+          : 20,
+    },
+    scheduledLongFormPostsPagination: {
+      total:
+        typeof scheduledLongFormPostsPagination.total === "number"
+          ? scheduledLongFormPostsPagination.total
+          : scheduledLongFormPostsArray.length,
+      pages:
+        typeof scheduledLongFormPostsPagination.pages === "number"
+          ? scheduledLongFormPostsPagination.pages
+          : 1,
+      currentPage:
+        typeof scheduledLongFormPostsPagination.currentPage === "number"
+          ? scheduledLongFormPostsPagination.currentPage
+          : 1,
+      limit:
+        typeof scheduledLongFormPostsPagination.limit === "number"
+          ? scheduledLongFormPostsPagination.limit
+          : 20,
+    },
   };
 }
 

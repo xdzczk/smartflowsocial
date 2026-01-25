@@ -348,7 +348,7 @@ export function HashtagPresetsSettings({
             }}
             className="space-y-4"
           >
-            <input type="hidden" {...editForm.register("id")} />
+            <input type="hidden" id="edit-id" {...editForm.register("id")} />
             <div className="space-y-2">
               <Label htmlFor="edit-name">Preset Name</Label>
               <Input

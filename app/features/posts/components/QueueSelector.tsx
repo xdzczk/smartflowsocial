@@ -78,9 +78,15 @@ export function QueueSelector({
             );
           })}
       </div>
-      <input type="hidden" name="queueType" value={selectedQueue} />
       <input
         type="hidden"
+        id="queue-type-hidden"
+        name="queueType"
+        value={selectedQueue}
+      />
+      <input
+        type="hidden"
+        id="queue-type-id-hidden"
         name="queueTypeId"
         value={getQueueTypeId(selectedQueue)}
       />

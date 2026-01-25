@@ -68,6 +68,8 @@ export function AssetsTab({
               </svg>
             </div>
             <input
+              id="assets-search"
+              name="assets-search"
               type="text"
               value={searchInput}
               onChange={(e) => onSearchInputChange(e.target.value)}

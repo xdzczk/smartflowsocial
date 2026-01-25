@@ -19,11 +19,14 @@ export default function CalendarPage() {
     scheduledLongFormPosts,
     pastPosts,
     pastLongFormPosts,
-    allContent,
+    allContent: _allContent,
     user,
     queueTypes,
     selectedQueueType: _selectedQueueType,
     isLoading: _isDataLoading,
+    totalPostsCount,
+    totalLongformCount,
+    totalContentCount,
   } = useCalendarData();
   const params = useParams();
   const revalidator = useRevalidator();
@@ -57,7 +60,7 @@ export default function CalendarPage() {
               currentTab === TAB_ALL ? TAB_ACTIVE_CLASSES : TAB_INACTIVE_CLASSES
             }`}
           >
-            All ({allContent.length})
+            All ({totalContentCount})
           </Link>
           <Link
             to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_POSTS}`}
@@ -67,7 +70,7 @@ export default function CalendarPage() {
                 : TAB_INACTIVE_CLASSES
             }`}
           >
-            Posts ({scheduledPosts.length})
+            Posts ({totalPostsCount})
           </Link>
           <Link
             to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_LONGFORM}`}
@@ -77,7 +80,7 @@ export default function CalendarPage() {
                 : TAB_INACTIVE_CLASSES
             }`}
           >
-            Longform ({scheduledLongFormPosts.length})
+            Longform ({totalLongformCount})
           </Link>
         </nav>
       </div>

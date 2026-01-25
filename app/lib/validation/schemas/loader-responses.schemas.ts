@@ -525,6 +525,8 @@ export const calendarLoaderDataSchema = z.object({
   queueTypes: z.array(queueTypeSchema),
   selectedQueueType: z.string(),
   scheduleIntervals: z.array(z.union([z.string(), z.number()])).optional(),
+  scheduledPostsPagination: paginationSchema.optional(),
+  scheduledLongFormPostsPagination: paginationSchema.optional(),
 });
 
 export type CalendarLoaderData = z.infer<typeof calendarLoaderDataSchema>;

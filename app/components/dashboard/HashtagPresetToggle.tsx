@@ -66,6 +66,7 @@ export function HashtagPresetToggle({
       <div className="flex items-center space-x-2">
         <Checkbox
           id="use-hashtag-presets"
+          name="use-hashtag-presets"
           checked={useHashtagPresets}
           onCheckedChange={(checked) => onUseHashtagPresetsChange?.(!!checked)}
           disabled={disabled}
@@ -138,15 +139,19 @@ export function HashtagPresetToggle({
           ) : (
             <>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Label
+                  htmlFor="hashtag-preset-select"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Choose Hashtag Preset
                 </Label>
                 <Select
                   value={selectedPresetId ?? "none"}
                   onValueChange={handlePresetChange}
                   disabled={disabled}
+                  name="hashtag-preset-select"
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="hashtag-preset-select" className="w-full">
                     <SelectValue placeholder="Select a hashtag preset" />
                   </SelectTrigger>
                   <SelectContent>

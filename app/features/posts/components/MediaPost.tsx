@@ -258,6 +258,7 @@ export default function MediaPost({
       <input type="hidden" name="_action" value="upload-media-preview" />
       <label className="block cursor-pointer">
         <input
+          id="media-post-file-input"
           type="file"
           name="files"
           className="hidden"

@@ -73,12 +73,17 @@ export function DraftEditForm({
             rows={6}
             disabled={isSubmitting}
           />
-          <input type="hidden" name="caption" value={caption || content} />
+          <input
+            type="hidden"
+            id="draft-caption-hidden"
+            name="caption"
+            value={caption || content}
+          />
         </div>
 
         {/* Queue Selection */}
         <div>
-          <Label>Queue Type</Label>
+          <Label htmlFor="draft-queue-type">Queue Type</Label>
           <div className="mt-2 flex flex-wrap gap-2">
             {queueTypes.map((queue) => {
               const queueName = typeof queue === "string" ? queue : queue.name;
@@ -119,7 +124,12 @@ export function DraftEditForm({
               }
             })}
           </div>
-          <input type="hidden" name="queueType" value={selectedQueue} />
+          <input
+            type="hidden"
+            id="draft-queue-type"
+            name="queueType"
+            value={selectedQueue}
+          />
         </div>
 
         {/* Hashtag Preset Toggle */}
@@ -140,12 +150,18 @@ export function DraftEditForm({
         {useHashtagPresets && selectedHashtagPresetId ? (
           <input
             type="hidden"
+            id="draft-hashtag-preset-id-hidden"
             name="hashTagPresetId"
             value={selectedHashtagPresetId}
           />
         ) : null}
         {useHashtagPresets ? (
-          <input type="hidden" name="useHashtagPresets" value="on" />
+          <input
+            type="hidden"
+            id="draft-use-hashtag-presets-hidden"
+            name="useHashtagPresets"
+            value="on"
+          />
         ) : null}
 
         {/* Schedule Time (for resume action) */}

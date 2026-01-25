@@ -3,17 +3,29 @@ interface ZapButtonProps {
   npub: string;
 }
 
+// Global flag to track if script is already loaded
+let nostrZapScriptLoaded = false;
+let nostrZapScriptElement: HTMLScriptElement | null = null;
+
 export default function ZapButton({ npub }: ZapButtonProps) {
   useEffect(() => {
-    // Initialize nostr-zap after component mounts
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/nostr-zap@0.20.0";
-    script.async = true;
-    document.body.appendChild(script);
+    // Only load script once globally, not per component instance
+    if (!nostrZapScriptLoaded && !nostrZapScriptElement) {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/nostr-zap@0.20.0";
+      script.async = true;
+      script.id = "nostr-zap-script"; // Add ID to prevent duplicates
 
+      // Mark as loaded before appending to prevent race conditions
+      nostrZapScriptLoaded = true;
+      nostrZapScriptElement = script;
+
+      document.body.appendChild(script);
+    }
+
+    // Don't remove script on unmount - it's shared across all ZapButton instances
     return () => {
-      // Cleanup script on unmount
-      document.body.removeChild(script);
+      // No cleanup needed - script stays loaded for other instances
     };
   }, []);
 

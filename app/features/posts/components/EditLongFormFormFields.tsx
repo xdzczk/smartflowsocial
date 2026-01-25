@@ -28,6 +28,7 @@ export function EditLongFormFormFields({
         </label>
         <input
           id="longform-title"
+          name="longform-title"
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -45,6 +46,7 @@ export function EditLongFormFormFields({
         </label>
         <textarea
           id="longform-summary"
+          name="longform-summary"
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           rows={3}
@@ -84,6 +86,7 @@ export function EditLongFormFormFields({
         </label>
         <input
           id="longform-cover-image"
+          name="longform-cover-image"
           type="url"
           value={image}
           onChange={(e) => setImage(e.target.value)}

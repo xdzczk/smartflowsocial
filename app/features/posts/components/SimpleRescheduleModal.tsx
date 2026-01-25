@@ -321,6 +321,7 @@ export function SimpleRescheduleModal({
                 </svg>
                 <input
                   id="simple-reschedule-datetime"
+                  name="simple-reschedule-datetime"
                   type="datetime-local"
                   value={formatDateTimeForInput(scheduledFor)}
                   onChange={(e) => {

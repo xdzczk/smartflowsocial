@@ -125,8 +125,15 @@ export default function SchedulingControls({
     <div className="space-y-4">
       <div>
         <Label htmlFor="queueType">Queue Type</Label>
-        <Select value={selectedQueueType} onValueChange={handleQueueChange}>
-          <SelectTrigger className={`w-full ${selectedQueueColor}`}>
+        <Select
+          value={selectedQueueType}
+          onValueChange={handleQueueChange}
+          name="queueType"
+        >
+          <SelectTrigger
+            id="queueType"
+            className={`w-full ${selectedQueueColor}`}
+          >
             <SelectValue placeholder="Select a queue type" />
           </SelectTrigger>
           <SelectContent>

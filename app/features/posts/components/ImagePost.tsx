@@ -388,6 +388,7 @@ export default function ImagePost({
         className={`block ${isUploaded ? "cursor-not-allowed" : "cursor-pointer"}`}
       >
         <input
+          id="image-post-file-input"
           type="file"
           name="files"
           className="hidden"

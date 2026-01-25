@@ -168,6 +168,7 @@ export function RelaysSettings({
               <div key={field.id} className="flex items-start space-x-2">
                 <div className="flex-1">
                   <Input
+                    id={`relay-${index}`}
                     {...form.register(`relays.${index}`)}
                     placeholder="wss://relay.damus.io"
                     disabled={isSubmitting}
