@@ -199,11 +199,11 @@ export function MonthlyView({
   return (
     <div className="flex h-full flex-col">
       {/* Weekday headers */}
-      <div className="grid flex-shrink-0 grid-cols-7 border-b border-gray-200 dark:border-gray-700">
+      <div className="border-border bg-card grid flex-shrink-0 grid-cols-7 border-b">
         {weekdays.map((day) => (
           <div
             key={day}
-            className="p-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
+            className="text-muted-foreground p-3 text-center text-sm font-medium"
           >
             {day}
           </div>
@@ -227,11 +227,9 @@ export function MonthlyView({
               key={dayInfo.date.toISOString()}
               role="gridcell"
               tabIndex={-1}
-              className={`flex min-h-[120px] flex-col border-r border-b border-gray-200 p-2 last:border-r-0 dark:border-gray-700 ${
-                dayInfo.isCurrentMonth
-                  ? "bg-white dark:bg-gray-800"
-                  : "bg-secondary/20"
-              } ${dayInfo.isToday ? "ring-2 ring-blue-500" : ""}`}
+              className={`border-border flex min-h-[120px] flex-col border-r border-b p-2 last:border-r-0 ${
+                dayInfo.isCurrentMonth ? "bg-card" : "bg-secondary/20"
+              } ${dayInfo.isToday ? "ring-primary ring-2" : ""}`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, dayInfo.date)}
             >

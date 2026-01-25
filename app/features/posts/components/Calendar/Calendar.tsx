@@ -121,9 +121,9 @@ export function Calendar({
   );
 
   return (
-    <div className="flex h-full flex-col rounded-lg bg-white shadow dark:bg-gray-800">
+    <div className="border-border bg-card flex h-full flex-col rounded-lg border shadow">
       {/* Header with view toggle */}
-      <div className="border-b border-gray-200 p-4 dark:border-gray-700">
+      <div className="border-border border-b p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Navigation */}
@@ -136,7 +136,7 @@ export function Calendar({
                     : addMonths(currentZoned, -1);
                 setCurrentDate(toDate(newZoned));
               }}
-              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="text-muted-foreground hover:text-foreground p-2"
             >
               <svg
                 className="h-5 w-5"
@@ -153,7 +153,7 @@ export function Calendar({
               </svg>
             </button>
 
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-foreground text-lg font-semibold">
               {(() => {
                 const currentZoned = fromDate(currentDate, userTimezone);
                 return view === "week"
@@ -178,7 +178,7 @@ export function Calendar({
                     : addMonths(currentZoned, 1);
                 setCurrentDate(toDate(newZoned));
               }}
-              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="text-muted-foreground hover:text-foreground p-2"
             >
               <svg
                 className="h-5 w-5"
@@ -200,20 +200,20 @@ export function Calendar({
                 const now = nowInTimezone(userTimezone);
                 setCurrentDate(toDate(now));
               }}
-              className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              className="text-primary hover:text-primary/80 px-3 py-1 text-sm"
             >
               Today
             </button>
           </div>
 
           {/* View toggle */}
-          <div className="flex items-center space-x-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-700">
+          <div className="bg-secondary/30 flex items-center space-x-1 rounded-lg p-1">
             <button
               onClick={() => setView("week")}
               className={`rounded-md px-3 py-1 text-sm font-medium ${
                 view === "week"
-                  ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
-                  : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Week
@@ -222,8 +222,8 @@ export function Calendar({
               onClick={() => setView("month")}
               className={`rounded-md px-3 py-1 text-sm font-medium ${
                 view === "month"
-                  ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white"
-                  : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Month

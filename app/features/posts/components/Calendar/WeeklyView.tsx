@@ -225,7 +225,7 @@ export function WeeklyView({
   return (
     <div className="flex h-[70vh] flex-col overflow-hidden">
       {/* Days header */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div className="border-border bg-card flex border-b">
         <div className="w-16 flex-shrink-0"></div>
         {weekDays.map((day) => {
           const userTimezone = user?.timezone ?? "Etc/UTC";
@@ -238,11 +238,11 @@ export function WeeklyView({
           return (
             <div
               key={day.toISOString()}
-              className={`min-w-0 flex-1 border-r border-gray-200 p-3 text-center last:border-r-0 dark:border-gray-700 ${
-                isToday ? "bg-blue-50 dark:bg-blue-900/20" : ""
+              className={`border-border min-w-0 flex-1 border-r p-3 text-center last:border-r-0 ${
+                isToday ? "bg-primary/20" : ""
               }`}
             >
-              <div className="text-sm font-medium text-gray-900 dark:text-white">
+              <div className="text-foreground text-sm font-medium">
                 {day.toLocaleDateString("en-US", {
                   weekday: "short",
                   timeZone: user?.timezone ?? "Etc/UTC",
@@ -250,9 +250,7 @@ export function WeeklyView({
               </div>
               <div
                 className={`mt-1 text-lg font-semibold ${
-                  isToday
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-900 dark:text-white"
+                  isToday ? "text-primary" : "text-foreground"
                 }`}
               >
                 {day.getDate()}
@@ -266,12 +264,9 @@ export function WeeklyView({
       <div className="flex-1 overflow-y-auto">
         <div className="relative">
           {hours.map((time) => (
-            <div
-              key={time}
-              className="flex h-12 border-b border-gray-100 dark:border-gray-800"
-            >
+            <div key={time} className="border-border flex h-12 border-b">
               {/* Time label */}
-              <div className="w-16 flex-shrink-0 p-2 text-right text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-muted-foreground w-16 flex-shrink-0 p-2 text-right text-xs">
                 {time}
               </div>
 
@@ -384,7 +379,7 @@ export function WeeklyView({
                             />
                           </div>
                         ))}
-                        <div className="flex flex-1 items-center justify-center rounded bg-gray-100 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                        <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
                           +{posts.length - 5}
                         </div>
                       </div>
@@ -434,10 +429,10 @@ function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
 
   return (
     <div
-      className="pointer-events-none absolute right-0 left-16 z-20 h-0.5 bg-red-500"
+      className="bg-destructive pointer-events-none absolute right-0 left-16 z-20 h-0.5"
       style={{ top: `${topOffset}px` }}
     >
-      <div className="absolute -top-1 -left-2 h-3 w-3 rounded-full bg-red-500"></div>
+      <div className="bg-destructive absolute -top-1 -left-2 h-3 w-3 rounded-full"></div>
     </div>
   );
 }

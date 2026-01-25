@@ -240,7 +240,7 @@ export default function PostedPostsTable({
                     </div>
                   ) : (
                     <div className="relative">
-                      <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                         TEXT
                       </div>
                       {post.repost ? (

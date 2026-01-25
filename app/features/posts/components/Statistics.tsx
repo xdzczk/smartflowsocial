@@ -17,7 +17,7 @@ export default function Statistics() {
         {/* Card */}
         <Card>
           <CardContent className="flex grow items-center justify-between p-5">
-            <div className="flex size-16 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-700/25 dark:text-blue-300">
+            <div className="bg-primary/20 text-primary flex size-16 items-center justify-center rounded-xl">
               <svg
                 className="hi-solid hi-clock inline-block size-8"
                 xmlns="http://www.w3.org/2000/svg"
@@ -32,8 +32,10 @@ export default function Statistics() {
               </svg>
             </div>
             <dl className="space-y-1 text-right">
-              <dt className="text-2xl font-bold">{stats.scheduledCount}</dt>
-              <dd className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+              <dt className="text-foreground text-2xl font-bold">
+                {stats.scheduledCount}
+              </dt>
+              <dd className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
                 Scheduled Posts
               </dd>
             </dl>
@@ -44,7 +46,7 @@ export default function Statistics() {
         {/* Card */}
         <Card>
           <CardContent className="flex grow items-center justify-between p-5">
-            <div className="flex size-16 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-700/25 dark:text-blue-300">
+            <div className="flex size-16 items-center justify-center rounded-xl bg-green-500/20 text-green-600 dark:text-green-400">
               <svg
                 className="hi-solid hi-check-circle inline-block size-8"
                 xmlns="http://www.w3.org/2000/svg"
@@ -59,8 +61,10 @@ export default function Statistics() {
               </svg>
             </div>
             <dl className="space-y-1 text-right">
-              <dt className="text-2xl font-bold">{stats.successCount}</dt>
-              <dd className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+              <dt className="text-foreground text-2xl font-bold">
+                {stats.successCount}
+              </dt>
+              <dd className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
                 Posted Successfully
               </dd>
             </dl>
@@ -73,7 +77,7 @@ export default function Statistics() {
           <CardContent className="p-0">
             <Link
               to="/dashboard/newpost"
-              className="flex grow items-center justify-between p-5 text-white hover:text-gray-100"
+              className="flex grow items-center justify-between p-5 text-white hover:text-white/90"
             >
               <div className="flex size-16 items-center justify-center rounded-xl bg-white/20 text-white">
                 <svg

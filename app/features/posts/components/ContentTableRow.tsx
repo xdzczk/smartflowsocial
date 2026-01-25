@@ -138,7 +138,7 @@ export function ContentTableRow({
           {(getContentPreview(item)?.length ?? 0) > 20 ? "…" : ""}
         </p>
       </td>
-      <td className="p-3">
+      <td className="text-foreground p-3">
         {type === "scheduled"
           ? formatDate(item.scheduledAtUtc ?? undefined, false, userTimezone)
           : type === "posted"
