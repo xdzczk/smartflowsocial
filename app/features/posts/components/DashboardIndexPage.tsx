@@ -291,6 +291,9 @@ export default function DashboardIndexPage() {
     user,
     queueTypes,
     hashTagPresets,
+    totalContentCount,
+    totalPostsCount,
+    totalLongformCount,
     isLoading: _isDataLoading,
     isFetchingNextPage,
     hasNextPage,
@@ -409,13 +412,16 @@ export default function DashboardIndexPage() {
         posts={scheduledPosts}
         longformPosts={longformPosts}
         basePath="/dashboard"
+        totalContentCount={totalContentCount}
+        totalPostsCount={totalPostsCount}
+        totalLongformCount={totalLongformCount}
       />
 
       <DashboardHeader
         currentTab={currentTab}
-        allContentCount={allContent.length}
-        postsCount={filteredPosts.length}
-        longformCount={longformPosts.length}
+        allContentCount={totalContentCount}
+        postsCount={totalPostsCount}
+        longformCount={totalLongformCount}
       />
 
       {/* Queue Selection Tabs */}

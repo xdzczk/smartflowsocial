@@ -123,6 +123,9 @@ export default function PostedPostsPage() {
     user,
     queueTypes,
     stats: initialStats,
+    totalContentCount,
+    totalPostsCount,
+    totalLongformCount,
     isLoading: _isLoading,
     isFetchingNextPage,
     hasNextPage,
@@ -266,9 +269,9 @@ export default function PostedPostsPage() {
           name: qt.name,
           color: qt.color ?? undefined,
         }))}
-        allContentLength={allContent.length}
-        postsLength={filteredPosts.length}
-        longformPostsLength={longformPosts.length}
+        allContentLength={totalContentCount}
+        postsLength={totalPostsCount}
+        longformPostsLength={totalLongformCount}
       />
 
       {currentTab === "all" ? (

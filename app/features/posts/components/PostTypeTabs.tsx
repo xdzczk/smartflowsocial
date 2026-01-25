@@ -7,6 +7,10 @@ interface PostTypeTabsProps {
   posts?: PostData[];
   longformPosts?: LongFormPostData[];
   basePath?: string;
+  // Optional: Use pagination totals instead of array lengths
+  totalContentCount?: number;
+  totalPostsCount?: number;
+  totalLongformCount?: number;
 }
 
 export default function PostTypeTabs({
@@ -15,6 +19,9 @@ export default function PostTypeTabs({
   posts = [],
   longformPosts = [],
   basePath = "/dashboard",
+  totalContentCount,
+  totalPostsCount,
+  totalLongformCount,
 }: PostTypeTabsProps) {
   const params = useParams();
   const queueParam = params["queueType"] ? `/${params["queueType"]}` : "";
@@ -26,6 +33,11 @@ export default function PostTypeTabs({
         : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
     }`;
 
+  // Use pagination totals if available, otherwise fall back to array lengths
+  const allCount = totalContentCount ?? allContent.length;
+  const postsCount = totalPostsCount ?? posts.length;
+  const longformCount = totalLongformCount ?? longformPosts.length;
+
   return (
     <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
       <nav className="-mb-px flex space-x-8" aria-label="Post Types">
@@ -33,19 +45,19 @@ export default function PostTypeTabs({
           to={`${basePath}${queueParam}?tab=all`}
           className={getTabClasses(currentTab === "all")}
         >
-          All ({allContent.length})
+          All ({allCount})
         </Link>
         <Link
           to={`${basePath}${queueParam}?tab=posts`}
           className={getTabClasses(currentTab === "posts")}
         >
-          Posts ({posts.length})
+          Posts ({postsCount})
         </Link>
         <Link
           to={`${basePath}${queueParam}?tab=longform`}
           className={getTabClasses(currentTab === "longform")}
         >
-          Longform ({longformPosts.length})
+          Longform ({longformCount})
         </Link>
       </nav>
     </div>

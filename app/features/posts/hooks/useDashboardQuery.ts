@@ -297,6 +297,9 @@ export function useDashboardInfiniteData() {
       queueTypes: [] as QueueType[],
       hashTagPresets: [] as HashTagPreset[],
       postStatistics: undefined,
+      totalContentCount: 0,
+      totalPostsCount: 0,
+      totalLongformCount: 0,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -355,6 +358,9 @@ export function useDashboardInfiniteData() {
       queueTypes: [] as QueueType[],
       hashTagPresets: [] as HashTagPreset[],
       postStatistics: undefined,
+      totalContentCount: 0,
+      totalPostsCount: 0,
+      totalLongformCount: 0,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -373,6 +379,10 @@ export function useDashboardInfiniteData() {
       : [];
   const postStatisticsRaw =
     "postStatistics" in lastPage ? lastPage.postStatistics : undefined;
+  const paginationRaw =
+    "pagination" in lastPage ? lastPage.pagination : undefined;
+  const longformPaginationRaw =
+    "longformPagination" in lastPage ? lastPage.longformPagination : undefined;
 
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
     ? queueTypesRaw
@@ -434,6 +444,25 @@ export function useDashboardInfiniteData() {
   const hashTagPresets: HashTagPreset[] =
     validateHashTagPresets(hashTagPresetsRaw);
 
+  // Extract pagination totals for displaying counts
+  const pagination =
+    paginationRaw &&
+    typeof paginationRaw === "object" &&
+    "total" in paginationRaw &&
+    typeof paginationRaw.total === "number"
+      ? paginationRaw.total
+      : allScheduledPosts.length;
+  const longformPagination =
+    longformPaginationRaw &&
+    typeof longformPaginationRaw === "object" &&
+    "total" in longformPaginationRaw &&
+    typeof longformPaginationRaw.total === "number"
+      ? longformPaginationRaw.total
+      : allLongformPosts.length;
+
+  // Calculate total content count (posts + longform)
+  const totalContentCount = pagination + longformPagination;
+
   return {
     scheduledPosts: allScheduledPosts,
     longformPosts: allLongformPosts,
@@ -442,6 +471,10 @@ export function useDashboardInfiniteData() {
     queueTypes,
     hashTagPresets,
     postStatistics: postStatisticsRaw,
+    // Pagination totals for display
+    totalPostsCount: pagination,
+    totalLongformCount: longformPagination,
+    totalContentCount,
     isLoading,
     isFetchingNextPage,
     hasNextPage,

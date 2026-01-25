@@ -343,6 +343,9 @@ function createEmptyPostedPostsData<TFetchNextPage>(
     queueTypes: [] satisfies QueueType[],
     pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
     stats: {} satisfies Record<string, PostStats>,
+    totalContentCount: 0,
+    totalPostsCount: 0,
+    totalLongformCount: 0,
   };
 }
 
@@ -553,6 +556,15 @@ export function usePostedPostsInfiniteData() {
     : [];
   const pagination = processPagination(paginationRaw);
 
+  // Extract pagination totals for displaying counts
+  // processPagination always returns an object with total, so we can safely access it
+  const totalPostsCount =
+    typeof pagination.total === "number" ? pagination.total : allPosts.length;
+  // For posted posts, longform posts are typically fewer, so we can estimate
+  // or use the actual count if available in pagination
+  const totalLongformCount = allLongformPosts.length; // Posted longform might not have separate pagination
+  const totalContentCount = totalPostsCount + totalLongformCount;
+
   return {
     posts: allPosts,
     longformPosts: allLongformPosts,
@@ -561,6 +573,10 @@ export function usePostedPostsInfiniteData() {
     queueTypes,
     pagination,
     stats: allStats,
+    // Pagination totals for display
+    totalPostsCount,
+    totalLongformCount,
+    totalContentCount,
     isLoading,
     isFetchingNextPage,
     hasNextPage,

@@ -35,6 +35,9 @@ export default function ScheduledPostsPage() {
     user,
     queueTypes,
     hashTagPresets,
+    totalContentCount,
+    totalPostsCount,
+    totalLongformCount,
     isLoading: _isDataLoading,
     isFetchingNextPage,
     hasNextPage,
@@ -124,9 +127,9 @@ export default function ScheduledPostsPage() {
     <div>
       <DashboardHeader
         currentTab={currentTab}
-        allContentCount={allContent.length}
-        postsCount={filteredPosts.length}
-        longformCount={longformPosts.length}
+        allContentCount={totalContentCount}
+        postsCount={totalPostsCount}
+        longformCount={totalLongformCount}
       />
 
       {/* Post Type Tabs */}
@@ -136,6 +139,9 @@ export default function ScheduledPostsPage() {
         posts={filteredPosts}
         longformPosts={longformPosts}
         basePath="/dashboard/scheduled"
+        totalContentCount={totalContentCount}
+        totalPostsCount={totalPostsCount}
+        totalLongformCount={totalLongformCount}
       />
 
       {/* Queue Selection Tabs */}
