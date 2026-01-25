@@ -4,7 +4,6 @@
  */
 
 import { Button } from "~/components/ui/button";
-import { Label } from "~/components/ui/label";
 
 interface LongFormContentEditorProps {
   uploadProvider?: string | null;
@@ -19,7 +18,9 @@ export function LongFormContentEditor({
     <div>
       <div className="mb-1 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Label id="content-label">Content *</Label>
+          <span id="content-label" className="text-sm leading-none font-medium">
+            Content *
+          </span>
           {uploadProvider ? (
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <span>Images upload via:</span>
