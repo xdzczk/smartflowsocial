@@ -22,7 +22,7 @@ export function LongFormCoverImage({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <Label htmlFor="image">Cover Image *</Label>
+        <Label htmlFor="cover-image-input">Cover Image *</Label>
         {uploadProvider ? (
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <span>Upload via:</span>
@@ -148,11 +148,14 @@ export function LongFormCoverImage({
                 >
                   Replace
                   <input
+                    id="cover-image-replace-input"
+                    name="cover-image-replace"
                     type="file"
                     accept="image/*"
                     onChange={onImageUpload}
                     className="absolute inset-0 cursor-pointer opacity-0"
                     disabled={uploadFetcherState !== "idle"}
+                    aria-label="Replace cover image"
                   />
                 </Button>
                 <Button

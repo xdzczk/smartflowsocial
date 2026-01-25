@@ -19,7 +19,9 @@ export function LongFormContentEditor({
     <div>
       <div className="mb-1 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Label htmlFor="content">Content *</Label>
+          <Label htmlFor="content" id="content-label">
+            Content *
+          </Label>
           {uploadProvider ? (
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <span>Images upload via:</span>
@@ -66,6 +68,8 @@ export function LongFormContentEditor({
           <div
             id="editorjs"
             className="prose prose-lg dark:prose-invert min-h-[460px] max-w-none"
+            role="textbox"
+            aria-labelledby="content-label"
           ></div>
         </div>
       </div>
