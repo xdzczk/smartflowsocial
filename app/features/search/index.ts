@@ -38,3 +38,13 @@ export { useSearchState } from "./hooks/useSearchState";
 // ============================================================================
 
 export { loadSearchData } from "./services/search-loader.server";
+
+// ============================================================================
+// Global Search (Public API)
+// ============================================================================
+
+export {
+  performGlobalSearch,
+  type GlobalSearchResult,
+  type GlobalSearchResponse,
+} from "./services/global-search.server";

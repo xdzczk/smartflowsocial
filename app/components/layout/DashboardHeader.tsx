@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@remix-run/react";
 import { Lock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   HiOutlineHome,
   HiOutlineCalendarDays,
@@ -8,17 +8,17 @@ import {
   HiOutlineCloudArrowUp,
   HiOutlineSquares2X2,
   HiOutlineDocumentDuplicate,
-  HiOutlineArrowPath,
   HiOutlineCalendar,
   HiOutlineClock,
   HiOutlineGift,
   HiOutlineFire,
-  HiOutlineMagnifyingGlass,
   HiOutlineCog6Tooth,
   HiOutlineBars3,
   HiOutlineXMark,
 } from "react-icons/hi2";
 
+import { ExpandableNavigationSection } from "~/components/layout/ExpandableNavigationSection";
+import { GlobalSearchBar } from "~/components/layout/GlobalSearchBar";
 import { Button } from "~/components/ui/button";
 import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
 import UpgradePrompt from "~/features/payments/components/UpgradePrompt";
@@ -106,6 +106,15 @@ export default function Header() {
   }>({ isOpen: false, feature: null, featureName: "" });
   const location = useLocation();
 
+  // Close mobile sidebar when navigation occurs
+  useEffect(() => {
+    // Use setTimeout to avoid calling setState synchronously in effect
+    const timeoutId = setTimeout(() => {
+      setMobileSidebarOpen(false);
+    }, 0);
+    return () => clearTimeout(timeoutId);
+  }, [location.pathname]);
+
   const handleUpgradeClick = (feature: FeatureName, featureName: string) => {
     setUpgradePrompt({ isOpen: true, feature, featureName });
   };
@@ -171,6 +180,56 @@ export default function Header() {
               >
                 Dashboard
               </NavigationItem>
+
+              {/* Create Section (Expandable) */}
+              <ExpandableNavigationSection
+                title="Create"
+                icon={<HiOutlineCloudArrowUp className="inline-block size-5" />}
+                items={[
+                  {
+                    to: "/dashboard/newpost",
+                    feature: "newPost",
+                    icon: (
+                      <HiOutlineCloudArrowUp className="inline-block size-5" />
+                    ),
+                    label: "New Post",
+                  },
+                  {
+                    to: "/dashboard/newlongformpost",
+                    feature: "longformPosts",
+                    icon: (
+                      <HiOutlineDocumentText className="inline-block size-5" />
+                    ),
+                    label: "New Long-form",
+                  },
+                  {
+                    to: "/dashboard/bulkposts",
+                    feature: "bulkScheduling",
+                    icon: (
+                      <HiOutlineSquares2X2 className="inline-block size-5" />
+                    ),
+                    label: "Bulk Posts",
+                  },
+                  {
+                    to: "/dashboard/drafts",
+                    feature: "drafts",
+                    icon: (
+                      <HiOutlineDocumentText className="inline-block size-5" />
+                    ),
+                    label: "Drafts",
+                  },
+                  {
+                    to: "/dashboard/templates",
+                    feature: "templates",
+                    icon: (
+                      <HiOutlineDocumentDuplicate className="inline-block size-5" />
+                    ),
+                    label: "Templates",
+                  },
+                ]}
+                onUpgradeClick={handleUpgradeClick}
+              />
+
               <NavigationItem
                 to="/dashboard/calendar"
                 feature="calendar"
@@ -180,64 +239,7 @@ export default function Header() {
               >
                 Calendar
               </NavigationItem>
-              <NavigationItem
-                to="/dashboard/drafts"
-                feature="drafts"
-                isActive={location.pathname.startsWith("/dashboard/drafts")}
-                onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineDocumentText className="inline-block size-5" />}
-              >
-                Drafts
-              </NavigationItem>
-              <NavigationItem
-                to="/dashboard/newpost"
-                feature="newPost"
-                isActive={location.pathname === "/dashboard/newpost"}
-                onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineCloudArrowUp className="inline-block size-5" />}
-              >
-                New Post
-              </NavigationItem>
-              <NavigationItem
-                to="/dashboard/newlongformpost"
-                feature="longformPosts"
-                isActive={location.pathname === "/dashboard/newlongformpost"}
-                onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineDocumentText className="inline-block size-5" />}
-              >
-                New Long-form
-              </NavigationItem>
-              <NavigationItem
-                to="/dashboard/bulkposts"
-                feature="bulkScheduling"
-                isActive={location.pathname === "/dashboard/bulkposts"}
-                onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineSquares2X2 className="inline-block size-5" />}
-              >
-                Bulk Posts
-              </NavigationItem>
-              <NavigationItem
-                to="/dashboard/templates"
-                feature="templates"
-                isActive={location.pathname.startsWith("/dashboard/templates")}
-                onUpgradeClick={handleUpgradeClick}
-                icon={
-                  <HiOutlineDocumentDuplicate className="inline-block size-5" />
-                }
-              >
-                Templates
-              </NavigationItem>
-              <NavigationItem
-                to="/dashboard/recyclables"
-                feature="recyclables"
-                isActive={location.pathname.startsWith(
-                  "/dashboard/recyclables"
-                )}
-                onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineArrowPath className="inline-block size-5" />}
-              >
-                Recyclables
-              </NavigationItem>
+
               <NavigationItem
                 to="/dashboard/scheduled"
                 feature="scheduled"
@@ -245,8 +247,9 @@ export default function Header() {
                 onUpgradeClick={handleUpgradeClick}
                 icon={<HiOutlineCalendar className="inline-block size-5" />}
               >
-                Scheduled Posts
+                Scheduled
               </NavigationItem>
+
               <NavigationItem
                 to="/dashboard/posted"
                 feature="posted"
@@ -254,41 +257,29 @@ export default function Header() {
                 onUpgradeClick={handleUpgradeClick}
                 icon={<HiOutlineClock className="inline-block size-5" />}
               >
-                Posted History
+                Posted
               </NavigationItem>
-              <NavigationItem
-                to="/dashboard/giveaway?days=7"
-                feature="giveaways"
-                isActive={location.pathname.startsWith("/dashboard/giveaway")}
-                onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineGift className="inline-block size-5" />}
-              >
-                Giveaway
-              </NavigationItem>
-              <NavigationItem
-                to="/dashboard/engagement/feed"
-                feature="engagement_feed"
-                isActive={location.pathname.startsWith(
-                  "/dashboard/engagement/feed"
-                )}
-                onUpgradeClick={handleUpgradeClick}
+
+              {/* Engagement Section (Expandable) */}
+              <ExpandableNavigationSection
+                title="Engagement"
                 icon={<HiOutlineFire className="inline-block size-5" />}
-              >
-                Engagement Feed
-              </NavigationItem>
-              <NavigationItem
-                to="/dashboard/search/posts"
-                feature="dashboard"
-                isActive={location.pathname.startsWith(
-                  "/dashboard/search/posts"
-                )}
+                items={[
+                  {
+                    to: "/dashboard/engagement/feed",
+                    feature: "engagement_feed",
+                    icon: <HiOutlineFire className="inline-block size-5" />,
+                    label: "Engagement Feed",
+                  },
+                  {
+                    to: "/dashboard/giveaway?days=7",
+                    feature: "giveaways",
+                    icon: <HiOutlineGift className="inline-block size-5" />,
+                    label: "Giveaway",
+                  },
+                ]}
                 onUpgradeClick={handleUpgradeClick}
-                icon={
-                  <HiOutlineMagnifyingGlass className="inline-block size-5" />
-                }
-              >
-                Search Posts
-              </NavigationItem>
+              />
             </nav>
           </div>
         </div>
@@ -343,7 +334,13 @@ export default function Header() {
           </div>
           {/* END Left Section */}
 
-          {/* Center Section */}
+          {/* Center Section - Global Search (Desktop) */}
+          <div className="hidden flex-1 items-center lg:flex lg:px-4">
+            <GlobalSearchBar className="w-full max-w-xl" />
+          </div>
+          {/* END Center Section - Global Search (Desktop) */}
+
+          {/* Center Section - Logo (Mobile) */}
           <div className="flex items-center lg:hidden">
             <Link
               prefetch="intent"
@@ -361,10 +358,16 @@ export default function Header() {
               <span className="hidden sm:inline">SmartFlow Social</span>
             </Link>
           </div>
-          {/* END Center Section */}
+          {/* END Center Section - Logo (Mobile) */}
 
           {/* Right Section */}
           <div className="flex items-center gap-2">
+            {/* Global Search (Mobile) */}
+            <div className="lg:hidden">
+              <GlobalSearchBar className="w-64" />
+            </div>
+            {/* END Global Search (Mobile) */}
+
             {/* Account Switcher for Premium/Founder Parents and Child -> Parent */}
             <AccountSwitchMenu />
 
