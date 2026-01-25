@@ -83,7 +83,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
     queryKey,
     queryFn: async ({ pageParam = 1 }) => {
       // Build URL with page parameter
-      const url = buildUrl
+      let url = buildUrl
         ? buildUrl(pageParam)
         : (() => {
             if (typeof window === "undefined") {
@@ -100,6 +100,46 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
 
       if (!url) {
         return Promise.reject(new Error("No URL provided"));
+      }
+
+      // CRITICAL: Add _data parameter to get JSON response instead of HTML
+      // Remix returns HTML by default, but _data parameter tells it to return JSON
+      // The route ID format matches the file structure:
+      // /dashboard -> routes/dashboard
+      // /dashboard/scheduled -> routes/dashboard.scheduled
+      // /dashboard/posted -> routes/dashboard.posted
+      if (typeof window !== "undefined") {
+        try {
+          // Handle both absolute and relative URLs
+          const baseUrl = url.startsWith("http")
+            ? url
+            : window.location.origin + url;
+          const urlObj = new URL(baseUrl);
+
+          // Only add _data if not already present
+          if (!urlObj.searchParams.has("_data")) {
+            const pathname = urlObj.pathname;
+
+            // Convert pathname to Remix route ID format
+            // Remove leading slash and replace remaining slashes with dots
+            let routeId = pathname
+              .replace(/^\//, "") // Remove leading slash
+              .replace(/\//g, "."); // Replace slashes with dots
+
+            // Prepend "routes/" to match Remix route ID format
+            routeId = routeId ? `routes/${routeId}` : "routes/dashboard";
+
+            urlObj.searchParams.set("_data", routeId);
+            // Return relative URL (pathname + search)
+            url = urlObj.pathname + urlObj.search;
+          }
+        } catch (error) {
+          // If URL parsing fails, log but continue (might be a relative URL)
+          console.error(
+            `[useInfiniteRemixQuery] Failed to parse URL for _data parameter:`,
+            error
+          );
+        }
       }
 
       // Helper to extract pagination page from data
