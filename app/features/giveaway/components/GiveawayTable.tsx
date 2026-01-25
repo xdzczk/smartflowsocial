@@ -46,7 +46,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
+    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -78,7 +78,7 @@ export function GiveawayTable({
         <table className="min-w-full align-middle text-sm whitespace-nowrap">
           <thead>
             <tr>
-              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
                 Media
               </th>
               <SortableHeader
@@ -99,22 +99,22 @@ export function GiveawayTable({
                 sortConfig={sortConfig}
                 onRequestSort={onRequestSort}
               />
-              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
                 Likes
               </th>
-              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
                 Replies
               </th>
-              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
                 Mentions
               </th>
-              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
                 Reposts
               </th>
-              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
                 Zaps
               </th>
-              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
                 Zapped
               </th>
               <SortableHeader
@@ -123,7 +123,7 @@ export function GiveawayTable({
                 sortConfig={sortConfig}
                 onRequestSort={onRequestSort}
               />
-              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
                 Actions
               </th>
             </tr>
@@ -132,7 +132,7 @@ export function GiveawayTable({
             {posts.map((post) => (
               <tr
                 key={post.id}
-                className="even:bg-secondary/20 hover:bg-accent/10 cursor-pointer"
+                className="border-border hover:bg-accent/10 cursor-pointer border-b"
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3">

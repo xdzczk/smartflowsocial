@@ -31,7 +31,7 @@ export function ContentTableHeader({
     <thead>
       <tr>
         {showBulkActions ? (
-          <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+          <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
             <input
               id="content-select-all"
               name="content-select-all"
@@ -46,14 +46,14 @@ export function ContentTableHeader({
             />
           </th>
         ) : null}
-        <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
           Type
         </th>
-        <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
           Media
         </th>
         <th
-          className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
+          className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
           onClick={() => onRequestSort("caption")}
         >
           Title/Caption{" "}
@@ -63,11 +63,11 @@ export function ContentTableHeader({
               : "↓"
             : null}
         </th>
-        <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
           Preview
         </th>
         <th
-          className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
+          className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
           onClick={() => onRequestSort(dateSortKey)}
         >
           {type === "posted"
@@ -81,13 +81,13 @@ export function ContentTableHeader({
               : "↓"
             : null}
         </th>
-        <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
           Queue
         </th>
-        <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
           Status
         </th>
-        <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
           Actions
         </th>
       </tr>

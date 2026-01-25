@@ -34,9 +34,7 @@ export function EngagementContent({
         {/* Replies Section */}
         {groupedNotifications.replies.length > 0 ? (
           <div>
-            <h4 className="mb-3 font-medium text-gray-900 dark:text-gray-100">
-              Replies
-            </h4>
+            <h4 className="text-foreground mb-3 font-medium">Replies</h4>
             <GroupedNotificationList
               groupedNotifications={groupedNotifications.replies}
               userTimezone={userTimezone ?? undefined}
@@ -63,8 +61,8 @@ export function EngagementContent({
 
         {groupedNotifications.replies.length === 0 &&
         groupedNotifications.quotes.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
-            <p className="text-gray-500 dark:text-gray-400">
+          <div className="border-border bg-card rounded-lg border p-8 text-center">
+            <p className="text-muted-foreground">
               No engagement found for your posts yet.
             </p>
           </div>
@@ -85,11 +83,11 @@ export function EngagementContent({
             trustScores={trustScores}
           />
         ) : (
-          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
-            <p className="text-gray-500 dark:text-gray-400">
+          <div className="border-border bg-card rounded-lg border p-8 text-center">
+            <p className="text-muted-foreground">
               No replies found for your posts.
             </p>
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="text-muted-foreground mt-2 text-sm">
               Posts fetched: {postsCount}
             </p>
           </div>
@@ -110,8 +108,8 @@ export function EngagementContent({
           trustScores={trustScores}
         />
       ) : (
-        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
-          <p className="text-gray-500 dark:text-gray-400">
+        <div className="border-border bg-card rounded-lg border p-8 text-center">
+          <p className="text-muted-foreground">
             No quote reposts found for your posts.
           </p>
         </div>

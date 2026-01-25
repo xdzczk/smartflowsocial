@@ -40,7 +40,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
+    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -136,7 +136,7 @@ export function ScheduledPostsTable({
       <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>
-            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
               <input
                 id="scheduled-select-all"
                 name="scheduled-select-all"
@@ -148,7 +148,7 @@ export function ScheduledPostsTable({
                 className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
               />
             </th>
-            <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
               Media
             </th>
             <SortableHeader
@@ -163,16 +163,16 @@ export function ScheduledPostsTable({
               sortConfig={sortConfig}
               onRequestSort={onRequestSort}
             />
-            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
               Time Remaining
             </th>
-            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
               Queue
             </th>
-            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
               Status
             </th>
-            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
               Actions
             </th>
           </tr>
@@ -181,7 +181,7 @@ export function ScheduledPostsTable({
           {posts.map((post) => (
             <tr
               key={post.id}
-              className="even:bg-secondary/20 hover:bg-accent/10 cursor-pointer"
+              className="border-border hover:bg-accent/10 cursor-pointer border-b"
               onClick={() => onPostClick(post)}
             >
               <td className="p-3 text-center">

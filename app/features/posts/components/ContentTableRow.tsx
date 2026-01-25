@@ -63,7 +63,7 @@ export function ContentTableRow({
   return (
     <tr
       key={`${item.type}-${item.id}`}
-      className="even:bg-secondary/20 hover:bg-accent/10 cursor-pointer"
+      className="border-border hover:bg-accent/10 cursor-pointer border-b"
       onClick={() => onPostSelect?.(item)}
     >
       {showBulkActions ? (
@@ -203,7 +203,7 @@ function ContentRowActions({
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="font-montserrat inline-block rounded-full bg-black/50 px-4 py-1 text-sm text-white transition-colors duration-200 hover:bg-black/70"
+              className="font-montserrat bg-primary text-primary-foreground hover:bg-primary/90 inline-block rounded-full px-4 py-1 text-sm transition-colors duration-200"
             >
               View Note
             </Link>
@@ -216,7 +216,7 @@ function ContentRowActions({
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="font-montserrat inline-block rounded-full bg-black/50 px-4 py-1 text-sm text-white transition-colors duration-200 hover:bg-black/70"
+              className="font-montserrat bg-primary text-primary-foreground hover:bg-primary/90 inline-block rounded-full px-4 py-1 text-sm transition-colors duration-200"
             >
               View Article
             </Link>

@@ -22,8 +22,8 @@ interface NotificationItemProps {
 const TYPE_BADGES = {
   reply: {
     label: "replied",
-    bgClass: "bg-blue-100 dark:bg-blue-900",
-    textClass: "text-blue-800 dark:text-blue-200",
+    bgClass: "bg-primary/20",
+    textClass: "text-primary",
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
         <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
@@ -33,8 +33,8 @@ const TYPE_BADGES = {
   },
   mention: {
     label: "mentioned",
-    bgClass: "bg-purple-100 dark:bg-purple-900",
-    textClass: "text-purple-800 dark:text-purple-200",
+    bgClass: "bg-accent/30",
+    textClass: "text-accent-foreground",
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
         <path
@@ -47,8 +47,8 @@ const TYPE_BADGES = {
   },
   quote: {
     label: "quoted",
-    bgClass: "bg-green-100 dark:bg-green-900",
-    textClass: "text-green-800 dark:text-green-200",
+    bgClass: "bg-green-500/20",
+    textClass: "text-green-600 dark:text-green-400",
     icon: (
       <svg
         className="h-4 w-4"
@@ -99,7 +99,7 @@ export function NotificationItem({
   const stats: NotificationStats | undefined = notification.stats;
 
   return (
-    <div className="p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/30">
+    <div className="hover:bg-accent/10 p-3 transition-colors">
       <div className="flex gap-2">
         {/* Author Avatar */}
         <div className="flex-shrink-0">
@@ -110,7 +110,7 @@ export function NotificationItem({
               className="h-10 w-10 rounded-full"
             />
           ) : (
-            <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
+            <div className="bg-muted h-10 w-10 rounded-full" />
           )}
         </div>
 
@@ -118,11 +118,11 @@ export function NotificationItem({
         <div className="flex-1 overflow-hidden">
           {/* Header */}
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <span className="text-foreground text-sm font-semibold">
               {displayName}
             </span>
             {notification.authorNip05 ? (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-muted-foreground text-xs">
                 @{notification.authorNip05.split("@")[0]}
               </span>
             ) : null}
@@ -140,7 +140,7 @@ export function NotificationItem({
               {typeBadge.icon}
               {typeBadge.label}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-muted-foreground text-xs">
               {formatDate(
                 new Date(notification.createdAt * 1000).toISOString()
               )}
@@ -148,7 +148,7 @@ export function NotificationItem({
           </div>
 
           {/* Notification Content */}
-          <p className="mb-2 text-sm break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+          <p className="text-foreground mb-2 text-sm break-words whitespace-pre-wrap">
             {notification.content}
           </p>
 
@@ -223,7 +223,7 @@ export function NotificationItem({
           {/* Toast Notification */}
           {actions.toast ? (
             <div
-              className={`mt-2 rounded-lg px-3 py-2 text-xs ${actions.toast.type === "success" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"}`}
+              className={`mt-2 rounded-lg px-3 py-2 text-xs ${actions.toast.type === "success" ? "bg-green-500/20 text-green-600 dark:text-green-400" : "bg-destructive/20 text-destructive"}`}
             >
               {actions.toast.message}
             </div>

@@ -79,10 +79,10 @@ Enjoy your memes and have a nice day!
   };
 
   return (
-    <div className="giveaway-post-container rounded-lg bg-white p-4 shadow dark:bg-gray-800">
+    <div className="giveaway-post-container border-border bg-card rounded-lg border p-4 shadow">
       <button
         onClick={handleGenerateMessage}
-        className="mb-4 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 mb-4 rounded px-4 py-2"
       >
         Generate Message
       </button>
@@ -90,7 +90,7 @@ Enjoy your memes and have a nice day!
       {message ? (
         <div className="mt-4">
           <textarea
-            className="w-full rounded-lg border border-gray-300 p-3 text-gray-800 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            className="border-border bg-background text-foreground w-full rounded-lg border p-3"
             rows={12}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -99,7 +99,7 @@ Enjoy your memes and have a nice day!
           <div className="mt-2 flex justify-end">
             <button
               onClick={handleCopyToClipboard}
-              className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+              className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
             >
               {copied ? "Copied!" : "Copy to Clipboard"}
             </button>

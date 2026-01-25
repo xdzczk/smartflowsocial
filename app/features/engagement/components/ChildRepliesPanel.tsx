@@ -14,8 +14,8 @@ export function ChildRepliesPanel({
 }: ChildRepliesPanelProps) {
   if (isLoading) {
     return (
-      <div className="mt-3 border-l-2 border-indigo-200 pl-3 dark:border-indigo-800">
-        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+      <div className="border-primary/30 mt-3 border-l-2 pl-3">
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
           <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle
               className="opacity-25"
@@ -39,16 +39,14 @@ export function ChildRepliesPanel({
 
   if (replies.length === 0) {
     return (
-      <div className="mt-3 border-l-2 border-indigo-200 pl-3 dark:border-indigo-800">
-        <div className="text-xs text-gray-500 dark:text-gray-400">
-          No replies yet
-        </div>
+      <div className="border-primary/30 mt-3 border-l-2 pl-3">
+        <div className="text-muted-foreground text-xs">No replies yet</div>
       </div>
     );
   }
 
   return (
-    <div className="mt-3 space-y-2 border-l-2 border-indigo-200 pl-3 dark:border-indigo-800">
+    <div className="border-primary/30 mt-3 space-y-2 border-l-2 pl-3">
       {replies.map((reply) => {
         const replyMetadata = metadata[reply.pubkey];
         let replyAuthorName =
@@ -88,7 +86,7 @@ export function ChildRepliesPanel({
         return (
           <div
             key={reply.id}
-            className="rounded-lg border border-gray-200 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-800/50"
+            className="border-border bg-secondary/30 rounded-lg border p-2"
           >
             <div className="mb-1 flex items-center gap-2">
               {replyAuthorPicture ? (
@@ -98,16 +96,16 @@ export function ChildRepliesPanel({
                   className="h-6 w-6 rounded-full"
                 />
               ) : (
-                <div className="h-6 w-6 rounded-full bg-gray-300 dark:bg-gray-600" />
+                <div className="bg-muted h-6 w-6 rounded-full" />
               )}
-              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+              <span className="text-foreground text-xs font-semibold">
                 {replyAuthorName}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-muted-foreground text-xs">
                 {formatDate(new Date(reply.created_at * 1000).toISOString())}
               </span>
             </div>
-            <p className="text-xs break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+            <p className="text-foreground text-xs break-words whitespace-pre-wrap">
               {reply.content}
             </p>
           </div>

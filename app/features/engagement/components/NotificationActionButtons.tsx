@@ -37,7 +37,7 @@ export function NotificationActionButtons({
       {/* Like Button */}
       <button
         onClick={onLike}
-        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
       >
         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -52,7 +52,7 @@ export function NotificationActionButtons({
       {/* Reply Button */}
       <button
         onClick={onToggleReply}
-        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+        className="text-muted-foreground hover:bg-primary/10 hover:text-primary inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
       >
         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
           <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
@@ -65,7 +65,7 @@ export function NotificationActionButtons({
       <button
         onClick={onRepost}
         disabled={isReposting}
-        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-green-50 hover:text-green-600 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+        className="text-muted-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:bg-green-500/10 hover:text-green-600 disabled:opacity-50 dark:hover:text-green-400"
       >
         <svg
           className="h-4 w-4"
@@ -109,7 +109,7 @@ export function NotificationActionButtons({
       {/* Copy NEvent Button */}
       <button
         onClick={onCopyNevent}
-        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
+        className="text-muted-foreground hover:bg-accent/10 hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
       >
         <svg
           className="h-4 w-4"
@@ -131,7 +131,7 @@ export function NotificationActionButtons({
       {stats?.replies ? (
         <button
           onClick={onToggleChildReplies}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-400"
+          className="text-muted-foreground hover:bg-accent/10 hover:text-accent-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
         >
           <svg
             className="h-4 w-4"
@@ -155,7 +155,7 @@ export function NotificationActionButtons({
         to={`https://primal.net/e/${eventId}`}
         target="_blank"
         rel="noreferrer"
-        className="ml-auto text-xs text-blue-600 hover:underline dark:text-blue-400"
+        className="text-primary ml-auto text-xs hover:underline"
       >
         View on Primal →
       </Link>

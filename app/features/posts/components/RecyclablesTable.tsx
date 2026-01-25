@@ -55,7 +55,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
+    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -88,7 +88,7 @@ export function RecyclablesTable({
       <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>
-            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
               <input
                 id="recyclable-select-all"
                 name="recyclable-select-all"
@@ -100,7 +100,7 @@ export function RecyclablesTable({
                 className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
               />
             </th>
-            <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
+            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
               Media
             </th>
             <SortableHeader
@@ -163,7 +163,7 @@ export function RecyclablesTable({
               sortConfig={sortConfig}
               onRequestSort={onRequestSort}
             />
-            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
+            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
               Actions
             </th>
           </tr>
@@ -181,7 +181,7 @@ export function RecyclablesTable({
             return (
               <tr
                 key={post.id}
-                className="even:bg-secondary/20 hover:bg-accent/10 cursor-pointer"
+                className="border-border hover:bg-accent/10 cursor-pointer border-b"
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3 text-center">
@@ -260,7 +260,7 @@ export function RecyclablesTable({
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="font-montserrat inline-block rounded-full bg-black/50 px-4 py-1 text-sm text-white transition-colors duration-200 hover:bg-black/70"
+                      className="font-montserrat bg-primary text-primary-foreground hover:bg-primary/90 inline-block rounded-full px-4 py-1 text-sm transition-colors duration-200"
                     >
                       View Note
                     </Link>

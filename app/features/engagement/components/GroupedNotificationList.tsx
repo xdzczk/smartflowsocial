@@ -25,7 +25,7 @@ export default function GroupedNotificationList({
   if (groupedNotifications.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <div className="mb-4 text-gray-400">
+        <div className="text-muted-foreground mb-4">
           <svg
             className="h-16 w-16"
             fill="none"
@@ -40,10 +40,10 @@ export default function GroupedNotificationList({
             />
           </svg>
         </div>
-        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+        <p className="text-foreground text-lg font-medium">
           No notifications yet
         </p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-muted-foreground text-sm">
           When you get replies or mentions, they&apos;ll show up here
         </p>
       </div>
@@ -114,12 +114,12 @@ function GroupedNotificationCard({
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="border-border bg-card overflow-hidden rounded-lg border">
       {/* Forum-style layout: Parent post on left, replies on right */}
       <div className="flex flex-col lg:flex-row">
         {/* Parent Post - Left Side */}
-        <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50 p-4 lg:w-2/5 lg:border-r lg:border-b-0 dark:border-gray-700 dark:bg-gray-900/50">
-          <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className="border-border bg-secondary/30 flex-shrink-0 border-b p-4 lg:w-2/5 lg:border-r lg:border-b-0">
+          <div className="text-muted-foreground mb-2 flex items-center gap-2 text-xs">
             <svg
               className="h-5 w-5"
               fill="none"
@@ -160,14 +160,14 @@ function GroupedNotificationCard({
               {parentPost.isLongform ? (
                 <>
                   {parentPost.title ? (
-                    <h4 className="mb-1 font-semibold text-gray-900 dark:text-gray-100">
+                    <h4 className="text-foreground mb-1 font-semibold">
                       {parentPost.title.length > 100
                         ? parentPost.title.substring(0, 100) + "..."
                         : parentPost.title}
                     </h4>
                   ) : null}
                   {parentPost.content ? (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-muted-foreground text-sm">
                       {parentPost.content.length > 150
                         ? parentPost.content.substring(0, 150) + "..."
                         : parentPost.content}
@@ -176,7 +176,7 @@ function GroupedNotificationCard({
                 </>
               ) : (
                 parentPost.caption && (
-                  <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                  <p className="text-foreground text-sm whitespace-pre-wrap">
                     {parentPost.caption.length > 200
                       ? parentPost.caption.substring(0, 200) + "..."
                       : parentPost.caption}
@@ -189,7 +189,7 @@ function GroupedNotificationCard({
                   to={`https://primal.net/e/${parentPost.eventId}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                  className="text-primary text-xs hover:underline"
                 >
                   View original post →
                 </Link>
@@ -197,7 +197,7 @@ function GroupedNotificationCard({
                   onClick={() => {
                     void copyParentNevent();
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
+                  className="text-muted-foreground hover:bg-accent/10 hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
                 >
                   <svg
                     className="h-3.5 w-3.5"
@@ -221,7 +221,7 @@ function GroupedNotificationCard({
           {/* Toast for parent post */}
           {parentToast ? (
             <div
-              className={`mt-2 rounded-lg px-3 py-2 text-xs ${parentToast.type === "success" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"}`}
+              className={`mt-2 rounded-lg px-3 py-2 text-xs ${parentToast.type === "success" ? "bg-green-500/20 text-green-600 dark:text-green-400" : "bg-destructive/20 text-destructive"}`}
             >
               {parentToast.message}
             </div>
@@ -229,8 +229,8 @@ function GroupedNotificationCard({
 
           {/* Parent Post Stats */}
           {parentPost.stats ? (
-            <div className="mt-4 flex flex-wrap gap-4 border-t border-gray-200 pt-3 dark:border-gray-700">
-              <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+            <div className="border-border mt-4 flex flex-wrap gap-4 border-t pt-3">
+              <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                 <svg
                   className="h-4 w-4"
                   fill="currentColor"
@@ -295,14 +295,14 @@ function GroupedNotificationCard({
 
         {/* Notifications - Right Side */}
         <div className="flex-1 lg:w-3/5">
-          <div className="bg-blue-50 px-4 py-2 dark:bg-blue-900/20">
-            <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
+          <div className="bg-primary/10 px-4 py-2">
+            <span className="text-primary text-sm font-medium">
               {notifications.length}{" "}
               {notifications.length === 1 ? "reply" : "replies"} / mentions
             </span>
           </div>
 
-          <div className="max-h-[500px] divide-y divide-gray-200 overflow-y-auto dark:divide-gray-700">
+          <div className="divide-border max-h-[500px] divide-y overflow-y-auto">
             {notifications.map((notification: Notification) => {
               return (
                 <NotificationItem
