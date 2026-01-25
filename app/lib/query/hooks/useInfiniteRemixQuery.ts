@@ -3,9 +3,7 @@
  * Allows using Remix loader data with React Query's useInfiniteQuery for infinite scroll
  */
 
-import { useFetcher } from "@remix-run/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useRef } from "react";
 
 // PageData is a flexible type that allows any data structure
 // Some loaders have pagination, others don't - we make it optional
@@ -64,11 +62,9 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
   refetchInterval?: number | false;
   refetchIntervalInBackground?: boolean;
 }) {
-  const fetcher = useFetcher<TData>();
-  // Track the URL we're currently loading to verify we get the right response
-  const loadingUrlRef = useRef<string | null>(null);
-  // Track when we made the request to ensure we only accept data from this specific request
-  const requestTimestampRef = useRef<number | null>(null);
+  // NOTE: We use fetch() directly instead of fetcher.load() because fetcher.load()
+  // doesn't work reliably in Promise contexts (the fetcher state doesn't update properly)
+  // const fetcher = useFetcher<TData>(); // Not needed anymore - using fetch() directly
 
   // Wrap getNextPageParam to respect maxPages limit
   const wrappedGetNextPageParam = (
@@ -106,79 +102,63 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         return Promise.reject(new Error("No URL provided"));
       }
 
-      // Wait for fetcher to be idle before starting new request (avoid race conditions)
-      // If fetcher is already loading, wait for it to complete first
-      const currentFetcherState = fetcher.state;
-      if (currentFetcherState !== "idle") {
-        // Wait for current request to finish before starting new one
-        await new Promise<void>((resolve) => {
-          const checkState = () => {
-            const state: string = fetcher.state;
-            if (state === "idle") {
-              resolve();
-            } else {
-              setTimeout(checkState, 50);
-            }
-          };
-          checkState();
-        });
-      }
-
-      // CRITICAL: Store what we expect to see change BEFORE making the request
-      // This ensures we can detect when NEW data arrives
-      const beforeLoadData = fetcher.data;
-      const beforeLoadPage =
-        beforeLoadData &&
-        typeof beforeLoadData === "object" &&
-        "pagination" in beforeLoadData &&
-        beforeLoadData.pagination &&
-        typeof beforeLoadData.pagination === "object" &&
-        "currentPage" in beforeLoadData.pagination &&
-        typeof beforeLoadData.pagination.currentPage === "number"
-          ? beforeLoadData.pagination.currentPage
-          : null;
-
-      // Store initial data for comparison
-      // Use the data we captured before calling load()
-      const initialFetcherData = beforeLoadData;
-      // Use the page we captured before loading
-      const initialPaginationPage = beforeLoadPage;
-
-      // Create a snapshot of initial data to detect changes
-      // Use a simple hash based on pagination and data length
-      const initialDataHash = initialFetcherData
-        ? JSON.stringify({
-            page: initialPaginationPage,
-            postsCount:
-              typeof initialFetcherData === "object" &&
-              "posts" in initialFetcherData &&
-              Array.isArray(initialFetcherData["posts"])
-                ? initialFetcherData["posts"].length
-                : 0,
-            longformCount:
-              typeof initialFetcherData === "object" &&
-              "longformPosts" in initialFetcherData &&
-              Array.isArray(initialFetcherData["longformPosts"])
-                ? initialFetcherData["longformPosts"].length
-                : 0,
-          })
-        : null;
-
-      // Set the URL we're expecting to load
-      loadingUrlRef.current = url;
-
-      // Record timestamp BEFORE making the request
-      // This ensures we only accept data that arrives after this request was made
-      const requestTimestamp = Date.now();
-      requestTimestampRef.current = requestTimestamp;
-
-      // Load the URL - this will trigger a new request
-      fetcher.load(url);
+      // Helper to extract pagination page from data
+      const getPaginationPage = (data: unknown): number | null => {
+        if (
+          data &&
+          typeof data === "object" &&
+          "pagination" in data &&
+          data.pagination &&
+          typeof data.pagination === "object" &&
+          "currentPage" in data.pagination &&
+          typeof data.pagination.currentPage === "number"
+        ) {
+          return data.pagination.currentPage;
+        }
+        return null;
+      };
 
       // Log that we're making the request - use console.error to ensure it shows
       console.error(
-        `[useInfiniteRemixQuery] 🔄 REQUESTING page ${pageParam} from ${url} (initial page: ${beforeLoadPage ?? "null"})`
+        `[useInfiniteRemixQuery] 🔄 REQUESTING page ${pageParam} from ${url}`
       );
+
+      // CRITICAL FIX: Use fetch directly instead of fetcher.load()
+      // fetcher.load() doesn't work reliably in Promise contexts - the fetcher state
+      // doesn't update properly when called from within a queryFn Promise
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = (await response.json()) as TData;
+        const detectedPage = getPaginationPage(data);
+
+        console.error(
+          `[useInfiniteRemixQuery] ✅ FETCH SUCCESS for page ${pageParam}: received data (detected page: ${detectedPage ?? "null"})`
+        );
+
+        return data;
+      } catch (error) {
+        console.error(
+          `[useInfiniteRemixQuery] ❌ FETCH ERROR for page ${pageParam}:`,
+          error
+        );
+        throw error;
+      }
+
+      // OLD CODE - using fetcher (kept for reference but not used)
+      // The issue was that fetcher.load() doesn't work in Promise contexts
+      /*
+      // Load the URL - this will trigger a new request
+      fetcher.load(url);
 
       // Wait for fetcher to complete with new data
       return new Promise<TData>((resolve, reject) => {
@@ -186,8 +166,8 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         const maxWaitTime = 10000; // 10 second timeout
         const startTime = Date.now();
 
-        // Helper to extract pagination page from data
-        const getPaginationPage = (data: unknown): number | null => {
+      // Helper to extract pagination page from data (moved outside Promise for reuse)
+      const getPaginationPage = (data: unknown): number | null => {
           if (
             data &&
             typeof data === "object" &&
@@ -609,6 +589,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         // Start checking immediately
         checkFetcher();
       });
+      */
     },
     initialPageParam: 1,
     getNextPageParam: wrappedGetNextPageParam,
