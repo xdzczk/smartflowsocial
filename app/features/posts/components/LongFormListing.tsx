@@ -489,6 +489,8 @@ export default function LongFormListing({
             <tr>
               <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 <input
+                  id="longform-select-all"
+                  name="longform-select-all"
                   type="checkbox"
                   checked={
                     filteredPosts.length > 0
@@ -603,6 +605,8 @@ export default function LongFormListing({
               >
                 <td className="p-3 text-center">
                   <input
+                    id={`longform-select-${post.id}`}
+                    name={`longform-select-${post.id}`}
                     type="checkbox"
                     checked={selectedPosts.has(post.id)}
                     onChange={() => togglePostSelection(post.id)}

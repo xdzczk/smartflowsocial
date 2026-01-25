@@ -33,6 +33,8 @@ export function ContentTableHeader({
         {showBulkActions ? (
           <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
             <input
+              id="content-select-all"
+              name="content-select-all"
               type="checkbox"
               checked={
                 filteredContentLength > 0

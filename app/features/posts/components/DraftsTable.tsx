@@ -123,6 +123,8 @@ export function DraftsTable({
           <tr>
             <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               <input
+                id="draft-select-all"
+                name="draft-select-all"
                 type="checkbox"
                 checked={
                   posts.length > 0 ? selectedPosts.size === posts.length : false
@@ -166,6 +168,8 @@ export function DraftsTable({
             >
               <td className="p-3 text-center">
                 <input
+                  id={`draft-select-${post.id}`}
+                  name={`draft-select-${post.id}`}
                   type="checkbox"
                   checked={selectedPosts.has(post.id)}
                   onChange={() => onToggleSelection(post.id)}

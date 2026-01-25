@@ -138,6 +138,8 @@ export function ScheduledPostsTable({
           <tr>
             <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               <input
+                id="scheduled-select-all"
+                name="scheduled-select-all"
                 type="checkbox"
                 checked={
                   posts.length > 0 ? selectedPosts.size === posts.length : false
@@ -184,6 +186,8 @@ export function ScheduledPostsTable({
             >
               <td className="p-3 text-center">
                 <input
+                  id={`scheduled-select-${post.id}`}
+                  name={`scheduled-select-${post.id}`}
                   type="checkbox"
                   checked={selectedPosts.has(post.id)}
                   onChange={() => onToggleSelection(post.id)}

@@ -69,6 +69,8 @@ export function ContentTableRow({
       {showBulkActions ? (
         <td className="p-3 text-center">
           <input
+            id={`content-select-${item.id}`}
+            name={`content-select-${item.id}`}
             type="checkbox"
             checked={selectedItems.has(item.id)}
             onChange={() => onToggleSelection?.(item.id)}
