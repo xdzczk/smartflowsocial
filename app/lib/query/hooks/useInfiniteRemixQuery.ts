@@ -67,6 +67,8 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
   const fetcher = useFetcher<TData>();
   // Track the URL we're currently loading to verify we get the right response
   const loadingUrlRef = useRef<string | null>(null);
+  // Track when we made the request to ensure we only accept data from this specific request
+  const requestTimestampRef = useRef<number | null>(null);
 
   // Wrap getNextPageParam to respect maxPages limit
   const wrappedGetNextPageParam = (
@@ -159,6 +161,11 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
       // Set the URL we're expecting to load
       loadingUrlRef.current = url;
 
+      // Record timestamp BEFORE making the request
+      // This ensures we only accept data that arrives after this request was made
+      const requestTimestamp = Date.now();
+      requestTimestampRef.current = requestTimestamp;
+
       // Load the URL - this will trigger a new request
       fetcher.load(url);
 
@@ -187,6 +194,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         // Helper to resolve with cleanup and validation
         const resolveWithCleanup = (data: TData) => {
           loadingUrlRef.current = null;
+          requestTimestampRef.current = null;
           // Validate data structure before resolving
           // TData extends PageData which is an object, so we only need to check type
           if (typeof data !== "object") {
@@ -201,52 +209,124 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         // Helper to reject with cleanup
         const rejectWithCleanup = (error: Error) => {
           loadingUrlRef.current = null;
+          requestTimestampRef.current = null;
           reject(error);
+        };
+
+        // Helper to check if data is from this specific request
+        const isDataFromThisRequest = (data: TData): boolean => {
+          const timeSinceRequest = Date.now() - requestTimestamp;
+
+          // If we haven't waited at least 50ms, this might be stale data from a previous request
+          if (timeSinceRequest < 50) {
+            return false;
+          }
+
+          // If data is different from initial, it's definitely new
+          if (data !== initialFetcherData) {
+            return true;
+          }
+
+          // If it's the same reference, check if page number matches what we requested
+          // This handles cases where Remix might return the same object but with updated content
+          const currentPage = getPaginationPage(data);
+          if (currentPage === pageParam) {
+            // Page matches - might be cached but correct, accept it after sufficient wait
+            return timeSinceRequest > 200;
+          }
+
+          // If page doesn't match and it's the same reference, it's stale
+          return false;
         };
 
         // Handle case where loading completed and we have new data
         const handleLoadingComplete = (data: TData) => {
           const currentPaginationPage = getPaginationPage(data);
+          const timeSinceRequest = Date.now() - requestTimestamp;
 
-          // CRITICAL: Verify this is actually NEW data, not the same as initial
-          // Check if this is different from what we started with
-          const isNewData = data !== initialFetcherData;
-
-          // If pagination exists, verify it matches the requested page
-          if (
-            currentPaginationPage !== null &&
-            currentPaginationPage !== pageParam
-          ) {
-            console.warn(
-              `[useInfiniteRemixQuery] Page mismatch: expected page ${pageParam}, got page ${currentPaginationPage}`
-            );
-            // Still accept if it's new data (might be a server-side pagination issue)
-            if (!isNewData) {
-              // This is the same data we started with - reject it
-              rejectWithCleanup(
-                new Error(
-                  `Received same data for page ${pageParam} (got page ${currentPaginationPage})`
-                )
-              );
-              return;
-            }
-          }
-
-          // If data reference is the same, it's definitely stale
-          if (!isNewData && initialFetcherData !== null) {
-            console.warn(
-              `[useInfiniteRemixQuery] Received same data reference for page ${pageParam}, waiting for new data...`
-            );
-            // Continue polling - might be a very fast response
+          // CRITICAL: If we've seen loading transition, this is new data from the server
+          // However, we need to ensure it's from THIS request, not a previous one
+          if (timeSinceRequest < 50) {
+            // Too soon - might be stale, wait a bit more
             setTimeout(checkFetcher, 100);
             return;
           }
 
-          // Accept the data since we've seen the loading transition and it's new
-          console.info(
-            `[useInfiniteRemixQuery] Successfully loaded page ${pageParam} (detected page ${currentPaginationPage ?? "unknown"})`
-          );
-          resolveWithCleanup(data);
+          // If data reference is different, it's definitely new
+          const isNewData = data !== initialFetcherData;
+
+          // If page number matches what we requested, accept it (even if same reference - might be cached)
+          const pageMatches =
+            currentPaginationPage === pageParam ||
+            currentPaginationPage === null;
+
+          // If page number changed from initial, it's definitely new data
+          const pageChanged =
+            currentPaginationPage !== null &&
+            currentPaginationPage !== initialPaginationPage;
+
+          const elapsed = Date.now() - startTime;
+
+          // SIMPLIFIED LOGIC: Since we've seen the loading transition, this is new data from server
+          // Accept it if ANY of these conditions are met:
+
+          // 1. Page number matches (most reliable)
+          if (pageMatches) {
+            console.info(
+              `[useInfiniteRemixQuery] Successfully loaded page ${pageParam} (detected page ${currentPaginationPage ?? "unknown"})`
+            );
+            resolveWithCleanup(data);
+            return;
+          }
+
+          // 2. Page number changed from initial (definitely new data)
+          if (pageChanged) {
+            console.info(
+              `[useInfiniteRemixQuery] Page changed from ${initialPaginationPage ?? "unknown"} to ${currentPaginationPage ?? "unknown"} for request ${pageParam}`
+            );
+            resolveWithCleanup(data);
+            return;
+          }
+
+          // 3. Data reference is different (definitely new data)
+          if (isNewData) {
+            console.info(
+              `[useInfiniteRemixQuery] New data reference detected for page ${pageParam} (detected page ${currentPaginationPage ?? "unknown"})`
+            );
+            resolveWithCleanup(data);
+            return;
+          }
+
+          // 4. After sufficient wait (200ms), accept if page matches (handles cached responses)
+          if (elapsed > 200 && currentPaginationPage === pageParam) {
+            console.info(
+              `[useInfiniteRemixQuery] Accepting data for page ${pageParam} after ${elapsed}ms (cached response)`
+            );
+            resolveWithCleanup(data);
+            return;
+          }
+
+          // 5. Final fallback: After 1 second, accept if data is different (handles server pagination issues)
+          if (elapsed > 1000 && isNewData) {
+            console.warn(
+              `[useInfiniteRemixQuery] Accepting data for page ${pageParam} after ${elapsed}ms despite page mismatch (page ${currentPaginationPage ?? "unknown"}) - data is new`
+            );
+            resolveWithCleanup(data);
+            return;
+          }
+
+          // If we've waited too long and still don't have valid data, reject
+          if (elapsed > 5000) {
+            rejectWithCleanup(
+              new Error(
+                `Failed to get valid data for page ${pageParam} after ${elapsed}ms (got page ${currentPaginationPage ?? "unknown"}, isNewData: ${isNewData})`
+              )
+            );
+            return;
+          }
+
+          // Wait a bit more and check again
+          setTimeout(checkFetcher, 100);
         };
 
         // Handle case where idle but haven't seen loading (cached or fast response)
@@ -255,6 +335,12 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           elapsed: number
         ): boolean => {
           const currentPaginationPage = getPaginationPage(data);
+
+          // CRITICAL: First verify this data is from THIS request
+          if (!isDataFromThisRequest(data)) {
+            // This is stale data from a previous request - ignore it
+            return false;
+          }
 
           // CRITICAL: Check if this is actually different data
           const isNewData = data !== initialFetcherData;
@@ -365,6 +451,16 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
               rejectWithCleanup(new Error("No data received from fetcher"));
               return;
             }
+
+            // CRITICAL: Verify this data is from our request
+            // If we haven't waited at least 50ms since making the request, this might be stale
+            const timeSinceRequest = Date.now() - requestTimestamp;
+            if (timeSinceRequest < 50) {
+              // Too soon - might be stale data, wait a bit more
+              setTimeout(checkFetcher, 100);
+              return;
+            }
+
             handleLoadingComplete(currentData as TData);
             return;
           }
@@ -374,6 +470,15 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           if (currentState === "idle" && !hasSeenLoading) {
             if (!currentData) {
               // Give it a moment to start loading
+              setTimeout(checkFetcher, 100);
+              return;
+            }
+
+            // CRITICAL: Ensure we've waited at least 50ms since making the request
+            // This prevents accepting stale data from previous requests
+            const timeSinceRequest = Date.now() - requestTimestamp;
+            if (timeSinceRequest < 50) {
+              // Too soon - wait for the request to actually complete
               setTimeout(checkFetcher, 100);
               return;
             }
@@ -388,6 +493,8 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           // Continue polling
           setTimeout(checkFetcher, 50);
         };
+
+        // Start checking immediately
         checkFetcher();
       });
     },
