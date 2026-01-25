@@ -344,7 +344,7 @@ export default function TemplateEditPage() {
                   return (
                     <div
                       key={postId}
-                      className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                      className="dark:bg-card rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700"
                     >
                       <div className="mb-3">
                         {hasFileUrl && firstImageUrl ? (

@@ -69,7 +69,7 @@ export function getContentPreview(item: CombinedContent): string | null {
 // Status color constants
 const DRAFT_COLOR = "bg-orange-500/20 text-orange-600 dark:text-orange-400";
 const PUBLISHED_COLOR = "bg-green-500/20 text-green-600 dark:text-green-400";
-const SCHEDULED_COLOR = "bg-primary/20 text-primary";
+const SCHEDULED_COLOR = "bg-primary/10 text-primary";
 
 export function getStatusColor(item: CombinedContent): string {
   // Use currentState as single source of truth
@@ -276,7 +276,7 @@ export function getContentTypeBadge(item: CombinedContent): {
   } else if (kind === 30023) {
     return {
       className:
-        "inline-flex rounded-full bg-accent/30 px-2 py-1 text-xs font-medium text-accent-foreground",
+        "inline-flex rounded-full bg-accent/15 px-2 py-1 text-xs font-medium text-accent-foreground",
       text: "LONG-FORM",
     };
   } else {
@@ -284,8 +284,8 @@ export function getContentTypeBadge(item: CombinedContent): {
     return {
       className: `inline-flex rounded-full px-2 py-1 text-xs font-medium ${
         item.type === "post"
-          ? "bg-primary/20 text-primary"
-          : "bg-accent/30 text-accent-foreground"
+          ? "bg-primary/10 text-primary"
+          : "bg-accent/15 text-accent-foreground"
       }`,
       text: item.type === "post" ? "Post" : "Article",
     };

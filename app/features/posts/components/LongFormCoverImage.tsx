@@ -131,7 +131,7 @@ export function LongFormCoverImage({
       ) : (
         <div className="mt-1">
           {/* Cover Image Preview */}
-          <div className="relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+          <div className="dark:bg-card relative overflow-hidden rounded-lg bg-gray-100">
             <img
               src={image}
               alt="Cover preview"

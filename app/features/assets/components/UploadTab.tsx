@@ -38,7 +38,7 @@ export function UploadTab({
     <div>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Text Asset Upload */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="dark:bg-card rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700">
           <h3 className="mb-4 text-lg font-semibold">Add Text Asset</h3>
           <AssetFetcherForm
             ref={textAssetFormRef}
@@ -103,7 +103,7 @@ export function UploadTab({
         </div>
 
         {/* Single Media Upload */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="dark:bg-card rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700">
           <h3 className="mb-4 text-lg font-semibold">Add Single Media</h3>
           <form
             ref={imageAssetFormRef}
@@ -184,7 +184,7 @@ export function UploadTab({
       </div>
 
       {/* Bulk Media Upload */}
-      <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="dark:bg-card mt-8 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700">
         <h3 className="mb-4 text-lg font-semibold">Bulk Media Upload</h3>
         <div className="space-y-4">
           <div>

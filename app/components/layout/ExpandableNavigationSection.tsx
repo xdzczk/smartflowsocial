@@ -50,7 +50,7 @@ function NavigationChildItemComponent({
 
   const childLinkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     isActive
-      ? "bg-primary/20 text-primary border-primary/30"
+      ? "bg-muted text-primary border-border"
       : hasAccess
         ? "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
         : "text-muted-foreground/50 cursor-not-allowed opacity-60"
@@ -130,7 +130,7 @@ export function ExpandableNavigationSection({
 
   const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer ${
     isAnyChildActive
-      ? "bg-primary/20 text-primary border-primary/30"
+      ? "bg-muted text-primary border-border"
       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
   }`;
 

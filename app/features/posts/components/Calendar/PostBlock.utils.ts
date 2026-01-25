@@ -88,7 +88,7 @@ export function getStatusColor(
 
   if (isLongform) {
     if (post.signedEvent) {
-      return "bg-green-500/20 text-green-600 dark:text-green-400";
+      return "bg-green-500/10 text-green-600 dark:text-green-400";
     }
     return "bg-secondary text-secondary-foreground";
   }
@@ -98,8 +98,8 @@ export function getStatusColor(
 
   if (post.signedEvent) {
     return wasAutoScheduled
-      ? "bg-primary/20 text-primary"
-      : "bg-green-500/20 text-green-600 dark:text-green-400";
+      ? "bg-primary/10 text-primary"
+      : "bg-green-500/10 text-green-600 dark:text-green-400";
   }
 
   return "bg-secondary text-secondary-foreground";

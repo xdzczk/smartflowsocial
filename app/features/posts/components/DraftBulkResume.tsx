@@ -578,7 +578,7 @@ export default function DraftBulkResume({
                       )
                     }
                     disabled={isSubmitting}
-                    className="mx-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="dark:bg-card mx-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:text-gray-300 dark:hover:bg-gray-700"
                   >
                     +{interval}h
                   </button>
@@ -690,7 +690,7 @@ export default function DraftBulkResume({
                       value={post.scheduledFor}
                       onChange={(e) => handleDateChange(index, e.target.value)}
                       disabled={isSubmitting}
-                      className="rounded-lg border p-2 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+                      className="dark:bg-card rounded-lg border p-2 text-gray-900 dark:text-gray-100"
                     />
                   </td>
                 </tr>
@@ -704,7 +704,7 @@ export default function DraftBulkResume({
           <button
             onClick={onCancel}
             disabled={isSubmitting}
-            className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="dark:bg-card rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             Cancel
           </button>

@@ -22,7 +22,7 @@ interface NotificationItemProps {
 const TYPE_BADGES = {
   reply: {
     label: "replied",
-    bgClass: "bg-primary/20",
+    bgClass: "bg-primary/10",
     textClass: "text-primary",
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -33,7 +33,7 @@ const TYPE_BADGES = {
   },
   mention: {
     label: "mentioned",
-    bgClass: "bg-accent/30",
+    bgClass: "bg-accent/15",
     textClass: "text-accent-foreground",
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -47,7 +47,7 @@ const TYPE_BADGES = {
   },
   quote: {
     label: "quoted",
-    bgClass: "bg-green-500/20",
+    bgClass: "bg-green-500/10",
     textClass: "text-green-600 dark:text-green-400",
     icon: (
       <svg

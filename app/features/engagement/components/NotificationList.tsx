@@ -92,7 +92,7 @@ function ReplyNotification({
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
   return (
-    <div className="bg-white p-4 transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/50">
+    <div className="dark:bg-card dark:hover:bg-muted/50 bg-white p-4 transition-colors hover:bg-gray-50">
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -177,7 +177,7 @@ function ZapNotification({
       notification.senderPubkey.slice(-4);
 
   return (
-    <div className="bg-white p-4 transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/50">
+    <div className="dark:bg-card dark:hover:bg-muted/50 bg-white p-4 transition-colors hover:bg-gray-50">
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -259,7 +259,7 @@ function MentionNotification({
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
   return (
-    <div className="bg-white p-4 transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/50">
+    <div className="dark:bg-card dark:hover:bg-muted/50 bg-white p-4 transition-colors hover:bg-gray-50">
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">

@@ -59,7 +59,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
   const text = typeof textValue === "string" ? textValue : "";
   const captionValue = block.data["caption"];
   const caption = typeof captionValue === "string" ? captionValue : "";
-  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-r">
+  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-card rounded-r">
     <p>${text}</p>
     ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
   </blockquote>`;
@@ -68,7 +68,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
 function convertCodeBlock(block: EditorJSBlock): string {
   const codeValue = block.data["code"];
   const code = typeof codeValue === "string" ? codeValue : "";
-  return `<pre class="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
+  return `<pre class="bg-gray-900 dark:bg-card text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
 }
 
 function convertLinkToolBlock(block: EditorJSBlock): string {
@@ -457,7 +457,7 @@ export default function LongFormDetailsModal({
 
               {/* Summary */}
               {post.summary ? (
-                <div className="mb-6 rounded-xl bg-gray-50 p-6 dark:bg-gray-800">
+                <div className="dark:bg-card mb-6 rounded-xl bg-gray-50 p-6">
                   <p className="text-lg leading-relaxed font-medium text-gray-700 dark:text-gray-300">
                     {post.summary}
                   </p>
@@ -545,7 +545,7 @@ export default function LongFormDetailsModal({
                         {post.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                            className="dark:bg-card rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:text-gray-300"
                           >
                             #{tag}
                           </span>
@@ -571,7 +571,7 @@ export default function LongFormDetailsModal({
                     </button>
                   </div>
                   {showEventData ? (
-                    <div className="rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
+                    <div className="dark:bg-card rounded-lg bg-gray-100 p-3">
                       <pre className="max-h-64 overflow-auto text-xs break-words whitespace-pre-wrap text-gray-800 dark:text-gray-200">
                         {JSON.stringify(post.signedEvent, null, 2)}
                       </pre>
@@ -607,7 +607,7 @@ export default function LongFormDetailsModal({
               {type === "draft" ? (
                 <Link
                   to={`/dashboard/drafts/longform/edit/${post.id}`}
-                  className="inline-flex items-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-blue-950/50"
+                  className="dark:bg-card inline-flex items-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-950/50"
                 >
                   Edit Draft
                 </Link>
@@ -624,7 +624,7 @@ export default function LongFormDetailsModal({
                 <button
                   type="submit"
                   disabled={deleteFetcher.state !== "idle"}
-                  className="inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:border-red-600 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/50"
+                  className="dark:bg-card inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-950/50"
                 >
                   {deleteFetcher.state !== "idle" &&
                   deleteFetcher.formData?.get("postId") === post.id

@@ -28,7 +28,7 @@ export function InvoiceModal({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="mx-4 max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+      <div className="dark:bg-card mx-4 max-w-lg rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-4">
           <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
             Complete Payment

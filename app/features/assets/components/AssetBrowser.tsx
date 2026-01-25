@@ -199,8 +199,8 @@ export default function AssetBrowser({
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                               asset.assetType === "IMAGE"
-                                ? "bg-accent/30 text-accent-foreground"
-                                : "bg-primary/20 text-primary"
+                                ? "bg-accent/15 text-accent-foreground"
+                                : "bg-primary/10 text-primary"
                             }`}
                           >
                             {asset.assetType}

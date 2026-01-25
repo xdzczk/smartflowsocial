@@ -57,28 +57,28 @@ export default function ScheduledPosts() {
           </div>
         </div>
         {/* Responsive Table Container */}
-        <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div className="dark:border-border bg-card min-w-full overflow-x-auto rounded border border-gray-200 bg-white">
           {/* Table */}
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             {/* Table Header */}
             <thead>
               <tr>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Media
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Caption
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Type
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Scheduled For
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
                   Status
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
                   Actions
                 </th>
               </tr>
@@ -105,7 +105,7 @@ export default function ScheduledPosts() {
                   return (
                     <tr
                       key={post.id}
-                      className="even:bg-gray-50 dark:even:bg-gray-900/50"
+                      className="dark:even:bg-muted/30 even:bg-gray-50"
                     >
                       <td className="p-3">
                         <div className="size-12 overflow-hidden rounded-lg">
@@ -168,7 +168,7 @@ export default function ScheduledPosts() {
                           onClick={() =>
                             setSelectedPost(post as unknown as PostData)
                           }
-                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm leading-5 font-semibold text-gray-800 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm focus:ring focus:ring-gray-300/25 active:border-gray-200 active:shadow-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200 dark:focus:ring-gray-600/40 dark:active:border-gray-700"
+                          className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm leading-5 font-semibold text-gray-800 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm focus:ring focus:ring-gray-300/25 active:border-gray-200 active:shadow-none dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200 dark:focus:ring-gray-600/40 dark:active:border-gray-700"
                         >
                           View
                         </button>
@@ -193,7 +193,7 @@ export default function ScheduledPosts() {
         {/* Post Details Modal */}
         {selectedPost ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white p-6 dark:bg-gray-800">
+            <div className="dark:bg-card max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Post Details</h3>
                 <button

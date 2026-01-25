@@ -249,7 +249,7 @@ export function RecyclablesTable({
                   )}
                 </td>
                 <td className="p-3">
-                  <span className="bg-primary/20 text-primary inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
+                  <span className="bg-primary/10 text-primary inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                     Recyclable
                   </span>
                 </td>

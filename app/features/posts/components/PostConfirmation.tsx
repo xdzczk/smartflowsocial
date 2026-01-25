@@ -325,7 +325,7 @@ export default function PostConfirmation({
               <div
                 // eslint-disable-next-line react/no-array-index-key -- Stable list of prepared events, no unique ID available
                 key={index}
-                className="group overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl dark:bg-gray-800"
+                className="group dark:bg-card overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl"
               >
                 {/* Post Header */}
                 <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
@@ -447,14 +447,14 @@ export default function PostConfirmation({
         <div className="mt-8 flex justify-center gap-4">
           <button
             onClick={() => window.history.back()}
-            className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="dark:bg-card rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             disabled={isSubmitting || isSigning}
           >
             ← Back to Edit
           </button>
           <button
             onClick={handleSaveAsDraft}
-            className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="dark:bg-card rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             disabled={isSubmitting || isSigning}
           >
             💾 Save as Draft

@@ -8,14 +8,14 @@ export function HomePage(): ReactNode {
     <>
       <div className="bg-background relative min-h-screen overflow-hidden">
         {/* Background gradient */}
-        <div className="from-secondary/20 to-background dark:from-background/50 absolute inset-0 bg-gradient-to-b via-transparent" />
+        <div className="from-secondary/20 to-background dark:from-background/20 absolute inset-0 bg-gradient-to-b via-transparent" />
 
         <Header />
 
         {/* Hero Section */}
         <section className="relative container mx-auto px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl">
           <div className="mx-auto max-w-4xl text-center">
-            <div className="border-primary/20 bg-primary/10 text-primary dark:bg-primary/20 mb-6 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
+            <div className="border-primary/20 bg-primary/10 text-primary dark:bg-primary/10 mb-6 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
               Schedule your nostr content with ease!
             </div>
 
@@ -102,7 +102,7 @@ export function HomePage(): ReactNode {
                   className="border-border bg-background rounded-lg border p-6 transition-shadow hover:shadow-lg"
                 >
                   <div className="bg-primary/10 mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
-                    <div className="bg-primary h-6 w-6 rounded" />
+                    <div className="bg-primary/40 h-6 w-6 rounded" />
                   </div>
                   <h3 className="text-foreground mb-2 text-lg font-bold">
                     {feature.title}
@@ -133,8 +133,8 @@ export function HomePage(): ReactNode {
                 {["Draft", "Queue", "Publish"].map((step, idx) => (
                   <div key={step} className="flex items-center gap-4">
                     <div className="flex flex-col items-center gap-2">
-                      <div className="bg-primary text-primary-foreground flex h-16 w-16 items-center justify-center rounded-lg">
-                        <div className="bg-primary-foreground/20 h-8 w-8 rounded" />
+                      <div className="bg-primary/10 border-primary/20 text-primary flex h-16 w-16 items-center justify-center rounded-lg border">
+                        <div className="bg-primary/40 h-8 w-8 rounded" />
                       </div>
                       <span className="text-foreground text-sm font-semibold">
                         {step}
@@ -177,8 +177,8 @@ export function HomePage(): ReactNode {
                         key={step}
                         className="flex flex-col items-center gap-2"
                       >
-                        <div className="bg-accent text-accent-foreground flex h-16 w-16 items-center justify-center rounded-lg">
-                          <div className="bg-accent-foreground/20 h-8 w-8 rounded" />
+                        <div className="bg-accent/10 border-accent/20 text-accent-foreground flex h-16 w-16 items-center justify-center rounded-lg border">
+                          <div className="bg-accent/40 h-8 w-8 rounded" />
                         </div>
                         <span className="text-foreground text-sm font-semibold">
                           {step}

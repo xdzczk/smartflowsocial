@@ -615,7 +615,7 @@ export default function ImagePost({
                         onClick={() =>
                           handleScheduleIntervalClick(intervalValue)
                         }
-                        className="rounded-md bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                        className="dark:bg-card rounded-md bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
                         disabled={fetcher.state !== "idle" || isUploaded}
                       >
                         +{intervalValue}h

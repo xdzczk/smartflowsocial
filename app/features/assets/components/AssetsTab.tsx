@@ -144,11 +144,11 @@ export function AssetsTab({
           </div>
         </div>
       ) : (
-        <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div className="dark:border-border bg-card min-w-full overflow-x-auto rounded border border-gray-200 bg-white">
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             <thead>
               <tr>
-                <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
                   <input
                     type="checkbox"
                     checked={
@@ -160,25 +160,25 @@ export function AssetsTab({
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                   />
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Media
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Title
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Content
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Tags
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Type
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Created
                 </th>
-                <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
                   Actions
                 </th>
               </tr>
@@ -187,7 +187,7 @@ export function AssetsTab({
               {assets.map((asset) => (
                 <tr
                   key={asset.id}
-                  className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-900/50 dark:hover:bg-gray-700/50"
+                  className="dark:even:bg-muted/30 dark:hover:bg-muted/50 even:bg-gray-50 hover:bg-gray-100"
                 >
                   <td className="p-3 text-center">
                     <input
@@ -268,7 +268,7 @@ export function AssetsTab({
                         type="submit"
                         onClick={(e) => onDeleteAsset(e, asset.id)}
                         disabled={deleteFetcherState !== "idle"}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                        className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
                       >
                         Delete
                       </button>

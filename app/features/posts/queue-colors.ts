@@ -21,9 +21,9 @@ export const getQueueColor = (
     const rgb = hexToRgb(customColor);
     if (rgb) {
       return {
-        bg: `bg-[${customColor}] bg-opacity-20 dark:bg-opacity-30`,
+        bg: `bg-[${customColor}] bg-opacity-10 dark:bg-opacity-15`,
         text: `text-[${customColor}] dark:text-[${customColor}]`,
-        hover: `hover:bg-[${customColor}] hover:bg-opacity-30 dark:hover:bg-opacity-50`,
+        hover: `hover:bg-[${customColor}] hover:bg-opacity-15 dark:hover:bg-opacity-25`,
         border: `border-[${customColor}] dark:border-[${customColor}]`,
       };
     }
@@ -34,22 +34,22 @@ export const getQueueColor = (
     { bg: string; text: string; hover: string; border: string }
   > = {
     main: {
-      bg: "bg-primary/20",
+      bg: "bg-primary/10",
       text: "text-primary",
-      hover: "hover:bg-primary/30",
-      border: "border-primary/30",
+      hover: "hover:bg-primary/15",
+      border: "border-primary/20",
     },
     memes: {
-      bg: "bg-green-500/20",
+      bg: "bg-green-500/10",
       text: "text-green-600 dark:text-green-400",
-      hover: "hover:bg-green-500/30",
-      border: "border-green-500/30",
+      hover: "hover:bg-green-500/15",
+      border: "border-green-500/20",
     },
     quotes: {
-      bg: "bg-accent/30",
+      bg: "bg-accent/15",
       text: "text-accent-foreground",
-      hover: "hover:bg-accent/40",
-      border: "border-accent/30",
+      hover: "hover:bg-accent/20",
+      border: "border-accent/20",
     },
     unassigned: {
       bg: "bg-muted",

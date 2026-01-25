@@ -56,7 +56,7 @@ export function DraftPreview({
       ) : null}
 
       {/* Post Type */}
-      <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
+      <div className="dark:bg-card rounded-lg bg-gray-50 p-4">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
             Post Type
@@ -68,7 +68,7 @@ export function DraftPreview({
       </div>
 
       {/* Queue */}
-      <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
+      <div className="dark:bg-card rounded-lg bg-gray-50 p-4">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
             Current Queue

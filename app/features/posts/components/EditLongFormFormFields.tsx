@@ -32,7 +32,7 @@ export function EditLongFormFormFields({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
           placeholder="Article title..."
         />
       </div>
@@ -50,7 +50,7 @@ export function EditLongFormFormFields({
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           rows={3}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
           placeholder="Article summary..."
         />
       </div>
@@ -62,7 +62,7 @@ export function EditLongFormFormFields({
         >
           Content
         </label>
-        <div className="rounded-md border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 dark:border-gray-600 dark:bg-gray-800">
+        <div className="dark:bg-card rounded-md border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 dark:border-gray-600">
           <div className="min-h-[300px] p-4">
             <div
               id="longform-editorjs"
@@ -90,7 +90,7 @@ export function EditLongFormFormFields({
           type="url"
           value={image}
           onChange={(e) => setImage(e.target.value)}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
           placeholder="https://example.com/image.jpg"
         />
       </div>

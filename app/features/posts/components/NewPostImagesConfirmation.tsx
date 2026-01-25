@@ -367,7 +367,7 @@ export default function NewPostImagesConfirmation({
 
         {/* Post Card */}
         <div className="mx-auto max-w-2xl">
-          <div className="group overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl dark:bg-gray-800">
+          <div className="group dark:bg-card overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl">
             {/* Post Header */}
             <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -496,14 +496,14 @@ export default function NewPostImagesConfirmation({
         <div className="mt-8 flex justify-center gap-4">
           <button
             onClick={onCancel}
-            className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="dark:bg-card rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             disabled={isSubmitting || isSigning}
           >
             ← Back to Edit
           </button>
           <button
             onClick={handleSaveAsDraft}
-            className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="dark:bg-card rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             disabled={isSubmitting || isSigning}
           >
             💾 Save as Draft

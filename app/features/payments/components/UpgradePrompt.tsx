@@ -21,7 +21,7 @@ export default function UpgradePrompt({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+      <div className="dark:bg-card mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">

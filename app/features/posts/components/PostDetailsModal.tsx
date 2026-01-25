@@ -115,7 +115,7 @@ export default function PostDetailsModal({
         );
       case "scheduled":
         return (
-          <span className={`${badgeClasses} bg-primary/20 text-primary`}>
+          <span className={`${badgeClasses} bg-primary/10 text-primary`}>
             Scheduled
           </span>
         );
@@ -172,7 +172,7 @@ export default function PostDetailsModal({
           ) : null}
 
           <div className="space-y-6">
-            <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
+            <div className="dark:bg-card/50 rounded-lg bg-gray-50 p-4">
               <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Caption
               </h3>
@@ -368,7 +368,7 @@ export default function PostDetailsModal({
                 <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Signed Event Data
                 </h3>
-                <pre className="max-h-96 overflow-auto rounded-md bg-gray-100 p-3 text-xs break-words whitespace-pre-wrap text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                <pre className="dark:bg-card max-h-96 overflow-auto rounded-md bg-gray-100 p-3 text-xs break-words whitespace-pre-wrap text-gray-800 dark:text-gray-200">
                   {JSON.stringify(post.signedEvent, null, 2)}
                 </pre>
               </div>
@@ -402,7 +402,7 @@ export default function PostDetailsModal({
               <button
                 type="submit"
                 disabled={deleteFetcher.state !== "idle"}
-                className="inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:border-red-600 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/50"
+                className="dark:bg-card inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-950/50"
               >
                 {deleteFetcher.state !== "idle" &&
                 deleteFetcher.formData?.get("postId") === post.id

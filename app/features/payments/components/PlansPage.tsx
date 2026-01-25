@@ -135,13 +135,13 @@ export function PlansPage(): ReactNode {
     <>
       <div className="bg-background relative min-h-screen overflow-hidden">
         {/* Subtle brand color gradient background */}
-        <div className="from-secondary/20 to-background dark:from-background/50 absolute inset-0 bg-gradient-to-b via-transparent" />
+        <div className="from-secondary/20 to-background dark:from-background/20 absolute inset-0 bg-gradient-to-b via-transparent" />
 
         <Header />
 
         <div className="relative container mx-auto px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl">
           <div className="mb-16 text-center">
-            <div className="border-primary/20 bg-primary/10 text-primary dark:bg-primary/20 mb-2 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
+            <div className="border-primary/20 bg-primary/10 text-primary dark:bg-primary/10 mb-2 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
               Choose the perfect plan for your needs!
             </div>
             <h1 className="text-foreground mb-4 text-4xl font-black">

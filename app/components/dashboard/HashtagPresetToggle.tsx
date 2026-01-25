@@ -84,7 +84,7 @@ export function HashtagPresetToggle({
         <div
           className={`rounded-lg p-3 ${
             useHashtagPresets
-              ? "border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+              ? "dark:bg-card border border-gray-200 bg-gray-50 dark:border-gray-700"
               : "border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
           }`}
         >
@@ -174,7 +174,7 @@ export function HashtagPresetToggle({
 
               {/* Selected preset preview */}
               {selectedPreset ? (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+                <div className="dark:bg-card rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {selectedPreset.name}

@@ -291,7 +291,7 @@ export default function BulkPostsTable({
                     value={post.caption}
                     onChange={(e) => handleCaptionChange(index, e.target.value)}
                     disabled={post.isKind6Repost}
-                    className={`w-full rounded-lg border p-2 text-gray-900 dark:bg-gray-800 dark:text-gray-100 ${post.isKind6Repost ? "cursor-not-allowed bg-gray-100 dark:bg-gray-700" : ""}`}
+                    className={`dark:bg-card w-full rounded-lg border p-2 text-gray-900 dark:text-gray-100 ${post.isKind6Repost ? "cursor-not-allowed bg-gray-100 dark:bg-gray-700" : ""}`}
                     rows={3}
                     placeholder={
                       post.isKind6Repost
@@ -303,7 +303,7 @@ export default function BulkPostsTable({
                   />
                   {(post.isKind6Repost || post.isQuotePost) &&
                   post.originalCaption ? (
-                    <div className="rounded border bg-gray-50 p-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                    <div className="dark:bg-card rounded border bg-gray-50 p-2 text-xs text-gray-500 dark:text-gray-400">
                       <strong>Original:</strong>{" "}
                       {post.originalCaption.length > 100
                         ? post.originalCaption.substring(0, 100) + "..."
@@ -344,7 +344,7 @@ export default function BulkPostsTable({
                   name="scheduledDates"
                   value={post.scheduledFor}
                   onChange={(e) => handleDateChange(index, e.target.value)}
-                  className="rounded-lg border p-2 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+                  className="dark:bg-card rounded-lg border p-2 text-gray-900 dark:text-gray-100"
                 />
               </td>
               <td className="p-4">

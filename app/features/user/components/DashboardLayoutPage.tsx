@@ -121,7 +121,7 @@ export function DashboardLayoutPage(): ReactNode {
 
           {isFreePlan ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
-              <div className="border-primary/20 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/20 mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
+              <div className="border-primary/20 bg-primary/10 text-primary dark:border-primary/20 dark:bg-primary/10 mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
                 <div>
                   <p className="font-medium">You’re on the Free plan</p>
                   <p className="text-sm opacity-90">

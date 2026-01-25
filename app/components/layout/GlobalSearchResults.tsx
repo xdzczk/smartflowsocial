@@ -183,7 +183,7 @@ export function GlobalSearchResults({
                   <span className="text-foreground text-sm font-medium">
                     {getPreviewText(result)}
                   </span>
-                  <span className="bg-primary/20 text-primary rounded px-1.5 py-0.5 text-xs font-medium">
+                  <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs font-medium">
                     {getTypeLabel(result.type)}
                   </span>
                 </div>

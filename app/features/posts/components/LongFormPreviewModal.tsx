@@ -46,7 +46,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
   const text = typeof block.data["text"] === "string" ? block.data["text"] : "";
   const caption =
     typeof block.data["caption"] === "string" ? block.data["caption"] : "";
-  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-r">
+  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-card rounded-r">
     <p>${text}</p>
     ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
   </blockquote>`;
@@ -54,7 +54,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
 
 function convertCodeBlock(block: EditorJSBlock): string {
   const code = typeof block.data["code"] === "string" ? block.data["code"] : "";
-  return `<pre class="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
+  return `<pre class="bg-gray-900 dark:bg-card text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
 }
 
 function convertLinkToolBlock(block: EditorJSBlock): string {
@@ -314,7 +314,7 @@ export default function LongFormPreviewModal({
 
             {/* Summary */}
             {summary ? (
-              <div className="mb-6 rounded-xl bg-gray-50 p-6 dark:bg-gray-800">
+              <div className="dark:bg-card mb-6 rounded-xl bg-gray-50 p-6">
                 <p className="text-lg leading-relaxed font-medium text-gray-700 dark:text-gray-300">
                   {summary}
                 </p>

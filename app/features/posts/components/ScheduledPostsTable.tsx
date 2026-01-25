@@ -215,7 +215,7 @@ export function ScheduledPostsTable({
                       }
                     />
                   ) : post.repost ? (
-                    <div className="bg-accent/30 text-accent-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                    <div className="bg-accent/15 text-accent-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                       REPOST
                     </div>
                   ) : post.isQuotedPost ? (
@@ -309,8 +309,8 @@ export function ScheduledPostsTable({
                 <div
                   className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${
                     post.signedEvent
-                      ? "bg-primary/20 text-primary"
-                      : "bg-green-500/20 text-green-600 dark:text-green-400"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-green-500/10 text-green-600 dark:text-green-400"
                   }`}
                 >
                   {post.signedEvent ? "Signed" : "Scheduled"}

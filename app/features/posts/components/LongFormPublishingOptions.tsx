@@ -64,7 +64,7 @@ export function LongFormPublishingOptions({
     currentQueueType.scheduleType === "FIXED_SLOTS";
 
   return (
-    <div className="space-y-6 rounded-lg bg-gray-50 p-6 dark:bg-gray-800/50">
+    <div className="dark:bg-card/50 space-y-6 rounded-lg bg-gray-50 p-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
         Publishing Options
       </h3>

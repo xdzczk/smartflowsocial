@@ -12,7 +12,7 @@ export function UploadProviderSettings({
     navigation.formData?.get("_action") === "update_upload_provider";
 
   return (
-    <div className="rounded-lg border bg-white shadow-sm dark:bg-gray-800">
+    <div className="dark:bg-card rounded-lg border bg-white shadow-sm">
       <div className="border-b px-6 py-4">
         <h3 className="text-lg font-medium">Media Upload Provider</h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">

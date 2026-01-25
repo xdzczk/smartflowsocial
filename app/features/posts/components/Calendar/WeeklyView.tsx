@@ -239,7 +239,7 @@ export function WeeklyView({
             <div
               key={day.toISOString()}
               className={`border-border min-w-0 flex-1 border-r p-3 text-center last:border-r-0 ${
-                isToday ? "bg-primary/20" : ""
+                isToday ? "bg-primary/10" : ""
               }`}
             >
               <div className="text-foreground text-sm font-medium">
@@ -287,7 +287,7 @@ export function WeeklyView({
                     role="gridcell"
                     tabIndex={-1}
                     className={`border-border relative min-w-0 flex-1 overflow-hidden border-r p-1 last:border-r-0 ${
-                      isDragOver ? "bg-primary/20" : "hover:bg-accent/10"
+                      isDragOver ? "bg-primary/10" : "hover:bg-accent/10"
                     }`}
                     onDragOver={(e) => handleDragOver(e, dateKey, time)}
                     onDrop={(e) => handleDrop(e, dateKey, time)}

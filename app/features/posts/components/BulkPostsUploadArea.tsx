@@ -45,7 +45,7 @@ export default function BulkPostsUploadArea({
         <div
           className={`rounded-lg border-2 border-dashed p-12 text-center ${
             isProcessing
-              ? "border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-800"
+              ? "dark:bg-card border-gray-200 bg-gray-50 dark:border-gray-600"
               : "border-gray-300"
           }`}
         >

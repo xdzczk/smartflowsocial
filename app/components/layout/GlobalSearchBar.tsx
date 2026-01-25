@@ -53,9 +53,10 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
 
   // Update results when fetcher data changes
   useEffect(() => {
-    if (fetcher.data) {
+    const data = fetcher.data;
+    if (data) {
       startTransition(() => {
-        setResults(fetcher.data.results);
+        setResults(data.results);
       });
     }
     // Update searching state based on fetcher state

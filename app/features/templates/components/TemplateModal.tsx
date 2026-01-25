@@ -34,7 +34,7 @@ export default function TemplateModal({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 dark:bg-gray-800">
+      <div className="dark:bg-card w-full max-w-md rounded-lg bg-white p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Create Template</h2>
           <button

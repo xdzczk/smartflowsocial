@@ -11,7 +11,7 @@ export default function LoginPage() {
       className="bg-background relative mx-auto flex min-h-dvh w-full min-w-[320px] flex-col"
     >
       {/* Subtle brand color gradient background */}
-      <div className="from-secondary/20 to-background dark:from-background/50 absolute inset-0 bg-gradient-to-b via-transparent" />
+      <div className="from-secondary/20 to-background dark:from-background/20 absolute inset-0 bg-gradient-to-b via-transparent" />
       <Header />
       <main
         id="page-content"

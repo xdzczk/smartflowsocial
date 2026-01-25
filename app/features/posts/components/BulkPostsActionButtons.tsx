@@ -49,7 +49,7 @@ export default function BulkPostsActionButtons({
                   type="button"
                   onClick={() => handleScheduleIntervalClick(interval)}
                   disabled={isProcessing}
-                  className="mx-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  className="dark:bg-card mx-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
                   +{interval}h
                 </button>

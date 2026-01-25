@@ -233,7 +233,7 @@ export function SimpleRescheduleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-800">
+      <div className="dark:bg-card w-full max-w-md rounded-lg bg-white shadow-xl">
         <div className="p-6">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">
@@ -359,7 +359,7 @@ export function SimpleRescheduleModal({
                       }
                     }
                   }}
-                  className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  className="dark:bg-card flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
                 />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -387,7 +387,7 @@ export function SimpleRescheduleModal({
                       e.target.value
                     );
                   }}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
                 >
                   <option value="">Manual (No Queue)</option>
                   {queueTypes.map((queueType) => (
