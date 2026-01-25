@@ -163,7 +163,7 @@ export function DraftsTable({
           {posts.map((post) => (
             <tr
               key={post.id}
-              className="border-border hover:bg-accent/10 cursor-pointer border-b"
+              className="border-border dark:hover:bg-muted cursor-pointer border-b hover:bg-gray-50"
               onClick={() => onPostClick(post)}
             >
               <td className="p-3 text-center">

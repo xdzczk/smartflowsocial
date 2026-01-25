@@ -34,12 +34,12 @@ export function PricingCard({
   return (
     <div
       className={`border-border bg-card relative rounded-lg border p-6 shadow-lg ${
-        plan.isPopular ? "ring-primary/30 ring-2" : ""
+        plan.isPopular ? "dark:ring-primary/30 ring-2 ring-gray-300" : ""
       }`}
     >
       {plan.isPopular ? (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-          <span className="bg-primary text-primary-foreground rounded-full px-3 py-1 text-sm font-medium shadow-md">
+          <span className="dark:bg-muted dark:text-muted-foreground rounded-full border border-gray-300 bg-transparent px-3 py-1 text-sm font-medium text-gray-700 dark:border-transparent">
             Most Popular
           </span>
         </div>
@@ -59,7 +59,7 @@ export function PricingCard({
       </div>
 
       {isCurrentPlan ? (
-        <div className="bg-primary/10 border-primary/20 text-primary w-full rounded-lg border px-4 py-3 text-center font-medium">
+        <div className="bg-muted border-border text-muted-foreground w-full rounded-lg border px-4 py-3 text-center font-medium">
           Current Plan
         </div>
       ) : (

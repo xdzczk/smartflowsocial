@@ -71,7 +71,7 @@ function NavigationItem({
 
   const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     isActive
-      ? "bg-muted text-primary border-border"
+      ? "bg-gray-50 text-gray-900 border-gray-200 dark:bg-muted dark:text-primary dark:border-border"
       : hasAccess
         ? "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
         : "text-muted-foreground/50 cursor-not-allowed opacity-60"
@@ -90,7 +90,7 @@ function NavigationItem({
       }
     >
       <span
-        className={`flex flex-none items-center ${isActive ? "text-primary" : "text-muted-foreground"}`}
+        className={`flex flex-none items-center ${isActive ? "dark:text-primary text-gray-900" : "text-muted-foreground"}`}
       >
         {icon}
       </span>
@@ -139,7 +139,7 @@ export default function Header() {
         } ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* Sidebar Header */}
-        <div className="bg-secondary/30 flex h-16 w-full flex-none items-center justify-between px-4 lg:justify-center">
+        <div className="bg-card flex h-16 w-full flex-none items-center justify-between px-4 lg:justify-center">
           {/* Brand */}
           <Link
             prefetch="intent"

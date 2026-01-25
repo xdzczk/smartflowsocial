@@ -141,7 +141,7 @@ export function PlansPage(): ReactNode {
 
         <div className="relative container mx-auto px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl">
           <div className="mb-16 text-center">
-            <div className="border-primary/20 bg-primary/10 text-primary dark:bg-primary/10 mb-2 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
+            <div className="border-border bg-muted text-muted-foreground mb-2 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
               Choose the perfect plan for your needs!
             </div>
             <h1 className="text-foreground mb-4 text-4xl font-black">

@@ -40,7 +40,7 @@ export default function LoginPage() {
                 backgroundImage: 'url("/photo-m_7p45JfXQo-600x600.jpg")',
               }}
             >
-              <div className="bg-primary/80 dark:bg-primary/60 absolute inset-0 rounded-r-lg" />
+              <div className="bg-muted dark:bg-muted absolute inset-0 rounded-r-lg" />
               <div className="relative text-center sm:text-left">
                 <p className="text-primary-foreground mb-2 text-lg leading-relaxed font-semibold sm:text-xl">
                   Sign in securely using your Nostr identity

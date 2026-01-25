@@ -20,8 +20,8 @@ export function DraftsBulkActions({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="border-primary/30 bg-primary/10 mb-4 flex items-center justify-between rounded-lg border p-4">
-      <span className="text-primary text-sm font-medium">
+    <div className="dark:border-border dark:bg-muted mb-4 flex items-center justify-between rounded-lg border border-gray-300 bg-gray-50 p-4">
+      <span className="dark:text-foreground text-sm font-medium text-gray-900">
         {selectedCount} post{selectedCount !== 1 ? "s" : ""} selected
       </span>
       <div className="flex gap-2">

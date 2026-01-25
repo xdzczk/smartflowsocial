@@ -79,7 +79,7 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
               <tr
                 key={feature.key}
                 className={`border-border border-b ${
-                  index % 2 === 0 ? "bg-secondary/30" : "bg-card"
+                  index % 2 === 0 ? "bg-muted" : "bg-card"
                 }`}
               >
                 <td className="text-foreground p-4 font-medium">

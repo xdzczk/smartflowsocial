@@ -22,7 +22,7 @@ export default function ScheduledPosts() {
         <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <div>
             <h3 className="mb-1 font-semibold">Scheduled Posts</h3>
-            <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <h4 className="dark:text-muted-foreground text-sm font-medium text-gray-500">
               You have{" "}
               <span className="text-blue-600 dark:text-blue-400">
                 {scheduledPosts.length} scheduled posts
@@ -50,29 +50,29 @@ export default function ScheduledPosts() {
                 type="text"
                 id="search"
                 name="search"
-                className="block w-full rounded-lg border border-gray-200 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
+                className="dark:border-border dark:bg-card dark:focus:border-primary block w-full rounded-lg border border-gray-200 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
                 placeholder="Search posts.."
               />
             </div>
           </div>
         </div>
         {/* Responsive Table Container */}
-        <div className="dark:border-border bg-card min-w-full overflow-x-auto rounded border border-gray-200 bg-white">
+        <div className="dark:border-border bg-card min-w-full overflow-x-auto rounded border border-gray-100 bg-white">
           {/* Table */}
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             {/* Table Header */}
             <thead>
               <tr>
-                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-left font-semibold text-gray-900">
                   Media
                 </th>
-                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-left font-semibold text-gray-900">
                   Caption
                 </th>
-                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-left font-semibold text-gray-900">
                   Type
                 </th>
-                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-left font-semibold text-gray-900">
                   Scheduled For
                 </th>
                 <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
@@ -105,7 +105,7 @@ export default function ScheduledPosts() {
                   return (
                     <tr
                       key={post.id}
-                      className="dark:even:bg-muted/30 even:bg-gray-50"
+                      className="dark:even:bg-muted dark:hover:bg-muted even:bg-gray-50/50 hover:bg-gray-50"
                     >
                       <td className="p-3">
                         <div className="size-12 overflow-hidden rounded-lg">
@@ -116,7 +116,7 @@ export default function ScheduledPosts() {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-gray-100 dark:bg-gray-700">
+                            <div className="dark:bg-muted flex h-full w-full items-center justify-center bg-gray-100">
                               <span className="text-xs text-gray-500 dark:text-gray-400">
                                 Text
                               </span>
@@ -129,7 +129,7 @@ export default function ScheduledPosts() {
                           {post.caption ?? "No caption"}
                         </p>
                       </td>
-                      <td className="p-3 text-gray-500 dark:text-gray-400">
+                      <td className="dark:text-muted-foreground p-3 text-gray-500">
                         {post.postType}
                       </td>
                       <td className="p-3">
@@ -234,8 +234,8 @@ export default function ScheduledPosts() {
                       className="mx-auto max-h-96 rounded-lg object-contain"
                     />
                   ) : (
-                    <div className="mx-auto flex h-48 w-full max-w-md items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700">
-                      <span className="text-gray-500 dark:text-gray-400">
+                    <div className="dark:bg-muted mx-auto flex h-48 w-full max-w-md items-center justify-center rounded-lg bg-gray-100">
+                      <span className="dark:text-muted-foreground text-gray-500">
                         Text post
                       </span>
                     </div>

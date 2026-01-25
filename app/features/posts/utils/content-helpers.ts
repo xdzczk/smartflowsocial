@@ -66,10 +66,13 @@ export function getContentPreview(item: CombinedContent): string | null {
   return null; // Posts show caption in title column
 }
 
-// Status color constants
-const DRAFT_COLOR = "bg-orange-500/20 text-orange-600 dark:text-orange-400";
-const PUBLISHED_COLOR = "bg-green-500/20 text-green-600 dark:text-green-400";
-const SCHEDULED_COLOR = "bg-primary/10 text-primary";
+// Status color constants - neutral outline style for light mode
+const DRAFT_COLOR =
+  "border border-orange-300 bg-transparent text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 dark:border-transparent";
+const PUBLISHED_COLOR =
+  "border border-green-300 bg-transparent text-green-700 dark:bg-green-500/20 dark:text-green-400 dark:border-transparent";
+const SCHEDULED_COLOR =
+  "border border-gray-300 bg-transparent text-gray-700 dark:bg-muted dark:text-muted-foreground dark:border-transparent";
 
 export function getStatusColor(item: CombinedContent): string {
   // Use currentState as single source of truth
@@ -104,14 +107,14 @@ export function getStatusColor(item: CombinedContent): string {
     }
 
     if (state === "FAILED") {
-      return "bg-destructive/20 text-destructive";
+      return "border border-red-300 bg-transparent text-red-700 dark:bg-destructive/20 dark:text-destructive dark:border-transparent";
     }
     if (state === "CANCELLED") {
-      return "bg-muted text-muted-foreground";
+      return "border border-gray-300 bg-transparent text-gray-700 dark:bg-muted dark:text-muted-foreground dark:border-transparent";
     }
   }
 
-  return "bg-muted text-muted-foreground";
+  return "border border-gray-300 bg-transparent text-gray-700 dark:bg-muted dark:text-muted-foreground dark:border-transparent";
 }
 
 export function getStatusText(item: CombinedContent): string {
@@ -284,8 +287,8 @@ export function getContentTypeBadge(item: CombinedContent): {
     return {
       className: `inline-flex rounded-full px-2 py-1 text-xs font-medium ${
         item.type === "post"
-          ? "bg-primary/10 text-primary"
-          : "bg-accent/15 text-accent-foreground"
+          ? "bg-muted text-muted-foreground"
+          : "bg-muted text-muted-foreground"
       }`,
       text: item.type === "post" ? "Post" : "Article",
     };

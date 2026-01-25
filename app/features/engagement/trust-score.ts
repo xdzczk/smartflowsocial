@@ -144,7 +144,7 @@ export function getTrustLevel(score: number): {
   } else {
     return {
       level: "Unverified",
-      color: "text-gray-600 dark:text-gray-400",
+      color: "text-gray-600 dark:text-muted-foreground",
       description: "Minimal profile information or activity",
     };
   }
@@ -163,6 +163,6 @@ export function getTrustScoreBadgeColor(score: number): string {
   } else if (score >= 20) {
     return "bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800";
   } else {
-    return "bg-gray-100 dark:bg-card text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700";
+    return "bg-gray-100 dark:bg-card text-gray-800 dark:text-foreground border-gray-200 dark:border-border";
   }
 }

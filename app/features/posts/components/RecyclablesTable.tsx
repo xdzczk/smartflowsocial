@@ -181,7 +181,7 @@ export function RecyclablesTable({
             return (
               <tr
                 key={post.id}
-                className="border-border hover:bg-accent/10 cursor-pointer border-b"
+                className="border-border dark:hover:bg-muted cursor-pointer border-b hover:bg-gray-50"
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3 text-center">
@@ -249,7 +249,7 @@ export function RecyclablesTable({
                   )}
                 </td>
                 <td className="p-3">
-                  <span className="bg-primary/10 text-primary inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
+                  <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                     Recyclable
                   </span>
                 </td>

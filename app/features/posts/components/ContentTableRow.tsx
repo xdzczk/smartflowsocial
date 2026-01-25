@@ -63,7 +63,7 @@ export function ContentTableRow({
   return (
     <tr
       key={`${item.type}-${item.id}`}
-      className="border-border hover:bg-accent/10 cursor-pointer border-b"
+      className="border-border hover:bg-muted cursor-pointer border-b"
       onClick={() => onPostSelect?.(item)}
     >
       {showBulkActions ? (

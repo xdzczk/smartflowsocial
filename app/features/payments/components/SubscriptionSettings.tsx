@@ -84,9 +84,9 @@ export function SubscriptionSettings({
       case "PAST_DUE":
         return "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20";
       case "INACTIVE":
-        return "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-900/20";
+        return "text-gray-600 bg-gray-100 dark:text-muted-foreground dark:bg-card/20";
       default:
-        return "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-900/20";
+        return "text-gray-600 bg-gray-100 dark:text-muted-foreground dark:bg-card/20";
     }
   };
 

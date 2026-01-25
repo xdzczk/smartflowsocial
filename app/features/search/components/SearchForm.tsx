@@ -26,7 +26,7 @@ export function SearchForm({ form, onSubmit, isSearching }: SearchFormProps) {
             type="text"
             {...form.register("eventInput")}
             placeholder="Enter event ID (hex), note1, or nevent1..."
-            className="block w-full rounded-lg border border-gray-200 px-4 py-3 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
+            className="dark:border-border dark:bg-card dark:focus:border-primary block w-full rounded-lg border border-gray-200 px-4 py-3 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
             disabled={isSearching}
           />
           {form.formState.errors.eventInput ? (
@@ -82,7 +82,7 @@ export function SearchForm({ form, onSubmit, isSearching }: SearchFormProps) {
       </fetcher.Form>
 
       {/* Format hints */}
-      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+      <div className="dark:text-muted-foreground mt-2 text-xs text-gray-500">
         <p className="mb-1">Supported formats:</p>
         <ul className="ml-4 list-disc space-y-0.5">
           <li>Hex event ID: 64-character hex string</li>

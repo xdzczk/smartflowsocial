@@ -179,7 +179,7 @@ export function LongFormPublishingOptions({
             name="scheduledFor"
             value={scheduledFor ?? ""}
             onChange={(e) => onScheduledForChange(e.target.value || null)}
-            className="flex-1 bg-white dark:bg-gray-900"
+            className="dark:bg-card flex-1 bg-white"
             placeholder="Select date and time"
           />
         </div>

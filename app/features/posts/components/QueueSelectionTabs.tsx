@@ -41,7 +41,7 @@ export default function QueueSelectionTabs({
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
             (!params["queueType"] && !searchParams.get("queueType")) ||
             searchParams.get("queueType") === "all"
-              ? "border-primary text-primary"
+              ? "dark:border-primary dark:text-primary border-gray-300 text-gray-900"
               : unselectedClasses
           }`}
         >

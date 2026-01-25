@@ -22,8 +22,8 @@ interface NotificationItemProps {
 const TYPE_BADGES = {
   reply: {
     label: "replied",
-    bgClass: "bg-primary/10",
-    textClass: "text-primary",
+    bgClass: "bg-muted",
+    textClass: "text-muted-foreground",
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
         <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
@@ -33,8 +33,8 @@ const TYPE_BADGES = {
   },
   mention: {
     label: "mentioned",
-    bgClass: "bg-accent/15",
-    textClass: "text-accent-foreground",
+    bgClass: "bg-muted",
+    textClass: "text-muted-foreground",
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
         <path
@@ -47,8 +47,8 @@ const TYPE_BADGES = {
   },
   quote: {
     label: "quoted",
-    bgClass: "bg-green-500/10",
-    textClass: "text-green-600 dark:text-green-400",
+    bgClass: "bg-muted",
+    textClass: "text-muted-foreground",
     icon: (
       <svg
         className="h-4 w-4"
@@ -99,7 +99,7 @@ export function NotificationItem({
   const stats: NotificationStats | undefined = notification.stats;
 
   return (
-    <div className="hover:bg-accent/10 p-3 transition-colors">
+    <div className="dark:hover:bg-muted p-3 transition-colors hover:bg-gray-50">
       <div className="flex gap-2">
         {/* Author Avatar */}
         <div className="flex-shrink-0">

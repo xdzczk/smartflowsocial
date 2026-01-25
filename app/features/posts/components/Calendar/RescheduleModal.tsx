@@ -264,7 +264,7 @@ function renderModalContent(
       </div>
 
       {/* Re-signing warning */}
-      <div className="border-primary/30 bg-primary/10 rounded-lg border p-3">
+      <div className="border-border bg-muted rounded-lg border p-3">
         <div className="flex items-start space-x-2">
           <svg
             className="text-primary mt-0.5 h-5 w-5 flex-shrink-0"
@@ -540,7 +540,7 @@ export function RescheduleModal({
             {wasAutoScheduled ? (
               <button
                 onClick={() => void handleConfirm(false)}
-                className="border-primary/30 text-primary hover:bg-primary/10 hover:text-primary/80 rounded-lg border px-4 py-2 text-sm font-medium"
+                className="border-primary/30 text-primary hover:bg-primary/5 hover:text-primary/90 rounded-lg border px-4 py-2 text-sm font-medium"
               >
                 Keep Queue Rule
               </button>

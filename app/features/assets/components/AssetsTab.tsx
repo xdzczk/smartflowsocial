@@ -73,7 +73,7 @@ export function AssetsTab({
               type="text"
               value={searchInput}
               onChange={(e) => onSearchInputChange(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
+              className="dark:border-border dark:bg-card dark:focus:border-primary block w-full rounded-lg border border-gray-300 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
               placeholder="Search assets by title, content, or tags..."
             />
           </div>
@@ -108,7 +108,7 @@ export function AssetsTab({
           {assets.length > 0 ? (
             <button
               onClick={onSelectAllAssets}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              className="dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
             >
               {selectedAssets.length === assets.length
                 ? "Deselect All"
@@ -135,20 +135,20 @@ export function AssetsTab({
                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
               />
             </svg>
-            <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+            <h3 className="dark:text-foreground mt-4 text-lg font-medium text-gray-900">
               No assets yet
             </h3>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className="dark:text-muted-foreground mt-2 text-sm text-gray-500">
               Create your first asset by adding text or uploading an image
             </p>
           </div>
         </div>
       ) : (
-        <div className="dark:border-border bg-card min-w-full overflow-x-auto rounded border border-gray-200 bg-white">
+        <div className="dark:border-border bg-card min-w-full overflow-x-auto rounded border border-gray-100 bg-white">
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             <thead>
               <tr>
-                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-50 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
                   <input
                     type="checkbox"
                     checked={
@@ -157,7 +157,7 @@ export function AssetsTab({
                         : false
                     }
                     onChange={onSelectAllAssets}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                    className="dark:border-border dark:bg-card h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </th>
                 <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
@@ -178,7 +178,7 @@ export function AssetsTab({
                 <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
                   Created
                 </th>
-                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
+                <th className="dark:bg-card dark:border-border bg-gray-50 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
                   Actions
                 </th>
               </tr>
@@ -187,14 +187,14 @@ export function AssetsTab({
               {assets.map((asset) => (
                 <tr
                   key={asset.id}
-                  className="dark:even:bg-muted/30 dark:hover:bg-muted/50 even:bg-gray-50 hover:bg-gray-100"
+                  className="dark:even:bg-muted dark:hover:bg-muted even:bg-gray-50/50 hover:bg-gray-50"
                 >
                   <td className="p-3 text-center">
                     <input
                       type="checkbox"
                       checked={selectedAssets.includes(asset.id)}
                       onChange={() => onAssetSelect(asset.id)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                      className="dark:border-border dark:bg-card h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </td>
                   <td className="p-3">
@@ -206,7 +206,7 @@ export function AssetsTab({
                         className="h-12 w-12 rounded object-cover"
                       />
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      <div className="dark:bg-muted dark:text-muted-foreground flex h-12 w-12 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600">
                         TEXT
                       </div>
                     )}
@@ -227,13 +227,13 @@ export function AssetsTab({
                         {asset.tags.slice(0, 3).map((tag: string) => (
                           <span
                             key={tag}
-                            className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                            className="dark:bg-muted dark:text-foreground inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800"
                           >
                             {tag}
                           </span>
                         ))}
                         {asset.tags.length > 3 ? (
-                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                          <span className="dark:bg-muted dark:text-foreground inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
                             +{asset.tags.length - 3}
                           </span>
                         ) : null}

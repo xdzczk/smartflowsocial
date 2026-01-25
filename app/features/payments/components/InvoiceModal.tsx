@@ -41,11 +41,11 @@ export function InvoiceModal({
         </div>
 
         <div className="mb-4">
-          <div className="mb-2 flex justify-between text-sm text-gray-600 dark:text-gray-400">
+          <div className="dark:text-muted-foreground mb-2 flex justify-between text-sm text-gray-600">
             <span>Amount:</span>
             <span className="font-medium">${invoiceData.amountUsd} USD</span>
           </div>
-          <div className="mb-2 flex justify-between text-sm text-gray-600 dark:text-gray-400">
+          <div className="dark:text-muted-foreground mb-2 flex justify-between text-sm text-gray-600">
             <span>Lightning Amount:</span>
             <span className="font-medium">
               {invoiceData.amount.toLocaleString()} sats
@@ -62,7 +62,7 @@ export function InvoiceModal({
         <div className="mb-4">
           <label
             htmlFor="lightning-invoice"
-            className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="dark:text-foreground mb-2 block text-sm font-medium text-gray-700"
           >
             Lightning Invoice:
           </label>
@@ -72,7 +72,7 @@ export function InvoiceModal({
               type="text"
               value={invoiceData.invoice}
               readOnly
-              className="min-w-0 flex-1 rounded-l-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              className="dark:border-border dark:bg-card dark:text-foreground min-w-0 flex-1 rounded-l-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:placeholder-gray-400"
             />
             <button
               onClick={() => onCopy(invoiceData.invoice)}
@@ -104,10 +104,10 @@ export function InvoiceModal({
         </div>
 
         <div className="text-center">
-          <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+          <p className="dark:text-muted-foreground mb-2 text-sm text-gray-500">
             This window will automatically close when payment is received
           </p>
-          <div className="text-xs text-gray-400 dark:text-gray-500">
+          <div className="dark:text-muted-foreground text-xs text-gray-400">
             {timeRemaining > 0 ? (
               <>
                 Payment expires in {Math.floor(timeRemaining / (1000 * 60))}:

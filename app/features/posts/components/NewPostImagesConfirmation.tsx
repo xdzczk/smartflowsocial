@@ -354,7 +354,7 @@ export default function NewPostImagesConfirmation({
         </div>
 
         {isSigning ? (
-          <div className="mx-auto mb-4 max-w-2xl rounded-md border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+          <div className="dark:bg-card/30 dark:text-foreground mx-auto mb-4 max-w-2xl rounded-md border bg-white/50 p-3 text-sm text-gray-700">
             Waiting for signer approval… If you’re using a remote signer, open
             it to approve the request.
           </div>
@@ -425,7 +425,7 @@ export default function NewPostImagesConfirmation({
                     <h4 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Caption
                     </h4>
-                    <div className="max-h-20 overflow-y-auto rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+                    <div className="dark:bg-muted max-h-20 overflow-y-auto rounded-lg bg-gray-50 p-3">
                       <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
                         {caption + addTags}
                       </p>

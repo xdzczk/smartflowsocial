@@ -39,20 +39,20 @@ export default function TemplateModal({
           <h2 className="text-xl font-semibold">Create Template</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="dark:text-muted-foreground dark:hover:text-foreground text-gray-500 hover:text-gray-700"
           >
             ✕
           </button>
         </div>
 
         <div className="mb-4">
-          <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="dark:text-muted-foreground mb-2 text-sm text-gray-600">
             Creating template with {selectedPostsCount} selected post
             {selectedPostsCount !== 1 ? "s" : ""}
           </p>
           <label
             htmlFor="templateName"
-            className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="dark:text-foreground mb-2 block text-sm font-medium text-gray-700"
           >
             Template Name
           </label>
@@ -61,7 +61,7 @@ export default function TemplateModal({
             id="templateName"
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:border-blue-400"
+            className="dark:border-border dark:bg-card dark:text-foreground dark:focus:border-primary w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
             placeholder="Enter template name..."
           />
         </div>
@@ -69,7 +69,7 @@ export default function TemplateModal({
         <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Cancel
           </button>

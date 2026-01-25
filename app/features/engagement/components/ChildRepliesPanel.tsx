@@ -14,7 +14,7 @@ export function ChildRepliesPanel({
 }: ChildRepliesPanelProps) {
   if (isLoading) {
     return (
-      <div className="border-primary/30 mt-3 border-l-2 pl-3">
+      <div className="dark:border-primary/30 mt-3 border-l-2 border-gray-300 pl-3">
         <div className="text-muted-foreground flex items-center gap-2 text-xs">
           <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle
@@ -39,7 +39,7 @@ export function ChildRepliesPanel({
 
   if (replies.length === 0) {
     return (
-      <div className="border-primary/30 mt-3 border-l-2 pl-3">
+      <div className="dark:border-primary/30 mt-3 border-l-2 border-gray-300 pl-3">
         <div className="text-muted-foreground text-xs">No replies yet</div>
       </div>
     );
@@ -86,7 +86,7 @@ export function ChildRepliesPanel({
         return (
           <div
             key={reply.id}
-            className="border-border bg-secondary/30 rounded-lg border p-2"
+            className="border-border dark:bg-secondary/30 rounded-lg border bg-gray-50 p-2"
           >
             <div className="mb-1 flex items-center gap-2">
               {replyAuthorPicture ? (

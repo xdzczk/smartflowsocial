@@ -227,7 +227,7 @@ export default function LongFormPreviewModal({
       />
 
       {/* Modal */}
-      <div className="relative mx-4 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl dark:bg-gray-900">
+      <div className="dark:bg-card relative mx-4 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 p-6 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -244,7 +244,7 @@ export default function LongFormPreviewModal({
         </div>
 
         {/* Content */}
-        <div className="max-h-[calc(90vh-120px)] overflow-y-auto bg-white dark:bg-gray-900">
+        <div className="dark:bg-card max-h-[calc(90vh-120px)] overflow-y-auto bg-white">
           {/* Article Card Preview - matches the Primal/Nostr style */}
           <div className="mx-auto max-w-2xl p-6">
             {/* Author Header */}

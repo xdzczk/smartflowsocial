@@ -47,7 +47,7 @@ export function EngagementContent({
         {/* Quote Reposts Section */}
         {groupedNotifications.quotes.length > 0 ? (
           <div>
-            <h4 className="mb-3 font-medium text-gray-900 dark:text-gray-100">
+            <h4 className="dark:text-foreground mb-3 font-medium text-gray-900">
               Repost with Quote
             </h4>
             <GroupedNotificationList

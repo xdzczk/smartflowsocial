@@ -46,13 +46,13 @@ export function PostStatusBadges({ post, isLongform }: PostStatusIconsProps) {
       {!isLongform &&
       !post.manual_override &&
       Boolean(!post.manual_override) ? (
-        <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+        <span className="rounded-full border border-blue-300 bg-transparent px-2 py-1 text-xs text-blue-700 dark:border-transparent dark:bg-blue-900/20 dark:text-blue-400">
           Auto
         </span>
       ) : null}
 
       {post.signedEvent && Boolean(post.signedEvent) ? (
-        <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900/20 dark:text-green-400">
+        <span className="rounded-full border border-green-300 bg-transparent px-2 py-1 text-xs text-green-700 dark:border-transparent dark:bg-green-900/20 dark:text-green-400">
           Signed
         </span>
       ) : null}

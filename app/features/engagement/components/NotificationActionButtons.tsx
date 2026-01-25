@@ -52,7 +52,7 @@ export function NotificationActionButtons({
       {/* Reply Button */}
       <button
         onClick={onToggleReply}
-        className="text-muted-foreground hover:bg-primary/10 hover:text-primary inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+        className="text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:bg-gray-50 hover:text-gray-900"
       >
         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
           <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
@@ -88,7 +88,7 @@ export function NotificationActionButtons({
       {/* Quote Button */}
       <button
         onClick={onToggleQuote}
-        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-green-50 hover:text-green-600 dark:text-gray-400 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+        className="dark:text-muted-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
       >
         <svg
           className="h-4 w-4"
@@ -109,7 +109,7 @@ export function NotificationActionButtons({
       {/* Copy NEvent Button */}
       <button
         onClick={onCopyNevent}
-        className="text-muted-foreground hover:bg-accent/10 hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+        className="text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:bg-gray-50 hover:text-gray-900"
       >
         <svg
           className="h-4 w-4"

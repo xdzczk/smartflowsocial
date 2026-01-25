@@ -40,13 +40,13 @@ export function SearchResult({
   onScheduleRepost,
 }: SearchResultProps) {
   return (
-    <div className="dark:bg-card rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700">
+    <div className="bg-card dark:border-border rounded-lg border border-gray-200 bg-white p-6">
       {/* Clear button */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Search Result</h2>
         <button
           onClick={onClear}
-          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          className="dark:text-muted-foreground dark:hover:text-foreground text-sm text-gray-500 hover:text-gray-700"
         >
           Clear
         </button>
@@ -61,7 +61,7 @@ export function SearchResult({
             className="h-12 w-12 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-300 text-gray-600 dark:bg-gray-600 dark:text-gray-300">
+          <div className="dark:bg-muted dark:text-muted-foreground flex h-12 w-12 items-center justify-center rounded-full bg-gray-300 text-gray-600">
             <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
@@ -104,36 +104,48 @@ export function SearchResult({
 
       {/* Content */}
       <div className="mb-4">
-        <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+        <p className="dark:text-foreground text-sm whitespace-pre-wrap text-gray-700">
           {result.content}
         </p>
       </div>
 
       {/* Engagement Stats */}
       {stats ? (
-        <div className="mb-4 grid grid-cols-3 gap-4 rounded-lg bg-gray-50 p-4 md:grid-cols-6 dark:bg-gray-900">
+        <div className="dark:bg-card mb-4 grid grid-cols-3 gap-4 rounded-lg bg-gray-50 p-4 md:grid-cols-6">
           <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Likes</p>
+            <p className="dark:text-muted-foreground text-xs text-gray-500">
+              Likes
+            </p>
             <p className="text-lg font-semibold">{stats.likes}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Replies</p>
+            <p className="dark:text-muted-foreground text-xs text-gray-500">
+              Replies
+            </p>
             <p className="text-lg font-semibold">{stats.replies}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Reposts</p>
+            <p className="dark:text-muted-foreground text-xs text-gray-500">
+              Reposts
+            </p>
             <p className="text-lg font-semibold">{stats.reposts}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Zaps</p>
+            <p className="dark:text-muted-foreground text-xs text-gray-500">
+              Zaps
+            </p>
             <p className="text-lg font-semibold">{stats.zaps}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Mentions</p>
+            <p className="dark:text-muted-foreground text-xs text-gray-500">
+              Mentions
+            </p>
             <p className="text-lg font-semibold">{stats.mentions}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Sats</p>
+            <p className="dark:text-muted-foreground text-xs text-gray-500">
+              Sats
+            </p>
             <p className="text-lg font-semibold">{stats.satszapped}</p>
           </div>
         </div>
@@ -141,10 +153,10 @@ export function SearchResult({
 
       {/* Event ID */}
       <div className="mb-4">
-        <p className="mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+        <p className="dark:text-muted-foreground mb-1 text-xs font-semibold text-gray-500">
           Event ID:
         </p>
-        <code className="block rounded bg-gray-100 p-2 text-xs dark:bg-gray-900">
+        <code className="dark:bg-card dark:text-foreground block rounded bg-gray-100 p-2 text-xs">
           {result.id}
         </code>
       </div>
@@ -153,7 +165,7 @@ export function SearchResult({
       <div className="flex flex-wrap gap-2">
         <button
           onClick={onScheduleQuote}
-          className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-4 py-2 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none dark:border-green-700 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+          className="bg-card dark:border-border dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-4 py-2 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40"
         >
           <svg
             className="h-4 w-4"
@@ -173,7 +185,7 @@ export function SearchResult({
 
         <button
           onClick={onScheduleRepost}
-          className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-4 py-2 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none dark:border-purple-700 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
+          className="bg-card dark:border-border dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-4 py-2 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40"
         >
           <svg
             className="h-4 w-4"
@@ -195,7 +207,7 @@ export function SearchResult({
           href={`https://primal.net/e/${result.id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm leading-5 font-semibold text-gray-800 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm focus:ring focus:ring-gray-300/25 active:border-gray-200 active:shadow-none dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200 dark:focus:ring-gray-600/40 dark:active:border-gray-700"
+          className="bg-card dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-border/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm leading-5 font-semibold text-gray-800 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm focus:ring focus:ring-gray-300/25 active:border-gray-200 active:shadow-none"
         >
           <svg
             className="h-4 w-4"

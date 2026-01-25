@@ -39,7 +39,7 @@ export function DashboardHeader({
         <h3 className="mb-1 font-semibold">{getTitle()}</h3>
         <h4 className="text-muted-foreground text-sm font-medium">
           You have{" "}
-          <span className="text-primary">
+          <span className="text-foreground">
             {getCount()} scheduled {getItemType()}
           </span>
         </h4>

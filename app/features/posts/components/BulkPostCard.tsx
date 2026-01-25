@@ -172,7 +172,7 @@ export function BulkPostCard({
 
     // Fallback: TEXT placeholder
     return (
-      <div className="flex h-24 w-24 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+      <div className="dark:bg-muted dark:text-muted-foreground flex h-24 w-24 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600">
         TEXT
       </div>
     );
@@ -192,7 +192,7 @@ export function BulkPostCard({
             value={post.caption}
             onChange={(e) => onCaptionChange(index, e.target.value)}
             disabled={post.isKind6Repost}
-            className={`dark:bg-card w-full rounded-lg border p-2 text-gray-900 dark:text-gray-100 ${post.isKind6Repost ? "cursor-not-allowed bg-gray-100 dark:bg-gray-700" : ""}`}
+            className={`dark:bg-card dark:text-foreground w-full rounded-lg border p-2 text-gray-900 ${post.isKind6Repost ? "dark:bg-muted cursor-not-allowed bg-gray-100" : ""}`}
             rows={3}
             placeholder={
               post.isKind6Repost

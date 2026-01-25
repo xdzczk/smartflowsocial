@@ -7,7 +7,7 @@ export function TemplatesHeader() {
     <div className="mb-6 flex items-center justify-between">
       <div>
         <h1 className="text-2xl font-bold">Assets</h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="dark:text-muted-foreground text-gray-600">
           Manage your reusable content assets
         </p>
       </div>

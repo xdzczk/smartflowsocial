@@ -98,8 +98,8 @@ export function getStatusColor(
 
   if (post.signedEvent) {
     return wasAutoScheduled
-      ? "bg-primary/10 text-primary"
-      : "bg-green-500/10 text-green-600 dark:text-green-400";
+      ? "bg-muted text-muted-foreground"
+      : "bg-muted text-muted-foreground";
   }
 
   return "bg-secondary text-secondary-foreground";

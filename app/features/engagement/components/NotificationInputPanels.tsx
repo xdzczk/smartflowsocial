@@ -25,7 +25,7 @@ export function ReplyInputPanel({
       <div className="flex justify-end gap-2">
         <button
           onClick={onCancel}
-          className="text-muted-foreground hover:bg-accent/10 hover:text-foreground rounded-lg px-3 py-1 text-xs font-medium"
+          className="text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground rounded-lg px-3 py-1 text-xs font-medium hover:bg-gray-50 hover:text-gray-900"
         >
           Cancel
         </button>
@@ -78,7 +78,7 @@ export function QuoteInputPanel({
       <div className="flex justify-end gap-2">
         <button
           onClick={onCancel}
-          className="text-muted-foreground hover:bg-accent/10 hover:text-foreground rounded-lg px-3 py-1 text-xs font-medium"
+          className="text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground rounded-lg px-3 py-1 text-xs font-medium hover:bg-gray-50 hover:text-gray-900"
         >
           Cancel
         </button>

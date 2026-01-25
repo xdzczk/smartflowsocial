@@ -111,26 +111,33 @@
     --radius: 0.5rem;
   }
   .dark {
-    /* Dark Mode - Brand Colors */
-    --background: 250 100% 2%;              /* Midnight blue #050151 */
+    /* Dark Mode - Neutral Foundation with Brand Accents */
+    /* Neutral structure colors (no color bias) */
+    --background: 0 0% 3%;                  /* Near-black canvas, neutral */
     --foreground: 0 0% 98%;                 /* White */
-    --card: 250 100% 5%;                    /* Slightly lighter than background */
+    --card: 0 0% 8%;                        /* Dark grey containers, neutral */
     --card-foreground: 0 0% 98%;
-    --popover: 250 100% 5%;
+    --popover: 0 0% 8%;                     /* Neutral dark grey */
     --popover-foreground: 0 0% 98%;
-    --primary: 255 97% 51%;                 /* Electric blue-purple #4408FF */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 250 100% 12%;              /* Dark indigo */
+    --secondary: 0 0% 12%;                  /* Neutral grey, no blue tint */
     --secondary-foreground: 0 0% 98%;
-    --muted: 250 100% 8%;
-    --muted-foreground: 250 20% 65%;
-    --accent: 255 60% 70%;                  /* Medium lavender #8B66FF */
+    --muted: 0 0% 10%;                      /* Neutral grey-light for tables */
+    --muted-foreground: 0 0% 65%;           /* Muted text, neutral grey */
+    --border: 0 0% 18%;                     /* Barely visible neutral border */
+    --input: 0 0% 18%;                      /* Neutral input border */
+    
+    /* Brand colors - only for user actions (commit, select, focus, hover) */
+    --primary: 255 97% 51%;                 /* Electric blue-purple #4408FF - CTAs only */
+    --primary-foreground: 0 0% 100%;
+    --accent: 255 60% 70%;                  /* Medium lavender #8B66FF - hover/selection */
     --accent-foreground: 0 0% 100%;
+    --ring: 255 97% 51%;                    /* Primary brand color - focus states */
+    
+    /* Destructive actions */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 250 100% 15%;
-    --input: 250 100% 15%;
-    --ring: 255 97% 51%;                    /* Primary brand color */
+    
+    /* Chart colors - keep brand for data visualization */
     --chart-1: 255 97% 51%;                 /* Brand primary */
     --chart-2: 255 60% 70%;                 /* Brand secondary */
     --chart-3: 250 100% 31%;                 /* Deep indigo #1E03A0 */

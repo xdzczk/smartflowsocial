@@ -251,7 +251,7 @@ export default function PostConfirmation({
         </div>
 
         {isSigning ? (
-          <div className="mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+          <div className="dark:bg-card/30 dark:text-foreground mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm text-gray-700">
             Waiting for signer approval…
             {signingProgress ? (
               <span className="text-muted-foreground ml-2">
@@ -347,7 +347,7 @@ export default function PostConfirmation({
                       <h4 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                         Caption
                       </h4>
-                      <div className="max-h-20 overflow-y-auto rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+                      <div className="dark:bg-muted max-h-20 overflow-y-auto rounded-lg bg-gray-50 p-3">
                         <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
                           {caption}
                         </p>
@@ -374,7 +374,7 @@ export default function PostConfirmation({
 
                   {/* Show placeholder for text-only posts */}
                   {!mediaUrl && !caption ? (
-                    <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-700">
+                    <div className="dark:bg-muted flex h-32 w-full items-center justify-center rounded-lg bg-gray-200">
                       <span className="text-gray-500 dark:text-gray-400">
                         {isRepost ? "REPOST" : "TEXT"}
                       </span>

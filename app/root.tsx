@@ -128,7 +128,13 @@ export default function App() {
                 const stored = localStorage.getItem('theme');
                 let theme;
                 if (stored) {
-                  theme = stored;
+                  // Handle both JSON stringified values and plain strings
+                  try {
+                    theme = JSON.parse(stored);
+                  } catch (e) {
+                    // If parsing fails, use the stored value directly (backward compatibility)
+                    theme = stored;
+                  }
                 } else {
                   // Default to dark mode, but respect system preference if available
                   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -142,6 +148,8 @@ export default function App() {
                 }
                 if (theme === 'dark') {
                   document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
                 }
               })();
             `,
@@ -204,32 +212,32 @@ export function ErrorBoundary() {
         <Links />
       </head>
       <body className="h-full">
-        <div className="flex min-h-full flex-col bg-white dark:bg-gray-900">
+        <div className="dark:bg-background flex min-h-full flex-col bg-white">
           <main className="mx-auto flex w-full max-w-7xl flex-auto flex-col justify-center px-4 py-24 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
-              <h1 className="text-6xl font-semibold text-gray-900 dark:text-white">
+              <h1 className="dark:text-foreground text-6xl font-semibold text-gray-900">
                 {statusCode}
               </h1>
-              <h2 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="dark:text-foreground mt-4 text-2xl font-semibold text-gray-900">
                 {errorTitle}
               </h2>
-              <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+              <p className="dark:text-muted-foreground mt-4 text-lg text-gray-600">
                 {errorMessage}
               </p>
               <div className="mt-10 flex justify-center">
                 <a
                   href="/"
-                  className="rounded-md bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary rounded-md px-6 py-3 text-base font-semibold shadow-sm focus-visible:ring-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   Go back home
                 </a>
               </div>
               {isDevelopment && error instanceof Error ? (
                 <details className="mt-10 text-left">
-                  <summary className="cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <summary className="text-foreground cursor-pointer text-sm font-semibold">
                     Error Details (Development Only)
                   </summary>
-                  <pre className="dark:bg-card mt-4 overflow-auto rounded-lg bg-gray-100 p-4 text-xs text-gray-800 dark:text-gray-200">
+                  <pre className="bg-card text-foreground mt-4 overflow-auto rounded-lg p-4 text-xs">
                     {error.stack ?? error.toString()}
                   </pre>
                 </details>

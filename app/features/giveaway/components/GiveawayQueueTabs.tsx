@@ -30,7 +30,7 @@ export function GiveawayQueueTabs({
           onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
             !currentQueueType
-              ? "border-primary text-primary"
+              ? "dark:border-primary dark:text-primary border-gray-300 text-gray-900"
               : "text-muted-foreground hover:border-border hover:text-foreground border-transparent"
           }`}
         >
@@ -77,7 +77,7 @@ export function GiveawayQueueTabs({
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`${baseClasses} ${
                 isSelected
-                  ? `border-primary text-primary ${safeColors?.text ?? ""}`
+                  ? `dark:border-primary dark:text-primary border-gray-300 text-gray-900 ${safeColors?.text ?? ""}`
                   : unselectedClasses
               }`}
             >

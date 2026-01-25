@@ -76,7 +76,7 @@ export default function MediaPlayer({
   if (hasError) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-200 dark:bg-gray-700 ${className}`}
+        className={`dark:bg-muted flex items-center justify-center bg-gray-200 ${className}`}
       >
         <div className="text-center">
           <div className="mb-2 text-gray-500">
@@ -103,7 +103,7 @@ export default function MediaPlayer({
   if (isLoading) {
     return (
       <div
-        className={`flex animate-pulse items-center justify-center bg-gray-200 dark:bg-gray-700 ${className}`}
+        className={`dark:bg-muted flex animate-pulse items-center justify-center bg-gray-200 ${className}`}
       >
         <div className="text-gray-500">
           <svg className="h-8 w-8 animate-spin" fill="none" viewBox="0 0 24 24">

@@ -132,7 +132,7 @@ export function GiveawayTable({
             {posts.map((post) => (
               <tr
                 key={post.id}
-                className="border-border hover:bg-accent/10 cursor-pointer border-b"
+                className="border-border hover:bg-muted cursor-pointer border-b"
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3">
@@ -185,7 +185,7 @@ export function GiveawayTable({
                     </div>
                   ) : (
                     <div className="relative">
-                      <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      <div className="dark:bg-muted dark:text-muted-foreground flex h-12 w-12 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600">
                         TEXT
                       </div>
                       {post.repost ? (

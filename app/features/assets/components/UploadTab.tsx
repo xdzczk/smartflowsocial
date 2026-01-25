@@ -58,7 +58,7 @@ export function UploadTab({
                 type="text"
                 name="title"
                 placeholder="Asset title"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
               />
             </div>
             <div>
@@ -73,7 +73,7 @@ export function UploadTab({
                 name="content"
                 placeholder="Enter your text content..."
                 rows={4}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
                 required
               />
             </div>
@@ -89,7 +89,7 @@ export function UploadTab({
                 type="text"
                 name="tags"
                 placeholder="tag1, tag2, tag3"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
               />
             </div>
             <button
@@ -126,7 +126,7 @@ export function UploadTab({
                 type="text"
                 name="title"
                 placeholder="Asset title"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
               />
             </div>
             <div>
@@ -141,10 +141,10 @@ export function UploadTab({
                 type="file"
                 name="file"
                 accept="image/*,video/*"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
                 required
               />
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p className="dark:text-muted-foreground mt-1 text-sm text-gray-500">
                 Supports images (up to 10MB) and videos (up to 100MB)
               </p>
               {uploadProvider ? (
@@ -169,7 +169,7 @@ export function UploadTab({
                 type="text"
                 name="tags"
                 placeholder="tag1, tag2, tag3"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
               />
             </div>
             <button
@@ -200,7 +200,7 @@ export function UploadTab({
               multiple
               accept="image/*,video/*"
               onChange={onBulkFileChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+              className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
             />
           </div>
 

@@ -36,10 +36,10 @@ export default function NotificationList({
             />
           </svg>
         </div>
-        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+        <p className="dark:text-foreground text-lg font-medium text-gray-700">
           No notifications yet
         </p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="dark:text-muted-foreground text-sm text-gray-500">
           When you get replies, mentions, or zaps, they&apos;ll show up here
         </p>
       </div>
@@ -123,9 +123,9 @@ function ReplyNotification({
                 className="h-6 w-6 rounded-full"
               />
             ) : (
-              <div className="h-6 w-6 rounded-full bg-gray-300 dark:bg-gray-600" />
+              <div className="dark:bg-muted h-6 w-6 rounded-full bg-gray-300" />
             )}
-            <span className="font-semibold text-gray-900 dark:text-gray-100">
+            <span className="dark:text-foreground font-semibold text-gray-900">
               {displayName}
             </span>
             {notification.authorNip05 ? (
@@ -133,16 +133,16 @@ function ReplyNotification({
                 @{notification.authorNip05.split("@")[0]}
               </span>
             ) : null}
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="dark:text-muted-foreground text-sm text-gray-500">
               replied
             </span>
           </div>
 
-          <p className="mb-2 text-sm break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+          <p className="dark:text-foreground mb-2 text-sm break-words whitespace-pre-wrap text-gray-700">
             {notification.content}
           </p>
 
-          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+          <div className="dark:text-muted-foreground flex items-center gap-4 text-xs text-gray-500">
             <span>
               {formatDate(
                 new Date(notification.createdAt * 1000).toISOString()
@@ -202,9 +202,9 @@ function ZapNotification({
                 className="h-6 w-6 rounded-full"
               />
             ) : (
-              <div className="h-6 w-6 rounded-full bg-gray-300 dark:bg-gray-600" />
+              <div className="dark:bg-muted h-6 w-6 rounded-full bg-gray-300" />
             )}
-            <span className="font-semibold text-gray-900 dark:text-gray-100">
+            <span className="dark:text-foreground font-semibold text-gray-900">
               {displayName}
             </span>
             {notification.senderNip05 ? (
@@ -212,7 +212,7 @@ function ZapNotification({
                 @{notification.senderNip05.split("@")[0]}
               </span>
             ) : null}
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="dark:text-muted-foreground text-sm text-gray-500">
               zapped you
             </span>
             <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
@@ -221,12 +221,12 @@ function ZapNotification({
           </div>
 
           {notification.content ? (
-            <p className="mb-2 text-sm break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+            <p className="dark:text-foreground mb-2 text-sm break-words whitespace-pre-wrap text-gray-700">
               {notification.content}
             </p>
           ) : null}
 
-          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+          <div className="dark:text-muted-foreground flex items-center gap-4 text-xs text-gray-500">
             <span>
               {formatDate(
                 new Date(notification.createdAt * 1000).toISOString()
@@ -290,9 +290,9 @@ function MentionNotification({
                 className="h-6 w-6 rounded-full"
               />
             ) : (
-              <div className="h-6 w-6 rounded-full bg-gray-300 dark:bg-gray-600" />
+              <div className="dark:bg-muted h-6 w-6 rounded-full bg-gray-300" />
             )}
-            <span className="font-semibold text-gray-900 dark:text-gray-100">
+            <span className="dark:text-foreground font-semibold text-gray-900">
               {displayName}
             </span>
             {notification.authorNip05 ? (
@@ -300,16 +300,16 @@ function MentionNotification({
                 @{notification.authorNip05.split("@")[0]}
               </span>
             ) : null}
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="dark:text-muted-foreground text-sm text-gray-500">
               mentioned you
             </span>
           </div>
 
-          <p className="mb-2 text-sm break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+          <p className="dark:text-foreground mb-2 text-sm break-words whitespace-pre-wrap text-gray-700">
             {notification.content}
           </p>
 
-          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+          <div className="dark:text-muted-foreground flex items-center gap-4 text-xs text-gray-500">
             <span>
               {formatDate(
                 new Date(notification.createdAt * 1000).toISOString()

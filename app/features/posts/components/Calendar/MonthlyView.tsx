@@ -237,7 +237,7 @@ export function MonthlyView({
               <div
                 className={`mb-1 text-sm font-medium ${
                   dayInfo.isToday
-                    ? "text-primary"
+                    ? "text-foreground"
                     : dayInfo.isCurrentMonth
                       ? "text-foreground"
                       : "text-muted-foreground"

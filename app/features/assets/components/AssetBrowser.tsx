@@ -166,7 +166,7 @@ export default function AssetBrowser({
                     key={asset.id}
                     className={`cursor-pointer rounded-lg border p-4 transition-all hover:shadow-md ${
                       selectedAssets.includes(asset.id)
-                        ? "border-primary bg-primary/10"
+                        ? "border-primary dark:bg-muted bg-gray-50"
                         : "border-border bg-card"
                     }`}
                     onClick={() => handleAssetSelect(asset.id)}
@@ -199,8 +199,8 @@ export default function AssetBrowser({
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                               asset.assetType === "IMAGE"
-                                ? "bg-accent/15 text-accent-foreground"
-                                : "bg-primary/10 text-primary"
+                                ? "bg-muted text-muted-foreground"
+                                : "bg-muted text-muted-foreground"
                             }`}
                           >
                             {asset.assetType}
@@ -228,7 +228,7 @@ export default function AssetBrowser({
                               </span>
                             ))}
                             {asset.tags.length > 2 ? (
-                              <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                              <span className="dark:bg-muted dark:text-foreground inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
                                 +{asset.tags.length - 2}
                               </span>
                             ) : null}

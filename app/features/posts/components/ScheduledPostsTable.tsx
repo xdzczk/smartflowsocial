@@ -181,7 +181,7 @@ export function ScheduledPostsTable({
           {posts.map((post) => (
             <tr
               key={post.id}
-              className="border-border hover:bg-accent/10 cursor-pointer border-b"
+              className="border-border dark:hover:bg-muted cursor-pointer border-b hover:bg-gray-50"
               onClick={() => onPostClick(post)}
             >
               <td className="p-3 text-center">
@@ -309,8 +309,8 @@ export function ScheduledPostsTable({
                 <div
                   className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${
                     post.signedEvent
-                      ? "bg-primary/10 text-primary"
-                      : "bg-green-500/10 text-green-600 dark:text-green-400"
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {post.signedEvent ? "Signed" : "Scheduled"}

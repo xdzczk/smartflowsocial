@@ -263,7 +263,7 @@ export function SimpleRescheduleModal({
           {/* Content */}
           <div className="space-y-4">
             {/* Post preview */}
-            <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+            <div className="dark:bg-muted rounded-lg bg-gray-50 p-3">
               <div className="mb-2 text-sm font-medium text-gray-900 dark:text-white">
                 {isLongform ? "Article" : "Post"} Preview:
               </div>
@@ -427,7 +427,7 @@ export function SimpleRescheduleModal({
               </div>
             </div>
             {isSigningEvent ? (
-              <div className="rounded-lg border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+              <div className="dark:bg-card/30 dark:text-foreground rounded-lg border bg-white/50 p-3 text-sm text-gray-700">
                 Waiting for signer approval… If you’re using a remote signer,
                 open it to approve the request.
               </div>

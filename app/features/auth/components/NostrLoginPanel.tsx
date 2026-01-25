@@ -721,7 +721,7 @@ export default function NostrLoginPanel() {
       ) : null}
 
       {state === "signer_initializing" && !signer ? (
-        <div className="space-y-3 rounded-md border bg-white/50 p-4 dark:bg-gray-900/30">
+        <div className="dark:bg-card/30 space-y-3 rounded-md border bg-white/50 p-4">
           <div className="text-sm font-medium">Remote signer</div>
           <div className="text-muted-foreground text-sm">
             Connect a remote signer and approve a profile. Each profile
@@ -803,7 +803,7 @@ export default function NostrLoginPanel() {
                             ? "text-green-700 dark:text-green-300"
                             : status === "failed"
                               ? "text-red-700 dark:text-red-300"
-                              : "text-gray-600 dark:text-gray-400";
+                              : "text-gray-600 dark:text-muted-foreground";
                         return (
                           <div
                             key={url}
@@ -856,7 +856,7 @@ export default function NostrLoginPanel() {
 
       {state === "awaiting_profile_selection" ? (
         <div
-          className="space-y-2 rounded-md border bg-white/50 p-4 text-sm dark:bg-gray-900/30"
+          className="dark:bg-card/30 space-y-2 rounded-md border bg-white/50 p-4 text-sm"
           role="status"
           aria-live="polite"
           aria-busy="true"
@@ -923,7 +923,7 @@ export default function NostrLoginPanel() {
           {nostrConnectUri ? (
             <div className="space-y-3 pt-2">
               <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
-                <div className="flex justify-center rounded-md border bg-white p-3 dark:bg-gray-950/30">
+                <div className="dark:bg-card/30 flex justify-center rounded-md border bg-white p-3">
                   <QRCode value={nostrConnectUri} size={168} />
                 </div>
                 <div className="space-y-2">
@@ -966,7 +966,7 @@ export default function NostrLoginPanel() {
 
       {pubkey &&
       (state === "requesting_signature" || state === "verifying_signature") ? (
-        <div className="space-y-3 rounded-md border bg-white/50 p-4 dark:bg-gray-900/30">
+        <div className="dark:bg-card/30 space-y-3 rounded-md border bg-white/50 p-4">
           <div className="text-sm">
             Signing in as{" "}
             <span className="font-medium">{formatNpubShort(pubkey)}</span>

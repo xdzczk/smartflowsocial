@@ -51,7 +51,7 @@ export function AssetPagination({
 
   return (
     <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <p className="dark:text-muted-foreground text-sm text-gray-600">
         Page {currentPage} of {totalPages} ({totalCount} total assets)
       </p>
       <div className="flex items-center gap-2">

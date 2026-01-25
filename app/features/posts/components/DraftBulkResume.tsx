@@ -551,7 +551,7 @@ export default function DraftBulkResume({
         </div>
 
         {isSubmitting ? (
-          <div className="mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm text-gray-700 dark:bg-gray-900/30 dark:text-gray-200">
+          <div className="dark:bg-card/30 dark:text-foreground mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm text-gray-700">
             Signing drafts… If you’re using a remote signer, keep it open to
             approve requests.
           </div>
@@ -644,7 +644,7 @@ export default function DraftBulkResume({
                         className="h-24 w-24 rounded object-cover"
                       />
                     ) : (
-                      <div className="flex h-24 w-24 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                      <div className="dark:bg-muted dark:text-muted-foreground flex h-24 w-24 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500">
                         TEXT
                       </div>
                     )}

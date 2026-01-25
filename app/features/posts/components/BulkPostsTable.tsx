@@ -227,7 +227,7 @@ function renderMediaCell(
   return (
     <PlaceholderBadge
       text="TEXT"
-      bgColor="bg-gray-200 dark:bg-gray-700"
+      bgColor="bg-gray-200 dark:bg-muted"
       textColor="text-gray-600 dark:text-gray-300"
     />
   );
@@ -291,7 +291,7 @@ export default function BulkPostsTable({
                     value={post.caption}
                     onChange={(e) => handleCaptionChange(index, e.target.value)}
                     disabled={post.isKind6Repost}
-                    className={`dark:bg-card w-full rounded-lg border p-2 text-gray-900 dark:text-gray-100 ${post.isKind6Repost ? "cursor-not-allowed bg-gray-100 dark:bg-gray-700" : ""}`}
+                    className={`dark:bg-card dark:text-foreground w-full rounded-lg border p-2 text-gray-900 ${post.isKind6Repost ? "dark:bg-muted cursor-not-allowed bg-gray-100" : ""}`}
                     rows={3}
                     placeholder={
                       post.isKind6Repost

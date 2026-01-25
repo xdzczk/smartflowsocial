@@ -39,7 +39,8 @@ export default function CalendarPage() {
   const currentTab = searchParams.get("tab") ?? TAB_ALL;
 
   // Tab styling constants
-  const TAB_ACTIVE_CLASSES = "border-primary text-primary";
+  const TAB_ACTIVE_CLASSES =
+    "border-gray-300 text-gray-900 dark:border-border dark:text-primary";
   const TAB_INACTIVE_CLASSES =
     "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
@@ -153,7 +154,7 @@ export default function CalendarPage() {
                     }
                     className={`${baseClasses} ${
                       isSelected
-                        ? `border-primary text-primary ${safeColors?.text ?? ""}`
+                        ? `dark:border-primary dark:text-primary border-gray-300 text-gray-900 ${safeColors?.text ?? ""}`
                         : unselectedClasses
                     }`}
                   >

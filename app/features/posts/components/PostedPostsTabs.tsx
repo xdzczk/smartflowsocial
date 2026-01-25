@@ -2,7 +2,8 @@ import { Link, useParams, useRevalidator } from "@remix-run/react";
 
 import { getQueueColor } from "../queue-colors";
 
-const ACTIVE_TAB_CLASSES = "border-primary text-primary";
+const ACTIVE_TAB_CLASSES =
+  "border-gray-300 text-gray-900 dark:border-primary dark:text-primary";
 const INACTIVE_TAB_CLASSES =
   "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
@@ -121,7 +122,7 @@ export default function PostedPostsTabs({
                   onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                   className={`${baseClasses} ${
                     isSelected && colors
-                      ? `${colors.border.replace("border-", "border-b-") || "border-b-primary"} ${colors.text || "text-primary"}`
+                      ? `${colors.border.replace("border-", "border-b-") || "dark:border-b-primary border-b-gray-300"} ${colors.text || "dark:text-primary text-gray-900"}`
                       : unselectedClasses
                   }`}
                 >

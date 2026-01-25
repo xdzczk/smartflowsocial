@@ -173,7 +173,7 @@ export function DraftEditForm({
             name="scheduledFor"
             value={scheduledFor}
             onChange={(e) => onScheduledForChange(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+            className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-lg border border-gray-300 p-2 text-gray-900"
             disabled={isSubmitting}
           />
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">

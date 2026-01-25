@@ -15,14 +15,14 @@ export function HomePage(): ReactNode {
         {/* Hero Section */}
         <section className="relative container mx-auto px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl">
           <div className="mx-auto max-w-4xl text-center">
-            <div className="border-primary/20 bg-primary/10 text-primary dark:bg-primary/10 mb-6 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
+            <div className="border-border bg-muted text-muted-foreground mb-6 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
               Schedule your nostr content with ease!
             </div>
 
             <h1 className="text-foreground mb-6 text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl">
               OWN YOUR CADENCE
               <br />
-              <span className="text-primary">ACROSS EVERY RELAY</span>
+              <span className="text-foreground">ACROSS EVERY RELAY</span>
             </h1>
 
             <p className="text-muted-foreground mx-auto mb-10 text-xl leading-relaxed lg:w-3/4 lg:text-2xl">
@@ -101,8 +101,8 @@ export function HomePage(): ReactNode {
                   key={feature.title}
                   className="border-border bg-background rounded-lg border p-6 transition-shadow hover:shadow-lg"
                 >
-                  <div className="bg-primary/10 mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
-                    <div className="bg-primary/40 h-6 w-6 rounded" />
+                  <div className="bg-muted mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
+                    <div className="bg-muted-foreground/30 h-6 w-6 rounded" />
                   </div>
                   <h3 className="text-foreground mb-2 text-lg font-bold">
                     {feature.title}
@@ -133,8 +133,8 @@ export function HomePage(): ReactNode {
                 {["Draft", "Queue", "Publish"].map((step, idx) => (
                   <div key={step} className="flex items-center gap-4">
                     <div className="flex flex-col items-center gap-2">
-                      <div className="bg-primary/10 border-primary/20 text-primary flex h-16 w-16 items-center justify-center rounded-lg border">
-                        <div className="bg-primary/40 h-8 w-8 rounded" />
+                      <div className="bg-muted border-border text-muted-foreground flex h-16 w-16 items-center justify-center rounded-lg border">
+                        <div className="bg-muted-foreground/30 h-8 w-8 rounded" />
                       </div>
                       <span className="text-foreground text-sm font-semibold">
                         {step}
@@ -177,8 +177,8 @@ export function HomePage(): ReactNode {
                         key={step}
                         className="flex flex-col items-center gap-2"
                       >
-                        <div className="bg-accent/10 border-accent/20 text-accent-foreground flex h-16 w-16 items-center justify-center rounded-lg border">
-                          <div className="bg-accent/40 h-8 w-8 rounded" />
+                        <div className="bg-muted border-border text-muted-foreground flex h-16 w-16 items-center justify-center rounded-lg border">
+                          <div className="bg-muted-foreground/30 h-8 w-8 rounded" />
                         </div>
                         <span className="text-foreground text-sm font-semibold">
                           {step}
@@ -199,7 +199,7 @@ export function HomePage(): ReactNode {
               <h2 className="text-foreground mb-4 text-4xl font-black">
                 PHILOSOPHY
               </h2>
-              <h3 className="text-primary mb-6 text-3xl font-bold">
+              <h3 className="text-foreground mb-6 text-3xl font-bold">
                 SOVEREIGN INFRASTRUCTURE
               </h3>
               <p className="text-muted-foreground mb-8 text-lg">

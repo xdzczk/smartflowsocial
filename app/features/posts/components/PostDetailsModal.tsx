@@ -102,27 +102,29 @@ export default function PostDetailsModal({
 
   const getStatusBadge = () => {
     const badgeClasses =
-      "inline-flex items-center rounded-full px-3 py-1 text-sm font-medium";
+      "inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium";
 
     switch (type) {
       case "draft":
         return (
           <span
-            className={`${badgeClasses} bg-orange-500/20 text-orange-600 dark:text-orange-400`}
+            className={`${badgeClasses} border-orange-300 bg-transparent text-orange-700 dark:border-transparent dark:bg-orange-500/20 dark:text-orange-400`}
           >
             Draft
           </span>
         );
       case "scheduled":
         return (
-          <span className={`${badgeClasses} bg-primary/10 text-primary`}>
+          <span
+            className={`${badgeClasses} dark:bg-muted dark:text-muted-foreground border-gray-300 bg-transparent text-gray-700 dark:border-transparent`}
+          >
             Scheduled
           </span>
         );
       default:
         return (
           <span
-            className={`${badgeClasses} bg-green-500/20 text-green-600 dark:text-green-400`}
+            className={`${badgeClasses} border-green-300 bg-transparent text-green-700 dark:border-transparent dark:bg-green-500/20 dark:text-green-400`}
           >
             Posted
           </span>
@@ -132,8 +134,8 @@ export default function PostDetailsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="mx-4 flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-900">
-        <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/95">
+      <div className="dark:bg-card mx-4 flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="dark:border-border dark:bg-card/95 sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -376,7 +378,7 @@ export default function PostDetailsModal({
           </div>
         </div>
 
-        <div className="sticky bottom-0 border-t border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/95">
+        <div className="dark:border-border dark:bg-card/95 sticky bottom-0 border-t border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm">
           <div className="flex justify-end gap-3">
             {type === "posted" &&
             post.signedEvent &&
@@ -387,7 +389,7 @@ export default function PostDetailsModal({
                 to={`https://primal.net/e/${post.signedEvent.id}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none dark:bg-gray-700 dark:hover:bg-gray-600"
+                className="dark:bg-muted dark:hover:bg-muted inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none"
               >
                 View Note
               </Link>
