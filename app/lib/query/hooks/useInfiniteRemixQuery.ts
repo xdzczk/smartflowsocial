@@ -296,8 +296,8 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           // ULTRA-SIMPLIFIED: If page number matches, accept it immediately
           // This is the most reliable check - if server says it's page 2, it's page 2
           if (currentPaginationPage === pageParam) {
-            console.info(
-              `[useInfiniteRemixQuery] Page ${pageParam} confirmed - accepting data (timeSinceRequest: ${timeSinceRequest}ms, elapsed: ${elapsed}ms)`
+            console.error(
+              `[useInfiniteRemixQuery] ✅ Page ${pageParam} CONFIRMED - accepting data (timeSinceRequest: ${timeSinceRequest}ms, elapsed: ${elapsed}ms)`
             );
             resolveWithCleanup(data);
             return;
@@ -308,17 +308,18 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
             // currentPaginationPage is guaranteed to be non-null here due to pageChanged check
             const currentPage = currentPaginationPage;
             const initialPage = initialPaginationPage ?? "unknown";
-            console.info(
-              `[useInfiniteRemixQuery] Page changed from ${initialPage} to ${currentPage} - accepting for request ${pageParam}`
+            console.error(
+              `[useInfiniteRemixQuery] ✅ Page CHANGED from ${initialPage} to ${currentPage} - accepting for request ${pageParam}`
             );
             resolveWithCleanup(data);
             return;
           }
 
-          // If data reference is different and we've waited, accept it
-          if (isNewData && elapsed > 200) {
-            console.warn(
-              `[useInfiniteRemixQuery] Accepting new data reference for page ${pageParam} (detected page ${currentPaginationPage ?? "unknown"}) after ${elapsed}ms`
+          // CRITICAL FALLBACK: If data is new and we've waited enough, accept it
+          // This handles cases where page detection might fail but data is actually new
+          if (isNewData && elapsed > 300) {
+            console.error(
+              `[useInfiniteRemixQuery] ⚠️ Accepting NEW DATA for page ${pageParam} (detected page ${currentPaginationPage ?? "null"}, elapsed: ${elapsed}ms) - data reference changed`
             );
             resolveWithCleanup(data);
             return;
@@ -326,8 +327,18 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
 
           // If we've waited a while and page matches, accept it (handles cached responses)
           if (elapsed > 500 && currentPaginationPage === pageParam) {
-            console.info(
-              `[useInfiniteRemixQuery] Accepting data for page ${pageParam} after ${elapsed}ms (cached response)`
+            console.error(
+              `[useInfiniteRemixQuery] ✅ Accepting data for page ${pageParam} after ${elapsed}ms (cached response)`
+            );
+            resolveWithCleanup(data);
+            return;
+          }
+
+          // Final fallback: After 1 second, if we have data and it's different, accept it
+          // This ensures we don't get stuck forever
+          if (elapsed > 1000 && isNewData) {
+            console.error(
+              `[useInfiniteRemixQuery] ⚠️ FINAL FALLBACK: Accepting data for page ${pageParam} after ${elapsed}ms (detected page ${currentPaginationPage ?? "null"}, isNewData: ${isNewData})`
             );
             resolveWithCleanup(data);
             return;
@@ -335,6 +346,9 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
 
           // If we've waited too long and still don't have valid data, reject
           if (elapsed > 5000) {
+            console.error(
+              `[useInfiniteRemixQuery] ❌ REJECTING: Failed to get valid data for page ${pageParam} after ${elapsed}ms (got page ${currentPaginationPage ?? "null"}, isNewData: ${isNewData}, initialPage: ${initialPaginationPage ?? "null"})`
+            );
             rejectWithCleanup(
               new Error(
                 `Failed to get valid data for page ${pageParam} after ${elapsed}ms (got page ${currentPaginationPage ?? "unknown"}, isNewData: ${isNewData}, initialPage: ${initialPaginationPage ?? "unknown"})`
@@ -451,16 +465,33 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         const checkFetcher = () => {
           const elapsed = Date.now() - startTime;
           if (elapsed > maxWaitTime) {
+            console.error(
+              `[useInfiniteRemixQuery] ❌ TIMEOUT for page ${pageParam} after ${elapsed}ms`
+            );
             rejectWithCleanup(new Error(`Fetcher timeout after ${elapsed}ms`));
             return;
           }
 
           const currentState = fetcher.state;
           const currentData = fetcher.data;
+          const currentPage = currentData
+            ? getPaginationPage(currentData)
+            : null;
+
+          // Log state for debugging
+          if (elapsed % 500 < 100) {
+            // Log roughly every 500ms to avoid spam
+            console.error(
+              `[useInfiniteRemixQuery] 🔍 Checking page ${pageParam}: state=${currentState}, hasData=${!!currentData}, detectedPage=${currentPage ?? "null"}, elapsed=${elapsed}ms, hasSeenLoading=${hasSeenLoading}`
+            );
+          }
 
           // Track when we see loading state (ensures new request started)
           if (currentState === "loading") {
             hasSeenLoading = true;
+            console.error(
+              `[useInfiniteRemixQuery] ⏳ Loading state detected for page ${pageParam}`
+            );
             // Reset data check - we're now loading, so any data we see after this should be new
             setTimeout(checkFetcher, 50);
             return;
@@ -469,6 +500,9 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
           // Once we've seen loading and now idle, we have new data
           if (hasSeenLoading && currentState === "idle") {
             if (!currentData) {
+              console.error(
+                `[useInfiniteRemixQuery] ❌ No data received for page ${pageParam} after loading`
+              );
               rejectWithCleanup(new Error("No data received from fetcher"));
               return;
             }
@@ -483,15 +517,23 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
             }
 
             // Check page number - if it matches, accept immediately
-            const currentPage = getPaginationPage(currentData);
-            if (currentPage === pageParam) {
-              console.info(
-                `[useInfiniteRemixQuery] Page ${pageParam} loaded successfully (after loading transition, ${timeSinceRequest}ms)`
+            const detectedPage = getPaginationPage(currentData);
+            console.error(
+              `[useInfiniteRemixQuery] ✅ Loading complete for page ${pageParam}: detectedPage=${detectedPage ?? "null"}, timeSinceRequest=${timeSinceRequest}ms`
+            );
+
+            if (detectedPage === pageParam) {
+              console.error(
+                `[useInfiniteRemixQuery] ✅ Page ${pageParam} MATCHES - resolving immediately`
               );
               resolveWithCleanup(currentData as TData);
               return;
             }
 
+            // If page doesn't match but we have data, still try to accept it
+            console.error(
+              `[useInfiniteRemixQuery] ⚠️ Page mismatch: requested ${pageParam}, got ${detectedPage ?? "null"} - trying handleLoadingComplete`
+            );
             handleLoadingComplete(currentData as TData);
             return;
           }
@@ -515,10 +557,14 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
             }
 
             // Check page number first - if it matches, accept immediately
-            const currentPage = getPaginationPage(currentData);
-            if (currentPage === pageParam) {
-              console.info(
-                `[useInfiniteRemixQuery] Page ${pageParam} loaded successfully (fast/cached response, ${timeSinceRequest}ms)`
+            const detectedPage = getPaginationPage(currentData);
+            console.error(
+              `[useInfiniteRemixQuery] 🔍 Idle without loading: requested=${pageParam}, detected=${detectedPage ?? "null"}, timeSinceRequest=${timeSinceRequest}ms`
+            );
+
+            if (detectedPage === pageParam) {
+              console.error(
+                `[useInfiniteRemixQuery] ✅ Page ${pageParam} MATCHES (fast/cached) - resolving`
               );
               resolveWithCleanup(currentData as TData);
               return;
