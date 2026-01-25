@@ -204,7 +204,7 @@ export default function AllContentListing({
       ) : null}
 
       {/* Content Table */}
-      <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
         <table className="min-w-full align-middle text-sm whitespace-nowrap">
           <ContentTableHeader
             type={type}
@@ -240,7 +240,7 @@ export default function AllContentListing({
 
       {filteredContent.length === 0 ? (
         <div className="mt-8 text-center">
-          <p className="text-gray-500 dark:text-gray-400">No content found.</p>
+          <p className="text-muted-foreground">No content found.</p>
         </div>
       ) : null}
     </div>

@@ -73,13 +73,13 @@ export default function Statistics() {
         {/* END Card */}
 
         {/* Create New Post Button Card */}
-        <Card className="border-purple-400 bg-gradient-to-br from-purple-500 to-indigo-600 transition-all hover:scale-105 hover:from-purple-600 hover:to-indigo-700 hover:shadow-xl">
+        <Card className="border-primary bg-primary hover:bg-primary/90 transition-all hover:scale-105 hover:shadow-xl">
           <CardContent className="p-0">
             <Link
               to="/dashboard/newpost"
-              className="flex grow items-center justify-between p-5 text-white hover:text-white/90"
+              className="text-primary-foreground hover:text-primary-foreground/90 flex grow items-center justify-between p-5"
             >
-              <div className="flex size-16 items-center justify-center rounded-xl bg-white/20 text-white">
+              <div className="bg-primary-foreground/20 text-primary-foreground flex size-16 items-center justify-center rounded-xl">
                 <svg
                   className="hi-solid hi-plus-circle inline-block size-8"
                   xmlns="http://www.w3.org/2000/svg"
@@ -94,8 +94,10 @@ export default function Statistics() {
                 </svg>
               </div>
               <dl className="space-y-1 text-right">
-                <dt className="text-2xl font-bold text-white">New</dt>
-                <dd className="text-sm font-semibold tracking-wider text-white/80 uppercase">
+                <dt className="text-primary-foreground text-2xl font-bold">
+                  New
+                </dt>
+                <dd className="text-primary-foreground/80 text-sm font-semibold tracking-wider uppercase">
                   Create Post
                 </dd>
               </dl>
