@@ -82,7 +82,9 @@ export default function AllContentListing({
         : type === "scheduled"
           ? "scheduledAtUtc"
           : "createdAt",
-    direction: "desc",
+    // For scheduled posts, show earliest (upcoming) first (asc)
+    // For posted posts, show newest first (desc)
+    direction: type === "scheduled" ? "asc" : "desc",
   });
 
   const requestSort = (key: string) => {

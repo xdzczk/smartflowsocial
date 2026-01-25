@@ -126,8 +126,14 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
               .replace(/^\//, "") // Remove leading slash
               .replace(/\//g, "."); // Replace slashes with dots
 
-            // Prepend "routes/" to match Remix route ID format
-            routeId = routeId ? `routes/${routeId}` : "routes/dashboard";
+            // Handle special case: /dashboard -> routes/dashboard._index
+            // (Remix uses dashboard._index.tsx for the /dashboard route)
+            if (routeId === "dashboard" || routeId === "") {
+              routeId = "routes/dashboard._index";
+            } else {
+              // Prepend "routes/" to match Remix route ID format
+              routeId = `routes/${routeId}`;
+            }
 
             urlObj.searchParams.set("_data", routeId);
             // Return relative URL (pathname + search)
