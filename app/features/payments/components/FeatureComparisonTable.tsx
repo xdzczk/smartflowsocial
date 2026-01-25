@@ -39,33 +39,35 @@ function renderFeatureValue(
 
   if (typeof value === "boolean") {
     return value ? (
-      <Check className="mx-auto h-5 w-5 text-green-500" />
+      <Check className="mx-auto h-5 w-5 text-green-500 dark:text-green-400" />
     ) : (
-      <X className="mx-auto h-5 w-5 text-gray-400" />
+      <X className="text-muted-foreground mx-auto h-5 w-5" />
     );
   }
 
   if (typeof value === "string") {
-    return <span className="px-2 text-center text-sm">{value}</span>;
+    return (
+      <span className="text-foreground px-2 text-center text-sm">{value}</span>
+    );
   }
 
-  return <span className="text-gray-400">-</span>;
+  return <span className="text-muted-foreground">-</span>;
 }
 
 export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
   return (
-    <div className="overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-800">
+    <div className="border-border bg-card overflow-hidden rounded-lg border shadow-lg">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="p-4 text-left font-medium text-black dark:text-white">
+            <tr className="border-border border-b">
+              <th className="text-foreground p-4 text-left font-medium">
                 Features
               </th>
               {plans.map((plan) => (
                 <th
                   key={plan.id}
-                  className="p-4 text-center font-medium text-black dark:text-white"
+                  className="text-foreground p-4 text-center font-medium"
                 >
                   {plan.name}
                 </th>
@@ -76,13 +78,11 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
             {featureLabels.map((feature, index) => (
               <tr
                 key={feature.key}
-                className={`border-b border-gray-200 dark:border-gray-700 ${
-                  index % 2 === 0
-                    ? "dark:bg-gray-750 bg-gray-50"
-                    : "bg-white dark:bg-gray-800"
+                className={`border-border border-b ${
+                  index % 2 === 0 ? "bg-secondary/30" : "bg-card"
                 }`}
               >
-                <td className="p-4 font-medium text-black dark:text-white">
+                <td className="text-foreground p-4 font-medium">
                   {feature.label}
                 </td>
                 {plans.map((plan) => (

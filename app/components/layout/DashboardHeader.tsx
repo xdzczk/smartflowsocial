@@ -21,6 +21,7 @@ import { ExpandableNavigationSection } from "~/components/layout/ExpandableNavig
 import { GlobalSearchBar } from "~/components/layout/GlobalSearchBar";
 import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/ui/Logo";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
 import UpgradePrompt from "~/features/payments/components/UpgradePrompt";
 import {
@@ -366,6 +367,9 @@ export default function Header() {
               <GlobalSearchBar className="w-64" />
             </div>
             {/* END Global Search (Mobile) */}
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* Account Switcher for Premium/Founder Parents and Child -> Parent */}
             <AccountSwitchMenu />
