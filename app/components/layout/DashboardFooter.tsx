@@ -16,7 +16,7 @@ export default function Footer() {
     <>
       <footer
         id="page-footer"
-        className="flex flex-none items-center bg-white dark:bg-gray-800/50"
+        className="sticky bottom-0 z-10 flex flex-none items-center bg-white dark:bg-gray-800/50"
       >
         <div className="max-w-10xl mx-auto flex w-full flex-col px-4 text-center text-sm md:flex-row md:justify-between md:text-left lg:px-8">
           <div className="pt-4 pb-1 md:pb-4">SmartFlow Social © </div>

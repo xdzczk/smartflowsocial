@@ -140,7 +140,7 @@ export function DashboardLayoutPage(): ReactNode {
             </div>
           ) : null}
 
-          <div className="max-w-10xl mx-auto w-full p-4 lg:p-8">
+          <div className="max-w-10xl mx-auto w-full p-4 pb-24 lg:p-8 lg:pb-24">
             <Outlet />
           </div>
         </main>
