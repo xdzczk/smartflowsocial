@@ -125,8 +125,21 @@ export default function App() {
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                const theme = localStorage.getItem('theme') || 
-                  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                const stored = localStorage.getItem('theme');
+                let theme;
+                if (stored) {
+                  theme = stored;
+                } else {
+                  // Default to dark mode, but respect system preference if available
+                  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+                  if (prefersLight) {
+                    theme = 'light';
+                  } else {
+                    // Default to dark if no preference or prefers dark
+                    theme = 'dark';
+                  }
+                }
                 if (theme === 'dark') {
                   document.documentElement.classList.add('dark');
                 }

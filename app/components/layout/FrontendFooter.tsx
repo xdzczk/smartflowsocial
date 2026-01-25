@@ -5,11 +5,13 @@ export default function Footer() {
     <footer id="page-footer" className="border-border bg-card border-t">
       <div className="container mx-auto px-4 py-16 text-center lg:px-8 lg:py-32 xl:max-w-7xl">
         <div className="mb-8 flex justify-center">
+          {/* Light mode logo - shown in light mode, hidden in dark mode */}
           <img
             src="/logos/Logo-Full-LightMode.svg"
             alt="SmartFlow Social"
-            className="h-12 w-auto dark:hidden"
+            className="block h-12 w-auto dark:hidden"
           />
+          {/* Dark mode logo - hidden in light mode, shown in dark mode */}
           <img
             src="/logos/Logo-Full-DarkMode.svg"
             alt="SmartFlow Social"

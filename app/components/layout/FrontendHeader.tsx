@@ -17,11 +17,13 @@ export default function Header() {
           >
             <div className="inline-flex items-center gap-3">
               {/* Logo - switches based on theme */}
+              {/* Light mode logo - shown in light mode, hidden in dark mode */}
               <img
                 src="/logos/Logo-Full-LightMode.svg"
                 alt="SmartFlow Social"
-                className="h-10 w-auto dark:hidden"
+                className="block h-10 w-auto dark:hidden"
               />
+              {/* Dark mode logo - hidden in light mode, shown in dark mode */}
               <img
                 src="/logos/Logo-Full-DarkMode.svg"
                 alt="SmartFlow Social"

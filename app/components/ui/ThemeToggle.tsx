@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import useLocalStorage from "~/lib/useLocalStorage";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useLocalStorage<"light" | "dark">("theme", "light");
+  // Default to dark mode, but will be overridden by system preference or stored value
+  const [theme, setTheme] = useLocalStorage<"light" | "dark">("theme", "dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
