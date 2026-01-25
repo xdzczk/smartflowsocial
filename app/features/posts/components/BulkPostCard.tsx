@@ -182,11 +182,12 @@ export function BulkPostCard({
     <tr className="border-b">
       <td className="p-4">
         {renderMediaPreview()}
-        <input type="file" name="files" hidden />
+        <input type="file" id={`file-input-${index}`} name="files" hidden />
       </td>
       <td className="p-4">
         <div className="space-y-2">
           <textarea
+            id={`caption-${index}`}
             name="captions"
             value={post.caption}
             onChange={(e) => onCaptionChange(index, e.target.value)}

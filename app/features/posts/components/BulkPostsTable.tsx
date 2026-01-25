@@ -276,11 +276,17 @@ export default function BulkPostsTable({
             <tr key={post.clientId} className="border-b">
               <td className="p-4">
                 {renderMediaCell(post, index, previewData, handleMediaClick)}
-                <input type="file" name="files" hidden />
+                <input
+                  type="file"
+                  id={`file-input-${index}`}
+                  name="files"
+                  hidden
+                />
               </td>
               <td className="p-4">
                 <div className="space-y-2">
                   <textarea
+                    id={`caption-${index}`}
                     name="captions"
                     value={post.caption}
                     onChange={(e) => handleCaptionChange(index, e.target.value)}

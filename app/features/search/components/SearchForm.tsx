@@ -22,6 +22,7 @@ export function SearchForm({ form, onSubmit, isSearching }: SearchFormProps) {
       <fetcher.Form onSubmit={onSubmit} className="flex gap-2">
         <div className="flex-1">
           <input
+            id="eventInput"
             type="text"
             {...form.register("eventInput")}
             placeholder="Enter event ID (hex), note1, or nevent1..."

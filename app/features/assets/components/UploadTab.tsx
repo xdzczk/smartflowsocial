@@ -231,6 +231,7 @@ export function UploadTab({
                           {file.name}
                         </p>
                         <input
+                          id={`bulk-title-${index}`}
                           type="text"
                           name="titles"
                           placeholder={`Title for ${file.name}`}
@@ -238,6 +239,7 @@ export function UploadTab({
                           className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:bg-gray-700 dark:text-gray-100"
                         />
                         <input
+                          id={`bulk-tags-${index}`}
                           type="text"
                           name="tags"
                           placeholder="Tags (comma-separated)"

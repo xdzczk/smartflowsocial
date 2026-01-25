@@ -371,6 +371,7 @@ async function run() {
             "'self'",
             "'unsafe-inline'", // Required for Remix's generated scripts
             "'unsafe-eval'", // Required for some third-party client libraries
+            "https://cdn.jsdelivr.net", // Required for nostr-zap library
           ],
           styleSrc: [
             "'self'",
