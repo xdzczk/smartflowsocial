@@ -71,10 +71,17 @@ export function LongFormPublishingOptions({
 
       {/* Queue Type Selection */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span
+          id="longform-queue-type-label"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
           Queue Type
-        </Label>
-        <div className="flex flex-wrap gap-2">
+        </span>
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-labelledby="longform-queue-type-label"
+        >
           {queueTypes
             .filter((queue) => {
               return typeof queue === "object"
