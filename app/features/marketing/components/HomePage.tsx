@@ -1,14 +1,27 @@
+import {
+  CheckCircleIcon,
+  LockClosedIcon,
+  ClockIcon,
+  ChartBarIcon,
+  DocumentTextIcon,
+  QueueListIcon,
+  PaperAirplaneIcon,
+  GlobeAltIcon,
+  PresentationChartLineIcon,
+} from "@heroicons/react/24/outline";
 import type { ReactNode } from "react";
 
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 
+const TEXT_PRIMARY_CLASS = "text-primary";
+
 export function HomePage(): ReactNode {
   return (
     <>
-      <div className="bg-background relative min-h-screen overflow-hidden">
-        {/* Background gradient */}
-        <div className="from-secondary/20 to-background dark:from-background/20 absolute inset-0 bg-gradient-to-b via-transparent" />
+      <div className="bg-background landing-texture relative min-h-screen overflow-hidden">
+        {/* Enhanced background gradient with micro-depth */}
+        <div className="hero-gradient-light dark:hero-gradient-dark absolute inset-0" />
 
         <Header />
 
@@ -20,9 +33,11 @@ export function HomePage(): ReactNode {
             </div>
 
             <h1 className="text-foreground mb-6 text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              OWN YOUR CADENCE
+              OWN YOUR <span className="text-primary">CADENCE</span>
               <br />
-              <span className="text-foreground">ACROSS EVERY RELAY</span>
+              <span className="text-foreground dark:text-foreground/90">
+                ACROSS EVERY RELAY
+              </span>
             </h1>
 
             <p className="text-muted-foreground mx-auto mb-10 text-xl leading-relaxed lg:w-3/4 lg:text-2xl">
@@ -61,7 +76,7 @@ export function HomePage(): ReactNode {
         </section>
 
         {/* Features Section */}
-        <section className="border-border bg-card relative border-t py-24">
+        <section className="border-border bg-card relative border-t py-32">
           <div className="container mx-auto px-4 lg:px-8 xl:max-w-7xl">
             <div className="mb-16 text-center">
               <h2 className="text-foreground mb-4 text-4xl font-black">
@@ -80,45 +95,74 @@ export function HomePage(): ReactNode {
                   title: "EXACTLY-ONCE PUBLISHING",
                   description:
                     "Guaranteed delivery with no duplicates. Your content publishes exactly once, every time.",
+                  icon: CheckCircleIcon,
+                  isEmphasized: true,
                 },
                 {
                   title: "SOVEREIGN INFRASTRUCTURE",
                   description:
                     "No key custody. No growth hacks. Protocol-first. Designed for serious operators.",
+                  icon: LockClosedIcon,
+                  isEmphasized: false,
                 },
                 {
                   title: "CADENCE & FLOW",
                   description:
                     "Design your publishing cadence once. The system maintains it indefinitely.",
+                  icon: ClockIcon,
+                  isEmphasized: false,
                 },
                 {
                   title: "ANALYTICS & INSIGHTS",
                   description:
                     "Track performance, engagement, and optimize your content strategy.",
+                  icon: ChartBarIcon,
+                  isEmphasized: false,
                 },
-              ].map((feature) => (
-                <div
-                  key={feature.title}
-                  className="border-border bg-background rounded-lg border p-6 transition-shadow hover:shadow-lg"
-                >
-                  <div className="bg-muted mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
-                    <div className="bg-muted-foreground/30 h-6 w-6 rounded" />
+              ].map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <div
+                    key={feature.title}
+                    className={`border-border card-lift rounded-lg border p-6 transition-all duration-200 ${
+                      feature.isEmphasized
+                        ? "bg-background border-primary/20 dark:border-primary/10 shadow-xl dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-2xl"
+                        : "bg-background dark:bg-card shadow-lg dark:shadow-xl"
+                    }`}
+                  >
+                    <div
+                      className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg ${
+                        feature.isEmphasized
+                          ? "bg-primary/10 dark:bg-primary/10"
+                          : "bg-primary/5 dark:bg-primary/5"
+                      }`}
+                    >
+                      <Icon
+                        className={`h-6 w-6 ${
+                          feature.isEmphasized
+                            ? TEXT_PRIMARY_CLASS
+                            : "text-primary/70 dark:text-primary/60"
+                        }`}
+                      />
+                    </div>
+                    <h3 className="text-foreground mb-2 text-lg font-bold">
+                      {feature.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      {feature.description}
+                    </p>
                   </div>
-                  <h3 className="text-foreground mb-2 text-lg font-bold">
-                    {feature.title}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {feature.description}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
 
         {/* Process Flow Section */}
-        <section className="border-border bg-background relative border-t py-24">
-          <div className="container mx-auto px-4 lg:px-8 xl:max-w-7xl">
+        <section className="border-border bg-background relative border-t py-32">
+          {/* Subtle gradient overlay for depth */}
+          <div className="from-primary/5 to-background dark:from-primary/3 absolute inset-0 bg-gradient-to-b via-transparent" />
+          <div className="relative container mx-auto px-4 lg:px-8 xl:max-w-7xl">
             <div className="mb-16 text-center">
               <h2 className="text-foreground mb-4 text-4xl font-black">
                 CADENCE & FLOW
@@ -129,37 +173,56 @@ export function HomePage(): ReactNode {
             </div>
 
             <div className="mx-auto max-w-4xl">
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                {["Draft", "Queue", "Publish"].map((step, idx) => (
-                  <div key={step} className="flex items-center gap-4">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="bg-muted border-border text-muted-foreground flex h-16 w-16 items-center justify-center rounded-lg border">
-                        <div className="bg-muted-foreground/30 h-8 w-8 rounded" />
+              <div className="flex flex-wrap items-center justify-center gap-6">
+                {[
+                  { name: "Draft", icon: DocumentTextIcon, isActive: true },
+                  { name: "Queue", icon: QueueListIcon, isActive: true },
+                  { name: "Publish", icon: PaperAirplaneIcon, isActive: true },
+                ].map((step, idx) => {
+                  const Icon = step.icon;
+                  return (
+                    <div key={step.name} className="flex items-center gap-6">
+                      <div className="flex flex-col items-center gap-2">
+                        <div
+                          className={`flex h-16 w-16 items-center justify-center rounded-lg border transition-all ${
+                            step.isActive
+                              ? "border-primary/30 bg-primary/10 dark:bg-primary/10 shadow-lg"
+                              : "border-border bg-muted"
+                          }`}
+                        >
+                          <Icon
+                            className={`h-8 w-8 ${
+                              step.isActive
+                                ? TEXT_PRIMARY_CLASS
+                                : "text-muted-foreground"
+                            }`}
+                          />
+                        </div>
+                        <span className="text-foreground text-sm font-semibold">
+                          {step.name}
+                        </span>
                       </div>
-                      <span className="text-foreground text-sm font-semibold">
-                        {step}
-                      </span>
+                      {idx < 2 ? (
+                        <svg
+                          className="text-primary arrow-pulse h-8 w-8"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      ) : null}
                     </div>
-                    {idx < 2 ? (
-                      <svg
-                        className="text-muted-foreground h-6 w-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    ) : null}
-                  </div>
-                ))}
-                <div className="flex items-center gap-4">
+                  );
+                })}
+                <div className="flex items-center gap-6">
                   <svg
-                    className="text-muted-foreground h-6 w-6"
+                    className="text-primary arrow-pulse h-8 w-8"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -167,24 +230,46 @@ export function HomePage(): ReactNode {
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={2}
+                      strokeWidth={2.5}
                       d="M9 5l7 7-7 7"
                     />
                   </svg>
-                  <div className="flex gap-4">
-                    {["Relay", "Analyze"].map((step) => (
-                      <div
-                        key={step}
-                        className="flex flex-col items-center gap-2"
-                      >
-                        <div className="bg-muted border-border text-muted-foreground flex h-16 w-16 items-center justify-center rounded-lg border">
-                          <div className="bg-muted-foreground/30 h-8 w-8 rounded" />
+                  <div className="flex gap-6">
+                    {[
+                      { name: "Relay", icon: GlobeAltIcon, isActive: false },
+                      {
+                        name: "Analyze",
+                        icon: PresentationChartLineIcon,
+                        isActive: false,
+                      },
+                    ].map((step) => {
+                      const Icon = step.icon;
+                      return (
+                        <div
+                          key={step.name}
+                          className="flex flex-col items-center gap-2"
+                        >
+                          <div
+                            className={`flex h-16 w-16 items-center justify-center rounded-lg border transition-all ${
+                              step.isActive
+                                ? "border-primary/30 bg-primary/10 dark:bg-primary/10 shadow-lg"
+                                : "border-border bg-muted"
+                            }`}
+                          >
+                            <Icon
+                              className={`h-8 w-8 ${
+                                step.isActive
+                                  ? TEXT_PRIMARY_CLASS
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          </div>
+                          <span className="text-foreground text-sm font-semibold">
+                            {step.name}
+                          </span>
                         </div>
-                        <span className="text-foreground text-sm font-semibold">
-                          {step}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -193,7 +278,7 @@ export function HomePage(): ReactNode {
         </section>
 
         {/* Philosophy Section */}
-        <section className="border-border bg-card relative border-t py-24">
+        <section className="border-border bg-card relative border-t py-32 dark:bg-[hsl(var(--landing-section-alt))]">
           <div className="container mx-auto px-4 lg:px-8 xl:max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <h2 className="text-foreground mb-4 text-4xl font-black">

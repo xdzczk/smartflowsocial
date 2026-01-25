@@ -28,6 +28,7 @@ const STORAGE_KEY = "__smartflow_active_nostr_signer_v1";
 
 let cachedSigner: NostrSigner | null = null;
 let cachedConfigJson: string | null = null;
+let wasHidden = false;
 
 /**
  * Clear the in-memory signer cache without removing persisted config.
@@ -35,6 +36,48 @@ let cachedConfigJson: string | null = null;
  */
 export function resetCachedSigner(): void {
   cachedSigner = null;
+}
+
+/**
+ * Initialize page visibility detection to reset cached NIP-46 signers
+ * when the page becomes visible again after being hidden.
+ * This helps recover from stale WebSocket connections when users switch
+ * between the browser and signer app on the same device.
+ */
+function initVisibilityHandler(): void {
+  if (typeof document === "undefined") return;
+
+  // Track if page was hidden
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      wasHidden = true;
+    } else if (wasHidden) {
+      // Page became visible again after being hidden
+      // Reset cached NIP-46 signer to force reconnection
+      const config = getActiveSignerConfig();
+      if (config?.type === "nip46" && cachedSigner) {
+        // Close existing connections gracefully
+        if (cachedSigner.type === "nip46" && cachedSigner.close) {
+          void (async () => {
+            try {
+              await cachedSigner.close();
+            } catch {
+              // Ignore errors during cleanup
+            }
+          })();
+        }
+        resetCachedSigner();
+      }
+      wasHidden = false;
+    }
+  };
+
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+}
+
+// Initialize visibility handler when module loads
+if (typeof window !== "undefined") {
+  initVisibilityHandler();
 }
 
 function bytesToHex(bytes: Uint8Array): string {
@@ -94,8 +137,50 @@ export function getActiveSignerConfig(): ActiveSignerConfig | null {
   }
 }
 
+/**
+ * Verify that a cached NIP-46 signer connection is still valid.
+ * Returns true if the signer is available and can be used, false otherwise.
+ * Uses a quick health check with a short timeout to avoid blocking.
+ */
+async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
+  if (signer.type !== "nip46") return true; // NIP-07 doesn't need verification
+
+  try {
+    // Quick health check: try to get public key with a short timeout
+    // This will fail if the connection is stale or the signer is unreachable
+    await Promise.race([
+      signer.getPublicKey(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Connection check timeout")), 3000)
+      ),
+    ]);
+    return true;
+  } catch {
+    // Connection is stale or unreachable
+    return false;
+  }
+}
+
 export async function getActiveSigner(): Promise<NostrSigner | null> {
-  if (cachedSigner) return cachedSigner;
+  // If we have a cached signer, verify it's still valid before returning it
+  if (cachedSigner) {
+    const isValid = await verifySignerConnection(cachedSigner);
+    if (isValid) {
+      return cachedSigner;
+    }
+    // Connection is stale, clear cache and reconnect
+    if (cachedSigner.type === "nip46" && cachedSigner.close) {
+      void (async () => {
+        try {
+          await cachedSigner.close();
+        } catch {
+          // Ignore errors during cleanup
+        }
+      })();
+    }
+    resetCachedSigner();
+  }
+
   const config = getActiveSignerConfig();
   if (!config) return null;
 

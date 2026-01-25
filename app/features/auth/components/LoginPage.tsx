@@ -8,23 +8,23 @@ export default function LoginPage() {
   return (
     <div
       id="page-container"
-      className="bg-background relative mx-auto flex min-h-dvh w-full min-w-[320px] flex-col"
+      className="bg-background landing-texture relative mx-auto flex min-h-dvh w-full min-w-[320px] flex-col"
     >
-      {/* Subtle brand color gradient background */}
-      <div className="from-secondary/20 to-background dark:from-background/20 absolute inset-0 bg-gradient-to-b via-transparent" />
+      {/* Enhanced background gradient with micro-depth - matching landing page */}
+      <div className="hero-gradient-light dark:hero-gradient-dark absolute inset-0" />
       <Header />
       <main
         id="page-content"
         className="relative mt-16 flex max-w-full flex-auto flex-col px-4 sm:px-6 lg:px-8"
       >
         <div className="mx-auto w-full max-w-md py-8 sm:max-w-xl lg:max-w-5xl lg:py-16">
-          <Card className="border-border flex flex-col overflow-hidden md:flex-row">
+          <Card className="border-border flex flex-col overflow-hidden shadow-xl md:flex-row dark:shadow-2xl">
             <CardContent className="p-6 md:w-1/2 md:p-10 lg:p-16">
               <header className="mb-8 text-center md:text-left">
-                <h1 className="text-foreground mb-2 text-2xl font-bold sm:text-3xl">
+                <h1 className="text-foreground mb-2 text-3xl font-black tracking-tight sm:text-4xl">
                   Welcome
                 </h1>
-                <h2 className="text-muted-foreground text-sm font-medium">
+                <h2 className="text-muted-foreground text-base font-medium sm:text-lg">
                   Sign in to your dashboard using Nostr
                 </h2>
               </header>
@@ -35,17 +35,21 @@ export default function LoginPage() {
             </CardContent>
 
             <div
-              className="relative flex min-h-[200px] items-center bg-cover px-6 py-10 md:min-h-full md:w-1/2 md:px-10 lg:p-16"
+              className="relative flex min-h-[200px] items-center justify-center bg-cover bg-center px-6 py-10 md:min-h-full md:w-1/2 md:px-10 lg:p-16"
               style={{
                 backgroundImage: 'url("/photo-m_7p45JfXQo-600x600.jpg")',
               }}
             >
-              <div className="bg-muted dark:bg-muted absolute inset-0 rounded-r-lg" />
-              <div className="relative text-center sm:text-left">
-                <p className="text-primary-foreground mb-2 text-lg leading-relaxed font-semibold sm:text-xl">
-                  Sign in securely using your Nostr identity
+              {/* Enhanced overlay with gradient */}
+              <div className="from-background/80 via-background/60 to-background/80 dark:from-background/90 dark:via-background/80 dark:to-background/90 absolute inset-0 rounded-r-lg bg-gradient-to-br" />
+              {/* Subtle brand color accent overlay */}
+              <div className="from-primary/5 absolute inset-0 rounded-r-lg bg-gradient-to-br to-transparent" />
+              <div className="relative z-10 text-center sm:text-left">
+                <p className="text-foreground mb-2 text-lg leading-relaxed font-bold sm:text-xl">
+                  Sign in securely using your{" "}
+                  <span className="text-primary">Nostr identity</span>
                 </p>
-                <p className="text-primary-foreground/90 text-sm font-medium sm:text-base">
+                <p className="text-muted-foreground text-sm font-medium sm:text-base">
                   Powered by Nostr protocol
                 </p>
               </div>

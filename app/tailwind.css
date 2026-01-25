@@ -86,7 +86,7 @@
     /* Light Mode - Neutral Foundation with Brand Accents */
     --background: 0 0% 100%;              /* White #FFFFFF */
     --foreground: 0 0% 5%;                /* Pure black (neutral) */
-    --card: 0 0% 100%;                      /* White */
+    --card: 0 0% 99%;                      /* Slightly off-white for depth */
     --card-foreground: 0 0% 5%;            /* Pure black (neutral) */
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 5%;         /* Pure black (neutral) */
@@ -109,6 +109,10 @@
     --chart-4: 250 25% 80%;                 /* Light lavender */
     --chart-5: 250 100% 5%;                 /* Dark indigo */
     --radius: 0.5rem;
+    
+    /* Landing page specific variables */
+    --landing-card-elevated: 0 0% 99%;
+    --landing-section-alt: 0 0% 100%;
   }
   .dark {
     /* Dark Mode - Neutral Foundation with Brand Accents */
@@ -123,7 +127,7 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 10%;                      /* Neutral grey-light for tables */
     --muted-foreground: 0 0% 65%;           /* Muted text, neutral grey */
-    --border: 0 0% 18%;                     /* Barely visible neutral border */
+    --border: 0 0% 20%;                     /* Increased visibility for landing cards */
     --input: 0 0% 18%;                      /* Neutral input border */
     
     /* Brand colors - only for user actions (commit, select, focus, hover) */
@@ -143,6 +147,10 @@
     --chart-3: 250 100% 31%;                 /* Deep indigo #1E03A0 */
     --chart-4: 250 25% 60%;                 /* Medium lavender */
     --chart-5: 250 25% 80%;                 /* Light lavender */
+    
+    /* Landing page specific variables */
+    --landing-card-elevated: 0 0% 10%;      /* Slightly lighter than card for emphasis */
+    --landing-section-alt: 0 0% 5%;         /* Alternating section background */
   }
 }
 
@@ -180,5 +188,67 @@
     border-color: hsl(var(--input));
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  /* Landing page specific utilities */
+  
+  /* Subtle noise texture using CSS (no images) */
+  .landing-texture {
+    background-image: 
+      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.03) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+  
+  .dark .landing-texture {
+    background-image: 
+      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.05) 1px, transparent 0);
+  }
+
+  /* Hero gradient utilities */
+  .hero-gradient-light {
+    background: linear-gradient(
+      to bottom,
+      hsl(var(--primary) / 0.1),
+      hsl(var(--secondary) / 0.15),
+      hsl(var(--background))
+    );
+  }
+
+  .hero-gradient-dark {
+    background: 
+      radial-gradient(ellipse at top, hsl(var(--primary) / 0.05) 0%, transparent 50%),
+      linear-gradient(
+        to bottom,
+        hsl(var(--primary) / 0.05),
+        hsl(var(--background) / 0.1),
+        hsl(var(--background))
+      );
+  }
+
+  /* Card lift animation */
+  .card-lift {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+  
+  .card-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Arrow pulse animation */
+  @keyframes arrowPulse {
+    0%, 100% {
+      opacity: 0.6;
+      transform: translateX(0);
+    }
+    50% {
+      opacity: 1;
+      transform: translateX(4px);
+    }
+  }
+
+  .arrow-pulse {
+    animation: arrowPulse 2s ease-in-out infinite;
   }
 }

@@ -73,7 +73,7 @@ function NavigationItem({
     isActive
       ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
       : hasAccess
-        ? "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
+        ? "text-muted-foreground hover:bg-muted hover:text-foreground active:border-border"
         : "text-muted-foreground/50 cursor-not-allowed opacity-60"
   }`;
 
@@ -161,7 +161,7 @@ export default function Header() {
               onClick={() => setMobileSidebarOpen(false)}
               variant="outline"
               size="sm"
-              className="border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
+              className="border-border bg-background text-foreground hover:bg-muted"
             >
               <HiOutlineXMark className="-mx-0.5 inline-block size-5" />
             </Button>

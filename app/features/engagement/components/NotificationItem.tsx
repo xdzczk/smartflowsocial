@@ -19,11 +19,14 @@ interface NotificationItemProps {
 }
 
 // Type badge configuration for each notification type
+const MUTED_BG_CLASS = "bg-muted";
+const MUTED_TEXT_CLASS = "text-muted-foreground";
+
 const TYPE_BADGES = {
   reply: {
     label: "replied",
-    bgClass: "bg-muted",
-    textClass: "text-muted-foreground",
+    bgClass: MUTED_BG_CLASS,
+    textClass: MUTED_TEXT_CLASS,
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
         <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
@@ -33,8 +36,8 @@ const TYPE_BADGES = {
   },
   mention: {
     label: "mentioned",
-    bgClass: "bg-muted",
-    textClass: "text-muted-foreground",
+    bgClass: MUTED_BG_CLASS,
+    textClass: MUTED_TEXT_CLASS,
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
         <path
@@ -47,8 +50,8 @@ const TYPE_BADGES = {
   },
   quote: {
     label: "quoted",
-    bgClass: "bg-muted",
-    textClass: "text-muted-foreground",
+    bgClass: MUTED_BG_CLASS,
+    textClass: MUTED_TEXT_CLASS,
     icon: (
       <svg
         className="h-4 w-4"

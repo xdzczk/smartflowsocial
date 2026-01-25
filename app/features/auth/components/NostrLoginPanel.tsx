@@ -699,12 +699,15 @@ export default function NostrLoginPanel() {
   return (
     <div className="space-y-4">
       {state === "signer_selection" ? (
-        <div className="space-y-3">
-          <div className="text-sm font-medium">Sign in with Nostr</div>
-          <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-4">
+          <div className="text-foreground text-base font-semibold">
+            Sign in with Nostr
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             <Button
               type="button"
               variant="default"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto py-3 text-base font-semibold shadow-lg transition-all hover:shadow-xl"
               onClick={() => void initNip07()}
             >
               Browser Extension (NIP-07)
@@ -712,6 +715,7 @@ export default function NostrLoginPanel() {
             <Button
               type="button"
               variant="outline"
+              className="border-border bg-card hover:bg-accent hover:text-accent-foreground h-auto py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg dark:shadow-lg"
               onClick={() => setState("signer_initializing")}
             >
               Remote Signer (NIP-46)
@@ -721,22 +725,32 @@ export default function NostrLoginPanel() {
       ) : null}
 
       {state === "signer_initializing" && !signer ? (
-        <div className="dark:bg-card/30 space-y-3 rounded-md border bg-white/50 p-4">
-          <div className="text-sm font-medium">Remote signer</div>
-          <div className="text-muted-foreground text-sm">
-            Connect a remote signer and approve a profile. Each profile
-            represents a different identity (pubkey).
+        <div className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
+          <div className="space-y-2">
+            <div className="text-foreground text-base font-bold">
+              Remote signer
+            </div>
+            <div className="text-muted-foreground text-sm leading-relaxed">
+              Connect a remote signer and approve a profile. Each profile
+              represents a different identity (pubkey).
+            </div>
           </div>
 
           <Tabs
             value={nip46Tab}
             onValueChange={(v) => setNip46Tab(v as "bunker" | "nostrconnect")}
           >
-            <TabsList className="w-full">
-              <TabsTrigger value="bunker" className="flex-1">
+            <TabsList className="border-border bg-muted w-full">
+              <TabsTrigger
+                value="bunker"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1"
+              >
                 Paste bunker input
               </TabsTrigger>
-              <TabsTrigger value="nostrconnect" className="flex-1">
+              <TabsTrigger
+                value="nostrconnect"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1"
+              >
                 Generate nostrconnect URI
               </TabsTrigger>
             </TabsList>
@@ -789,11 +803,11 @@ export default function NostrLoginPanel() {
                   alternatives.
                 </div>
                 {relayUrls.length > 0 ? (
-                  <div className="space-y-1 pt-1 text-xs">
-                    <div className="text-muted-foreground">
+                  <div className="border-border bg-muted/50 dark:bg-muted/30 space-y-2 rounded-md border p-3 pt-2 text-xs">
+                    <div className="text-foreground font-medium">
                       Relay status (best-effort connectivity check):
                     </div>
-                    <div className="grid gap-1">
+                    <div className="grid gap-1.5">
                       {relayUrls.map((url) => {
                         const s = relayStatuses[url];
                         const status: RelayCheckStatus =
@@ -803,14 +817,16 @@ export default function NostrLoginPanel() {
                             ? "text-green-700 dark:text-green-300"
                             : status === "failed"
                               ? "text-red-700 dark:text-red-300"
-                              : "text-foreground dark:text-muted-foreground";
+                              : "text-muted-foreground";
                         return (
                           <div
                             key={url}
                             className="flex items-start justify-between gap-2"
                           >
-                            <div className="truncate">{url}</div>
-                            <div className={`shrink-0 ${color}`}>
+                            <div className="truncate font-mono text-xs">
+                              {url}
+                            </div>
+                            <div className={`shrink-0 font-medium ${color}`}>
                               {getRelayStatusLabel(status)}
                             </div>
                           </div>
@@ -856,14 +872,14 @@ export default function NostrLoginPanel() {
 
       {state === "awaiting_profile_selection" ? (
         <div
-          className="dark:bg-card/30 space-y-2 rounded-md border bg-white/50 p-4 text-sm"
+          className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
           role="status"
           aria-live="polite"
           aria-busy="true"
         >
-          <div className="flex items-center gap-2 font-medium">
+          <div className="flex items-center gap-3">
             <svg
-              className="h-4 w-4 animate-spin"
+              className="text-primary h-5 w-5 animate-spin"
               viewBox="0 0 24 24"
               aria-hidden="true"
             >
@@ -882,16 +898,20 @@ export default function NostrLoginPanel() {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
               />
             </svg>
-            Waiting for approval…
+            <div className="text-foreground text-base font-bold">
+              Waiting for approval…
+            </div>
           </div>
-          <div className="text-muted-foreground">
+          <div className="text-muted-foreground text-sm leading-relaxed">
             Approve the connection in your remote signer. If you switch
             profiles, you switch identity and must re-authenticate.
           </div>
           {relayUrls.length > 0 ? (
-            <div className="dark:bg-muted/20 rounded-md border bg-white/60 p-3 text-xs">
-              <div className="mb-1 font-medium">Relay status</div>
-              <div className="grid gap-1">
+            <div className="border-border bg-muted/50 dark:bg-muted/30 rounded-md border p-3 text-xs">
+              <div className="text-foreground mb-2 font-semibold">
+                Relay status
+              </div>
+              <div className="grid gap-1.5">
                 {relayUrls.map((url) => {
                   const s = relayStatuses[url];
                   const status: RelayCheckStatus = s?.status ?? "checking";
@@ -900,46 +920,50 @@ export default function NostrLoginPanel() {
                       ? "text-green-700 dark:text-green-300"
                       : status === "failed"
                         ? "text-red-700 dark:text-red-300"
-                        : "text-foreground dark:text-foreground";
+                        : "text-muted-foreground";
                   return (
                     <div
                       key={url}
                       className="flex items-start justify-between gap-2"
                     >
-                      <div className="truncate">{url}</div>
-                      <div className={`shrink-0 ${color}`}>
+                      <div className="truncate font-mono text-xs">{url}</div>
+                      <div className={`shrink-0 font-medium ${color}`}>
                         {getRelayStatusLabel(status)}
                       </div>
                     </div>
                   );
                 })}
               </div>
-              <div className="text-muted-foreground mt-2">
+              <div className="text-muted-foreground mt-3 text-xs">
                 If any relays fail, remove them from the list and click Try
                 again.
               </div>
             </div>
           ) : null}
           {nostrConnectUri ? (
-            <div className="space-y-3 pt-2">
-              <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
-                <div className="dark:bg-card/30 flex justify-center rounded-md border bg-white p-3">
+            <div className="space-y-4 pt-2">
+              <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
+                <div className="border-border bg-background dark:bg-card flex justify-center rounded-lg border p-4 shadow-md">
                   <QRCode value={nostrConnectUri} size={168} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nip46NostrConnectUriWaiting">
+                <div className="space-y-3">
+                  <Label
+                    htmlFor="nip46NostrConnectUriWaiting"
+                    className="text-sm font-semibold"
+                  >
                     nostrconnect URI
                   </Label>
                   <textarea
                     id="nip46NostrConnectUriWaiting"
                     readOnly
-                    className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
+                    className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                     value={nostrConnectUri}
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <Button
                       type="button"
                       variant="outline"
+                      className="border-border bg-card hover:bg-accent hover:text-accent-foreground"
                       onClick={() => void copyNostrConnectUri()}
                     >
                       {copyOk ? "Copied" : "Copy"}
@@ -966,14 +990,17 @@ export default function NostrLoginPanel() {
 
       {pubkey &&
       (state === "requesting_signature" || state === "verifying_signature") ? (
-        <div className="dark:bg-card/30 space-y-3 rounded-md border bg-white/50 p-4">
-          <div className="text-sm">
+        <div className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
+          <div className="text-base">
             Signing in as{" "}
-            <span className="font-medium">{formatNpubShort(pubkey)}</span>
+            <span className="text-primary font-bold">
+              {formatNpubShort(pubkey)}
+            </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               type="button"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
               onClick={() => void performLogin()}
               disabled={state === "verifying_signature"}
             >
@@ -984,6 +1011,7 @@ export default function NostrLoginPanel() {
             <Button
               type="button"
               variant="outline"
+              className="border-border bg-card hover:bg-accent hover:text-accent-foreground"
               onClick={() => void resetToSelection()}
             >
               Back
@@ -998,42 +1026,50 @@ export default function NostrLoginPanel() {
           tabIndex={-1}
           role="alert"
           aria-live="assertive"
-          className="space-y-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 focus:outline-none dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+          className="space-y-3 rounded-lg border border-red-300 bg-red-50 p-5 text-sm text-red-800 shadow-lg focus:outline-none dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
         >
-          <div className="font-medium">{getErrorTitle(error.code)}</div>
-          <div>{error.message}</div>
-          <ul className="list-disc space-y-1 pl-5 text-xs">
+          <div className="text-base font-bold">{getErrorTitle(error.code)}</div>
+          <div className="text-sm leading-relaxed">{error.message}</div>
+          <ul className="list-disc space-y-1.5 pl-5 text-xs">
             {getErrorSuggestions(error.code).map((s) => (
-              <li key={s}>{s}</li>
+              <li key={s} className="leading-relaxed">
+                {s}
+              </li>
             ))}
           </ul>
           {error.details ? (
             <details className="text-xs">
-              <summary className="cursor-pointer select-none">
+              <summary className="cursor-pointer font-medium select-none">
                 Technical details
               </summary>
-              <pre className="mt-2 rounded bg-black/5 p-2 whitespace-pre-wrap dark:bg-white/10">
+              <pre className="border-border bg-background dark:bg-card mt-2 rounded-md border p-3 text-xs whitespace-pre-wrap">
                 {error.details}
               </pre>
             </details>
           ) : null}
-          <div className="flex gap-2">
+          <div className="flex gap-3 pt-2">
             {error.code === "SIGNER_NOT_FOUND" ? (
               <Button
                 type="button"
                 variant="outline"
+                className="border-border bg-card hover:bg-accent hover:text-accent-foreground"
                 onClick={() => void resetToSelection()}
               >
                 Back
               </Button>
             ) : (
               <>
-                <Button type="button" onClick={handleTryAgain}>
+                <Button
+                  type="button"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                  onClick={handleTryAgain}
+                >
                   Try again
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
+                  className="border-border bg-card hover:bg-accent hover:text-accent-foreground"
                   onClick={() => void resetToSelection()}
                 >
                   Back
