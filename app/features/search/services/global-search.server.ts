@@ -1,6 +1,6 @@
 /**
  * Global Search Service
- * Searches across all content types: drafts, scheduled, posted, templates, and external posts
+ * Searches across all content types: drafts, scheduled, publishing, posted, failed, cancelled, templates, and external posts
  */
 
 import { prisma } from "~/lib/prisma.server";
@@ -8,7 +8,15 @@ import { prisma } from "~/lib/prisma.server";
 import { handleSearchEvent } from "./search-action.server";
 
 export interface GlobalSearchResult {
-  type: "draft" | "scheduled" | "posted" | "template" | "external";
+  type:
+    | "draft"
+    | "scheduled"
+    | "publishing"
+    | "posted"
+    | "failed"
+    | "cancelled"
+    | "template"
+    | "external";
   id: string;
   title?: string;
   caption?: string;
@@ -195,7 +203,7 @@ async function searchScheduled(
 }
 
 /**
- * Search posted content (Post and LongFormPost with currentState = 'POSTED')
+ * Search posted content (Post and LongFormPost with currentState = 'PUBLISHED')
  */
 async function searchPosted(
   userId: string,
@@ -206,7 +214,7 @@ async function searchPosted(
   const postedPosts = await prisma.post.findMany({
     where: {
       userId,
-      currentState: "POSTED",
+      currentState: "PUBLISHED",
       OR: [
         { caption: { contains: query, mode: "insensitive" } },
         { content: { contains: query, mode: "insensitive" } },
@@ -228,7 +236,7 @@ async function searchPosted(
   const postedLongforms = await prisma.longFormPost.findMany({
     where: {
       userId,
-      currentState: "POSTED",
+      currentState: "PUBLISHED",
       OR: [
         { title: { contains: query, mode: "insensitive" } },
         { content: { contains: query, mode: "insensitive" } },
@@ -270,6 +278,257 @@ async function searchPosted(
       createdAt: post.createdAt.toISOString(),
       postedAt: post.postedAt?.toISOString(),
       url: `/dashboard/posted`,
+      isLongform: true,
+    })),
+  ];
+
+  return results.slice(0, limit);
+}
+
+/**
+ * Search publishing posts (Post and LongFormPost with currentState = 'PUBLISHING')
+ */
+async function searchPublishing(
+  userId: string,
+  query: string,
+  limit = 5
+): Promise<GlobalSearchResult[]> {
+  // Search regular posts
+  const publishingPosts = await prisma.post.findMany({
+    where: {
+      userId,
+      currentState: "PUBLISHING",
+      OR: [
+        { caption: { contains: query, mode: "insensitive" } },
+        { content: { contains: query, mode: "insensitive" } },
+      ],
+    },
+    take: limit,
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      caption: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+      currentState: true,
+    },
+  });
+
+  // Search long-form posts
+  const publishingLongforms = await prisma.longFormPost.findMany({
+    where: {
+      userId,
+      currentState: "PUBLISHING",
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { content: { contains: query, mode: "insensitive" } },
+        { summary: { contains: query, mode: "insensitive" } },
+      ],
+    },
+    take: limit,
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      summary: true,
+      createdAt: true,
+      updatedAt: true,
+      currentState: true,
+    },
+  });
+
+  const results: GlobalSearchResult[] = [
+    ...publishingPosts.map((post: (typeof publishingPosts)[number]) => ({
+      type: "publishing" as const,
+      id: post.id,
+      caption: post.caption ?? undefined,
+      content: post.content ?? undefined,
+      status: post.currentState,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      url: `/dashboard/scheduled`,
+      isLongform: false,
+    })),
+    ...publishingLongforms.map(
+      (post: (typeof publishingLongforms)[number]) => ({
+        type: "publishing" as const,
+        id: post.id,
+        title: post.title ?? undefined,
+        content: post.content ?? undefined,
+        summary: post.summary ?? undefined,
+        status: post.currentState,
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
+        url: `/dashboard/scheduled`,
+        isLongform: true,
+      })
+    ),
+  ];
+
+  return results.slice(0, limit);
+}
+
+/**
+ * Search failed posts (Post and LongFormPost with currentState = 'FAILED')
+ */
+async function searchFailed(
+  userId: string,
+  query: string,
+  limit = 5
+): Promise<GlobalSearchResult[]> {
+  // Search regular posts
+  const failedPosts = await prisma.post.findMany({
+    where: {
+      userId,
+      currentState: "FAILED",
+      OR: [
+        { caption: { contains: query, mode: "insensitive" } },
+        { content: { contains: query, mode: "insensitive" } },
+      ],
+    },
+    take: limit,
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      caption: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+      currentState: true,
+    },
+  });
+
+  // Search long-form posts
+  const failedLongforms = await prisma.longFormPost.findMany({
+    where: {
+      userId,
+      currentState: "FAILED",
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { content: { contains: query, mode: "insensitive" } },
+        { summary: { contains: query, mode: "insensitive" } },
+      ],
+    },
+    take: limit,
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      summary: true,
+      createdAt: true,
+      updatedAt: true,
+      currentState: true,
+    },
+  });
+
+  const results: GlobalSearchResult[] = [
+    ...failedPosts.map((post: (typeof failedPosts)[number]) => ({
+      type: "failed" as const,
+      id: post.id,
+      caption: post.caption ?? undefined,
+      content: post.content ?? undefined,
+      status: post.currentState,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      url: `/dashboard/scheduled`,
+      isLongform: false,
+    })),
+    ...failedLongforms.map((post: (typeof failedLongforms)[number]) => ({
+      type: "failed" as const,
+      id: post.id,
+      title: post.title ?? undefined,
+      content: post.content ?? undefined,
+      summary: post.summary ?? undefined,
+      status: post.currentState,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      url: `/dashboard/scheduled`,
+      isLongform: true,
+    })),
+  ];
+
+  return results.slice(0, limit);
+}
+
+/**
+ * Search cancelled posts (Post and LongFormPost with currentState = 'CANCELLED')
+ */
+async function searchCancelled(
+  userId: string,
+  query: string,
+  limit = 5
+): Promise<GlobalSearchResult[]> {
+  // Search regular posts
+  const cancelledPosts = await prisma.post.findMany({
+    where: {
+      userId,
+      currentState: "CANCELLED",
+      OR: [
+        { caption: { contains: query, mode: "insensitive" } },
+        { content: { contains: query, mode: "insensitive" } },
+      ],
+    },
+    take: limit,
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      caption: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+      currentState: true,
+    },
+  });
+
+  // Search long-form posts
+  const cancelledLongforms = await prisma.longFormPost.findMany({
+    where: {
+      userId,
+      currentState: "CANCELLED",
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { content: { contains: query, mode: "insensitive" } },
+        { summary: { contains: query, mode: "insensitive" } },
+      ],
+    },
+    take: limit,
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      summary: true,
+      createdAt: true,
+      updatedAt: true,
+      currentState: true,
+    },
+  });
+
+  const results: GlobalSearchResult[] = [
+    ...cancelledPosts.map((post: (typeof cancelledPosts)[number]) => ({
+      type: "cancelled" as const,
+      id: post.id,
+      caption: post.caption ?? undefined,
+      content: post.content ?? undefined,
+      status: post.currentState,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      url: `/dashboard/scheduled`,
+      isLongform: false,
+    })),
+    ...cancelledLongforms.map((post: (typeof cancelledLongforms)[number]) => ({
+      type: "cancelled" as const,
+      id: post.id,
+      title: post.title ?? undefined,
+      content: post.content ?? undefined,
+      summary: post.summary ?? undefined,
+      status: post.currentState,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      url: `/dashboard/scheduled`,
       isLongform: true,
     })),
   ];
@@ -363,18 +622,25 @@ export async function performGlobalSearch(
   }
 
   // Search all local content types in parallel
-  const [drafts, scheduled, posted, templates] = await Promise.all([
-    searchDrafts(userId, trimmedQuery, limitPerType),
-    searchScheduled(userId, trimmedQuery, limitPerType),
-    searchPosted(userId, trimmedQuery, limitPerType),
-    searchTemplates(userId, trimmedQuery, limitPerType),
-  ]);
+  const [drafts, scheduled, publishing, posted, failed, cancelled, templates] =
+    await Promise.all([
+      searchDrafts(userId, trimmedQuery, limitPerType),
+      searchScheduled(userId, trimmedQuery, limitPerType),
+      searchPublishing(userId, trimmedQuery, limitPerType),
+      searchPosted(userId, trimmedQuery, limitPerType),
+      searchFailed(userId, trimmedQuery, limitPerType),
+      searchCancelled(userId, trimmedQuery, limitPerType),
+      searchTemplates(userId, trimmedQuery, limitPerType),
+    ]);
 
   // Combine all results
   const allResults: GlobalSearchResult[] = [
     ...drafts,
     ...scheduled,
+    ...publishing,
     ...posted,
+    ...failed,
+    ...cancelled,
     ...templates,
     ...externalResults,
   ];

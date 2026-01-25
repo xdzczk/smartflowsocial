@@ -5,10 +5,21 @@ import {
   Clock,
   FolderOpen,
   ExternalLink,
+  Loader2,
+  XCircle,
+  Ban,
 } from "lucide-react";
 
 export interface GlobalSearchResult {
-  type: "draft" | "scheduled" | "posted" | "template" | "external";
+  type:
+    | "draft"
+    | "scheduled"
+    | "publishing"
+    | "posted"
+    | "failed"
+    | "cancelled"
+    | "template"
+    | "external";
   id: string;
   title?: string;
   caption?: string;
@@ -35,8 +46,14 @@ function getTypeIcon(type: GlobalSearchResult["type"]) {
       return <FileText className="h-4 w-4" />;
     case "scheduled":
       return <Calendar className="h-4 w-4" />;
+    case "publishing":
+      return <Loader2 className="h-4 w-4 animate-spin" />;
     case "posted":
       return <Clock className="h-4 w-4" />;
+    case "failed":
+      return <XCircle className="h-4 w-4" />;
+    case "cancelled":
+      return <Ban className="h-4 w-4" />;
     case "template":
       return <FolderOpen className="h-4 w-4" />;
     case "external":
@@ -52,8 +69,14 @@ function getTypeLabel(type: GlobalSearchResult["type"]): string {
       return "Draft";
     case "scheduled":
       return "Scheduled";
+    case "publishing":
+      return "Publishing";
     case "posted":
       return "Posted";
+    case "failed":
+      return "Failed";
+    case "cancelled":
+      return "Cancelled";
     case "template":
       return "Template";
     case "external":

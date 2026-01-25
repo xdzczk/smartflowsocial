@@ -1,16 +1,52 @@
+import { Link } from "@remix-run/react";
+
 export default function Footer() {
   return (
-    <>
-      {/* Footer Section: Simple Vertical with Social Dark */}
-      <footer id="page-footer" className="bg-gray-900 text-gray-100">
-        <div className="container mx-auto px-4 py-16 text-center text-sm lg:px-8 lg:py-32 xl:max-w-7xl">
-          <hr className="my-10 border-dashed border-gray-700/75" />
-          <div className="text-gray-400/80">
-            <span className="font-medium">SmartFlow Social</span> ©
-          </div>
+    <footer id="page-footer" className="border-border bg-card border-t">
+      <div className="container mx-auto px-4 py-16 text-center lg:px-8 lg:py-32 xl:max-w-7xl">
+        <div className="mb-8 flex justify-center">
+          <img
+            src="/logos/Logo-Full-LightMode.svg"
+            alt="SmartFlow Social"
+            className="h-12 w-auto dark:hidden"
+          />
+          <img
+            src="/logos/Logo-Full-DarkMode.svg"
+            alt="SmartFlow Social"
+            className="hidden h-12 w-auto dark:block"
+          />
         </div>
-      </footer>
-      {/* END Footer Section: Simple Vertical with Social Dark */}
-    </>
+        <nav className="mb-8 flex flex-wrap justify-center gap-6 text-sm">
+          <Link
+            to="/"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Home
+          </Link>
+          <Link
+            to="/plans"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Plans
+          </Link>
+          <Link
+            to="/"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Blog
+          </Link>
+          <Link
+            to="/"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Contact
+          </Link>
+        </nav>
+        <div className="text-muted-foreground text-sm">
+          <span className="font-medium">SmartFlow Social</span> ©{" "}
+          {new Date().getFullYear()}
+        </div>
+      </div>
+    </footer>
   );
 }

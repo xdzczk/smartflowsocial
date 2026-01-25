@@ -6,73 +6,209 @@ import Header from "~/components/layout/FrontendHeader";
 export function HomePage(): ReactNode {
   return (
     <>
-      <div className="relative overflow-hidden bg-white dark:bg-gray-900 dark:text-gray-100">
-        <div className="absolute top-0 right-0 left-0 flex h-64 opacity-70 dark:opacity-50">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white dark:to-gray-900" />
-          <div className="grow bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900 dark:to-emerald-900" />
-          <div className="grow bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900 dark:to-teal-900" />
-          <div className="grow bg-gradient-to-r from-teal-100 to-cyan-100 dark:from-teal-900 dark:to-cyan-900" />
-          <div className="grow bg-gradient-to-r from-cyan-100 to-sky-100 dark:from-cyan-900 dark:to-sky-900" />
-          <div className="grow bg-gradient-to-r from-sky-100 to-blue-100 dark:from-sky-900 dark:to-blue-900" />
-          <div className="grow bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900" />
-          <div className="grow bg-gradient-to-r from-indigo-100 to-violet-100 dark:from-indigo-900 dark:to-violet-900" />
-          <div className="grow bg-gradient-to-r from-violet-100 to-purple-100 dark:from-violet-900 dark:to-purple-900" />
-          <div className="grow bg-gradient-to-r from-purple-100 to-fuchsia-100 dark:from-purple-900 dark:to-fuchsia-900" />
-          <div className="grow bg-gradient-to-r from-fuchsia-100 to-pink-100 dark:from-fuchsia-900 dark:to-pink-900" />
-          <div className="grow bg-gradient-to-r from-pink-100 to-rose-100 dark:from-pink-900 dark:to-rose-900" />
-        </div>
+      <div className="bg-background relative min-h-screen overflow-hidden">
+        {/* Background gradient */}
+        <div className="from-secondary/20 to-background dark:from-background/50 absolute inset-0 bg-gradient-to-b via-transparent" />
 
         <Header />
 
-        <div className="relative container mx-auto px-4 py-16 text-center lg:px-8 lg:py-32 xl:max-w-7xl">
-          <div className="mb-2 inline-flex rounded border border-amber-300 bg-amber-200 px-2 py-1 text-sm leading-4 font-medium text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/50 dark:text-amber-200">
-            Schedule your nostr content with ease!
-          </div>
-          <div className="mx-auto my-10 flex size-24 -rotate-6 items-center justify-center rounded-full border border-blue-800 bg-blue-600 text-white ring-4 ring-blue-300 dark:border-blue-500 dark:ring-blue-900">
-            <svg
-              className="hi-solid hi-bolt inline-block size-10"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-            </svg>
-          </div>
-          <h1 className="mb-4 text-4xl font-black text-black dark:text-white">
-            Schedule and Publish Great Nostr Content
-          </h1>
-          <h2 className="mx-auto text-xl leading-relaxed font-medium text-gray-700 lg:w-2/3 dark:text-gray-300">
-            Write, schedule, and publish engaging nostr threads and posts. Take
-            control of your nostr presence with our powerful scheduling tools.
-          </h2>
-          <div className="flex flex-col gap-2 py-10 sm:flex-row sm:items-center sm:justify-center">
-            <a
-              href="/plans"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-700 bg-blue-700 px-7 py-3.5 leading-6 font-semibold text-white hover:border-blue-600 hover:bg-blue-600 hover:text-white focus:ring focus:ring-blue-400/50 active:border-blue-700 active:bg-blue-700 dark:focus:ring-blue-400/90"
-            >
-              <span>View Plans</span>
-              <svg
-                className="hi-mini hi-arrow-right inline-block size-5 opacity-50"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
+        {/* Hero Section */}
+        <section className="relative container mx-auto px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="border-primary/20 bg-primary/10 text-primary dark:bg-primary/20 mb-6 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
+              Schedule your nostr content with ease!
+            </div>
+
+            <h1 className="text-foreground mb-6 text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl">
+              OWN YOUR CADENCE
+              <br />
+              <span className="text-primary">ACROSS EVERY RELAY</span>
+            </h1>
+
+            <p className="text-muted-foreground mx-auto mb-10 text-xl leading-relaxed lg:w-3/4 lg:text-2xl">
+              Sovereign publishing infrastructure. Design the system once.
+              Cadence holds indefinitely.
+            </p>
+
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+              <a
+                href="/plans"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </a>
-            <a
-              href="/"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-7 py-3.5 leading-6 font-semibold text-gray-800 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm focus:ring focus:ring-gray-300/25 active:border-gray-200 active:shadow-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200 dark:focus:ring-gray-600/40 dark:active:border-gray-700"
-            >
-              <span>Watch Demo</span>
-            </a>
+                <span>ENTER CONSOLE</span>
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </a>
+              <a
+                href="/"
+                className="border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground focus:ring-primary inline-flex items-center justify-center gap-2 rounded-lg border px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+              >
+                <span>Watch Demo</span>
+              </a>
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="border-border bg-card relative border-t py-24">
+          <div className="container mx-auto px-4 lg:px-8 xl:max-w-7xl">
+            <div className="mb-16 text-center">
+              <h2 className="text-foreground mb-4 text-4xl font-black">
+                FLOW WITHOUT CHAOS
+              </h2>
+              <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+                SmartFlowSocial links drafts, queues, automation, and analytics
+                into a single, repeating system. Cadence holds without constant
+                operator input.
+              </p>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  title: "EXACTLY-ONCE PUBLISHING",
+                  description:
+                    "Guaranteed delivery with no duplicates. Your content publishes exactly once, every time.",
+                },
+                {
+                  title: "SOVEREIGN INFRASTRUCTURE",
+                  description:
+                    "No key custody. No growth hacks. Protocol-first. Designed for serious operators.",
+                },
+                {
+                  title: "CADENCE & FLOW",
+                  description:
+                    "Design your publishing cadence once. The system maintains it indefinitely.",
+                },
+                {
+                  title: "ANALYTICS & INSIGHTS",
+                  description:
+                    "Track performance, engagement, and optimize your content strategy.",
+                },
+              ].map((feature) => (
+                <div
+                  key={feature.title}
+                  className="border-border bg-background rounded-lg border p-6 transition-shadow hover:shadow-lg"
+                >
+                  <div className="bg-primary/10 mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
+                    <div className="bg-primary h-6 w-6 rounded" />
+                  </div>
+                  <h3 className="text-foreground mb-2 text-lg font-bold">
+                    {feature.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    {feature.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Process Flow Section */}
+        <section className="border-border bg-background relative border-t py-24">
+          <div className="container mx-auto px-4 lg:px-8 xl:max-w-7xl">
+            <div className="mb-16 text-center">
+              <h2 className="text-foreground mb-4 text-4xl font-black">
+                CADENCE & FLOW
+              </h2>
+              <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+                FLOW WITHOUT CHAOS
+              </p>
+            </div>
+
+            <div className="mx-auto max-w-4xl">
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                {["Draft", "Queue", "Publish"].map((step, idx) => (
+                  <div key={step} className="flex items-center gap-4">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="bg-primary text-primary-foreground flex h-16 w-16 items-center justify-center rounded-lg">
+                        <div className="bg-primary-foreground/20 h-8 w-8 rounded" />
+                      </div>
+                      <span className="text-foreground text-sm font-semibold">
+                        {step}
+                      </span>
+                    </div>
+                    {idx < 2 ? (
+                      <svg
+                        className="text-muted-foreground h-6 w-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    ) : null}
+                  </div>
+                ))}
+                <div className="flex items-center gap-4">
+                  <svg
+                    className="text-muted-foreground h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                  <div className="flex gap-4">
+                    {["Relay", "Analyze"].map((step) => (
+                      <div
+                        key={step}
+                        className="flex flex-col items-center gap-2"
+                      >
+                        <div className="bg-accent text-accent-foreground flex h-16 w-16 items-center justify-center rounded-lg">
+                          <div className="bg-accent-foreground/20 h-8 w-8 rounded" />
+                        </div>
+                        <span className="text-foreground text-sm font-semibold">
+                          {step}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Philosophy Section */}
+        <section className="border-border bg-card relative border-t py-24">
+          <div className="container mx-auto px-4 lg:px-8 xl:max-w-7xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="text-foreground mb-4 text-4xl font-black">
+                PHILOSOPHY
+              </h2>
+              <h3 className="text-primary mb-6 text-3xl font-bold">
+                SOVEREIGN INFRASTRUCTURE
+              </h3>
+              <p className="text-muted-foreground mb-8 text-lg">
+                No key custody. No growth hacks. Protocol-first. Designed for
+                serious operators.
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
 
       <Footer />
