@@ -1,6 +1,12 @@
 import { useFetcher } from "@remix-run/react";
 import { Search, X } from "lucide-react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  startTransition,
+} from "react";
 
 import {
   GlobalSearchResults,
@@ -26,38 +32,38 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
   // Debounce search
   useEffect(() => {
     if (!query.trim()) {
-      // Use setTimeout to avoid calling setState synchronously in effect
-      const timeoutId = setTimeout(() => {
+      startTransition(() => {
         setResults([]);
         setIsSearching(false);
-      }, 0);
-      return () => clearTimeout(timeoutId);
+      });
+      return;
     }
 
-    // Use setTimeout to avoid calling setState synchronously in effect
-    const timeoutId1 = setTimeout(() => {
+    startTransition(() => {
       setIsSearching(true);
-    }, 0);
-    const timeoutId2 = setTimeout(() => {
+    });
+    const timeoutId = setTimeout(() => {
       fetcher.load(`/api/global-search?q=${encodeURIComponent(query)}`);
     }, 300);
 
     return () => {
-      clearTimeout(timeoutId1);
-      clearTimeout(timeoutId2);
+      clearTimeout(timeoutId);
     };
   }, [query, fetcher]);
 
   // Update results when fetcher data changes
   useEffect(() => {
     if (fetcher.data) {
-      // Use setTimeout to avoid calling setState synchronously in effect
-      const timeoutId = setTimeout(() => {
-        setResults(fetcher.data?.results ?? []);
-        setIsSearching(fetcher.state !== "idle");
-      }, 0);
-      return () => clearTimeout(timeoutId);
+      startTransition(() => {
+        setResults(fetcher.data.results);
+      });
     }
+    // Update searching state based on fetcher state
+    startTransition(() => {
+      setIsSearching(
+        fetcher.state === "loading" || fetcher.state === "submitting"
+      );
+    });
   }, [fetcher.data, fetcher.state]);
 
   // Keyboard shortcuts
@@ -67,9 +73,10 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setIsOpen(true);
-        setTimeout(() => {
+        // Use requestAnimationFrame for smoother focus
+        requestAnimationFrame(() => {
           inputRef.current?.focus();
-        }, 0);
+        });
       }
 
       // Escape to close
@@ -105,7 +112,12 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
   }, [isOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const newQuery = e.target.value;
+    setQuery(newQuery);
+    // Keep dropdown open when typing
+    if (newQuery.trim() && !isOpen) {
+      setIsOpen(true);
+    }
   };
 
   const handleInputFocus = () => {
@@ -124,8 +136,9 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     setResults([]);
   }, []);
 
-  // Determine if we should show results
-  const showResults = isOpen && query.trim() !== "";
+  // Determine if we should show results dropdown
+  // Show when open and either has query text or is currently searching
+  const showResults = isOpen && (query.trim() !== "" || isSearching);
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
