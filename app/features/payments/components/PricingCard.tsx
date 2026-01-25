@@ -33,39 +33,33 @@ export function PricingCard({
 }: PricingCardProps) {
   return (
     <div
-      className={`relative rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800 ${
-        plan.isPopular ? "ring-2 ring-green-500" : ""
+      className={`border-border bg-card relative rounded-lg border p-6 shadow-lg ${
+        plan.isPopular ? "ring-primary ring-2" : ""
       }`}
     >
       {plan.isPopular ? (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-          <span className="rounded-full bg-green-500 px-3 py-1 text-sm font-medium text-white">
+          <span className="bg-primary text-primary-foreground rounded-full px-3 py-1 text-sm font-medium">
             Most Popular
           </span>
         </div>
       ) : null}
 
       <div className="mb-6 text-center">
-        <h3 className="mb-2 text-2xl font-bold text-black dark:text-white">
-          {plan.name}
-        </h3>
+        <h3 className="text-foreground mb-2 text-2xl font-bold">{plan.name}</h3>
         <div className="mb-2">
-          <span className="text-4xl font-bold text-black dark:text-white">
+          <span className="text-foreground text-4xl font-bold">
             {plan.price === 0 ? "Free" : `$${plan.price}`}
           </span>
           {plan.period ? (
-            <span className="ml-2 text-gray-500 dark:text-gray-400">
-              {plan.period}
-            </span>
+            <span className="text-muted-foreground ml-2">{plan.period}</span>
           ) : null}
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          {plan.description}
-        </p>
+        <p className="text-muted-foreground text-sm">{plan.description}</p>
       </div>
 
       {isCurrentPlan ? (
-        <div className="w-full rounded-lg bg-green-100 px-4 py-3 text-center font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
+        <div className="bg-primary/20 border-primary/30 text-primary w-full rounded-lg border px-4 py-3 text-center font-medium">
           Current Plan
         </div>
       ) : (
@@ -78,8 +72,8 @@ export function PricingCard({
             onClick={(event) => onPlanSelect(event, plan.id)}
             className={`w-full rounded-lg px-4 py-3 font-medium transition-colors disabled:opacity-50 ${
               plan.isPopular
-                ? "bg-green-500 text-white hover:bg-green-600"
-                : "bg-blue-700 text-white hover:bg-blue-600 dark:bg-gray-700 dark:hover:bg-gray-600"
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
             }`}
           >
             {isLoading && selectedPlan === plan.id ? (

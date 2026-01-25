@@ -235,7 +235,7 @@ export default function DraftsPage() {
 
           {/* Bulk Edit */}
           {showAdvancedBulkResume ? (
-            <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900">
+            <div className="bg-background fixed inset-0 z-50">
               <DraftBulkResume
                 selectedDrafts={convertDraftsPostsToPostDataArray(
                   filteredPosts.filter((post) => selectedPosts.has(post.id)),
@@ -279,7 +279,7 @@ export default function DraftsPage() {
 
       {/* Loading indicator for next page */}
       {isFetchingNextPage ? (
-        <div className="mt-4 text-center text-sm text-gray-500">
+        <div className="text-muted-foreground mt-4 text-center text-sm">
           Loading more drafts...
         </div>
       ) : null}

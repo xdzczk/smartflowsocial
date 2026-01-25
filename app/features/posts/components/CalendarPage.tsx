@@ -39,20 +39,18 @@ export default function CalendarPage() {
   const currentTab = searchParams.get("tab") ?? TAB_ALL;
 
   // Tab styling constants
-  const TAB_ACTIVE_CLASSES = "border-blue-500 text-blue-600 dark:text-blue-400";
+  const TAB_ACTIVE_CLASSES = "border-primary text-primary";
   const TAB_INACTIVE_CLASSES =
-    "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300";
+    "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
   return (
     <div className="flex h-full flex-col space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          Calendar
-        </h1>
+        <h1 className="text-foreground text-2xl font-semibold">Calendar</h1>
       </div>
 
       {/* Post Type Tabs */}
-      <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="border-border mb-6 border-b">
         <nav className="-mb-px flex space-x-8" aria-label="Post Types">
           <Link
             to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_ALL}`}
@@ -89,7 +87,7 @@ export default function CalendarPage() {
       {currentTab === TAB_ALL ||
       currentTab === TAB_POSTS ||
       currentTab === TAB_LONGFORM ? (
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-border border-b">
           <nav className="-mb-px flex space-x-8" aria-label="Queue Types">
             <Link
               to={`/dashboard/calendar?tab=${currentTab}`}
@@ -122,7 +120,7 @@ export default function CalendarPage() {
                 const baseClasses =
                   "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium capitalize";
                 const unselectedClasses =
-                  "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300";
+                  "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
                 if (isSelected && queueColor) {
                   // Use inline styles for custom colors
@@ -155,7 +153,7 @@ export default function CalendarPage() {
                     }
                     className={`${baseClasses} ${
                       isSelected
-                        ? `border-blue-500 ${safeColors?.text ?? ""}`
+                        ? `border-primary text-primary ${safeColors?.text ?? ""}`
                         : unselectedClasses
                     }`}
                   >

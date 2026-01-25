@@ -16,17 +16,12 @@ export default function Header() {
             to="/"
             className="flex h-20 items-center justify-center transition"
           >
-            <div className="inline-flex items-center gap-3">
-              <Logo
-                lightSrc="/logos/Logo-Full-LightMode.svg"
-                darkSrc="/logos/Logo-Full-DarkMode.svg"
-                alt="SmartFlow Social"
-                className="h-10 w-auto"
-              />
-              <span className="text-foreground text-2xl font-semibold">
-                SmartFlow Social
-              </span>
-            </div>
+            <Logo
+              lightSrc="/logos/Logo-Full-LightMode.svg"
+              darkSrc="/logos/Logo-Full-DarkMode.svg"
+              alt="SmartFlow Social"
+              className="h-10 w-auto"
+            />
           </Link>
         </div>
         <div className="flex flex-col gap-4 text-center md:flex-row md:items-center md:justify-between md:gap-0">

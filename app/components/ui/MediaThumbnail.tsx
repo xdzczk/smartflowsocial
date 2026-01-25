@@ -52,7 +52,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
     if (fallback) return <>{fallback}</>;
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400 ${className}`}
+        className={`bg-muted text-muted-foreground flex items-center justify-center text-xs font-medium ${className}`}
       >
         NO MEDIA
       </div>
@@ -77,7 +77,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
   if (hasError) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400 ${className}`}
+        className={`bg-muted text-muted-foreground flex items-center justify-center text-xs font-medium ${className}`}
       >
         TEXT
       </div>

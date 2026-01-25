@@ -45,7 +45,7 @@ export function DashboardLayoutPage(): ReactNode {
     <>
       <div
         id="page-container"
-        className={`mx-auto flex min-h-dvh w-full min-w-[320px] flex-col bg-gray-100 lg:pl-64 dark:bg-gray-900 dark:text-gray-100`}
+        className="bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col lg:pl-64"
       >
         <Header />
 
@@ -85,7 +85,7 @@ export function DashboardLayoutPage(): ReactNode {
                         <input type="hidden" name="parentNpub" value={p.npub} />
                         <input type="hidden" name="decision" value="reject" />
                         <button
-                          className="inline-flex items-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 disabled:opacity-70 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+                          className="bg-secondary text-secondary-foreground hover:bg-secondary/80 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
                           type="submit"
                           disabled={isThisSubmitting}
                         >
@@ -103,7 +103,7 @@ export function DashboardLayoutPage(): ReactNode {
                         <input type="hidden" name="parentNpub" value={p.npub} />
                         <input type="hidden" name="decision" value="accept" />
                         <button
-                          className="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:opacity-70"
+                          className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-70"
                           type="submit"
                           disabled={isThisSubmitting}
                         >
@@ -121,7 +121,7 @@ export function DashboardLayoutPage(): ReactNode {
 
           {isFreePlan ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
-              <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-100">
+              <div className="border-primary/20 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/20 mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
                 <div>
                   <p className="font-medium">You’re on the Free plan</p>
                   <p className="text-sm opacity-90">
@@ -132,7 +132,7 @@ export function DashboardLayoutPage(): ReactNode {
                 <Link
                   prefetch="intent"
                   to="/plans"
-                  className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
                 >
                   View plans
                 </Link>

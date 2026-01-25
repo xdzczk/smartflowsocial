@@ -9,6 +9,9 @@ import {
   type FeatureName,
 } from "~/features/payments/types";
 
+const TEXT_PRIMARY = "text-primary";
+const TEXT_MUTED_FOREGROUND = "text-muted-foreground";
+
 interface NavigationChildItem {
   to: string;
   feature: FeatureName;
@@ -47,10 +50,10 @@ function NavigationChildItemComponent({
 
   const childLinkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     isActive
-      ? "bg-gray-700/75 text-white"
+      ? "bg-primary/20 text-primary border-primary/30"
       : hasAccess
-        ? "text-gray-300 hover:bg-gray-700/75 hover:text-white active:border-gray-700"
-        : "text-gray-500 cursor-not-allowed opacity-60"
+        ? "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
+        : "text-muted-foreground/50 cursor-not-allowed opacity-60"
   }`;
 
   return (
@@ -65,7 +68,9 @@ function NavigationChildItemComponent({
           : undefined
       }
     >
-      <span className="flex flex-none items-center text-gray-300">
+      <span
+        className={`flex flex-none items-center ${isActive ? TEXT_PRIMARY : TEXT_MUTED_FOREGROUND}`}
+      >
         {child.icon}
       </span>
       <span className="grow py-2">{child.label}</span>
@@ -125,8 +130,8 @@ export function ExpandableNavigationSection({
 
   const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer ${
     isAnyChildActive
-      ? "bg-gray-700/75 text-white"
-      : "text-gray-300 hover:bg-gray-700/75 hover:text-white active:border-gray-700"
+      ? "bg-primary/20 text-primary border-primary/30"
+      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
   }`;
 
   return (
@@ -140,12 +145,14 @@ export function ExpandableNavigationSection({
         aria-expanded={isExpanded}
         aria-controls={`${title.toLowerCase().replace(/\s+/g, "-")}-section-content`}
       >
-        <span className="flex flex-none items-center text-gray-300">
+        <span
+          className={`flex flex-none items-center ${isAnyChildActive ? TEXT_PRIMARY : TEXT_MUTED_FOREGROUND}`}
+        >
           {icon}
         </span>
         <span className="grow py-2 text-left">{title}</span>
         <span
-          className={`flex flex-none items-center text-gray-300 transition-transform duration-200 ease-in-out ${
+          className={`flex flex-none items-center ${isAnyChildActive ? TEXT_PRIMARY : TEXT_MUTED_FOREGROUND} transition-transform duration-200 ease-in-out ${
             isExpanded ? "rotate-180" : "rotate-0"
           }`}
         >

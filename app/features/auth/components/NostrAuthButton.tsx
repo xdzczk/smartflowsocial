@@ -118,8 +118,7 @@ export default function NostrAuthButton() {
         </>
       ) : (
         <Button
-          className="bg-gradient-to-r from-purple-500 to-indigo-600 font-bold text-white hover:from-purple-600 hover:to-indigo-700"
-          size="lg"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
           asChild
         >
           <Link to={`/login?redirectTo=${redirectTo}`}>Sign in</Link>

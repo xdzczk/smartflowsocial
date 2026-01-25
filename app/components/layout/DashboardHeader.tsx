@@ -20,6 +20,7 @@ import {
 import { ExpandableNavigationSection } from "~/components/layout/ExpandableNavigationSection";
 import { GlobalSearchBar } from "~/components/layout/GlobalSearchBar";
 import { Button } from "~/components/ui/button";
+import { Logo } from "~/components/ui/Logo";
 import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
 import UpgradePrompt from "~/features/payments/components/UpgradePrompt";
 import {
@@ -69,10 +70,10 @@ function NavigationItem({
 
   const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     isActive
-      ? "bg-gray-700/75 text-white"
+      ? "bg-primary/20 text-primary border-primary/30"
       : hasAccess
-        ? "text-gray-300 hover:bg-gray-700/75 hover:text-white active:border-gray-700"
-        : "text-gray-500 cursor-not-allowed opacity-60"
+        ? "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
+        : "text-muted-foreground/50 cursor-not-allowed opacity-60"
   }`;
 
   return (
@@ -87,7 +88,11 @@ function NavigationItem({
           : undefined
       }
     >
-      <span className="flex flex-none items-center text-gray-300">{icon}</span>
+      <span
+        className={`flex flex-none items-center ${isActive ? "text-primary" : "text-muted-foreground"}`}
+      >
+        {icon}
+      </span>
       <span className="grow py-2">{children}</span>
       {!hasAccess ? (
         <Lock className="h-4 w-4 flex-shrink-0 text-amber-500" />
@@ -128,27 +133,24 @@ export default function Header() {
       <nav
         id="page-sidebar"
         aria-label="Main Sidebar Navigation"
-        className={`fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r border-gray-800 bg-gray-800 text-gray-200 transition-transform duration-500 ease-out lg:w-64 ${
+        className={`border-border bg-card text-foreground fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r transition-transform duration-500 ease-out lg:w-64 ${
           desktopSidebarOpen ? "lg:translate-x-0" : "lg:-translate-x-full"
         } ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* Sidebar Header */}
-        <div className="flex h-16 w-full flex-none items-center justify-between bg-gray-600/25 px-4 lg:justify-center">
+        <div className="bg-secondary/30 flex h-16 w-full flex-none items-center justify-between px-4 lg:justify-center">
           {/* Brand */}
           <Link
             prefetch="intent"
             to="/dashboard"
-            className="group inline-flex items-center gap-2 text-lg font-bold tracking-wide text-gray-100 hover:text-gray-300"
+            className="group text-foreground hover:text-primary inline-flex items-center gap-2 text-lg font-bold tracking-wide transition-colors"
           >
-            <svg
-              className="size-8 text-blue-600 dark:text-blue-500"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M12 2C6.477 2 2 6.477 2 12c0 5.523 4.477 10 10 10s10-4.477 10-10c0-5.523-4.477-10-10-10zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm1-11h-2v3H8v2h3v3h2v-3h3v-2h-3V9z" />
-            </svg>
-            <span>SmartFlow Social</span>
+            <Logo
+              lightSrc="/logos/Logo-Full-LightMode.svg"
+              darkSrc="/logos/Logo-Full-DarkMode.svg"
+              alt="SmartFlow Social"
+              className="h-8 w-auto"
+            />
           </Link>
           {/* END Brand */}
 
@@ -158,7 +160,7 @@ export default function Header() {
               onClick={() => setMobileSidebarOpen(false)}
               variant="outline"
               size="sm"
-              className="border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-600 hover:bg-gray-700 hover:text-gray-200"
+              className="border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
             >
               <HiOutlineXMark className="-mx-0.5 inline-block size-5" />
             </Button>
@@ -303,7 +305,7 @@ export default function Header() {
       {/* Page Header */}
       <header
         id="page-header"
-        className={`fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center bg-white shadow-sm dark:bg-gray-800 ${desktopSidebarOpen ? "lg:pl-64" : ""}`}
+        className={`bg-background border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b shadow-sm ${desktopSidebarOpen ? "lg:pl-64" : ""}`}
       >
         <div className="max-w-10xl mx-auto flex w-full justify-between px-4 lg:px-8">
           {/* Left Section */}
@@ -345,17 +347,14 @@ export default function Header() {
             <Link
               prefetch="intent"
               to="/dashboard"
-              className="group inline-flex items-center gap-2 text-lg font-bold tracking-wide text-gray-900 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300"
+              className="group text-foreground hover:text-primary inline-flex items-center gap-2 text-lg font-bold tracking-wide transition-colors"
             >
-              <svg
-                className="size-8 text-blue-600 dark:text-blue-500"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 5.523 4.477 10 10 10s10-4.477 10-10c0-5.523-4.477-10-10-10zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm1-11h-2v3H8v2h3v3h2v-3h3v-2h-3V9z" />
-              </svg>
-              <span className="hidden sm:inline">SmartFlow Social</span>
+              <Logo
+                lightSrc="/logos/Logo-Full-LightMode.svg"
+                darkSrc="/logos/Logo-Full-DarkMode.svg"
+                alt="SmartFlow Social"
+                className="h-8 w-auto"
+              />
             </Link>
           </div>
           {/* END Center Section - Logo (Mobile) */}

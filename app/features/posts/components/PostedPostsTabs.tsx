@@ -2,9 +2,9 @@ import { Link, useParams, useRevalidator } from "@remix-run/react";
 
 import { getQueueColor } from "../queue-colors";
 
-const ACTIVE_TAB_CLASSES = "border-blue-500 text-blue-600 dark:text-blue-400";
+const ACTIVE_TAB_CLASSES = "border-primary text-primary";
 const INACTIVE_TAB_CLASSES =
-  "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300";
+  "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
 interface QueueType {
   name: string;
@@ -33,7 +33,7 @@ export default function PostedPostsTabs({
   return (
     <>
       {/* Post Type Tabs */}
-      <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="border-border mb-6 border-b">
         <nav className="-mb-px flex space-x-8" aria-label="Post Types">
           <Link
             to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=all`}
@@ -68,7 +68,7 @@ export default function PostedPostsTabs({
       {currentTab === "all" ||
       currentTab === "posts" ||
       currentTab === "longform" ? (
-        <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="border-border mb-6 border-b">
           <nav className="-mb-px flex space-x-8" aria-label="Queue Types">
             <Link
               to={`/dashboard/posted?tab=${currentTab}`}
@@ -121,7 +121,7 @@ export default function PostedPostsTabs({
                   onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                   className={`${baseClasses} ${
                     isSelected && colors
-                      ? `${colors.border.replace("border-", "border-b-")} ${colors.text}`
+                      ? `${colors.border.replace("border-", "border-b-") || "border-b-primary"} ${colors.text || "text-primary"}`
                       : unselectedClasses
                   }`}
                 >

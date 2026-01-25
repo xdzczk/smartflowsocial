@@ -29,8 +29,8 @@ export default function PostTypeTabs({
   const getTabClasses = (isActive: boolean) =>
     `whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
       isActive
-        ? "border-blue-500 text-blue-600 dark:text-blue-400"
-        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+        ? "border-primary text-primary"
+        : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
     }`;
 
   // Use pagination totals if available, otherwise fall back to array lengths
@@ -39,7 +39,7 @@ export default function PostTypeTabs({
   const longformCount = totalLongformCount ?? longformPosts.length;
 
   return (
-    <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+    <div className="border-border mb-6 border-b">
       <nav className="-mb-px flex space-x-8" aria-label="Post Types">
         <Link
           to={`${basePath}${queueParam}?tab=all`}

@@ -61,7 +61,7 @@ const MediaModal: React.FC<MediaModalProps> = ({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute -top-12 right-0 z-20 text-white hover:text-gray-300"
+          className="absolute -top-12 right-0 z-20 text-white hover:text-white/80"
           aria-label="Close modal"
         >
           <XMarkIcon className="h-8 w-8" />
