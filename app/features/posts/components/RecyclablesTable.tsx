@@ -55,7 +55,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
+    className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -84,11 +84,11 @@ export function RecyclablesTable({
   bulkDeleteFetcher,
 }: RecyclablesTableProps) {
   return (
-    <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
       <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>
-            <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
               <input
                 id="recyclable-select-all"
                 name="recyclable-select-all"
@@ -97,10 +97,10 @@ export function RecyclablesTable({
                   posts.length > 0 ? selectedPosts.size === posts.length : false
                 }
                 onChange={onToggleSelectAll}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
               />
             </th>
-            <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
               Media
             </th>
             <SortableHeader
@@ -163,7 +163,7 @@ export function RecyclablesTable({
               sortConfig={sortConfig}
               onRequestSort={onRequestSort}
             />
-            <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
               Actions
             </th>
           </tr>
@@ -181,7 +181,7 @@ export function RecyclablesTable({
             return (
               <tr
                 key={post.id}
-                className="cursor-pointer even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-900/50 dark:hover:bg-gray-700/50"
+                className="even:bg-secondary/20 hover:bg-accent/10 cursor-pointer"
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3 text-center">
@@ -192,7 +192,7 @@ export function RecyclablesTable({
                     checked={selectedPosts.has(post.id)}
                     onChange={() => onToggleSelect(post.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                    className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
                   />
                 </td>
                 <td className="p-3">
@@ -203,7 +203,7 @@ export function RecyclablesTable({
                       className="h-12 w-12 rounded object-cover"
                     />
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                    <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                       TEXT
                     </div>
                   )}
@@ -249,7 +249,7 @@ export function RecyclablesTable({
                   )}
                 </td>
                 <td className="p-3">
-                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  <span className="bg-primary/20 text-primary inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                     Recyclable
                   </span>
                 </td>
@@ -273,7 +273,7 @@ export function RecyclablesTable({
                       <button
                         type="submit"
                         disabled={individualRepostFetcher.state !== "idle"}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
+                        className="border-accent/30 bg-card text-accent-foreground hover:border-accent/50 hover:bg-accent/10 focus:ring-accent/25 active:border-accent/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         {individualRepostFetcher.state !== "idle"
                           ? "Reposting..."
@@ -289,7 +289,7 @@ export function RecyclablesTable({
                       <button
                         type="submit"
                         disabled={individualRepostFetcher.state !== "idle"}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                        className="bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/30 px-2 py-1 text-sm leading-5 font-semibold text-green-600 hover:border-green-500/50 hover:bg-green-500/10 focus:ring focus:ring-green-500/25 active:border-green-500/30 active:shadow-none disabled:opacity-50 dark:text-green-400"
                       >
                         {individualRepostFetcher.state !== "idle"
                           ? "Quoting..."
@@ -308,7 +308,7 @@ export function RecyclablesTable({
                           deleteFetcher.state !== "idle" ||
                           bulkDeleteFetcher.state !== "idle"
                         }
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                        className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-destructive/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         {deleteFetcher.state !== "idle"
                           ? "Deleting..."

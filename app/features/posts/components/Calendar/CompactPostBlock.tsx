@@ -100,9 +100,7 @@ function ThumbnailSection({
         className="h-4 w-4 flex-shrink-0 rounded"
         forceType={isVideoFile(firstImage) ? "video" : "image"}
         hidePlayButton={true}
-        fallback={
-          <div className="h-4 w-4 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-600" />
-        }
+        fallback={<div className="bg-muted h-4 w-4 flex-shrink-0 rounded" />}
       />
       <PostBadges post={post} size="sm" />
     </div>
@@ -153,7 +151,7 @@ function MediaPreview({
           forceType={isVideoFile(firstImage) ? "video" : "image"}
           hidePlayButton={false}
           fallback={
-            <div className="flex h-full w-full items-center justify-center bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+            <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
               {post.postType === "VIDEO" || isVideoFile(firstImage)
                 ? "VIDEO"
                 : "MEDIA"}
@@ -163,7 +161,7 @@ function MediaPreview({
         <PostBadges post={post} size="md" position="absolute-large" />
       </div>
       {(post.caption ?? (isLongform && post.summary)) ? (
-        <p className="truncate-2-lines flex-shrink-0 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+        <p className="truncate-2-lines text-muted-foreground flex-shrink-0 text-xs leading-relaxed">
           {isLongform ? (post.summary ?? postPreview) : postPreview}
         </p>
       ) : null}

@@ -48,7 +48,7 @@ const SortableHeader = ({
   requestSort,
 }: SortableHeaderProps) => (
   <th
-    className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
+    className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
     onClick={() => requestSort(sortKey)}
   >
     {label}{" "}
@@ -88,11 +88,11 @@ export default function PostedPostsTable({
   bulkDeleteFetcher,
 }: PostedPostsTableProps) {
   return (
-    <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
       <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>
-            <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
               <input
                 id="posted-select-all"
                 name="posted-select-all"
@@ -103,10 +103,10 @@ export default function PostedPostsTable({
                     : false
                 }
                 onChange={toggleSelectAll}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
               />
             </th>
-            <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
               Media
             </th>
             <SortableHeader
@@ -169,7 +169,7 @@ export default function PostedPostsTable({
               sortConfig={sortConfig}
               requestSort={requestSort}
             />
-            <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
               Actions
             </th>
           </tr>
@@ -181,7 +181,7 @@ export default function PostedPostsTable({
             return (
               <tr
                 key={post.id}
-                className="cursor-pointer even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-900/50 dark:hover:bg-gray-700/50"
+                className="even:bg-secondary/20 hover:bg-accent/10 cursor-pointer"
                 onClick={() => setSelectedPost(post)}
               >
                 <td className="p-3 text-center">
@@ -192,7 +192,7 @@ export default function PostedPostsTable({
                     checked={selectedPosts.has(post.id)}
                     onChange={() => togglePostSelection(post.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                    className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
                   />
                 </td>
                 <td className="p-3">
@@ -355,7 +355,7 @@ export default function PostedPostsTable({
                                   post.id
                                 : false)
                             }
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
+                            className="border-accent/30 bg-card text-accent-foreground hover:border-accent/50 hover:bg-accent/10 focus:ring-accent/25 active:border-accent/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                           >
                             {fetcher.state !== "idle" &&
                             (formData
@@ -387,7 +387,7 @@ export default function PostedPostsTable({
                                   post.id
                                 : false)
                             }
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                            className="bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/30 px-2 py-1 text-sm leading-5 font-semibold text-green-600 hover:border-green-500/50 hover:bg-green-500/10 focus:ring focus:ring-green-500/25 active:border-green-500/30 active:shadow-none disabled:opacity-50 dark:text-green-400"
                           >
                             {fetcher.state !== "idle" &&
                             (formData
@@ -412,7 +412,7 @@ export default function PostedPostsTable({
                           deleteFetcher.state !== "idle" ||
                           bulkDeleteFetcher.state !== "idle"
                         }
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                        className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-destructive/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         {deleteFetcher.state !== "idle" &&
                         deleteFetcher.formData?.get("postId") === post.id

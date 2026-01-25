@@ -291,10 +291,8 @@ export function WeeklyView({
                     key={`${dateKey}-${time}`}
                     role="gridcell"
                     tabIndex={-1}
-                    className={`relative min-w-0 flex-1 overflow-hidden border-r border-gray-100 p-1 last:border-r-0 dark:border-gray-800 ${
-                      isDragOver
-                        ? "bg-blue-100 dark:bg-blue-900/30"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    className={`border-border relative min-w-0 flex-1 overflow-hidden border-r p-1 last:border-r-0 ${
+                      isDragOver ? "bg-primary/20" : "hover:bg-accent/10"
                     }`}
                     onDragOver={(e) => handleDragOver(e, dateKey, time)}
                     onDrop={(e) => handleDrop(e, dateKey, time)}

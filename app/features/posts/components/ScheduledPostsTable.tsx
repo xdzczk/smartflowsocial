@@ -40,7 +40,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
+    className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -132,11 +132,11 @@ export function ScheduledPostsTable({
   };
 
   return (
-    <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
       <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>
-            <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
               <input
                 id="scheduled-select-all"
                 name="scheduled-select-all"
@@ -145,10 +145,10 @@ export function ScheduledPostsTable({
                   posts.length > 0 ? selectedPosts.size === posts.length : false
                 }
                 onChange={onToggleSelectAll}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
               />
             </th>
-            <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
               Media
             </th>
             <SortableHeader
@@ -163,16 +163,16 @@ export function ScheduledPostsTable({
               sortConfig={sortConfig}
               onRequestSort={onRequestSort}
             />
-            <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
               Time Remaining
             </th>
-            <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
               Queue
             </th>
-            <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
               Status
             </th>
-            <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+            <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
               Actions
             </th>
           </tr>
@@ -181,7 +181,7 @@ export function ScheduledPostsTable({
           {posts.map((post) => (
             <tr
               key={post.id}
-              className="cursor-pointer even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-900/50 dark:hover:bg-gray-700/50"
+              className="even:bg-secondary/20 hover:bg-accent/10 cursor-pointer"
               onClick={() => onPostClick(post)}
             >
               <td className="p-3 text-center">
@@ -192,7 +192,7 @@ export function ScheduledPostsTable({
                   checked={selectedPosts.has(post.id)}
                   onChange={() => onToggleSelection(post.id)}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                  className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
                 />
               </td>
               <td className="p-3">
@@ -209,21 +209,21 @@ export function ScheduledPostsTable({
                         }
                       }}
                       fallback={
-                        <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                        <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                           TEXT
                         </div>
                       }
                     />
                   ) : post.repost ? (
-                    <div className="flex h-12 w-12 items-center justify-center rounded bg-purple-100 text-xs font-medium text-purple-800 dark:bg-purple-800 dark:text-purple-200">
+                    <div className="bg-accent/30 text-accent-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                       REPOST
                     </div>
                   ) : post.isQuotedPost ? (
-                    <div className="flex h-12 w-12 items-center justify-center rounded bg-green-100 text-xs font-medium text-green-800 dark:bg-green-800 dark:text-green-200">
+                    <div className="flex h-12 w-12 items-center justify-center rounded bg-green-500/20 text-xs font-medium text-green-600 dark:text-green-400">
                       QUOTE
                     </div>
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                    <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                       TEXT
                     </div>
                   )}
@@ -272,7 +272,7 @@ export function ScheduledPostsTable({
               </td>
               <td className="p-3">{formatDate(post.scheduledAtUtc)}</td>
               <td className="p-3 text-center">
-                <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                <div className="text-primary text-sm font-medium">
                   {countdowns[post.id] ?? "—"}
                 </div>
               </td>
@@ -307,8 +307,8 @@ export function ScheduledPostsTable({
                 <div
                   className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${
                     post.signedEvent
-                      ? "bg-blue-100 text-blue-900 dark:border-blue-900/75 dark:bg-blue-700/10 dark:text-blue-200"
-                      : "bg-emerald-100 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-700/10 dark:text-emerald-200"
+                      ? "bg-primary/20 text-primary"
+                      : "bg-green-500/20 text-green-600 dark:text-green-400"
                   }`}
                 >
                   {post.signedEvent ? "Signed" : "Scheduled"}
@@ -321,7 +321,7 @@ export function ScheduledPostsTable({
                       e.stopPropagation();
                       onEditPost(post);
                     }}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-blue-800 hover:border-blue-300 hover:text-blue-900 hover:shadow-sm focus:ring focus:ring-blue-300/25 active:border-blue-200 active:shadow-none dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:border-blue-600 dark:hover:text-blue-200 dark:focus:ring-blue-600/40 dark:active:border-blue-700"
+                    className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-primary/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
                   >
                     Edit
                   </button>
@@ -330,7 +330,7 @@ export function ScheduledPostsTable({
                       e.stopPropagation();
                       onReschedulePost(post);
                     }}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                    className="bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/30 px-2 py-1 text-sm leading-5 font-semibold text-green-600 hover:border-green-500/50 hover:bg-green-500/10 focus:ring focus:ring-green-500/25 active:border-green-500/30 active:shadow-none dark:text-green-400"
                   >
                     Reschedule
                   </button>
@@ -346,7 +346,7 @@ export function ScheduledPostsTable({
                         deleteFetcher.state !== "idle" ||
                         bulkDeleteState !== "idle"
                       }
-                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                      className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-destructive/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                     >
                       {deleteFetcher.state !== "idle" &&
                       deleteFetcher.formData?.get("postId") === post.id

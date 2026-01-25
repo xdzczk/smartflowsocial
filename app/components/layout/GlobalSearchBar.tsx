@@ -132,7 +132,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
       {/* Search Input */}
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <Search className="h-4 w-4 text-gray-400" />
+          <Search className="text-muted-foreground h-4 w-4" />
         </div>
         <input
           ref={inputRef}
@@ -141,13 +141,13 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           placeholder="Search posts, drafts, templates... (⌘K)"
-          className="block w-full rounded-lg border border-gray-200 bg-white py-2 pr-10 pl-10 text-sm placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
+          className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-2 pr-10 pl-10 text-sm focus:ring focus:outline-none"
         />
         {query ? (
           <button
             type="button"
             onClick={handleClose}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-3"
           >
             <X className="h-4 w-4" />
           </button>

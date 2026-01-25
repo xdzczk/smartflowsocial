@@ -83,14 +83,14 @@ export function getStatusColor(
 ): string {
   // Past posts get grayed out styling regardless of other conditions
   if (isPast) {
-    return "bg-gray-50 text-gray-400 dark:bg-gray-800 dark:text-gray-600 opacity-60";
+    return "bg-muted text-muted-foreground opacity-60";
   }
 
   if (isLongform) {
     if (post.signedEvent) {
-      return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+      return "bg-green-500/20 text-green-600 dark:text-green-400";
     }
-    return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+    return "bg-secondary text-secondary-foreground";
   }
 
   // Fallback to original logic for regular posts
@@ -98,11 +98,11 @@ export function getStatusColor(
 
   if (post.signedEvent) {
     return wasAutoScheduled
-      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-      : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+      ? "bg-primary/20 text-primary"
+      : "bg-green-500/20 text-green-600 dark:text-green-400";
   }
 
-  return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+  return "bg-secondary text-secondary-foreground";
 }
 
 export function getQueueColorStyle(

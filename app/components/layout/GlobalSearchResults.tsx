@@ -129,10 +129,10 @@ export function GlobalSearchResults({
 }: GlobalSearchResultsProps) {
   if (isLoading) {
     return (
-      <div className="max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+      <div className="border-border bg-card max-h-96 overflow-y-auto rounded-lg border shadow-lg">
         <div className="flex items-center justify-center p-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-          <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+          <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+          <span className="text-muted-foreground ml-2 text-sm">
             Searching...
           </span>
         </div>
@@ -142,8 +142,8 @@ export function GlobalSearchResults({
 
   if (results.length === 0) {
     return (
-      <div className="max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-        <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div className="border-border bg-card max-h-96 overflow-y-auto rounded-lg border shadow-lg">
+        <div className="text-muted-foreground p-8 text-center text-sm">
           No results found
         </div>
       </div>
@@ -162,13 +162,10 @@ export function GlobalSearchResults({
   );
 
   return (
-    <div className="max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+    <div className="border-border bg-card max-h-96 overflow-y-auto rounded-lg border shadow-lg">
       {Object.entries(groupedResults).map(([type, typeResults]) => (
-        <div
-          key={type}
-          className="border-b border-gray-200 last:border-b-0 dark:border-gray-700"
-        >
-          <div className="bg-gray-50 px-4 py-2 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:bg-gray-900 dark:text-gray-400">
+        <div key={type} className="border-border border-b last:border-b-0">
+          <div className="bg-secondary/30 text-muted-foreground px-4 py-2 text-xs font-semibold tracking-wide uppercase">
             {getTypeLabel(type as GlobalSearchResult["type"])}
           </div>
           {typeResults.map((result) => (
@@ -176,21 +173,21 @@ export function GlobalSearchResults({
               key={result.id}
               to={result.url}
               onClick={onResultClick}
-              className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              className="hover:bg-accent/10 flex items-start gap-3 px-4 py-3"
             >
-              <div className="mt-0.5 flex-shrink-0 text-gray-400">
+              <div className="text-muted-foreground mt-0.5 flex-shrink-0">
                 {getTypeIcon(result.type)}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <span className="text-foreground text-sm font-medium">
                     {getPreviewText(result)}
                   </span>
-                  <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  <span className="bg-primary/20 text-primary rounded px-1.5 py-0.5 text-xs font-medium">
                     {getTypeLabel(result.type)}
                   </span>
                 </div>
-                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-muted-foreground mt-1 text-xs">
                   {formatDate(result.createdAt)}
                 </div>
               </div>

@@ -230,7 +230,7 @@ export function MonthlyView({
               className={`flex min-h-[120px] flex-col border-r border-b border-gray-200 p-2 last:border-r-0 dark:border-gray-700 ${
                 dayInfo.isCurrentMonth
                   ? "bg-white dark:bg-gray-800"
-                  : "bg-gray-50 dark:bg-gray-900"
+                  : "bg-secondary/20"
               } ${dayInfo.isToday ? "ring-2 ring-blue-500" : ""}`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, dayInfo.date)}
@@ -239,10 +239,10 @@ export function MonthlyView({
               <div
                 className={`mb-1 text-sm font-medium ${
                   dayInfo.isToday
-                    ? "text-blue-600 dark:text-blue-400"
+                    ? "text-primary"
                     : dayInfo.isCurrentMonth
-                      ? "text-gray-900 dark:text-white"
-                      : "text-gray-400 dark:text-gray-600"
+                      ? "text-foreground"
+                      : "text-muted-foreground"
                 }`}
               >
                 {dayInfo.date.getDate()}

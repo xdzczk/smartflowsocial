@@ -108,23 +108,21 @@ export default function PostDetailsModal({
       case "draft":
         return (
           <span
-            className={`${badgeClasses} bg-orange-100 text-orange-900 dark:bg-orange-700/10 dark:text-orange-200`}
+            className={`${badgeClasses} bg-orange-500/20 text-orange-600 dark:text-orange-400`}
           >
             Draft
           </span>
         );
       case "scheduled":
         return (
-          <span
-            className={`${badgeClasses} bg-blue-100 text-blue-900 dark:bg-blue-700/10 dark:text-blue-200`}
-          >
+          <span className={`${badgeClasses} bg-primary/20 text-primary`}>
             Scheduled
           </span>
         );
       default:
         return (
           <span
-            className={`${badgeClasses} bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200`}
+            className={`${badgeClasses} bg-green-500/20 text-green-600 dark:text-green-400`}
           >
             Posted
           </span>

@@ -40,7 +40,7 @@ export function GiveawayFilters({
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, from: e.target.value })
               }
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm leading-6 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900"
+              className="border-border bg-background text-foreground focus:border-primary focus:ring-primary/50 rounded-lg border px-3 py-2 text-sm leading-6 focus:ring focus:outline-none"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -55,14 +55,14 @@ export function GiveawayFilters({
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, to: e.target.value })
               }
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm leading-6 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900"
+              className="border-border bg-background text-foreground focus:border-primary focus:ring-primary/50 rounded-lg border px-3 py-2 text-sm leading-6 focus:ring focus:outline-none"
             />
           </div>
         </div>
 
         {/* Search input */}
         <div className="relative w-full">
-          <div className="pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l text-gray-500">
+          <div className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l">
             <svg
               className="hi-mini hi-magnifying-glass inline-block size-5"
               xmlns="http://www.w3.org/2000/svg"
@@ -83,7 +83,7 @@ export function GiveawayFilters({
             name="search"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="block w-full rounded-lg border border-gray-200 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
+            className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring focus:outline-none"
             placeholder="Search posts.."
           />
         </div>
@@ -94,7 +94,7 @@ export function GiveawayFilters({
         <div className="mb-4 flex justify-end">
           <button
             onClick={onClearFilters}
-            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-primary hover:text-primary/80 text-sm"
           >
             Clear filters
           </button>

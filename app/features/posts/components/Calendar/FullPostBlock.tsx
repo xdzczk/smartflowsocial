@@ -52,7 +52,7 @@ export function FullPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "posted" : "scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}`}
-      className={`rounded-lg border p-3 transition-all focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+      className={`border-border focus:ring-primary rounded-lg border p-3 transition-all focus:ring-2 focus:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer"
       } ${
         isDragging ? "rotate-2 opacity-50" : isPast ? "" : "hover:shadow-lg"
@@ -70,7 +70,7 @@ export function FullPostBlock({
                 forceType={isVideoFile(firstImage) ? "video" : "image"}
                 hidePlayButton={hideVideoPlayButton}
                 fallback={
-                  <div className="h-5 w-5 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-600" />
+                  <div className="bg-muted h-5 w-5 flex-shrink-0 rounded" />
                 }
               />
               <PostBadges post={post} size="md" />
@@ -103,7 +103,7 @@ export function FullPostBlock({
               forceType={isVideoFile(firstImage) ? "video" : "image"}
               hidePlayButton={hideVideoPlayButton}
               fallback={
-                <div className="flex h-full w-full items-center justify-center bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
                   {post.postType === "VIDEO" || isVideoFile(firstImage)
                     ? "VIDEO"
                     : "MEDIA"}
@@ -115,13 +115,13 @@ export function FullPostBlock({
         </div>
       ) : null}
 
-      <p className="text-sm text-gray-600 dark:text-gray-300">
+      <p className="text-muted-foreground text-sm">
         {isLongform ? (post.summary ?? postPreview) : postPreview}
       </p>
 
       {!isLongform && post.fileUrl.length > 0 ? (
         <div className="mt-2">
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-muted-foreground text-xs">
             {post.fileUrl.length} file{post.fileUrl.length > 1 ? "s" : ""}
             {post.fileUrl.length > 1 ? " (carousel)" : null}
           </div>

@@ -67,12 +67,9 @@ export function getContentPreview(item: CombinedContent): string | null {
 }
 
 // Status color constants
-const DRAFT_COLOR =
-  "bg-orange-100 text-orange-900 dark:border-orange-900/75 dark:bg-orange-700/10 dark:text-orange-200";
-const PUBLISHED_COLOR =
-  "bg-green-100 text-green-900 dark:border-green-900/75 dark:bg-green-700/10 dark:text-green-200";
-const SCHEDULED_COLOR =
-  "bg-blue-100 text-blue-900 dark:border-blue-900/75 dark:bg-blue-700/10 dark:text-blue-200";
+const DRAFT_COLOR = "bg-orange-500/20 text-orange-600 dark:text-orange-400";
+const PUBLISHED_COLOR = "bg-green-500/20 text-green-600 dark:text-green-400";
+const SCHEDULED_COLOR = "bg-primary/20 text-primary";
 
 export function getStatusColor(item: CombinedContent): string {
   // Use currentState as single source of truth
@@ -107,14 +104,14 @@ export function getStatusColor(item: CombinedContent): string {
     }
 
     if (state === "FAILED") {
-      return "bg-red-100 text-red-900 dark:border-red-900/75 dark:bg-red-700/10 dark:text-red-200";
+      return "bg-destructive/20 text-destructive";
     }
     if (state === "CANCELLED") {
-      return "bg-gray-100 text-gray-900 dark:border-gray-900/75 dark:bg-gray-700/10 dark:text-gray-200";
+      return "bg-muted text-muted-foreground";
     }
   }
 
-  return "bg-gray-100 text-gray-900 dark:border-gray-900/75 dark:bg-gray-700/10 dark:text-gray-200";
+  return "bg-muted text-muted-foreground";
 }
 
 export function getStatusText(item: CombinedContent): string {
@@ -273,13 +270,13 @@ export function getContentTypeBadge(item: CombinedContent): {
   if (kind === 6) {
     return {
       className:
-        "inline-flex rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+        "inline-flex rounded-full bg-orange-500/20 px-2 py-1 text-xs font-medium text-orange-600 dark:text-orange-400",
       text: "REPOST",
     };
   } else if (kind === 30023) {
     return {
       className:
-        "inline-flex rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+        "inline-flex rounded-full bg-accent/30 px-2 py-1 text-xs font-medium text-accent-foreground",
       text: "LONG-FORM",
     };
   } else {
@@ -287,8 +284,8 @@ export function getContentTypeBadge(item: CombinedContent): {
     return {
       className: `inline-flex rounded-full px-2 py-1 text-xs font-medium ${
         item.type === "post"
-          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-          : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+          ? "bg-primary/20 text-primary"
+          : "bg-accent/30 text-accent-foreground"
       }`,
       text: item.type === "post" ? "Post" : "Article",
     };

@@ -46,7 +46,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
+    className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -70,15 +70,15 @@ export function GiveawayTable({
   return (
     <>
       {/* Results count */}
-      <div className="mb-2 text-sm text-gray-500">
+      <div className="text-muted-foreground mb-2 text-sm">
         Showing {posts.length} posts with engagement
       </div>
 
-      <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
         <table className="min-w-full align-middle text-sm whitespace-nowrap">
           <thead>
             <tr>
-              <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
                 Media
               </th>
               <SortableHeader
@@ -99,22 +99,22 @@ export function GiveawayTable({
                 sortConfig={sortConfig}
                 onRequestSort={onRequestSort}
               />
-              <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
                 Likes
               </th>
-              <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
                 Replies
               </th>
-              <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
                 Mentions
               </th>
-              <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
                 Reposts
               </th>
-              <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
                 Zaps
               </th>
-              <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
                 Zapped
               </th>
               <SortableHeader
@@ -123,7 +123,7 @@ export function GiveawayTable({
                 sortConfig={sortConfig}
                 onRequestSort={onRequestSort}
               />
-              <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+              <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
                 Actions
               </th>
             </tr>
@@ -132,7 +132,7 @@ export function GiveawayTable({
             {posts.map((post) => (
               <tr
                 key={post.id}
-                className="cursor-pointer even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-900/50 dark:hover:bg-gray-700/50"
+                className="even:bg-secondary/20 hover:bg-accent/10 cursor-pointer"
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3">
@@ -143,7 +143,7 @@ export function GiveawayTable({
                         alt="Post preview"
                         className="h-12 w-12 rounded object-cover"
                         fallback={
-                          <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                          <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                             TEXT
                           </div>
                         }

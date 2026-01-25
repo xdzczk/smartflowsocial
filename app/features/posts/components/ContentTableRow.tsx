@@ -63,7 +63,7 @@ export function ContentTableRow({
   return (
     <tr
       key={`${item.type}-${item.id}`}
-      className="cursor-pointer even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-900/50 dark:hover:bg-gray-700/50"
+      className="even:bg-secondary/20 hover:bg-accent/10 cursor-pointer"
       onClick={() => onPostSelect?.(item)}
     >
       {showBulkActions ? (
@@ -75,7 +75,7 @@ export function ContentTableRow({
             checked={selectedItems.has(item.id)}
             onChange={() => onToggleSelection?.(item.id)}
             onClick={(e) => e.stopPropagation()}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+            className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
           />
         </td>
       ) : null}
@@ -96,7 +96,7 @@ export function ContentTableRow({
                   alt="Post preview"
                   className="h-12 w-12 rounded object-cover"
                   fallback={
-                    <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                    <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                       TEXT
                     </div>
                   }
@@ -113,7 +113,7 @@ export function ContentTableRow({
                 alt="Article cover"
                 className="h-12 w-12 rounded object-cover"
                 fallback={
-                  <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                  <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                     ART
                   </div>
                 }
@@ -123,7 +123,7 @@ export function ContentTableRow({
 
           // Default fallback based on content type
           return (
-            <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+            <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
               {item.type === "post" ? "TEXT" : "ART"}
             </div>
           );
@@ -133,7 +133,7 @@ export function ContentTableRow({
         <p className="font-medium">{getContentTitle(item)}</p>
       </td>
       <td className="p-3">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground text-sm">
           {getContentPreview(item)?.slice(0, 20) ?? ""}
           {(getContentPreview(item)?.length ?? 0) > 20 ? "…" : ""}
         </p>
@@ -244,7 +244,7 @@ function ContentRowActions({
                               item.id
                             : false)
                         }
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
+                        className="border-accent/30 bg-card text-accent-foreground hover:border-accent/50 hover:bg-accent/10 focus:ring-accent/25 active:border-accent/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         {fetcher.state !== "idle" &&
                         (formData
@@ -270,7 +270,7 @@ function ContentRowActions({
                               item.id
                             : false)
                         }
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                        className="bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/30 px-2 py-1 text-sm leading-5 font-semibold text-green-600 hover:border-green-500/50 hover:bg-green-500/10 focus:ring focus:ring-green-500/25 active:border-green-500/30 active:shadow-none disabled:opacity-50 dark:text-green-400"
                       >
                         {fetcher.state !== "idle" &&
                         (formData
@@ -367,7 +367,7 @@ function ContentRowActions({
               e.stopPropagation();
               onEditPost?.(item.originalData);
             }}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-blue-800 hover:border-blue-300 hover:text-blue-900 hover:shadow-sm focus:ring focus:ring-blue-300/25 active:border-blue-200 active:shadow-none dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:border-blue-600 dark:hover:text-blue-200 dark:focus:ring-blue-600/40 dark:active:border-blue-700"
+            className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-primary/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
           >
             Edit
           </button>
@@ -376,7 +376,7 @@ function ContentRowActions({
               e.stopPropagation();
               onReschedulePost?.(item.originalData);
             }}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+            className="bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/30 px-2 py-1 text-sm leading-5 font-semibold text-green-600 hover:border-green-500/50 hover:bg-green-500/10 focus:ring focus:ring-green-500/25 active:border-green-500/30 active:shadow-none dark:text-green-400"
           >
             Reschedule
           </button>
@@ -394,7 +394,7 @@ function ContentRowActions({
         <button
           type="submit"
           disabled={deleteFetcher.state !== "idle"}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+          className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-destructive/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
         >
           {deleteFetcher.state !== "idle" &&
           (deleteFetcher.formData

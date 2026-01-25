@@ -102,9 +102,7 @@ function PostThumbnail({
           forceType={isVideoFile(firstImage) ? "video" : "image"}
           hidePlayButton={size === "xs" ? true : hideVideoPlayButton}
           fallback={
-            <div
-              className={`${sizeClasses} flex-shrink-0 rounded bg-gray-200 dark:bg-gray-600`}
-            />
+            <div className={`${sizeClasses} bg-muted flex-shrink-0 rounded`} />
           }
         />
         <PostBadges post={post} size={badgeSize} />

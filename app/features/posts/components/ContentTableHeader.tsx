@@ -31,7 +31,7 @@ export function ContentTableHeader({
     <thead>
       <tr>
         {showBulkActions ? (
-          <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+          <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
             <input
               id="content-select-all"
               name="content-select-all"
@@ -42,18 +42,18 @@ export function ContentTableHeader({
                   : false
               }
               onChange={onToggleSelectAll}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
             />
           </th>
         ) : null}
-        <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+        <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
           Type
         </th>
-        <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+        <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
           Media
         </th>
         <th
-          className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
+          className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
           onClick={() => onRequestSort("caption")}
         >
           Title/Caption{" "}
@@ -63,11 +63,11 @@ export function ContentTableHeader({
               : "↓"
             : null}
         </th>
-        <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+        <th className="bg-secondary/30 text-foreground px-3 py-4 text-left font-semibold">
           Preview
         </th>
         <th
-          className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
+          className="bg-secondary/30 text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
           onClick={() => onRequestSort(dateSortKey)}
         >
           {type === "posted"
@@ -81,13 +81,13 @@ export function ContentTableHeader({
               : "↓"
             : null}
         </th>
-        <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+        <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
           Queue
         </th>
-        <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+        <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
           Status
         </th>
-        <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
+        <th className="bg-secondary/30 text-foreground px-3 py-4 text-center font-semibold">
           Actions
         </th>
       </tr>

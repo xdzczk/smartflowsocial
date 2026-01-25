@@ -63,7 +63,7 @@ export function ThumbnailPostBlock({
             forceType={isVideoFile(firstImage) ? "video" : "image"}
             hidePlayButton={true}
             fallback={
-              <div className="h-4 w-4 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-600" />
+              <div className="bg-muted h-4 w-4 flex-shrink-0 rounded" />
             }
           />
           <PostBadges post={post} size="sm" />

@@ -34,28 +34,28 @@ export const getQueueColor = (
     { bg: string; text: string; hover: string; border: string }
   > = {
     main: {
-      bg: "bg-blue-100 dark:bg-blue-900/30",
-      text: "text-blue-800 dark:text-blue-200",
-      hover: "hover:bg-blue-200 dark:hover:bg-blue-900/50",
-      border: "border-blue-300 dark:border-blue-600",
+      bg: "bg-primary/20",
+      text: "text-primary",
+      hover: "hover:bg-primary/30",
+      border: "border-primary/30",
     },
     memes: {
-      bg: "bg-green-100 dark:bg-green-900/30",
-      text: "text-green-800 dark:text-green-200",
-      hover: "hover:bg-green-200 dark:hover:bg-green-900/50",
-      border: "border-green-300 dark:border-green-600",
+      bg: "bg-green-500/20",
+      text: "text-green-600 dark:text-green-400",
+      hover: "hover:bg-green-500/30",
+      border: "border-green-500/30",
     },
     quotes: {
-      bg: "bg-purple-100 dark:bg-purple-900/30",
-      text: "text-purple-800 dark:text-purple-200",
-      hover: "hover:bg-purple-200 dark:hover:bg-purple-900/50",
-      border: "border-purple-300 dark:border-purple-600",
+      bg: "bg-accent/30",
+      text: "text-accent-foreground",
+      hover: "hover:bg-accent/40",
+      border: "border-accent/30",
     },
     unassigned: {
-      bg: "bg-gray-100 dark:bg-gray-700",
-      text: "text-gray-800 dark:text-gray-200",
-      hover: "hover:bg-gray-200 dark:hover:bg-gray-600",
-      border: "border-gray-300 dark:border-gray-600",
+      bg: "bg-muted",
+      text: "text-muted-foreground",
+      hover: "hover:bg-muted/80",
+      border: "border-border",
     },
   };
 
