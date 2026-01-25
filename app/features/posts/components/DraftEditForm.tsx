@@ -173,10 +173,10 @@ export function DraftEditForm({
             name="scheduledFor"
             value={scheduledFor}
             onChange={(e) => onScheduledForChange(e.target.value)}
-            className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-lg border border-gray-300 p-2 text-gray-900"
+            className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-lg border p-2"
             disabled={isSubmitting}
           />
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-muted-foreground dark:text-foreground mt-1 text-sm">
             Set a schedule time to resume this draft as a scheduled post
           </p>
         </div>

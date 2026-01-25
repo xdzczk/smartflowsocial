@@ -51,14 +51,14 @@ export function AssetPagination({
 
   return (
     <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-      <p className="dark:text-muted-foreground text-sm text-gray-600">
+      <p className="dark:text-muted-foreground text-foreground text-sm">
         Page {currentPage} of {totalPages} ({totalCount} total assets)
       </p>
       <div className="flex items-center gap-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700"
+          className="border-border hover:bg-muted dark:border-border dark:hover:bg-muted rounded border px-3 py-1 text-sm disabled:opacity-50"
         >
           Previous
         </button>
@@ -69,7 +69,7 @@ export function AssetPagination({
               <span
                 // eslint-disable-next-line react/no-array-index-key -- Stable pagination list, composite key with prefix
                 key={`ellipsis-${index}`}
-                className="px-2 py-1 text-gray-500"
+                className="text-muted-foreground px-2 py-1"
               >
                 ...
               </span>
@@ -80,7 +80,7 @@ export function AssetPagination({
                 className={`rounded px-3 py-1 text-sm ${
                   currentPage === page
                     ? "bg-blue-600 text-white"
-                    : "border border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
+                    : "border-border hover:bg-muted dark:border-border dark:hover:bg-muted border"
                 }`}
               >
                 {page}
@@ -92,7 +92,7 @@ export function AssetPagination({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700"
+          className="border-border hover:bg-muted dark:border-border dark:hover:bg-muted rounded border px-3 py-1 text-sm disabled:opacity-50"
         >
           Next
         </button>

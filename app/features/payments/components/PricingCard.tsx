@@ -34,12 +34,12 @@ export function PricingCard({
   return (
     <div
       className={`border-border bg-card relative rounded-lg border p-6 shadow-lg ${
-        plan.isPopular ? "dark:ring-primary/30 ring-2 ring-gray-300" : ""
+        plan.isPopular ? "dark:ring-primary/30 ring-border ring-2" : ""
       }`}
     >
       {plan.isPopular ? (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-          <span className="dark:bg-muted dark:text-muted-foreground rounded-full border border-gray-300 bg-transparent px-3 py-1 text-sm font-medium text-gray-700 dark:border-transparent">
+          <span className="dark:bg-muted dark:text-muted-foreground border-border text-muted-foreground rounded-full border bg-transparent px-3 py-1 text-sm font-medium dark:border-transparent">
             Most Popular
           </span>
         </div>

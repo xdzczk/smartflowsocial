@@ -369,7 +369,7 @@ export default function LongFormPost({
         />
 
         {isSigning ? (
-          <div className="dark:bg-card/30 dark:text-foreground mt-3 rounded-md border bg-white/50 p-3 text-sm text-gray-700">
+          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mt-3 rounded-md border bg-white/50 p-3 text-sm">
             Waiting for signer approval… If you’re using a remote signer, open
             it to approve the request.
           </div>

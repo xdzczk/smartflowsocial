@@ -197,7 +197,7 @@ function GroupedNotificationCard({
                   onClick={() => {
                     void copyParentNevent();
                   }}
-                  className="text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:bg-gray-50 hover:text-gray-900"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
                 >
                   <svg
                     className="h-3.5 w-3.5"
@@ -241,7 +241,7 @@ function GroupedNotificationCard({
                 </svg>
                 <span>{parentPost.stats.replies}</span>
               </div>
-              <div className="dark:text-muted-foreground flex items-center gap-1.5 text-xs text-gray-600">
+              <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
                 <svg
                   className="h-4 w-4"
                   fill="currentColor"
@@ -259,7 +259,7 @@ function GroupedNotificationCard({
                     : "0"}
                 </span>
               </div>
-              <div className="dark:text-muted-foreground flex items-center gap-1.5 text-xs text-gray-600">
+              <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
                 <svg
                   className="h-4 w-4"
                   fill="currentColor"
@@ -273,7 +273,7 @@ function GroupedNotificationCard({
                 </svg>
                 <span>{parentPost.stats.likes}</span>
               </div>
-              <div className="dark:text-muted-foreground flex items-center gap-1.5 text-xs text-gray-600">
+              <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -295,8 +295,8 @@ function GroupedNotificationCard({
 
         {/* Notifications - Right Side */}
         <div className="flex-1 lg:w-3/5">
-          <div className="dark:bg-muted bg-gray-50 px-4 py-2">
-            <span className="dark:text-foreground text-sm font-medium text-gray-900">
+          <div className="bg-muted px-4 py-2">
+            <span className="text-foreground text-sm font-medium">
               {notifications.length}{" "}
               {notifications.length === 1 ? "reply" : "replies"} / mentions
             </span>

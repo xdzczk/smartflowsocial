@@ -271,7 +271,7 @@ export function MonthlyView({
 
                 {/* Show remaining count */}
                 {remainingCount > 0 && Boolean(remainingCount) ? (
-                  <div className="px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-muted-foreground dark:text-foreground px-2 py-1 text-xs">
                     +{remainingCount} more
                   </div>
                 ) : null}

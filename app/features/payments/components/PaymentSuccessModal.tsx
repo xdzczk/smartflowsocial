@@ -19,13 +19,13 @@ export function PaymentSuccessModal({
       <div className="dark:bg-card mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl">
         <div className="text-center">
           <Check className="mx-auto mb-4 h-12 w-12 text-green-500" />
-          <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-foreground mb-2 text-lg font-semibold dark:text-white">
             Payment Successful!
           </h3>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="text-foreground dark:text-foreground">
             {message ?? "Your plan has been activated successfully!"}
           </p>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-muted-foreground dark:text-foreground mt-2 text-sm">
             Redirecting...
           </p>
         </div>

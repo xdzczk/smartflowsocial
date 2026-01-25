@@ -271,7 +271,7 @@ export default function MediaPost({
           role="button"
           tabIndex={0}
           aria-label="Drop zone for media files. Click or drag and drop files here."
-          className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center hover:border-gray-400"
+          className="border-border hover:border-border rounded-lg border-2 border-dashed p-12 text-center"
           onDrop={(e) => void handleDrop(e)}
           onDragOver={handleDragOver}
           onKeyDown={(e) => {
@@ -306,8 +306,8 @@ export default function MediaPost({
                         preload="metadata"
                       />
                     ) : (
-                      <div className="flex h-32 w-32 items-center justify-center rounded bg-gray-200">
-                        <span className="text-xs text-gray-500">
+                      <div className="bg-muted flex h-32 w-32 items-center justify-center rounded">
+                        <span className="text-muted-foreground text-xs">
                           Unsupported
                         </span>
                       </div>
@@ -329,8 +329,8 @@ export default function MediaPost({
                   </div>
                 );
               })}
-              <div className="flex h-32 w-32 items-center justify-center rounded border-2 border-dashed border-gray-300 hover:border-gray-400">
-                <span className="text-4xl text-gray-500">+</span>
+              <div className="border-border hover:border-border flex h-32 w-32 items-center justify-center rounded border-2 border-dashed">
+                <span className="text-muted-foreground text-4xl">+</span>
               </div>
             </div>
           ) : (
@@ -352,10 +352,10 @@ export default function MediaPost({
                 </svg>
               </div>
               <div>
-                <p className="text-xl font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-foreground dark:text-foreground text-xl font-medium">
                   Click to upload or drag and drop
                 </p>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="text-muted-foreground mt-1 text-sm">
                   Images (10MB max) and Videos (100MB max)
                 </p>
               </div>
@@ -366,7 +366,7 @@ export default function MediaPost({
       <div className="mt-4">
         <textarea
           name="caption"
-          className="w-full rounded-lg border p-4 text-gray-900"
+          className="text-foreground w-full rounded-lg border p-4"
           placeholder="Add a caption to your media..."
           rows={3}
           disabled={isUploading || isUploaded}
@@ -405,11 +405,11 @@ export default function MediaPost({
               checked={isRecyclable}
               onChange={(e) => setIsRecyclable(e.target.checked)}
               disabled={isUploading || isUploaded}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
             />
             <label
               htmlFor="isRecyclable"
-              className="text-sm text-gray-700 dark:text-gray-300"
+              className="text-muted-foreground dark:text-foreground text-sm"
             >
               Make this post recyclable
             </label>
@@ -435,7 +435,7 @@ export default function MediaPost({
         </div>
         <div className="flex flex-col items-end gap-2">
           {uploadProvider ? (
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="text-muted-foreground flex items-center gap-1 text-xs">
               <span>Upload via:</span>
               <span
                 className={`rounded px-2 py-1 text-xs font-medium ${

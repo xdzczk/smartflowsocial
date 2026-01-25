@@ -21,7 +21,7 @@ export default function BulkPostsUploadArea({
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Upload Media Files</h2>
         {uploadProvider ? (
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs">
             <span>Upload via:</span>
             <span
               className={`rounded px-2 py-1 text-xs font-medium ${
@@ -45,8 +45,8 @@ export default function BulkPostsUploadArea({
         <div
           className={`rounded-lg border-2 border-dashed p-12 text-center ${
             isProcessing
-              ? "dark:bg-card border-gray-200 bg-gray-50 dark:border-gray-600"
-              : "border-gray-300"
+              ? "dark:bg-card border-border bg-muted dark:border-border"
+              : "border-border"
           }`}
         >
           <div className="flex flex-col items-center gap-4">
@@ -71,11 +71,11 @@ export default function BulkPostsUploadArea({
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xl font-medium text-gray-700 dark:text-gray-300">
+                  <p className="text-muted-foreground dark:text-foreground text-xl font-medium">
                     Processing media files&hellip; {processingProgress.current}/
                     {processingProgress.total}
                   </p>
-                  <div className="mt-2 h-2 w-64 rounded-full bg-gray-200">
+                  <div className="bg-muted mt-2 h-2 w-64 rounded-full">
                     <div
                       className="h-2 rounded-full bg-blue-500 transition-all duration-300"
                       style={{
@@ -104,7 +104,7 @@ export default function BulkPostsUploadArea({
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xl font-medium text-gray-700 dark:text-gray-300">
+                  <p className="text-muted-foreground dark:text-foreground text-xl font-medium">
                     Click to upload images and videos (Max 100MB)
                   </p>
                 </div>

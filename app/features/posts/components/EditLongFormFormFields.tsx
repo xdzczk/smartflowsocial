@@ -22,7 +22,7 @@ export function EditLongFormFormFields({
       <div>
         <label
           htmlFor="longform-title"
-          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
         >
           Title
         </label>
@@ -32,7 +32,7 @@ export function EditLongFormFormFields({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
           placeholder="Article title..."
         />
       </div>
@@ -40,7 +40,7 @@ export function EditLongFormFormFields({
       <div>
         <label
           htmlFor="longform-summary"
-          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
         >
           Summary
         </label>
@@ -50,7 +50,7 @@ export function EditLongFormFormFields({
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           rows={3}
-          className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
           placeholder="Article summary..."
         />
       </div>
@@ -58,11 +58,11 @@ export function EditLongFormFormFields({
       <div>
         <label
           htmlFor="longform-editorjs"
-          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
         >
           Content
         </label>
-        <div className="dark:bg-card rounded-md border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 dark:border-gray-600">
+        <div className="dark:bg-card border-border dark:border-border rounded-md border bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
           <div className="min-h-[300px] p-4">
             <div
               id="longform-editorjs"
@@ -71,7 +71,7 @@ export function EditLongFormFormFields({
           </div>
         </div>
         {!editorReady ? (
-          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="text-muted-foreground dark:text-foreground mt-2 text-sm">
             Loading editor...
           </div>
         ) : null}
@@ -80,7 +80,7 @@ export function EditLongFormFormFields({
       <div>
         <label
           htmlFor="longform-cover-image"
-          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
         >
           Cover Image URL (optional)
         </label>
@@ -90,7 +90,7 @@ export function EditLongFormFormFields({
           type="url"
           value={image}
           onChange={(e) => setImage(e.target.value)}
-          className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
           placeholder="https://example.com/image.jpg"
         />
       </div>

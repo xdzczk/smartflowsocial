@@ -116,7 +116,7 @@ export default function PostDetailsModal({
       case "scheduled":
         return (
           <span
-            className={`${badgeClasses} dark:bg-muted dark:text-muted-foreground border-gray-300 bg-transparent text-gray-700 dark:border-transparent`}
+            className={`${badgeClasses} dark:bg-muted dark:text-muted-foreground border-border text-muted-foreground bg-transparent dark:border-transparent`}
           >
             Scheduled
           </span>
@@ -135,17 +135,17 @@ export default function PostDetailsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="dark:bg-card mx-4 flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="dark:border-border dark:bg-card/95 sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm">
+        <div className="dark:border-border dark:bg-card/95 border-border sticky top-0 z-10 border-b bg-white/95 px-6 py-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-foreground text-xl font-semibold dark:text-white">
                 {getModalTitle()}
               </h2>
               {getStatusBadge()}
             </div>
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+              className="text-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex h-8 w-8 items-center justify-center rounded-full transition-colors"
             >
               ✕
             </button>
@@ -174,22 +174,22 @@ export default function PostDetailsModal({
           ) : null}
 
           <div className="space-y-6">
-            <div className="dark:bg-card/50 rounded-lg bg-gray-50 p-4">
-              <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="dark:bg-card/50 bg-muted rounded-lg p-4">
+              <h3 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
                 Caption
               </h3>
-              <p className="leading-relaxed text-gray-900 dark:text-white">
+              <p className="text-foreground leading-relaxed dark:text-white">
                 {post.caption}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               {type === "draft" ? (
-                <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                  <h3 className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div className="border-border dark:border-border rounded-lg border p-4">
+                  <h3 className="text-muted-foreground dark:text-foreground mb-1 text-sm font-medium">
                     Created
                   </h3>
-                  <p className="text-gray-900 dark:text-white">
+                  <p className="text-foreground dark:text-white">
                     {formatDate(post.createdAt)}
                   </p>
                 </div>
@@ -198,19 +198,19 @@ export default function PostDetailsModal({
               {type === "scheduled" ? (
                 <>
                   {"scheduledAtUtc" in post && post.scheduledAtUtc ? (
-                    <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                      <h3 className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div className="border-border dark:border-border rounded-lg border p-4">
+                      <h3 className="text-muted-foreground dark:text-foreground mb-1 text-sm font-medium">
                         Scheduled For
                       </h3>
-                      <p className="text-gray-900 dark:text-white">
+                      <p className="text-foreground dark:text-white">
                         {formatScheduledDate(post.scheduledAtUtc)}
                       </p>
                     </div>
                   ) : null}
 
                   {queueType ? (
-                    <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                      <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div className="border-border dark:border-border rounded-lg border p-4">
+                      <h3 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
                         Queue Type
                       </h3>
                       {(() => {
@@ -234,19 +234,19 @@ export default function PostDetailsModal({
               {type === "posted" ? (
                 <>
                   {post.postedAt ? (
-                    <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                      <h3 className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div className="border-border dark:border-border rounded-lg border p-4">
+                      <h3 className="text-muted-foreground dark:text-foreground mb-1 text-sm font-medium">
                         Posted At
                       </h3>
-                      <p className="text-gray-900 dark:text-white">
+                      <p className="text-foreground dark:text-white">
                         {formatDate(post.postedAt)}
                       </p>
                     </div>
                   ) : null}
 
                   {queueType ? (
-                    <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                      <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div className="border-border dark:border-border rounded-lg border p-4">
+                      <h3 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
                         Queue Type
                       </h3>
                       {(() => {
@@ -268,8 +268,8 @@ export default function PostDetailsModal({
               ) : null}
 
               {type === "draft" && queueType ? (
-                <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                  <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div className="border-border dark:border-border rounded-lg border p-4">
+                  <h3 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
                     Queue Type
                   </h3>
                   {(() => {
@@ -290,8 +290,8 @@ export default function PostDetailsModal({
             </div>
 
             {post.tags && post.tags.length > 0 && !post.repost ? (
-              <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="border-border dark:border-border rounded-lg border p-4">
+                <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
                   Tags
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -308,56 +308,56 @@ export default function PostDetailsModal({
             ) : null}
 
             {showStats && stats ? (
-              <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="border-border dark:border-border rounded-lg border p-4">
+                <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
                   Engagement Stats
                 </h3>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-foreground text-2xl font-bold dark:text-white">
                       {stats.likes}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-foreground dark:text-foreground text-sm">
                       Likes
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-foreground text-2xl font-bold dark:text-white">
                       {stats.replies}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-foreground dark:text-foreground text-sm">
                       Replies
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-foreground text-2xl font-bold dark:text-white">
                       {stats.mentions}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-foreground dark:text-foreground text-sm">
                       Mentions
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-foreground text-2xl font-bold dark:text-white">
                       {stats.reposts}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-foreground dark:text-foreground text-sm">
                       Reposts
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-foreground text-2xl font-bold dark:text-white">
                       {stats.zaps}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-foreground dark:text-foreground text-sm">
                       Zaps
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-foreground text-2xl font-bold dark:text-white">
                       {stats.satszapped}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-foreground dark:text-foreground text-sm">
                       Sats Zapped
                     </p>
                   </div>
@@ -366,11 +366,11 @@ export default function PostDetailsModal({
             ) : null}
 
             {showSignedEvent && post.signedEvent ? (
-              <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="border-border dark:border-border rounded-lg border p-4">
+                <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
                   Signed Event Data
                 </h3>
-                <pre className="dark:bg-card max-h-96 overflow-auto rounded-md bg-gray-100 p-3 text-xs break-words whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+                <pre className="dark:bg-card bg-muted text-foreground dark:text-foreground max-h-96 overflow-auto rounded-md p-3 text-xs break-words whitespace-pre-wrap">
                   {JSON.stringify(post.signedEvent, null, 2)}
                 </pre>
               </div>
@@ -378,7 +378,7 @@ export default function PostDetailsModal({
           </div>
         </div>
 
-        <div className="dark:border-border dark:bg-card/95 sticky bottom-0 border-t border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm">
+        <div className="dark:border-border dark:bg-card/95 border-border sticky bottom-0 border-t bg-white/95 px-6 py-4 backdrop-blur-sm">
           <div className="flex justify-end gap-3">
             {type === "posted" &&
             post.signedEvent &&
@@ -389,7 +389,7 @@ export default function PostDetailsModal({
                 to={`https://primal.net/e/${post.signedEvent.id}`}
                 target="_blank"
                 rel="noreferrer"
-                className="dark:bg-muted dark:hover:bg-muted inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none"
+                className="dark:bg-muted dark:hover:bg-muted bg-muted hover:bg-muted inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none"
               >
                 View Note
               </Link>

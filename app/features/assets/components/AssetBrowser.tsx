@@ -166,7 +166,7 @@ export default function AssetBrowser({
                     key={asset.id}
                     className={`cursor-pointer rounded-lg border p-4 transition-all hover:shadow-md ${
                       selectedAssets.includes(asset.id)
-                        ? "border-primary dark:bg-muted bg-gray-50"
+                        ? "border-primary dark:bg-muted bg-muted"
                         : "border-border bg-card"
                     }`}
                     onClick={() => handleAssetSelect(asset.id)}
@@ -228,7 +228,7 @@ export default function AssetBrowser({
                               </span>
                             ))}
                             {asset.tags.length > 2 ? (
-                              <span className="dark:bg-muted dark:text-foreground inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+                              <span className="dark:bg-muted dark:text-foreground bg-muted text-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                                 +{asset.tags.length - 2}
                               </span>
                             ) : null}

@@ -21,7 +21,7 @@ export function LongFormActionButtons({
   const isDisabled = fetcherState !== "idle" || !isFormValid || isSigning;
 
   return (
-    <div className="border-t border-gray-200 pt-6 dark:border-gray-700">
+    <div className="border-border dark:border-border border-t pt-6">
       <div className="flex w-full flex-col gap-3 sm:flex-row">
         <Button
           type="submit"
@@ -29,7 +29,7 @@ export function LongFormActionButtons({
           value="save-draft"
           variant="outline"
           disabled={isDisabled}
-          className="flex-1 border-gray-300 sm:min-w-[140px] sm:flex-none dark:border-gray-600"
+          className="border-border dark:border-border flex-1 sm:min-w-[140px] sm:flex-none"
         >
           {fetcherState !== "idle" ? "Saving..." : "Save Draft"}
         </Button>
@@ -39,7 +39,7 @@ export function LongFormActionButtons({
           variant="outline"
           onClick={onPreview}
           disabled={!isFormValid}
-          className="flex-1 border-gray-300 sm:min-w-[140px] sm:flex-none dark:border-gray-600"
+          className="border-border dark:border-border flex-1 sm:min-w-[140px] sm:flex-none"
         >
           <svg
             className="mr-2 h-4 w-4"

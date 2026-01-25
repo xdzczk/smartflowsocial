@@ -28,7 +28,7 @@ export function QueueSelector({
     <div className={className}>
       <span
         id="queue-type-label"
-        className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+        className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
       >
         Queue Type
       </span>

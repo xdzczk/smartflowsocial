@@ -542,16 +542,16 @@ export default function DraftBulkResume({
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-foreground text-3xl font-bold dark:text-white">
             Resume Draft Posts
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <p className="text-foreground dark:text-foreground mt-2">
             Configure and sign {posts.length} draft posts before scheduling
           </p>
         </div>
 
         {isSubmitting ? (
-          <div className="dark:bg-card/30 dark:text-foreground mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm text-gray-700">
+          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm">
             Signing drafts… If you’re using a remote signer, keep it open to
             approve requests.
           </div>
@@ -578,7 +578,7 @@ export default function DraftBulkResume({
                       )
                     }
                     disabled={isSubmitting}
-                    className="dark:bg-card mx-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="dark:bg-card bg-muted text-muted-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted mx-2 rounded-md px-4 py-2 text-sm font-medium shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                   >
                     +{interval}h
                   </button>
@@ -590,7 +590,7 @@ export default function DraftBulkResume({
         {/* Bulk Queue Selection */}
         {posts.length > 0 ? (
           <div className="mb-6">
-            <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
               Bulk Queue Selection
             </h3>
             <div className="flex flex-wrap justify-center gap-2">
@@ -616,7 +616,7 @@ export default function DraftBulkResume({
                 );
               })}
             </div>
-            <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
               Click a queue to update all posts
             </p>
           </div>
@@ -644,14 +644,14 @@ export default function DraftBulkResume({
                         className="h-24 w-24 rounded object-cover"
                       />
                     ) : (
-                      <div className="dark:bg-muted dark:text-muted-foreground flex h-24 w-24 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500">
+                      <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-muted-foreground flex h-24 w-24 items-center justify-center rounded text-xs font-medium">
                         TEXT
                       </div>
                     )}
                   </td>
                   <td className="p-4">
                     <div className="max-h-20 overflow-y-auto">
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                      <p className="text-muted-foreground dark:text-foreground text-sm">
                         {post.content?.substring(0, 150) ?? ""}
                         {(post.content?.length ?? 0) > 150 ? "..." : null}
                       </p>
@@ -690,7 +690,7 @@ export default function DraftBulkResume({
                       value={post.scheduledFor}
                       onChange={(e) => handleDateChange(index, e.target.value)}
                       disabled={isSubmitting}
-                      className="dark:bg-card rounded-lg border p-2 text-gray-900 dark:text-gray-100"
+                      className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
                     />
                   </td>
                 </tr>
@@ -704,7 +704,7 @@ export default function DraftBulkResume({
           <button
             onClick={onCancel}
             disabled={isSubmitting}
-            className="dark:bg-card rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="dark:bg-card border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border bg-white px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
           >
             Cancel
           </button>

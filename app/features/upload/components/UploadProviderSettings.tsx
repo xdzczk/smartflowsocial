@@ -15,7 +15,7 @@ export function UploadProviderSettings({
     <div className="dark:bg-card rounded-lg border bg-white shadow-sm">
       <div className="border-b px-6 py-4">
         <h3 className="text-lg font-medium">Media Upload Provider</h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-muted-foreground dark:text-foreground mt-1 text-sm">
           Choose how your media files are stored and served
         </p>
       </div>
@@ -32,12 +32,12 @@ export function UploadProviderSettings({
                 type="radio"
                 value="S3"
                 defaultChecked={uploadProvider === "S3"}
-                className="mt-1 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="border-border mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
               />
               <div className="flex-1">
                 <label
                   htmlFor="s3"
-                  className="block text-sm font-medium text-gray-900 dark:text-gray-100"
+                  className="text-foreground dark:text-foreground block text-sm font-medium"
                 >
                   Amazon S3 (Default)
                 </label>
@@ -63,12 +63,12 @@ export function UploadProviderSettings({
                   uploadProvider === "BLOSSOM_PRIMAL" ||
                   uploadProvider === "BLOSSOM"
                 }
-                className="mt-1 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="border-border mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
               />
               <div className="flex-1">
                 <label
                   htmlFor="blossom-primal"
-                  className="block text-sm font-medium text-gray-900 dark:text-gray-100"
+                  className="text-foreground dark:text-foreground block text-sm font-medium"
                 >
                   Primal Blossom (NOSTR)
                 </label>
@@ -94,12 +94,12 @@ export function UploadProviderSettings({
                 type="radio"
                 value="BLOSSOM_BLOSSTR"
                 defaultChecked={uploadProvider === "BLOSSOM_BLOSSTR"}
-                className="mt-1 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="border-border mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
               />
               <div className="flex-1">
                 <label
                   htmlFor="blossom-blosstr"
-                  className="block text-sm font-medium text-gray-900 dark:text-gray-100"
+                  className="text-foreground dark:text-foreground block text-sm font-medium"
                 >
                   Blosstr Blossom (NOSTR)
                 </label>

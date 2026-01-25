@@ -71,7 +71,7 @@ function NavigationItem({
 
   const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     isActive
-      ? "bg-gray-50 text-gray-900 border-gray-200 dark:bg-muted dark:text-primary dark:border-border"
+      ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
       : hasAccess
         ? "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
         : "text-muted-foreground/50 cursor-not-allowed opacity-60"
@@ -90,7 +90,7 @@ function NavigationItem({
       }
     >
       <span
-        className={`flex flex-none items-center ${isActive ? "dark:text-primary text-gray-900" : "text-muted-foreground"}`}
+        className={`flex flex-none items-center ${isActive ? "text-foreground dark:text-primary" : "text-muted-foreground"}`}
       >
         {icon}
       </span>

@@ -165,7 +165,7 @@ export function GlobalSearchResults({
     <div className="border-border bg-card max-h-96 overflow-y-auto rounded-lg border shadow-lg">
       {Object.entries(groupedResults).map(([type, typeResults]) => (
         <div key={type} className="border-border border-b last:border-b-0">
-          <div className="dark:bg-muted text-muted-foreground bg-gray-50 px-4 py-2 text-xs font-semibold tracking-wide uppercase">
+          <div className="bg-muted text-muted-foreground px-4 py-2 text-xs font-semibold tracking-wide uppercase">
             {getTypeLabel(type as GlobalSearchResult["type"])}
           </div>
           {typeResults.map((result) => (
@@ -173,7 +173,7 @@ export function GlobalSearchResults({
               key={result.id}
               to={result.url}
               onClick={onResultClick}
-              className="dark:hover:bg-muted flex items-start gap-3 px-4 py-3 hover:bg-gray-50"
+              className="hover:bg-muted flex items-start gap-3 px-4 py-3"
             >
               <div className="text-muted-foreground mt-0.5 flex-shrink-0">
                 {getTypeIcon(result.type)}

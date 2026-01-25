@@ -50,7 +50,7 @@ function NavigationChildItemComponent({
 
   const childLinkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     isActive
-      ? "bg-gray-50 text-gray-900 border-gray-200 dark:bg-muted dark:text-primary dark:border-border"
+      ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
       : hasAccess
         ? "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
         : "text-muted-foreground/50 cursor-not-allowed opacity-60"
@@ -69,7 +69,7 @@ function NavigationChildItemComponent({
       }
     >
       <span
-        className={`flex flex-none items-center ${isActive ? "dark:text-primary text-gray-900" : TEXT_MUTED_FOREGROUND}`}
+        className={`flex flex-none items-center ${isActive ? "text-foreground dark:text-primary" : TEXT_MUTED_FOREGROUND}`}
       >
         {child.icon}
       </span>
@@ -130,7 +130,7 @@ export function ExpandableNavigationSection({
 
   const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer ${
     isAnyChildActive
-      ? "bg-gray-50 text-gray-900 border-gray-200 dark:bg-muted dark:text-primary dark:border-border"
+      ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground active:border-border"
   }`;
 
@@ -146,7 +146,7 @@ export function ExpandableNavigationSection({
         aria-controls={`${title.toLowerCase().replace(/\s+/g, "-")}-section-content`}
       >
         <span
-          className={`flex flex-none items-center ${isAnyChildActive ? "dark:text-primary text-gray-900" : TEXT_MUTED_FOREGROUND}`}
+          className={`flex flex-none items-center ${isAnyChildActive ? "text-foreground dark:text-primary" : TEXT_MUTED_FOREGROUND}`}
         >
           {icon}
         </span>

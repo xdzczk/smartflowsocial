@@ -172,7 +172,7 @@ export function BulkPostCard({
 
     // Fallback: TEXT placeholder
     return (
-      <div className="dark:bg-muted dark:text-muted-foreground flex h-24 w-24 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600">
+      <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-24 w-24 items-center justify-center rounded text-xs font-medium">
         TEXT
       </div>
     );
@@ -192,7 +192,7 @@ export function BulkPostCard({
             value={post.caption}
             onChange={(e) => onCaptionChange(index, e.target.value)}
             disabled={post.isKind6Repost}
-            className={`dark:bg-card dark:text-foreground w-full rounded-lg border p-2 text-gray-900 ${post.isKind6Repost ? "dark:bg-muted cursor-not-allowed bg-gray-100" : ""}`}
+            className={`dark:bg-card dark:text-foreground text-foreground w-full rounded-lg border p-2 ${post.isKind6Repost ? "dark:bg-muted bg-muted cursor-not-allowed" : ""}`}
             rows={3}
             placeholder={
               post.isKind6Repost
@@ -203,7 +203,7 @@ export function BulkPostCard({
             }
           />
           {(post.isKind6Repost ?? post.isQuotePost) && post.originalCaption ? (
-            <div className="dark:bg-card rounded border bg-gray-50 p-2 text-xs text-gray-500 dark:text-gray-400">
+            <div className="dark:bg-card bg-muted text-muted-foreground dark:text-foreground rounded border p-2 text-xs">
               <strong>Original:</strong>{" "}
               {post.originalCaption.length > 100
                 ? post.originalCaption.substring(0, 100) + "..."
@@ -240,7 +240,7 @@ export function BulkPostCard({
           name="scheduledDates"
           value={post.scheduledFor}
           onChange={(e) => onDateChange(index, e.target.value)}
-          className="dark:bg-card rounded-lg border p-2 text-gray-900 dark:text-gray-100"
+          className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
         />
       </td>
       <td className="p-4">
@@ -250,11 +250,11 @@ export function BulkPostCard({
             type="checkbox"
             checked={post.isRecyclable}
             onChange={(e) => onIsRecyclableChange(index, e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
           />
           <label
             htmlFor={`recyclable-${index}`}
-            className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+            className="text-muted-foreground dark:text-foreground ml-2 text-sm"
           >
             Recyclable
           </label>

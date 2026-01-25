@@ -28,31 +28,31 @@ export default function UpgradePrompt({
               <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-foreground text-lg font-semibold dark:text-white">
                 Feature Locked
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-foreground dark:text-foreground text-sm">
                 Upgrade required
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-foreground hover:text-foreground dark:hover:text-foreground"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="mb-6">
-          <p className="text-gray-700 dark:text-gray-300">
+          <p className="text-muted-foreground dark:text-foreground">
             <strong>{featureName}</strong> requires a{" "}
             <span className="font-semibold text-blue-600 capitalize dark:text-blue-400">
               {minPlan}
             </span>{" "}
             plan or higher.
           </p>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-foreground dark:text-foreground mt-2 text-sm">
             Upgrade your plan to unlock this feature and many more advanced
             tools for your social media automation.
           </p>
@@ -67,7 +67,7 @@ export default function UpgradePrompt({
           </Link>
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted flex-1 rounded-lg border px-4 py-2 font-medium focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none"
           >
             Cancel
           </button>

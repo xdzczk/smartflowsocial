@@ -39,7 +39,7 @@ export default function SearchPostsPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="mb-2 text-2xl font-bold">Search Posts</h1>
-        <p className="dark:text-muted-foreground text-sm text-gray-600">
+        <p className="dark:text-muted-foreground text-foreground text-sm">
           Search for any Nostr post by event ID, note1, or nevent1 format
         </p>
       </div>

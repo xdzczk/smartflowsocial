@@ -49,7 +49,7 @@ export default function BulkPostsActionButtons({
                   type="button"
                   onClick={() => handleScheduleIntervalClick(interval)}
                   disabled={isProcessing}
-                  className="dark:bg-card mx-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  className="dark:bg-card bg-muted text-muted-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted mx-2 rounded-md px-4 py-2 text-sm font-medium shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
                   +{interval}h
                 </button>
@@ -85,7 +85,7 @@ export default function BulkPostsActionButtons({
             );
           })}
         </div>
-        <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
           Click a queue to update all posts
         </p>
       </div>
@@ -119,7 +119,7 @@ export default function BulkPostsActionButtons({
               : "Mark All Recyclable"}
           </button>
         </div>
-        <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
           Toggle recyclable status for all posts
         </p>
       </div>

@@ -182,8 +182,8 @@ export function HashtagPresetSelector({
                     key={preset.id}
                     className={`cursor-pointer rounded-lg border p-3 transition-colors ${
                       selectedPresetId === preset.id
-                        ? "dark:border-primary dark:bg-primary/10 border-gray-300 bg-gray-50"
-                        : "dark:hover:bg-accent/50 hover:bg-gray-50"
+                        ? "border-border bg-muted dark:border-primary dark:bg-primary/10"
+                        : "hover:bg-muted dark:hover:bg-accent/50"
                     } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
                     onClick={() => !disabled && handlePresetClick(preset)}
                     onKeyDown={handleKeyDown}
@@ -198,7 +198,7 @@ export function HashtagPresetSelector({
                             {countHashtags(preset.tags)} tags
                           </Badge>
                           {selectedPresetId === preset.id ? (
-                            <Check className="dark:text-primary h-4 w-4 text-gray-900" />
+                            <Check className="text-foreground dark:text-primary h-4 w-4" />
                           ) : null}
                         </div>
 

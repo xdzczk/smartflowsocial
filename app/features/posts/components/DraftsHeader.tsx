@@ -31,7 +31,7 @@ export function DraftsHeader({
     <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
       <div>
         <h3 className="mb-1 font-semibold">Draft Posts</h3>
-        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+        <h4 className="text-muted-foreground dark:text-foreground text-sm font-medium">
           You have{" "}
           <span className="text-blue-600 dark:text-blue-400">
             {getCount()} draft {getItemType()}

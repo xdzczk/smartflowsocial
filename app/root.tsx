@@ -215,13 +215,13 @@ export function ErrorBoundary() {
         <div className="dark:bg-background flex min-h-full flex-col bg-white">
           <main className="mx-auto flex w-full max-w-7xl flex-auto flex-col justify-center px-4 py-24 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
-              <h1 className="dark:text-foreground text-6xl font-semibold text-gray-900">
+              <h1 className="dark:text-foreground text-foreground text-6xl font-semibold">
                 {statusCode}
               </h1>
-              <h2 className="dark:text-foreground mt-4 text-2xl font-semibold text-gray-900">
+              <h2 className="dark:text-foreground text-foreground mt-4 text-2xl font-semibold">
                 {errorTitle}
               </h2>
-              <p className="dark:text-muted-foreground mt-4 text-lg text-gray-600">
+              <p className="dark:text-muted-foreground text-foreground mt-4 text-lg">
                 {errorMessage}
               </p>
               <div className="mt-10 flex justify-center">

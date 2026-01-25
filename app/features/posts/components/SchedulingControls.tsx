@@ -119,7 +119,7 @@ export default function SchedulingControls({
   const selectedQueueColor =
     selectedQueueType !== "unassigned"
       ? getDynamicQueueStyle(selectedQueueType, false)
-      : "bg-gray-100 text-gray-800";
+      : "bg-muted text-foreground";
 
   return (
     <div className="space-y-4">

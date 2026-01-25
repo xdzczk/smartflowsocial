@@ -40,13 +40,13 @@ export function SearchResult({
   onScheduleRepost,
 }: SearchResultProps) {
   return (
-    <div className="bg-card dark:border-border rounded-lg border border-gray-200 bg-white p-6">
+    <div className="bg-card dark:border-border border-border rounded-lg border bg-white p-6">
       {/* Clear button */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Search Result</h2>
         <button
           onClick={onClear}
-          className="dark:text-muted-foreground dark:hover:text-foreground text-sm text-gray-500 hover:text-gray-700"
+          className="dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:text-muted-foreground text-sm"
         >
           Clear
         </button>
@@ -61,7 +61,7 @@ export function SearchResult({
             className="h-12 w-12 rounded-full object-cover"
           />
         ) : (
-          <div className="dark:bg-muted dark:text-muted-foreground flex h-12 w-12 items-center justify-center rounded-full bg-gray-300 text-gray-600">
+          <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-12 w-12 items-center justify-center rounded-full">
             <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
@@ -73,7 +73,7 @@ export function SearchResult({
         )}
         <div>
           <p className="font-semibold">{result.authorName}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-muted-foreground dark:text-foreground text-xs">
             {formatDate(new Date(result.created_at * 1000))} • Kind{" "}
             {result.kind}
           </p>
@@ -95,7 +95,7 @@ export function SearchResult({
             ))}
           </div>
           {result.mediaUrls.length > 6 ? (
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="text-muted-foreground mt-2 text-xs">
               +{result.mediaUrls.length - 6} more media files
             </p>
           ) : null}
@@ -104,46 +104,46 @@ export function SearchResult({
 
       {/* Content */}
       <div className="mb-4">
-        <p className="dark:text-foreground text-sm whitespace-pre-wrap text-gray-700">
+        <p className="dark:text-foreground text-muted-foreground text-sm whitespace-pre-wrap">
           {result.content}
         </p>
       </div>
 
       {/* Engagement Stats */}
       {stats ? (
-        <div className="dark:bg-card mb-4 grid grid-cols-3 gap-4 rounded-lg bg-gray-50 p-4 md:grid-cols-6">
+        <div className="dark:bg-card bg-muted mb-4 grid grid-cols-3 gap-4 rounded-lg p-4 md:grid-cols-6">
           <div className="text-center">
-            <p className="dark:text-muted-foreground text-xs text-gray-500">
+            <p className="dark:text-muted-foreground text-muted-foreground text-xs">
               Likes
             </p>
             <p className="text-lg font-semibold">{stats.likes}</p>
           </div>
           <div className="text-center">
-            <p className="dark:text-muted-foreground text-xs text-gray-500">
+            <p className="dark:text-muted-foreground text-muted-foreground text-xs">
               Replies
             </p>
             <p className="text-lg font-semibold">{stats.replies}</p>
           </div>
           <div className="text-center">
-            <p className="dark:text-muted-foreground text-xs text-gray-500">
+            <p className="dark:text-muted-foreground text-muted-foreground text-xs">
               Reposts
             </p>
             <p className="text-lg font-semibold">{stats.reposts}</p>
           </div>
           <div className="text-center">
-            <p className="dark:text-muted-foreground text-xs text-gray-500">
+            <p className="dark:text-muted-foreground text-muted-foreground text-xs">
               Zaps
             </p>
             <p className="text-lg font-semibold">{stats.zaps}</p>
           </div>
           <div className="text-center">
-            <p className="dark:text-muted-foreground text-xs text-gray-500">
+            <p className="dark:text-muted-foreground text-muted-foreground text-xs">
               Mentions
             </p>
             <p className="text-lg font-semibold">{stats.mentions}</p>
           </div>
           <div className="text-center">
-            <p className="dark:text-muted-foreground text-xs text-gray-500">
+            <p className="dark:text-muted-foreground text-muted-foreground text-xs">
               Sats
             </p>
             <p className="text-lg font-semibold">{stats.satszapped}</p>
@@ -153,10 +153,10 @@ export function SearchResult({
 
       {/* Event ID */}
       <div className="mb-4">
-        <p className="dark:text-muted-foreground mb-1 text-xs font-semibold text-gray-500">
+        <p className="dark:text-muted-foreground text-muted-foreground mb-1 text-xs font-semibold">
           Event ID:
         </p>
-        <code className="dark:bg-card dark:text-foreground block rounded bg-gray-100 p-2 text-xs">
+        <code className="dark:bg-card dark:text-foreground bg-muted block rounded p-2 text-xs">
           {result.id}
         </code>
       </div>
@@ -207,7 +207,7 @@ export function SearchResult({
           href={`https://primal.net/e/${result.id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-card dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-border/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm leading-5 font-semibold text-gray-800 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm focus:ring focus:ring-gray-300/25 active:border-gray-200 active:shadow-none"
+          className="bg-card dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-border/40 dark:active:border-border border-border text-foreground hover:border-border hover:text-foreground focus:ring-border/25 active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
         >
           <svg
             className="h-4 w-4"

@@ -73,7 +73,7 @@ export function HashtagPresetToggle({
         />
         <Label
           htmlFor="use-hashtag-presets"
-          className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground cursor-pointer text-sm font-medium"
         >
           Use Hashtag Presets
         </Label>
@@ -84,19 +84,19 @@ export function HashtagPresetToggle({
         <div
           className={`rounded-lg p-3 ${
             useHashtagPresets
-              ? "dark:bg-card border border-gray-200 bg-gray-50 dark:border-gray-700"
+              ? "dark:bg-card border-border bg-muted dark:border-border border"
               : "border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
           }`}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
                 {useHashtagPresets ? "Queue Default:" : "Using Queue Default:"}
               </span>
               <Badge variant="secondary" className="text-xs">
                 {queueType.hashTagPreset.name}
               </Badge>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-muted-foreground dark:text-foreground text-xs">
                 ({countHashtags(queueType.hashTagPreset.tags)} tags)
               </span>
             </div>
@@ -141,7 +141,7 @@ export function HashtagPresetToggle({
               <div className="space-y-2">
                 <Label
                   htmlFor="hashtag-preset-select"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="text-muted-foreground dark:text-foreground text-sm font-medium"
                 >
                   Choose Hashtag Preset
                 </Label>
@@ -156,7 +156,9 @@ export function HashtagPresetToggle({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">
-                      <span className="text-gray-500">No hashtag preset</span>
+                      <span className="text-muted-foreground">
+                        No hashtag preset
+                      </span>
                     </SelectItem>
                     {presets.map((preset) => (
                       <SelectItem key={preset.id} value={preset.id}>
@@ -174,9 +176,9 @@ export function HashtagPresetToggle({
 
               {/* Selected preset preview */}
               {selectedPreset ? (
-                <div className="dark:bg-card rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700">
+                <div className="dark:bg-card border-border bg-muted dark:border-border rounded-lg border p-3">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
                       {selectedPreset.name}
                     </span>
                     <Badge variant="secondary" className="text-xs">
@@ -184,7 +186,7 @@ export function HashtagPresetToggle({
                     </Badge>
                   </div>
                   {selectedPreset.description ? (
-                    <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-muted-foreground dark:text-foreground mb-2 text-xs">
                       {selectedPreset.description}
                     </p>
                   ) : null}

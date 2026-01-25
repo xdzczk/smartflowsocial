@@ -22,7 +22,7 @@ export default function ScheduledPosts() {
         <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <div>
             <h3 className="mb-1 font-semibold">Scheduled Posts</h3>
-            <h4 className="dark:text-muted-foreground text-sm font-medium text-gray-500">
+            <h4 className="text-muted-foreground text-sm font-medium">
               You have{" "}
               <span className="text-blue-600 dark:text-blue-400">
                 {scheduledPosts.length} scheduled posts
@@ -31,7 +31,7 @@ export default function ScheduledPosts() {
           </div>
           <div className="flex items-center gap-2">
             <div className="relative w-full">
-              <div className="pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l text-gray-500">
+              <div className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l">
                 <svg
                   className="hi-mini hi-magnifying-glass inline-block size-5"
                   xmlns="http://www.w3.org/2000/svg"
@@ -50,35 +50,35 @@ export default function ScheduledPosts() {
                 type="text"
                 id="search"
                 name="search"
-                className="dark:border-border dark:bg-card dark:focus:border-primary block w-full rounded-lg border border-gray-200 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
+                className="border-border placeholder-muted-foreground dark:border-border dark:bg-card dark:focus:border-primary block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
                 placeholder="Search posts.."
               />
             </div>
           </div>
         </div>
         {/* Responsive Table Container */}
-        <div className="dark:border-border bg-card min-w-full overflow-x-auto rounded border border-gray-100 bg-white">
+        <div className="bg-card border-border min-w-full overflow-x-auto rounded border bg-white">
           {/* Table */}
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             {/* Table Header */}
             <thead>
               <tr>
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-left font-semibold text-gray-900">
+                <th className="bg-muted text-foreground dark:bg-card dark:border-border dark:text-foreground px-3 py-4 text-left font-semibold">
                   Media
                 </th>
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-left font-semibold text-gray-900">
+                <th className="bg-muted text-foreground dark:bg-card dark:border-border dark:text-foreground px-3 py-4 text-left font-semibold">
                   Caption
                 </th>
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-left font-semibold text-gray-900">
+                <th className="bg-muted text-foreground dark:bg-card dark:border-border dark:text-foreground px-3 py-4 text-left font-semibold">
                   Type
                 </th>
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-left font-semibold text-gray-900">
+                <th className="bg-muted text-foreground dark:bg-card dark:border-border dark:text-foreground px-3 py-4 text-left font-semibold">
                   Scheduled For
                 </th>
-                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
+                <th className="bg-muted text-foreground dark:bg-card dark:border-border dark:text-foreground px-3 py-4 text-center font-semibold">
                   Status
                 </th>
-                <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:text-gray-50">
+                <th className="bg-muted text-foreground dark:bg-card dark:border-border dark:text-foreground px-3 py-4 text-center font-semibold">
                   Actions
                 </th>
               </tr>
@@ -105,7 +105,7 @@ export default function ScheduledPosts() {
                   return (
                     <tr
                       key={post.id}
-                      className="dark:even:bg-muted dark:hover:bg-muted even:bg-gray-50/50 hover:bg-gray-50"
+                      className="dark:even:bg-muted dark:hover:bg-muted even:bg-muted/50 hover:bg-muted"
                     >
                       <td className="p-3">
                         <div className="size-12 overflow-hidden rounded-lg">
@@ -116,8 +116,8 @@ export default function ScheduledPosts() {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="dark:bg-muted flex h-full w-full items-center justify-center bg-gray-100">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="dark:bg-muted bg-muted flex h-full w-full items-center justify-center">
+                              <span className="text-muted-foreground dark:text-foreground text-xs">
                                 Text
                               </span>
                             </div>
@@ -129,7 +129,7 @@ export default function ScheduledPosts() {
                           {post.caption ?? "No caption"}
                         </p>
                       </td>
-                      <td className="dark:text-muted-foreground p-3 text-gray-500">
+                      <td className="dark:text-muted-foreground text-muted-foreground p-3">
                         {post.postType}
                       </td>
                       <td className="p-3">
@@ -168,7 +168,7 @@ export default function ScheduledPosts() {
                           onClick={() =>
                             setSelectedPost(post as unknown as PostData)
                           }
-                          className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm leading-5 font-semibold text-gray-800 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm focus:ring focus:ring-gray-300/25 active:border-gray-200 active:shadow-none dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200 dark:focus:ring-gray-600/40 dark:active:border-gray-700"
+                          className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-border/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none dark:focus:ring-gray-600/40"
                         >
                           View
                         </button>
@@ -178,7 +178,10 @@ export default function ScheduledPosts() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="p-4 text-center text-gray-500">
+                  <td
+                    colSpan={6}
+                    className="text-muted-foreground p-4 text-center"
+                  >
                     No scheduled posts found
                   </td>
                 </tr>
@@ -198,7 +201,7 @@ export default function ScheduledPosts() {
                 <h3 className="text-lg font-semibold">Post Details</h3>
                 <button
                   onClick={() => setSelectedPost(null)}
-                  className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="hover:bg-muted dark:hover:bg-muted rounded-lg p-1"
                 >
                   <svg
                     className="size-5"
@@ -234,8 +237,8 @@ export default function ScheduledPosts() {
                       className="mx-auto max-h-96 rounded-lg object-contain"
                     />
                   ) : (
-                    <div className="dark:bg-muted mx-auto flex h-48 w-full max-w-md items-center justify-center rounded-lg bg-gray-100">
-                      <span className="dark:text-muted-foreground text-gray-500">
+                    <div className="dark:bg-muted bg-muted mx-auto flex h-48 w-full max-w-md items-center justify-center rounded-lg">
+                      <span className="dark:text-muted-foreground text-muted-foreground">
                         Text post
                       </span>
                     </div>

@@ -28,20 +28,20 @@ function convertHeaderBlock(block: EditorJSBlock): string {
   const textValue = block.data["text"];
   const text = typeof textValue === "string" ? textValue : "";
   const sizeClass = level === 2 ? "2xl" : level === 3 ? "xl" : "lg";
-  return `<h${levelStr} class="text-${sizeClass} font-bold mb-4 text-gray-900 dark:text-white">${text}</h${levelStr}>`;
+  return `<h${levelStr} class="text-${sizeClass} font-bold mb-4 text-foreground dark:text-white">${text}</h${levelStr}>`;
 }
 
 function convertParagraphBlock(block: EditorJSBlock): string {
   const textValue = block.data["text"];
   const text = typeof textValue === "string" ? textValue : "";
-  return `<p class="mb-4 text-gray-700 dark:text-300 leading-relaxed">${text}</p>`;
+  return `<p class="mb-4 text-muted-foreground dark:text-300 leading-relaxed">${text}</p>`;
 }
 
 function convertListBlock(block: EditorJSBlock): string {
   const listType = block.data["style"] === "ordered" ? "ol" : "ul";
   const listClass =
     block.data["style"] === "ordered" ? "list-decimal" : "list-disc";
-  let html = `<${listType} class="${listClass} ml-6 mb-4 text-gray-700 dark:text-gray-300">`;
+  let html = `<${listType} class="${listClass} ml-6 mb-4 text-muted-foreground dark:text-foreground">`;
   if (Array.isArray(block.data["items"])) {
     const items = block.data["items"];
     if (Array.isArray(items)) {
@@ -59,7 +59,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
   const text = typeof textValue === "string" ? textValue : "";
   const captionValue = block.data["caption"];
   const caption = typeof captionValue === "string" ? captionValue : "";
-  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-card rounded-r">
+  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-foreground dark:text-foreground bg-muted dark:bg-card rounded-r">
     <p>${text}</p>
     ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
   </blockquote>`;
@@ -68,7 +68,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
 function convertCodeBlock(block: EditorJSBlock): string {
   const codeValue = block.data["code"];
   const code = typeof codeValue === "string" ? codeValue : "";
-  return `<pre class="bg-gray-900 dark:bg-card text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
+  return `<pre class="bg-muted dark:bg-card text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
 }
 
 function convertLinkToolBlock(block: EditorJSBlock): string {
@@ -80,10 +80,10 @@ function convertLinkToolBlock(block: EditorJSBlock): string {
           description?: string;
         })
       : null;
-  return `<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
+  return `<div class="border border-border dark:border-border rounded-lg p-4 mb-4">
     <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
       <div class="font-semibold">${meta?.title ?? link}</div>
-      ${meta?.description ? `<div class="text-gray-600 dark:text-gray-400 text-sm mt-1">${meta.description}</div>` : ""}
+      ${meta?.description ? `<div class="text-foreground dark:text-foreground text-sm mt-1">${meta.description}</div>` : ""}
     </a>
   </div>`;
 }
@@ -110,13 +110,13 @@ function convertImageBlock(block: EditorJSBlock): string {
   }
   return `<figure class="mb-6">
     <img src="${imageUrl}" alt="${caption}" class="w-full rounded-lg shadow-sm" style="max-height: 500px; object-fit: contain;" />
-    ${caption ? `<figcaption class="text-center text-sm text-gray-600 dark:text-gray-400 mt-2 italic">${caption}</figcaption>` : ""}
+    ${caption ? `<figcaption class="text-center text-sm text-foreground dark:text-foreground mt-2 italic">${caption}</figcaption>` : ""}
   </figure>`;
 }
 
 function convertDefaultBlock(block: EditorJSBlock): string {
   if (typeof block.data["text"] === "string") {
-    return `<p class="mb-4 text-gray-700 dark:text-gray-300">${block.data["text"]}</p>`;
+    return `<p class="mb-4 text-muted-foreground dark:text-foreground">${block.data["text"]}</p>`;
   }
   const file =
     block.data["file"] && typeof block.data["file"] === "object"
@@ -150,14 +150,14 @@ export default function LongFormDetailsModal({
 
   const convertEditorJSToHTML = (content: string) => {
     if (!content || content.trim() === "") {
-      return '<p class="text-gray-500 italic">No content available</p>';
+      return '<p class="text-muted-foreground italic">No content available</p>';
     }
 
     try {
       const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
 
       if (!editorData.blocks || !Array.isArray(editorData.blocks)) {
-        return '<p class="text-gray-500 italic">No content blocks found</p>';
+        return '<p class="text-muted-foreground italic">No content blocks found</p>';
       }
 
       let html = "";
@@ -195,7 +195,7 @@ export default function LongFormDetailsModal({
 
       return (
         html ||
-        '<p class="text-gray-500 italic">Content could not be rendered</p>'
+        '<p class="text-muted-foreground italic">Content could not be rendered</p>'
       );
     } catch (error) {
       handleErrorSafely(error, {
@@ -204,7 +204,7 @@ export default function LongFormDetailsModal({
       });
       // Try to display as plain text if JSON parsing fails
       const plainTextContent = content.replace(/<[^>]*>/g, "");
-      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent}</p>`;
+      return `<p class="text-muted-foreground dark:text-foreground">${plainTextContent}</p>`;
     }
   };
 
@@ -357,17 +357,17 @@ export default function LongFormDetailsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="dark:bg-card mx-4 flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
         {/* Header */}
-        <div className="dark:border-border dark:bg-card/95 sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm">
+        <div className="dark:border-border dark:bg-card/95 border-border sticky top-0 z-10 border-b bg-white/95 px-6 py-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-foreground text-xl font-semibold dark:text-white">
                 {getModalTitle()}
               </h2>
               {getStatusBadge()}
             </div>
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+              className="text-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex h-8 w-8 items-center justify-center rounded-full transition-colors"
             >
               ✕
             </button>
@@ -386,13 +386,13 @@ export default function LongFormDetailsModal({
                   A
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-900 dark:text-white">
+                  <div className="text-foreground font-semibold dark:text-white">
                     You
                   </div>
                 </div>
                 <div className="ml-auto">
                   <svg
-                    className="h-6 w-6 text-gray-400"
+                    className="text-foreground h-6 w-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -408,7 +408,7 @@ export default function LongFormDetailsModal({
               </div>
 
               {/* Date and Reading Time */}
-              <div className="mb-4 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-muted-foreground dark:text-foreground mb-4 flex items-center gap-2 text-sm">
                 <span>
                   {formatDate(
                     type === "posted"
@@ -440,7 +440,7 @@ export default function LongFormDetailsModal({
               </div>
 
               {/* Title */}
-              <h1 className="mb-6 text-3xl leading-tight font-bold text-gray-900 dark:text-white">
+              <h1 className="text-foreground mb-6 text-3xl leading-tight font-bold dark:text-white">
                 {post.title ?? "Untitled Article"}
               </h1>
 
@@ -457,8 +457,8 @@ export default function LongFormDetailsModal({
 
               {/* Summary */}
               {post.summary ? (
-                <div className="dark:bg-card mb-6 rounded-xl bg-gray-50 p-6">
-                  <p className="text-lg leading-relaxed font-medium text-gray-700 dark:text-gray-300">
+                <div className="dark:bg-card bg-muted mb-6 rounded-xl p-6">
+                  <p className="text-muted-foreground dark:text-foreground text-lg leading-relaxed font-medium">
                     {post.summary}
                   </p>
                 </div>
@@ -466,7 +466,7 @@ export default function LongFormDetailsModal({
 
               {/* Content */}
               <div
-                className="prose prose-lg dark:prose-invert max-w-none text-gray-900 dark:text-white"
+                className="prose prose-lg dark:prose-invert text-foreground max-w-none dark:text-white"
                 style={{
                   fontSize: "1.1rem",
                   lineHeight: "1.7",
@@ -479,7 +479,7 @@ export default function LongFormDetailsModal({
 
               {/* Tags */}
               {post.tags.length > 0 ? (
-                <div className="mt-8 flex items-center gap-2 border-t border-gray-200 pt-6 dark:border-gray-700">
+                <div className="border-border dark:border-border mt-8 flex items-center gap-2 border-t pt-6">
                   {post.tags.map((tag) => (
                     <span
                       key={tag}
@@ -494,29 +494,29 @@ export default function LongFormDetailsModal({
           </div>
 
           {/* Details Sidebar */}
-          <div className="w-80 overflow-y-auto border-l border-gray-200 dark:border-gray-700">
+          <div className="border-border dark:border-border w-80 overflow-y-auto border-l">
             <div className="space-y-6 p-6">
               <div>
-                <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
                   Article Details
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-muted-foreground dark:text-foreground text-xs">
                       Status
                     </span>
                     <div className="mt-1">{getStatusBadge()}</div>
                   </div>
 
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-muted-foreground dark:text-foreground text-xs">
                       {type === "posted"
                         ? "Published"
                         : type === "scheduled"
                           ? "Scheduled For"
                           : "Created"}
                     </span>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                    <p className="text-foreground mt-1 text-sm dark:text-white">
                       {formatDate(
                         type === "posted"
                           ? (post.publishedAt ?? undefined)
@@ -528,24 +528,24 @@ export default function LongFormDetailsModal({
                   </div>
 
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-muted-foreground dark:text-foreground text-xs">
                       Reading Time
                     </span>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                    <p className="text-foreground mt-1 text-sm dark:text-white">
                       {getReadingTime(post.content ?? undefined)}
                     </p>
                   </div>
 
                   {post.tags.length > 0 ? (
                     <div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-muted-foreground dark:text-foreground text-xs">
                         Tags
                       </span>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {post.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="dark:bg-card rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:text-gray-300"
+                            className="dark:bg-card bg-muted text-muted-foreground dark:text-foreground rounded px-2 py-1 text-xs"
                           >
                             #{tag}
                           </span>
@@ -560,7 +560,7 @@ export default function LongFormDetailsModal({
               {showSignedEvent && post.signedEvent ? (
                 <div>
                   <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <h3 className="text-muted-foreground dark:text-foreground text-sm font-medium">
                       Signed Event Data
                     </h3>
                     <button
@@ -571,8 +571,8 @@ export default function LongFormDetailsModal({
                     </button>
                   </div>
                   {showEventData ? (
-                    <div className="dark:bg-card rounded-lg bg-gray-100 p-3">
-                      <pre className="max-h-64 overflow-auto text-xs break-words whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+                    <div className="dark:bg-card bg-muted rounded-lg p-3">
+                      <pre className="text-foreground dark:text-foreground max-h-64 overflow-auto text-xs break-words whitespace-pre-wrap">
                         {JSON.stringify(post.signedEvent, null, 2)}
                       </pre>
                     </div>
@@ -584,7 +584,7 @@ export default function LongFormDetailsModal({
         </div>
 
         {/* Footer */}
-        <div className="dark:border-border dark:bg-card/95 sticky bottom-0 border-t border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm">
+        <div className="dark:border-border dark:bg-card/95 border-border sticky bottom-0 border-t bg-white/95 px-6 py-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div className="flex gap-3">
               {type === "posted" &&
@@ -598,7 +598,7 @@ export default function LongFormDetailsModal({
                   to={`https://primal.net/a/${String(post.nostrEventId ?? (typeof post.signedEvent === "object" && post.signedEvent !== null && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="dark:bg-muted dark:hover:bg-muted/80 inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none"
+                  className="dark:bg-muted dark:hover:bg-muted/80 bg-muted hover:bg-muted inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none"
                 >
                   View Article
                 </Link>

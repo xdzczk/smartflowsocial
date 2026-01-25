@@ -38,7 +38,7 @@ export function UploadTab({
     <div>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Text Asset Upload */}
-        <div className="dark:bg-card rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700">
+        <div className="dark:bg-card border-border dark:border-border rounded-lg border bg-white p-6">
           <h3 className="mb-4 text-lg font-semibold">Add Text Asset</h3>
           <AssetFetcherForm
             ref={textAssetFormRef}
@@ -49,7 +49,7 @@ export function UploadTab({
             <div>
               <label
                 htmlFor="text-asset-title"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="text-muted-foreground dark:text-foreground block text-sm font-medium"
               >
                 Title (optional)
               </label>
@@ -58,13 +58,13 @@ export function UploadTab({
                 type="text"
                 name="title"
                 placeholder="Asset title"
-                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
+                className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-md border px-3 py-2"
               />
             </div>
             <div>
               <label
                 htmlFor="text-asset-content"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="text-muted-foreground dark:text-foreground block text-sm font-medium"
               >
                 Content
               </label>
@@ -73,14 +73,14 @@ export function UploadTab({
                 name="content"
                 placeholder="Enter your text content..."
                 rows={4}
-                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
+                className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-md border px-3 py-2"
                 required
               />
             </div>
             <div>
               <label
                 htmlFor="text-asset-tags"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="text-muted-foreground dark:text-foreground block text-sm font-medium"
               >
                 Tags (comma-separated)
               </label>
@@ -89,7 +89,7 @@ export function UploadTab({
                 type="text"
                 name="tags"
                 placeholder="tag1, tag2, tag3"
-                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
+                className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-md border px-3 py-2"
               />
             </div>
             <button
@@ -103,7 +103,7 @@ export function UploadTab({
         </div>
 
         {/* Single Media Upload */}
-        <div className="dark:bg-card rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700">
+        <div className="dark:bg-card border-border dark:border-border rounded-lg border bg-white p-6">
           <h3 className="mb-4 text-lg font-semibold">Add Single Media</h3>
           <form
             ref={imageAssetFormRef}
@@ -117,7 +117,7 @@ export function UploadTab({
             <div>
               <label
                 htmlFor="media-asset-title"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="text-muted-foreground dark:text-foreground block text-sm font-medium"
               >
                 Title (optional)
               </label>
@@ -126,13 +126,13 @@ export function UploadTab({
                 type="text"
                 name="title"
                 placeholder="Asset title"
-                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
+                className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-md border px-3 py-2"
               />
             </div>
             <div>
               <label
                 htmlFor="media-asset-file"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="text-muted-foreground dark:text-foreground block text-sm font-medium"
               >
                 Media File (Image or Video)
               </label>
@@ -141,10 +141,10 @@ export function UploadTab({
                 type="file"
                 name="file"
                 accept="image/*,video/*"
-                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
+                className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-md border px-3 py-2"
                 required
               />
-              <p className="dark:text-muted-foreground mt-1 text-sm text-gray-500">
+              <p className="dark:text-muted-foreground text-muted-foreground mt-1 text-sm">
                 Supports images (up to 10MB) and videos (up to 100MB)
               </p>
               {uploadProvider ? (
@@ -160,7 +160,7 @@ export function UploadTab({
             <div>
               <label
                 htmlFor="media-asset-tags"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="text-muted-foreground dark:text-foreground block text-sm font-medium"
               >
                 Tags (comma-separated)
               </label>
@@ -169,7 +169,7 @@ export function UploadTab({
                 type="text"
                 name="tags"
                 placeholder="tag1, tag2, tag3"
-                className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
+                className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-md border px-3 py-2"
               />
             </div>
             <button
@@ -184,13 +184,13 @@ export function UploadTab({
       </div>
 
       {/* Bulk Media Upload */}
-      <div className="dark:bg-card mt-8 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700">
+      <div className="dark:bg-card border-border dark:border-border mt-8 rounded-lg border bg-white p-6">
         <h3 className="mb-4 text-lg font-semibold">Bulk Media Upload</h3>
         <div className="space-y-4">
           <div>
             <label
               htmlFor="bulk-media-files"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="text-muted-foreground dark:text-foreground block text-sm font-medium"
             >
               Select Multiple Media Files
             </label>
@@ -200,7 +200,7 @@ export function UploadTab({
               multiple
               accept="image/*,video/*"
               onChange={onBulkFileChange}
-              className="dark:bg-card dark:text-foreground mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
+              className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-md border px-3 py-2"
             />
           </div>
 
@@ -215,7 +215,7 @@ export function UploadTab({
                 {bulkUploadFiles.map((file, index) => (
                   <div
                     key={`${file.name}-${file.size}-${file.lastModified}`}
-                    className="rounded-lg border border-gray-300 p-4"
+                    className="border-border rounded-lg border p-4"
                   >
                     <div className="flex items-start gap-4">
                       <MediaThumbnail
@@ -227,7 +227,7 @@ export function UploadTab({
                         className="h-16 w-16 rounded object-cover"
                       />
                       <div className="flex-1 space-y-2">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <p className="text-muted-foreground dark:text-foreground text-sm font-medium">
                           {file.name}
                         </p>
                         <input
@@ -236,14 +236,14 @@ export function UploadTab({
                           name="titles"
                           placeholder={`Title for ${file.name}`}
                           defaultValue={file.name.replace(/\.[^/.]+$/, "")}
-                          className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                          className="border-border text-foreground dark:bg-muted dark:text-foreground block w-full rounded-md border px-3 py-2 text-sm"
                         />
                         <input
                           id={`bulk-tags-${index}`}
                           type="text"
                           name="tags"
                           placeholder="Tags (comma-separated)"
-                          className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                          className="border-border text-foreground dark:bg-muted dark:text-foreground block w-full rounded-md border px-3 py-2 text-sm"
                         />
                       </div>
                     </div>

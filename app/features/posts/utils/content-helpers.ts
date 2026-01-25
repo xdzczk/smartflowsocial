@@ -72,7 +72,7 @@ const DRAFT_COLOR =
 const PUBLISHED_COLOR =
   "border border-green-300 bg-transparent text-green-700 dark:bg-green-500/20 dark:text-green-400 dark:border-transparent";
 const SCHEDULED_COLOR =
-  "border border-gray-300 bg-transparent text-gray-700 dark:bg-muted dark:text-muted-foreground dark:border-transparent";
+  "border border-border bg-transparent text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent";
 
 export function getStatusColor(item: CombinedContent): string {
   // Use currentState as single source of truth
@@ -110,7 +110,7 @@ export function getStatusColor(item: CombinedContent): string {
       return "border border-red-300 bg-transparent text-red-700 dark:bg-destructive/20 dark:text-destructive dark:border-transparent";
     }
     if (state === "CANCELLED") {
-      return "border border-gray-300 bg-transparent text-gray-700 dark:bg-muted dark:text-muted-foreground dark:border-transparent";
+      return "border border-border bg-transparent text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent";
     }
   }
 

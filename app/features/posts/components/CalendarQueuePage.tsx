@@ -23,7 +23,7 @@ export default function CalendarQueuePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <h1 className="text-foreground text-2xl font-semibold dark:text-white">
           Calendar -{" "}
           {selectedQueueType === "all"
             ? "All Queues"
@@ -33,7 +33,7 @@ export default function CalendarQueuePage() {
       </div>
 
       {/* Queue Selection Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-border dark:border-border border-b">
         <nav className="-mb-px flex space-x-8" aria-label="Queue Types">
           <Link
             to="/dashboard/calendar"
@@ -42,7 +42,7 @@ export default function CalendarQueuePage() {
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               !params["queueType"]
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                : "text-muted-foreground hover:border-border hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground border-transparent"
             }`}
           >
             All Queues
@@ -68,7 +68,7 @@ export default function CalendarQueuePage() {
               const baseClasses =
                 "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium capitalize";
               const unselectedClasses =
-                "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300";
+                "border-transparent text-muted-foreground hover:border-border hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground";
 
               if (isSelected && queueColor) {
                 // Use inline styles for custom colors

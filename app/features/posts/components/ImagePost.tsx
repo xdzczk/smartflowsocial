@@ -400,7 +400,7 @@ export default function ImagePost({
           disabled={fetcher.state !== "idle" || isUploaded}
         />
         <div
-          className={`rounded-lg border-2 border-dashed border-gray-300 p-12 text-center ${!isUploaded && "hover:border-gray-400"}`}
+          className={`border-border rounded-lg border-2 border-dashed p-12 text-center ${!isUploaded && "hover:border-border"}`}
           onDrop={
             !isUploaded
               ? (e) => {
@@ -432,8 +432,8 @@ export default function ImagePost({
                   </button>
                 </div>
               ))}
-              <div className="flex h-32 w-32 items-center justify-center border-2 border-dashed border-gray-300 hover:border-gray-400">
-                <span className="text-4xl text-gray-500">+</span>
+              <div className="border-border hover:border-border flex h-32 w-32 items-center justify-center border-2 border-dashed">
+                <span className="text-muted-foreground text-4xl">+</span>
               </div>
             </div>
           ) : (
@@ -455,10 +455,10 @@ export default function ImagePost({
                 </svg>
               </div>
               <div>
-                <p className="text-xl font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-foreground dark:text-foreground text-xl font-medium">
                   Click to upload or drag and drop
                 </p>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="text-muted-foreground mt-1 text-sm">
                   Multiple images (max 100MB total)
                 </p>
               </div>
@@ -469,7 +469,7 @@ export default function ImagePost({
       <div className="mt-4">
         <textarea
           name="caption"
-          className="w-full rounded-lg border p-4 text-gray-900"
+          className="text-foreground w-full rounded-lg border p-4"
           placeholder="Add a caption to your image(s)..."
           rows={3}
           disabled={fetcher.state !== "idle" || isUploaded}
@@ -480,7 +480,7 @@ export default function ImagePost({
           <div className="mb-2">
             <label
               htmlFor="queue-type-selector"
-              className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
             >
               Queue Type
             </label>
@@ -534,11 +534,11 @@ export default function ImagePost({
               checked={isRecyclable}
               onChange={(e) => setIsRecyclable(e.target.checked)}
               disabled={fetcher.state !== "idle" || isUploaded}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
             />
             <label
               htmlFor="isRecyclable"
-              className="text-sm text-gray-700 dark:text-gray-300"
+              className="text-muted-foreground dark:text-foreground text-sm"
             >
               Make this post recyclable
             </label>
@@ -552,7 +552,7 @@ export default function ImagePost({
                 setScheduledFor(e.target.value);
                 setTimeError("");
               }}
-              className={`rounded-md border ${timeError ? "border-red-500" : "border-gray-300"} p-2 text-gray-900`}
+              className={`rounded-md border ${timeError ? "border-red-500" : "border-border"} text-foreground p-2`}
               disabled={fetcher.state !== "idle" || isUploaded}
             />
           </div>
@@ -615,7 +615,7 @@ export default function ImagePost({
                         onClick={() =>
                           handleScheduleIntervalClick(intervalValue)
                         }
-                        className="dark:bg-card rounded-md bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                        className="dark:bg-card bg-muted text-muted-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted rounded-md px-2.5 py-1.5 text-xs font-medium"
                         disabled={fetcher.state !== "idle" || isUploaded}
                       >
                         +{intervalValue}h

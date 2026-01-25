@@ -99,7 +99,7 @@ export function NotificationItem({
   const stats: NotificationStats | undefined = notification.stats;
 
   return (
-    <div className="dark:hover:bg-muted p-3 transition-colors hover:bg-gray-50">
+    <div className="hover:bg-muted p-3 transition-colors">
       <div className="flex gap-2">
         {/* Author Avatar */}
         <div className="flex-shrink-0">

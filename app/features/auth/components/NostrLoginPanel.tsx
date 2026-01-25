@@ -803,7 +803,7 @@ export default function NostrLoginPanel() {
                             ? "text-green-700 dark:text-green-300"
                             : status === "failed"
                               ? "text-red-700 dark:text-red-300"
-                              : "text-gray-600 dark:text-muted-foreground";
+                              : "text-foreground dark:text-muted-foreground";
                         return (
                           <div
                             key={url}
@@ -889,7 +889,7 @@ export default function NostrLoginPanel() {
             profiles, you switch identity and must re-authenticate.
           </div>
           {relayUrls.length > 0 ? (
-            <div className="rounded-md border bg-white/60 p-3 text-xs dark:bg-gray-950/20">
+            <div className="dark:bg-muted/20 rounded-md border bg-white/60 p-3 text-xs">
               <div className="mb-1 font-medium">Relay status</div>
               <div className="grid gap-1">
                 {relayUrls.map((url) => {
@@ -900,7 +900,7 @@ export default function NostrLoginPanel() {
                       ? "text-green-700 dark:text-green-300"
                       : status === "failed"
                         ? "text-red-700 dark:text-red-300"
-                        : "text-gray-600 dark:text-gray-400";
+                        : "text-foreground dark:text-foreground";
                   return (
                     <div
                       key={url}

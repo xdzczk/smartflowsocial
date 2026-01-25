@@ -237,12 +237,12 @@ export function SimpleRescheduleModal({
         <div className="p-6">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-foreground text-lg font-semibold dark:text-white">
               Reschedule {isLongform ? "Article" : "Post"}
             </h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              className="text-foreground hover:text-foreground dark:hover:text-foreground"
             >
               <svg
                 className="h-6 w-6"
@@ -263,8 +263,8 @@ export function SimpleRescheduleModal({
           {/* Content */}
           <div className="space-y-4">
             {/* Post preview */}
-            <div className="dark:bg-muted rounded-lg bg-gray-50 p-3">
-              <div className="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            <div className="dark:bg-muted bg-muted rounded-lg p-3">
+              <div className="text-foreground mb-2 text-sm font-medium dark:text-white">
                 {isLongform ? "Article" : "Post"} Preview:
               </div>
 
@@ -282,14 +282,14 @@ export function SimpleRescheduleModal({
                 </div>
               ) : null}
 
-              <div className="text-sm text-gray-600 dark:text-gray-300">
+              <div className="text-foreground dark:text-foreground text-sm">
                 {isLongform && "title" in post
                   ? (post.title ?? "Untitled Article")
                   : "caption" in post
                     ? (post.caption ?? "No caption")
                     : "No caption"}
                 {"fileUrl" in post && post.fileUrl.length > 0 ? (
-                  <span className="ml-2 text-xs text-gray-500">
+                  <span className="text-muted-foreground ml-2 text-xs">
                     ({post.fileUrl.length} file
                     {post.fileUrl.length > 1 ? "s" : ""})
                   </span>
@@ -301,13 +301,13 @@ export function SimpleRescheduleModal({
             <div className="space-y-2">
               <label
                 htmlFor="simple-reschedule-datetime"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="text-muted-foreground dark:text-foreground block text-sm font-medium"
               >
                 New scheduled time:
               </label>
               <div className="flex items-center space-x-2">
                 <svg
-                  className="h-4 w-4 text-gray-400"
+                  className="text-foreground h-4 w-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -359,10 +359,10 @@ export function SimpleRescheduleModal({
                       }
                     }
                   }}
-                  className="dark:bg-card flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
+                  className="dark:bg-card border-border text-foreground dark:border-border flex-1 rounded-md border bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
                 />
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-muted-foreground dark:text-foreground text-xs">
                 {formatDateTime(scheduledFor)}
               </div>
             </div>
@@ -372,7 +372,7 @@ export function SimpleRescheduleModal({
               <div className="space-y-2">
                 <label
                   htmlFor="simple-reschedule-queue-type"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="text-muted-foreground dark:text-foreground block text-sm font-medium"
                 >
                   Queue Type:
                 </label>
@@ -387,7 +387,7 @@ export function SimpleRescheduleModal({
                       e.target.value
                     );
                   }}
-                  className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
+                  className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
                 >
                   <option value="">Manual (No Queue)</option>
                   {queueTypes.map((queueType) => (
@@ -396,7 +396,7 @@ export function SimpleRescheduleModal({
                     </option>
                   ))}
                 </select>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-muted-foreground dark:text-foreground text-xs">
                   {selectedQueueType
                     ? "Post will be managed by the selected queue type"
                     : "Post will be manually scheduled"}
@@ -427,7 +427,7 @@ export function SimpleRescheduleModal({
               </div>
             </div>
             {isSigningEvent ? (
-              <div className="dark:bg-card/30 dark:text-foreground rounded-lg border bg-white/50 p-3 text-sm text-gray-700">
+              <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground rounded-lg border bg-white/50 p-3 text-sm">
                 Waiting for signer approval… If you’re using a remote signer,
                 open it to approve the request.
               </div>
@@ -456,7 +456,7 @@ export function SimpleRescheduleModal({
           <div className="mt-6 flex items-center justify-end space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              className="text-muted-foreground hover:text-foreground dark:text-foreground px-4 py-2 text-sm font-medium dark:hover:text-white"
             >
               Cancel
             </button>

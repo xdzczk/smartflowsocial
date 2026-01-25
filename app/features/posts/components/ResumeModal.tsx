@@ -34,7 +34,7 @@ export function ResumeModal({
           <h2 className="text-xl font-semibold">Resume Draft</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-muted-foreground hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground"
           >
             ✕
           </button>
@@ -96,7 +96,7 @@ export function ResumeModal({
             <button
               onClick={onClose}
               disabled={isSubmitting}
-              className="dark:bg-card rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              className="dark:bg-card border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border bg-white px-4 py-2 text-sm font-medium"
             >
               Cancel
             </button>

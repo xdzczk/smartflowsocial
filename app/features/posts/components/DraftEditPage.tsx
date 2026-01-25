@@ -185,7 +185,7 @@ export default function DraftEditPage() {
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-foreground text-2xl font-bold dark:text-white">
           Edit Draft
         </h1>
         <Link

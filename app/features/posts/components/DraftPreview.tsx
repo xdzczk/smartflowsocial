@@ -56,9 +56,9 @@ export function DraftPreview({
       ) : null}
 
       {/* Post Type */}
-      <div className="dark:bg-card rounded-lg bg-gray-50 p-4">
+      <div className="dark:bg-card bg-muted rounded-lg p-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
             Post Type
           </span>
           <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300">
@@ -68,9 +68,9 @@ export function DraftPreview({
       </div>
 
       {/* Queue */}
-      <div className="dark:bg-card rounded-lg bg-gray-50 p-4">
+      <div className="dark:bg-card bg-muted rounded-lg p-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
             Current Queue
           </span>
           {queueColor ? (

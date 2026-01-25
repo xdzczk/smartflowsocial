@@ -166,7 +166,7 @@ export default function TemplateEditPage() {
                 type="text"
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
-                className="dark:border-border dark:bg-card rounded-lg border border-gray-300 px-3 py-1 text-xl font-bold"
+                className="dark:border-border dark:bg-card border-border rounded-lg border px-3 py-1 text-xl font-bold"
               />
               <button
                 onClick={handleUpdateName}
@@ -182,7 +182,7 @@ export default function TemplateEditPage() {
                   setIsEditingName(false);
                   setTemplateName(templateNameValue);
                 }}
-                className="dark:border-border dark:hover:bg-muted rounded-lg border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
+                className="dark:border-border dark:hover:bg-muted border-border hover:bg-muted rounded-lg border px-3 py-1 text-sm"
               >
                 Cancel
               </button>
@@ -192,7 +192,7 @@ export default function TemplateEditPage() {
               <h1 className="text-2xl font-bold">{templateNameValue}</h1>
               <button
                 onClick={() => setIsEditingName(true)}
-                className="dark:text-muted-foreground dark:hover:text-foreground text-gray-500 hover:text-gray-700"
+                className="dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:text-muted-foreground"
               >
                 <svg
                   className="h-4 w-4"
@@ -211,7 +211,7 @@ export default function TemplateEditPage() {
             </div>
           )}
         </div>
-        <p className="dark:text-muted-foreground text-sm text-gray-500">
+        <p className="dark:text-muted-foreground text-muted-foreground text-sm">
           {Array.isArray((template as { posts?: unknown }).posts)
             ? ((template as { posts?: unknown }).posts as unknown[]).length
             : 0}{" "}
@@ -232,7 +232,7 @@ export default function TemplateEditPage() {
         <div className="py-12 text-center">
           <div className="mx-auto max-w-md">
             <svg
-              className="mx-auto h-12 w-12 text-gray-400"
+              className="text-foreground mx-auto h-12 w-12"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -244,10 +244,10 @@ export default function TemplateEditPage() {
                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
               />
             </svg>
-            <h3 className="dark:text-foreground mt-4 text-lg font-medium text-gray-900">
+            <h3 className="dark:text-foreground text-foreground mt-4 text-lg font-medium">
               No posts in this template
             </h3>
-            <p className="dark:text-muted-foreground mt-2 text-sm text-gray-500">
+            <p className="dark:text-muted-foreground text-muted-foreground mt-2 text-sm">
               This template is empty. You can delete it or go back to add posts.
             </p>
           </div>
@@ -344,7 +344,7 @@ export default function TemplateEditPage() {
                   return (
                     <div
                       key={postId}
-                      className="bg-card dark:border-border rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                      className="bg-card dark:border-border border-border rounded-lg border bg-white p-4 shadow-sm"
                     >
                       <div className="mb-3">
                         {hasFileUrl && firstImageUrl ? (
@@ -354,14 +354,14 @@ export default function TemplateEditPage() {
                             className="h-48 w-full rounded object-cover"
                           />
                         ) : (
-                          <div className="dark:bg-muted dark:text-muted-foreground flex h-48 w-full items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600">
+                          <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-48 w-full items-center justify-center rounded text-xs font-medium">
                             TEXT POST
                           </div>
                         )}
                       </div>
 
                       <div className="mb-3">
-                        <p className="dark:text-foreground line-clamp-3 text-sm text-gray-700">
+                        <p className="dark:text-foreground text-muted-foreground line-clamp-3 text-sm">
                           {postCaption}
                         </p>
                       </div>
@@ -384,7 +384,7 @@ export default function TemplateEditPage() {
                             </span>
                           ) : null}
                         </div>
-                        <span className="dark:text-muted-foreground text-xs text-gray-500">
+                        <span className="dark:text-muted-foreground text-muted-foreground text-xs">
                           Posted{" "}
                           {postPostedAt
                             ? formatDate(postPostedAt as string | Date)

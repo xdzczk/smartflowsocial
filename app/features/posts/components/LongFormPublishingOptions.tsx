@@ -64,8 +64,8 @@ export function LongFormPublishingOptions({
     currentQueueType.scheduleType === "FIXED_SLOTS";
 
   return (
-    <div className="dark:bg-card/50 space-y-6 rounded-lg bg-gray-50 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+    <div className="dark:bg-card/50 bg-muted space-y-6 rounded-lg p-6">
+      <h3 className="text-foreground text-lg font-semibold dark:text-white">
         Publishing Options
       </h3>
 
@@ -73,7 +73,7 @@ export function LongFormPublishingOptions({
       <div className="space-y-3">
         <span
           id="longform-queue-type-label"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground block text-sm font-medium"
         >
           Queue Type
         </span>
@@ -168,7 +168,7 @@ export function LongFormPublishingOptions({
       <div className="space-y-3">
         <Label
           htmlFor="scheduledFor"
-          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground text-sm font-medium"
         >
           Schedule for later
         </Label>

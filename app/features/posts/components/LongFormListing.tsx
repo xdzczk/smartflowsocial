@@ -417,7 +417,7 @@ export default function LongFormListing({
       {onSearchChange ? (
         <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <div>
-            <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <h4 className="text-muted-foreground dark:text-foreground text-sm font-medium">
               You have{" "}
               <span className="text-blue-600 dark:text-blue-400">
                 {filteredPosts.length} longform {type} posts
@@ -426,7 +426,7 @@ export default function LongFormListing({
           </div>
           <div className="flex items-center gap-2">
             <div className="relative w-full">
-              <div className="pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l text-gray-500">
+              <div className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l">
                 <svg
                   className="hi-mini hi-magnifying-glass inline-block size-5"
                   xmlns="http://www.w3.org/2000/svg"
@@ -445,7 +445,7 @@ export default function LongFormListing({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="dark:border-border dark:bg-card dark:focus:border-primary block w-full rounded-lg border border-gray-200 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
+                className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
                 placeholder="Search longform posts..."
               />
             </div>
@@ -483,11 +483,11 @@ export default function LongFormListing({
       ) : null}
 
       {/* Posts Table */}
-      <div className="dark:border-border bg-card min-w-full overflow-x-auto rounded border border-gray-100 bg-white">
+      <div className="dark:border-border bg-card border-border min-w-full overflow-x-auto rounded border bg-white">
         <table className="min-w-full align-middle text-sm whitespace-nowrap">
           <thead>
             <tr>
-              <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-center font-semibold text-gray-900">
+              <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
                 <input
                   id="longform-select-all"
                   name="longform-select-all"
@@ -498,14 +498,14 @@ export default function LongFormListing({
                       : false
                   }
                   onChange={toggleSelectAll}
-                  className="dark:border-border dark:bg-card h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="dark:border-border dark:bg-card border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
                 />
               </th>
-              <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
+              <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
                 Cover
               </th>
               <th
-                className="dark:bg-card dark:border-border cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50"
+                className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
                 onClick={() => requestSort("title")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -524,11 +524,11 @@ export default function LongFormListing({
                     : "↓"
                   : null}
               </th>
-              <th className="dark:bg-card dark:border-border bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50">
+              <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
                 Summary
               </th>
               <th
-                className="dark:bg-card dark:border-border cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:text-gray-50"
+                className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
                 onClick={() =>
                   requestSort(
                     type === "posted"
@@ -570,18 +570,18 @@ export default function LongFormListing({
                     : "↓"
                   : null}
               </th>
-              <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-center font-semibold text-gray-900">
+              <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
                 Reading Time
               </th>
               {type === "scheduled" ? (
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-center font-semibold text-gray-900">
+                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
                   Time Remaining
                 </th>
               ) : null}
-              <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-center font-semibold text-gray-900">
+              <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
                 Status
               </th>
-              <th className="dark:bg-card dark:border-border dark:text-foreground bg-gray-50 px-3 py-4 text-center font-semibold text-gray-900">
+              <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
                 Actions
               </th>
             </tr>
@@ -591,7 +591,7 @@ export default function LongFormListing({
             {filteredPosts.map((post) => (
               <tr
                 key={post.id}
-                className="dark:even:bg-muted dark:hover:bg-muted cursor-pointer even:bg-gray-50/50 hover:bg-gray-50"
+                className="dark:even:bg-muted dark:hover:bg-muted even:bg-muted/50 hover:bg-muted cursor-pointer"
                 onClick={() => onPostSelect?.(post)}
                 onKeyDown={(e) => {
                   if ((e.key === "Enter" || e.key === " ") && onPostSelect) {
@@ -611,7 +611,7 @@ export default function LongFormListing({
                     checked={selectedPosts.has(post.id)}
                     onChange={() => togglePostSelection(post.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="dark:border-border dark:bg-card h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="dark:border-border dark:bg-card border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
                   />
                 </td>
                 <td className="p-3">
@@ -622,7 +622,7 @@ export default function LongFormListing({
                       className="h-12 w-16 rounded object-cover"
                     />
                   ) : (
-                    <div className="dark:bg-muted dark:text-muted-foreground flex h-12 w-16 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500">
+                    <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-muted-foreground flex h-12 w-16 items-center justify-center rounded text-xs font-medium">
                       ARTICLE
                     </div>
                   )}
@@ -635,7 +635,7 @@ export default function LongFormListing({
                   </p>
                 </td>
                 <td className="max-w-xs p-3">
-                  <p className="dark:text-muted-foreground line-clamp-2 text-sm text-gray-600">
+                  <p className="dark:text-muted-foreground text-foreground line-clamp-2 text-sm">
                     {post.summary && post.summary.length > 60
                       ? post.summary.substring(0, 60) + "..."
                       : (post.summary ?? "No summary")}
@@ -656,7 +656,7 @@ export default function LongFormListing({
                   )}
                 </td>
                 <td className="p-3 text-center">
-                  <span className="dark:text-muted-foreground text-sm text-gray-500">
+                  <span className="dark:text-muted-foreground text-muted-foreground text-sm">
                     {getReadingTime(post.content ?? undefined)}
                   </span>
                 </td>

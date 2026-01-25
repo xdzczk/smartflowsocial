@@ -48,7 +48,7 @@ export function EditPostFormFields({
       <div>
         <label
           htmlFor="edit-post-images"
-          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
         >
           Images / Media
         </label>
@@ -92,7 +92,7 @@ export function EditPostFormFields({
           })}
           <label
             htmlFor="edit-post-file-input"
-            className="flex h-24 w-24 cursor-pointer items-center justify-center rounded border-2 border-dashed border-gray-300 hover:border-gray-400"
+            className="border-border hover:border-border flex h-24 w-24 cursor-pointer items-center justify-center rounded border-2 border-dashed"
           >
             <input
               id="edit-post-file-input"
@@ -103,7 +103,7 @@ export function EditPostFormFields({
               multiple
               onChange={onFileChange}
             />
-            <span className="text-3xl text-gray-500">+</span>
+            <span className="text-muted-foreground text-3xl">+</span>
           </label>
         </div>
       </div>
@@ -112,7 +112,7 @@ export function EditPostFormFields({
       <div>
         <label
           htmlFor="edit-post-caption"
-          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
         >
           Caption
         </label>
@@ -122,7 +122,7 @@ export function EditPostFormFields({
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           rows={4}
-          className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
           placeholder="What's on your mind?"
         />
       </div>
@@ -141,7 +141,7 @@ export function EditPostFormFields({
         <div>
           <label
             htmlFor="edit-post-hashtags"
-            className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
           >
             Hashtags (space-separated, e.g. #nostr #bitcoin)
           </label>
@@ -151,7 +151,7 @@ export function EditPostFormFields({
             type="text"
             value={manualHashtags}
             onChange={(e) => setManualHashtags(e.target.value)}
-            className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
+            className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
             placeholder="#tag1 #tag2 #tag3"
           />
         </div>
@@ -160,7 +160,7 @@ export function EditPostFormFields({
       <div>
         <label
           htmlFor="edit-post-queue-type"
-          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
         >
           Queue Type
         </label>
@@ -169,7 +169,7 @@ export function EditPostFormFields({
           name="edit-post-queue-type"
           value={selectedQueueType}
           onChange={(e) => setSelectedQueueType(e.target.value)}
-          className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
         >
           <option value="">Manual (No Queue)</option>
           {queueTypes.map((queueType) => (

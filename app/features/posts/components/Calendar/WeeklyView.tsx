@@ -289,7 +289,7 @@ export function WeeklyView({
                     className={`border-border relative min-w-0 flex-1 overflow-hidden border-r p-1 last:border-r-0 ${
                       isDragOver
                         ? "bg-primary/5 border-primary/20"
-                        : "dark:hover:bg-muted hover:bg-gray-50"
+                        : "dark:hover:bg-muted hover:bg-muted"
                     }`}
                     onDragOver={(e) => handleDragOver(e, dateKey, time)}
                     onDrop={(e) => handleDrop(e, dateKey, time)}

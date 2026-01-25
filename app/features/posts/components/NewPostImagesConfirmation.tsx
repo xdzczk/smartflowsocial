@@ -345,16 +345,16 @@ export default function NewPostImagesConfirmation({
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-foreground text-3xl font-bold dark:text-white">
             Confirm Your Post
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <p className="text-foreground dark:text-foreground mt-2">
             Review your post before publishing or scheduling
           </p>
         </div>
 
         {isSigning ? (
-          <div className="dark:bg-card/30 dark:text-foreground mx-auto mb-4 max-w-2xl rounded-md border bg-white/50 p-3 text-sm text-gray-700">
+          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mx-auto mb-4 max-w-2xl rounded-md border bg-white/50 p-3 text-sm">
             Waiting for signer approval… If you’re using a remote signer, open
             it to approve the request.
           </div>
@@ -369,8 +369,8 @@ export default function NewPostImagesConfirmation({
         <div className="mx-auto max-w-2xl">
           <div className="group dark:bg-card overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl">
             {/* Post Header */}
-            <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="border-border dark:border-border flex items-center justify-between border-b p-4">
+              <h3 className="text-foreground text-lg font-semibold dark:text-white">
                 Media Post
               </h3>
               <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300">
@@ -422,11 +422,11 @@ export default function NewPostImagesConfirmation({
                     : "";
                 return caption ? (
                   <div>
-                    <h4 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <h4 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
                       Caption
                     </h4>
-                    <div className="dark:bg-muted max-h-20 overflow-y-auto rounded-lg bg-gray-50 p-3">
-                      <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                    <div className="dark:bg-muted bg-muted max-h-20 overflow-y-auto rounded-lg p-3">
+                      <p className="text-muted-foreground dark:text-foreground text-sm whitespace-pre-wrap">
                         {caption + addTags}
                       </p>
                     </div>
@@ -437,7 +437,7 @@ export default function NewPostImagesConfirmation({
               {/* Tags */}
               {tags ? (
                 <div>
-                  <h4 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <h4 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
                     Tags
                   </h4>
                   <div className="flex flex-wrap gap-1">
@@ -458,11 +458,11 @@ export default function NewPostImagesConfirmation({
               ) : null}
 
               {/* Schedule time */}
-              <div className="rounded-lg border border-gray-200 p-3 text-center dark:border-gray-600">
-                <h4 className="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+              <div className="border-border dark:border-border rounded-lg border p-3 text-center">
+                <h4 className="text-muted-foreground dark:text-foreground mb-1 text-xs font-medium tracking-wide uppercase">
                   Scheduled for
                 </h4>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                <p className="text-foreground text-sm font-semibold dark:text-white">
                   {events[0]?.content.scheduledFor
                     ? (() => {
                         try {
@@ -496,14 +496,14 @@ export default function NewPostImagesConfirmation({
         <div className="mt-8 flex justify-center gap-4">
           <button
             onClick={onCancel}
-            className="dark:bg-card rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="dark:bg-card border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border bg-white px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
             disabled={isSubmitting || isSigning}
           >
             ← Back to Edit
           </button>
           <button
             onClick={handleSaveAsDraft}
-            className="dark:bg-card rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="dark:bg-card border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border bg-white px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
             disabled={isSubmitting || isSigning}
           >
             💾 Save as Draft

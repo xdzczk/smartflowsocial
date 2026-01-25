@@ -15,20 +15,20 @@ function convertHeaderBlock(block: EditorJSBlock): string {
   const textValue = block.data["text"];
   const text = typeof textValue === "string" ? textValue : "";
   const sizeClass = level === 2 ? "2xl" : level === 3 ? "xl" : "lg";
-  return `<h${levelStr} class="text-${sizeClass} font-bold mb-4 text-gray-900 dark:text-white">${text}</h${levelStr}>`;
+  return `<h${levelStr} class="text-${sizeClass} font-bold mb-4 text-foreground dark:text-white">${text}</h${levelStr}>`;
 }
 
 function convertParagraphBlock(block: EditorJSBlock): string {
   const textValue = block.data["text"];
   const text = typeof textValue === "string" ? textValue : "";
-  return `<p class="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">${text}</p>`;
+  return `<p class="mb-4 text-muted-foreground dark:text-foreground leading-relaxed">${text}</p>`;
 }
 
 function convertListBlock(block: EditorJSBlock): string {
   const listType = block.data["style"] === "ordered" ? "ol" : "ul";
   const listClass =
     block.data["style"] === "ordered" ? "list-decimal" : "list-disc";
-  let html = `<${listType} class="${listClass} ml-6 mb-4 text-gray-700 dark:text-gray-300">`;
+  let html = `<${listType} class="${listClass} ml-6 mb-4 text-muted-foreground dark:text-foreground">`;
   if (Array.isArray(block.data["items"])) {
     const items = block.data["items"];
     if (Array.isArray(items)) {
@@ -46,7 +46,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
   const text = typeof block.data["text"] === "string" ? block.data["text"] : "";
   const caption =
     typeof block.data["caption"] === "string" ? block.data["caption"] : "";
-  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-card rounded-r">
+  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-foreground dark:text-foreground bg-muted dark:bg-card rounded-r">
     <p>${text}</p>
     ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
   </blockquote>`;
@@ -54,7 +54,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
 
 function convertCodeBlock(block: EditorJSBlock): string {
   const code = typeof block.data["code"] === "string" ? block.data["code"] : "";
-  return `<pre class="bg-gray-900 dark:bg-card text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
+  return `<pre class="bg-muted dark:bg-card text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
 }
 
 function convertLinkToolBlock(block: EditorJSBlock): string {
@@ -66,10 +66,10 @@ function convertLinkToolBlock(block: EditorJSBlock): string {
           description?: string;
         })
       : null;
-  return `<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
+  return `<div class="border border-border dark:border-border rounded-lg p-4 mb-4">
     <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
       <div class="font-semibold">${meta?.title ?? link}</div>
-      ${meta?.description ? `<div class="text-gray-600 dark:text-gray-400 text-sm mt-1">${meta.description}</div>` : ""}
+      ${meta?.description ? `<div class="text-foreground dark:text-foreground text-sm mt-1">${meta.description}</div>` : ""}
     </a>
   </div>`;
 }
@@ -96,13 +96,13 @@ function convertImageBlock(block: EditorJSBlock): string {
   }
   return `<figure class="mb-6">
     <img src="${imageUrl}" alt="${caption}" class="w-full rounded-lg shadow-sm" style="max-height: 500px; object-fit: contain;" />
-    ${caption ? `<figcaption class="text-center text-sm text-gray-600 dark:text-gray-400 mt-2 italic">${caption}</figcaption>` : ""}
+    ${caption ? `<figcaption class="text-center text-sm text-foreground dark:text-foreground mt-2 italic">${caption}</figcaption>` : ""}
   </figure>`;
 }
 
 function convertDefaultBlock(block: EditorJSBlock): string {
   if (typeof block.data["text"] === "string") {
-    return `<p class="mb-4 text-gray-700 dark:text-gray-300">${block.data["text"]}</p>`;
+    return `<p class="mb-4 text-muted-foreground dark:text-foreground">${block.data["text"]}</p>`;
   }
   const file =
     block.data["file"] && typeof block.data["file"] === "object"
@@ -141,14 +141,14 @@ export default function LongFormPreviewModal({
 
   const convertEditorJSToHTML = (content: string) => {
     if (!content || content.trim() === "") {
-      return '<p class="text-gray-500 italic">No content available</p>';
+      return '<p class="text-muted-foreground italic">No content available</p>';
     }
 
     try {
       const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
 
       if (!editorData.blocks || !Array.isArray(editorData.blocks)) {
-        return '<p class="text-gray-500 italic">No content blocks found</p>';
+        return '<p class="text-muted-foreground italic">No content blocks found</p>';
       }
 
       let html = "";
@@ -186,7 +186,7 @@ export default function LongFormPreviewModal({
 
       return (
         html ||
-        '<p class="text-gray-500 italic">Content could not be rendered</p>'
+        '<p class="text-muted-foreground italic">Content could not be rendered</p>'
       );
     } catch (error) {
       handleErrorSafely(error, {
@@ -195,7 +195,7 @@ export default function LongFormPreviewModal({
       });
       // Try to display as plain text if JSON parsing fails
       const plainTextContent = content.replace(/<[^>]*>/g, "");
-      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent || "Content parsing failed"}</p>`;
+      return `<p class="text-muted-foreground dark:text-foreground">${plainTextContent || "Content parsing failed"}</p>`;
     }
   };
 
@@ -229,15 +229,15 @@ export default function LongFormPreviewModal({
       {/* Modal */}
       <div className="dark:bg-card relative mx-4 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 p-6 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="border-border dark:border-border flex items-center justify-between border-b p-6">
+          <h2 className="text-foreground text-lg font-semibold dark:text-white">
             Preview: How your post will look
           </h2>
           <Button
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            className="text-muted-foreground hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground"
           >
             ✕ Close
           </Button>
@@ -253,13 +253,13 @@ export default function LongFormPreviewModal({
                 {author.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div className="font-semibold text-gray-900 dark:text-white">
+                <div className="text-foreground font-semibold dark:text-white">
                   {author}
                 </div>
               </div>
               <div className="ml-auto">
                 <svg
-                  className="h-6 w-6 text-gray-400"
+                  className="text-foreground h-6 w-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -275,7 +275,7 @@ export default function LongFormPreviewModal({
             </div>
 
             {/* Date and Source */}
-            <div className="mb-4 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-muted-foreground dark:text-foreground mb-4 flex items-center gap-2 text-sm">
               <span>{formatDate()}</span>
               <span>•</span>
               <span>via SmartFlow</span>
@@ -297,7 +297,7 @@ export default function LongFormPreviewModal({
             </div>
 
             {/* Title */}
-            <h1 className="mb-4 text-2xl leading-tight font-bold text-gray-900 dark:text-white">
+            <h1 className="text-foreground mb-4 text-2xl leading-tight font-bold dark:text-white">
               {title || "Untitled Post"}
             </h1>
 
@@ -314,8 +314,8 @@ export default function LongFormPreviewModal({
 
             {/* Summary */}
             {summary ? (
-              <div className="dark:bg-card mb-6 rounded-xl bg-gray-50 p-6">
-                <p className="text-lg leading-relaxed font-medium text-gray-700 dark:text-gray-300">
+              <div className="dark:bg-card bg-muted mb-6 rounded-xl p-6">
+                <p className="text-muted-foreground dark:text-foreground text-lg leading-relaxed font-medium">
                   {summary}
                 </p>
               </div>
@@ -323,7 +323,7 @@ export default function LongFormPreviewModal({
 
             {/* Full Content */}
             <div
-              className="prose prose-lg dark:prose-invert mb-6 max-w-none text-gray-900 dark:text-white"
+              className="prose prose-lg dark:prose-invert text-foreground mb-6 max-w-none dark:text-white"
               style={{
                 fontSize: "1.1rem",
                 lineHeight: "1.7",
@@ -339,7 +339,7 @@ export default function LongFormPreviewModal({
               {/* Hashtags */}
               {displayedHashtags ? (
                 <div className="ml-auto flex items-center gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="text-muted-foreground dark:text-foreground text-xs">
                     {displayedHashtags}
                   </span>
                 </div>

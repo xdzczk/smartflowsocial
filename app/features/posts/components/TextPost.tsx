@@ -317,7 +317,7 @@ export default function TextPost({
       }}
     >
       {isSigning ? (
-        <div className="dark:bg-card/30 dark:text-foreground mb-3 rounded-md border bg-white/50 p-3 text-sm text-gray-700">
+        <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mb-3 rounded-md border bg-white/50 p-3 text-sm">
           Waiting for signer approval… If you’re using a remote signer, open it
           to approve the request.
         </div>
@@ -366,7 +366,7 @@ export default function TextPost({
           {form.formState.errors.content.message}
         </div>
       ) : null}
-      <div className="mt-2 text-right text-sm text-gray-500">
+      <div className="text-muted-foreground mt-2 text-right text-sm">
         {content.length}/5000
       </div>
       <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -402,11 +402,11 @@ export default function TextPost({
               id="isRecyclable"
               {...form.register("isRecyclable")}
               disabled={fetcher.state !== "idle" || isSigning}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
             />
             <Label
               htmlFor="isRecyclable"
-              className="text-sm text-gray-700 dark:text-gray-300"
+              className="text-muted-foreground dark:text-foreground text-sm"
             >
               Make this post recyclable
             </Label>

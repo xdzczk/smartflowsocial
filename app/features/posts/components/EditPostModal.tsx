@@ -172,12 +172,12 @@ export function EditPostModal({
           <div className="p-6">
             {/* Header */}
             <div className="mb-6 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-foreground text-xl font-semibold dark:text-white">
                 Edit {isLongform ? "Article" : "Post"}
               </h3>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="text-foreground hover:text-foreground dark:hover:text-foreground"
               >
                 <svg
                   className="h-6 w-6"
@@ -233,7 +233,7 @@ export function EditPostModal({
               <div>
                 <label
                   htmlFor="edit-post-scheduled-for"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
                 >
                   Scheduled For
                 </label>
@@ -270,7 +270,7 @@ export function EditPostModal({
                       setScheduledFor(null);
                     }
                   }}
-                  className="dark:bg-card w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:text-white"
+                  className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
                 />
               </div>
 
@@ -297,7 +297,7 @@ export function EditPostModal({
                 </div>
               </div>
               {isSigningEvent ? (
-                <div className="dark:bg-card/30 dark:text-foreground rounded-lg border bg-white/50 p-3 text-sm text-gray-700">
+                <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground rounded-lg border bg-white/50 p-3 text-sm">
                   Waiting for signer approval… If you’re using a remote signer,
                   open it to approve the request.
                 </div>
@@ -317,7 +317,7 @@ export function EditPostModal({
             <div className="mt-6 flex items-center justify-end space-x-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                className="text-muted-foreground hover:text-foreground dark:text-foreground px-4 py-2 text-sm font-medium dark:hover:text-white"
               >
                 Cancel
               </button>

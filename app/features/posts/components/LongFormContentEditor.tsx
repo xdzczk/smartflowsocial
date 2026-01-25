@@ -22,7 +22,7 @@ export function LongFormContentEditor({
             Content *
           </span>
           {uploadProvider ? (
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="text-muted-foreground flex items-center gap-1 text-xs">
               <span>Images upload via:</span>
               <span
                 className={`rounded px-2 py-1 text-xs font-medium ${
@@ -62,7 +62,7 @@ export function LongFormContentEditor({
           Insert Assets
         </Button>
       </div>
-      <div className="mt-1 rounded-lg border border-gray-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 dark:border-gray-600">
+      <div className="border-border dark:border-border mt-1 rounded-lg border focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
         <div className="min-h-[500px] p-4">
           <div
             id="editorjs"

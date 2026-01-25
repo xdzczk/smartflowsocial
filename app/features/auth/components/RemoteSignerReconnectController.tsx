@@ -67,10 +67,10 @@ export function RemoteSignerReconnectController() {
       toastIdRef.current = toast.custom(
         (t) => (
           <div className="dark:bg-card w-[360px] rounded-lg border bg-white p-3 shadow-lg">
-            <div className="dark:text-foreground text-sm font-medium text-gray-900">
+            <div className="dark:text-foreground text-foreground text-sm font-medium">
               Remote signer isn’t responding
             </div>
-            <div className="dark:text-foreground mt-1 text-sm text-gray-600">
+            <div className="dark:text-foreground text-foreground mt-1 text-sm">
               {detail?.message ??
                 "Open your signer app to approve, or reconnect the session."}
             </div>

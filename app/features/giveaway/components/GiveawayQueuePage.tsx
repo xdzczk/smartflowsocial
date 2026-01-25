@@ -71,7 +71,7 @@ export default function GiveawayQueuePage() {
         currentQueueType={params["queueType"]}
       />
 
-      <div className="mb-2 text-sm text-gray-500">
+      <div className="text-muted-foreground mb-2 text-sm">
         Showing {filteredPosts.length} posts with engagement
         {selectedQueueType !== "all" ? ` for ${selectedQueueType} queue` : null}
       </div>

@@ -76,10 +76,10 @@ export default function MediaPlayer({
   if (hasError) {
     return (
       <div
-        className={`dark:bg-muted flex items-center justify-center bg-gray-200 ${className}`}
+        className={`dark:bg-muted bg-muted flex items-center justify-center ${className}`}
       >
         <div className="text-center">
-          <div className="mb-2 text-gray-500">
+          <div className="text-muted-foreground mb-2">
             <svg
               className="mx-auto h-8 w-8"
               fill="none"
@@ -94,7 +94,7 @@ export default function MediaPlayer({
               />
             </svg>
           </div>
-          <p className="text-sm text-gray-500">Unable to load media</p>
+          <p className="text-muted-foreground text-sm">Unable to load media</p>
         </div>
       </div>
     );
@@ -103,9 +103,9 @@ export default function MediaPlayer({
   if (isLoading) {
     return (
       <div
-        className={`dark:bg-muted flex animate-pulse items-center justify-center bg-gray-200 ${className}`}
+        className={`dark:bg-muted bg-muted flex animate-pulse items-center justify-center ${className}`}
       >
-        <div className="text-gray-500">
+        <div className="text-muted-foreground">
           <svg className="h-8 w-8 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle
               className="opacity-25"
@@ -205,7 +205,7 @@ export function MediaThumbnail({
         <div className="bg-opacity-30 group-hover:bg-opacity-50 absolute inset-0 flex items-center justify-center bg-black transition-all duration-200">
           <div className="bg-opacity-90 group-hover:bg-opacity-100 rounded-full bg-white p-3 transition-all duration-200">
             <svg
-              className="h-8 w-8 text-gray-800"
+              className="text-foreground h-8 w-8"
               fill="currentColor"
               viewBox="0 0 24 24"
             >

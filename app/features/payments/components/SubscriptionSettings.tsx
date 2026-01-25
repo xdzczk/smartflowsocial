@@ -84,9 +84,9 @@ export function SubscriptionSettings({
       case "PAST_DUE":
         return "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20";
       case "INACTIVE":
-        return "text-gray-600 bg-gray-100 dark:text-muted-foreground dark:bg-card/20";
+        return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
       default:
-        return "text-gray-600 bg-gray-100 dark:text-muted-foreground dark:bg-card/20";
+        return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
     }
   };
 
@@ -277,13 +277,13 @@ export function SubscriptionSettings({
                                   payment.id
                                 )
                               }
-                              className="inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                              className="hover:bg-muted dark:hover:bg-muted inline-flex items-center justify-center rounded p-1 transition-colors"
                               title="Copy payment hash"
                             >
                               {copiedHash === payment.id ? (
                                 <Check className="h-3 w-3 text-green-600" />
                               ) : (
-                                <Copy className="h-3 w-3 text-gray-500" />
+                                <Copy className="text-muted-foreground h-3 w-3" />
                               )}
                             </button>
                           </div>
@@ -318,7 +318,7 @@ export function SubscriptionSettings({
               </div>
             ) : (
               <div className="py-12 text-center">
-                <Receipt className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                <Receipt className="text-foreground mx-auto mb-4 h-12 w-12" />
                 <h3 className="mb-2 text-lg font-medium">No Payment History</h3>
                 <p className="text-muted-foreground">
                   Your payment history will appear here once you make your first
@@ -331,7 +331,7 @@ export function SubscriptionSettings({
       ) : (
         /* No Subscription */
         <div className="py-8 text-center">
-          <Crown className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+          <Crown className="text-foreground mx-auto mb-4 h-12 w-12" />
           <h3 className="mb-2 text-lg font-medium">No Active Subscription</h3>
           <p className="text-muted-foreground mb-6">
             You don&apos;t have an active subscription. Choose a plan to unlock

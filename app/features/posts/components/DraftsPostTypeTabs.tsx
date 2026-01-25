@@ -1,7 +1,7 @@
 import { Link } from "@remix-run/react";
 
 const ACTIVE_TAB_CLASSES =
-  "border-gray-300 text-gray-900 dark:border-primary dark:text-primary";
+  "border-border text-foreground dark:border-primary dark:text-primary";
 const INACTIVE_TAB_CLASSES =
   "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 

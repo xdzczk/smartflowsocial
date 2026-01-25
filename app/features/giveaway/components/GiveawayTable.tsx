@@ -185,7 +185,7 @@ export function GiveawayTable({
                     </div>
                   ) : (
                     <div className="relative">
-                      <div className="dark:bg-muted dark:text-muted-foreground flex h-12 w-12 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600">
+                      <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                         TEXT
                       </div>
                       {post.repost ? (

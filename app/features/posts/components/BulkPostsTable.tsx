@@ -227,8 +227,8 @@ function renderMediaCell(
   return (
     <PlaceholderBadge
       text="TEXT"
-      bgColor="bg-gray-200 dark:bg-muted"
-      textColor="text-gray-600 dark:text-gray-300"
+      bgColor="bg-muted dark:bg-muted"
+      textColor="text-foreground dark:text-foreground"
     />
   );
 }
@@ -291,7 +291,7 @@ export default function BulkPostsTable({
                     value={post.caption}
                     onChange={(e) => handleCaptionChange(index, e.target.value)}
                     disabled={post.isKind6Repost}
-                    className={`dark:bg-card dark:text-foreground w-full rounded-lg border p-2 text-gray-900 ${post.isKind6Repost ? "dark:bg-muted cursor-not-allowed bg-gray-100" : ""}`}
+                    className={`dark:bg-card dark:text-foreground text-foreground w-full rounded-lg border p-2 ${post.isKind6Repost ? "dark:bg-muted bg-muted cursor-not-allowed" : ""}`}
                     rows={3}
                     placeholder={
                       post.isKind6Repost
@@ -303,7 +303,7 @@ export default function BulkPostsTable({
                   />
                   {(post.isKind6Repost || post.isQuotePost) &&
                   post.originalCaption ? (
-                    <div className="dark:bg-card rounded border bg-gray-50 p-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="dark:bg-card bg-muted text-muted-foreground dark:text-foreground rounded border p-2 text-xs">
                       <strong>Original:</strong>{" "}
                       {post.originalCaption.length > 100
                         ? post.originalCaption.substring(0, 100) + "..."
@@ -344,7 +344,7 @@ export default function BulkPostsTable({
                   name="scheduledDates"
                   value={post.scheduledFor}
                   onChange={(e) => handleDateChange(index, e.target.value)}
-                  className="dark:bg-card rounded-lg border p-2 text-gray-900 dark:text-gray-100"
+                  className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
                 />
               </td>
               <td className="p-4">
@@ -356,11 +356,11 @@ export default function BulkPostsTable({
                     onChange={(e) =>
                       handleIsRecyclableChange(index, e.target.checked)
                     }
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
                   />
                   <label
                     htmlFor={`bulk-recyclable-${post.clientId}`}
-                    className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                    className="text-muted-foreground dark:text-foreground ml-2 text-sm"
                   >
                     Recyclable
                   </label>

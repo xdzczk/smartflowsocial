@@ -24,7 +24,7 @@ export function LongFormCoverImage({
       <div className="mb-2 flex items-center justify-between">
         <Label htmlFor="cover-image-input">Cover Image *</Label>
         {uploadProvider ? (
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs">
             <span>Upload via:</span>
             <span
               className={`rounded px-2 py-1 text-xs font-medium ${
@@ -48,11 +48,11 @@ export function LongFormCoverImage({
       ) : null}
 
       {!image ? (
-        <div className="relative mt-1 rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500">
+        <div className="border-border hover:border-border dark:border-border dark:hover:border-border relative mt-1 rounded-lg border-2 border-dashed p-6 text-center transition-colors">
           {uploadFetcherState !== "idle" ? (
             <div className="flex items-center justify-center gap-2">
               <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600"></div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-muted-foreground dark:text-foreground text-sm">
                 Uploading...
               </p>
             </div>
@@ -76,7 +76,7 @@ export function LongFormCoverImage({
               >
                 <div className="flex flex-col items-center justify-center gap-4">
                   <svg
-                    className="h-12 w-12 text-gray-400 dark:text-gray-500"
+                    className="text-foreground dark:text-muted-foreground h-12 w-12"
                     stroke="currentColor"
                     fill="none"
                     viewBox="0 0 48 48"
@@ -89,10 +89,10 @@ export function LongFormCoverImage({
                     />
                   </svg>
                   <div className="text-center">
-                    <p className="mb-1 text-sm font-medium text-gray-600 dark:text-gray-300">
+                    <p className="text-foreground dark:text-foreground mb-1 text-sm font-medium">
                       Click to upload cover image
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                    <p className="text-foreground dark:text-muted-foreground text-xs">
                       PNG, JPG, GIF up to 5MB
                     </p>
                   </div>
@@ -101,7 +101,7 @@ export function LongFormCoverImage({
 
               {/* Separator and Assets button - not clickable for file upload */}
               <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-gray-400">or</span>
+                <span className="text-foreground text-xs">or</span>
                 <Button
                   type="button"
                   variant="outline"
@@ -131,7 +131,7 @@ export function LongFormCoverImage({
       ) : (
         <div className="mt-1">
           {/* Cover Image Preview */}
-          <div className="dark:bg-card relative overflow-hidden rounded-lg bg-gray-100">
+          <div className="dark:bg-card bg-muted relative overflow-hidden rounded-lg">
             <img
               src={image}
               alt="Cover preview"
@@ -144,7 +144,7 @@ export function LongFormCoverImage({
                   variant="secondary"
                   size="sm"
                   disabled={uploadFetcherState !== "idle"}
-                  className="relative bg-white/90 text-gray-900 hover:bg-white"
+                  className="text-foreground relative bg-white/90 hover:bg-white"
                 >
                   Replace
                   <input
@@ -181,7 +181,7 @@ export function LongFormCoverImage({
               </div>
             </div>
           </div>
-          <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
             Cover image • Hover to replace or remove
           </p>
         </div>

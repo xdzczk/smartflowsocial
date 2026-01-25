@@ -114,9 +114,9 @@ export function getQueueColorStyle(
   // Past posts get grayed styling regardless of queue color
   if (isPast) {
     return {
-      backgroundColor: "#f9fafb",
-      color: "#9ca3af",
-      borderColor: "#e5e7eb",
+      backgroundColor: "hsl(var(--muted))",
+      color: "hsl(var(--muted-foreground))",
+      borderColor: "hsl(var(--border))",
       opacity: 0.6,
     };
   }
