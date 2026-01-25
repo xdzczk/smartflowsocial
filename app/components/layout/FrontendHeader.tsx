@@ -1,5 +1,6 @@
 import { Link } from "@remix-run/react";
 
+import { Logo } from "~/components/ui/Logo";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
 
@@ -16,18 +17,11 @@ export default function Header() {
             className="flex h-20 items-center justify-center transition"
           >
             <div className="inline-flex items-center gap-3">
-              {/* Logo - switches based on theme */}
-              {/* Light mode logo - shown in light mode, hidden in dark mode */}
-              <img
-                src="/logos/Logo-Full-LightMode.svg"
+              <Logo
+                lightSrc="/logos/Logo-Full-LightMode.svg"
+                darkSrc="/logos/Logo-Full-DarkMode.svg"
                 alt="SmartFlow Social"
-                className="block h-10 w-auto dark:hidden"
-              />
-              {/* Dark mode logo - hidden in light mode, shown in dark mode */}
-              <img
-                src="/logos/Logo-Full-DarkMode.svg"
-                alt="SmartFlow Social"
-                className="hidden h-10 w-auto dark:block"
+                className="h-10 w-auto"
               />
               <span className="text-foreground text-2xl font-semibold">
                 SmartFlow Social
