@@ -28,23 +28,42 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     results: GlobalSearchResult[];
     total: number;
   }>();
+  const searchRequestIdRef = useRef(0);
+  const currentQueryRef = useRef("");
 
-  // Debounce search
+  // Debounce search with request tracking
   useEffect(() => {
-    if (!query.trim()) {
+    const trimmedQuery = query.trim();
+
+    if (!trimmedQuery || trimmedQuery.length < 2) {
+      // Require at least 2 characters to search
       startTransition(() => {
         setResults([]);
         setIsSearching(false);
       });
+      currentQueryRef.current = "";
       return;
     }
+
+    // Increment request ID to track the current request
+    const currentRequestId = ++searchRequestIdRef.current;
+    currentQueryRef.current = trimmedQuery;
 
     startTransition(() => {
       setIsSearching(true);
     });
+
     const timeoutId = setTimeout(() => {
-      fetcher.load(`/api/global-search?q=${encodeURIComponent(query)}`);
-    }, 300);
+      // Only proceed if this is still the current request and query hasn't changed
+      if (
+        currentRequestId === searchRequestIdRef.current &&
+        currentQueryRef.current === trimmedQuery
+      ) {
+        fetcher.load(
+          `/api/global-search?q=${encodeURIComponent(trimmedQuery)}`
+        );
+      }
+    }, 500); // Increased debounce from 300ms to 500ms to reduce server load
 
     return () => {
       clearTimeout(timeoutId);
@@ -53,18 +72,26 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
 
   // Update results when fetcher data changes
   useEffect(() => {
-    const data = fetcher.data;
-    if (data) {
+    // Only update if fetcher is idle (request completed) and we have data
+    if (fetcher.state === "idle") {
+      if (fetcher.data) {
+        const data = fetcher.data;
+        startTransition(() => {
+          setResults(data.results);
+          setIsSearching(false);
+        });
+      } else {
+        // Request completed but no data - might be empty query or error
+        startTransition(() => {
+          setIsSearching(false);
+        });
+      }
+    } else {
+      // Show searching state when loading or submitting
       startTransition(() => {
-        setResults(data.results);
+        setIsSearching(true);
       });
     }
-    // Update searching state based on fetcher state
-    startTransition(() => {
-      setIsSearching(
-        fetcher.state === "loading" || fetcher.state === "submitting"
-      );
-    });
   }, [fetcher.data, fetcher.state]);
 
   // Keyboard shortcuts

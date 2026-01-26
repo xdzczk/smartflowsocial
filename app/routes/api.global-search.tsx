@@ -11,12 +11,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const url = new URL(request.url);
   const query = url.searchParams.get("q") ?? "";
+  const trimmedQuery = query.trim();
 
-  if (!query || query.trim() === "") {
+  // Require at least 2 characters to search (matches client-side requirement)
+  if (!trimmedQuery || trimmedQuery.length < 2) {
     return json({ results: [], total: 0 });
   }
 
-  const results = await performGlobalSearch(userId, query, 5);
+  const results = await performGlobalSearch(userId, trimmedQuery, 5);
   return json(results);
 }
 
@@ -25,11 +27,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const queryValue = formData.get("q");
   const query = typeof queryValue === "string" ? queryValue : "";
+  const trimmedQuery = query.trim();
 
-  if (!query || query.trim() === "") {
+  // Require at least 2 characters to search (matches client-side requirement)
+  if (!trimmedQuery || trimmedQuery.length < 2) {
     return json({ results: [], total: 0 });
   }
 
-  const results = await performGlobalSearch(userId, query, 5);
+  const results = await performGlobalSearch(userId, trimmedQuery, 5);
   return json(results);
 }
