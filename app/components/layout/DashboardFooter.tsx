@@ -1,9 +1,19 @@
+import { ClockIcon } from "@heroicons/react/20/solid";
 import { useState, useEffect } from "react";
 
 import { useOptionalUser } from "~/lib/remix-utils";
+
+// Helper to extract city name from timezone (e.g., "Africa/Cairo" -> "Cairo")
+function getTimezoneShortName(timezone: string | undefined): string {
+  if (!timezone) return "";
+  const parts = timezone.split("/");
+  return parts[parts.length - 1] ?? timezone;
+}
+
 export default function Footer() {
   const user = useOptionalUser() ?? null;
   const [time, setTime] = useState(new Date());
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date());
@@ -12,44 +22,55 @@ export default function Footer() {
     return () => clearInterval(timer);
   }, []);
 
+  const userTimezone =
+    user && typeof user === "object" && "timezone" in user
+      ? (user.timezone ?? undefined)
+      : undefined;
+
+  const dateString = time.toLocaleDateString("en-US", {
+    timeZone: userTimezone,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const timeString = time.toLocaleTimeString("en-US", {
+    timeZone: userTimezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  const timezoneShort = getTimezoneShortName(userTimezone);
+
   return (
-    <>
-      <footer
-        id="page-footer"
-        className="border-border bg-card sticky bottom-0 z-10 flex flex-none items-center border-t"
-      >
-        <div className="max-w-10xl mx-auto flex w-full flex-col px-4 text-center text-sm md:flex-row md:justify-between md:text-left lg:px-8">
-          <div className="text-foreground pt-4 pb-1 md:pb-4">
-            SmartFlow Social ©{" "}
-          </div>
-          <div className="inline-flex items-center justify-center pt-1 pb-4 md:pt-4">
-            <span className="text-foreground font-mono">
-              {" "}
-              {time.toLocaleDateString("en-US", {
-                timeZone:
-                  user && typeof user === "object" && "timezone" in user
-                    ? (user.timezone ?? undefined)
-                    : undefined,
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-              {" ⏰ "}
-              {time.toLocaleTimeString("en-US", {
-                timeZone: user?.timezone ?? undefined,
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true,
-              })}
-              {" 🌍 "}
-              {user && typeof user === "object" && "timezone" in user
-                ? user.timezone
-                : undefined}
-            </span>
-          </div>
+    <footer
+      id="page-footer"
+      className="border-border bg-card sticky bottom-0 z-10 flex flex-none items-center border-t"
+    >
+      <div className="max-w-10xl mx-auto flex w-full flex-col gap-2 px-3 py-2 text-center text-xs sm:flex-row sm:justify-between sm:gap-0 sm:px-4 sm:py-2.5 sm:text-left sm:text-sm md:px-6 lg:px-8">
+        <div className="text-muted-foreground">
+          SmartFlow Social © {new Date().getFullYear()}
         </div>
-      </footer>
-    </>
+        <div className="text-muted-foreground flex items-center justify-center gap-1.5 sm:gap-2">
+          <ClockIcon className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
+          <span className="hidden sm:inline">{dateString}</span>
+          <span className="sm:hidden">{dateString.split(",")[0]}</span>
+          <span className="hidden lg:inline">·</span>
+          <span>{timeString}</span>
+          {userTimezone ? (
+            <>
+              <span className="hidden lg:inline">·</span>
+              <span className="hidden sm:inline lg:hidden">
+                {timezoneShort}
+              </span>
+              <span className="hidden lg:inline">{userTimezone}</span>
+              <span className="sm:hidden">{timezoneShort}</span>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </footer>
   );
 }

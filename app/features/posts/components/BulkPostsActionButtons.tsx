@@ -9,7 +9,7 @@ interface BulkPostsActionButtonsProps {
   isProcessing: boolean;
   scheduleIntervals: number[] | undefined;
   queueTypes: QueueType[];
-  hashTagPresets: Array<{ id: string; name: string; hashtags: string }>;
+  hashTagPresets: Array<{ id: string; name: string; tags: string }>;
   selectedHashtagPresetId: string | null;
   useHashtagPresets: boolean;
   handleScheduleIntervalClick: (interval: number) => void;
@@ -95,7 +95,7 @@ export default function BulkPostsActionButtons({
           presets={hashTagPresets.map((p) => ({
             id: p.id,
             name: p.name,
-            tags: p.hashtags,
+            tags: p.tags,
           }))}
           selectedPresetId={selectedHashtagPresetId}
           onSelect={handleHashtagPresetSelect}

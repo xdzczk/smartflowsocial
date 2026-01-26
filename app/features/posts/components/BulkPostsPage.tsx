@@ -32,7 +32,7 @@ import { isVideoFile } from "~/utils/media-helpers";
 function extractLoaderData(data: unknown): {
   tags: string[];
   queueTypes: QueueType[];
-  hashTagPresets: Array<{ id: string; name: string; hashtags: string }>;
+  hashTagPresets: Array<{ id: string; name: string; tags: string }>;
   mode: string | null;
 } {
   const tags =
@@ -67,7 +67,7 @@ function extractLoaderData(data: unknown): {
     hashTagPresets: hashTagPresets as Array<{
       id: string;
       name: string;
-      hashtags: string;
+      tags: string;
     }>,
     mode: typeof mode === "string" ? mode : null,
   };
@@ -201,7 +201,7 @@ export default function BulkPostsPage() {
   const data = useLoaderData<{
     tags: string[];
     queueTypes: QueueType[];
-    hashTagPresets: Array<{ id: string; name: string; hashtags: string }>;
+    hashTagPresets: Array<{ id: string; name: string; tags: string }>;
     mode: string | null;
   }>();
   const { tags, queueTypes, hashTagPresets, mode } = extractLoaderData(data);

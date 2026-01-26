@@ -17,14 +17,14 @@ import Header from "~/components/layout/FrontendHeader";
 export function HomePage(): ReactNode {
   return (
     <>
-      <div className="bg-background landing-texture relative min-h-screen overflow-hidden">
+      <div className="bg-background landing-texture relative min-h-screen">
         {/* Enhanced background gradient with micro-depth */}
         <div className="hero-gradient-light dark:hero-gradient-dark absolute inset-0" />
 
         <Header />
 
         {/* Hero Section */}
-        <section className="relative container mx-auto px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl">
+        <section className="relative container mx-auto px-4 py-12 sm:py-16 lg:px-8 lg:py-24 xl:max-w-7xl xl:py-32">
           <div className="mx-auto max-w-4xl text-center">
             <div className="border-border bg-muted text-muted-foreground mb-6 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
               Schedule your nostr content with ease!
@@ -74,7 +74,7 @@ export function HomePage(): ReactNode {
         </section>
 
         {/* Features Section */}
-        <section className="border-border bg-card relative border-t py-32">
+        <section className="border-border bg-card relative border-t py-16 sm:py-24 lg:py-32">
           <div className="container mx-auto px-4 lg:px-8 xl:max-w-7xl">
             <div className="mb-16 text-center">
               <h2 className="text-foreground mb-4 text-4xl font-black">
@@ -151,7 +151,7 @@ export function HomePage(): ReactNode {
         </section>
 
         {/* Process Flow Section */}
-        <section className="border-border bg-background relative border-t py-32">
+        <section className="border-border bg-background relative border-t py-16 sm:py-24 lg:py-32">
           {/* Subtle neutral gradient overlay for depth */}
           <div className="from-muted/10 to-background dark:from-muted/5 absolute inset-0 bg-gradient-to-b via-transparent" />
           <div className="relative container mx-auto px-4 lg:px-8 xl:max-w-7xl">
@@ -252,7 +252,7 @@ export function HomePage(): ReactNode {
         </section>
 
         {/* Philosophy Section */}
-        <section className="border-border bg-card relative border-t py-32 dark:bg-[hsl(var(--landing-section-alt))]">
+        <section className="border-border bg-card relative border-t py-16 sm:py-24 lg:py-32 dark:bg-[hsl(var(--landing-section-alt))]">
           <div className="container mx-auto px-4 lg:px-8 xl:max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <h2 className="text-foreground mb-4 text-4xl font-black">
