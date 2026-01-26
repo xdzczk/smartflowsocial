@@ -382,7 +382,7 @@ export default function LongFormDetailsModal({
             <div className="mx-auto max-w-3xl p-6">
               {/* Author Header */}
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-semibold text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(255,77%,51%)] to-[hsl(255,97%,51%)] text-lg font-semibold text-white">
                   A
                 </div>
                 <div>

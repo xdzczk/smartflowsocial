@@ -39,6 +39,28 @@ export function resetCachedSigner(): void {
 }
 
 /**
+ * Clear cached NIP-46 signer connections.
+ * This is called when we detect the page was hidden or when connections fail.
+ */
+function clearCachedNip46Signer(): void {
+  const config = getActiveSignerConfig();
+  if (config?.type === "nip46" && cachedSigner) {
+    // Close existing connections gracefully
+    if (cachedSigner.type === "nip46" && cachedSigner.close) {
+      const closeFn = cachedSigner.close;
+      void (async () => {
+        try {
+          await closeFn();
+        } catch {
+          // Ignore errors during cleanup
+        }
+      })();
+    }
+    resetCachedSigner();
+  }
+}
+
+/**
  * Initialize page visibility detection to reset cached NIP-46 signers
  * when the page becomes visible again after being hidden.
  * This helps recover from stale WebSocket connections when users switch
@@ -53,27 +75,23 @@ function initVisibilityHandler(): void {
       wasHidden = true;
     } else if (wasHidden) {
       // Page became visible again after being hidden
-      // Reset cached NIP-46 signer to force reconnection
-      const config = getActiveSignerConfig();
-      if (config?.type === "nip46" && cachedSigner) {
-        // Close existing connections gracefully
-        if (cachedSigner.type === "nip46" && cachedSigner.close) {
-          const closeFn = cachedSigner.close;
-          void (async () => {
-            try {
-              await closeFn();
-            } catch {
-              // Ignore errors during cleanup
-            }
-          })();
-        }
-        resetCachedSigner();
-      }
+      // Always clear cached NIP-46 signer to force fresh reconnection
+      // This prevents using stale WebSocket connections
+      clearCachedNip46Signer();
+      wasHidden = false;
+    }
+  };
+
+  // Also listen for focus events as a backup (handles some edge cases)
+  const handleFocus = () => {
+    if (wasHidden) {
+      clearCachedNip46Signer();
       wasHidden = false;
     }
   };
 
   document.addEventListener("visibilitychange", handleVisibilityChange);
+  window.addEventListener("focus", handleFocus);
 }
 
 // Initialize visibility handler when module loads
@@ -157,7 +175,8 @@ async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
     ]);
     return true;
   } catch {
-    // Connection is stale or unreachable
+    // Any error means the connection is stale or unreachable
+    // This includes "subscription closed", websocket errors, and other connection issues
     return false;
   }
 }
@@ -170,17 +189,7 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
       return cachedSigner;
     }
     // Connection is stale, clear cache and reconnect
-    if (cachedSigner.type === "nip46" && cachedSigner.close) {
-      const closeFn = cachedSigner.close;
-      void (async () => {
-        try {
-          await closeFn();
-        } catch {
-          // Ignore errors during cleanup
-        }
-      })();
-    }
-    resetCachedSigner();
+    clearCachedNip46Signer();
   }
 
   const config = getActiveSignerConfig();
@@ -194,26 +203,44 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
   const clientSecretKey = hexToBytes(config.clientSecretKeyHex);
   const pool = new SimplePool();
 
-  if (config.method === "bunker_input") {
-    const bp = await parseBunkerInput(config.bunkerInput);
-    if (!bp) {
-      throw new Error("Invalid bunker input");
+  try {
+    if (config.method === "bunker_input") {
+      const bp = await parseBunkerInput(config.bunkerInput);
+      if (!bp) {
+        throw new Error("Invalid bunker input");
+      }
+      const inner = BunkerSigner.fromBunker(clientSecretKey, bp, { pool });
+      await inner.connect();
+      cachedSigner = new Nip46Signer({ pool, inner });
+      return cachedSigner;
     }
-    const inner = BunkerSigner.fromBunker(clientSecretKey, bp, { pool });
-    await inner.connect();
+
+    // nostrconnect_uri
+    const inner = await BunkerSigner.fromURI(
+      clientSecretKey,
+      config.uri,
+      { pool },
+      60_000
+    );
     cachedSigner = new Nip46Signer({ pool, inner });
     return cachedSigner;
+  } catch (err) {
+    // If connection fails, clear the cache to prevent retrying with stale data
+    const errorMessage =
+      err instanceof Error
+        ? err.message.toLowerCase()
+        : String(err).toLowerCase();
+    if (
+      errorMessage.includes("subscription closed") ||
+      errorMessage.includes("websocket") ||
+      errorMessage.includes("closed") ||
+      errorMessage.includes("connection")
+    ) {
+      // Clear cache on connection errors so next attempt will be fresh
+      resetCachedSigner();
+    }
+    throw err;
   }
-
-  // nostrconnect_uri
-  const inner = await BunkerSigner.fromURI(
-    clientSecretKey,
-    config.uri,
-    { pool },
-    60_000
-  );
-  cachedSigner = new Nip46Signer({ pool, inner });
-  return cachedSigner;
 }
 
 /**

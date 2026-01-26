@@ -105,7 +105,7 @@ export default function ScheduledPosts() {
                   return (
                     <tr
                       key={post.id}
-                      className="dark:even:bg-muted dark:hover:bg-muted even:bg-muted/50 hover:bg-muted"
+                      className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted"
                     >
                       <td className="p-3">
                         <div className="size-12 overflow-hidden rounded-lg">

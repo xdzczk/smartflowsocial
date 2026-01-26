@@ -187,7 +187,7 @@ export function AssetsTab({
               {assets.map((asset) => (
                 <tr
                   key={asset.id}
-                  className="dark:even:bg-muted dark:hover:bg-muted even:bg-muted/50 hover:bg-muted"
+                  className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted"
                 >
                   <td className="p-3 text-center">
                     <input

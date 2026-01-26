@@ -156,9 +156,30 @@ async function trySignWithConfiguredSigner(
     return normalizeSignResult(signResult, nostrEvent);
   } catch (err) {
     if (prefersRemoteSigner) {
-      if (err instanceof RemoteSignerTimeoutError) {
-        emitRemoteSignerTimeoutEvent({ message: err.message });
+      // Check if this is a connection error that should trigger cache reset
+      const errorMessage =
+        err instanceof Error
+          ? err.message.toLowerCase()
+          : String(err).toLowerCase();
+      const isConnectionError =
+        errorMessage.includes("subscription closed") ||
+        errorMessage.includes("websocket") ||
+        errorMessage.includes("closed") ||
+        errorMessage.includes("connection") ||
+        err instanceof RemoteSignerTimeoutError;
+
+      if (isConnectionError) {
+        // Clear cache and emit timeout event for connection errors
         await resetSignerCacheBestEffort();
+        if (err instanceof RemoteSignerTimeoutError) {
+          emitRemoteSignerTimeoutEvent({ message: err.message });
+        } else {
+          // For other connection errors, emit a generic timeout event
+          emitRemoteSignerTimeoutEvent({
+            message:
+              "Connection to remote signer failed. Please try again or reconnect your signer.",
+          });
+        }
       }
       throw err;
     }

@@ -133,8 +133,8 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 7.5%;                    /* Between surface and elevated */
     --muted-foreground: 30 5% 60%;         /* Warm grey #9A948F for secondary text */
-    --border: 0 0% 11.8%;                  /* Borders/dividers #1E1E24 */
-    --input: 0 0% 11.8%;                    /* Input borders */
+    --border: 0 0% 9.5%;                   /* Borders/dividers - subtle, felt not seen */
+    --input: 0 0% 9.5%;                    /* Input borders - matches border */
     
     /* Brand colors - two-purple system */
     --primary: 255 77% 51%;                 /* Calm purple - desaturated for headlines, subtle accents */
@@ -144,12 +144,12 @@
     --accent-foreground: 0 0% 100%;
     --ring: 255 97% 51%;                    /* Action purple for focus states */
     
-    /* Destructive actions */
-    --destructive: 0 62.8% 30.6%;
+    /* Destructive actions - desaturated by ~25% for restraint */
+    --destructive: 0 50% 28%;
     --destructive-foreground: 0 0% 98%;
     
-    /* Success actions */
-    --success: 142 70% 45%;                /* Lighter green for dark backgrounds */
+    /* Success actions - desaturated by ~25% for restraint */
+    --success: 142 50% 40%;                 /* Desaturated green for dark backgrounds */
     --success-foreground: 0 0% 100%;       /* White */
     
     /* Chart colors - keep brand for data visualization */

@@ -461,7 +461,7 @@ export default function PostConfirmation({
           </button>
           <button
             onClick={() => void handleSignAndSubmit()}
-            className="rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-blue-600 hover:to-blue-700 hover:shadow-xl disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
+            className="rounded-lg bg-gradient-to-r from-[hsl(255,77%,51%)] to-[hsl(255,97%,51%)] px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-[hsl(255,97%,51%)] hover:to-[hsl(255,77%,51%)] hover:shadow-xl disabled:cursor-not-allowed disabled:from-[hsl(255,77%,30%)] disabled:to-[hsl(255,97%,40%)]"
             disabled={isSubmitting || isSigning}
           >
             {isSigning ? (

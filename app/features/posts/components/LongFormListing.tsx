@@ -591,7 +591,7 @@ export default function LongFormListing({
             {filteredPosts.map((post) => (
               <tr
                 key={post.id}
-                className="dark:even:bg-muted dark:hover:bg-muted even:bg-muted/50 hover:bg-muted cursor-pointer"
+                className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted cursor-pointer"
                 onClick={() => onPostSelect?.(post)}
                 onKeyDown={(e) => {
                   if ((e.key === "Enter" || e.key === " ") && onPostSelect) {

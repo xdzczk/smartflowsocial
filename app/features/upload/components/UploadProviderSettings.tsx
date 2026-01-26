@@ -1,4 +1,13 @@
 import { Form, useNavigation } from "@remix-run/react";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+
 interface UploadProviderSettingsProps {
   uploadProvider: string;
 }
@@ -11,16 +20,17 @@ export function UploadProviderSettings({
     navigation.state === "submitting" &&
     navigation.formData?.get("_action") === "update_upload_provider";
 
-  return (
-    <div className="dark:bg-card rounded-lg border bg-white shadow-sm">
-      <div className="border-b px-6 py-4">
-        <h3 className="text-lg font-medium">Media Upload Provider</h3>
-        <p className="text-muted-foreground dark:text-foreground mt-1 text-sm">
-          Choose how your media files are stored and served
-        </p>
-      </div>
+  const primaryAccentColor = "hsl(var(--primary))";
 
-      <div className="p-6">
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Media Upload Provider</CardTitle>
+        <CardDescription>
+          Choose how your media files are stored and served
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <Form method="post">
           <input type="hidden" name="_action" value="update_upload_provider" />
 
@@ -32,12 +42,13 @@ export function UploadProviderSettings({
                 type="radio"
                 value="S3"
                 defaultChecked={uploadProvider === "S3"}
-                className="border-border text-primary focus:ring-primary mt-1 h-4 w-4"
+                className="border-border text-primary focus:ring-primary accent-primary mt-1 h-4 w-4"
+                style={{ accentColor: primaryAccentColor }}
               />
               <div className="flex-1">
                 <label
                   htmlFor="s3"
-                  className="text-foreground dark:text-foreground block text-sm font-medium"
+                  className="text-foreground block text-sm font-medium"
                 >
                   Amazon S3 (Default)
                 </label>
@@ -63,12 +74,13 @@ export function UploadProviderSettings({
                   uploadProvider === "BLOSSOM_PRIMAL" ||
                   uploadProvider === "BLOSSOM"
                 }
-                className="border-border text-primary focus:ring-primary mt-1 h-4 w-4"
+                className="border-border text-primary focus:ring-primary accent-primary mt-1 h-4 w-4"
+                style={{ accentColor: primaryAccentColor }}
               />
               <div className="flex-1">
                 <label
                   htmlFor="blossom-primal"
-                  className="text-foreground dark:text-foreground block text-sm font-medium"
+                  className="text-foreground block text-sm font-medium"
                 >
                   Primal Blossom (NOSTR)
                 </label>
@@ -94,12 +106,13 @@ export function UploadProviderSettings({
                 type="radio"
                 value="BLOSSOM_BLOSSTR"
                 defaultChecked={uploadProvider === "BLOSSOM_BLOSSTR"}
-                className="border-border text-primary focus:ring-primary mt-1 h-4 w-4"
+                className="border-border text-primary focus:ring-primary accent-primary mt-1 h-4 w-4"
+                style={{ accentColor: primaryAccentColor }}
               />
               <div className="flex-1">
                 <label
                   htmlFor="blossom-blosstr"
-                  className="text-foreground dark:text-foreground block text-sm font-medium"
+                  className="text-foreground block text-sm font-medium"
                 >
                   Blosstr Blossom (NOSTR)
                 </label>
@@ -131,7 +144,7 @@ export function UploadProviderSettings({
             </button>
           </div>
         </Form>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
