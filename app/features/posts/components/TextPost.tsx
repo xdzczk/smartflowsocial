@@ -402,7 +402,7 @@ export default function TextPost({
               id="isRecyclable"
               {...form.register("isRecyclable")}
               disabled={fetcher.state !== "idle" || isSigning}
-              className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
+              className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
             />
             <Label
               htmlFor="isRecyclable"

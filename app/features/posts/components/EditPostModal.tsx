@@ -168,16 +168,16 @@ export function EditPostModal({
       {isLongform ? <EditorJSStyles /> : null}
 
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="dark:bg-card max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-xl">
+        <div className="bg-card max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg shadow-xl">
           <div className="p-6">
             {/* Header */}
             <div className="mb-6 flex items-center justify-between">
-              <h3 className="text-foreground text-xl font-semibold dark:text-white">
+              <h3 className="text-foreground text-xl font-semibold">
                 Edit {isLongform ? "Article" : "Post"}
               </h3>
               <button
                 onClick={onClose}
-                className="text-foreground hover:text-foreground dark:hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <svg
                   className="h-6 w-6"
@@ -233,7 +233,7 @@ export function EditPostModal({
               <div>
                 <label
                   htmlFor="edit-post-scheduled-for"
-                  className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
+                  className="text-muted-foreground mb-2 block text-sm font-medium"
                 >
                   Scheduled For
                 </label>
@@ -270,7 +270,7 @@ export function EditPostModal({
                       setScheduledFor(null);
                     }
                   }}
-                  className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+                  className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2"
                 />
               </div>
 
@@ -289,7 +289,7 @@ export function EditPostModal({
                     />
                   </svg>
                   <div>
-                    <div className="text-foreground dark:text-foreground text-sm font-medium">
+                    <div className="text-foreground text-sm font-medium">
                       Editing this {isLongform ? "article" : "post"} requires
                       re-signing the Nostr event
                     </div>
@@ -297,7 +297,7 @@ export function EditPostModal({
                 </div>
               </div>
               {isSigningEvent ? (
-                <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground rounded-lg border bg-white/50 p-3 text-sm">
+                <div className="bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
                   Waiting for signer approval… If you’re using a remote signer,
                   open it to approve the request.
                 </div>
@@ -317,7 +317,7 @@ export function EditPostModal({
             <div className="mt-6 flex items-center justify-end space-x-3">
               <button
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground dark:text-foreground px-4 py-2 text-sm font-medium dark:hover:text-white"
+                className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
               >
                 Cancel
               </button>

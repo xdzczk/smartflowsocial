@@ -97,7 +97,7 @@ export function RecyclablesTable({
                   posts.length > 0 ? selectedPosts.size === posts.length : false
                 }
                 onChange={onToggleSelectAll}
-                className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
+                className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
               />
             </th>
             <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
@@ -192,7 +192,7 @@ export function RecyclablesTable({
                     checked={selectedPosts.has(post.id)}
                     onChange={() => onToggleSelect(post.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
+                    className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
                   />
                 </td>
                 <td className="p-3">

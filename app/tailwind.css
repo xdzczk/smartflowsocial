@@ -38,6 +38,8 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-success: hsl(var(--success));
   --color-success-foreground: hsl(var(--success-foreground));
+  --color-checkbox: hsl(var(--checkbox));
+  --color-checkbox-foreground: hsl(var(--checkbox-foreground));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -106,6 +108,8 @@
     --destructive-foreground: 0 0% 98%;
     --success: 142 76% 36%;                /* Green-600 equivalent */
     --success-foreground: 0 0% 100%;      /* White */
+    --checkbox: 0 0% 50%;                  /* Neutral gray for checkboxes */
+    --checkbox-foreground: 0 0% 100%;      /* White checkmark */
     --border: 0 0% 90%;                     /* Neutral border */
     --input: 0 0% 90%;                      /* Neutral input border */
     --ring: 255 97% 51%;                    /* Action purple for focus states */
@@ -151,6 +155,10 @@
     /* Success actions - desaturated by ~25% for restraint */
     --success: 142 50% 40%;                 /* Desaturated green for dark backgrounds */
     --success-foreground: 0 0% 100%;       /* White */
+    
+    /* Checkbox - neutral gray for selection states */
+    --checkbox: 0 0% 60%;                   /* Neutral gray for checkboxes in dark mode */
+    --checkbox-foreground: 0 0% 100%;      /* White checkmark */
     
     /* Chart colors - keep brand for data visualization */
     --chart-1: 255 97% 51%;                 /* Brand primary */
@@ -271,5 +279,10 @@
 
   .arrow-pulse {
     animation: arrowPulse 2s ease-in-out infinite;
+  }
+
+  /* Native checkbox accent color - controls checked state */
+  .accent-checkbox {
+    accent-color: hsl(var(--checkbox));
   }
 }

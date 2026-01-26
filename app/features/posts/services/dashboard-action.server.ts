@@ -22,8 +22,9 @@ export async function handleDashboardAction(
   const { _action } = result.data;
 
   if (_action === "delete") {
-    await deletePost({ id: result.data.postId, userId });
-    return { success: true };
+    const deletedPost = await deletePost({ id: result.data.postId, userId });
+    // Return success even if post was already deleted (idempotent operation)
+    return { success: true, deleted: deletedPost !== null };
   }
 
   if (_action === "deleteLongForm") {
@@ -32,10 +33,11 @@ export async function handleDashboardAction(
   }
 
   if (_action === "bulkDelete") {
-    await Promise.all(
+    const results = await Promise.all(
       result.data.postIds.map((id: string) => deletePost({ id, userId }))
     );
-    return { success: true };
+    const deletedCount = results.filter((post) => post !== null).length;
+    return { success: true, deletedCount };
   }
 
   // TypeScript guarantees this is "bulkDeleteLongForm" after previous checks

@@ -22,29 +22,36 @@ export async function handleScheduledAction(
   const { _action } = result.data;
 
   if (_action === "delete") {
-    await deletePost({ id: result.data.postId, userId });
-    return { success: true };
+    const deletedPost = await deletePost({ id: result.data.postId, userId });
+    // Return success even if post was already deleted (idempotent operation)
+    return { success: true, deleted: deletedPost !== null };
   }
 
   if (_action === "deleteLongForm") {
-    await deleteLongFormPost({ id: result.data.postId, userId });
-    return { success: true };
+    const deletedPost = await deleteLongFormPost({
+      id: result.data.postId,
+      userId,
+    });
+    // Return success even if post was already deleted (idempotent operation)
+    return { success: true, deleted: deletedPost !== null };
   }
 
   if (_action === "bulkDelete") {
-    await Promise.all(
+    const results = await Promise.all(
       result.data.postIds.map((id: string) => deletePost({ id, userId }))
     );
-    return { success: true };
+    const deletedCount = results.filter((post) => post !== null).length;
+    return { success: true, deletedCount };
   }
 
   if (_action === "bulkDeleteLongForm") {
-    await Promise.all(
+    const results = await Promise.all(
       result.data.postIds.map((id: string) =>
         deleteLongFormPost({ id, userId })
       )
     );
-    return { success: true };
+    const deletedCount = results.filter((post) => post !== null).length;
+    return { success: true, deletedCount };
   }
 
   // TypeScript guarantees this is "bulkDeleteMixed" after previous checks
@@ -55,6 +62,7 @@ export async function handleScheduledAction(
       return deleteLongFormPost({ id: item.id, userId });
     }
   });
-  await Promise.all(promises);
-  return { success: true };
+  const results = await Promise.all(promises);
+  const deletedCount = results.filter((post) => post !== null).length;
+  return { success: true, deletedCount };
 }

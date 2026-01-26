@@ -238,20 +238,20 @@ export default function PostConfirmation({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6 dark:from-gray-900 dark:to-gray-800">
+    <div className="bg-background min-h-screen p-6">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-foreground text-3xl font-bold dark:text-white">
+          <h1 className="text-foreground text-3xl font-bold">
             Confirm Your Posts
           </h1>
-          <p className="text-foreground dark:text-foreground mt-2">
+          <p className="text-muted-foreground mt-2">
             Review your {postsCount} posts before scheduling them
           </p>
         </div>
 
         {isSigning ? (
-          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm">
+          <div className="bg-muted text-muted-foreground mx-auto mb-4 max-w-3xl rounded-md border p-3 text-sm">
             Waiting for signer approval…
             {signingProgress ? (
               <span className="text-muted-foreground ml-2">
@@ -325,11 +325,11 @@ export default function PostConfirmation({
               <div
                 // eslint-disable-next-line react/no-array-index-key -- Stable list of prepared events, no unique ID available
                 key={index}
-                className="group dark:bg-card overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl"
+                className="group bg-card overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl"
               >
                 {/* Post Header */}
-                <div className="border-border dark:border-border flex items-center justify-between border-b p-4">
-                  <h3 className="text-foreground text-lg font-semibold dark:text-white">
+                <div className="border-border flex items-center justify-between border-b p-4">
+                  <h3 className="text-foreground text-lg font-semibold">
                     {isRepost ? `Repost ${index + 1}` : `Post ${index + 1}`}
                   </h3>
                   <span
@@ -344,11 +344,11 @@ export default function PostConfirmation({
                   {/* Caption */}
                   {caption ? (
                     <div>
-                      <h4 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
+                      <h4 className="text-muted-foreground mb-2 text-sm font-medium">
                         Caption
                       </h4>
-                      <div className="dark:bg-muted bg-muted max-h-20 overflow-y-auto rounded-lg p-3">
-                        <p className="text-muted-foreground dark:text-foreground text-sm whitespace-pre-wrap">
+                      <div className="bg-muted max-h-20 overflow-y-auto rounded-lg p-3">
+                        <p className="text-muted-foreground text-sm whitespace-pre-wrap">
                           {caption}
                         </p>
                       </div>
@@ -358,7 +358,7 @@ export default function PostConfirmation({
                   {/* Media preview - shown after caption */}
                   {mediaUrl ? (
                     <div>
-                      <h4 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
+                      <h4 className="text-muted-foreground mb-2 text-sm font-medium">
                         Media
                       </h4>
                       <div className="relative overflow-hidden rounded-lg">
@@ -375,7 +375,7 @@ export default function PostConfirmation({
                   {/* Show placeholder for text-only posts */}
                   {!mediaUrl && !caption ? (
                     <div className="dark:bg-muted bg-muted flex h-32 w-full items-center justify-center rounded-lg">
-                      <span className="text-muted-foreground dark:text-foreground">
+                      <span className="text-muted-foreground">
                         {isRepost ? "REPOST" : "TEXT"}
                       </span>
                     </div>
@@ -384,7 +384,7 @@ export default function PostConfirmation({
                   {/* Tags - Only show hashtag tags (t) for non-reposts */}
                   {tags && !isRepost ? (
                     <div>
-                      <h4 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
+                      <h4 className="text-muted-foreground mb-2 text-sm font-medium">
                         Tags
                       </h4>
                       <div className="flex flex-wrap gap-1">
@@ -402,7 +402,7 @@ export default function PostConfirmation({
                               <span
                                 // eslint-disable-next-line react/no-array-index-key -- Stable list of tags, no unique ID available
                                 key={tagIndex}
-                                className="bg-muted text-foreground dark:bg-muted dark:text-foreground rounded-full px-2 py-1 text-xs font-medium"
+                                className="bg-muted text-foreground rounded-full px-2 py-1 text-xs font-medium"
                               >
                                 #{tagValue}
                               </span>
@@ -413,11 +413,11 @@ export default function PostConfirmation({
                   ) : null}
 
                   {/* Schedule time */}
-                  <div className="border-border dark:border-border rounded-lg border p-3 text-center">
-                    <h4 className="text-muted-foreground dark:text-foreground mb-1 text-xs font-medium tracking-wide uppercase">
+                  <div className="border-border rounded-lg border p-3 text-center">
+                    <h4 className="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">
                       Scheduled for
                     </h4>
-                    <p className="text-foreground text-sm font-semibold dark:text-white">
+                    <p className="text-foreground text-sm font-semibold">
                       {(() => {
                         try {
                           const timestamp = getCreatedAtTimestamp(eventsData);
@@ -447,14 +447,14 @@ export default function PostConfirmation({
         <div className="mt-8 flex justify-center gap-4">
           <button
             onClick={() => window.history.back()}
-            className="dark:bg-card border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border bg-white px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
+            className="bg-card border-border text-foreground hover:bg-muted rounded-lg border px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
             disabled={isSubmitting || isSigning}
           >
             ← Back to Edit
           </button>
           <button
             onClick={handleSaveAsDraft}
-            className="dark:bg-card border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border bg-white px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
+            className="bg-card border-border text-foreground hover:bg-muted rounded-lg border px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
             disabled={isSubmitting || isSigning}
           >
             💾 Save as Draft

@@ -405,7 +405,7 @@ export default function MediaPost({
               checked={isRecyclable}
               onChange={(e) => setIsRecyclable(e.target.checked)}
               disabled={isUploading || isUploaded}
-              className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
+              className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
             />
             <label
               htmlFor="isRecyclable"

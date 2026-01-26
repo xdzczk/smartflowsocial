@@ -1,9 +1,12 @@
 import { useFetcher } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 
 import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
 import type { CombinedContent, LongFormPostData, PostData } from "../types";
+
+import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 // Union type for posts that can be edited/rescheduled
 type EditablePost = PostData | LongFormPostData;
 
@@ -189,8 +192,57 @@ export function useScheduledState({
     }
   };
 
+  const queryClient = useQueryClient();
+
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
+
+    const postIds = Array.from(selectedPosts);
+
+    // Optimistically remove posts from cache
+    queryClient.setQueryData(
+      scheduledPostsKeys.list(undefined, currentTab),
+      (old: unknown) => {
+        if (!old || typeof old !== "object" || !("pages" in old)) return old;
+        const infiniteData = old as { pages: unknown[]; pageParams: unknown[] };
+        return {
+          ...infiniteData,
+          pages: infiniteData.pages.map((page) => {
+            if (!page || typeof page !== "object") return page;
+            const pageObj = page as Record<string, unknown>;
+            const updated: Record<string, unknown> = { ...pageObj };
+
+            // Remove deleted posts from posts array
+            if (Array.isArray(pageObj["posts"])) {
+              updated["posts"] = (pageObj["posts"] as unknown[]).filter(
+                (post) =>
+                  !post ||
+                  typeof post !== "object" ||
+                  !("id" in post) ||
+                  typeof post.id !== "string" ||
+                  !postIds.includes(post.id)
+              );
+            }
+
+            // Remove deleted posts from longformPosts array
+            if (Array.isArray(pageObj["longformPosts"])) {
+              updated["longformPosts"] = (
+                pageObj["longformPosts"] as unknown[]
+              ).filter(
+                (post) =>
+                  !post ||
+                  typeof post !== "object" ||
+                  !("id" in post) ||
+                  typeof post.id !== "string" ||
+                  !postIds.includes(post.id)
+              );
+            }
+
+            return updated;
+          }),
+        };
+      }
+    );
 
     // For All tab, we need to handle mixed content types
     if (currentTab === "all" && allContent) {
@@ -210,11 +262,28 @@ export function useScheduledState({
         "_action",
         currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete"
       );
-      formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+      formData.append("postIds", JSON.stringify(postIds));
 
       bulkDeleteFetcher.submit(formData, { method: "post" });
     }
   };
+
+  // Invalidate queries when delete succeeds
+  useEffect(() => {
+    if (bulkDeleteFetcher.state === "idle" && bulkDeleteFetcher.data) {
+      void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
+      // Clear selection after successful delete
+      setSelectedPosts(new Set());
+    }
+  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, queryClient]);
+
+  // Handle individual delete fetcher
+  useEffect(() => {
+    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
+      // Invalidate queries to refetch fresh data after successful delete
+      void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
+    }
+  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
 
   const handleMediaClick = (mediaSrc: string) => {
     setSelectedMedia(mediaSrc);

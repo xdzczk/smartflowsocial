@@ -48,7 +48,7 @@ export function EditPostFormFields({
       <div>
         <label
           htmlFor="edit-post-images"
-          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
+          className="text-muted-foreground mb-2 block text-sm font-medium"
         >
           Images / Media
         </label>
@@ -112,7 +112,7 @@ export function EditPostFormFields({
       <div>
         <label
           htmlFor="edit-post-caption"
-          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
+          className="text-muted-foreground mb-2 block text-sm font-medium"
         >
           Caption
         </label>
@@ -122,7 +122,7 @@ export function EditPostFormFields({
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           rows={4}
-          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+          className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2"
           placeholder="What's on your mind?"
         />
       </div>
@@ -141,7 +141,7 @@ export function EditPostFormFields({
         <div>
           <label
             htmlFor="edit-post-hashtags"
-            className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
+            className="text-muted-foreground mb-2 block text-sm font-medium"
           >
             Hashtags (space-separated, e.g. #nostr #bitcoin)
           </label>
@@ -151,7 +151,7 @@ export function EditPostFormFields({
             type="text"
             value={manualHashtags}
             onChange={(e) => setManualHashtags(e.target.value)}
-            className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+            className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2"
             placeholder="#tag1 #tag2 #tag3"
           />
         </div>
@@ -160,7 +160,7 @@ export function EditPostFormFields({
       <div>
         <label
           htmlFor="edit-post-queue-type"
-          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
+          className="text-muted-foreground mb-2 block text-sm font-medium"
         >
           Queue Type
         </label>
@@ -169,7 +169,7 @@ export function EditPostFormFields({
           name="edit-post-queue-type"
           value={selectedQueueType}
           onChange={(e) => setSelectedQueueType(e.target.value)}
-          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+          className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2"
         >
           <option value="">Manual (No Queue)</option>
           {queueTypes.map((queueType) => (

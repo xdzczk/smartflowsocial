@@ -250,7 +250,20 @@ export async function deletePost({
   id: string;
   userId: string;
   correlationId?: string;
-}): Promise<Post> {
+}): Promise<Post | null> {
+  // Check if post exists before attempting to delete
+  const existingPost = await prisma.post.findUnique({
+    where: {
+      id,
+      userId,
+    },
+  });
+
+  // If post doesn't exist, return null instead of throwing
+  if (!existingPost) {
+    return null;
+  }
+
   const post = await prisma.post.delete({
     where: {
       id,

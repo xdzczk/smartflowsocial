@@ -75,7 +75,7 @@ export function ContentTableRow({
             checked={selectedItems.has(item.id)}
             onChange={() => onToggleSelection?.(item.id)}
             onClick={(e) => e.stopPropagation()}
-            className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
+            className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
           />
         </td>
       ) : null}

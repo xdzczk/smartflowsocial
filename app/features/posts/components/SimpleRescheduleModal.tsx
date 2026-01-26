@@ -233,16 +233,16 @@ export function SimpleRescheduleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="dark:bg-card w-full max-w-md rounded-lg bg-white shadow-xl">
+      <div className="bg-card w-full max-w-md rounded-lg shadow-xl">
         <div className="p-6">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-foreground text-lg font-semibold dark:text-white">
+            <h3 className="text-foreground text-lg font-semibold">
               Reschedule {isLongform ? "Article" : "Post"}
             </h3>
             <button
               onClick={onClose}
-              className="text-foreground hover:text-foreground dark:hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground"
             >
               <svg
                 className="h-6 w-6"
@@ -263,8 +263,8 @@ export function SimpleRescheduleModal({
           {/* Content */}
           <div className="space-y-4">
             {/* Post preview */}
-            <div className="dark:bg-muted bg-muted rounded-lg p-3">
-              <div className="text-foreground mb-2 text-sm font-medium dark:text-white">
+            <div className="bg-muted rounded-lg p-3">
+              <div className="text-foreground mb-2 text-sm font-medium">
                 {isLongform ? "Article" : "Post"} Preview:
               </div>
 
@@ -282,7 +282,7 @@ export function SimpleRescheduleModal({
                 </div>
               ) : null}
 
-              <div className="text-foreground dark:text-foreground text-sm">
+              <div className="text-foreground text-sm">
                 {isLongform && "title" in post
                   ? (post.title ?? "Untitled Article")
                   : "caption" in post
@@ -301,7 +301,7 @@ export function SimpleRescheduleModal({
             <div className="space-y-2">
               <label
                 htmlFor="simple-reschedule-datetime"
-                className="text-muted-foreground dark:text-foreground block text-sm font-medium"
+                className="text-muted-foreground block text-sm font-medium"
               >
                 New scheduled time:
               </label>
@@ -359,10 +359,10 @@ export function SimpleRescheduleModal({
                       }
                     }
                   }}
-                  className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary flex-1 rounded-md border bg-white px-3 py-2 text-sm focus:ring-2 dark:text-white"
+                  className="bg-card border-border text-foreground focus:border-primary focus:ring-primary flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2"
                 />
               </div>
-              <div className="text-muted-foreground dark:text-foreground text-xs">
+              <div className="text-muted-foreground text-xs">
                 {formatDateTime(scheduledFor)}
               </div>
             </div>
@@ -372,7 +372,7 @@ export function SimpleRescheduleModal({
               <div className="space-y-2">
                 <label
                   htmlFor="simple-reschedule-queue-type"
-                  className="text-muted-foreground dark:text-foreground block text-sm font-medium"
+                  className="text-muted-foreground block text-sm font-medium"
                 >
                   Queue Type:
                 </label>
@@ -387,7 +387,7 @@ export function SimpleRescheduleModal({
                       e.target.value
                     );
                   }}
-                  className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 text-sm focus:ring-2 dark:text-white"
+                  className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 text-sm focus:ring-2"
                 >
                   <option value="">Manual (No Queue)</option>
                   {queueTypes.map((queueType) => (
@@ -396,7 +396,7 @@ export function SimpleRescheduleModal({
                     </option>
                   ))}
                 </select>
-                <div className="text-muted-foreground dark:text-foreground text-xs">
+                <div className="text-muted-foreground text-xs">
                   {selectedQueueType
                     ? "Post will be managed by the selected queue type"
                     : "Post will be manually scheduled"}
@@ -419,7 +419,7 @@ export function SimpleRescheduleModal({
                   />
                 </svg>
                 <div>
-                  <div className="text-foreground dark:text-foreground text-sm font-medium">
+                  <div className="text-foreground text-sm font-medium">
                     Rescheduling this {isLongform ? "article" : "post"} requires
                     re-signing the Nostr event
                   </div>
@@ -427,7 +427,7 @@ export function SimpleRescheduleModal({
               </div>
             </div>
             {isSigningEvent ? (
-              <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground rounded-lg border bg-white/50 p-3 text-sm">
+              <div className="bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
                 Waiting for signer approval… If you’re using a remote signer,
                 open it to approve the request.
               </div>
@@ -456,7 +456,7 @@ export function SimpleRescheduleModal({
           <div className="mt-6 flex items-center justify-end space-x-3">
             <button
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground dark:text-foreground px-4 py-2 text-sm font-medium dark:hover:text-white"
+              className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
             >
               Cancel
             </button>

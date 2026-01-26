@@ -157,7 +157,7 @@ export function AssetsTab({
                         : false
                     }
                     onChange={onSelectAllAssets}
-                    className="dark:border-border dark:bg-card border-border text-primary focus:ring-primary h-4 w-4 rounded"
+                    className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
                   />
                 </th>
                 <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
@@ -194,7 +194,7 @@ export function AssetsTab({
                       type="checkbox"
                       checked={selectedAssets.includes(asset.id)}
                       onChange={() => onAssetSelect(asset.id)}
-                      className="dark:border-border dark:bg-card border-border text-primary focus:ring-primary h-4 w-4 rounded"
+                      className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
                     />
                   </td>
                   <td className="p-3">

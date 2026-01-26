@@ -439,7 +439,20 @@ export async function deleteLongFormPost({
 }: {
   id: LongFormPost["id"];
   userId: LongFormPost["userId"];
-}) {
+}): Promise<LongFormPost | null> {
+  // Check if post exists before attempting to delete
+  const existingPost = await prisma.longFormPost.findUnique({
+    where: {
+      id,
+      userId,
+    },
+  });
+
+  // If post doesn't exist, return null instead of throwing
+  if (!existingPost) {
+    return null;
+  }
+
   return prisma.longFormPost.delete({
     where: { id, userId },
   });

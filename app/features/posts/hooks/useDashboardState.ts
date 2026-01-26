@@ -1,9 +1,12 @@
 import { useFetcher } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 
 import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
 import type { PostData, LongFormPostData } from "../types";
+
+import { dashboardKeys } from "./useDashboardQuery";
 interface UseDashboardStateProps {
   scheduledPosts: PostData[];
   userTimezone?: string | null;
@@ -180,15 +183,58 @@ export function useDashboardState({
     }
   };
 
+  const queryClient = useQueryClient();
+
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
 
+    const postIds = Array.from(selectedPosts);
+
+    // Optimistically remove posts from cache
+    queryClient.setQueryData(dashboardKeys.list(), (old: unknown) => {
+      if (!old || typeof old !== "object" || !("pages" in old)) return old;
+      const infiniteData = old as { pages: unknown[]; pageParams: unknown[] };
+      return {
+        ...infiniteData,
+        pages: infiniteData.pages.map((page) => {
+          if (!page || typeof page !== "object") return page;
+          const pageObj = page as Record<string, unknown>;
+          const updated: Record<string, unknown> = { ...pageObj };
+
+          // Remove deleted posts from scheduledPosts
+          if (Array.isArray(pageObj["scheduledPosts"])) {
+            updated["scheduledPosts"] = (
+              pageObj["scheduledPosts"] as unknown[]
+            ).filter(
+              (post) =>
+                !post ||
+                typeof post !== "object" ||
+                !("id" in post) ||
+                typeof post.id !== "string" ||
+                !postIds.includes(post.id)
+            );
+          }
+
+          return updated;
+        }),
+      };
+    });
+
     const formData = new FormData();
     formData.append("_action", "bulkDelete");
-    formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+    formData.append("postIds", JSON.stringify(postIds));
 
     bulkDeleteFetcher.submit(formData, { method: "post" });
   };
+
+  // Invalidate queries when delete succeeds
+  useEffect(() => {
+    if (bulkDeleteFetcher.state === "idle" && bulkDeleteFetcher.data) {
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+      // Clear selection after successful delete
+      setSelectedPosts(new Set());
+    }
+  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, queryClient]);
 
   const handleMediaClick = (mediaSrc: string) => {
     setSelectedMedia(mediaSrc);

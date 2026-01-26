@@ -498,7 +498,7 @@ export default function LongFormListing({
                       : false
                   }
                   onChange={toggleSelectAll}
-                  className="dark:border-border dark:bg-card border-border text-primary focus:ring-primary h-4 w-4 rounded"
+                  className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
                 />
               </th>
               <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
@@ -611,7 +611,7 @@ export default function LongFormListing({
                     checked={selectedPosts.has(post.id)}
                     onChange={() => togglePostSelection(post.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="dark:border-border dark:bg-card border-border text-primary focus:ring-primary h-4 w-4 rounded"
+                    className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
                   />
                 </td>
                 <td className="p-3">

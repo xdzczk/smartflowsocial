@@ -42,7 +42,7 @@ export function ContentTableHeader({
                   : false
               }
               onChange={onToggleSelectAll}
-              className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
+              className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
             />
           </th>
         ) : null}

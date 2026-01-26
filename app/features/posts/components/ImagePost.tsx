@@ -534,7 +534,7 @@ export default function ImagePost({
               checked={isRecyclable}
               onChange={(e) => setIsRecyclable(e.target.checked)}
               disabled={fetcher.state !== "idle" || isUploaded}
-              className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
+              className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
             />
             <label
               htmlFor="isRecyclable"

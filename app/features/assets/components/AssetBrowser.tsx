@@ -179,7 +179,7 @@ export default function AssetBrowser({
                         type="checkbox"
                         checked={selectedAssets.includes(asset.id)}
                         onChange={() => handleAssetSelect(asset.id)}
-                        className="border-border text-primary focus:ring-primary mt-1 h-4 w-4 rounded"
+                        className="border-border accent-checkbox focus:ring-checkbox mt-1 h-4 w-4 rounded"
                       />
 
                       <div className="min-w-0 flex-1">
