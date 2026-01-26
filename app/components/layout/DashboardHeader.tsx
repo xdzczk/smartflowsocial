@@ -143,13 +143,13 @@ export default function Header() {
           <Link
             prefetch="intent"
             to="/dashboard"
-            className="group text-foreground hover:text-primary inline-flex items-center gap-2 text-lg font-bold tracking-wide transition-colors"
+            className="group text-foreground hover:text-primary inline-flex items-center gap-2 transition-colors"
           >
             <Logo
               lightSrc="/logos/Logo-Full-LightMode.svg"
               darkSrc="/logos/Logo-Full-DarkMode.svg"
               alt="SmartFlow Social"
-              className="h-8 w-auto"
+              className="h-9 w-auto lg:h-10"
             />
           </Link>
           {/* END Brand */}
@@ -337,8 +337,8 @@ export default function Header() {
           {/* END Left Section */}
 
           {/* Center Section - Global Search */}
-          <div className="flex flex-1 items-center px-2 sm:px-3 lg:px-4">
-            <GlobalSearchBar className="w-full max-w-xl" />
+          <div className="flex flex-1 items-center justify-center px-2 sm:px-3 lg:px-6">
+            <GlobalSearchBar className="w-full max-w-2xl" />
           </div>
           {/* END Center Section - Global Search */}
 

@@ -399,7 +399,6 @@ export default function UserMenu() {
               method="post"
               onSubmit={() => {
                 clearActiveSignerConfig();
-                setOpen(false);
               }}
             >
               <Button
