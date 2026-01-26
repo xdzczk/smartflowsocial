@@ -124,9 +124,17 @@ function normalizeEvent(event: unknown): unknown {
 /**
  * Recursively normalize all events in a data structure
  * This is used to normalize loader response data before validation
+ * Preserves Date objects and other non-event data
+ * Only normalizes objects that contain signedEvent or nostrEvent fields
  */
 export function normalizeLoaderResponseData(data: unknown): unknown {
+  // Preserve primitives, null, and Date objects
   if (!data || typeof data !== "object") {
+    return data;
+  }
+
+  // Preserve Date objects as-is
+  if (data instanceof Date) {
     return data;
   }
 
@@ -135,10 +143,23 @@ export function normalizeLoaderResponseData(data: unknown): unknown {
   }
 
   const obj = data as Record<string, unknown>;
+
+  // Check if this object has event fields that need normalization
+  const hasEventFields = "signedEvent" in obj || "nostrEvent" in obj;
+
+  // If this object doesn't have event fields, preserve it as-is (including Date objects)
+  if (!hasEventFields) {
+    return data;
+  }
+
+  // Only normalize objects that have event fields
   const normalized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
-    if (key === "signedEvent" || key === "nostrEvent") {
+    // Preserve Date objects
+    if (value instanceof Date) {
+      normalized[key] = value;
+    } else if (key === "signedEvent" || key === "nostrEvent") {
       // Normalize event objects
       normalized[key] = normalizeEvent(value);
     } else if (
@@ -149,18 +170,26 @@ export function normalizeLoaderResponseData(data: unknown): unknown {
       // Recursively normalize arrays of posts
       if (Array.isArray(value)) {
         normalized[key] = value.map((post) => {
-          if (post && typeof post === "object" && !Array.isArray(post)) {
+          if (
+            post &&
+            typeof post === "object" &&
+            !Array.isArray(post) &&
+            !(post instanceof Date)
+          ) {
             const postObj = post as Record<string, unknown>;
-            const normalizedPost = { ...postObj };
-            if ("signedEvent" in normalizedPost) {
-              normalizedPost["signedEvent"] = normalizeEvent(
-                normalizedPost["signedEvent"]
-              );
-            }
-            if ("nostrEvent" in normalizedPost) {
-              normalizedPost["nostrEvent"] = normalizeEvent(
-                normalizedPost["nostrEvent"]
-              );
+            const normalizedPost: Record<string, unknown> = {};
+            // Copy all properties, preserving Date objects
+            for (const [postKey, postValue] of Object.entries(postObj)) {
+              if (postValue instanceof Date) {
+                normalizedPost[postKey] = postValue;
+              } else if (
+                postKey === "signedEvent" ||
+                postKey === "nostrEvent"
+              ) {
+                normalizedPost[postKey] = normalizeEvent(postValue);
+              } else {
+                normalizedPost[postKey] = postValue;
+              }
             }
             return normalizedPost;
           }
@@ -170,8 +199,17 @@ export function normalizeLoaderResponseData(data: unknown): unknown {
         normalized[key] = value;
       }
     } else {
-      // Recursively normalize nested objects
-      normalized[key] = normalizeLoaderResponseData(value);
+      // For other fields, recursively check if they contain events
+      // But preserve Date objects and other primitives
+      if (value instanceof Date) {
+        normalized[key] = value;
+      } else if (value && typeof value === "object" && !Array.isArray(value)) {
+        // Recursively normalize nested objects that might contain events
+        normalized[key] = normalizeLoaderResponseData(value);
+      } else {
+        // Preserve other values as-is
+        normalized[key] = value;
+      }
     }
   }
 
