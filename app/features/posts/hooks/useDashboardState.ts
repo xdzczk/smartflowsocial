@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useParams, useSearchParams } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 
@@ -184,14 +184,19 @@ export function useDashboardState({
   };
 
   const queryClient = useQueryClient();
+  const params = useParams();
+  const [searchParams] = useSearchParams();
+  const queueType = params["queueType"] ?? "all";
+  const currentTab = searchParams.get("tab") ?? "all";
 
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
 
     const postIds = Array.from(selectedPosts);
 
-    // Optimistically remove posts from cache
-    queryClient.setQueryData(dashboardKeys.list(), (old: unknown) => {
+    // Optimistically remove posts from cache using the correct query key
+    const queryKey = dashboardKeys.list(queueType, currentTab);
+    queryClient.setQueryData(queryKey, (old: unknown) => {
       if (!old || typeof old !== "object" || !("pages" in old)) return old;
       const infiniteData = old as { pages: unknown[]; pageParams: unknown[] };
       return {
@@ -205,6 +210,20 @@ export function useDashboardState({
           if (Array.isArray(pageObj["scheduledPosts"])) {
             updated["scheduledPosts"] = (
               pageObj["scheduledPosts"] as unknown[]
+            ).filter(
+              (post) =>
+                !post ||
+                typeof post !== "object" ||
+                !("id" in post) ||
+                typeof post.id !== "string" ||
+                !postIds.includes(post.id)
+            );
+          }
+
+          // Also remove from longformPosts if present
+          if (Array.isArray(pageObj["longformPosts"])) {
+            updated["longformPosts"] = (
+              pageObj["longformPosts"] as unknown[]
             ).filter(
               (post) =>
                 !post ||
@@ -230,6 +249,7 @@ export function useDashboardState({
   // Invalidate queries when delete succeeds
   useEffect(() => {
     if (bulkDeleteFetcher.state === "idle" && bulkDeleteFetcher.data) {
+      // Invalidate all dashboard queries to ensure consistency
       void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
       // Clear selection after successful delete
       setSelectedPosts(new Set());

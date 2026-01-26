@@ -6,6 +6,7 @@ import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
 import type { CombinedContent, LongFormPostData, PostData } from "../types";
 
+import { dashboardKeys } from "./useDashboardQuery";
 import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 // Union type for posts that can be edited/rescheduled
 type EditablePost = PostData | LongFormPostData;
@@ -271,7 +272,9 @@ export function useScheduledState({
   // Invalidate queries when delete succeeds
   useEffect(() => {
     if (bulkDeleteFetcher.state === "idle" && bulkDeleteFetcher.data) {
+      // Invalidate both scheduled and dashboard queries to ensure consistency
       void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
       // Clear selection after successful delete
       setSelectedPosts(new Set());
     }
@@ -280,8 +283,9 @@ export function useScheduledState({
   // Handle individual delete fetcher
   useEffect(() => {
     if (deleteFetcher.state === "idle" && deleteFetcher.data) {
-      // Invalidate queries to refetch fresh data after successful delete
+      // Invalidate both scheduled and dashboard queries to ensure consistency
       void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     }
   }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
 

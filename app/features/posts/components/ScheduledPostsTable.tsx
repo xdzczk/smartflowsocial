@@ -3,8 +3,12 @@
  */
 
 import { useFetcher } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
+import { scheduledPostsKeys } from "~/features/posts/hooks/useScheduledPostsQuery";
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 
 import { getQueueColor } from "../queue-colors";
@@ -67,7 +71,22 @@ export function ScheduledPostsTable({
   onMediaClick,
   bulkDeleteState,
 }: ScheduledPostsTableProps) {
-  const deleteFetcher = useFetcher();
+  const deleteFetcher = useFetcher<{ success?: boolean }>();
+  const queryClient = useQueryClient();
+
+  // Invalidate queries when individual delete succeeds
+  useEffect(() => {
+    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
+      const data = deleteFetcher.data;
+      if (typeof data === "object" && "success" in data && data.success) {
+        // Invalidate both dashboard and scheduled posts queries
+        void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+        void queryClient.invalidateQueries({
+          queryKey: scheduledPostsKeys.all,
+        });
+      }
+    }
+  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
 
   const formatDate = (scheduledAtUtc: Date | null) => {
     try {

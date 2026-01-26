@@ -3,8 +3,14 @@
  * Centralized data fetching for calendar pages
  */
 
+import type { Prisma } from "@prisma/client";
+
 import { getUserById, getQueueTypes } from "~/features/user";
 import { addDays, nowUTC, toPrismaDate } from "~/lib/temporal";
+import {
+  validateSignedEvent,
+  validateNostrEvent,
+} from "~/lib/validation/nostr-events.server";
 import {
   getScheduledLongFormPosts,
   getPastLongFormPosts,
@@ -133,10 +139,9 @@ export async function loadCalendarData(userId: string, queueType: string) {
           };
         })()
       : undefined;
-    const signedEventValue: PostData["signedEvent"] =
-      post.signedEvent as PostData["signedEvent"];
-    const nostrEventValue: PostData["nostrEvent"] =
-      post.nostrEvent as PostData["nostrEvent"];
+    // Validate Prisma JsonValue with Zod schemas
+    const signedEventValue = validateSignedEvent(post.signedEvent);
+    const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: PostData = {
       ...rest,
       queueType: convertedQueueType,
@@ -165,10 +170,9 @@ export async function loadCalendarData(userId: string, queueType: string) {
           };
         })()
       : undefined;
-    const signedEventValue: PostData["signedEvent"] =
-      post.signedEvent as PostData["signedEvent"];
-    const nostrEventValue: PostData["nostrEvent"] =
-      post.nostrEvent as PostData["nostrEvent"];
+    // Validate Prisma JsonValue with Zod schemas
+    const signedEventValue = validateSignedEvent(post.signedEvent);
+    const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: PostData = {
       ...rest,
       queueType: convertedQueueType,
@@ -216,10 +220,13 @@ export async function loadCalendarData(userId: string, queueType: string) {
           };
         })()
       : undefined;
-    const signedEventValue: LongFormPostData["signedEvent"] =
-      post.signedEvent as LongFormPostData["signedEvent"];
-    const nostrEventValue: LongFormPostData["nostrEvent"] =
-      post.nostrEvent as LongFormPostData["nostrEvent"];
+    // Validate Prisma JsonValue with Zod schemas
+    const signedEventValue = validateSignedEvent(
+      post.signedEvent as Prisma.JsonValue
+    );
+    const nostrEventValue = validateNostrEvent(
+      post.nostrEvent as Prisma.JsonValue
+    );
     const result: LongFormPostData = {
       ...(rest as unknown as LongFormPostData),
       queueType: convertedQueueType,
@@ -283,11 +290,18 @@ export async function loadCalendarData(userId: string, queueType: string) {
             };
           })()
         : undefined;
+    // Validate Prisma JsonValue with Zod schemas
+    const signedEventValue = validateSignedEvent(
+      post.signedEvent as Prisma.JsonValue
+    );
+    const nostrEventValue = validateNostrEvent(
+      post.nostrEvent as Prisma.JsonValue
+    );
     const result: LongFormPostData = {
       ...(post as unknown as LongFormPostData),
       queueType: convertedQueueType,
-      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
-      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
     };
     return result;
   });
@@ -397,10 +411,9 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
           };
         })()
       : undefined;
-    const signedEventValue: PostData["signedEvent"] =
-      post.signedEvent as PostData["signedEvent"];
-    const nostrEventValue: PostData["nostrEvent"] =
-      post.nostrEvent as PostData["nostrEvent"];
+    // Validate Prisma JsonValue with Zod schemas
+    const signedEventValue = validateSignedEvent(post.signedEvent);
+    const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: PostData = {
       ...rest,
       queueType: convertedQueueType,

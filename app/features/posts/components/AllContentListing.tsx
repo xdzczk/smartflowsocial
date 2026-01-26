@@ -1,6 +1,9 @@
 import { useFetcher } from "@remix-run/react";
-import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
+import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
+import { scheduledPostsKeys } from "~/features/posts/hooks/useScheduledPostsQuery";
 import { fromISOString } from "~/lib/temporal";
 
 import type {
@@ -72,6 +75,22 @@ export default function AllContentListing({
     needsSigning?: boolean;
     post?: PostData | LongFormPostData;
   }>();
+  const queryClient = useQueryClient();
+
+  // Invalidate queries when individual delete succeeds
+  useEffect(() => {
+    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
+      const data = deleteFetcher.data;
+      if (typeof data === "object" && "success" in data && data.success) {
+        // Invalidate both dashboard and scheduled posts queries
+        void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+        void queryClient.invalidateQueries({
+          queryKey: scheduledPostsKeys.all,
+        });
+      }
+    }
+  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
+
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
