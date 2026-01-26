@@ -113,7 +113,7 @@ export async function handlePostImages({
     correlationId,
   });
 
-  return redirect("/dashboard/posted");
+  return redirect(`/dashboard/posted?published=${result.post.id}`);
 }
 
 /**
@@ -162,7 +162,7 @@ export async function handleScheduleImages({
 
   // Use CreatePostUseCase for post creation with scheduling (handles queue type resolution internally)
   const createPostUseCase = new CreatePostUseCase();
-  await createPostUseCase.execute({
+  const result = await createPostUseCase.execute({
     userId,
     content: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
     caption: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
@@ -180,7 +180,7 @@ export async function handleScheduleImages({
     correlationId,
   });
 
-  return redirect("/dashboard/scheduled");
+  return redirect(`/dashboard/scheduled?scheduled=${result.post.id}`);
 }
 
 /**

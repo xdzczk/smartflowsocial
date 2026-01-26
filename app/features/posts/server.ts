@@ -189,6 +189,7 @@ export { calculateLongFormStatus } from "./services/longform-status-calculator.s
 // ============================================================================
 
 export { handleCalendarAction } from "./services/calendar-action.server";
+export { getPostDataForModal } from "./services/post-data-loader.server";
 export {
   loadCalendarData,
   loadCalendarQueueData,

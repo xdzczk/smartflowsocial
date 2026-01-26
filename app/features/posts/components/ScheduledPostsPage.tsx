@@ -1,5 +1,5 @@
-import { useSearchParams } from "@remix-run/react";
-import { useEffect } from "react";
+import { useSearchParams, useNavigate, useFetcher } from "@remix-run/react";
+import { useEffect, useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
@@ -26,6 +26,13 @@ import {
 } from "~/lib/validation/combined-content";
 import { validateUserData } from "~/lib/validation/user-data";
 
+import {
+  getPostTypeFromPost,
+  getNewPostUrl,
+} from "../utils/publish-result.utils";
+
+import PublishResultModal from "./PublishResultModal";
+
 export default function ScheduledPostsPage() {
   // Use infinite query for data fetching with infinite scroll
   const {
@@ -44,10 +51,75 @@ export default function ScheduledPostsPage() {
     fetchNextPage,
   } = useScheduledPostsInfiniteData();
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const postFetcher = useFetcher();
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [modalPostId, setModalPostId] = useState<string | null>(null);
+  const [modalPost, setModalPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+    scheduledAtUtc?: Date | null;
+  } | null>(null);
+  const [modalLongFormPost, setModalLongFormPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+    scheduledAtUtc?: Date | null;
+  } | null>(null);
 
   // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") ?? "all";
+
+  // Check for scheduled URL param
+  useEffect(() => {
+    const scheduledPostId = searchParams.get("scheduled");
+    if (scheduledPostId && user) {
+      // Use setTimeout to avoid setState in effect warning
+      setTimeout(() => {
+        setModalPostId(scheduledPostId);
+        // Fetch post data
+        postFetcher.load(`/api/posts/${scheduledPostId}`);
+      }, 0);
+    }
+  }, [searchParams, user, postFetcher]);
+
+  // Handle post fetcher data
+  useEffect(() => {
+    if (postFetcher.data && modalPostId) {
+      const data = postFetcher.data as {
+        post?: {
+          id: string;
+          publishAttemptId: string | null;
+          currentState?: string | null;
+          scheduledAtUtc?: Date | null;
+        };
+        longFormPost?: {
+          id: string;
+          publishAttemptId: string | null;
+          currentState?: string | null;
+          scheduledAtUtc?: Date | null;
+        };
+        error?: string;
+      };
+      const post = data.post;
+      const longFormPost = data.longFormPost;
+
+      if (post || longFormPost) {
+        // Use setTimeout to avoid setState in effect warning
+        setTimeout(() => {
+          setModalPost(post ?? null);
+          setModalLongFormPost(longFormPost ?? null);
+          setShowPublishModal(true);
+          // Clear URL param to prevent re-showing on refresh
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete("scheduled");
+          setSearchParams(newSearchParams, { replace: true });
+        }, 0);
+      }
+    }
+  }, [postFetcher.data, modalPostId, searchParams, setSearchParams]);
 
   // Set up intersection observer for infinite scroll
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
@@ -308,6 +380,31 @@ export default function ScheduledPostsPage() {
           onConfirm={handleModalSuccess}
           user={user ? (validateUserData(user) ?? undefined) : undefined}
           queueTypes={queueTypes}
+        />
+      ) : null}
+
+      {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
+        <PublishResultModal
+          isOpen={showPublishModal}
+          postId={modalPostId}
+          publishAttemptId={null} // Scheduled posts don't have publishAttemptId yet
+          action="schedule"
+          postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
+          scheduledFor={
+            modalPost?.scheduledAtUtc ??
+            modalLongFormPost?.scheduledAtUtc ??
+            null
+          }
+          onCreateNew={() => {
+            const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
+            navigate(getNewPostUrl(postType));
+          }}
+          onViewPage={() => {
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
+          }}
         />
       ) : null}
     </div>

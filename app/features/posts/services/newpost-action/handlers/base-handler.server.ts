@@ -94,9 +94,9 @@ export async function handlePostCreation(
       correlationId: context.correlationId,
     });
 
-    return { redirect: "/dashboard/posted" };
+    return { redirect: `/dashboard/posted?published=${result.post.id}` };
   }
 
   // schedule - post will be scheduled via outbox pattern
-  return { redirect: "/dashboard/scheduled" };
+  return { redirect: `/dashboard/scheduled?scheduled=${result.post.id}` };
 }

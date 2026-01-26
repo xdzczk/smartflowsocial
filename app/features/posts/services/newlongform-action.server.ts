@@ -399,7 +399,9 @@ async function handlePublish(
       relays: sanitizedRelays,
     });
 
-    return redirect("/dashboard/posted?tab=longform");
+    return redirect(
+      `/dashboard/posted?published=${result.post.id}&tab=longform`
+    );
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
@@ -528,7 +530,7 @@ async function handleScheduleLongform(
 
   // Use CreateLongFormPostUseCase for post creation with scheduling
   const createLongFormPostUseCase = new CreateLongFormPostUseCase();
-  await createLongFormPostUseCase.execute({
+  const result = await createLongFormPostUseCase.execute({
     userId,
     title,
     summary: finalSummary,
@@ -544,7 +546,9 @@ async function handleScheduleLongform(
     isPublished: false,
   });
 
-  return redirect("/dashboard/scheduled?tab=longform");
+  return redirect(
+    `/dashboard/scheduled?scheduled=${result.post.id}&tab=longform`
+  );
 }
 
 /**

@@ -1,5 +1,10 @@
-import { useParams } from "@remix-run/react";
-import { useEffect, useMemo } from "react";
+import {
+  useParams,
+  useSearchParams,
+  useNavigate,
+  useFetcher,
+} from "@remix-run/react";
+import { useEffect, useMemo, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
@@ -27,6 +32,14 @@ import {
 } from "~/lib/validation/combined-content";
 import { comparePostDataByProperty } from "~/lib/validation/post-data-properties";
 import { getPostStats, getPostStatsValue } from "~/lib/validation/post-stats";
+
+import {
+  getPostTypeFromPost,
+  getNewPostUrl,
+  determineModalAction,
+} from "../utils/publish-result.utils";
+
+import PublishResultModal from "./PublishResultModal";
 
 function getDateValue(postedAt: Date | string | null | undefined): number {
   if (postedAt instanceof Date) {
@@ -133,6 +146,68 @@ export default function PostedPostsPage() {
   } = usePostedPostsInfiniteData();
 
   const _params = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const postFetcher = useFetcher();
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [modalPostId, setModalPostId] = useState<string | null>(null);
+  const [modalPost, setModalPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+  } | null>(null);
+  const [modalLongFormPost, setModalLongFormPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+  } | null>(null);
+
+  // Check for published URL param
+  useEffect(() => {
+    const publishedPostId = searchParams.get("published");
+    if (publishedPostId && user) {
+      // Use setTimeout to avoid setState in effect warning
+      setTimeout(() => {
+        setModalPostId(publishedPostId);
+        // Fetch post data
+        postFetcher.load(`/api/posts/${publishedPostId}`);
+      }, 0);
+    }
+  }, [searchParams, user, postFetcher]);
+
+  // Handle post fetcher data
+  useEffect(() => {
+    if (postFetcher.data && modalPostId) {
+      const data = postFetcher.data as {
+        post?: {
+          id: string;
+          publishAttemptId: string | null;
+          currentState?: string | null;
+        };
+        longFormPost?: {
+          id: string;
+          publishAttemptId: string | null;
+          currentState?: string | null;
+        };
+        error?: string;
+      };
+      const post = data.post;
+      const longFormPost = data.longFormPost;
+
+      if (post || longFormPost) {
+        // Use setTimeout to avoid setState in effect warning
+        setTimeout(() => {
+          setModalPost(post ?? null);
+          setModalLongFormPost(longFormPost ?? null);
+          setShowPublishModal(true);
+          // Clear URL param to prevent re-showing on refresh
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete("published");
+          setSearchParams(newSearchParams, { replace: true });
+        }, 0);
+      }
+    }
+  }, [postFetcher.data, modalPostId, searchParams, setSearchParams]);
 
   // Set up intersection observer for infinite scroll
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
@@ -369,6 +444,30 @@ export default function PostedPostsPage() {
       ) : null}
 
       {toast ? <Toast toast={toast} onClose={() => setToast(null)} /> : null}
+
+      {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
+        <PublishResultModal
+          isOpen={showPublishModal}
+          postId={modalPostId}
+          publishAttemptId={
+            modalPost?.publishAttemptId ??
+            modalLongFormPost?.publishAttemptId ??
+            null
+          }
+          action={determineModalAction(modalPost, modalLongFormPost)}
+          postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
+          onCreateNew={() => {
+            const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
+            navigate(getNewPostUrl(postType));
+          }}
+          onViewPage={() => {
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

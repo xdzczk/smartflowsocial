@@ -102,6 +102,7 @@ export { EditPostModal } from "./components/EditPostModal";
 export { default as LongFormDetailsModal } from "./components/LongFormDetailsModal";
 export { default as LongFormListing } from "./components/LongFormListing";
 export { default as PostDetailsModal } from "./components/PostDetailsModal";
+export { default as PublishResultModal } from "./components/PublishResultModal";
 export { PostsSearch } from "./components/PostsSearch";
 export { default as PostTypeTabs } from "./components/PostTypeTabs";
 export { default as QueueSelectionTabs } from "./components/QueueSelectionTabs";

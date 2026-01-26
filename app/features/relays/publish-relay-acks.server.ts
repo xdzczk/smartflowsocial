@@ -29,3 +29,21 @@ export async function persistPublishRelayAcks(input: {
     skipDuplicates: true,
   });
 }
+
+/**
+ * Get relay acknowledgements for a specific publish attempt
+ */
+export async function getPublishRelayAcksByAttemptId(
+  publishAttemptId: string,
+  userId: string
+) {
+  return prisma.publishRelayAck.findMany({
+    where: {
+      publishAttemptId,
+      userId,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+}

@@ -1,5 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 
+import { SearchableTimezoneSelector } from "~/components/settings/SearchableTimezoneSelector";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -9,14 +10,6 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { timeZonesList } from "~/lib/date";
 import { updateTimezoneClientSchema } from "~/lib/validation";
 import {
   useZodForm,
@@ -66,24 +59,14 @@ export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
         >
           <div className="space-y-2">
             <Label htmlFor="timezone">Select Timezone</Label>
-            <Select
+            <SearchableTimezoneSelector
+              id="timezone"
               value={form.watch("timezone")}
               onValueChange={(value) => {
                 form.setValue("timezone", value, { shouldValidate: true });
               }}
               disabled={isSubmitting}
-            >
-              <SelectTrigger id="timezone">
-                <SelectValue placeholder="Select a timezone" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeZonesList.map((tz) => (
-                  <SelectItem key={tz} value={tz}>
-                    {tz}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
             {form.formState.errors.timezone ? (
               <p className="text-destructive text-sm">
                 {form.formState.errors.timezone.message}

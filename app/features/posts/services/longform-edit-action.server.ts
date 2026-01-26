@@ -402,7 +402,7 @@ async function handlePublish(
     correlationId,
   });
 
-  return redirect("/dashboard/posted?tab=longform");
+  return redirect(`/dashboard/posted?published=${postId}&tab=longform`);
 }
 
 /**
@@ -554,7 +554,7 @@ async function handleScheduleLongform(
     });
   }
 
-  return redirect("/dashboard/scheduled?tab=longform");
+  return redirect(`/dashboard/scheduled?scheduled=${postId}&tab=longform`);
 }
 
 /**
