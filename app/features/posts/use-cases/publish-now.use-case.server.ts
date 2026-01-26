@@ -55,7 +55,17 @@ export class PublishNowUseCase {
     // Use currentState as single source of truth
     const isAlreadyPosted = deriveIsPosted(post.currentState);
     if (isAlreadyPosted) {
-      throw new Error(`Post ${input.postId} already published`);
+      // Idempotent behavior: if already published, log and return gracefully
+      // This handles duplicate requests (e.g., double-clicks, form resubmissions)
+      logInfo(
+        "PublishNowUseCase: Post already published, skipping duplicate publish",
+        buildObsContext({
+          postId: input.postId,
+          userId: input.userId,
+          correlationId,
+        })
+      );
+      return;
     }
 
     // Cryptographically validate the signed event before publishing

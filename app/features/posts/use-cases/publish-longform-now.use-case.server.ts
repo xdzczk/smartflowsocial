@@ -14,6 +14,7 @@ import {
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logError, logInfo } from "~/lib/error-logger.server";
 import { generatePublishAttemptId } from "~/lib/idempotency.server";
+import { buildObsContext } from "~/lib/observability-context.server";
 import { nowMillis } from "~/lib/temporal";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 import { getLongFormPost } from "~/models/longformpost.server";
@@ -42,7 +43,17 @@ export class PublishLongFormNowUseCase {
     // Use currentState as single source of truth
     const isAlreadyPublished = deriveIsPublishedLongForm(post.currentState);
     if (isAlreadyPublished) {
-      throw new Error(`Long form post ${input.postId} already published`);
+      // Idempotent behavior: if already published, log and return gracefully
+      // This handles duplicate requests (e.g., double-clicks, form resubmissions)
+      logInfo(
+        "PublishLongFormNowUseCase: Post already published, skipping duplicate publish",
+        buildObsContext({
+          postId: input.postId,
+          userId: input.userId,
+          correlationId,
+        })
+      );
+      return;
     }
 
     const validatedSignedEvent = validateSignedEventCryptographically(
