@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/dialog";
 import type { ProfileData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
-import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { formatNpubShort } from "~/lib/nostr-conversion";
 import { clearActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -84,16 +84,6 @@ function displayPicture(
   } catch {
     return undefined;
   }
-}
-
-function formatNpubShort(hexOrNpub?: string): string {
-  if (!hexOrNpub) return "";
-  const np = hexOrNpub.startsWith("npub")
-    ? hexOrNpub
-    : (nostrAdapter.encodeNpub(hexOrNpub) ?? hexOrNpub);
-  if (!np) return "";
-  if (np.length <= 20) return np; // already short
-  return `${np.slice(0, 8)}...${np.slice(-8)}`;
 }
 
 // Helper functions from NostrAuthButton

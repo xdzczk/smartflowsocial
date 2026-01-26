@@ -9,6 +9,7 @@ import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { NostrEvent } from "~/features/nostr/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { convertHexToNpub } from "~/lib/nostr-conversion";
 import {
   clearActiveSignerConfig,
   serializeSecretKey,
@@ -65,7 +66,10 @@ const PROFILE_MISMATCH_MESSAGE =
 
 function formatNpubShort(pubkeyHex?: string | null): string {
   if (!pubkeyHex) return "";
-  const npub = nostrAdapter.encodeNpub(pubkeyHex) ?? pubkeyHex;
+  // Use shared conversion utility that works in both server and client contexts
+  const npub = pubkeyHex.startsWith("npub")
+    ? pubkeyHex
+    : convertHexToNpub(pubkeyHex);
   if (npub.length <= 20) return npub;
   return `${npub.slice(0, 12)}...${npub.slice(-8)}`;
 }
