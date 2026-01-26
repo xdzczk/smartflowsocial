@@ -54,10 +54,118 @@ export function HashtagPresetToggle({
     }
   };
 
-  const countHashtags = (tags: string): number => {
+  const countHashtags = (tags: string | undefined | null): number => {
+    if (!tags || typeof tags !== "string") {
+      return 0;
+    }
     return tags
       .split(/\s+/)
       .filter((tag) => tag.startsWith("#") && tag.length > 1).length;
+  };
+
+  const renderQueuePresetInfo = () => {
+    if (!showQueuePreset || !queueType?.hashTagPreset) {
+      return null;
+    }
+
+    const queuePreset = queueType.hashTagPreset;
+    const tags = queuePreset.tags;
+    const tagCount = countHashtags(tags);
+
+    return (
+      <div
+        className={`rounded-lg p-3 ${
+          useHashtagPresets
+            ? "dark:bg-card border-border bg-muted dark:border-border border"
+            : "border-success bg-success/10 dark:border-success dark:bg-success/20/20 border"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
+              {useHashtagPresets ? "Queue Default:" : "Using Queue Default:"}
+            </span>
+            <Badge variant="secondary" className="text-xs">
+              {queuePreset.name}
+            </Badge>
+            <span className="text-muted-foreground dark:text-foreground text-xs">
+              ({tagCount} tags)
+            </span>
+          </div>
+        </div>
+        {!useHashtagPresets && tags ? (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {tags
+              .split(/\s+/)
+              .filter((tag) => tag.startsWith("#") && tag.length > 1)
+              .slice(0, 4)
+              .map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="px-2 py-0.5 text-xs"
+                >
+                  {tag}
+                </Badge>
+              ))}
+            {tagCount > 4 ? (
+              <Badge variant="outline" className="px-2 py-0.5 text-xs">
+                +{tagCount - 4} more
+              </Badge>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderSelectedPresetPreview = () => {
+    if (!selectedPreset) {
+      return null;
+    }
+
+    const tags = selectedPreset.tags;
+    const tagCount = countHashtags(tags);
+
+    return (
+      <div className="dark:bg-card border-border bg-muted dark:border-border rounded-lg border p-3">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
+            {selectedPreset.name}
+          </span>
+          <Badge variant="secondary" className="text-xs">
+            {tagCount} tags
+          </Badge>
+        </div>
+        {selectedPreset.description ? (
+          <p className="text-muted-foreground dark:text-foreground mb-2 text-xs">
+            {selectedPreset.description}
+          </p>
+        ) : null}
+        <div className="flex flex-wrap gap-1">
+          {tags
+            ? tags
+                .split(/\s+/)
+                .filter((tag) => tag.startsWith("#") && tag.length > 1)
+                .slice(0, 6)
+                .map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="px-2 py-0.5 text-xs"
+                  >
+                    {tag}
+                  </Badge>
+                ))
+            : null}
+          {tagCount > 6 ? (
+            <Badge variant="outline" className="px-2 py-0.5 text-xs">
+              +{tagCount - 6} more
+            </Badge>
+          ) : null}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -80,51 +188,7 @@ export function HashtagPresetToggle({
       </div>
 
       {/* Show queue type's hashtag preset info when available */}
-      {showQueuePreset && queueType?.hashTagPreset ? (
-        <div
-          className={`rounded-lg p-3 ${
-            useHashtagPresets
-              ? "dark:bg-card border-border bg-muted dark:border-border border"
-              : "border-success bg-success/10 dark:border-success dark:bg-success/20/20 border"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
-                {useHashtagPresets ? "Queue Default:" : "Using Queue Default:"}
-              </span>
-              <Badge variant="secondary" className="text-xs">
-                {queueType.hashTagPreset.name}
-              </Badge>
-              <span className="text-muted-foreground dark:text-foreground text-xs">
-                ({countHashtags(queueType.hashTagPreset.tags)} tags)
-              </span>
-            </div>
-          </div>
-          {!useHashtagPresets ? (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {queueType.hashTagPreset.tags
-                .split(/\s+/)
-                .filter((tag) => tag.startsWith("#") && tag.length > 1)
-                .slice(0, 4)
-                .map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="outline"
-                    className="px-2 py-0.5 text-xs"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              {countHashtags(queueType.hashTagPreset.tags) > 4 ? (
-                <Badge variant="outline" className="px-2 py-0.5 text-xs">
-                  +{countHashtags(queueType.hashTagPreset.tags) - 4} more
-                </Badge>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      {renderQueuePresetInfo()}
 
       {/* Hashtag preset selector */}
       {useHashtagPresets ? (
@@ -175,43 +239,7 @@ export function HashtagPresetToggle({
               </div>
 
               {/* Selected preset preview */}
-              {selectedPreset ? (
-                <div className="dark:bg-card border-border bg-muted dark:border-border rounded-lg border p-3">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
-                      {selectedPreset.name}
-                    </span>
-                    <Badge variant="secondary" className="text-xs">
-                      {countHashtags(selectedPreset.tags)} tags
-                    </Badge>
-                  </div>
-                  {selectedPreset.description ? (
-                    <p className="text-muted-foreground dark:text-foreground mb-2 text-xs">
-                      {selectedPreset.description}
-                    </p>
-                  ) : null}
-                  <div className="flex flex-wrap gap-1">
-                    {selectedPreset.tags
-                      .split(/\s+/)
-                      .filter((tag) => tag.startsWith("#") && tag.length > 1)
-                      .slice(0, 6)
-                      .map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="px-2 py-0.5 text-xs"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    {countHashtags(selectedPreset.tags) > 6 ? (
-                      <Badge variant="outline" className="px-2 py-0.5 text-xs">
-                        +{countHashtags(selectedPreset.tags) - 6} more
-                      </Badge>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
+              {renderSelectedPresetPreview()}
             </>
           )}
         </div>
