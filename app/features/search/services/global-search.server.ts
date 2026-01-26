@@ -1,9 +1,15 @@
 /**
  * Global Search Service
- * Searches across all content types: drafts, scheduled, publishing, posted, failed, cancelled, templates, and external posts
+ * Searches across all content types: drafts, scheduled, publishing, posted, failed, cancelled, templates, external posts, and features
  */
 
+import {
+  hasFeatureAccess,
+  type FeatureName,
+  type UserSubscription,
+} from "~/features/payments/types";
 import { prisma } from "~/lib/prisma.server";
+import { getUserSubscription } from "~/models/payment.server";
 
 import { handleSearchEvent } from "./search-action.server";
 
@@ -16,7 +22,8 @@ export interface GlobalSearchResult {
     | "failed"
     | "cancelled"
     | "template"
-    | "external";
+    | "external"
+    | "feature";
   id: string;
   title?: string;
   caption?: string;
@@ -583,6 +590,153 @@ function isNostrEventId(query: string): boolean {
 }
 
 /**
+ * Feature definitions for search
+ */
+interface FeatureDefinition {
+  label: string;
+  url: string;
+  feature: FeatureName;
+  keywords: string[]; // Additional search keywords
+}
+
+const FEATURES: FeatureDefinition[] = [
+  {
+    label: "Dashboard",
+    url: "/dashboard",
+    feature: "dashboard",
+    keywords: ["home", "main", "overview"],
+  },
+  {
+    label: "New Post",
+    url: "/dashboard/newpost",
+    feature: "newPost",
+    keywords: ["create", "new", "post", "compose"],
+  },
+  {
+    label: "New Long-form",
+    url: "/dashboard/newlongformpost",
+    feature: "longformPosts",
+    keywords: ["long", "form", "article", "blog", "create"],
+  },
+  {
+    label: "Bulk Posts",
+    url: "/dashboard/bulkposts",
+    feature: "bulkScheduling",
+    keywords: ["bulk", "schedule", "multiple", "batch"],
+  },
+  {
+    label: "Drafts",
+    url: "/dashboard/drafts",
+    feature: "drafts",
+    keywords: ["draft", "unsaved", "unpublished"],
+  },
+  {
+    label: "Templates",
+    url: "/dashboard/templates",
+    feature: "templates",
+    keywords: ["template", "preset", "reuse"],
+  },
+  {
+    label: "Calendar",
+    url: "/dashboard/calendar",
+    feature: "calendar",
+    keywords: ["schedule", "view", "timeline"],
+  },
+  {
+    label: "Scheduled",
+    url: "/dashboard/scheduled",
+    feature: "scheduled",
+    keywords: ["upcoming", "queued", "pending"],
+  },
+  {
+    label: "Posted",
+    url: "/dashboard/posted",
+    feature: "posted",
+    keywords: ["published", "sent", "history"],
+  },
+  {
+    label: "Engagement Feed",
+    url: "/dashboard/engagement/feed",
+    feature: "engagement_feed",
+    keywords: ["engagement", "feed", "activity", "interactions"],
+  },
+  {
+    label: "Giveaway",
+    url: "/dashboard/giveaway",
+    feature: "giveaways",
+    keywords: ["giveaway", "contest", "promotion"],
+  },
+  {
+    label: "Settings",
+    url: "/dashboard/settings",
+    feature: "settings",
+    keywords: ["preferences", "config", "options", "account"],
+  },
+];
+
+/**
+ * Search features based on query and user permissions
+ */
+async function searchFeatures(
+  userId: string,
+  query: string,
+  limit = 10
+): Promise<GlobalSearchResult[]> {
+  const trimmedQuery = query.toLowerCase();
+  const subscription = await getUserSubscription(userId);
+  const userSubscription: UserSubscription | null = subscription?.planId
+    ? {
+        planId: subscription.planId,
+        status: subscription.status,
+        Plan: subscription.Plan
+          ? {
+              name: subscription.Plan.name,
+              id: subscription.Plan.id,
+            }
+          : undefined,
+      }
+    : null;
+
+  // Filter features that match the query and user has access to
+  const matchingFeatures = FEATURES.filter((feature) => {
+    // Check if user has access to this feature
+    if (!hasFeatureAccess(userSubscription, feature.feature)) {
+      return false;
+    }
+
+    // Check if query matches label or keywords
+    const labelMatch = feature.label.toLowerCase().includes(trimmedQuery);
+    const keywordMatch = feature.keywords.some((keyword) =>
+      keyword.toLowerCase().includes(trimmedQuery)
+    );
+
+    return labelMatch || keywordMatch;
+  });
+
+  // Sort by relevance (exact label match first, then keyword matches)
+  const sortedFeatures = matchingFeatures.sort((a, b) => {
+    const aLabelMatch = a.label.toLowerCase().includes(trimmedQuery);
+    const bLabelMatch = b.label.toLowerCase().includes(trimmedQuery);
+    if (aLabelMatch && !bLabelMatch) return -1;
+    if (!aLabelMatch && bLabelMatch) return 1;
+    return a.label.localeCompare(b.label);
+  });
+
+  // Limit results
+  const limitedFeatures = sortedFeatures.slice(0, limit);
+
+  // Convert to GlobalSearchResult format
+  return limitedFeatures.map((feature) => ({
+    type: "feature" as const,
+    id: feature.url,
+    title: feature.label,
+    status: "feature",
+    createdAt: new Date().toISOString(), // Features don't have dates, use current time
+    url: feature.url,
+  }));
+}
+
+/**
  * Perform global search across all content types
  */
 export async function performGlobalSearch(
@@ -621,20 +775,30 @@ export async function performGlobalSearch(
     }
   }
 
-  // Search all local content types in parallel
-  const [drafts, scheduled, publishing, posted, failed, cancelled, templates] =
-    await Promise.all([
-      searchDrafts(userId, trimmedQuery, limitPerType),
-      searchScheduled(userId, trimmedQuery, limitPerType),
-      searchPublishing(userId, trimmedQuery, limitPerType),
-      searchPosted(userId, trimmedQuery, limitPerType),
-      searchFailed(userId, trimmedQuery, limitPerType),
-      searchCancelled(userId, trimmedQuery, limitPerType),
-      searchTemplates(userId, trimmedQuery, limitPerType),
-    ]);
+  // Search all local content types and features in parallel
+  const [
+    drafts,
+    scheduled,
+    publishing,
+    posted,
+    failed,
+    cancelled,
+    templates,
+    features,
+  ] = await Promise.all([
+    searchDrafts(userId, trimmedQuery, limitPerType),
+    searchScheduled(userId, trimmedQuery, limitPerType),
+    searchPublishing(userId, trimmedQuery, limitPerType),
+    searchPosted(userId, trimmedQuery, limitPerType),
+    searchFailed(userId, trimmedQuery, limitPerType),
+    searchCancelled(userId, trimmedQuery, limitPerType),
+    searchTemplates(userId, trimmedQuery, limitPerType),
+    searchFeatures(userId, trimmedQuery, 10), // Show up to 10 features
+  ]);
 
-  // Combine all results
+  // Combine all results, prioritizing features at the top
   const allResults: GlobalSearchResult[] = [
+    ...features, // Features first for better UX
     ...drafts,
     ...scheduled,
     ...publishing,

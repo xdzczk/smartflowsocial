@@ -30,6 +30,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
   }>();
   const searchRequestIdRef = useRef(0);
   const currentQueryRef = useRef("");
+  const resultsQueryRef = useRef(""); // Track which query the current results are for
 
   // Debounce search with request tracking
   useEffect(() => {
@@ -42,6 +43,12 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
         setIsSearching(false);
       });
       currentQueryRef.current = "";
+      resultsQueryRef.current = "";
+      return;
+    }
+
+    // If we already have results for this exact query, don't search again
+    if (resultsQueryRef.current === trimmedQuery && results.length > 0) {
       return;
     }
 
@@ -68,7 +75,8 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [query, fetcher]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only depend on query, not fetcher
+  }, [query]);
 
   // Update results when fetcher data changes
   useEffect(() => {
@@ -76,23 +84,32 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     if (fetcher.state === "idle") {
       if (fetcher.data) {
         const data = fetcher.data;
-        startTransition(() => {
-          setResults(data.results);
-          setIsSearching(false);
-        });
+        // Only update if this data is for the current query
+        if (currentQueryRef.current === query.trim()) {
+          startTransition(() => {
+            setResults(data.results);
+            setIsSearching(false);
+            resultsQueryRef.current = query.trim(); // Remember which query these results are for
+          });
+        }
       } else {
         // Request completed but no data - might be empty query or error
-        startTransition(() => {
-          setIsSearching(false);
-        });
+        // Only update if this is for the current query
+        if (currentQueryRef.current === query.trim()) {
+          startTransition(() => {
+            setIsSearching(false);
+          });
+        }
       }
     } else {
-      // Show searching state when loading or submitting
-      startTransition(() => {
-        setIsSearching(true);
-      });
+      // Show searching state when loading or submitting (only if we're searching for the current query)
+      if (currentQueryRef.current === query.trim()) {
+        startTransition(() => {
+          setIsSearching(true);
+        });
+      }
     }
-  }, [fetcher.data, fetcher.state]);
+  }, [fetcher.data, fetcher.state, query]);
 
   // Keyboard shortcuts
   useEffect(() => {

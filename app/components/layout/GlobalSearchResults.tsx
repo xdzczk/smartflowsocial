@@ -8,6 +8,7 @@ import {
   Loader2,
   XCircle,
   Ban,
+  Sparkles,
 } from "lucide-react";
 
 export interface GlobalSearchResult {
@@ -19,7 +20,8 @@ export interface GlobalSearchResult {
     | "failed"
     | "cancelled"
     | "template"
-    | "external";
+    | "external"
+    | "feature";
   id: string;
   title?: string;
   caption?: string;
@@ -42,6 +44,8 @@ interface GlobalSearchResultsProps {
 
 function getTypeIcon(type: GlobalSearchResult["type"]) {
   switch (type) {
+    case "feature":
+      return <Sparkles className="h-4 w-4" />;
     case "draft":
       return <FileText className="h-4 w-4" />;
     case "scheduled":
@@ -65,6 +69,8 @@ function getTypeIcon(type: GlobalSearchResult["type"]) {
 
 function getTypeLabel(type: GlobalSearchResult["type"]): string {
   switch (type) {
+    case "feature":
+      return "Feature";
     case "draft":
       return "Draft";
     case "scheduled":
@@ -103,6 +109,10 @@ function formatDate(date: Date | string): string {
 }
 
 function getPreviewText(result: GlobalSearchResult): string {
+  // Features always use title
+  if (result.type === "feature" && result.title) {
+    return result.title;
+  }
   if (result.title) return result.title;
   if (result.caption) {
     return result.caption.length > 60
@@ -183,13 +193,17 @@ export function GlobalSearchResults({
                   <span className="text-foreground text-sm font-medium">
                     {getPreviewText(result)}
                   </span>
-                  <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs font-medium">
-                    {getTypeLabel(result.type)}
-                  </span>
+                  {result.type !== "feature" ? (
+                    <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs font-medium">
+                      {getTypeLabel(result.type)}
+                    </span>
+                  ) : null}
                 </div>
-                <div className="text-muted-foreground mt-1 text-xs">
-                  {formatDate(result.createdAt)}
-                </div>
+                {result.type !== "feature" ? (
+                  <div className="text-muted-foreground mt-1 text-xs">
+                    {formatDate(result.createdAt)}
+                  </div>
+                ) : null}
               </div>
             </Link>
           ))}
