@@ -219,7 +219,7 @@ export function ScheduledPostsTable({
                       REPOST
                     </div>
                   ) : post.isQuotedPost ? (
-                    <div className="flex h-12 w-12 items-center justify-center rounded bg-green-500/20 text-xs font-medium text-green-600 dark:text-green-400">
+                    <div className="bg-success/20 text-success dark:text-success flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
                       QUOTE
                     </div>
                   ) : (
@@ -228,7 +228,7 @@ export function ScheduledPostsTable({
                     </div>
                   )}
                   {post.repost && post.fileUrl.length > 0 ? (
-                    <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
+                    <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
                       <svg
                         className="h-3 w-3 text-white"
                         fill="none"
@@ -245,7 +245,7 @@ export function ScheduledPostsTable({
                     </div>
                   ) : null}
                   {post.isQuotedPost && post.fileUrl.length > 0 ? (
-                    <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
+                    <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
                       <svg
                         className="h-3 w-3 text-white"
                         fill="none"
@@ -332,7 +332,7 @@ export function ScheduledPostsTable({
                       e.stopPropagation();
                       onReschedulePost(post);
                     }}
-                    className="bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/30 px-2 py-1 text-sm leading-5 font-semibold text-green-600 hover:border-green-500/50 hover:bg-green-500/10 focus:ring focus:ring-green-500/25 active:border-green-500/30 active:shadow-none dark:text-green-400"
+                    className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-success/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
                   >
                     Reschedule
                   </button>

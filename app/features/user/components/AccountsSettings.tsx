@@ -311,7 +311,9 @@ export function AccountsSettings({
             )}
           </div>
           {fetcher.data?.error ? (
-            <p className="mt-2 text-sm text-red-600">{fetcher.data.error}</p>
+            <p className="text-destructive mt-2 text-sm">
+              {fetcher.data.error}
+            </p>
           ) : null}
         </div>
       ) : null}

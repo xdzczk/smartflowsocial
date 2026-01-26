@@ -190,7 +190,7 @@ export default function DraftEditPage() {
         </h1>
         <Link
           to="/dashboard/drafts"
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+          className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground"
         >
           ← Back to Drafts
         </Link>

@@ -32,7 +32,7 @@ export function UploadProviderSettings({
                 type="radio"
                 value="S3"
                 defaultChecked={uploadProvider === "S3"}
-                className="border-border mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                className="border-border text-primary focus:ring-primary mt-1 h-4 w-4"
               />
               <div className="flex-1">
                 <label
@@ -43,10 +43,10 @@ export function UploadProviderSettings({
                 </label>
 
                 <div className="mt-2 flex items-center space-x-2 text-xs">
-                  <span className="rounded-full bg-green-100 px-2 py-1 text-green-800">
+                  <span className="bg-success/20 text-success rounded-full px-2 py-1">
                     ✓ Fast
                   </span>
-                  <span className="rounded-full bg-green-100 px-2 py-1 text-green-800">
+                  <span className="bg-success/20 text-success rounded-full px-2 py-1">
                     ✓ Reliable
                   </span>
                 </div>
@@ -63,7 +63,7 @@ export function UploadProviderSettings({
                   uploadProvider === "BLOSSOM_PRIMAL" ||
                   uploadProvider === "BLOSSOM"
                 }
-                className="border-border mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                className="border-border text-primary focus:ring-primary mt-1 h-4 w-4"
               />
               <div className="flex-1">
                 <label
@@ -74,13 +74,13 @@ export function UploadProviderSettings({
                 </label>
 
                 <div className="mt-2 flex items-center space-x-2 text-xs">
-                  <span className="rounded-full bg-blue-100 px-2 py-1 text-blue-800">
+                  <span className="bg-muted text-foreground rounded-full px-2 py-1">
                     ⚡ Primal.net
                   </span>
-                  <span className="rounded-full bg-green-100 px-2 py-1 text-green-800">
+                  <span className="bg-success/20 text-success rounded-full px-2 py-1">
                     ✓ Fast CDN
                   </span>
-                  <span className="rounded-full bg-green-100 px-2 py-1 text-green-800">
+                  <span className="bg-success/20 text-success rounded-full px-2 py-1">
                     ✓ Free
                   </span>
                 </div>
@@ -94,7 +94,7 @@ export function UploadProviderSettings({
                 type="radio"
                 value="BLOSSOM_BLOSSTR"
                 defaultChecked={uploadProvider === "BLOSSOM_BLOSSTR"}
-                className="border-border mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                className="border-border text-primary focus:ring-primary mt-1 h-4 w-4"
               />
               <div className="flex-1">
                 <label
@@ -109,11 +109,11 @@ export function UploadProviderSettings({
                     href="https://blosstr.com/?ref=smartflow"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-full bg-purple-100 px-2 py-1 text-purple-800 underline hover:bg-purple-200"
+                    className="bg-muted text-foreground hover:bg-muted/80 rounded-full px-2 py-1 underline"
                   >
                     🌸 Blosstr.com
                   </a>
-                  <span className="rounded-full bg-yellow-100 px-2 py-1 text-yellow-800">
+                  <span className="bg-muted text-foreground rounded-full px-2 py-1">
                     🔒 Subscription required
                   </span>
                 </div>
@@ -125,7 +125,7 @@ export function UploadProviderSettings({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? "Updating..." : "Update Provider"}
             </button>

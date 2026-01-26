@@ -65,7 +65,7 @@ export function NotificationActionButtons({
       <button
         onClick={onRepost}
         disabled={isReposting}
-        className="text-muted-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:bg-green-500/10 hover:text-green-600 disabled:opacity-50 dark:hover:text-green-400"
+        className="text-muted-foreground hover:bg-success/10 hover:text-success dark:hover:text-success inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50"
       >
         <svg
           className="h-4 w-4"
@@ -88,7 +88,7 @@ export function NotificationActionButtons({
       {/* Quote Button */}
       <button
         onClick={onToggleQuote}
-        className="dark:text-muted-foreground text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+        className="dark:text-muted-foreground text-foreground hover:bg-success/10 hover:text-success dark:hover:bg-success/20 dark:hover:text-success inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
       >
         <svg
           className="h-4 w-4"
@@ -131,7 +131,7 @@ export function NotificationActionButtons({
       {stats?.replies ? (
         <button
           onClick={onToggleChildReplies}
-          className="text-muted-foreground hover:bg-accent/10 hover:text-accent-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
         >
           <svg
             className="h-4 w-4"

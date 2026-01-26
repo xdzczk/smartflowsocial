@@ -190,7 +190,7 @@ export function LongFormPublishingOptions({
               variant="outline"
               size="sm"
               onClick={onNextSlotClick}
-              className="border-blue-500 text-blue-700 hover:bg-blue-50"
+              className="border-primary text-foreground hover:bg-muted"
             >
               Next Slot
             </Button>

@@ -9,11 +9,11 @@ interface SuccessMessageProps {
 
 export function SuccessMessage({ message, onDismiss }: SuccessMessageProps) {
   return (
-    <div className="mb-6 rounded-lg border border-green-500/30 bg-green-500/10 p-4">
+    <div className="border-success/30 bg-success/10 mb-6 rounded-lg border p-4">
       <div className="flex items-center">
         <div className="flex-shrink-0">
           <svg
-            className="h-5 w-5 text-green-600 dark:text-green-400"
+            className="text-success h-5 w-5"
             viewBox="0 0 20 20"
             fill="currentColor"
           >
@@ -25,7 +25,7 @@ export function SuccessMessage({ message, onDismiss }: SuccessMessageProps) {
           </svg>
         </div>
         <div className="ml-3">
-          <p className="text-sm font-medium text-green-600 dark:text-green-400">
+          <p className="text-success text-sm font-medium">
             {decodeURIComponent(message)}
           </p>
         </div>
@@ -33,7 +33,7 @@ export function SuccessMessage({ message, onDismiss }: SuccessMessageProps) {
           <div className="-mx-1.5 -my-1.5">
             <button
               onClick={onDismiss}
-              className="focus:ring-offset-background inline-flex rounded-md bg-green-500/20 p-1.5 text-green-600 hover:bg-green-500/30 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none dark:text-green-400"
+              className="focus:ring-offset-background bg-success/20 text-success hover:bg-success/30 focus:ring-success inline-flex rounded-md p-1.5 focus:ring-2 focus:ring-offset-2 focus:outline-none"
             >
               <span className="sr-only">Dismiss</span>
               <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">

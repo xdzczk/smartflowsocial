@@ -27,8 +27,8 @@ export function LongFormContentEditor({
               <span
                 className={`rounded px-2 py-1 text-xs font-medium ${
                   uploadProvider.includes("BLOSSOM")
-                    ? "bg-purple-100 text-purple-800"
-                    : "bg-blue-100 text-blue-800"
+                    ? "bg-muted text-foreground"
+                    : "bg-muted text-foreground"
                 }`}
               >
                 {uploadProvider.includes("BLOSSOM")
@@ -62,7 +62,7 @@ export function LongFormContentEditor({
           Insert Assets
         </Button>
       </div>
-      <div className="border-border dark:border-border mt-1 rounded-lg border focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+      <div className="border-border dark:border-border focus-within:border-primary focus-within:ring-primary mt-1 rounded-lg border focus-within:ring-1">
         <div className="min-h-[500px] p-4">
           <div
             id="editorjs"

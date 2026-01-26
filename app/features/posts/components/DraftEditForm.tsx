@@ -199,7 +199,7 @@ export function DraftEditForm({
               type="button"
               onClick={onResumeClick}
               disabled={isSubmitting}
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              className="bg-success hover:bg-success/90 flex-1"
             >
               Resume & Schedule
             </Button>
@@ -208,7 +208,7 @@ export function DraftEditForm({
       </fetcher.Form>
 
       {/* Draft Info */}
-      <div className="rounded-lg bg-yellow-50 p-4 dark:bg-yellow-900/20">
+      <div className="dark:bg-muted rounded-lg bg-yellow-50 p-4">
         <div className="flex">
           <div className="flex-shrink-0">
             <svg
@@ -224,10 +224,10 @@ export function DraftEditForm({
             </svg>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+            <h3 className="dark:text-foreground text-sm font-medium text-yellow-800">
               Draft Status
             </h3>
-            <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+            <div className="dark:text-foreground mt-2 text-sm text-yellow-700">
               <p>
                 This post is saved as a draft and is not signed. It cannot be
                 published until you resume it and provide a schedule time.

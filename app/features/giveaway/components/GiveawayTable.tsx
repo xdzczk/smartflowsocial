@@ -149,7 +149,7 @@ export function GiveawayTable({
                         }
                       />
                       {post.repost ? (
-                        <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
+                        <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -166,7 +166,7 @@ export function GiveawayTable({
                         </div>
                       ) : null}
                       {post.isQuotedPost ? (
-                        <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
+                        <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -189,7 +189,7 @@ export function GiveawayTable({
                         TEXT
                       </div>
                       {post.repost ? (
-                        <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
+                        <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -206,7 +206,7 @@ export function GiveawayTable({
                         </div>
                       ) : null}
                       {post.isQuotedPost ? (
-                        <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
+                        <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"

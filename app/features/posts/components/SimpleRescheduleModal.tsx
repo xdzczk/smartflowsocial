@@ -359,7 +359,7 @@ export function SimpleRescheduleModal({
                       }
                     }
                   }}
-                  className="dark:bg-card border-border text-foreground dark:border-border flex-1 rounded-md border bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
+                  className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary flex-1 rounded-md border bg-white px-3 py-2 text-sm focus:ring-2 dark:text-white"
                 />
               </div>
               <div className="text-muted-foreground dark:text-foreground text-xs">
@@ -387,7 +387,7 @@ export function SimpleRescheduleModal({
                       e.target.value
                     );
                   }}
-                  className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
+                  className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 text-sm focus:ring-2 dark:text-white"
                 >
                   <option value="">Manual (No Queue)</option>
                   {queueTypes.map((queueType) => (
@@ -405,10 +405,10 @@ export function SimpleRescheduleModal({
             ) : null}
 
             {/* Re-signing warning */}
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="border-border bg-muted dark:border-border dark:bg-muted/20 rounded-lg border p-3">
               <div className="flex items-start space-x-2">
                 <svg
-                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
+                  className="text-muted-foreground mt-0.5 h-5 w-5 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -419,7 +419,7 @@ export function SimpleRescheduleModal({
                   />
                 </svg>
                 <div>
-                  <div className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  <div className="text-foreground dark:text-foreground text-sm font-medium">
                     Rescheduling this {isLongform ? "article" : "post"} requires
                     re-signing the Nostr event
                   </div>
@@ -435,8 +435,8 @@ export function SimpleRescheduleModal({
 
             {/* Validation error */}
             {form.formState.errors.scheduledFor ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-                <div className="text-sm text-red-800 dark:text-red-200">
+              <div className="border-destructive bg-destructive/10 dark:border-destructive dark:bg-destructive/20/20 rounded-lg border p-3">
+                <div className="text-destructive dark:text-destructive text-sm">
                   {form.formState.errors.scheduledFor.message}
                 </div>
               </div>
@@ -444,8 +444,8 @@ export function SimpleRescheduleModal({
 
             {/* Error display */}
             {(fetcher.data?.error ?? signingError) ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-                <div className="text-sm text-red-800 dark:text-red-200">
+              <div className="border-destructive bg-destructive/10 dark:border-destructive dark:bg-destructive/20/20 rounded-lg border p-3">
+                <div className="text-destructive dark:text-destructive text-sm">
                   {fetcher.data?.error ?? signingError}
                 </div>
               </div>
@@ -463,7 +463,7 @@ export function SimpleRescheduleModal({
             <button
               onClick={() => void handleSubmit()}
               disabled={fetcher.state === "submitting" || isSigningEvent}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSigningEvent
                 ? "Signing Event..."

@@ -126,7 +126,7 @@ function renderMediaCell(
         <MediaWithBadge
           src={originalImageUrl}
           alt="Original post preview"
-          badgeColor="bg-purple-500"
+          badgeColor="bg-primary"
           badgeIcon={
             <svg
               className="h-3 w-3 text-white"
@@ -149,8 +149,8 @@ function renderMediaCell(
     return (
       <PlaceholderBadge
         text="REPOST"
-        bgColor="bg-purple-200 dark:bg-purple-800"
-        textColor="text-purple-800 dark:text-purple-200"
+        bgColor="bg-muted"
+        textColor="text-foreground"
       />
     );
   }
@@ -163,7 +163,7 @@ function renderMediaCell(
         <MediaWithBadge
           src={fileUrl}
           alt="Quote post preview"
-          badgeColor="bg-green-500"
+          badgeColor="bg-success"
           badgeIcon={
             <svg
               className="h-3 w-3 text-white"
@@ -186,8 +186,8 @@ function renderMediaCell(
     return (
       <PlaceholderBadge
         text="QUOTE"
-        bgColor="bg-green-200 dark:bg-green-800"
-        textColor="text-green-800 dark:text-green-200"
+        bgColor="bg-success/20 dark:bg-success"
+        textColor="text-success dark:text-success"
       />
     );
   }
@@ -356,7 +356,7 @@ export default function BulkPostsTable({
                     onChange={(e) =>
                       handleIsRecyclableChange(index, e.target.checked)
                     }
-                    className="border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+                    className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
                   />
                   <label
                     htmlFor={`bulk-recyclable-${post.clientId}`}
@@ -370,7 +370,7 @@ export default function BulkPostsTable({
                 <button
                   type="button"
                   onClick={() => handleRemovePost(index)}
-                  className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+                  className="bg-destructive hover:bg-destructive rounded px-3 py-1 text-white"
                 >
                   Remove
                 </button>

@@ -190,7 +190,7 @@ function SubmitButton({
     <button
       type="submit"
       disabled={disabled}
-      className="mt-6 w-full rounded-lg bg-blue-500 p-4 text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-blue-300"
+      className="bg-primary text-primary-foreground hover:bg-primary/90 mt-6 w-full rounded-lg p-4 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {getButtonContent()}
     </button>
@@ -453,7 +453,7 @@ export default function BulkPostsPage() {
     <div className="p-6">
       <h1 className="mb-6 text-2xl font-bold">{getPageTitle(mode)}</h1>
       {displayedHashtags && displayedHashtags.length <= 10 ? (
-        <div className="mb-6 inline-flex items-center gap-1 rounded bg-orange-200 px-2 py-1 text-xs leading-4 font-semibold text-orange-700">
+        <div className="bg-muted text-foreground mb-6 inline-flex items-center gap-1 rounded px-2 py-1 text-xs leading-4 font-semibold">
           <svg
             className="hi-solid hi-hashtag inline-block size-4 opacity-75"
             fill="currentColor"

@@ -108,7 +108,7 @@ export default function PostDetailsModal({
       case "draft":
         return (
           <span
-            className={`${badgeClasses} border-orange-300 bg-transparent text-orange-700 dark:border-transparent dark:bg-orange-500/20 dark:text-orange-400`}
+            className={`${badgeClasses} border-border text-foreground dark:bg-muted dark:text-foreground bg-transparent dark:border-transparent`}
           >
             Draft
           </span>
@@ -124,7 +124,7 @@ export default function PostDetailsModal({
       default:
         return (
           <span
-            className={`${badgeClasses} border-green-300 bg-transparent text-green-700 dark:border-transparent dark:bg-green-500/20 dark:text-green-400`}
+            className={`${badgeClasses} border-success text-success dark:bg-success/20 dark:text-success bg-transparent dark:border-transparent`}
           >
             Posted
           </span>
@@ -298,7 +298,7 @@ export default function PostDetailsModal({
                   {post.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-200"
+                      className="bg-muted text-foreground dark:bg-muted/30 dark:text-foreground rounded-full px-3 py-1 text-sm font-medium"
                     >
                       #{tag}
                     </span>
@@ -404,7 +404,7 @@ export default function PostDetailsModal({
               <button
                 type="submit"
                 disabled={deleteFetcher.state !== "idle"}
-                className="dark:bg-card inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-950/50"
+                className="dark:bg-card border-destructive text-destructive hover:bg-destructive/10 focus:ring-destructive dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
               >
                 {deleteFetcher.state !== "idle" &&
                 deleteFetcher.formData?.get("postId") === post.id

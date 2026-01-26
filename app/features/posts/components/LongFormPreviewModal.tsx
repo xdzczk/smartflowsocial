@@ -46,7 +46,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
   const text = typeof block.data["text"] === "string" ? block.data["text"] : "";
   const caption =
     typeof block.data["caption"] === "string" ? block.data["caption"] : "";
-  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-foreground dark:text-foreground bg-muted dark:bg-card rounded-r">
+  return `<blockquote class="border-l-4 border-primary pl-4 py-2 mb-4 italic text-foreground dark:text-foreground bg-muted dark:bg-card rounded-r">
     <p>${text}</p>
     ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
   </blockquote>`;
@@ -54,7 +54,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
 
 function convertCodeBlock(block: EditorJSBlock): string {
   const code = typeof block.data["code"] === "string" ? block.data["code"] : "";
-  return `<pre class="bg-muted dark:bg-card text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
+  return `<pre class="bg-muted dark:bg-card text-success p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
 }
 
 function convertLinkToolBlock(block: EditorJSBlock): string {
@@ -67,7 +67,7 @@ function convertLinkToolBlock(block: EditorJSBlock): string {
         })
       : null;
   return `<div class="border border-border dark:border-border rounded-lg p-4 mb-4">
-    <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
+    <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:underline">
       <div class="font-semibold">${meta?.title ?? link}</div>
       ${meta?.description ? `<div class="text-foreground dark:text-foreground text-sm mt-1">${meta.description}</div>` : ""}
     </a>

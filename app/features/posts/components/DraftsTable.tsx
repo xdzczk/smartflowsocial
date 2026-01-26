@@ -222,7 +222,7 @@ export function DraftsTable({
                 )}
               </td>
               <td className="p-3 text-center">
-                <div className="inline-flex rounded-full border border-transparent bg-orange-500/20 px-2 py-1 text-xs leading-4 font-semibold text-orange-600 dark:text-orange-400">
+                <div className="bg-muted text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
                   Draft
                 </div>
               </td>

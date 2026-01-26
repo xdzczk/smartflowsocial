@@ -66,7 +66,7 @@ export function SchedulingSection({
             size="sm"
             onClick={onCalculateNextSlot}
             disabled={disabled}
-            className="border-blue-500 text-blue-700 hover:bg-blue-50"
+            className="border-primary text-foreground hover:bg-muted"
           >
             Next Slot
           </Button>
@@ -79,7 +79,7 @@ export function SchedulingSection({
               size="sm"
               onClick={() => onScheduleIntervalClick(interval)}
               disabled={disabled}
-              className="border-blue-500 text-blue-700 hover:bg-blue-50"
+              className="border-primary text-foreground hover:bg-muted"
             >
               +{interval}h
             </Button>

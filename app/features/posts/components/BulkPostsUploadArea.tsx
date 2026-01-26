@@ -26,8 +26,8 @@ export default function BulkPostsUploadArea({
             <span
               className={`rounded px-2 py-1 text-xs font-medium ${
                 uploadProvider.includes("BLOSSOM")
-                  ? "bg-purple-100 text-purple-800"
-                  : "bg-blue-100 text-blue-800"
+                  ? "bg-muted text-foreground"
+                  : "bg-muted text-foreground"
               }`}
             >
               {uploadProvider.includes("BLOSSOM")
@@ -52,7 +52,7 @@ export default function BulkPostsUploadArea({
           <div className="flex flex-col items-center gap-4">
             {isProcessing ? (
               <>
-                <div className="text-blue-500">
+                <div className="text-muted-foreground">
                   <svg className="h-12 w-12 animate-spin" viewBox="0 0 24 24">
                     <circle
                       className="opacity-25"
@@ -77,7 +77,7 @@ export default function BulkPostsUploadArea({
                   </p>
                   <div className="bg-muted mt-2 h-2 w-64 rounded-full">
                     <div
-                      className="h-2 rounded-full bg-blue-500 transition-all duration-300"
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{
                         width: `${(processingProgress.current / processingProgress.total) * 100}%`,
                       }}
@@ -87,7 +87,7 @@ export default function BulkPostsUploadArea({
               </>
             ) : (
               <>
-                <div className="text-green-500">
+                <div className="text-success">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-12 w-12"

@@ -159,7 +159,7 @@ function UltraCompactLayout({
   displayTime,
   userTimezone,
 }: UltraCompactLayoutProps) {
-  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus:ring-1 focus:ring-blue-500`;
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus:ring-1 focus:ring-primary`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,
@@ -242,7 +242,7 @@ function RegularLayout({
   userTimezone,
   hideVideoPlayButton,
 }: RegularLayoutProps) {
-  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} px-2 py-1 focus:ring-2 focus:ring-blue-500`;
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} px-2 py-1 focus:ring-2 focus:ring-primary`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,

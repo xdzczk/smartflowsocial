@@ -360,7 +360,7 @@ export default function NewPostImagesConfirmation({
           </div>
         ) : null}
         {signingError ? (
-          <div className="mx-auto mb-4 max-w-2xl rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+          <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mx-auto mb-4 max-w-2xl rounded-md border p-3 text-sm">
             {signingError}
           </div>
         ) : null}
@@ -373,7 +373,7 @@ export default function NewPostImagesConfirmation({
               <h3 className="text-foreground text-lg font-semibold dark:text-white">
                 Media Post
               </h3>
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+              <span className="bg-muted text-foreground dark:bg-muted dark:text-foreground rounded-full px-3 py-1 text-xs font-medium">
                 {postsCount} {postsCount === 1 ? "File" : "Files"}
               </span>
             </div>
@@ -448,7 +448,7 @@ export default function NewPostImagesConfirmation({
                         <span
                           // eslint-disable-next-line react/no-array-index-key -- Stable list of tags, no unique ID available
                           key={tagIndex}
-                          className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300"
+                          className="bg-muted text-foreground dark:bg-muted dark:text-foreground rounded-full px-2 py-1 text-xs font-medium"
                         >
                           {tag.startsWith("#") ? tag : `#${tag}`}
                         </span>

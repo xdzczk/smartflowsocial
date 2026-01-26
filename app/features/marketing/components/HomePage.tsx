@@ -65,7 +65,7 @@ export function HomePage(): ReactNode {
               </a>
               <a
                 href="/"
-                className="border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground focus:ring-primary inline-flex items-center justify-center gap-2 rounded-lg border px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                className="border-border bg-card text-foreground hover:bg-muted hover:text-foreground focus:ring-primary inline-flex items-center justify-center gap-2 rounded-lg border px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
               >
                 <span>Watch Demo</span>
               </a>

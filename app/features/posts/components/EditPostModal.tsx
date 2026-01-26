@@ -270,15 +270,15 @@ export function EditPostModal({
                       setScheduledFor(null);
                     }
                   }}
-                  className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
+                  className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
                 />
               </div>
 
               {/* Re-signing notice */}
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+              <div className="border-border bg-muted dark:border-border dark:bg-muted/20 rounded-lg border p-4">
                 <div className="flex items-start space-x-2">
                   <svg
-                    className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
+                    className="text-muted-foreground mt-0.5 h-5 w-5 flex-shrink-0"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -289,7 +289,7 @@ export function EditPostModal({
                     />
                   </svg>
                   <div>
-                    <div className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    <div className="text-foreground dark:text-foreground text-sm font-medium">
                       Editing this {isLongform ? "article" : "post"} requires
                       re-signing the Nostr event
                     </div>
@@ -305,8 +305,8 @@ export function EditPostModal({
 
               {/* Error display */}
               {(fetcher.data?.error ?? signingError) ? (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-                  <div className="text-sm text-red-800 dark:text-red-200">
+                <div className="border-destructive bg-destructive/10 dark:border-destructive dark:bg-destructive/20/20 rounded-lg border p-4">
+                  <div className="text-destructive dark:text-destructive text-sm">
                     {fetcher.data?.error ?? signingError}
                   </div>
                 </div>
@@ -328,7 +328,7 @@ export function EditPostModal({
                   isSigningEvent ||
                   isUploadingImages
                 }
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUploadingImages
                   ? "Uploading Images..."

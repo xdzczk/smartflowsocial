@@ -59,7 +59,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
   const text = typeof textValue === "string" ? textValue : "";
   const captionValue = block.data["caption"];
   const caption = typeof captionValue === "string" ? captionValue : "";
-  return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-foreground dark:text-foreground bg-muted dark:bg-card rounded-r">
+  return `<blockquote class="border-l-4 border-primary pl-4 py-2 mb-4 italic text-foreground dark:text-foreground bg-muted dark:bg-card rounded-r">
     <p>${text}</p>
     ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
   </blockquote>`;
@@ -68,7 +68,7 @@ function convertQuoteBlock(block: EditorJSBlock): string {
 function convertCodeBlock(block: EditorJSBlock): string {
   const codeValue = block.data["code"];
   const code = typeof codeValue === "string" ? codeValue : "";
-  return `<pre class="bg-muted dark:bg-card text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
+  return `<pre class="bg-muted dark:bg-card text-success p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
 }
 
 function convertLinkToolBlock(block: EditorJSBlock): string {
@@ -81,7 +81,7 @@ function convertLinkToolBlock(block: EditorJSBlock): string {
         })
       : null;
   return `<div class="border border-border dark:border-border rounded-lg p-4 mb-4">
-    <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
+    <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:underline">
       <div class="font-semibold">${meta?.title ?? link}</div>
       ${meta?.description ? `<div class="text-foreground dark:text-foreground text-sm mt-1">${meta.description}</div>` : ""}
     </a>
@@ -321,7 +321,7 @@ export default function LongFormDetailsModal({
       return (
         <Badge
           variant="secondary"
-          className="bg-orange-100 text-orange-900 dark:bg-orange-700/10 dark:text-orange-200"
+          className="bg-muted text-foreground dark:bg-muted dark:text-foreground"
         >
           Draft
         </Badge>
@@ -330,7 +330,7 @@ export default function LongFormDetailsModal({
       return (
         <Badge
           variant="secondary"
-          className="bg-blue-100 text-blue-900 dark:bg-blue-700/10 dark:text-blue-200"
+          className="bg-muted text-foreground dark:bg-primary/90/10 dark:text-foreground"
         >
           Scheduled
         </Badge>
@@ -339,7 +339,7 @@ export default function LongFormDetailsModal({
       return (
         <Badge
           variant="secondary"
-          className="bg-green-100 text-green-900 dark:bg-green-700/10 dark:text-green-200"
+          className="bg-success/20 text-success dark:bg-success/10 dark:text-success"
         >
           Published
         </Badge>
@@ -483,7 +483,7 @@ export default function LongFormDetailsModal({
                   {post.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="cursor-pointer text-sm text-blue-600 hover:underline dark:text-blue-400"
+                      className="text-primary dark:text-muted-foreground cursor-pointer text-sm hover:underline"
                     >
                       #{tag}
                     </span>
@@ -565,7 +565,7 @@ export default function LongFormDetailsModal({
                     </h3>
                     <button
                       onClick={() => setShowEventData(!showEventData)}
-                      className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                      className="text-primary dark:text-muted-foreground text-xs hover:underline"
                     >
                       {showEventData ? "Hide" : "Show"}
                     </button>
@@ -607,7 +607,7 @@ export default function LongFormDetailsModal({
               {type === "draft" ? (
                 <Link
                   to={`/dashboard/drafts/longform/edit/${post.id}`}
-                  className="dark:bg-card inline-flex items-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-950/50"
+                  className="dark:bg-card border-border text-foreground hover:bg-muted focus:ring-primary dark:border-border dark:text-foreground dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                 >
                   Edit Draft
                 </Link>
@@ -624,7 +624,7 @@ export default function LongFormDetailsModal({
                 <button
                   type="submit"
                   disabled={deleteFetcher.state !== "idle"}
-                  className="dark:bg-card inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-950/50"
+                  className="dark:bg-card border-destructive text-destructive hover:bg-destructive/10 focus:ring-destructive dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
                 >
                   {deleteFetcher.state !== "idle" &&
                   deleteFetcher.formData?.get("postId") === post.id

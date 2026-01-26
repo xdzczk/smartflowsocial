@@ -204,7 +204,7 @@ export default function PostedPostsTable({
                         className="h-12 w-12 rounded object-cover"
                       />
                       {post.repost ? (
-                        <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
+                        <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -221,7 +221,7 @@ export default function PostedPostsTable({
                         </div>
                       ) : null}
                       {post.isQuotedPost ? (
-                        <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
+                        <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -244,7 +244,7 @@ export default function PostedPostsTable({
                         TEXT
                       </div>
                       {post.repost ? (
-                        <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
+                        <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -261,7 +261,7 @@ export default function PostedPostsTable({
                         </div>
                       ) : null}
                       {post.isQuotedPost ? (
-                        <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
+                        <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -321,7 +321,7 @@ export default function PostedPostsTable({
                   )}
                 </td>
                 <td className="p-3">
-                  <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
+                  <span className="bg-success/20 text-success dark:bg-success/20 dark:text-success inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                     Posted
                   </span>
                 </td>
@@ -355,7 +355,7 @@ export default function PostedPostsTable({
                                   post.id
                                 : false)
                             }
-                            className="border-accent/30 bg-card text-accent-foreground hover:border-accent/50 hover:bg-accent/10 focus:ring-accent/25 active:border-accent/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                            className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                           >
                             {fetcher.state !== "idle" &&
                             (formData
@@ -387,7 +387,7 @@ export default function PostedPostsTable({
                                   post.id
                                 : false)
                             }
-                            className="bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/30 px-2 py-1 text-sm leading-5 font-semibold text-green-600 hover:border-green-500/50 hover:bg-green-500/10 focus:ring focus:ring-green-500/25 active:border-green-500/30 active:shadow-none disabled:opacity-50 dark:text-green-400"
+                            className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-success/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                           >
                             {fetcher.state !== "idle" &&
                             (formData

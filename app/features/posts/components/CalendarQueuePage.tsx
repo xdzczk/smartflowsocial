@@ -41,7 +41,7 @@ export default function CalendarQueuePage() {
             onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               !params["queueType"]
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                ? "border-primary text-muted-foreground"
                 : "text-muted-foreground hover:border-border hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground border-transparent"
             }`}
           >
@@ -99,7 +99,7 @@ export default function CalendarQueuePage() {
                   onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                   className={`${baseClasses} ${
                     isSelected
-                      ? `border-blue-500 ${safeColors?.text ?? ""}`
+                      ? `border-primary ${safeColors?.text ?? ""}`
                       : unselectedClasses
                   }`}
                 >

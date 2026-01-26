@@ -79,7 +79,7 @@ export function AssetPagination({
                 onClick={() => onPageChange(page)}
                 className={`rounded px-3 py-1 text-sm ${
                   currentPage === page
-                    ? "bg-blue-600 text-white"
+                    ? "bg-primary text-primary-foreground"
                     : "border-border hover:bg-muted dark:border-border dark:hover:bg-muted border"
                 }`}
               >

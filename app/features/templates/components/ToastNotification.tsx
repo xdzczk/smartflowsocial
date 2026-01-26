@@ -12,7 +12,7 @@ export function ToastNotification({
   onClose: _onClose,
 }: ToastNotificationProps) {
   return (
-    <div className="fixed right-4 bottom-4 rounded-lg bg-green-500 px-4 py-3 text-white shadow-lg">
+    <div className="bg-success fixed right-4 bottom-4 rounded-lg px-4 py-3 text-white shadow-lg">
       {message}
     </div>
   );

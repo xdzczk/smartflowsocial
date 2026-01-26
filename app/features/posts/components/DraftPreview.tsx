@@ -61,7 +61,7 @@ export function DraftPreview({
           <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
             Post Type
           </span>
-          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+          <span className="bg-muted text-foreground dark:bg-muted dark:text-foreground rounded-full px-2 py-1 text-xs font-medium">
             {post.postType}
           </span>
         </div>

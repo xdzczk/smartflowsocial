@@ -127,7 +127,7 @@ export default function TemplateEditPage() {
         <div className="flex items-center gap-4">
           <Link
             to="/dashboard/templates"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground"
           >
             ← Back to Templates
           </Link>
@@ -141,14 +141,14 @@ export default function TemplateEditPage() {
               ((template as { posts?: unknown }).posts as unknown[]).length ===
                 0
             }
-            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-blue-300"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 disabled:opacity-50"
           >
             {scheduleFetcher.state !== "idle" ? "Loading..." : "Schedule Posts"}
           </button>
           <button
             onClick={handleDeleteTemplate}
             disabled={deleteTemplateFetcher.state !== "idle"}
-            className="rounded-lg border border-red-300 px-4 py-2 text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
+            className="border-destructive text-destructive hover:bg-destructive/10 dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10 rounded-lg border px-4 py-2 disabled:opacity-50"
           >
             {deleteTemplateFetcher.state !== "idle"
               ? "Deleting..."
@@ -173,7 +173,7 @@ export default function TemplateEditPage() {
                 disabled={
                   updateNameFetcher.state !== "idle" || !templateName.trim()
                 }
-                className="rounded-lg bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700 disabled:bg-green-300"
+                className="bg-success hover:bg-success/90 rounded-lg px-3 py-1 text-sm text-white disabled:opacity-50"
               >
                 Save
               </button>
@@ -397,14 +397,14 @@ export default function TemplateEditPage() {
                           to={`https://primal.net/e/${signedEventId}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                          className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground text-xs"
                         >
                           View Original
                         </Link>
                         <button
                           onClick={() => handleRemovePost(postId)}
                           disabled={removePostFetcher.state !== "idle"}
-                          className="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
+                          className="border-destructive text-destructive hover:bg-destructive/10 dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10 rounded-lg border px-2 py-1 text-xs disabled:opacity-50"
                         >
                           {removePostFetcher.state !== "idle"
                             ? "..."

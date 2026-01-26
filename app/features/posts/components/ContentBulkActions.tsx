@@ -49,7 +49,7 @@ export function ContentBulkActions({
               disabled={
                 repostFetcher ? repostFetcher.state !== "idle" : undefined
               }
-              className="border-accent/30 bg-card text-accent-foreground hover:border-accent/50 hover:bg-accent/10 focus:ring-accent/25 active:border-accent/30 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+              className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
             >
               {repostFetcher && repostFetcher.state !== "idle"
                 ? PROCESSING_TEXT
@@ -60,7 +60,7 @@ export function ContentBulkActions({
               disabled={
                 repostFetcher ? repostFetcher.state !== "idle" : undefined
               }
-              className="bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/30 px-3 py-2 text-sm leading-5 font-semibold text-green-600 hover:border-green-500/50 hover:bg-green-500/10 focus:ring focus:ring-green-500/25 active:border-green-500/30 active:shadow-none disabled:opacity-50 dark:text-green-400"
+              className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-success/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
             >
               {repostFetcher && repostFetcher.state !== "idle"
                 ? PROCESSING_TEXT

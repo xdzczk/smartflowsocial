@@ -715,7 +715,7 @@ export default function NostrLoginPanel() {
             <Button
               type="button"
               variant="outline"
-              className="border-border bg-card hover:bg-accent hover:text-accent-foreground h-auto py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg dark:shadow-lg"
+              className="border-border bg-card hover:bg-muted hover:text-foreground h-auto py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg dark:shadow-lg"
               onClick={() => setState("signer_initializing")}
             >
               Remote Signer (NIP-46)
@@ -814,9 +814,9 @@ export default function NostrLoginPanel() {
                           s?.status ?? "checking";
                         const color =
                           status === "connected"
-                            ? "text-green-700 dark:text-green-300"
+                            ? "text-success dark:text-success"
                             : status === "failed"
-                              ? "text-red-700 dark:text-red-300"
+                              ? "text-destructive dark:text-destructive"
                               : "text-muted-foreground";
                         return (
                           <div
@@ -917,9 +917,9 @@ export default function NostrLoginPanel() {
                   const status: RelayCheckStatus = s?.status ?? "checking";
                   const color =
                     status === "connected"
-                      ? "text-green-700 dark:text-green-300"
+                      ? "text-success dark:text-success"
                       : status === "failed"
-                        ? "text-red-700 dark:text-red-300"
+                        ? "text-destructive dark:text-destructive"
                         : "text-muted-foreground";
                   return (
                     <div
@@ -963,7 +963,7 @@ export default function NostrLoginPanel() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-border bg-card hover:bg-accent hover:text-accent-foreground"
+                      className="border-border bg-card hover:bg-muted hover:text-foreground"
                       onClick={() => void copyNostrConnectUri()}
                     >
                       {copyOk ? "Copied" : "Copy"}
@@ -1011,7 +1011,7 @@ export default function NostrLoginPanel() {
             <Button
               type="button"
               variant="outline"
-              className="border-border bg-card hover:bg-accent hover:text-accent-foreground"
+              className="border-border bg-card hover:bg-muted hover:text-foreground"
               onClick={() => void resetToSelection()}
             >
               Back
@@ -1026,7 +1026,7 @@ export default function NostrLoginPanel() {
           tabIndex={-1}
           role="alert"
           aria-live="assertive"
-          className="space-y-3 rounded-lg border border-red-300 bg-red-50 p-5 text-sm text-red-800 shadow-lg focus:outline-none dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+          className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive space-y-3 rounded-lg border p-5 text-sm shadow-lg focus:outline-none"
         >
           <div className="text-base font-bold">{getErrorTitle(error.code)}</div>
           <div className="text-sm leading-relaxed">{error.message}</div>
@@ -1052,7 +1052,7 @@ export default function NostrLoginPanel() {
               <Button
                 type="button"
                 variant="outline"
-                className="border-border bg-card hover:bg-accent hover:text-accent-foreground"
+                className="border-border bg-card hover:bg-muted hover:text-foreground"
                 onClick={() => void resetToSelection()}
               >
                 Back
@@ -1069,7 +1069,7 @@ export default function NostrLoginPanel() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="border-border bg-card hover:bg-accent hover:text-accent-foreground"
+                  className="border-border bg-card hover:bg-muted hover:text-foreground"
                   onClick={() => void resetToSelection()}
                 >
                   Back

@@ -47,7 +47,7 @@ export default function UpgradePrompt({
         <div className="mb-6">
           <p className="text-muted-foreground dark:text-foreground">
             <strong>{featureName}</strong> requires a{" "}
-            <span className="font-semibold text-blue-600 capitalize dark:text-blue-400">
+            <span className="text-foreground dark:text-muted-foreground font-semibold capitalize">
               {minPlan}
             </span>{" "}
             plan or higher.
@@ -61,7 +61,7 @@ export default function UpgradePrompt({
         <div className="flex gap-3">
           <Link
             to="/plans"
-            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary flex-1 rounded-lg px-4 py-2 text-center font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
           >
             View Plans
           </Link>

@@ -96,9 +96,9 @@ function ReplyNotification({
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
+          <div className="bg-muted dark:bg-muted flex h-8 w-8 items-center justify-center rounded-full">
             <svg
-              className="h-4 w-4 text-blue-600 dark:text-blue-400"
+              className="text-muted-foreground h-4 w-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -150,7 +150,7 @@ function ReplyNotification({
               to={`https://primal.net/e/${String(notification.eventId)}`}
               target="_blank"
               rel="noreferrer"
-              className="text-blue-600 hover:underline dark:text-blue-400"
+              className="text-primary dark:text-muted-foreground hover:underline"
             >
               View on Primal
             </Link>
@@ -181,7 +181,7 @@ function ZapNotification({
         <div className="flex-shrink-0">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
             <svg
-              className="h-4 w-4 text-yellow-600 dark:text-yellow-400"
+              className="dark:text-foreground h-4 w-4 text-yellow-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -211,7 +211,7 @@ function ZapNotification({
             <span className="dark:text-muted-foreground text-muted-foreground text-sm">
               zapped you
             </span>
-            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+            <span className="dark:text-foreground rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-900">
               ⚡ {notification.amountSats.toLocaleString()} sats
             </span>
           </div>
@@ -232,7 +232,7 @@ function ZapNotification({
               to={`https://primal.net/e/${String(notification.originalEventId)}`}
               target="_blank"
               rel="noreferrer"
-              className="text-blue-600 hover:underline dark:text-blue-400"
+              className="text-primary dark:text-muted-foreground hover:underline"
             >
               View original post
             </Link>
@@ -259,9 +259,9 @@ function MentionNotification({
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900">
+          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-full">
             <svg
-              className="h-4 w-4 text-purple-600 dark:text-purple-400"
+              className="text-foreground h-4 w-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -313,7 +313,7 @@ function MentionNotification({
               to={`https://primal.net/e/${String(notification.eventId)}`}
               target="_blank"
               rel="noreferrer"
-              className="text-blue-600 hover:underline dark:text-blue-400"
+              className="text-primary dark:text-muted-foreground hover:underline"
             >
               View on Primal
             </Link>

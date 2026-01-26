@@ -80,7 +80,7 @@ export function BulkPostCard({
               className="h-24 w-24 rounded object-cover"
               onClick={() => onMediaClick(imageUrl)}
             />
-            <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
+            <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
               <svg
                 className="h-3 w-3 text-white"
                 fill="none"
@@ -99,7 +99,7 @@ export function BulkPostCard({
         );
       }
       return (
-        <div className="flex h-24 w-24 items-center justify-center rounded bg-purple-200 text-xs font-medium text-purple-800 dark:bg-purple-800 dark:text-purple-200">
+        <div className="bg-muted text-foreground flex h-24 w-24 items-center justify-center rounded text-xs font-medium">
           REPOST
         </div>
       );
@@ -117,7 +117,7 @@ export function BulkPostCard({
               className="h-24 w-24 rounded object-cover"
               onClick={() => onMediaClick(imageUrl)}
             />
-            <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
+            <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
               <svg
                 className="h-3 w-3 text-white"
                 fill="none"
@@ -136,7 +136,7 @@ export function BulkPostCard({
         );
       }
       return (
-        <div className="flex h-24 w-24 items-center justify-center rounded bg-green-200 text-xs font-medium text-green-800 dark:bg-green-800 dark:text-green-200">
+        <div className="bg-success/20 text-success dark:bg-success dark:text-success flex h-24 w-24 items-center justify-center rounded text-xs font-medium">
           QUOTE
         </div>
       );
@@ -250,7 +250,7 @@ export function BulkPostCard({
             type="checkbox"
             checked={post.isRecyclable}
             onChange={(e) => onIsRecyclableChange(index, e.target.checked)}
-            className="border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+            className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
           />
           <label
             htmlFor={`recyclable-${index}`}
@@ -264,7 +264,7 @@ export function BulkPostCard({
         <button
           type="button"
           onClick={() => onRemove(index)}
-          className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+          className="bg-destructive hover:bg-destructive rounded px-3 py-1 text-white"
         >
           Remove
         </button>

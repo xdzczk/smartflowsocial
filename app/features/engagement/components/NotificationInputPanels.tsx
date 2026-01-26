@@ -64,15 +64,15 @@ export function QuoteInputPanel({
       : originalContent;
 
   return (
-    <div className="mt-2 rounded-lg border border-green-500/30 bg-green-500/10 p-2">
-      <div className="mb-2 text-xs text-green-600 dark:text-green-400">
+    <div className="border-success/30 bg-success/10 mt-2 rounded-lg border p-2">
+      <div className="text-success dark:text-success mb-2 text-xs">
         Quoting: <span className="italic">&quot;{truncatedOriginal}&quot;</span>
       </div>
       <textarea
         value={quoteContent}
         onChange={(e) => onContentChange(e.target.value)}
         placeholder="Add your thoughts on this reply..."
-        className="text-foreground placeholder:text-muted-foreground w-full resize-none rounded border-0 bg-transparent p-2 text-sm focus:ring-2 focus:ring-green-500"
+        className="text-foreground placeholder:text-muted-foreground focus:ring-success w-full resize-none rounded border-0 bg-transparent p-2 text-sm focus:ring-2"
         rows={3}
       />
       <div className="flex justify-end gap-2">
@@ -85,7 +85,7 @@ export function QuoteInputPanel({
         <button
           onClick={onSubmit}
           disabled={isQuoting || !quoteContent.trim()}
-          className="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 dark:bg-green-500 dark:hover:bg-green-600"
+          className="bg-success hover:bg-success/90 dark:bg-success dark:hover:bg-success rounded-lg px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
         >
           {isQuoting ? "Posting..." : "Post Quote"}
         </button>

@@ -18,7 +18,7 @@ export function PaymentSuccessModal({
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
       <div className="dark:bg-card mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl">
         <div className="text-center">
-          <Check className="mx-auto mb-4 h-12 w-12 text-green-500" />
+          <Check className="text-success mx-auto mb-4 h-12 w-12" />
           <h3 className="text-foreground mb-2 text-lg font-semibold dark:text-white">
             Payment Successful!
           </h3>

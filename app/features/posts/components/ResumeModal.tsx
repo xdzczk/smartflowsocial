@@ -41,7 +41,7 @@ export function ResumeModal({
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg bg-yellow-50 p-4 dark:bg-yellow-900/20">
+          <div className="dark:bg-muted rounded-lg bg-yellow-50 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg
@@ -57,10 +57,10 @@ export function ResumeModal({
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                <h3 className="dark:text-foreground text-sm font-medium text-yellow-800">
                   Signing Required
                 </h3>
-                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                <div className="dark:text-foreground mt-2 text-sm text-yellow-700">
                   <p>
                     This draft needs to be signed before it can be scheduled.
                     The signing process will create a cryptographic signature
@@ -103,7 +103,7 @@ export function ResumeModal({
             <button
               onClick={onConfirm}
               disabled={isSubmitting}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+              className="bg-success hover:bg-success/90 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               {isSubmitting ? "Signing & Scheduling..." : "Sign & Schedule"}
             </button>

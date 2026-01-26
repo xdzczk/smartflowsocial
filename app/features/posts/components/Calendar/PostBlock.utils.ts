@@ -88,7 +88,7 @@ export function getStatusColor(
 
   if (isLongform) {
     if (post.signedEvent) {
-      return "bg-green-500/10 text-green-600 dark:text-green-400";
+      return "bg-success/10 text-success dark:text-success";
     }
     return "bg-secondary text-secondary-foreground";
   }

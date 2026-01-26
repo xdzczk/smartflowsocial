@@ -64,7 +64,7 @@ export function EditPostFormFields({
               <button
                 type="button"
                 onClick={() => onRemoveExistingImage(idx)}
-                className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                className="bg-destructive hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1 text-white"
               >
                 ×
               </button>
@@ -83,7 +83,7 @@ export function EditPostFormFields({
                 <button
                   type="button"
                   onClick={() => onRemoveNewFile(idx)}
-                  className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                  className="bg-destructive hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1 text-white"
                 >
                   ×
                 </button>
@@ -122,7 +122,7 @@ export function EditPostFormFields({
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           rows={4}
-          className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
           placeholder="What's on your mind?"
         />
       </div>
@@ -151,7 +151,7 @@ export function EditPostFormFields({
             type="text"
             value={manualHashtags}
             onChange={(e) => setManualHashtags(e.target.value)}
-            className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
+            className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
             placeholder="#tag1 #tag2 #tag3"
           />
         </div>
@@ -169,7 +169,7 @@ export function EditPostFormFields({
           name="edit-post-queue-type"
           value={selectedQueueType}
           onChange={(e) => setSelectedQueueType(e.target.value)}
-          className="dark:bg-card border-border text-foreground dark:border-border w-full rounded-md border bg-white px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
         >
           <option value="">Manual (No Queue)</option>
           {queueTypes.map((queueType) => (

@@ -266,7 +266,7 @@ export function HashtagPresetsSettings({
             {presets.map((preset) => (
               <div
                 key={preset.id}
-                className="hover:bg-accent/50 flex items-start justify-between rounded-lg border p-4 transition-colors"
+                className="hover:bg-muted flex items-start justify-between rounded-lg border p-4 transition-colors"
               >
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex items-center gap-2">
@@ -324,7 +324,7 @@ export function HashtagPresetsSettings({
         )}
 
         {fetcher.data?.success ? (
-          <p className="mt-4 text-sm text-green-600">
+          <p className="text-success mt-4 text-sm">
             Hashtag preset updated successfully!
           </p>
         ) : null}

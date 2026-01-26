@@ -392,19 +392,19 @@ export default function LongFormListing({
   const getStatusBadge = (_post: LongFormPostType | LongFormPostData) => {
     if (type === "draft") {
       return (
-        <div className="inline-flex rounded-full border border-transparent bg-orange-100 px-2 py-1 text-xs leading-4 font-semibold text-orange-900 dark:border-orange-900/75 dark:bg-orange-700/10 dark:text-orange-200">
+        <div className="bg-muted text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
           Draft
         </div>
       );
     } else if (type === "scheduled") {
       return (
-        <div className="inline-flex rounded-full border border-transparent bg-blue-100 px-2 py-1 text-xs leading-4 font-semibold text-blue-900 dark:border-blue-900/75 dark:bg-blue-700/10 dark:text-blue-200">
+        <div className="bg-muted text-foreground dark:border-border/75 dark:bg-primary/90/10 dark:text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
           Scheduled
         </div>
       );
     } else {
       return (
-        <div className="inline-flex rounded-full border border-transparent bg-green-100 px-2 py-1 text-xs leading-4 font-semibold text-green-900 dark:border-green-900/75 dark:bg-green-700/10 dark:text-green-200">
+        <div className="bg-success/20 text-success dark:border-success/75 dark:bg-success/10 dark:text-success inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
           Published
         </div>
       );
@@ -419,7 +419,7 @@ export default function LongFormListing({
           <div>
             <h4 className="text-muted-foreground dark:text-foreground text-sm font-medium">
               You have{" "}
-              <span className="text-blue-600 dark:text-blue-400">
+              <span className="text-muted-foreground">
                 {filteredPosts.length} longform {type} posts
               </span>
             </h4>
@@ -445,7 +445,7 @@ export default function LongFormListing({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
+                className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring"
                 placeholder="Search longform posts..."
               />
             </div>
@@ -455,8 +455,8 @@ export default function LongFormListing({
 
       {/* Bulk Actions */}
       {selectedPosts.size > 0 ? (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-700 dark:bg-blue-900/50">
-          <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+        <div className="border-border bg-muted dark:border-border dark:bg-muted/50 mb-4 flex items-center justify-between rounded-lg border p-4">
+          <span className="text-foreground dark:text-foreground text-sm font-medium">
             {selectedPosts.size} post{selectedPosts.size !== 1 ? "s" : ""}{" "}
             selected
           </span>
@@ -464,7 +464,7 @@ export default function LongFormListing({
             {type === "draft" ? (
               <Link
                 to="/dashboard/newlongformpost"
-                className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-blue-800 hover:border-blue-300 hover:text-blue-900 hover:shadow-sm focus:ring focus:ring-blue-300/25 active:border-blue-200 active:shadow-none dark:border-blue-700 dark:text-blue-300 dark:hover:border-blue-600 dark:hover:text-blue-200 dark:focus:ring-blue-600/40 dark:active:border-blue-700"
+                className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-primary/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-primary/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
               >
                 Create New
               </Link>
@@ -472,7 +472,7 @@ export default function LongFormListing({
             <button
               onClick={handleBulkDelete}
               disabled={bulkDeleteFetcher.state !== "idle"}
-              className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+              className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-destructive/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-destructive/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
             >
               {bulkDeleteFetcher.state !== "idle"
                 ? "Deleting..."
@@ -498,7 +498,7 @@ export default function LongFormListing({
                       : false
                   }
                   onChange={toggleSelectAll}
-                  className="dark:border-border dark:bg-card border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+                  className="dark:border-border dark:bg-card border-border text-primary focus:ring-primary h-4 w-4 rounded"
                 />
               </th>
               <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
@@ -611,7 +611,7 @@ export default function LongFormListing({
                     checked={selectedPosts.has(post.id)}
                     onChange={() => togglePostSelection(post.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="dark:border-border dark:bg-card border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+                    className="dark:border-border dark:bg-card border-border text-primary focus:ring-primary h-4 w-4 rounded"
                   />
                 </td>
                 <td className="p-3">
@@ -662,7 +662,7 @@ export default function LongFormListing({
                 </td>
                 {type === "scheduled" ? (
                   <td className="p-3 text-center">
-                    <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                    <div className="text-muted-foreground text-sm font-medium">
                       {countdowns[post.id] ?? "—"}
                     </div>
                   </td>
@@ -674,7 +674,7 @@ export default function LongFormListing({
                       <Link
                         to={`/dashboard/drafts/longform/edit/${post.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-blue-800 hover:border-blue-300 hover:text-blue-900 hover:shadow-sm focus:ring focus:ring-blue-300/25 active:border-blue-200 active:shadow-none dark:border-blue-700 dark:text-blue-300 dark:hover:border-blue-600 dark:hover:text-blue-200 dark:focus:ring-blue-600/40 dark:active:border-blue-700"
+                        className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-primary/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-primary/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
                       >
                         Edit
                       </Link>
@@ -686,7 +686,7 @@ export default function LongFormListing({
                             e.stopPropagation();
                             onEditPost(post);
                           }}
-                          className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-blue-800 hover:border-blue-300 hover:text-blue-900 hover:shadow-sm focus:ring focus:ring-blue-300/25 active:border-blue-200 active:shadow-none dark:border-blue-700 dark:text-blue-300 dark:hover:border-blue-600 dark:hover:text-blue-200 dark:focus:ring-blue-600/40 dark:active:border-blue-700"
+                          className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-primary/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-primary/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
                         >
                           Edit
                         </button>
@@ -697,7 +697,7 @@ export default function LongFormListing({
                               onReschedulePost(post);
                             }
                           }}
-                          className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none dark:border-green-700 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                          className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-success/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-success/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
                         >
                           Reschedule
                         </button>
@@ -749,7 +749,7 @@ export default function LongFormListing({
                                             | null) === post.id
                                         : false)
                                     }
-                                    className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
+                                    className="dark:bg-card border-border text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
                                   >
                                     {fetcher.state !== "idle" &&
                                     (formData
@@ -793,7 +793,7 @@ export default function LongFormListing({
                                             | null) === post.id
                                         : false)
                                     }
-                                    className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                                    className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-success/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-success/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
                                   >
                                     {fetcher.state !== "idle" &&
                                     (fetcher.formData
@@ -826,7 +826,7 @@ export default function LongFormListing({
                           deleteFetcher.state !== "idle" ||
                           bulkDeleteFetcher.state !== "idle"
                         }
-                        className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                        className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-destructive/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-destructive/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
                       >
                         {deleteFetcher.state !== "idle" &&
                         deleteFetcher.formData?.get("postId") === post.id

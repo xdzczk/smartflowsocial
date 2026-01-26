@@ -157,7 +157,7 @@ export function GiveawayBlacklistSettings({
           </Button>
 
           {fetcher.data?.success ? (
-            <p className="text-sm text-green-600">
+            <p className="text-success text-sm">
               Blacklist updated successfully!
             </p>
           ) : null}

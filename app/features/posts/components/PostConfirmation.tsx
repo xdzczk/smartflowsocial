@@ -262,7 +262,7 @@ export default function PostConfirmation({
           </div>
         ) : null}
         {signingError ? (
-          <div className="mx-auto mb-4 max-w-3xl rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+          <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mx-auto mb-4 max-w-3xl rounded-md border p-3 text-sm">
             {signingError}
           </div>
         ) : null}
@@ -402,7 +402,7 @@ export default function PostConfirmation({
                               <span
                                 // eslint-disable-next-line react/no-array-index-key -- Stable list of tags, no unique ID available
                                 key={tagIndex}
-                                className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300"
+                                className="bg-muted text-foreground dark:bg-muted dark:text-foreground rounded-full px-2 py-1 text-xs font-medium"
                               >
                                 #{tagValue}
                               </span>

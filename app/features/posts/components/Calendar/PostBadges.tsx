@@ -35,7 +35,7 @@ export function PostBadges({
   return (
     <>
       {post.repost ? (
-        <div className={`${positionClass} rounded-full bg-purple-500 p-0.5`}>
+        <div className={`${positionClass} bg-primary rounded-full p-0.5`}>
           <svg
             className={`${sizeClass} text-white`}
             fill="none"
@@ -52,7 +52,7 @@ export function PostBadges({
         </div>
       ) : null}
       {post.isQuotedPost ? (
-        <div className={`${positionClass} rounded-full bg-green-500 p-0.5`}>
+        <div className={`${positionClass} bg-success rounded-full p-0.5`}>
           <svg
             className={`${sizeClass} text-white`}
             fill="none"

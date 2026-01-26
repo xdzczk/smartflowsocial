@@ -13,7 +13,7 @@ export default function Toast({ toast, onClose }: ToastProps) {
     <div className="fixed right-4 bottom-4 z-50">
       <div
         className={`rounded-lg px-4 py-3 text-white shadow-lg ${
-          toast.type === "success" ? "bg-green-500" : "bg-red-500"
+          toast.type === "success" ? "bg-success" : "bg-destructive"
         }`}
       >
         <div className="flex items-start gap-2">

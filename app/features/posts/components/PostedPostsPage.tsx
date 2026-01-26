@@ -237,7 +237,7 @@ export default function PostedPostsPage() {
   // Handle nullable user - if user is null, we should not render the component
   if (!user) {
     return (
-      <div className="p-4 text-center text-red-600">
+      <div className="text-destructive p-4 text-center">
         Error: User data not available. Please refresh the page.
       </div>
     );

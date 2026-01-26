@@ -29,8 +29,8 @@ export function LongFormCoverImage({
             <span
               className={`rounded px-2 py-1 text-xs font-medium ${
                 uploadProvider.includes("BLOSSOM")
-                  ? "bg-purple-100 text-purple-800"
-                  : "bg-blue-100 text-blue-800"
+                  ? "bg-muted text-foreground"
+                  : "bg-muted text-foreground"
               }`}
             >
               {uploadProvider.includes("BLOSSOM")
@@ -42,7 +42,7 @@ export function LongFormCoverImage({
       </div>
 
       {uploadError ? (
-        <div className="mt-1 rounded border border-red-400 bg-red-100 p-2 text-sm text-red-700">
+        <div className="border-destructive bg-destructive/10 text-destructive mt-1 rounded border p-2 text-sm">
           {uploadError}
         </div>
       ) : null}
@@ -51,7 +51,7 @@ export function LongFormCoverImage({
         <div className="border-border hover:border-border dark:border-border dark:hover:border-border relative mt-1 rounded-lg border-2 border-dashed p-6 text-center transition-colors">
           {uploadFetcherState !== "idle" ? (
             <div className="flex items-center justify-center gap-2">
-              <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600"></div>
+              <div className="border-primary h-6 w-6 animate-spin rounded-full border-b-2"></div>
               <p className="text-muted-foreground dark:text-foreground text-sm">
                 Uploading...
               </p>
@@ -164,7 +164,7 @@ export function LongFormCoverImage({
                   size="sm"
                   onClick={onOpenAssetBrowser}
                   disabled={uploadFetcherState !== "idle"}
-                  className="bg-blue-600/90 text-white hover:bg-blue-600"
+                  className="bg-primary/90 text-primary-foreground hover:bg-primary"
                 >
                   Assets
                 </Button>
@@ -174,7 +174,7 @@ export function LongFormCoverImage({
                   size="sm"
                   onClick={onRemove}
                   disabled={uploadFetcherState !== "idle"}
-                  className="bg-red-600/90 text-white hover:bg-red-600"
+                  className="bg-destructive/90 hover:bg-destructive text-white"
                 >
                   Remove
                 </Button>

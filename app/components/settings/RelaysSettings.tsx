@@ -145,7 +145,7 @@ export function RelaysSettings({
                   </div>
                   <div className="shrink-0 text-sm">
                     {mr.enabled ? (
-                      <span className="text-green-600">Enabled</span>
+                      <span className="text-success">Enabled</span>
                     ) : (
                       <span className="text-muted-foreground">Disabled</span>
                     )}
@@ -238,9 +238,7 @@ export function RelaysSettings({
           </Button>
 
           {fetcher.data?.success ? (
-            <p className="text-sm text-green-600">
-              Relays updated successfully!
-            </p>
+            <p className="text-success text-sm">Relays updated successfully!</p>
           ) : null}
           {fetcher.data?.error ? (
             <p className="text-destructive text-sm">{fetcher.data.error}</p>

@@ -557,7 +557,7 @@ export default function DraftBulkResume({
           </div>
         ) : null}
         {signingError ? (
-          <div className="mx-auto mb-4 max-w-3xl rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+          <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mx-auto mb-4 max-w-3xl rounded-md border p-3 text-sm">
             {signingError}
           </div>
         ) : null}

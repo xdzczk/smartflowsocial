@@ -39,7 +39,7 @@ function renderFeatureValue(
 
   if (typeof value === "boolean") {
     return value ? (
-      <Check className="mx-auto h-5 w-5 text-green-500 dark:text-green-400" />
+      <Check className="text-success dark:text-success mx-auto h-5 w-5" />
     ) : (
       <X className="text-muted-foreground mx-auto h-5 w-5" />
     );

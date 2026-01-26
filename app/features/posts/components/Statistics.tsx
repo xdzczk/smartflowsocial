@@ -46,7 +46,7 @@ export default function Statistics() {
         {/* Card */}
         <Card>
           <CardContent className="flex grow items-center justify-between p-5">
-            <div className="flex size-16 items-center justify-center rounded-xl bg-green-500/20 text-green-600 dark:text-green-400">
+            <div className="bg-success/20 text-success dark:text-success flex size-16 items-center justify-center rounded-xl">
               <svg
                 className="hi-solid hi-check-circle inline-block size-8"
                 xmlns="http://www.w3.org/2000/svg"

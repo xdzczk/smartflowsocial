@@ -73,13 +73,13 @@ export function AssetsTab({
               type="text"
               value={searchInput}
               onChange={(e) => onSearchInputChange(e.target.value)}
-              className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
+              className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring"
               placeholder="Search assets by title, content, or tags..."
             />
           </div>
           <button
             type="submit"
-            className="ml-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 ml-2 rounded-lg px-4 py-2"
           >
             Search
           </button>
@@ -89,7 +89,7 @@ export function AssetsTab({
           {selectedAssets.length > 0 ? (
             <button
               onClick={onBulkPostAssets}
-              className="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+              className="bg-success hover:bg-success/90 rounded-lg px-4 py-2 text-white"
             >
               Post Selected ({selectedAssets.length})
             </button>
@@ -98,7 +98,7 @@ export function AssetsTab({
             <button
               onClick={onBulkDeleteAssets}
               disabled={deleteFetcherState !== "idle"}
-              className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-destructive hover:bg-destructive/90 rounded-lg px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {deleteFetcherState !== "idle"
                 ? "Deleting..."
@@ -157,7 +157,7 @@ export function AssetsTab({
                         : false
                     }
                     onChange={onSelectAllAssets}
-                    className="dark:border-border dark:bg-card border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+                    className="dark:border-border dark:bg-card border-border text-primary focus:ring-primary h-4 w-4 rounded"
                   />
                 </th>
                 <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
@@ -194,7 +194,7 @@ export function AssetsTab({
                       type="checkbox"
                       checked={selectedAssets.includes(asset.id)}
                       onChange={() => onAssetSelect(asset.id)}
-                      className="dark:border-border dark:bg-card border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+                      className="dark:border-border dark:bg-card border-border text-primary focus:ring-primary h-4 w-4 rounded"
                     />
                   </td>
                   <td className="p-3">
@@ -246,10 +246,10 @@ export function AssetsTab({
                     <span
                       className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                         asset.assetType === "IMAGE"
-                          ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                          ? "bg-muted text-foreground"
                           : asset.assetType === "VIDEO"
-                            ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                            : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            ? "bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive"
+                            : "bg-muted text-foreground dark:bg-muted dark:text-foreground"
                       }`}
                     >
                       {asset.assetType}
@@ -268,7 +268,7 @@ export function AssetsTab({
                         type="submit"
                         onClick={(e) => onDeleteAsset(e, asset.id)}
                         disabled={deleteFetcherState !== "idle"}
-                        className="dark:bg-card inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                        className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-destructive/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-destructive/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
                       >
                         Delete
                       </button>

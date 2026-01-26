@@ -172,7 +172,7 @@ export function ScheduleIntervalsSettings({
           </Button>
 
           {fetcher.data?.success ? (
-            <p className="text-sm text-green-600">
+            <p className="text-success text-sm">
               Schedule intervals updated successfully!
             </p>
           ) : null}

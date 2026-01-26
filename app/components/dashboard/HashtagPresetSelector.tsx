@@ -183,7 +183,7 @@ export function HashtagPresetSelector({
                     className={`cursor-pointer rounded-lg border p-3 transition-colors ${
                       selectedPresetId === preset.id
                         ? "border-border bg-muted dark:border-primary dark:bg-primary/10"
-                        : "hover:bg-muted dark:hover:bg-accent/50"
+                        : "hover:bg-muted"
                     } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
                     onClick={() => !disabled && handlePresetClick(preset)}
                     onKeyDown={handleKeyDown}

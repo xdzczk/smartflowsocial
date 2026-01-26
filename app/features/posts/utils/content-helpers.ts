@@ -68,9 +68,9 @@ export function getContentPreview(item: CombinedContent): string | null {
 
 // Status color constants - neutral outline style for light mode
 const DRAFT_COLOR =
-  "border border-orange-300 bg-transparent text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 dark:border-transparent";
+  "border border-border bg-transparent text-foreground dark:bg-muted dark:text-foreground dark:border-transparent";
 const PUBLISHED_COLOR =
-  "border border-green-300 bg-transparent text-green-700 dark:bg-green-500/20 dark:text-green-400 dark:border-transparent";
+  "border border-success bg-transparent text-success dark:bg-success/20 dark:text-success dark:border-transparent";
 const SCHEDULED_COLOR =
   "border border-border bg-transparent text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent";
 
@@ -107,7 +107,7 @@ export function getStatusColor(item: CombinedContent): string {
     }
 
     if (state === "FAILED") {
-      return "border border-red-300 bg-transparent text-red-700 dark:bg-destructive/20 dark:text-destructive dark:border-transparent";
+      return "border border-destructive bg-transparent text-destructive dark:bg-destructive/20 dark:text-destructive dark:border-transparent";
     }
     if (state === "CANCELLED") {
       return "border border-border bg-transparent text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent";
@@ -273,7 +273,7 @@ export function getContentTypeBadge(item: CombinedContent): {
   if (kind === 6) {
     return {
       className:
-        "inline-flex rounded-full bg-orange-500/20 px-2 py-1 text-xs font-medium text-orange-600 dark:text-orange-400",
+        "inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground dark:text-foreground",
       text: "REPOST",
     };
   } else if (kind === 30023) {

@@ -112,7 +112,7 @@ export default function BulkPostsActionButtons({
             type="button"
             onClick={handleBulkRecyclableToggle}
             disabled={isProcessing}
-            className="rounded-md bg-purple-100 px-4 py-2 text-sm font-medium text-purple-700 shadow-md transition-all hover:scale-105 hover:bg-purple-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-purple-800 dark:text-purple-300 dark:hover:bg-purple-700"
+            className="bg-muted text-foreground hover:bg-muted/80 rounded-md px-4 py-2 text-sm font-medium shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
           >
             {posts.every((post) => post.isRecyclable)
               ? "Mark All Non-Recyclable"

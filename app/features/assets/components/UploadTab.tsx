@@ -95,7 +95,7 @@ export function UploadTab({
             <button
               type="submit"
               disabled={assetFetcher.state !== "idle"}
-              className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-lg px-4 py-2 disabled:opacity-50"
             >
               {assetFetcher.state !== "idle" ? "Adding..." : "Add Text Asset"}
             </button>
@@ -148,7 +148,7 @@ export function UploadTab({
                 Supports images (up to 10MB) and videos (up to 100MB)
               </p>
               {uploadProvider ? (
-                <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                <p className="text-muted-foreground mt-1 text-xs">
                   Using{" "}
                   {uploadProvider === "nostr"
                     ? "NOSTR"
@@ -175,7 +175,7 @@ export function UploadTab({
             <button
               type="submit"
               disabled={singleFileUploading}
-              className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-lg px-4 py-2 disabled:opacity-50"
             >
               {singleFileUploading ? "Uploading..." : "Add Media Asset"}
             </button>
@@ -252,7 +252,7 @@ export function UploadTab({
               </div>
               <div className="flex flex-col gap-2">
                 {uploadProvider ? (
-                  <p className="text-center text-xs text-blue-600 dark:text-blue-400">
+                  <p className="text-muted-foreground text-center text-xs">
                     Using{" "}
                     {uploadProvider === "nostr"
                       ? "NOSTR"
@@ -264,7 +264,7 @@ export function UploadTab({
                   type="button"
                   onClick={onBulkFileUpload}
                   disabled={bulkFileUploading}
-                  className="w-full rounded-lg bg-green-600 px-4 py-3 text-lg font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                  className="bg-success hover:bg-success/90 w-full rounded-lg px-4 py-3 text-lg font-semibold text-white disabled:opacity-50"
                 >
                   {bulkFileUploading
                     ? "Uploading..."

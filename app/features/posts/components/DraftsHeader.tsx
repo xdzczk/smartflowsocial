@@ -33,7 +33,7 @@ export function DraftsHeader({
         <h3 className="mb-1 font-semibold">Draft Posts</h3>
         <h4 className="text-muted-foreground dark:text-foreground text-sm font-medium">
           You have{" "}
-          <span className="text-blue-600 dark:text-blue-400">
+          <span className="text-muted-foreground">
             {getCount()} draft {getItemType()}
           </span>
         </h4>

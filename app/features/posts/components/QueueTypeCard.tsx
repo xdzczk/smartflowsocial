@@ -52,7 +52,7 @@ export function QueueTypeCard({
   };
 
   return (
-    <Card className="hover:bg-accent/50 transition-colors">
+    <Card className="hover:bg-muted transition-colors">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">

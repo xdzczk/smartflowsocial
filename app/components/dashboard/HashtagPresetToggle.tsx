@@ -85,7 +85,7 @@ export function HashtagPresetToggle({
           className={`rounded-lg p-3 ${
             useHashtagPresets
               ? "dark:bg-card border-border bg-muted dark:border-border border"
-              : "border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
+              : "border-success bg-success/10 dark:border-success dark:bg-success/20/20 border"
           }`}
         >
           <div className="flex items-center justify-between">
@@ -130,8 +130,8 @@ export function HashtagPresetToggle({
       {useHashtagPresets ? (
         <div className="space-y-3">
           {presets.length === 0 ? (
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+            <div className="dark:border-border dark:bg-muted rounded-lg border border-yellow-200 bg-yellow-50 p-3">
+              <p className="dark:text-foreground text-sm text-yellow-700">
                 No hashtag presets available. Create some in Settings to reuse
                 hashtags across your posts.
               </p>

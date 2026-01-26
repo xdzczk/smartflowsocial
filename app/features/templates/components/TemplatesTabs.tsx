@@ -15,7 +15,7 @@ export function TemplatesTabs({ activeTab, onTabChange }: TemplatesTabsProps) {
           onClick={() => onTabChange("assets")}
           className={`border-b-2 px-1 pb-4 text-sm font-medium ${
             activeTab === "assets"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              ? "border-primary text-muted-foreground"
               : "dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:border-border hover:text-muted-foreground border-transparent"
           }`}
         >
@@ -25,7 +25,7 @@ export function TemplatesTabs({ activeTab, onTabChange }: TemplatesTabsProps) {
           onClick={() => onTabChange("upload")}
           className={`border-b-2 px-1 pb-4 text-sm font-medium ${
             activeTab === "upload"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              ? "border-primary text-muted-foreground"
               : "dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:border-border hover:text-muted-foreground border-transparent"
           }`}
         >

@@ -120,25 +120,25 @@ export function getTrustLevel(score: number): {
   if (score >= 80) {
     return {
       level: "Highly Trusted",
-      color: "text-green-600 dark:text-green-400",
+      color: "text-success dark:text-success",
       description: "Well-established profile with strong community engagement",
     };
   } else if (score >= 60) {
     return {
       level: "Trusted",
-      color: "text-blue-600 dark:text-blue-400",
+      color: "text-muted-foreground",
       description: "Active profile with good community standing",
     };
   } else if (score >= 40) {
     return {
       level: "Developing",
-      color: "text-yellow-600 dark:text-yellow-400",
+      color: "text-yellow-600 dark:text-foreground",
       description: "Growing profile building community presence",
     };
   } else if (score >= 20) {
     return {
       level: "New",
-      color: "text-orange-600 dark:text-orange-400",
+      color: "text-foreground dark:text-foreground",
       description: "Recently created or limited activity profile",
     };
   } else {
@@ -155,13 +155,13 @@ export function getTrustLevel(score: number): {
  */
 export function getTrustScoreBadgeColor(score: number): string {
   if (score >= 80) {
-    return "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800";
+    return "bg-success/20 dark:bg-success/20 text-success dark:text-success border-success dark:border-success";
   } else if (score >= 60) {
-    return "bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800";
+    return "bg-muted dark:bg-muted/20 text-foreground dark:text-foreground border-border dark:border-border";
   } else if (score >= 40) {
-    return "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800";
+    return "bg-yellow-100 dark:bg-muted text-yellow-800 dark:text-foreground border-yellow-200 dark:border-border";
   } else if (score >= 20) {
-    return "bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800";
+    return "bg-muted dark:bg-muted text-foreground dark:text-foreground border-border dark:border-border";
   } else {
     return "bg-gray-100 dark:bg-card text-gray-800 dark:text-foreground border-gray-200 dark:border-border";
   }

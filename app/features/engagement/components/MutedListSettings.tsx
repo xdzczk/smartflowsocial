@@ -128,7 +128,7 @@ export function MutedListSettings({
 
         {/* Success/Error Messages */}
         {syncFetcher.data?.success ? (
-          <p className="text-sm text-green-600">
+          <p className="text-success text-sm">
             Muted list synced successfully! Found {mutedCount} muted users.
           </p>
         ) : null}
@@ -155,7 +155,7 @@ export function MutedListSettings({
         </div>
 
         {toggleFetcher.data?.success ? (
-          <p className="text-sm text-green-600">
+          <p className="text-success text-sm">
             Filter setting updated successfully!
           </p>
         ) : null}
@@ -183,7 +183,7 @@ export function MutedListSettings({
         </div>
 
         {toggleLowTrustFetcher.data?.success ? (
-          <p className="text-sm text-green-600">
+          <p className="text-success text-sm">
             Low trust filter setting updated successfully!
           </p>
         ) : null}

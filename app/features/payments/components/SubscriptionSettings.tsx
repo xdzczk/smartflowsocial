@@ -78,11 +78,11 @@ export function SubscriptionSettings({
   const getStatusColor = (status: string) => {
     switch (status.toUpperCase()) {
       case "ACTIVE":
-        return "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20";
+        return "text-success bg-success/20 dark:text-success dark:bg-success/20/20";
       case "CANCELED":
-        return "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20";
+        return "text-destructive bg-destructive/10 dark:text-destructive dark:bg-destructive/20/20";
       case "PAST_DUE":
-        return "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20";
+        return "text-yellow-600 bg-yellow-100 dark:text-foreground dark:bg-muted";
       case "INACTIVE":
         return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
       default:
@@ -156,7 +156,7 @@ export function SubscriptionSettings({
                         {subscription.status}
                       </span>
                       {subscription.plan?.enableLifetimeAccess ? (
-                        <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">
+                        <span className="bg-muted text-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                           Lifetime Access
                         </span>
                       ) : null}
@@ -186,7 +186,7 @@ export function SubscriptionSettings({
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Start Date */}
                 <div className="flex items-center gap-3 rounded-lg border p-4">
-                  <Calendar className="h-5 w-5 text-green-500" />
+                  <Calendar className="text-success h-5 w-5" />
                   <div>
                     <p className="font-medium">Subscription Started</p>
                     <p className="text-muted-foreground text-sm">
@@ -200,7 +200,7 @@ export function SubscriptionSettings({
                   subscription.nextPaymentDue) &&
                 !subscription.plan.enableLifetimeAccess ? (
                   <div className="flex items-center gap-3 rounded-lg border p-4">
-                    <CreditCard className="h-5 w-5 text-blue-500" />
+                    <CreditCard className="text-primary h-5 w-5" />
                     <div>
                       <p className="font-medium">Next Billing Date</p>
                       <p className="text-muted-foreground text-sm">
@@ -217,10 +217,10 @@ export function SubscriptionSettings({
 
             {/* Cancellation Notice */}
             {subscription.cancelAtPeriodEnd ? (
-              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
+              <div className="dark:border-border dark:bg-muted rounded-lg border border-yellow-200 bg-yellow-50 p-4">
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  <AlertCircle className="dark:text-foreground h-5 w-5 text-yellow-600" />
+                  <p className="dark:text-foreground text-sm font-medium text-yellow-800">
                     Your subscription is set to cancel at the end of the current
                     period
                   </p>
@@ -232,7 +232,7 @@ export function SubscriptionSettings({
             <div className="text-center">
               <Link
                 to="/plans"
-                className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                className="text-primary hover:text-primary/90 inline-flex items-center gap-2 text-sm"
               >
                 View All Plans & Features
                 <ArrowUpRight className="h-4 w-4" />
@@ -253,7 +253,7 @@ export function SubscriptionSettings({
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="mb-1 flex items-center gap-2">
-                            <Receipt className="h-4 w-4 text-green-600" />
+                            <Receipt className="text-success h-4 w-4" />
                             <p className="text-sm font-medium">
                               {payment.description ??
                                 payment.planName ??
@@ -281,7 +281,7 @@ export function SubscriptionSettings({
                               title="Copy payment hash"
                             >
                               {copiedHash === payment.id ? (
-                                <Check className="h-3 w-3 text-green-600" />
+                                <Check className="text-success h-3 w-3" />
                               ) : (
                                 <Copy className="text-muted-foreground h-3 w-3" />
                               )}
@@ -289,13 +289,13 @@ export function SubscriptionSettings({
                           </div>
 
                           {payment.planName ? (
-                            <div className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                            <div className="bg-muted text-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                               {payment.planName}
                             </div>
                           ) : null}
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-green-600">
+                          <p className="text-success font-semibold">
                             {formatCurrency(payment.amountUsd)}
                           </p>
                           {payment.amount > 0 ? (
@@ -339,7 +339,7 @@ export function SubscriptionSettings({
           </p>
           <Link
             to="/plans"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
           >
             View Plans
             <ArrowUpRight className="h-4 w-4" />

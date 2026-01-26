@@ -40,15 +40,15 @@ export const getQueueColor = (
       border: "border-primary/20",
     },
     memes: {
-      bg: "bg-green-500/10",
-      text: "text-green-600 dark:text-green-400",
-      hover: "hover:bg-green-500/15",
-      border: "border-green-500/20",
+      bg: "bg-success/10",
+      text: "text-success dark:text-success",
+      hover: "hover:bg-success/15",
+      border: "border-success/20",
     },
     quotes: {
       bg: "bg-accent/15",
       text: "text-accent-foreground",
-      hover: "hover:bg-accent/20",
+      hover: "hover:bg-muted",
       border: "border-accent/20",
     },
     unassigned: {

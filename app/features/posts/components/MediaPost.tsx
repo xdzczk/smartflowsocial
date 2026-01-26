@@ -317,7 +317,7 @@ export default function MediaPost({
                       onClick={() =>
                         setFiles(files.filter((_, i) => i !== index))
                       }
-                      className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                      className="bg-destructive hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1 text-white"
                       disabled={isUploading}
                     >
                       ×
@@ -335,7 +335,7 @@ export default function MediaPost({
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
-              <div className="text-green-500">
+              <div className="text-success">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-12 w-12"
@@ -405,7 +405,7 @@ export default function MediaPost({
               checked={isRecyclable}
               onChange={(e) => setIsRecyclable(e.target.checked)}
               disabled={isUploading || isUploaded}
-              className="border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+              className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
             />
             <label
               htmlFor="isRecyclable"
@@ -430,7 +430,7 @@ export default function MediaPost({
             showTimeInput={true}
           />
           {timeError ? (
-            <p className="text-sm text-red-500">{timeError}</p>
+            <p className="text-destructive text-sm">{timeError}</p>
           ) : null}
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -440,8 +440,8 @@ export default function MediaPost({
               <span
                 className={`rounded px-2 py-1 text-xs font-medium ${
                   uploadProvider.includes("BLOSSOM")
-                    ? "bg-purple-100 text-purple-800"
-                    : "bg-blue-100 text-blue-800"
+                    ? "bg-muted text-foreground"
+                    : "bg-muted text-foreground"
                 }`}
               >
                 {uploadProvider.includes("BLOSSOM")
@@ -452,7 +452,7 @@ export default function MediaPost({
           ) : null}
           <button
             type="submit"
-            className="rounded-lg bg-green-500 px-8 py-4 text-white hover:bg-green-600 disabled:opacity-50"
+            className="bg-success hover:bg-success rounded-lg px-8 py-4 text-white disabled:opacity-50"
             disabled={isUploading || files.length === 0}
           >
             {isUploading ? "Uploading..." : "Upload Media →"}

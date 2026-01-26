@@ -323,7 +323,7 @@ export default function TextPost({
         </div>
       ) : null}
       {signingError ? (
-        <div className="mb-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+        <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mb-3 rounded-md border p-3 text-sm">
           {signingError}
         </div>
       ) : null}
@@ -331,7 +331,7 @@ export default function TextPost({
         <Textarea
           id="content"
           {...form.register("content")}
-          className={form.formState.errors.content ? "border-red-500" : ""}
+          className={form.formState.errors.content ? "border-destructive" : ""}
           placeholder="Start writing your post here..."
           rows={6}
           disabled={fetcher.state !== "idle" || isSigning}
@@ -362,7 +362,7 @@ export default function TextPost({
         </Button>
       </div>
       {form.formState.errors.content ? (
-        <div className="mt-1 text-sm text-red-500">
+        <div className="text-destructive mt-1 text-sm">
           {form.formState.errors.content.message}
         </div>
       ) : null}
@@ -402,7 +402,7 @@ export default function TextPost({
               id="isRecyclable"
               {...form.register("isRecyclable")}
               disabled={fetcher.state !== "idle" || isSigning}
-              className="border-border h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+              className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
             />
             <Label
               htmlFor="isRecyclable"
@@ -493,7 +493,7 @@ export default function TextPost({
             type="submit"
             value="post-text"
             name="_action"
-            className="bg-green-600 text-white hover:bg-green-700"
+            className="bg-success hover:bg-success/90 text-white"
             disabled={fetcher.state !== "idle" || isSigning}
           >
             <svg

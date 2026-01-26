@@ -61,7 +61,7 @@ export default function TemplateModal({
             id="templateName"
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
-            className="dark:border-border dark:bg-card dark:text-foreground dark:focus:border-primary border-border text-foreground w-full rounded-lg border px-3 py-2 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
+            className="dark:border-border dark:bg-card dark:text-foreground dark:focus:border-primary border-border text-foreground focus:border-primary focus:ring-primary/50 w-full rounded-lg border px-3 py-2 focus:ring"
             placeholder="Enter template name..."
           />
         </div>
@@ -76,7 +76,7 @@ export default function TemplateModal({
           <button
             onClick={handleCreateTemplate}
             disabled={!templateName.trim() || templateFetcher.state !== "idle"}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:bg-green-300 dark:bg-green-700 dark:hover:bg-green-600 dark:disabled:bg-green-800"
+            className="bg-success hover:bg-success/90 dark:bg-success dark:hover:bg-success rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:disabled:opacity-50"
           >
             {templateFetcher.state !== "idle" ? "Creating..." : "Create"}
           </button>

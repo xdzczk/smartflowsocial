@@ -11,7 +11,7 @@ export function PostStatusIcons({ post, isLongform }: PostStatusIconsProps) {
       !post.manual_override &&
       Boolean(!post.manual_override) ? (
         <svg
-          className="h-3 w-3 text-blue-500"
+          className="text-muted-foreground h-3 w-3"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -25,7 +25,7 @@ export function PostStatusIcons({ post, isLongform }: PostStatusIconsProps) {
 
       {post.signedEvent && Boolean(post.signedEvent) ? (
         <svg
-          className="h-3 w-3 text-green-500"
+          className="text-success h-3 w-3"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -46,13 +46,13 @@ export function PostStatusBadges({ post, isLongform }: PostStatusIconsProps) {
       {!isLongform &&
       !post.manual_override &&
       Boolean(!post.manual_override) ? (
-        <span className="rounded-full border border-blue-300 bg-transparent px-2 py-1 text-xs text-blue-700 dark:border-transparent dark:bg-blue-900/20 dark:text-blue-400">
+        <span className="border-border text-foreground dark:bg-muted/20 dark:text-muted-foreground rounded-full border bg-transparent px-2 py-1 text-xs dark:border-transparent">
           Auto
         </span>
       ) : null}
 
       {post.signedEvent && Boolean(post.signedEvent) ? (
-        <span className="rounded-full border border-green-300 bg-transparent px-2 py-1 text-xs text-green-700 dark:border-transparent dark:bg-green-900/20 dark:text-green-400">
+        <span className="border-success text-success dark:bg-success/20/20 dark:text-success rounded-full border bg-transparent px-2 py-1 text-xs dark:border-transparent">
           Signed
         </span>
       ) : null}

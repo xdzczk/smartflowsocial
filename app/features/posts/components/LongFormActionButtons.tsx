@@ -68,7 +68,7 @@ export function LongFormActionButtons({
             type="button"
             onClick={onSchedule}
             disabled={isDisabled}
-            className="flex-1 bg-blue-600 px-8 font-medium text-white hover:bg-blue-700"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 px-8 font-medium"
           >
             {isSigning
               ? "Waiting for signer…"
@@ -81,7 +81,7 @@ export function LongFormActionButtons({
             type="button"
             onClick={onPublish}
             disabled={isDisabled}
-            className="flex-1 bg-green-600 px-8 font-medium text-white hover:bg-green-700"
+            className="bg-success hover:bg-success/90 flex-1 px-8 font-medium text-white"
           >
             {isSigning
               ? "Waiting for signer…"

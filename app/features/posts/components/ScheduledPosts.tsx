@@ -24,7 +24,7 @@ export default function ScheduledPosts() {
             <h3 className="mb-1 font-semibold">Scheduled Posts</h3>
             <h4 className="text-muted-foreground text-sm font-medium">
               You have{" "}
-              <span className="text-blue-600 dark:text-blue-400">
+              <span className="text-muted-foreground">
                 {scheduledPosts.length} scheduled posts
               </span>
             </h4>
@@ -50,7 +50,7 @@ export default function ScheduledPosts() {
                 type="text"
                 id="search"
                 name="search"
-                className="border-border placeholder-muted-foreground dark:border-border dark:bg-card dark:focus:border-primary block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:border-blue-500 focus:ring focus:ring-blue-500/50"
+                className="border-border placeholder-muted-foreground dark:border-border dark:bg-card dark:focus:border-primary focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring"
                 placeholder="Search posts.."
               />
             </div>
@@ -155,7 +155,7 @@ export default function ScheduledPosts() {
                         <div
                           className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${
                             post.signedEvent
-                              ? "bg-blue-100 text-blue-900 dark:border-blue-900/75 dark:bg-blue-700/10 dark:text-blue-200"
+                              ? "bg-muted text-foreground dark:border-border/75 dark:bg-primary/90/10 dark:text-foreground"
                               : "bg-emerald-100 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-700/10 dark:text-emerald-200"
                           }`}
                         >
@@ -283,7 +283,7 @@ export default function ScheduledPosts() {
                     <span
                       className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${
                         selectedPost.signedEvent
-                          ? "bg-blue-100 text-blue-900 dark:border-blue-900/75 dark:bg-blue-700/10 dark:text-blue-200"
+                          ? "bg-muted text-foreground dark:border-border/75 dark:bg-primary/90/10 dark:text-foreground"
                           : "bg-emerald-100 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-700/10 dark:text-emerald-200"
                       }`}
                     >

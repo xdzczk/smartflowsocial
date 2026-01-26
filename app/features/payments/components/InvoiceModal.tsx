@@ -33,8 +33,8 @@ export function InvoiceModal({
           <h3 className="text-foreground mb-2 text-lg font-semibold dark:text-white">
             Complete Payment
           </h3>
-          <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/30">
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
+          <div className="bg-muted dark:bg-muted/30 rounded-lg p-3">
+            <p className="text-foreground dark:text-foreground text-sm font-medium">
               Selected Plan: {invoiceData.planName}
             </p>
           </div>
@@ -72,11 +72,11 @@ export function InvoiceModal({
               type="text"
               value={invoiceData.invoice}
               readOnly
-              className="dark:border-border dark:bg-card dark:text-foreground border-border bg-muted text-foreground dark:placeholder-muted-foreground min-w-0 flex-1 rounded-l-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              className="dark:border-border dark:bg-card dark:text-foreground border-border bg-muted text-foreground dark:placeholder-muted-foreground focus:border-primary focus:ring-primary min-w-0 flex-1 rounded-l-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
             />
             <button
               onClick={() => onCopy(invoiceData.invoice)}
-              className="border-border dark:border-border rounded-r-lg border border-l-0 bg-blue-500 px-3 py-2 text-sm text-white hover:bg-blue-600 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              className="border-border dark:border-border bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary rounded-r-lg border border-l-0 px-3 py-2 text-sm focus:ring-1 focus:outline-none"
             >
               Copy
             </button>
@@ -96,7 +96,7 @@ export function InvoiceModal({
             />
           </div>
           {isPolling ? (
-            <div className="flex items-center justify-center text-sm text-blue-600 dark:text-blue-400">
+            <div className="text-muted-foreground flex items-center justify-center text-sm">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Waiting for payment...
             </div>
@@ -116,7 +116,7 @@ export function InvoiceModal({
                 ).padStart(2, "0")}
               </>
             ) : (
-              <span className="text-red-500">Payment expired</span>
+              <span className="text-destructive">Payment expired</span>
             )}
           </div>
         </div>
