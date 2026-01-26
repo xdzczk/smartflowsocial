@@ -1,9 +1,4 @@
-import {
-  useParams,
-  useSearchParams,
-  useNavigate,
-  useFetcher,
-} from "@remix-run/react";
+import { useParams, useSearchParams, useNavigate } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
@@ -148,7 +143,6 @@ export default function PostedPostsPage() {
   const _params = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const postFetcher = useFetcher();
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
   const [modalPost, setModalPost] = useState<{
@@ -165,49 +159,54 @@ export default function PostedPostsPage() {
   // Check for published URL param
   useEffect(() => {
     const publishedPostId = searchParams.get("published");
-    if (publishedPostId && user) {
+    if (publishedPostId && user && !modalPostId && !showPublishModal) {
       // Use setTimeout to avoid setState in effect warning
       setTimeout(() => {
         setModalPostId(publishedPostId);
-        // Fetch post data
-        postFetcher.load(`/api/posts/${publishedPostId}`);
       }, 0);
-    }
-  }, [searchParams, user, postFetcher]);
 
-  // Handle post fetcher data
-  useEffect(() => {
-    if (postFetcher.data && modalPostId) {
-      const data = postFetcher.data as {
-        post?: {
-          id: string;
-          publishAttemptId: string | null;
-          currentState?: string | null;
-        };
-        longFormPost?: {
-          id: string;
-          publishAttemptId: string | null;
-          currentState?: string | null;
-        };
-        error?: string;
-      };
-      const post = data.post;
-      const longFormPost = data.longFormPost;
+      // Fetch post data using fetch directly for API routes
+      void (async () => {
+        try {
+          const res = await fetch(`/api/posts/${publishedPostId}`);
+          if (!res.ok) {
+            throw new Error(`Failed to fetch: ${res.status}`);
+          }
+          const data = (await res.json()) as {
+            post?: {
+              id: string;
+              publishAttemptId: string | null;
+              currentState?: string | null;
+            };
+            longFormPost?: {
+              id: string;
+              publishAttemptId: string | null;
+              currentState?: string | null;
+            };
+            error?: string;
+          };
 
-      if (post || longFormPost) {
-        // Use setTimeout to avoid setState in effect warning
-        setTimeout(() => {
-          setModalPost(post ?? null);
-          setModalLongFormPost(longFormPost ?? null);
-          setShowPublishModal(true);
-          // Clear URL param to prevent re-showing on refresh
-          const newSearchParams = new URLSearchParams(searchParams);
-          newSearchParams.delete("published");
-          setSearchParams(newSearchParams, { replace: true });
-        }, 0);
-      }
+          if (data.post || data.longFormPost) {
+            setTimeout(() => {
+              setModalPost(data.post ?? null);
+              setModalLongFormPost(data.longFormPost ?? null);
+              setShowPublishModal(true);
+            }, 0);
+            // Clear URL param to prevent re-showing on refresh
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("published");
+            setSearchParams(newSearchParams, { replace: true });
+          }
+        } catch (error) {
+          console.error("Failed to fetch post data:", error);
+          // Reset state on error
+          setTimeout(() => {
+            setModalPostId(null);
+          }, 0);
+        }
+      })();
     }
-  }, [postFetcher.data, modalPostId, searchParams, setSearchParams]);
+  }, [searchParams, user, modalPostId, showPublishModal, setSearchParams]);
 
   // Set up intersection observer for infinite scroll
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({

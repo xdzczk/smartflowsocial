@@ -286,6 +286,12 @@ export default function PublishResultModal({
     return "publishing";
   }, [action, relayAcks.length, relayStatusCounts]);
 
+  // Early return if modal is not open to prevent blocking
+  // Must be after all hooks
+  if (!isOpen) {
+    return null;
+  }
+
   // Format scheduled time
   const formatScheduledTime = () => {
     if (!scheduledFor) return "";
@@ -309,8 +315,14 @@ export default function PublishResultModal({
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent
         className="max-w-2xl [&>button]:hidden"
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          // Prevent closing by clicking outside
+          e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          // Prevent closing with Escape key
+          e.preventDefault();
+        }}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
