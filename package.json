@@ -75,7 +75,8 @@
     "precheck": "pnpm lint && pnpm exec tsc --noEmit",
     "validate": "pnpm format:check && pnpm lint:ci && pnpm typecheck",
     "clean": "rm -rf build .remix node_modules/.cache coverage .tsbuildinfo",
-    "lint:fix": "node scripts/fix-eslint-errors.js"
+    "lint:fix": "node scripts/fix-eslint-errors.js",
+    "generate-icons": "tsx scripts/generate-pwa-icons.ts"
   },
   "eslintIgnore": [
     "/node_modules",

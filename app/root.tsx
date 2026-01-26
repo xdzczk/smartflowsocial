@@ -39,6 +39,17 @@ export const links: LinksFunction = () => {
     },
     { rel: "stylesheet", href: stylesheet },
     ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
+    // PWA manifest
+    { rel: "manifest", href: "/manifest.json" },
+    // Apple touch icons for iOS
+    {
+      rel: "apple-touch-icon",
+      href: "/apple-touch-icon.png",
+      sizes: "180x180",
+    },
+    // Standard icons
+    { rel: "icon", href: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    { rel: "icon", href: "/icon-512.png", sizes: "512x512", type: "image/png" },
   ];
 };
 
@@ -93,6 +104,11 @@ export const meta = () => [
   { name: "twitter:description", content: APP_DESCRIPTION },
   { name: "robots", content: "index, follow" },
   { name: "viewport", content: "width=device-width, initial-scale=1" },
+  // iOS PWA meta tags
+  { name: "apple-mobile-web-app-capable", content: "yes" },
+  { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+  { name: "apple-mobile-web-app-title", content: APP_NAME },
+  { name: "theme-color", content: "#4408FF" },
 ];
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;

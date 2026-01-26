@@ -19,10 +19,10 @@ import {
 
 import { ExpandableNavigationSection } from "~/components/layout/ExpandableNavigationSection";
 import { GlobalSearchBar } from "~/components/layout/GlobalSearchBar";
+import UserMenu from "~/components/layout/UserMenu";
 import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/ui/Logo";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
-import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
 import UpgradePrompt from "~/features/payments/components/UpgradePrompt";
 import {
   useFeatureAccess,
@@ -30,7 +30,6 @@ import {
   getMinimumPlanForFeature,
   type FeatureName,
 } from "~/features/payments/types";
-import AccountSwitchMenu from "~/features/user/components/AccountSwitchMenu";
 
 // Navigation item component with lock functionality
 interface NavigationItemProps {
@@ -308,7 +307,7 @@ export default function Header() {
         id="page-header"
         className={`bg-background border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b shadow-sm ${desktopSidebarOpen ? "lg:pl-64" : ""}`}
       >
-        <div className="max-w-10xl mx-auto flex w-full justify-between px-4 lg:px-8">
+        <div className="max-w-10xl mx-auto flex w-full justify-between px-3 sm:px-4 lg:px-8">
           {/* Left Section */}
           <div className="flex items-center gap-2">
             {/* Toggle Sidebar on Desktop */}
@@ -337,46 +336,19 @@ export default function Header() {
           </div>
           {/* END Left Section */}
 
-          {/* Center Section - Global Search (Desktop) */}
-          <div className="hidden flex-1 items-center lg:flex lg:px-4">
+          {/* Center Section - Global Search */}
+          <div className="flex flex-1 items-center px-2 sm:px-3 lg:px-4">
             <GlobalSearchBar className="w-full max-w-xl" />
           </div>
-          {/* END Center Section - Global Search (Desktop) */}
-
-          {/* Center Section - Logo (Mobile) */}
-          <div className="flex items-center lg:hidden">
-            <Link
-              prefetch="intent"
-              to="/dashboard"
-              className="group text-foreground hover:text-primary inline-flex items-center gap-2 text-lg font-bold tracking-wide transition-colors"
-            >
-              <Logo
-                lightSrc="/logos/Logo-Full-LightMode.svg"
-                darkSrc="/logos/Logo-Full-DarkMode.svg"
-                alt="SmartFlow Social"
-                className="h-8 w-auto"
-              />
-            </Link>
-          </div>
-          {/* END Center Section - Logo (Mobile) */}
+          {/* END Center Section - Global Search */}
 
           {/* Right Section */}
-          <div className="flex items-center gap-2">
-            {/* Global Search (Mobile) */}
-            <div className="lg:hidden">
-              <GlobalSearchBar className="w-64" />
-            </div>
-            {/* END Global Search (Mobile) */}
-
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            {/* Account Switcher for Premium/Founder Parents and Child -> Parent */}
-            <AccountSwitchMenu />
-
-            {/* Auth / Logout */}
-            <NostrAuthButton />
-            {/* END User Dropdown */}
+            {/* User Menu (Account switching + Logout) */}
+            <UserMenu />
           </div>
           {/* END Right Section */}
         </div>
