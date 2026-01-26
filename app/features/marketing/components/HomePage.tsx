@@ -14,8 +14,6 @@ import type { ReactNode } from "react";
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 
-const TEXT_PRIMARY_CLASS = "text-primary";
-
 export function HomePage(): ReactNode {
   return (
     <>
@@ -33,7 +31,7 @@ export function HomePage(): ReactNode {
             </div>
 
             <h1 className="text-foreground mb-6 text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              OWN YOUR <span className="text-primary">CADENCE</span>
+              OWN YOUR <span className="hero-gradient-text">CADENCE</span>
               <br />
               <span className="text-foreground dark:text-foreground/90">
                 ACROSS EVERY RELAY
@@ -48,7 +46,7 @@ export function HomePage(): ReactNode {
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <a
                 href="/plans"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                className="bg-primary-action text-primary-foreground hover:bg-primary-action/90 focus:ring-primary-action inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
               >
                 <span>ENTER CONSOLE</span>
                 <svg
@@ -126,22 +124,16 @@ export function HomePage(): ReactNode {
                     key={feature.title}
                     className={`border-border card-lift rounded-lg border p-6 transition-all duration-200 ${
                       feature.isEmphasized
-                        ? "bg-background border-primary/20 dark:border-primary/10 shadow-xl dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-2xl"
+                        ? "bg-background shadow-xl dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-2xl"
                         : "bg-background dark:bg-card shadow-lg dark:shadow-xl"
                     }`}
                   >
-                    <div
-                      className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg ${
-                        feature.isEmphasized
-                          ? "bg-primary/10 dark:bg-primary/10"
-                          : "bg-primary/5 dark:bg-primary/5"
-                      }`}
-                    >
+                    <div className="bg-muted mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
                       <Icon
                         className={`h-6 w-6 ${
                           feature.isEmphasized
-                            ? TEXT_PRIMARY_CLASS
-                            : "text-primary/70 dark:text-primary/60"
+                            ? "text-foreground"
+                            : "text-muted-foreground"
                         }`}
                       />
                     </div>
@@ -160,8 +152,8 @@ export function HomePage(): ReactNode {
 
         {/* Process Flow Section */}
         <section className="border-border bg-background relative border-t py-32">
-          {/* Subtle gradient overlay for depth */}
-          <div className="from-primary/5 to-background dark:from-primary/3 absolute inset-0 bg-gradient-to-b via-transparent" />
+          {/* Subtle neutral gradient overlay for depth */}
+          <div className="from-muted/10 to-background dark:from-muted/5 absolute inset-0 bg-gradient-to-b via-transparent" />
           <div className="relative container mx-auto px-4 lg:px-8 xl:max-w-7xl">
             <div className="mb-16 text-center">
               <h2 className="text-foreground mb-4 text-4xl font-black">
@@ -186,17 +178,11 @@ export function HomePage(): ReactNode {
                         <div
                           className={`flex h-16 w-16 items-center justify-center rounded-lg border transition-all ${
                             step.isActive
-                              ? "border-primary/30 bg-primary/10 dark:bg-primary/10 shadow-lg"
+                              ? "border-border bg-muted shadow-lg dark:bg-[hsl(var(--landing-card-elevated))]"
                               : "border-border bg-muted"
                           }`}
                         >
-                          <Icon
-                            className={`h-8 w-8 ${
-                              step.isActive
-                                ? TEXT_PRIMARY_CLASS
-                                : "text-muted-foreground"
-                            }`}
-                          />
+                          <Icon className="text-foreground h-8 w-8" />
                         </div>
                         <span className="text-foreground text-sm font-semibold">
                           {step.name}
@@ -204,7 +190,7 @@ export function HomePage(): ReactNode {
                       </div>
                       {idx < 2 ? (
                         <svg
-                          className="text-primary arrow-pulse h-8 w-8"
+                          className="text-muted-foreground arrow-pulse h-8 w-8"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -222,7 +208,7 @@ export function HomePage(): ReactNode {
                 })}
                 <div className="flex items-center gap-6">
                   <svg
-                    className="text-primary arrow-pulse h-8 w-8"
+                    className="text-muted-foreground arrow-pulse h-8 w-8"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -249,20 +235,8 @@ export function HomePage(): ReactNode {
                           key={step.name}
                           className="flex flex-col items-center gap-2"
                         >
-                          <div
-                            className={`flex h-16 w-16 items-center justify-center rounded-lg border transition-all ${
-                              step.isActive
-                                ? "border-primary/30 bg-primary/10 dark:bg-primary/10 shadow-lg"
-                                : "border-border bg-muted"
-                            }`}
-                          >
-                            <Icon
-                              className={`h-8 w-8 ${
-                                step.isActive
-                                  ? TEXT_PRIMARY_CLASS
-                                  : "text-muted-foreground"
-                              }`}
-                            />
+                          <div className="border-border bg-muted flex h-16 w-16 items-center justify-center rounded-lg border transition-all">
+                            <Icon className="text-muted-foreground h-8 w-8" />
                           </div>
                           <span className="text-foreground text-sm font-semibold">
                             {step.name}

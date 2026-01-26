@@ -26,6 +26,7 @@
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
   --color-primary: hsl(var(--primary));
+  --color-primary-action: hsl(var(--primary-action));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
@@ -90,19 +91,20 @@
     --card-foreground: 0 0% 5%;            /* Pure black (neutral) */
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 5%;         /* Pure black (neutral) */
-    --primary: 255 97% 51%;                 /* Electric blue-purple #4408FF */
+    --primary: 255 77% 51%;                /* Calm purple - desaturated by 20% for headlines, subtle accents */
+    --primary-action: 255 97% 51%;        /* Action purple - bright for buttons, active states */
     --primary-foreground: 0 0% 100%;       /* White */
     --secondary: 250 25% 90%;               /* Pale lavender #C7C8FF */
     --secondary-foreground: 0 0% 5%;        /* Pure black (neutral) */
     --muted: 0 0% 98%;                      /* Neutral light gray */
-    --muted-foreground: 0 0% 45%;           /* Neutral gray text */
+    --muted-foreground: 25 8% 45%;         /* Warm grey #6F6A66 for secondary text */
     --accent: 255 60% 70%;                  /* Medium lavender #8B66FF */
     --accent-foreground: 0 0% 100%;         /* White */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 90%;                     /* Neutral border */
     --input: 0 0% 90%;                      /* Neutral input border */
-    --ring: 255 97% 51%;                    /* Primary brand color */
+    --ring: 255 97% 51%;                    /* Action purple for focus states */
     --chart-1: 255 97% 51%;                 /* Brand primary */
     --chart-2: 255 60% 70%;                 /* Brand secondary */
     --chart-3: 250 100% 31%;                 /* Deep indigo #1E03A0 */
@@ -115,27 +117,28 @@
     --landing-section-alt: 0 0% 100%;
   }
   .dark {
-    /* Dark Mode - Neutral Foundation with Brand Accents */
-    /* Neutral structure colors (no color bias) */
-    --background: 0 0% 3%;                  /* Near-black canvas, neutral */
+    /* Dark Mode - True Neutral Foundation with Brand Accents */
+    /* Three-layer neutral system (no color bias) */
+    --background: 0 0% 4.3%;                /* Base canvas #0B0B0D */
     --foreground: 0 0% 98%;                 /* White */
-    --card: 0 0% 8%;                        /* Dark grey containers, neutral */
+    --card: 0 0% 6.7%;                     /* Surface panels #111114 */
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;                     /* Neutral dark grey */
+    --popover: 0 0% 6.7%;                  /* Surface panels */
     --popover-foreground: 0 0% 98%;
-    --secondary: 0 0% 12%;                  /* Neutral grey, no blue tint */
+    --secondary: 0 0% 12%;                 /* Neutral grey, no blue tint */
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 10%;                      /* Neutral grey-light for tables */
-    --muted-foreground: 0 0% 65%;           /* Muted text, neutral grey */
-    --border: 0 0% 20%;                     /* Increased visibility for landing cards */
-    --input: 0 0% 18%;                      /* Neutral input border */
+    --muted: 0 0% 7.5%;                    /* Between surface and elevated */
+    --muted-foreground: 30 5% 60%;         /* Warm grey #9A948F for secondary text */
+    --border: 0 0% 11.8%;                  /* Borders/dividers #1E1E24 */
+    --input: 0 0% 11.8%;                    /* Input borders */
     
-    /* Brand colors - only for user actions (commit, select, focus, hover) */
-    --primary: 255 97% 51%;                 /* Electric blue-purple #4408FF - CTAs only */
+    /* Brand colors - two-purple system */
+    --primary: 255 77% 51%;                 /* Calm purple - desaturated for headlines, subtle accents */
+    --primary-action: 255 97% 51%;          /* Action purple - bright for buttons, active states */
     --primary-foreground: 0 0% 100%;
     --accent: 255 60% 70%;                  /* Medium lavender #8B66FF - hover/selection */
     --accent-foreground: 0 0% 100%;
-    --ring: 255 97% 51%;                    /* Primary brand color - focus states */
+    --ring: 255 97% 51%;                    /* Action purple for focus states */
     
     /* Destructive actions */
     --destructive: 0 62.8% 30.6%;
@@ -149,8 +152,8 @@
     --chart-5: 250 25% 80%;                 /* Light lavender */
     
     /* Landing page specific variables */
-    --landing-card-elevated: 0 0% 10%;      /* Slightly lighter than card for emphasis */
-    --landing-section-alt: 0 0% 5%;         /* Alternating section background */
+    --landing-card-elevated: 0 0% 8.6%;     /* Elevated cards #16161A */
+    --landing-section-alt: 0 0% 4.3%;       /* Base canvas for alternation */
   }
 }
 
@@ -168,11 +171,11 @@
 @layer components {
   /* Ensure buttons have proper contrast in both modes */
   .btn-primary {
-    background-color: hsl(var(--primary));
+    background-color: hsl(var(--primary-action));
     color: hsl(var(--primary-foreground));
   }
   .btn-primary:hover {
-    background-color: hsl(var(--primary) / 0.9);
+    background-color: hsl(var(--primary-action) / 0.9);
   }
 
   /* Ensure tabs are visible in both modes */
@@ -206,25 +209,35 @@
       radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.05) 1px, transparent 0);
   }
 
-  /* Hero gradient utilities */
+  /* Hero gradient utilities - neutral gradients only */
   .hero-gradient-light {
     background: linear-gradient(
       to bottom,
-      hsl(var(--primary) / 0.1),
-      hsl(var(--secondary) / 0.15),
+      hsl(var(--muted) / 0.3),
       hsl(var(--background))
     );
   }
 
   .hero-gradient-dark {
     background: 
-      radial-gradient(ellipse at top, hsl(var(--primary) / 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at top, hsl(var(--muted) / 0.2) 0%, transparent 50%),
       linear-gradient(
         to bottom,
-        hsl(var(--primary) / 0.05),
-        hsl(var(--background) / 0.1),
+        hsl(var(--muted) / 0.15),
         hsl(var(--background))
       );
+  }
+
+  /* Hero gradient text for controlled color moment */
+  .hero-gradient-text {
+    background: linear-gradient(
+      to bottom,
+      hsl(var(--primary)),
+      hsl(var(--primary-action))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   /* Card lift animation */

@@ -58,9 +58,10 @@ function initVisibilityHandler(): void {
       if (config?.type === "nip46" && cachedSigner) {
         // Close existing connections gracefully
         if (cachedSigner.type === "nip46" && cachedSigner.close) {
+          const closeFn = cachedSigner.close;
           void (async () => {
             try {
-              await cachedSigner.close();
+              await closeFn();
             } catch {
               // Ignore errors during cleanup
             }
@@ -170,9 +171,10 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
     }
     // Connection is stale, clear cache and reconnect
     if (cachedSigner.type === "nip46" && cachedSigner.close) {
+      const closeFn = cachedSigner.close;
       void (async () => {
         try {
-          await cachedSigner.close();
+          await closeFn();
         } catch {
           // Ignore errors during cleanup
         }
