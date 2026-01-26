@@ -6,17 +6,23 @@
 import { z } from "zod";
 
 import { ValidationError } from "~/lib/errors";
+import { normalizeLoaderResponseData } from "~/lib/validation/nostr-events.server";
 
 /**
  * Validate loader response data with Zod schema
  * Throws ValidationError if validation fails
+ *
+ * Note: This function normalizes malformed tags in events before validation
+ * to handle cases where Prisma JSON storage serializes arrays as objects
  */
 export function validateLoaderResponse<T extends z.ZodTypeAny>(
   data: unknown,
   schema: T
 ): z.infer<T> {
   try {
-    return schema.parse(data);
+    // Normalize data before validation to fix malformed tags
+    const normalizedData = normalizeLoaderResponseData(data);
+    return schema.parse(normalizedData);
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errorDetails = error.issues.map((err) => ({

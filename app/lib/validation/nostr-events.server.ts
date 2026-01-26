@@ -14,6 +14,47 @@ import {
 } from "./schemas/nostr-events.schemas";
 
 /**
+ * Normalize a single tag element - converts object to array
+ */
+function normalizeTagElement(tag: unknown): string[] {
+  // If already an array, return as string array
+  if (Array.isArray(tag)) {
+    return tag.map((item) => String(item));
+  }
+
+  // If it's an object, convert to array
+  if (typeof tag === "object" && tag !== null && !Array.isArray(tag)) {
+    const tagObj = tag as Record<string, unknown>;
+    const keys = Object.keys(tagObj);
+
+    // Try numeric keys first (most common case: { "0": "t", "1": "hashtag" })
+    const numericKeys = keys
+      .map((k) => Number.parseInt(k, 10))
+      .filter((n) => !Number.isNaN(n))
+      .sort((a, b) => a - b);
+
+    if (numericKeys.length > 0 && numericKeys[0] === 0) {
+      // Check if keys are sequential (0, 1, 2, ...)
+      const lastKey = numericKeys[numericKeys.length - 1];
+      if (lastKey !== undefined) {
+        const isSequential =
+          numericKeys.length === lastKey + 1 &&
+          numericKeys.every((n, i) => n === i);
+        if (isSequential) {
+          return numericKeys.map((n) => String(tagObj[String(n)] ?? ""));
+        }
+      }
+    }
+
+    // Fallback: convert all values to array (preserve order if possible)
+    return Object.values(tagObj).map((item) => String(item ?? ""));
+  }
+
+  // Fallback: convert to string array
+  return [String(tag ?? "")];
+}
+
+/**
  * Normalize tags array - converts objects with numeric keys back to arrays
  * This fixes an issue where Prisma JSON storage might serialize arrays as objects
  */
@@ -22,60 +63,40 @@ function normalizeTags(tags: unknown): string[][] {
     return [];
   }
 
-  // If it's already an array, validate and return
+  // If it's already an array, normalize each element
   if (Array.isArray(tags)) {
-    return tags.map((tag) => {
-      // If tag is already an array, return it
-      if (Array.isArray(tag)) {
-        return tag.map((item) => String(item));
-      }
-      // If tag is an object, try to convert it to an array
-      if (typeof tag === "object" && tag !== null && !Array.isArray(tag)) {
-        const tagObj = tag as Record<string, unknown>;
-        // Convert object to array by iterating numeric keys
-        const tagArray: string[] = [];
-        let index = 0;
-        while (String(index) in tagObj || index in tagObj) {
-          const key = String(index) in tagObj ? String(index) : index;
-          tagArray.push(String(tagObj[key] ?? ""));
-          index++;
-        }
-        return tagArray;
-      }
-      // Fallback: convert to string array
-      return [String(tag)];
-    });
+    return tags.map((tag) => normalizeTagElement(tag));
   }
 
   // If tags is an object (not an array), try to convert it
   // Note: tags is truthy here due to early return above, but we check typeof for type narrowing
   if (typeof tags === "object" && !Array.isArray(tags)) {
     const tagsObj = tags as Record<string, unknown>;
-    const tagsArray: string[][] = [];
-    let index = 0;
-    while (String(index) in tagsObj || index in tagsObj) {
-      const key = String(index) in tagsObj ? String(index) : index;
-      const tag = tagsObj[key];
-      if (Array.isArray(tag)) {
-        tagsArray.push(tag.map((item) => String(item)));
-      } else if (tag && typeof tag === "object" && !Array.isArray(tag)) {
-        // Nested object - convert to array
-        const tagObj = tag as Record<string, unknown>;
-        const tagArray: string[] = [];
-        let tagIndex = 0;
-        while (String(tagIndex) in tagObj || tagIndex in tagObj) {
-          const tagKey =
-            String(tagIndex) in tagObj ? String(tagIndex) : tagIndex;
-          tagArray.push(String(tagObj[tagKey] ?? ""));
-          tagIndex++;
+    const keys = Object.keys(tagsObj);
+
+    // Try numeric keys first
+    const numericKeys = keys
+      .map((k) => Number.parseInt(k, 10))
+      .filter((n) => !Number.isNaN(n))
+      .sort((a, b) => a - b);
+
+    if (numericKeys.length > 0 && numericKeys[0] === 0) {
+      // Check if keys are sequential
+      const lastKey = numericKeys[numericKeys.length - 1];
+      if (lastKey !== undefined) {
+        const isSequential =
+          numericKeys.length === lastKey + 1 &&
+          numericKeys.every((n, i) => n === i);
+        if (isSequential) {
+          return numericKeys.map((n) =>
+            normalizeTagElement(tagsObj[String(n)])
+          );
         }
-        tagsArray.push(tagArray);
-      } else {
-        tagsArray.push([String(tag ?? "")]);
       }
-      index++;
     }
-    return tagsArray;
+
+    // Fallback: convert all values to array of arrays
+    return Object.values(tagsObj).map((tag) => normalizeTagElement(tag));
   }
 
   return [];
@@ -95,6 +116,63 @@ function normalizeEvent(event: unknown): unknown {
   // Normalize tags if they exist
   if ("tags" in normalized) {
     normalized["tags"] = normalizeTags(normalized["tags"]);
+  }
+
+  return normalized;
+}
+
+/**
+ * Recursively normalize all events in a data structure
+ * This is used to normalize loader response data before validation
+ */
+export function normalizeLoaderResponseData(data: unknown): unknown {
+  if (!data || typeof data !== "object") {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map((item) => normalizeLoaderResponseData(item));
+  }
+
+  const obj = data as Record<string, unknown>;
+  const normalized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === "signedEvent" || key === "nostrEvent") {
+      // Normalize event objects
+      normalized[key] = normalizeEvent(value);
+    } else if (
+      key === "scheduledPosts" ||
+      key === "posts" ||
+      key === "longformPosts"
+    ) {
+      // Recursively normalize arrays of posts
+      if (Array.isArray(value)) {
+        normalized[key] = value.map((post) => {
+          if (post && typeof post === "object" && !Array.isArray(post)) {
+            const postObj = post as Record<string, unknown>;
+            const normalizedPost = { ...postObj };
+            if ("signedEvent" in normalizedPost) {
+              normalizedPost["signedEvent"] = normalizeEvent(
+                normalizedPost["signedEvent"]
+              );
+            }
+            if ("nostrEvent" in normalizedPost) {
+              normalizedPost["nostrEvent"] = normalizeEvent(
+                normalizedPost["nostrEvent"]
+              );
+            }
+            return normalizedPost;
+          }
+          return post;
+        });
+      } else {
+        normalized[key] = value;
+      }
+    } else {
+      // Recursively normalize nested objects
+      normalized[key] = normalizeLoaderResponseData(value);
+    }
   }
 
   return normalized;
