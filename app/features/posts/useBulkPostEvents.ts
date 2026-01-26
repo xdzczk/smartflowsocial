@@ -104,7 +104,10 @@ function buildContent(
   return contentParts.join("\n");
 }
 
-function convertTagsToArray(tagsString: string): string[][] {
+function convertTagsToArray(tagsString: string | undefined): string[][] {
+  if (!tagsString) {
+    return [];
+  }
   return tagsString
     .split(" ")
     .filter((tag: string) => tag.length > 0)
@@ -560,6 +563,9 @@ export function useBulkPostEvents({
         let effectiveHashtags: string;
         if (useHashtagPresets && selectedHashtags) {
           effectiveHashtags = selectedHashtags;
+        } else if (useHashtagPresets && !selectedHashtags) {
+          // If hashtag presets are enabled but no preset is selected, use empty string
+          effectiveHashtags = "";
         } else if (post.queueType && post.queueType !== "unassigned") {
           effectiveHashtags =
             hashtagCache.get(post.queueType) ?? tags.join(" ");
