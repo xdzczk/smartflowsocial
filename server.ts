@@ -376,6 +376,7 @@ async function run() {
           styleSrc: [
             "'self'",
             "'unsafe-inline'", // Required for Remix's generated styles
+            "https://fonts.googleapis.com", // Required for Google Fonts (Kanit)
           ],
           imgSrc: ["'self'", "data:", "https:", "blob:"],
           connectSrc: [
@@ -389,7 +390,11 @@ async function run() {
             "'self'",
             "blob:", // Required for Sentry workers
           ],
-          fontSrc: ["'self'", "data:"],
+          fontSrc: [
+            "'self'",
+            "data:",
+            "https://fonts.gstatic.com", // Required for Google Fonts (Kanit) font files
+          ],
           objectSrc: ["'none'"],
           // Allow local previews (blob:) and external video hosts (e.g. Blossom)
           mediaSrc: ["'self'", "blob:", "https:"],

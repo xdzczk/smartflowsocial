@@ -105,7 +105,7 @@ export const meta = () => [
   { name: "robots", content: "index, follow" },
   { name: "viewport", content: "width=device-width, initial-scale=1" },
   // iOS PWA meta tags
-  { name: "apple-mobile-web-app-capable", content: "yes" },
+  { name: "mobile-web-app-capable", content: "yes" },
   { name: "apple-mobile-web-app-status-bar-style", content: "default" },
   { name: "apple-mobile-web-app-title", content: APP_NAME },
   { name: "theme-color", content: "#4408FF" },
