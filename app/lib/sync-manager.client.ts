@@ -28,9 +28,12 @@ export function subscribeToSyncState(
   callback: (state: SyncState) => void
 ): () => void {
   syncStateListeners.add(callback);
-  // Immediately call with current state
-  // eslint-disable-next-line promise/prefer-await-to-callbacks -- This is an event listener pattern, not a promise callback. Callbacks are appropriate here.
-  callback(currentSyncState);
+  // Defer initial callback to avoid setState during render/effect setup
+  // This prevents React error #418 (Cannot update a component while rendering a different component)
+  setTimeout(() => {
+    // eslint-disable-next-line promise/prefer-await-to-callbacks -- This is a setTimeout callback, not a promise callback. It's necessary to defer state updates and avoid React render conflicts.
+    callback(currentSyncState);
+  }, 0);
 
   // Return unsubscribe function
   return (): void => {

@@ -23,18 +23,22 @@ export function LifecycleHandler() {
     // Check for pending correlation context on mount
     const correlationContext = getAndClearCorrelationContext();
     if (correlationContext) {
-      // Trigger sync to refresh data after signer return
-      void triggerForegroundSync(queryClient);
-      revalidator.revalidate();
+      // Defer sync to avoid setState during render
+      setTimeout(() => {
+        void triggerForegroundSync(queryClient);
+        revalidator.revalidate();
+      }, 0);
     }
 
     // Initialize lifecycle handlers
     return initLifecycleHandlers({
       onVisibilityChange: (isVisible) => {
         if (isVisible) {
-          // Page became visible - trigger sync
-          void triggerForegroundSync(queryClient);
-          revalidator.revalidate();
+          // Page became visible - trigger sync (defer to avoid setState during render)
+          setTimeout(() => {
+            void triggerForegroundSync(queryClient);
+            revalidator.revalidate();
+          }, 0);
         } else {
           // Page hidden - persist state
           persistUIState({
@@ -47,9 +51,11 @@ export function LifecycleHandler() {
         // Page shown (including back/forward navigation)
         const state = getPersistedState();
         if (state.lastSyncTimestamp) {
-          // Trigger sync if we have a last sync timestamp
-          void triggerForegroundSync(queryClient);
-          revalidator.revalidate();
+          // Trigger sync if we have a last sync timestamp (defer to avoid setState during render)
+          setTimeout(() => {
+            void triggerForegroundSync(queryClient);
+            revalidator.revalidate();
+          }, 0);
         }
       },
       onPageHide: () => {
@@ -60,9 +66,11 @@ export function LifecycleHandler() {
         });
       },
       onFocus: () => {
-        // Window focused - trigger sync
-        void triggerForegroundSync(queryClient);
-        revalidator.revalidate();
+        // Window focused - trigger sync (defer to avoid setState during render)
+        setTimeout(() => {
+          void triggerForegroundSync(queryClient);
+          revalidator.revalidate();
+        }, 0);
       },
     });
   }, [revalidator, queryClient]);
