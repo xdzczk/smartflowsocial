@@ -154,7 +154,7 @@ export function NotificationSettings({
               </div>
               <Switch
                 id="push-enabled"
-                checked={pushNotificationsEnabled ? isSubscribed : null}
+                checked={pushNotificationsEnabled ? isSubscribed : false}
                 onCheckedChange={(checked) => {
                   void handleTogglePushNotifications(checked);
                 }}

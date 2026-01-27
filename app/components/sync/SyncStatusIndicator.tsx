@@ -20,7 +20,13 @@ type SyncState = "synced" | "syncing" | "needs_attention";
 
 export function SyncStatusIndicator() {
   const queryClient = useQueryClient();
-  const [syncState, setSyncState] = useState<SyncState>(getSyncState());
+  // Use lazy initializer to avoid SSR issues and ESLint warnings
+  const [syncState, setSyncState] = useState<SyncState>(() => {
+    if (typeof window !== "undefined") {
+      return getSyncState();
+    }
+    return "synced";
+  });
 
   useEffect(() => {
     // Subscribe to sync state changes

@@ -8,6 +8,7 @@ import type { QueryClient } from "@tanstack/react-query";
 type SyncState = "synced" | "syncing" | "needs_attention";
 
 const POSTS_QUERY_KEY = "posts";
+const SCHEDULED_POSTS_QUERY_KEY = "scheduled-posts";
 
 let currentSyncState: SyncState = "synced";
 let syncStateListeners: Set<(state: SyncState) => void> = new Set();
