@@ -130,6 +130,7 @@ export function BlossomMediaMirrorsSettings({
           <div className="flex items-center space-x-2">
             <Checkbox
               id="enableMirrorBlossom"
+              name="enableMirrorBlossom"
               checked={watchedEnableMirror}
               onCheckedChange={(checked) => {
                 form.setValue("enableMirrorBlossom", checked as boolean);
@@ -152,6 +153,7 @@ export function BlossomMediaMirrorsSettings({
                 {fields.map((field, index) => (
                   <div key={field.id} className="flex gap-2">
                     <Input
+                      id={`mirror-url-${index}`}
                       {...form.register(`mirrorUrls.${index}`)}
                       placeholder="https://blossom.example.com"
                       disabled={isSubmitting}

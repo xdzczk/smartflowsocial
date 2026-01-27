@@ -3,14 +3,11 @@
  * Provides caching and background refetching for calendar page
  */
 
-import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
+import { useLoaderData, useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
-import {
-  calendarLoaderDataSchema,
-  type CalendarLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
+import { calendarLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 import { validateUserData } from "~/lib/validation/user-data";
 
 import { combineContent } from "../combined";
@@ -44,7 +41,6 @@ export function useCalendarQuery() {
   const queueType = params["queueType"] ?? "all";
 
   const loaderDataRaw = useLoaderData();
-  const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
@@ -56,34 +52,25 @@ export function useCalendarQuery() {
     queryKey: calendarKeys.list(queueType),
     queryFn: async () => {
       const url = `/dashboard/calendar${queueType !== "all" ? `/${queueType}` : ""}`;
-      fetcher.load(url);
+      const response = await fetch(url);
 
-      return new Promise<CalendarLoaderData>((resolve, reject) => {
-        const checkFetcher = () => {
-          if (fetcher.state === "idle") {
-            if (fetcher.data) {
-              const validated = safeValidateLoaderResponse(
-                fetcher.data,
-                calendarLoaderDataSchema
-              );
-              if (validated) {
-                resolve(validated);
-              } else {
-                reject(new Error("Invalid data received from fetcher"));
-              }
-            } else if (validatedLoaderData) {
-              resolve(validatedLoaderData);
-            } else {
-              reject(new Error("Invalid loader data"));
-            }
-          } else if (fetcher.state === "loading") {
-            setTimeout(checkFetcher, 50);
-          } else {
-            reject(new Error("Failed to fetch data"));
-          }
-        };
-        checkFetcher();
-      });
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch calendar data: ${response.statusText}`
+        );
+      }
+
+      const data = (await response.json()) as unknown;
+      const validated = safeValidateLoaderResponse(
+        data,
+        calendarLoaderDataSchema
+      );
+
+      if (!validated) {
+        throw new Error("Invalid data received from server");
+      }
+
+      return validated;
     },
     initialData: validatedLoaderData,
     staleTime: 30 * 1000, // 30 seconds

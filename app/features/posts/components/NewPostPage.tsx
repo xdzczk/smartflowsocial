@@ -456,14 +456,30 @@ export default function NewPostPage() {
           postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
           onCreateNew={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
             navigate(getNewPostUrl(postType));
           }}
           onViewPage={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
-            if (postType === "longform") {
-              navigate("/dashboard/posted?tab=longform");
+            const action = determineModalAction(modalPost, modalLongFormPost);
+
+            if (action === "schedule") {
+              // Navigate to scheduled page
+              if (postType === "longform") {
+                navigate("/dashboard/scheduled?tab=longform");
+              } else {
+                navigate("/dashboard/scheduled");
+              }
             } else {
-              navigate("/dashboard/posted");
+              // Navigate to posted page
+              if (postType === "longform") {
+                navigate("/dashboard/posted?tab=longform");
+              } else {
+                navigate("/dashboard/posted");
+              }
             }
           }}
         />

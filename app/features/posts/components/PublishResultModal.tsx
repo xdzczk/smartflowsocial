@@ -7,7 +7,7 @@ import {
   Calendar,
   CheckSquare,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -79,15 +79,26 @@ function StatusDescription({
   status,
   postType,
   formatScheduledTime,
+  bulkCount,
 }: {
   action: "publish" | "schedule";
   status: StatusType;
   postType: "post" | "longform";
   formatScheduledTime: () => string;
+  bulkCount?: number | null;
 }) {
   const contentType = postType === "longform" ? "article" : "post";
 
   if (action === "schedule") {
+    if (bulkCount && bulkCount > 1) {
+      return (
+        <p>
+          Your {bulkCount} {contentType}s have been scheduled successfully. The
+          first post will be published at{" "}
+          <strong>{formatScheduledTime()}</strong>.
+        </p>
+      );
+    }
     return (
       <p>
         Your {contentType} has been scheduled and will be published at{" "}
@@ -171,6 +182,7 @@ interface PublishResultModalProps {
   scheduledFor?: Date | string | null;
   onCreateNew: () => void;
   onViewPage: () => void;
+  bulkCount?: number | null;
 }
 
 export default function PublishResultModal({
@@ -182,12 +194,47 @@ export default function PublishResultModal({
   scheduledFor,
   onCreateNew,
   onViewPage,
+  bulkCount,
 }: PublishResultModalProps) {
   const [relayAcks, setRelayAcks] = useState<RelayAck[]>([]);
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
   const maxPollingAttempts = 10; // 10 attempts * 5 seconds = 50 seconds max
   const pollingInterval = 5000; // 5 seconds - increased to avoid rate limiting
+
+  // Helper function to calculate status from relay acks
+  const calculateStatusFromAcks = useCallback(
+    (acks: RelayAck[]): StatusType => {
+      if (action === "schedule") {
+        return "scheduled";
+      }
+
+      if (acks.length === 0) {
+        return "publishing";
+      }
+
+      const acceptedCount = acks.filter(
+        (ack) => ack.status === "ACCEPTED"
+      ).length;
+      const failedCount = acks.filter((ack) => ack.status === "FAILED").length;
+      const timeoutCount = acks.filter(
+        (ack) => ack.status === "TIMEOUT"
+      ).length;
+
+      if (acceptedCount > 0 && failedCount === 0 && timeoutCount === 0) {
+        return "success";
+      }
+      if (acceptedCount > 0) {
+        return "partial";
+      }
+      if (failedCount > 0 || timeoutCount > 0) {
+        return "failed";
+      }
+
+      return "publishing";
+    },
+    [action]
+  );
 
   // Poll for relay acknowledgements (only for published posts)
   useEffect(() => {
@@ -205,6 +252,7 @@ export default function PublishResultModal({
     let backoffDelay = pollingInterval; // Start with base interval
     let pollTimeout: NodeJS.Timeout | null = null;
     let isPolling = true;
+    let lastKnownAcks: RelayAck[] = [];
 
     // Start polling with exponential backoff on errors
     const poll = async () => {
@@ -213,9 +261,13 @@ export default function PublishResultModal({
       }
 
       if (currentPollCount >= maxPollingAttempts) {
-        setTimeout(() => {
-          setHasTimedOut(true);
-        }, 0);
+        // Check last known status before setting timeout
+        const lastStatus = calculateStatusFromAcks(lastKnownAcks);
+        if (lastStatus === "publishing" || lastStatus === "partial") {
+          setTimeout(() => {
+            setHasTimedOut(true);
+          }, 0);
+        }
         return;
       }
 
@@ -240,9 +292,23 @@ export default function PublishResultModal({
             error?: string;
           };
           if (data.acks) {
+            const newAcks = data.acks;
+            lastKnownAcks = newAcks; // Track last known acks
+            const newStatus = calculateStatusFromAcks(newAcks);
+
             setTimeout(() => {
-              setRelayAcks(data.acks ?? []);
+              setRelayAcks(newAcks);
             }, 0);
+
+            // Stop polling if all relays have responded successfully
+            if (newStatus === "success") {
+              isPolling = false;
+              if (pollTimeout) {
+                clearTimeout(pollTimeout);
+                pollTimeout = null;
+              }
+              return; // Don't increment poll count or schedule next poll
+            }
           }
         } else {
           // Other error - use moderate backoff
@@ -268,7 +334,11 @@ export default function PublishResultModal({
         if (!isPolling) return;
         void (async () => {
           await poll();
-          scheduleNextPoll();
+          // Only schedule next poll if still polling (not stopped due to success)
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- isPolling can be set to false by poll()
+          if (isPolling) {
+            scheduleNextPoll();
+          }
         })();
       }, backoffDelay);
     };
@@ -276,7 +346,10 @@ export default function PublishResultModal({
     // Poll immediately, then schedule next
     void (async () => {
       await poll();
-      scheduleNextPoll();
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- isPolling can be set to false by poll()
+      if (isPolling) {
+        scheduleNextPoll();
+      }
     })();
 
     return () => {
@@ -292,6 +365,7 @@ export default function PublishResultModal({
     postId,
     maxPollingAttempts,
     pollingInterval,
+    calculateStatusFromAcks,
   ]);
 
   // Calculate relay status counts
@@ -381,8 +455,10 @@ export default function PublishResultModal({
               status={status}
               postType={postType}
               formatScheduledTime={formatScheduledTime}
+              bulkCount={bulkCount}
             />
-            {hasTimedOut ? (
+            {hasTimedOut &&
+            (status === "publishing" || status === "partial") ? (
               <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
                 Still waiting for some relays to respond...
               </p>

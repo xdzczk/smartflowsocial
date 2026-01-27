@@ -401,6 +401,10 @@ export default function ScheduledPostsPage() {
           }
           onCreateNew={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
             navigate(getNewPostUrl(postType));
           }}
           onViewPage={() => {

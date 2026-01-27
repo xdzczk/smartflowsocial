@@ -1,4 +1,9 @@
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useNavigate,
+  useSearchParams,
+} from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { type ToastMessage } from "~/components/types";
@@ -23,9 +28,11 @@ import {
   BulkPostsTable,
   BulkPostsUploadArea,
   PostConfirmation,
+  PublishResultModal,
 } from "~/features/posts/ui";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
+import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { isVideoFile } from "~/utils/media-helpers";
 
@@ -253,6 +260,25 @@ export default function BulkPostsPage() {
     string | null
   >(null);
   const [selectedHashtags, setSelectedHashtags] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // Modal state for bulk scheduling success
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [modalPostId, setModalPostId] = useState<string | null>(null);
+  const [modalPost, setModalPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+    scheduledAtUtc?: string | null;
+  } | null>(null);
+  const [modalLongFormPost, setModalLongFormPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+    scheduledAtUtc?: string | null;
+  } | null>(null);
+  const [bulkPostCount, setBulkPostCount] = useState<number | null>(null);
 
   // Use extracted hooks
   useBulkPostsState({ mode, posts, setPosts });
@@ -449,6 +475,73 @@ export default function BulkPostsPage() {
     };
   }, [previewData]);
 
+  // Check for bulk scheduling success URL param
+  useEffect(() => {
+    const bulkScheduled = searchParams.get("bulkScheduled");
+    const count = searchParams.get("count");
+    const firstPostId = searchParams.get("firstPostId");
+
+    if (
+      bulkScheduled === "true" &&
+      firstPostId &&
+      !modalPostId &&
+      !showPublishModal
+    ) {
+      const postCount = count ? parseInt(count, 10) : null;
+      setBulkPostCount(postCount);
+
+      // Use setTimeout to avoid setState in effect warning
+      setTimeout(() => {
+        setModalPostId(firstPostId);
+      }, 0);
+
+      // Fetch post data using fetch directly for API routes
+      void (async () => {
+        try {
+          const res = await fetch(`/api/posts/${firstPostId}`);
+          if (!res.ok) {
+            throw new Error(`Failed to fetch: ${res.status}`);
+          }
+          const data = (await res.json()) as {
+            post?: {
+              id: string;
+              publishAttemptId: string | null;
+              currentState?: string | null;
+              scheduledAtUtc?: string | null;
+            };
+            longFormPost?: {
+              id: string;
+              publishAttemptId: string | null;
+              currentState?: string | null;
+              scheduledAtUtc?: string | null;
+            };
+            error?: string;
+          };
+
+          if (data.post || data.longFormPost) {
+            setTimeout(() => {
+              setModalPost(data.post ?? null);
+              setModalLongFormPost(data.longFormPost ?? null);
+              setShowPublishModal(true);
+            }, 0);
+            // Clear URL params to prevent re-showing on refresh
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("bulkScheduled");
+            newSearchParams.delete("count");
+            newSearchParams.delete("firstPostId");
+            setSearchParams(newSearchParams, { replace: true });
+          }
+        } catch (error) {
+          console.error("Failed to fetch post data:", error);
+          // Reset state on error
+          setTimeout(() => {
+            setModalPostId(null);
+          }, 0);
+        }
+      })();
+    }
+  }, [searchParams, modalPostId, showPublishModal, setSearchParams]);
+
   return (
     <div className="p-6">
       <h1 className="mb-6 text-2xl font-bold">{getPageTitle(mode)}</h1>
@@ -547,6 +640,39 @@ export default function BulkPostsPage() {
           alt="Media content"
           isOpen={isMediaModalOpen}
           onClose={handleCloseMediaModal}
+        />
+      ) : null}
+
+      {/* Bulk Scheduling Success Modal */}
+      {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
+        <PublishResultModal
+          isOpen={showPublishModal}
+          postId={modalPostId}
+          publishAttemptId={null} // Scheduled posts don't have publishAttemptId yet
+          action="schedule"
+          postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
+          scheduledFor={
+            modalPost?.scheduledAtUtc ??
+            modalLongFormPost?.scheduledAtUtc ??
+            null
+          }
+          bulkCount={bulkPostCount}
+          onCreateNew={() => {
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
+            setBulkPostCount(null);
+            navigate(`/dashboard/bulkposts${mode ? `?mode=${mode}` : ""}`);
+          }}
+          onViewPage={() => {
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
+            setBulkPostCount(null);
+            navigate("/dashboard/scheduled");
+          }}
         />
       ) : null}
     </div>

@@ -173,7 +173,7 @@ export async function handleSignAndSchedule(
       resetTime: rateLimitCheck.resetTime,
     });
 
-    await Promise.all(
+    const createdPosts = await Promise.all(
       signedEvents.map(async (signedEvent, index) => {
         // Parse content assuming format: "caption imageUrl1 imageUrl2 ..."
         let content = "";
@@ -252,6 +252,24 @@ export async function handleSignAndSchedule(
     // If this is a recycle mode (posts have original post IDs), mark original posts as non-recyclable
     if (mode === "recycle" && originalPostIds.length > 0) {
       await markOriginalPostsAsNonRecyclable(originalPostIds, userId);
+    }
+
+    // Redirect back to bulk posts page with success info, or to scheduled page
+    const createdPostCount = createdPosts.length;
+    const firstPostId = createdPosts[0]?.id;
+
+    // If we have a first post ID, redirect to bulk posts page with success params
+    // Otherwise, redirect to scheduled page
+    if (firstPostId) {
+      const baseUrl = `/dashboard/bulkposts`;
+      const params = new URLSearchParams();
+      if (mode) {
+        params.set("mode", mode);
+      }
+      params.set("bulkScheduled", "true");
+      params.set("count", createdPostCount.toString());
+      params.set("firstPostId", firstPostId);
+      return redirect(`${baseUrl}?${params.toString()}`);
     }
 
     return redirect(`/dashboard/scheduled`);

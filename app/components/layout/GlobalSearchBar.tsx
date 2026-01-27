@@ -194,6 +194,8 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
         </div>
         <input
           ref={inputRef}
+          id="global-search"
+          name="global-search"
           type="text"
           value={query}
           onChange={handleInputChange}
