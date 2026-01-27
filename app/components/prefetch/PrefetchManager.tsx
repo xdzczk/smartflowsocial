@@ -73,16 +73,25 @@ export function PrefetchManager() {
 
   // Monitor fetcher for errors and stop prefetching if we hit rate limits
   useEffect(() => {
-    if (fetcher.data && typeof fetcher.data === "object") {
-      const data = fetcher.data as { error?: string; status?: number };
-      if (data.error || (data.status && data.status >= 400)) {
-        // Stop prefetching if we encounter errors (especially 429 rate limit)
-        if (data.status === 429) {
-          hasErrorRef.current = true;
+    // Check fetcher state for errors
+    if (fetcher.state === "idle") {
+      // Check if fetcher encountered an error
+      if (fetcher.data && typeof fetcher.data === "object") {
+        const data = fetcher.data as { error?: string; status?: number };
+        if (data.error || (data.status && data.status >= 400)) {
+          // Stop prefetching if we encounter errors (especially 429 rate limit or auth errors)
+          if (
+            data.status === 429 ||
+            data.status === 401 ||
+            data.status === 403 ||
+            data.status === 500
+          ) {
+            hasErrorRef.current = true;
+          }
         }
       }
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, fetcher.state]);
 
   return null;
 }

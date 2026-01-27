@@ -107,9 +107,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Skip service worker registration requests
+  if (url.pathname === "/sw.js" || url.pathname.endsWith("/sw.js")) {
+    return;
+  }
+
   // API calls - network first, no caching
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(fetch(request));
+    event.respondWith(
+      fetch(request).catch(() => {
+        // If API fetch fails, return error response instead of letting it throw
+        return new Response("Network error", {
+          status: 503,
+          statusText: "Service Unavailable",
+        });
+      })
+    );
     return;
   }
 
@@ -125,12 +138,24 @@ self.addEventListener("fetch", (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          return fetch(request).then((response) => {
-            if (response.ok) {
-              cache.put(request, response.clone());
-            }
-            return response;
-          });
+          return fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                cache.put(request, response.clone());
+              }
+              return response;
+            })
+            .catch(() => {
+              // If fetch fails, return cached version if available
+              if (cachedResponse) {
+                return cachedResponse;
+              }
+              // Otherwise return error
+              return new Response("Network error", {
+                status: 503,
+                statusText: "Service Unavailable",
+              });
+            });
         });
       })
     );
@@ -174,5 +199,15 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Default: network first
-  event.respondWith(fetch(request));
+  event.respondWith(
+    fetch(request).catch((error) => {
+      // Log error but don't crash the service worker
+      console.error("Service Worker fetch error:", error);
+      // Return error response
+      return new Response("Network error", {
+        status: 503,
+        statusText: "Service Unavailable",
+      });
+    })
+  );
 });

@@ -13,34 +13,45 @@ import { initSentry } from "~/lib/sentry.client";
 initSentry();
 
 // Register service worker after React hydration
+// Only register if user is likely authenticated (check for session cookie or user data)
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     void (async () => {
       try {
-        const registration = await navigator.serviceWorker.register("/sw.js");
-        // Handle service worker updates
-        registration.addEventListener("updatefound", () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener("statechange", () => {
-              if (
-                newWorker.state === "installed" &&
-                navigator.serviceWorker.controller
-              ) {
-                // New service worker available, prompt user to reload
-                // Optionally show a toast notification here
-              }
-            });
-          }
-        });
-      } catch (error) {
-        console.error("Service Worker registration failed:", error);
-      }
+        // Check if we're on a public page - don't register SW for unauthenticated users
+        const isPublicPage =
+          window.location.pathname === "/" ||
+          window.location.pathname.startsWith("/login") ||
+          window.location.pathname.startsWith("/plans");
 
-      // Handle service worker controller changes (page reload after update)
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        window.location.reload();
-      });
+        // Only register service worker for authenticated pages
+        if (!isPublicPage) {
+          const registration = await navigator.serviceWorker.register("/sw.js");
+          // Handle service worker updates
+          registration.addEventListener("updatefound", () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener("statechange", () => {
+                if (
+                  newWorker.state === "installed" &&
+                  navigator.serviceWorker.controller
+                ) {
+                  // New service worker available, prompt user to reload
+                  // Optionally show a toast notification here
+                }
+              });
+            }
+          });
+
+          // Handle service worker controller changes (page reload after update)
+          navigator.serviceWorker.addEventListener("controllerchange", () => {
+            window.location.reload();
+          });
+        }
+      } catch (error) {
+        // Silently fail - service worker is optional
+        console.warn("Service Worker registration failed:", error);
+      }
     })();
   });
 }
