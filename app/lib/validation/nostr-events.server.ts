@@ -155,7 +155,10 @@ export function normalizeLoaderResponseData(data: unknown): unknown {
     } else if (
       key === "scheduledPosts" ||
       key === "posts" ||
-      key === "longformPosts"
+      key === "longformPosts" ||
+      key === "pastPosts" ||
+      key === "scheduledLongFormPosts" ||
+      key === "pastLongFormPosts"
     ) {
       // Recursively normalize arrays of posts - these always need to be checked
       if (Array.isArray(value)) {
@@ -199,8 +202,17 @@ export function normalizeLoaderResponseData(data: unknown): unknown {
         !(value instanceof Date)
       ) {
         const valueObj = value as Record<string, unknown>;
-        // Only recursively normalize if it has event fields or is a known post array container
-        if ("signedEvent" in valueObj || "nostrEvent" in valueObj) {
+        // Recursively normalize if it has event fields or contains post arrays
+        if (
+          "signedEvent" in valueObj ||
+          "nostrEvent" in valueObj ||
+          "pastPosts" in valueObj ||
+          "scheduledPosts" in valueObj ||
+          "posts" in valueObj ||
+          "longformPosts" in valueObj ||
+          "scheduledLongFormPosts" in valueObj ||
+          "pastLongFormPosts" in valueObj
+        ) {
           normalized[key] = normalizeLoaderResponseData(value);
         } else {
           // Preserve objects without event fields (like user, hashTagPresets, etc.)

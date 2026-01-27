@@ -9,14 +9,36 @@ import { getVapidPublicKey } from "~/infra/notifications/web-push-config.server"
  * GET /api/push-subscribe - Get VAPID public key
  */
 export async function loader() {
-  const publicKey = getVapidPublicKey();
-  if (!publicKey) {
+  try {
+    // Ensure web push is initialized
+    const { initWebPush } =
+      await import("~/infra/notifications/web-push-config.server");
+    initWebPush();
+
+    const publicKey = getVapidPublicKey();
+    if (!publicKey) {
+      return json(
+        {
+          error:
+            "Push notifications not configured. Please set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables.",
+        },
+        { status: 503 }
+      );
+    }
+    return json({ publicKey });
+  } catch (error) {
+    const { logError } = await import("~/lib/error-logger.server");
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Failed to get VAPID public key",
+    });
     return json(
-      { error: "Push notifications not configured" },
+      {
+        error:
+          "Failed to initialize push notifications. Please check server configuration.",
+      },
       { status: 503 }
     );
   }
-  return json({ publicKey });
 }
 
 /**

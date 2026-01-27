@@ -663,7 +663,13 @@ export default function BulkPostsPage() {
             setModalPost(null);
             setModalLongFormPost(null);
             setBulkPostCount(null);
-            navigate(`/dashboard/bulkposts${mode ? `?mode=${mode}` : ""}`);
+            // Reset form state and navigate to fresh bulk post page
+            setPosts([]);
+            setPreparedEvents([]);
+            setShowConfirmation(false);
+            navigate(`/dashboard/bulkposts${mode ? `?mode=${mode}` : ""}`, {
+              replace: true,
+            });
           }}
           onViewPage={() => {
             setShowPublishModal(false);

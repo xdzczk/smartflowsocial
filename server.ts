@@ -680,6 +680,18 @@ async function run() {
     }
   }
 
+  // Initialize web push notifications
+  try {
+    const { initWebPush } =
+      await import("./app/infra/notifications/web-push-config.server");
+    initWebPush();
+    logInfo("Web Push initialized");
+  } catch (error) {
+    logWarning("Failed to initialize Web Push (non-fatal)", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   // Initialize database (migrations + seeding) before starting the server
   void initializeDatabase();
 

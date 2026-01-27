@@ -67,12 +67,42 @@ export function NotificationSettings({
 
     if (enabled) {
       // Subscribe to push
-      const subscription = await subscribeToPush();
-      if (subscription) {
-        setIsSubscribed(true);
-        setPermission("granted");
-      } else {
+      try {
+        const subscription = await subscribeToPush();
+        if (subscription) {
+          setIsSubscribed(true);
+          setPermission("granted");
+        } else {
+          setPushNotificationsEnabled(false);
+          // Show error to user - permission might have been denied or VAPID keys not configured
+          const currentPermission = getPushPermission();
+          if (currentPermission === "denied") {
+            setPermission("denied");
+          } else {
+            // VAPID keys likely not configured
+            console.error(
+              "Failed to subscribe to push notifications. This may be because:\n" +
+                "1. VAPID keys are not configured on the server (VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY)\n" +
+                "2. Browser permission was denied\n" +
+                "3. Service worker is not registered"
+            );
+          }
+        }
+      } catch (error) {
         setPushNotificationsEnabled(false);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error(
+          "Failed to subscribe to push notifications:",
+          errorMessage
+        );
+        // If error mentions VAPID, update permission state
+        if (errorMessage.includes("VAPID") || errorMessage.includes("503")) {
+          // Server-side configuration issue
+          console.error(
+            "Push notifications are not configured on the server. Please contact support."
+          );
+        }
       }
     } else {
       // Unsubscribe

@@ -295,8 +295,11 @@ export default function NewPostPage() {
     files,
     setFiles,
     selectedQueueType,
+    setSelectedQueueType,
     selectedHashTagPresetId,
+    setSelectedHashTagPresetId,
     selectedHashtags,
+    setSelectedHashtags,
     showImagePreview,
     setShowImagePreview,
     preparedImageEvent,
@@ -460,7 +463,15 @@ export default function NewPostPage() {
             setModalPostId(null);
             setModalPost(null);
             setModalLongFormPost(null);
-            navigate(getNewPostUrl(postType));
+            // Reset form state
+            setFiles([]);
+            setSelectedQueueType("unassigned");
+            setSelectedHashTagPresetId(null);
+            setSelectedHashtags("");
+            setShowImagePreview(false);
+            setPreparedImageEvent(null);
+            // Navigate to fresh form
+            navigate(getNewPostUrl(postType), { replace: true });
           }}
           onViewPage={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);

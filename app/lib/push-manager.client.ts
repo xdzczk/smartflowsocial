@@ -66,9 +66,23 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
     // Get VAPID public key from server
     const response = await fetch("/api/push-subscribe");
     if (!response.ok) {
-      throw new Error("Failed to get VAPID public key");
+      const errorData = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      const errorMessage =
+        errorData.error ?? `Server returned ${response.status}`;
+      throw new Error(`Failed to get VAPID public key: ${errorMessage}`);
     }
-    const { publicKey } = (await response.json()) as { publicKey: string };
+    const data = (await response.json()) as {
+      publicKey?: string;
+      error?: string;
+    };
+    if (data.error || !data.publicKey) {
+      throw new Error(
+        data.error ?? "VAPID public key not available from server"
+      );
+    }
+    const { publicKey } = data;
 
     if (!publicKey) {
       throw new Error("VAPID public key not available");
