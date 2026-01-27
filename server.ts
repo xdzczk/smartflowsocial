@@ -30,6 +30,7 @@ import {
   apiLimiter,
   strictLimiter,
   authLimiter,
+  pollingLimiter,
 } from "./app/lib/rate-limit.server";
 
 // Only install in production or when explicitly enabled to avoid missing map file errors in dev
@@ -467,6 +468,9 @@ async function run() {
   app.use(morgan("tiny"));
 
   // Rate limiting
+  // More lenient limits for polling endpoints (must come before general API limiter)
+  app.use("/api/publish-result", pollingLimiter);
+
   // Apply general API rate limiting to all API routes
   app.use("/api/", apiLimiter);
 

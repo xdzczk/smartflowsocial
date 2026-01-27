@@ -163,9 +163,11 @@ export async function handlePostOrScheduleText({
       correlationId,
     });
 
-    return redirect(`/dashboard/posted?published=${result.post.id}`);
+    // Stay on current page and show modal there
+    return redirect(`/dashboard/newpost?published=${result.post.id}`);
   } else {
     // schedule-text - post will be scheduled via outbox pattern
-    return redirect(`/dashboard/scheduled?scheduled=${result.post.id}`);
+    // Stay on current page and show modal there
+    return redirect(`/dashboard/newpost?scheduled=${result.post.id}`);
   }
 }

@@ -113,7 +113,8 @@ export async function handlePostImages({
     correlationId,
   });
 
-  return redirect(`/dashboard/posted?published=${result.post.id}`);
+  // Stay on current page and show modal there
+  return redirect(`/dashboard/newpost?published=${result.post.id}`);
 }
 
 /**
@@ -180,7 +181,8 @@ export async function handleScheduleImages({
     correlationId,
   });
 
-  return redirect(`/dashboard/scheduled?scheduled=${result.post.id}`);
+  // Stay on current page and show modal there
+  return redirect(`/dashboard/newpost?scheduled=${result.post.id}`);
 }
 
 /**

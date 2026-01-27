@@ -399,9 +399,8 @@ async function handlePublish(
       relays: sanitizedRelays,
     });
 
-    return redirect(
-      `/dashboard/posted?published=${result.post.id}&tab=longform`
-    );
+    // Stay on current page and show modal there
+    return redirect(`/dashboard/newlongformpost?published=${result.post.id}`);
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
@@ -546,9 +545,8 @@ async function handleScheduleLongform(
     isPublished: false,
   });
 
-  return redirect(
-    `/dashboard/scheduled?scheduled=${result.post.id}&tab=longform`
-  );
+  // Stay on current page and show modal there
+  return redirect(`/dashboard/newlongformpost?scheduled=${result.post.id}`);
 }
 
 /**

@@ -94,9 +94,11 @@ export async function handlePostCreation(
       correlationId: context.correlationId,
     });
 
-    return { redirect: `/dashboard/posted?published=${result.post.id}` };
+    // Stay on current page and show modal there
+    return { redirect: `/dashboard/newpost?published=${result.post.id}` };
   }
 
   // schedule - post will be scheduled via outbox pattern
-  return { redirect: `/dashboard/scheduled?scheduled=${result.post.id}` };
+  // Stay on current page and show modal there
+  return { redirect: `/dashboard/newpost?scheduled=${result.post.id}` };
 }

@@ -57,7 +57,9 @@ export const apiLimiter = rateLimit({
       ),
     });
   },
-  skip: (_req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
+  skip: (req: Request) => {
+    return isTestEnvironment() || req.path === "/api/publish-result";
+  },
 });
 
 /**
@@ -82,6 +84,30 @@ export const strictLimiter = rateLimit({
     });
   },
   skip: (_req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
+});
+
+/**
+ * Lenient rate limiter for polling endpoints (e.g., publish-result)
+ * Limits: 2000 requests per 15 minutes per IP
+ * Disabled in test environments
+ */
+export const pollingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isTestEnvironment() ? 10000 : 2000, // Very high limit in tests, lenient in production
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many polling requests, please slow down.",
+  handler: (req: Request, res: Response) => {
+    res.status(429).json({
+      error: RATE_LIMIT_EXCEEDED_ERROR,
+      message: "Too many polling requests. Please wait before polling again.",
+      retryAfter: Math.ceil(
+        (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
+          1000
+      ),
+    });
+  },
+  skip: (_req: Request) => isTestEnvironment(),
 });
 
 /**

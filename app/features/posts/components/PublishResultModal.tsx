@@ -1,4 +1,3 @@
-import { useFetcher } from "@remix-run/react";
 import {
   CheckCircle2,
   Clock,
@@ -184,12 +183,11 @@ export default function PublishResultModal({
   onCreateNew,
   onViewPage,
 }: PublishResultModalProps) {
-  const fetcher = useFetcher<{ acks?: RelayAck[]; error?: string }>();
   const [relayAcks, setRelayAcks] = useState<RelayAck[]>([]);
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
-  const maxPollingAttempts = 15; // 15 attempts * 2 seconds = 30 seconds max
-  const pollingInterval = 2000; // 2 seconds
+  const maxPollingAttempts = 10; // 10 attempts * 5 seconds = 50 seconds max
+  const pollingInterval = 5000; // 5 seconds - increased to avoid rate limiting
 
   // Poll for relay acknowledgements (only for published posts)
   useEffect(() => {
@@ -204,9 +202,16 @@ export default function PublishResultModal({
     }, 0);
 
     let currentPollCount = 0;
+    let backoffDelay = pollingInterval; // Start with base interval
+    let pollTimeout: NodeJS.Timeout | null = null;
+    let isPolling = true;
 
-    // Start polling immediately
-    const poll = () => {
+    // Start polling with exponential backoff on errors
+    const poll = async () => {
+      if (!isPolling) {
+        return;
+      }
+
       if (currentPollCount >= maxPollingAttempts) {
         setTimeout(() => {
           setHasTimedOut(true);
@@ -214,17 +219,72 @@ export default function PublishResultModal({
         return;
       }
 
-      fetcher.load(
-        `/api/publish-result?postId=${postId}&publishAttemptId=${publishAttemptId}`
-      );
+      try {
+        const response = await fetch(
+          `/api/publish-result?postId=${postId}&publishAttemptId=${publishAttemptId}`
+        );
+
+        if (response.status === 429) {
+          // Rate limited - increase backoff exponentially, max 30 seconds
+          backoffDelay = Math.min(backoffDelay * 2, 30000);
+          console.warn(
+            "Rate limited (429), backing off to",
+            backoffDelay,
+            "ms"
+          );
+        } else if (response.ok) {
+          // Success - reset backoff to base interval
+          backoffDelay = pollingInterval;
+          const data = (await response.json()) as {
+            acks?: RelayAck[];
+            error?: string;
+          };
+          if (data.acks) {
+            setTimeout(() => {
+              setRelayAcks(data.acks ?? []);
+            }, 0);
+          }
+        } else {
+          // Other error - use moderate backoff
+          backoffDelay = Math.min(backoffDelay * 1.5, 20000);
+        }
+      } catch (error) {
+        console.error("Error polling relay acks:", error);
+        // Network error - use moderate backoff
+        backoffDelay = Math.min(backoffDelay * 1.5, 20000);
+      }
+
       currentPollCount += 1;
     };
 
-    // Poll immediately, then every 2 seconds
-    poll();
-    const interval = setInterval(poll, pollingInterval);
+    // Schedule next poll with backoff
+    const scheduleNextPoll = () => {
+      if (!isPolling) return;
 
-    return () => clearInterval(interval);
+      if (pollTimeout) {
+        clearTimeout(pollTimeout);
+      }
+      pollTimeout = setTimeout(() => {
+        if (!isPolling) return;
+        void (async () => {
+          await poll();
+          scheduleNextPoll();
+        })();
+      }, backoffDelay);
+    };
+
+    // Poll immediately, then schedule next
+    void (async () => {
+      await poll();
+      scheduleNextPoll();
+    })();
+
+    return () => {
+      isPolling = false;
+      if (pollTimeout) {
+        clearTimeout(pollTimeout);
+      }
+    };
   }, [
     isOpen,
     action,
@@ -232,20 +292,7 @@ export default function PublishResultModal({
     postId,
     maxPollingAttempts,
     pollingInterval,
-    fetcher,
   ]);
-
-  // Update relay acks when fetcher data changes
-  useEffect(() => {
-    if (fetcher.data?.acks) {
-      // Capture the value to avoid TypeScript narrowing issues in setTimeout
-      const acks = fetcher.data.acks;
-      // Use setTimeout to avoid setState in effect warning
-      setTimeout(() => {
-        setRelayAcks(acks);
-      }, 0);
-    }
-  }, [fetcher.data]);
 
   // Calculate relay status counts
   const relayStatusCounts = useMemo(() => {

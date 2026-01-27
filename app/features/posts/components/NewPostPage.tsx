@@ -1,5 +1,6 @@
 import type { AssetType } from "@prisma/client";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useSearchParams, useNavigate } from "@remix-run/react";
+import { useEffect, useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { Asset } from "~/features/assets";
@@ -13,10 +14,16 @@ import {
   MediaPost,
   NewPostHeader,
   NewPostImagesConfirmation,
+  PublishResultModal,
   TextPost,
 } from "~/features/posts/ui";
 
 import { useNewPostState } from "../hooks/useNewPostState";
+import {
+  getPostTypeFromPost,
+  getNewPostUrl,
+  determineModalAction,
+} from "../utils/publish-result.utils";
 
 // ============================================================================
 // Loader Data Parsing Helpers (route-safe, no server imports)
@@ -298,6 +305,77 @@ export default function NewPostPage() {
     handleHashtagPresetSelect,
   } = useNewPostState();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [modalPostId, setModalPostId] = useState<string | null>(null);
+  const [modalPost, setModalPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+  } | null>(null);
+  const [modalLongFormPost, setModalLongFormPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+  } | null>(null);
+
+  // Check for published/scheduled URL param
+  useEffect(() => {
+    const publishedPostId = searchParams.get("published");
+    const scheduledPostId = searchParams.get("scheduled");
+    const postId = publishedPostId ?? scheduledPostId;
+
+    if (postId && !modalPostId && !showPublishModal) {
+      // Use setTimeout to avoid setState in effect warning
+      setTimeout(() => {
+        setModalPostId(postId);
+      }, 0);
+
+      // Fetch post data using fetch directly for API routes
+      void (async () => {
+        try {
+          const res = await fetch(`/api/posts/${postId}`);
+          if (!res.ok) {
+            throw new Error(`Failed to fetch: ${res.status}`);
+          }
+          const data = (await res.json()) as {
+            post?: {
+              id: string;
+              publishAttemptId: string | null;
+              currentState?: string | null;
+            };
+            longFormPost?: {
+              id: string;
+              publishAttemptId: string | null;
+              currentState?: string | null;
+            };
+            error?: string;
+          };
+
+          if (data.post || data.longFormPost) {
+            setTimeout(() => {
+              setModalPost(data.post ?? null);
+              setModalLongFormPost(data.longFormPost ?? null);
+              setShowPublishModal(true);
+            }, 0);
+            // Clear URL param to prevent re-showing on refresh
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("published");
+            newSearchParams.delete("scheduled");
+            setSearchParams(newSearchParams, { replace: true });
+          }
+        } catch (error) {
+          console.error("Failed to fetch post data:", error);
+          // Reset state on error
+          setTimeout(() => {
+            setModalPostId(null);
+          }, 0);
+        }
+      })();
+    }
+  }, [searchParams, modalPostId, showPublishModal, setSearchParams]);
+
   return (
     <div className="p-6">
       <NewPostHeader selectedHashtags={selectedHashtags} />
@@ -364,6 +442,32 @@ export default function NewPostPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
+        <PublishResultModal
+          isOpen={showPublishModal}
+          postId={modalPostId}
+          publishAttemptId={
+            modalPost?.publishAttemptId ??
+            modalLongFormPost?.publishAttemptId ??
+            null
+          }
+          action={determineModalAction(modalPost, modalLongFormPost)}
+          postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
+          onCreateNew={() => {
+            const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
+            navigate(getNewPostUrl(postType));
+          }}
+          onViewPage={() => {
+            const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
+            if (postType === "longform") {
+              navigate("/dashboard/posted?tab=longform");
+            } else {
+              navigate("/dashboard/posted");
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }

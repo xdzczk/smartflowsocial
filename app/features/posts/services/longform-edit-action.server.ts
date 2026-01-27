@@ -402,6 +402,7 @@ async function handlePublish(
     correlationId,
   });
 
+  // Stay on current page and show modal there (for edit, redirect to posted page)
   return redirect(`/dashboard/posted?published=${postId}&tab=longform`);
 }
 
