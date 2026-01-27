@@ -12,6 +12,39 @@ import { hydrateRoot } from "react-dom/client";
 import { initSentry } from "~/lib/sentry.client";
 initSentry();
 
+// Register service worker after React hydration
+if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    void (async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/sw.js");
+        // Handle service worker updates
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener("statechange", () => {
+              if (
+                newWorker.state === "installed" &&
+                navigator.serviceWorker.controller
+              ) {
+                // New service worker available, prompt user to reload
+                // Optionally show a toast notification here
+              }
+            });
+          }
+        });
+      } catch (error) {
+        console.error("Service Worker registration failed:", error);
+      }
+
+      // Handle service worker controller changes (page reload after update)
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        window.location.reload();
+      });
+    })();
+  });
+}
+
 startTransition(() => {
   hydrateRoot(
     document,

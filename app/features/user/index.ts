@@ -58,6 +58,8 @@ export {
   getUserFilterMuted,
   updateUserHidePostsFromLowTrustUsers,
   getUserHidePostsFromLowTrustUsers,
+  getUserPushNotificationPreferences,
+  updateUserPushNotificationPreferences,
 } from "./services/user-settings.server";
 
 // Queue Types

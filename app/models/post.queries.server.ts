@@ -21,11 +21,13 @@ export async function getScheduledPosts({
   page = 1,
   limit = 20,
   queueType,
+  since,
 }: {
   userId: string;
   page?: number;
   limit?: number;
   queueType?: string;
+  since?: number; // Unix timestamp in milliseconds for delta sync
 }): Promise<PostsWithPagination> {
   try {
     const skip = (page - 1) * limit;
@@ -35,6 +37,14 @@ export async function getScheduledPosts({
       currentState: "SCHEDULED",
       userId: userId,
     };
+
+    // Add delta sync filter if since timestamp is provided
+    if (since !== undefined) {
+      const sinceDate = new Date(since);
+      whereClause.updatedAt = {
+        gte: sinceDate,
+      };
+    }
 
     // Add queue type filter if specified
     if (queueType && queueType !== "all") {
@@ -209,10 +219,12 @@ export async function getRecentPostedPosts({
   userId,
   days,
   queueType,
+  since,
 }: {
   userId: string;
   days: number;
   queueType?: string;
+  since?: number; // Unix timestamp in milliseconds for delta sync
 }): Promise<PostWithQueueType[]> {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -225,6 +237,14 @@ export async function getRecentPostedPosts({
       gte: startDate,
     },
   };
+
+  // Add delta sync filter if since timestamp is provided
+  if (since !== undefined) {
+    const sinceDate = new Date(since);
+    whereClause.updatedAt = {
+      gte: sinceDate,
+    };
+  }
 
   // Add queue type filter if specified
   if (queueType && queueType !== "all") {

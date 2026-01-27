@@ -14,6 +14,8 @@ import {
 } from "@remix-run/react";
 import { Toaster } from "react-hot-toast";
 
+import { LifecycleHandler } from "~/components/lifecycle/LifecycleHandler";
+import { PrefetchManager } from "~/components/prefetch/PrefetchManager";
 import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
 import { getUser } from "~/features/auth/session.server";
 import { handleLoaderError } from "~/lib/error-handler.server";
@@ -175,6 +177,8 @@ export default function App() {
       <body className="h-full">
         <QueryProvider>
           <Toaster position="top-right" />
+          <LifecycleHandler />
+          <PrefetchManager />
           <RemoteSignerReconnectController />
           <Outlet />
           <ScrollRestoration />

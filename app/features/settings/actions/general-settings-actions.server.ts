@@ -7,6 +7,7 @@ import { json } from "@remix-run/node";
 import {
   updateGiveawayBlacklist,
   updateScheduleInterval,
+  updateUserPushNotificationPreferences,
   updateUserRelays,
   updateUserTimezone,
 } from "~/features/user";
@@ -63,6 +64,26 @@ export async function handleGeneralSettingsAction(
       num.toString()
     );
     await updateScheduleInterval(userId, intervals);
+    return json({ success: true });
+  }
+
+  if (action === "update_notification_preferences") {
+    const pushNotificationsEnabled = formData.get("pushNotificationsEnabled");
+    const pushNotifyPublishSuccess = formData.get("pushNotifyPublishSuccess");
+    const pushNotifyPublishFailure = formData.get("pushNotifyPublishFailure");
+
+    await updateUserPushNotificationPreferences(userId, {
+      ...(pushNotificationsEnabled !== null && {
+        pushNotificationsEnabled: pushNotificationsEnabled === "true",
+      }),
+      ...(pushNotifyPublishSuccess !== null && {
+        pushNotifyPublishSuccess: pushNotifyPublishSuccess === "true",
+      }),
+      ...(pushNotifyPublishFailure !== null && {
+        pushNotifyPublishFailure: pushNotifyPublishFailure === "true",
+      }),
+    });
+
     return json({ success: true });
   }
 

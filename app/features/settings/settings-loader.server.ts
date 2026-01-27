@@ -25,6 +25,7 @@ import {
   getUserMirrorUploadUrls,
   getUserMutedList,
   getUserNWC,
+  getUserPushNotificationPreferences,
   getUserTimezone,
   getUserUploadProvider,
 } from "~/features/user";
@@ -125,6 +126,9 @@ export interface SettingsLoaderData {
   mutedList: MutedList | null;
   filterMuted: boolean;
   hidePostsFromLowTrustUsers: boolean;
+  pushNotificationsEnabled: boolean;
+  pushNotifyPublishSuccess: boolean;
+  pushNotifyPublishFailure: boolean;
 }
 
 /**
@@ -161,6 +165,7 @@ export async function loadSettingsData(
     mutedList,
     filterMuted,
     hidePostsFromLowTrustUsers,
+    pushNotificationPreferences,
   ] = await Promise.all([
     getUserTimezone(userId),
     getRelayIntentCached(userId),
@@ -177,6 +182,7 @@ export async function loadSettingsData(
     getUserMutedList(userId),
     getUserFilterMuted(userId),
     getUserHidePostsFromLowTrustUsers(userId),
+    getUserPushNotificationPreferences(userId),
   ]);
 
   const relays = relayIntent.writeRelays;
@@ -336,5 +342,11 @@ export async function loadSettingsData(
     mutedList,
     filterMuted,
     hidePostsFromLowTrustUsers,
+    pushNotificationsEnabled:
+      pushNotificationPreferences.pushNotificationsEnabled,
+    pushNotifyPublishSuccess:
+      pushNotificationPreferences.pushNotifyPublishSuccess,
+    pushNotifyPublishFailure:
+      pushNotificationPreferences.pushNotifyPublishFailure,
   };
 }

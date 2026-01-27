@@ -294,6 +294,59 @@ export async function getUserMutedList(userId: string): Promise<{
 }
 
 /**
+ * Gets user's push notification preferences
+ */
+export async function getUserPushNotificationPreferences(
+  userId: string
+): Promise<{
+  pushNotificationsEnabled: boolean;
+  pushNotifyPublishSuccess: boolean;
+  pushNotifyPublishFailure: boolean;
+}> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      pushNotificationsEnabled: true,
+      pushNotifyPublishSuccess: true,
+      pushNotifyPublishFailure: true,
+    },
+  });
+
+  return {
+    pushNotificationsEnabled: user?.pushNotificationsEnabled ?? true,
+    pushNotifyPublishSuccess: user?.pushNotifyPublishSuccess ?? true,
+    pushNotifyPublishFailure: user?.pushNotifyPublishFailure ?? true,
+  };
+}
+
+/**
+ * Updates push notification preferences
+ */
+export async function updateUserPushNotificationPreferences(
+  userId: string,
+  preferences: {
+    pushNotificationsEnabled?: boolean;
+    pushNotifyPublishSuccess?: boolean;
+    pushNotifyPublishFailure?: boolean;
+  }
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(preferences.pushNotificationsEnabled !== undefined && {
+        pushNotificationsEnabled: preferences.pushNotificationsEnabled,
+      }),
+      ...(preferences.pushNotifyPublishSuccess !== undefined && {
+        pushNotifyPublishSuccess: preferences.pushNotifyPublishSuccess,
+      }),
+      ...(preferences.pushNotifyPublishFailure !== undefined && {
+        pushNotifyPublishFailure: preferences.pushNotifyPublishFailure,
+      }),
+    },
+  });
+}
+
+/**
  * Updates the filterMuted setting
  */
 export function updateUserFilterMuted(

@@ -27,6 +27,10 @@ model User {
   mutedList                  Json?
   filterMuted                Boolean        @default(false)
   hidePostsFromLowTrustUsers Boolean        @default(false)
+  // Push notification preferences
+  pushNotificationsEnabled   Boolean        @default(true)
+  pushNotifyPublishSuccess   Boolean        @default(true)
+  pushNotifyPublishFailure   Boolean        @default(true)
   // Child/parent self-relation via npub
   isChild                    Boolean        @default(false)
   parentNpub                 String?
@@ -44,6 +48,7 @@ model User {
   templates      Template[]
   sessions       Session[]
   publishRelayAcks PublishRelayAck[]
+  pushSubscriptions PushSubscription[]
 
   @@index([parentNpub])
 }
@@ -516,4 +521,18 @@ model PostAnalyticsDaily {
   @@unique([userId, date])
   @@index([userId, date])
   @@index([date])
+}
+
+// Push notification subscriptions for PWA
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

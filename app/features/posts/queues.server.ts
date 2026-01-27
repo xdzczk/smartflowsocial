@@ -443,6 +443,36 @@ async function handleScheduledPostJobError(input: {
       attemptsMade,
       correlationId
     );
+
+    // Send push notification for publish failure (only on final failure, not retries)
+    try {
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { publishAttemptId: true },
+      });
+      const publishAttemptId =
+        post?.publishAttemptId ?? `failed_${postId}_${Date.now()}`;
+      const { sendPublishFailureNotification } =
+        await import("~/infra/notifications/push-notification.server");
+      await sendPublishFailureNotification(
+        userId,
+        postId,
+        publishAttemptId,
+        err.message
+      );
+    } catch (notificationError) {
+      // Log but don't fail if notification fails
+      logError(
+        notificationError instanceof Error
+          ? notificationError
+          : new Error(String(notificationError)),
+        {
+          message: "Failed to send publish failure notification",
+          postId,
+          userId,
+        }
+      );
+    }
   }
 
   logError(err, {
@@ -506,6 +536,36 @@ async function handleScheduledLongFormPostJobError(input: {
       attemptsMade,
       correlationId
     );
+
+    // Send push notification for publish failure (only on final failure, not retries)
+    try {
+      const longformPost = await prisma.longFormPost.findUnique({
+        where: { id: postId },
+        select: { publishAttemptId: true },
+      });
+      const publishAttemptId =
+        longformPost?.publishAttemptId ?? `failed_${postId}_${Date.now()}`;
+      const { sendPublishFailureNotification } =
+        await import("~/infra/notifications/push-notification.server");
+      await sendPublishFailureNotification(
+        userId,
+        postId,
+        publishAttemptId,
+        err.message
+      );
+    } catch (notificationError) {
+      // Log but don't fail if notification fails
+      logError(
+        notificationError instanceof Error
+          ? notificationError
+          : new Error(String(notificationError)),
+        {
+          message: "Failed to send publish failure notification",
+          postId,
+          userId,
+        }
+      );
+    }
   }
 
   if (!willRetry) {
@@ -754,6 +814,26 @@ async function runScheduledPostJob(input: {
     },
   });
 
+  // Send push notification for publish success (immediate, no batching)
+  try {
+    const { sendPublishSuccessNotification } =
+      await import("~/infra/notifications/push-notification.server");
+    await sendPublishSuccessNotification(userId, postId, publishAttemptId);
+  } catch (notificationError) {
+    // Log but don't fail the job if notification fails
+    logError(
+      notificationError instanceof Error
+        ? notificationError
+        : new Error(String(notificationError)),
+      {
+        message: "Failed to send publish success notification",
+        postId,
+        userId,
+        publishAttemptId,
+      }
+    );
+  }
+
   return { success: true, postId };
 }
 
@@ -940,6 +1020,26 @@ async function runScheduledLongFormPostJob(input: {
       jobId: String(job.id ?? "unknown"),
     },
   });
+
+  // Send push notification for publish success (immediate, no batching)
+  try {
+    const { sendPublishSuccessNotification } =
+      await import("~/infra/notifications/push-notification.server");
+    await sendPublishSuccessNotification(userId, postId, publishAttemptId);
+  } catch (notificationError) {
+    // Log but don't fail the job if notification fails
+    logError(
+      notificationError instanceof Error
+        ? notificationError
+        : new Error(String(notificationError)),
+      {
+        message: "Failed to send publish success notification",
+        postId,
+        userId,
+        publishAttemptId,
+      }
+    );
+  }
 
   return { success: true, postId };
 }

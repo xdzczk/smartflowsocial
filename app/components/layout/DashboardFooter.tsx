@@ -1,6 +1,7 @@
 import { ClockIcon } from "@heroicons/react/20/solid";
 import { useState, useEffect } from "react";
 
+import { SyncStatusIndicator } from "~/components/sync/SyncStatusIndicator";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 // Helper to extract city name from timezone (e.g., "Africa/Cairo" -> "Cairo")
@@ -54,6 +55,8 @@ export default function Footer() {
           SmartFlow Social © {new Date().getFullYear()}
         </div>
         <div className="text-muted-foreground flex items-center justify-center gap-1.5 sm:gap-2">
+          <SyncStatusIndicator />
+          <span className="hidden lg:inline">·</span>
           <ClockIcon className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
           <span className="hidden sm:inline">{dateString}</span>
           <span className="sm:hidden">{dateString.split(",")[0]}</span>

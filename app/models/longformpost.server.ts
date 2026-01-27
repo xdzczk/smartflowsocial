@@ -606,21 +606,33 @@ export async function getScheduledLongFormPosts({
   userId,
   page = 1,
   limit = 20,
+  since,
 }: {
   userId: User["id"];
   page?: number;
   limit?: number;
+  since?: number; // Unix timestamp in milliseconds for delta sync
 }) {
   try {
     const skip = (page - 1) * limit;
 
+    const where: Prisma.LongFormPostWhereInput = {
+      userId,
+      // Use currentState as single source of truth
+      currentState: "SCHEDULED",
+    };
+
+    // Add delta sync filter if since timestamp is provided
+    if (since !== undefined) {
+      const sinceDate = new Date(since);
+      where.updatedAt = {
+        gte: sinceDate,
+      };
+    }
+
     const [posts, total] = await Promise.all([
       prisma.longFormPost.findMany({
-        where: {
-          userId,
-          // Use currentState as single source of truth
-          currentState: "SCHEDULED",
-        },
+        where,
         include: {
           queueType: true,
         },
@@ -628,13 +640,7 @@ export async function getScheduledLongFormPosts({
         skip,
         take: limit,
       }),
-      prisma.longFormPost.count({
-        where: {
-          userId,
-          // Use currentState as single source of truth
-          currentState: "SCHEDULED",
-        },
-      }),
+      prisma.longFormPost.count({ where }),
     ]);
 
     return {

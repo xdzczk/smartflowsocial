@@ -1,5 +1,6 @@
 import { useLoaderData, useSearchParams } from "@remix-run/react";
 
+import { NotificationSettings } from "~/components/settings/NotificationSettings";
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
 import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -293,6 +294,9 @@ export default function SettingsPage() {
     mutedList?: unknown;
     filterMuted?: unknown;
     hidePostsFromLowTrustUsers?: unknown;
+    pushNotificationsEnabled?: unknown;
+    pushNotifyPublishSuccess?: unknown;
+    pushNotifyPublishFailure?: unknown;
   };
 
   const {
@@ -319,6 +323,9 @@ export default function SettingsPage() {
     mutedList: mutedListRaw,
     filterMuted,
     hidePostsFromLowTrustUsers,
+    pushNotificationsEnabled,
+    pushNotifyPublishSuccess,
+    pushNotifyPublishFailure,
   } = data;
 
   const queueTypes = parseQueueTypes(queueTypesRaw);
@@ -384,6 +391,20 @@ export default function SettingsPage() {
             <TimezoneSettings timezone={timezoneValue} />
             <ScheduleIntervalsSettings
               scheduleIntervals={scheduleIntervalsList}
+            />
+            <NotificationSettings
+              pushNotificationsEnabled={asBoolean(
+                pushNotificationsEnabled,
+                true
+              )}
+              pushNotifyPublishSuccess={asBoolean(
+                pushNotifyPublishSuccess,
+                true
+              )}
+              pushNotifyPublishFailure={asBoolean(
+                pushNotifyPublishFailure,
+                true
+              )}
             />
           </div>
         </TabsContent>

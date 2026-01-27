@@ -37,11 +37,12 @@ export async function loadDashboardData(
   userId: string,
   queueType: string,
   page = 1,
-  limit = 20
+  limit = 20,
+  since?: number // Unix timestamp in milliseconds for delta sync
 ) {
   const results = await Promise.allSettled([
-    getScheduledPosts({ userId, queueType, page, limit }),
-    getScheduledLongFormPosts({ userId, page, limit }),
+    getScheduledPosts({ userId, queueType, page, limit, since }),
+    getScheduledLongFormPosts({ userId, page, limit, since }),
     getPostStatistics({ userId }),
     getUserById(userId),
     getQueueTypesCached(userId),
