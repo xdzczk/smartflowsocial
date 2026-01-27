@@ -15,7 +15,7 @@ export const relaysArray: string[] = [
   "wss://nostr.einundzwanzig.space",
   "wss://nostr.fmt.wiz.biz",
   "wss://nostr.wine",
-  "wss://relay.nostr.band",
+  "wss://nos.lol/",
   "wss://relay.westernbtc.com",
   "wss://nostr.roundrockbitcoiners.com",
   "wss://nostr.land",
@@ -41,7 +41,7 @@ export const DEFAULT_USER_WRITE_RELAYS: string[] = [
   "wss://relay.snort.social",
   "wss://relay.primal.net",
   "wss://relay.damus.io",
-  "wss://relay.nostr.band",
+  "wss://nos.lol/",
 ];
 
 export const blastrRelay = "wss://blastr.smartflowsocial.com";

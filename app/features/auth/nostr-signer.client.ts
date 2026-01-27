@@ -120,6 +120,17 @@ export function parseRelayList(raw: string): string[] {
     .filter((s) => s.length > 0);
 }
 
+/**
+ * Calculate progressive timeout for NIP-46 connections
+ * Reduces timeout on retries to fail faster
+ */
+function getProgressiveConnectionTimeout(retryCount: number): number {
+  const baseTimeout = 120_000; // 2 minutes for first attempt
+  if (retryCount === 0) return baseTimeout;
+  const timeout = baseTimeout / Math.pow(2, retryCount);
+  return Math.max(timeout, 30_000); // Minimum 30 seconds
+}
+
 export function createNip46NostrConnectUri(input: {
   relays: string[];
   appName?: string;
@@ -150,6 +161,7 @@ export async function connectNip46WithBunkerInput(input: {
   pool?: SimplePool;
   clientSecretKey?: Uint8Array;
   timeoutMs: number;
+  retryCount?: number;
 }): Promise<Nip46ConnectResult> {
   const clientSecretKey = input.clientSecretKey ?? generateSecretKey();
   const pool = input.pool ?? new SimplePool();
@@ -160,8 +172,14 @@ export async function connectNip46WithBunkerInput(input: {
   }
   const inner = BunkerSigner.fromBunker(clientSecretKey, bp, { pool });
 
+  // Use progressive timeout if retryCount is provided, otherwise use provided timeoutMs
+  const timeoutMs =
+    input.retryCount !== undefined
+      ? getProgressiveConnectionTimeout(input.retryCount)
+      : input.timeoutMs;
+
   const timeout = new Promise<never>((_resolve, reject) =>
-    setTimeout(() => reject(new Error("SIGNER_TIMEOUT")), input.timeoutMs)
+    setTimeout(() => reject(new Error("SIGNER_TIMEOUT")), timeoutMs)
   );
 
   await Promise.race([inner.connect(), timeout]);
@@ -178,8 +196,14 @@ export async function connectNip46WithNostrConnectUri(input: {
   pool: SimplePool;
   timeoutMs: number;
   relaysToCloseOnCancel: string[];
+  retryCount?: number;
 }): Promise<Nip46ConnectResult> {
-  const timeoutMs = Math.max(1_000, input.timeoutMs);
+  // Use progressive timeout if retryCount is provided, otherwise use provided timeoutMs
+  const timeoutMs =
+    input.retryCount !== undefined
+      ? getProgressiveConnectionTimeout(input.retryCount)
+      : Math.max(1_000, input.timeoutMs);
+
   const inner = await BunkerSigner.fromURI(
     input.clientSecretKey,
     input.uri,

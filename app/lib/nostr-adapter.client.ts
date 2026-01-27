@@ -21,12 +21,54 @@ import type {
 import { RemoteSignerTimeoutError } from "~/lib/errors";
 import { emitRemoteSignerTimeoutEvent } from "~/lib/remote-signer-reconnect.client";
 
+import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
 const ACTIVE_SIGNER_CONNECT_TIMEOUT_MS = 15_000;
 const ACTIVE_SIGNER_SIGN_TIMEOUT_MS = 30_000;
+
+// Track retry counts for progressive timeouts
+let connectionRetryCount = 0;
+let signRetryCount = 0;
+
+/**
+ * Reset retry counts (call after successful operation)
+ */
+export function resetNostrRetryCounts(): void {
+  connectionRetryCount = 0;
+  signRetryCount = 0;
+}
+
+/**
+ * Increment and get connection retry count
+ */
+export function getConnectionRetryCount(): number {
+  return connectionRetryCount;
+}
+
+/**
+ * Increment connection retry count
+ */
+export function incrementConnectionRetryCount(): void {
+  connectionRetryCount++;
+}
+
+/**
+ * Increment and get sign retry count
+ */
+export function getSignRetryCount(): number {
+  return signRetryCount;
+}
+
+/**
+ * Increment sign retry count
+ */
+export function incrementSignRetryCount(): void {
+  signRetryCount++;
+}
 
 async function withTimeout<T>(
   promise: Promise<T>,
@@ -133,10 +175,17 @@ async function trySignWithConfiguredSigner(
         : null;
     prefersRemoteSigner = !!cfg && cfg.type === "nip46";
 
+    const connectTimeout = prefersRemoteSigner
+      ? getProgressiveTimeout(
+          connectionRetryCount,
+          ACTIVE_SIGNER_CONNECT_TIMEOUT_MS
+        )
+      : ACTIVE_SIGNER_CONNECT_TIMEOUT_MS;
+
     const activeSigner = prefersRemoteSigner
       ? await withTimeout(
           signerManager.getActiveSigner(),
-          ACTIVE_SIGNER_CONNECT_TIMEOUT_MS,
+          connectTimeout,
           "Connecting to remote signer took too long. Open your signer app and try again."
         )
       : await signerManager.getActiveSigner();
@@ -144,14 +193,22 @@ async function trySignWithConfiguredSigner(
     if (!activeSigner) return null;
 
     const signPromise = Promise.resolve(activeSigner.signEvent(nostrEvent));
+    const signTimeout =
+      activeSigner.type === "nip46"
+        ? getProgressiveTimeout(signRetryCount, ACTIVE_SIGNER_SIGN_TIMEOUT_MS)
+        : ACTIVE_SIGNER_SIGN_TIMEOUT_MS;
+
     const signResult =
       activeSigner.type === "nip46"
         ? await withTimeout(
             signPromise,
-            ACTIVE_SIGNER_SIGN_TIMEOUT_MS,
+            signTimeout,
             "Remote signer did not respond. Open your signer app (e.g. Primal) and approve the request."
           )
         : await signPromise;
+
+    // Reset retry counts on success
+    resetNostrRetryCounts();
 
     return normalizeSignResult(signResult, nostrEvent);
   } catch (err) {
@@ -169,6 +226,8 @@ async function trySignWithConfiguredSigner(
         err instanceof RemoteSignerTimeoutError;
 
       if (isConnectionError) {
+        // Increment retry count for connection errors
+        incrementConnectionRetryCount();
         // Clear cache and emit timeout event for connection errors
         await resetSignerCacheBestEffort();
         if (err instanceof RemoteSignerTimeoutError) {
@@ -180,6 +239,9 @@ async function trySignWithConfiguredSigner(
               "Connection to remote signer failed. Please try again or reconnect your signer.",
           });
         }
+      } else {
+        // Increment sign retry count for sign errors (prefersRemoteSigner is already true in this block)
+        incrementSignRetryCount();
       }
       throw err;
     }

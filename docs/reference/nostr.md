@@ -146,11 +146,12 @@ Standard Nostr event structure and relay communication.
 
 1. **User starts sign-in**
    - User navigates to `/login`
+   - App proactively checks for NIP-07 extension availability
    - User explicitly chooses **Browser Extension (NIP-07)** or **Remote Signer (NIP-46)**
 
 2. **Resolve identity pubkey**
-   - NIP-07: `window.nostr.getPublicKey()`
-   - NIP-46: connect/approve in the remote signer, then `getPublicKey()`
+   - NIP-07: `window.nostr.getPublicKey()` (with circuit breaker protection)
+   - NIP-46: connect/approve in the remote signer, then `getPublicKey()` (with progressive timeouts)
 
    ```typescript
    const pubkey = await window.nostr.getPublicKey();
@@ -161,6 +162,7 @@ Standard Nostr event structure and relay communication.
 
 4. **Sign canonical login message (kind 27235)**
    - Client builds a deterministic message and signs it with the chosen signer
+   - Uses progressive timeouts for NIP-46 connections
 
    ```typescript
    const event = {
@@ -179,6 +181,36 @@ Standard Nostr event structure and relay communication.
      - `signedEvent.pubkey` matches declared `pubkey`
    - Server creates a DB-backed session bound to the pubkey and sets a cookie
 
+### Connection Management
+
+**Progressive Timeouts:**
+
+- First attempt: 120 seconds (2 minutes)
+- Retry 1: 60 seconds (1 minute)
+- Retry 2: 30 seconds
+- Prevents indefinite waiting on retries
+
+**Circuit Breaker:**
+
+- Tracks consecutive failures per signer type
+- After 3 failures: 30-second cooldown
+- Prevents hammering failed connections
+- Automatically resets on success
+
+**Health Monitoring:**
+
+- Periodic health checks every 30 seconds
+- Quick validation before critical operations
+- Automatic reconnection on stale connections
+- Connection age tracking (5-minute inactivity threshold)
+
+**Mobile Optimizations:**
+
+- Cooldown period after app becomes visible (iOS: 1.5s, Android: 0.8s)
+- Automatic retry with exponential backoff
+- App switching detection and auto-resume
+- Progress indicators during connection attempts
+
 ### Rollout / feature flags
 
 SmartFlowSocial supports staged rollout and emergency toggles via environment variables:
@@ -195,6 +227,22 @@ SmartFlowSocial supports staged rollout and emergency toggles via environment va
 
 The legacy authentication endpoint **`POST /nostr-auth` has been removed**. Clients must sign in via
 `/login` using the challenge/verify endpoints above.
+
+### Connection Quality Metrics
+
+SmartFlowSocial tracks connection quality metrics (anonymized, stored locally) to:
+
+- Adjust timeouts based on historical success rates
+- Prefer connection methods with better success rates
+- Provide user hints based on common failure patterns
+- Enable data-driven improvements
+
+Metrics include:
+
+- Connection success rate by platform (iOS/Android/Desktop)
+- Average connection time by method
+- Failure reasons distribution
+- Retry success rates
 
 ### Supported signers
 

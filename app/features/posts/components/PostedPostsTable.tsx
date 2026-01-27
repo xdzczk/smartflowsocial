@@ -1,11 +1,12 @@
 import { Link } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { formatDate, getImageUrls } from "~/lib/helpers";
+import { getImageUrls } from "~/lib/helpers";
 
 import { getQueueColor } from "../queue-colors";
 import type { PostStats } from "../stats.server";
 import type { PostData, PostFetcher } from "../types";
+import { formatDate } from "../utils/content-helpers";
 
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
@@ -72,6 +73,8 @@ interface PostedPostsTableProps {
   individualRepostFetcher: PostFetcher;
   deleteFetcher: PostFetcher;
   bulkDeleteFetcher: PostFetcher;
+  userTimezone?: string;
+  userTimeFormat?: "12h" | "24h";
 }
 
 export default function PostedPostsTable({
@@ -86,6 +89,8 @@ export default function PostedPostsTable({
   individualRepostFetcher,
   deleteFetcher,
   bulkDeleteFetcher,
+  userTimezone,
+  userTimeFormat = "12h",
 }: PostedPostsTableProps) {
   return (
     <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
@@ -288,7 +293,14 @@ export default function PostedPostsTable({
                   </p>
                 </td>
                 <td className="p-3">
-                  {post.postedAt ? formatDate(post.postedAt) : "-"}
+                  {post.postedAt
+                    ? formatDate(
+                        post.postedAt,
+                        false,
+                        userTimezone,
+                        userTimeFormat
+                      )
+                    : "-"}
                 </td>
                 <td className="p-3">{postStats.likes}</td>
                 <td className="p-3">{postStats.replies}</td>

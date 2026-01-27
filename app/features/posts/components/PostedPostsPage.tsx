@@ -36,6 +36,17 @@ import {
 
 import PublishResultModal from "./PublishResultModal";
 
+/**
+ * Helper to extract user time format preference
+ */
+function getUserTimeFormat(user: unknown): "12h" | "24h" {
+  return user && typeof user === "object" && "timeFormat" in user
+    ? user.timeFormat === "24h"
+      ? "24h"
+      : "12h"
+    : "12h";
+}
+
 function getDateValue(postedAt: Date | string | null | undefined): number {
   if (postedAt instanceof Date) {
     return postedAt.getTime();
@@ -329,6 +340,8 @@ export default function PostedPostsPage() {
     });
   };
 
+  const userTimeFormat = getUserTimeFormat(user);
+
   return (
     <div>
       <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
@@ -355,6 +368,7 @@ export default function PostedPostsPage() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           userTimezone={user.timezone ?? undefined}
+          userTimeFormat={userTimeFormat}
           onPostSelect={(content) => {
             if (content.type === "post") {
               const postData = extractPostData(content);
@@ -403,6 +417,8 @@ export default function PostedPostsPage() {
           individualRepostFetcher={individualRepostFetcher}
           deleteFetcher={deleteFetcher}
           bulkDeleteFetcher={bulkDeleteFetcher}
+          userTimezone={user.timezone ?? undefined}
+          userTimeFormat={userTimeFormat}
         />
       ) : (
         <LongFormListing
@@ -411,6 +427,7 @@ export default function PostedPostsPage() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           userTimezone={user.timezone ?? undefined}
+          userTimeFormat={userTimeFormat}
           longformRepostFetcher={longformRepostFetcher}
           longformQuoteFetcher={longformQuoteFetcher}
           onPostSelect={(post) => {
@@ -439,6 +456,7 @@ export default function PostedPostsPage() {
           type="posted"
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}
+          userTimeFormat={userTimeFormat}
         />
       ) : null}
 

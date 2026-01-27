@@ -29,6 +29,11 @@ const STORAGE_KEY = "__smartflow_active_nostr_signer_v1";
 let cachedSigner: NostrSigner | null = null;
 let cachedConfigJson: string | null = null;
 let wasHidden = false;
+let _lastVisibilityChangeTime = 0; // Reserved for future metrics/debugging
+let connectionCooldownUntil = 0;
+let healthCheckInterval: ReturnType<typeof setInterval> | null = null;
+let connectionEstablishedAt: number | null = null;
+let _lastActivityTime: number | null = null; // Reserved for future metrics/debugging
 
 /**
  * Clear the in-memory signer cache without removing persisted config.
@@ -36,6 +41,29 @@ let wasHidden = false;
  */
 export function resetCachedSigner(): void {
   cachedSigner = null;
+}
+
+/**
+ * Detect if we're on iOS (mobile Safari or webview)
+ */
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+/**
+ * Detect if we're on a mobile device (iOS or Android)
+ */
+function isMobile(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    ) || !!(navigator.maxTouchPoints && navigator.maxTouchPoints > 1)
+  );
 }
 
 /**
@@ -57,6 +85,9 @@ function clearCachedNip46Signer(): void {
       })();
     }
     resetCachedSigner();
+    stopHealthCheckMonitoring();
+    connectionEstablishedAt = null;
+    _lastActivityTime = null;
   }
 }
 
@@ -65,20 +96,38 @@ function clearCachedNip46Signer(): void {
  * when the page becomes visible again after being hidden.
  * This helps recover from stale WebSocket connections when users switch
  * between the browser and signer app on the same device.
+ * On iOS, adds a cooldown period after becoming visible to allow WebSocket
+ * connections to stabilize before attempting new connections.
  */
 function initVisibilityHandler(): void {
   if (typeof document === "undefined") return;
 
   // Track if page was hidden
   const handleVisibilityChange = () => {
+    const now = Date.now();
     if (document.hidden) {
       wasHidden = true;
+      _lastVisibilityChangeTime = now;
     } else if (wasHidden) {
       // Page became visible again after being hidden
       // Always clear cached NIP-46 signer to force fresh reconnection
       // This prevents using stale WebSocket connections
       clearCachedNip46Signer();
       wasHidden = false;
+
+      // Add a cooldown period after becoming visible
+      // This gives WebSocket connections time to stabilize
+      // iOS aggressively closes WebSocket connections when apps are backgrounded
+      // Android can also have issues, though less frequently
+      if (isMobile()) {
+        // Mobile devices: longer cooldown (iOS needs more, Android benefits too)
+        const baseCooldown = isIOS() ? 1500 : 800; // iOS: 1.5s, Android: 0.8s
+        const cooldownMs = baseCooldown + Math.random() * 500;
+        connectionCooldownUntil = now + cooldownMs;
+      } else {
+        // Desktop: shorter cooldown
+        connectionCooldownUntil = now + 500; // 0.5 seconds
+      }
     }
   };
 
@@ -87,6 +136,14 @@ function initVisibilityHandler(): void {
     if (wasHidden) {
       clearCachedNip46Signer();
       wasHidden = false;
+      const now = Date.now();
+      if (isMobile()) {
+        const baseCooldown = isIOS() ? 1500 : 800;
+        const cooldownMs = baseCooldown + Math.random() * 500;
+        connectionCooldownUntil = now + cooldownMs;
+      } else {
+        connectionCooldownUntil = now + 500;
+      }
     }
   };
 
@@ -170,9 +227,10 @@ async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
     await Promise.race([
       signer.getPublicKey(),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Connection check timeout")), 3000)
+        setTimeout(() => reject(new Error("Connection check timeout")), 2000)
       ),
     ]);
+    _lastActivityTime = Date.now();
     return true;
   } catch {
     // Any error means the connection is stale or unreachable
@@ -181,15 +239,84 @@ async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
   }
 }
 
+/**
+ * Start periodic health checks for active NIP-46 connections
+ */
+function startHealthCheckMonitoring(): void {
+  if (healthCheckInterval) return; // Already monitoring
+
+  healthCheckInterval = setInterval(() => {
+    void (async () => {
+      const config = getActiveSignerConfig();
+      if (config?.type !== "nip46" || !cachedSigner) {
+        // No active NIP-46 connection, stop monitoring
+        if (healthCheckInterval) {
+          clearInterval(healthCheckInterval);
+          healthCheckInterval = null;
+        }
+        return;
+      }
+
+      // Check if connection is old enough to warrant health check
+      const now = Date.now();
+      if (
+        connectionEstablishedAt &&
+        now - connectionEstablishedAt > 5 * 60 * 1000
+      ) {
+        // Connection is older than 5 minutes, perform health check
+        const isValid = await verifySignerConnection(cachedSigner);
+        if (!isValid) {
+          // Connection is stale, clear it
+          clearCachedNip46Signer();
+          connectionEstablishedAt = null;
+          _lastActivityTime = null;
+
+          // Emit event for connection state change
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("nostr-connection-stale", {
+                detail: { signerType: "nip46" },
+              })
+            );
+          }
+        }
+      }
+    })();
+  }, 30_000); // Check every 30 seconds
+}
+
+/**
+ * Stop health check monitoring
+ */
+function stopHealthCheckMonitoring(): void {
+  if (healthCheckInterval) {
+    clearInterval(healthCheckInterval);
+    healthCheckInterval = null;
+  }
+}
+
+// Complex signer resolution with caching, health checks, cooldowns, and platform-specific optimizations
+// eslint-disable-next-line sonarjs/cognitive-complexity -- Signer management requires handling multiple connection types, visibility changes, cooldowns, and error recovery
 export async function getActiveSigner(): Promise<NostrSigner | null> {
   // If we have a cached signer, verify it's still valid before returning it
   if (cachedSigner) {
+    // Quick health check before critical operations
     const isValid = await verifySignerConnection(cachedSigner);
     if (isValid) {
+      _lastActivityTime = Date.now();
       return cachedSigner;
     }
     // Connection is stale, clear cache and reconnect
     clearCachedNip46Signer();
+
+    // Emit connection stale event
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("nostr-connection-stale", {
+          detail: { signerType: "nip46" },
+        })
+      );
+    }
   }
 
   const config = getActiveSignerConfig();
@@ -200,8 +327,16 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
     return cachedSigner;
   }
 
+  // Check if we're in a cooldown period after app became visible
+  // This helps prevent connection attempts immediately after returning from background
+  const now = Date.now();
+  if (now < connectionCooldownUntil) {
+    const waitMs = connectionCooldownUntil - now;
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+  }
+
   const clientSecretKey = hexToBytes(config.clientSecretKeyHex);
-  const pool = new SimplePool();
+  let pool: SimplePool | null = new SimplePool();
 
   try {
     if (config.method === "bunker_input") {
@@ -212,6 +347,20 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
       const inner = BunkerSigner.fromBunker(clientSecretKey, bp, { pool });
       await inner.connect();
       cachedSigner = new Nip46Signer({ pool, inner });
+      pool = null; // Transfer ownership to cachedSigner
+      connectionEstablishedAt = Date.now();
+      _lastActivityTime = Date.now();
+      startHealthCheckMonitoring();
+
+      // Emit connection healthy event
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("nostr-connection-healthy", {
+            detail: { signerType: "nip46" },
+          })
+        );
+      }
+
       return cachedSigner;
     }
 
@@ -223,8 +372,35 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
       60_000
     );
     cachedSigner = new Nip46Signer({ pool, inner });
+    pool = null; // Transfer ownership to cachedSigner
+    connectionEstablishedAt = Date.now();
+    _lastActivityTime = Date.now();
+    startHealthCheckMonitoring();
+
+    // Emit connection healthy event
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("nostr-connection-healthy", {
+          detail: { signerType: "nip46" },
+        })
+      );
+    }
+
     return cachedSigner;
   } catch (err) {
+    // Clean up pool if connection failed
+    if (pool) {
+      try {
+        // Close any relay connections that might have been opened
+        // When method is nostrconnect_uri, relays is always defined in the type
+        if (config.method === "nostrconnect_uri") {
+          pool.close(config.relays);
+        }
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+
     // If connection fails, clear the cache to prevent retrying with stale data
     const errorMessage =
       err instanceof Error
@@ -238,6 +414,13 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
     ) {
       // Clear cache on connection errors so next attempt will be fresh
       resetCachedSigner();
+
+      // On mobile, extend cooldown period after connection errors
+      // This gives more time for WebSocket connections to stabilize
+      if (isMobile()) {
+        const errorCooldown = isIOS() ? 2000 : 1500; // iOS: 2s, Android: 1.5s
+        connectionCooldownUntil = now + errorCooldown;
+      }
     }
     throw err;
   }

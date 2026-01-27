@@ -62,6 +62,7 @@ interface SimpleRescheduleModalProps {
   onConfirm: () => void;
   user?: UserData;
   queueTypes?: QueueType[];
+  userTimeFormat?: "12h" | "24h";
 }
 
 export function SimpleRescheduleModal({
@@ -70,6 +71,7 @@ export function SimpleRescheduleModal({
   onConfirm,
   user,
   queueTypes = [],
+  userTimeFormat = "12h",
 }: SimpleRescheduleModalProps) {
   interface FetcherData {
     success?: boolean;
@@ -222,13 +224,18 @@ export function SimpleRescheduleModal({
   const formatDateTime = (date: Date) => {
     const userTimezone = user?.timezone ?? "UTC";
     const zonedDateTime = fromDate(date, userTimezone);
-    return formatForDisplay(zonedDateTime, userTimezone, {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatForDisplay(
+      zonedDateTime,
+      userTimezone,
+      {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+      userTimeFormat
+    );
   };
 
   return (

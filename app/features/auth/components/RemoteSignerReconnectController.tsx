@@ -34,7 +34,7 @@ import {
 const DEFAULT_RELAYS = [
   "wss://relay.primal.net",
   "wss://relay.damus.io",
-  "wss://relay.nostr.band",
+  "wss://nos.lol/",
 ].join("\n");
 
 type ConnectState = "idle" | "uri_ready" | "waiting" | "connected" | "failed";

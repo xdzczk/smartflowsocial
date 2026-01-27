@@ -224,6 +224,10 @@ export async function logout(request: Request) {
     });
   }
 
+  // Explicitly clear legacy session key (defense-in-depth)
+  session.unset(LEGACY_USER_SESSION_KEY);
+  session.unset(SESSION_ID_KEY);
+
   return redirect("/", {
     headers: {
       "Set-Cookie": await sessionStorage.destroySession(session),

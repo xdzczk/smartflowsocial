@@ -84,6 +84,7 @@ function renderPostsTabContent(props: {
   sortConfig: { key: string; direction: "asc" | "desc" };
   countdowns: Record<string, string>;
   userTimezone: string | undefined;
+  userTimeFormat: "12h" | "24h";
   bulkDeleteFetcher: { state: string };
   setSelectedPost: (post: PostData | null) => void;
   handleEditPost: (post: PostData | LongFormPostData) => void;
@@ -107,6 +108,7 @@ function renderPostsTabContent(props: {
     sortConfig,
     countdowns,
     userTimezone,
+    userTimeFormat,
     bulkDeleteFetcher,
     setSelectedPost,
     handleEditPost,
@@ -141,6 +143,7 @@ function renderPostsTabContent(props: {
         onToggleSelectAll={toggleSelectAll}
         countdowns={countdowns}
         userTimezone={userTimezone}
+        userTimeFormat={userTimeFormat}
         onPostClick={(post) => {
           setSelectedPost(post);
         }}
@@ -161,6 +164,7 @@ function renderPostsTabContent(props: {
           showSignedEvent={true}
           type="scheduled"
           userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
         />
       ) : null}
 
@@ -181,6 +185,7 @@ function renderLongformTabContent(props: {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   userTimezone: string | undefined;
+  userTimeFormat: "12h" | "24h";
   setSelectedLongFormPost: (post: LongFormPostData | null) => void;
   handleEditPost: (post: PostData | LongFormPostData) => void;
   handleReschedulePost: (post: PostData | LongFormPostData) => void;
@@ -190,6 +195,7 @@ function renderLongformTabContent(props: {
     searchTerm,
     setSearchTerm,
     userTimezone,
+    userTimeFormat,
     setSelectedLongFormPost,
     handleEditPost,
     handleReschedulePost,
@@ -202,6 +208,7 @@ function renderLongformTabContent(props: {
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       userTimezone={userTimezone}
+      userTimeFormat={userTimeFormat}
       onPostSelect={(post) => {
         setSelectedLongFormPost(post as LongFormPostData);
       }}
@@ -224,6 +231,7 @@ function renderModals(props: {
   queueTypes: Array<string | QueueType>;
   hashTagPresets: HashTagPreset[];
   userTimezone: string | undefined;
+  userTimeFormat: "12h" | "24h";
   handleCloseEditModal: () => void;
   handleCloseRescheduleModal: () => void;
   handleModalSuccess: () => void;
@@ -239,6 +247,7 @@ function renderModals(props: {
     queueTypes,
     hashTagPresets,
     userTimezone,
+    userTimeFormat,
     handleCloseEditModal,
     handleCloseRescheduleModal,
     handleModalSuccess,
@@ -253,6 +262,7 @@ function renderModals(props: {
           type="scheduled"
           showSignedEvent={true}
           userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
         />
       ) : null}
 
@@ -288,6 +298,7 @@ function renderModals(props: {
                 )
               : []
           }
+          userTimeFormat={userTimeFormat}
         />
       ) : null}
     </>
@@ -481,6 +492,7 @@ export default function DashboardIndexPage() {
           sortConfig,
           countdowns,
           userTimezone: getUserTimezone(user),
+          userTimeFormat: getUserTimeFormat(user),
           bulkDeleteFetcher,
           setSelectedPost,
           handleEditPost,
@@ -502,6 +514,7 @@ export default function DashboardIndexPage() {
           searchTerm,
           setSearchTerm,
           userTimezone: getUserTimezone(user),
+          userTimeFormat: getUserTimeFormat(user),
           setSelectedLongFormPost,
           handleEditPost,
           handleReschedulePost,
@@ -532,6 +545,7 @@ export default function DashboardIndexPage() {
         queueTypes: Array.isArray(queueTypes) ? queueTypes : [],
         hashTagPresets: Array.isArray(hashTagPresets) ? hashTagPresets : [],
         userTimezone: getUserTimezone(user),
+        userTimeFormat: getUserTimeFormat(user),
         handleCloseEditModal,
         handleCloseRescheduleModal,
         handleModalSuccess,
