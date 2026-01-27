@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@remix-run/react";
 import { ChevronDown, Lock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   useFeatureAccess,
@@ -88,24 +88,35 @@ export function ExpandableNavigationSection({
   onUpgradeClick,
 }: ExpandableNavigationSectionProps) {
   const location = useLocation();
-  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Check if any child route is active
+  const isAnyChildActive = items.some((child) =>
+    location.pathname.startsWith(child.to)
+  );
+
+  // Track manual expansion state (user clicked to expand/collapse)
+  const previousPathnameRef = useRef(location.pathname);
+  const [manuallyExpanded, setManuallyExpanded] = useState<boolean | null>(
+    null
+  );
 
   // Check if any child has access - we'll check this in child components
   // For now, we'll show the section if there are any children
   // Individual children will handle their own access checks
   const hasAnyAccessibleChild = items.length > 0;
 
-  // Auto-expand when any child route is active
+  // Reset manual expansion state when route changes
+  // This is necessary to sync UI state with route changes, which is a valid use case for setState in effects
   useEffect(() => {
-    const isAnyChildActive = items.some((child) =>
-      location.pathname.startsWith(child.to)
-    );
-    // Use setTimeout to avoid calling setState synchronously in effect
-    const timeoutId = setTimeout(() => {
-      setIsExpanded(isAnyChildActive);
-    }, 0);
-    return () => clearTimeout(timeoutId);
-  }, [location.pathname, items]);
+    if (previousPathnameRef.current !== location.pathname) {
+      previousPathnameRef.current = location.pathname;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- We need to reset manual expansion state when route changes to sync UI with navigation
+      setManuallyExpanded(null);
+    }
+  }, [location.pathname]);
+
+  // Compute expanded state: use manual state if set, otherwise use active child state
+  const isExpanded = manuallyExpanded ?? isAnyChildActive;
 
   // Hide section if no children are accessible
   if (!hasAnyAccessibleChild) {
@@ -113,7 +124,7 @@ export function ExpandableNavigationSection({
   }
 
   const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
+    setManuallyExpanded(!isExpanded);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -122,11 +133,6 @@ export function ExpandableNavigationSection({
       toggleExpanded();
     }
   };
-
-  // Check if any child is currently active
-  const isAnyChildActive = items.some((child) =>
-    location.pathname.startsWith(child.to)
-  );
 
   const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer ${
     isAnyChildActive
