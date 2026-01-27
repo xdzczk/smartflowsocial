@@ -136,6 +136,7 @@ interface LongFormDetailsModalProps {
   type: "draft" | "scheduled" | "posted";
   showSignedEvent?: boolean;
   userTimezone?: string;
+  userTimeFormat?: "12h" | "24h";
 }
 
 export default function LongFormDetailsModal({
@@ -144,6 +145,7 @@ export default function LongFormDetailsModal({
   type,
   showSignedEvent = false,
   userTimezone = "UTC",
+  userTimeFormat = "12h",
 }: LongFormDetailsModalProps) {
   const [showEventData, setShowEventData] = useState(false);
   const deleteFetcher = useFetcher();
@@ -241,14 +243,19 @@ export default function LongFormDetailsModal({
 
       // Convert to user's timezone for display
       const userZoned = zonedDateTime.withTimeZone(userTimezone);
-      return formatForDisplay(userZoned, userTimezone, {
-        month: "2-digit",
-        day: "2-digit",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      return formatForDisplay(
+        userZoned,
+        userTimezone,
+        {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: userTimeFormat === "12h",
+        },
+        userTimeFormat
+      );
     } catch (error) {
       handleErrorSafely(error, {
         component: "LongFormDetailsModal",

@@ -10,6 +10,7 @@ import {
   updateUserPushNotificationPreferences,
   updateUserRelays,
   updateUserTimezone,
+  updateUserTimeFormat,
 } from "~/features/user";
 import {
   updateTimezoneSchema,
@@ -85,6 +86,15 @@ export async function handleGeneralSettingsAction(
     });
 
     return json({ success: true });
+  }
+
+  if (action === "update_time_format") {
+    const timeFormat = formData.get("timeFormat");
+    if (timeFormat === "12h" || timeFormat === "24h") {
+      await updateUserTimeFormat(userId, timeFormat);
+      return json({ success: true });
+    }
+    return json({ error: "Invalid time format" }, { status: 400 });
   }
 
   return null;

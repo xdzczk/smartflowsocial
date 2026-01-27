@@ -24,6 +24,7 @@ interface AllContentListingProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   userTimezone?: string;
+  userTimeFormat?: "12h" | "24h";
   onPostSelect?: (content: CombinedContent) => void;
   selectedItems?: Set<string>;
   onToggleSelection?: (id: string) => void;
@@ -50,6 +51,7 @@ export default function AllContentListing({
   searchTerm,
   onSearchChange,
   userTimezone,
+  userTimeFormat = "12h",
   onPostSelect,
   selectedItems = new Set(),
   onToggleSelection,
@@ -241,6 +243,7 @@ export default function AllContentListing({
                 item={item}
                 type={type}
                 userTimezone={userTimezone}
+                userTimeFormat={userTimeFormat}
                 showBulkActions={showBulkActions}
                 selectedItems={selectedItems}
                 onToggleSelection={onToggleSelection}

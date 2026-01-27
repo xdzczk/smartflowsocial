@@ -33,6 +33,17 @@ import {
 
 import PublishResultModal from "./PublishResultModal";
 
+/**
+ * Helper to extract user time format preference
+ */
+function getUserTimeFormat(user: unknown): "12h" | "24h" {
+  return user && typeof user === "object" && "timeFormat" in user
+    ? user.timeFormat === "24h"
+      ? "24h"
+      : "12h"
+    : "12h";
+}
+
 export default function ScheduledPostsPage() {
   // Use infinite query for data fetching with infinite scroll
   const {
@@ -199,6 +210,9 @@ export default function ScheduledPostsPage() {
     currentTab,
   });
 
+  const userTimezone = user?.timezone ?? undefined;
+  const userTimeFormat = getUserTimeFormat(user);
+
   return (
     <div>
       <DashboardHeader
@@ -238,7 +252,8 @@ export default function ScheduledPostsPage() {
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone ?? undefined}
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
           onPostSelect={(content) => {
             // Use type guards for safe type narrowing
             if (content.type === "post") {
@@ -280,7 +295,8 @@ export default function ScheduledPostsPage() {
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
             countdowns={countdowns}
-            userTimezone={user?.timezone ?? undefined}
+            userTimezone={userTimezone}
+            userTimeFormat={userTimeFormat}
             onPostClick={(post) => setSelectedPost(post)}
             onEditPost={(post) =>
               handleEditPost(post as PostData | LongFormPostData)
@@ -298,7 +314,8 @@ export default function ScheduledPostsPage() {
               onClose={() => setSelectedPost(null)}
               showSignedEvent={true}
               type="scheduled"
-              userTimezone={user?.timezone ?? undefined}
+              userTimezone={userTimezone}
+              userTimeFormat={userTimeFormat}
             />
           ) : null}
 
@@ -318,7 +335,8 @@ export default function ScheduledPostsPage() {
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone ?? undefined}
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
           onPostSelect={(post) => {
             setSelectedLongFormPost(post as LongFormPostData);
           }}
@@ -351,7 +369,8 @@ export default function ScheduledPostsPage() {
           onClose={() => setSelectedLongFormPost(null)}
           type="scheduled"
           showSignedEvent={true}
-          userTimezone={user?.timezone ?? undefined}
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
         />
       ) : null}
 

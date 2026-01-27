@@ -295,11 +295,8 @@ export default function NewPostPage() {
     files,
     setFiles,
     selectedQueueType,
-    setSelectedQueueType,
     selectedHashTagPresetId,
-    setSelectedHashTagPresetId,
     selectedHashtags,
-    setSelectedHashtags,
     showImagePreview,
     setShowImagePreview,
     preparedImageEvent,
@@ -463,15 +460,8 @@ export default function NewPostPage() {
             setModalPostId(null);
             setModalPost(null);
             setModalLongFormPost(null);
-            // Reset form state
-            setFiles([]);
-            setSelectedQueueType("unassigned");
-            setSelectedHashTagPresetId(null);
-            setSelectedHashtags("");
-            setShowImagePreview(false);
-            setPreparedImageEvent(null);
-            // Navigate to fresh form
-            navigate(getNewPostUrl(postType), { replace: true });
+            // Navigate to fresh form page - this will trigger a full reload and reset all state
+            window.location.href = getNewPostUrl(postType);
           }}
           onViewPage={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);

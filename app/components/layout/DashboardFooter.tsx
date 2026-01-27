@@ -28,6 +28,13 @@ export default function Footer() {
       ? (user.timezone ?? undefined)
       : undefined;
 
+  const userTimeFormat =
+    user && typeof user === "object" && "timeFormat" in user
+      ? user.timeFormat === "24h"
+        ? "24h"
+        : "12h"
+      : "12h";
+
   const dateString = time.toLocaleDateString("en-US", {
     timeZone: userTimezone,
     month: "short",
@@ -40,7 +47,7 @@ export default function Footer() {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: true,
+    hour12: userTimeFormat === "12h",
   });
 
   const timezoneShort = getTimezoneShortName(userTimezone);

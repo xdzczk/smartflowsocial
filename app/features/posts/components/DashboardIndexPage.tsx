@@ -46,6 +46,18 @@ function getUserTimezone(user: unknown): string | undefined {
   return undefined;
 }
 
+function getUserTimeFormat(user: unknown): "12h" | "24h" {
+  if (
+    user &&
+    typeof user === "object" &&
+    "timeFormat" in user &&
+    user.timeFormat === "24h"
+  ) {
+    return "24h";
+  }
+  return "12h";
+}
+
 function handleContentSelection(
   content: CombinedContent,
   setSelectedPost: (post: PostData | null) => void,
@@ -443,6 +455,7 @@ export default function DashboardIndexPage() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone ?? undefined}
+          userTimeFormat={getUserTimeFormat(user)}
           onPostSelect={(content) =>
             handleContentSelection(
               content,

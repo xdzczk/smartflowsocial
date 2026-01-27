@@ -82,15 +82,24 @@ function getFirstMedia(data: RescheduleData): string | null {
   return getFirstMediaFromFileUrl(post);
 }
 
-function formatDateTime(date: Date, userTimezone: string): string {
+function formatDateTime(
+  date: Date,
+  userTimezone: string,
+  userTimeFormat: "12h" | "24h" = "12h"
+): string {
   const zonedDateTime = fromDate(date, userTimezone);
-  return formatForDisplay(zonedDateTime, userTimezone, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatForDisplay(
+    zonedDateTime,
+    userTimezone,
+    {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+    userTimeFormat
+  );
 }
 
 function validateDateTime(
@@ -130,7 +139,12 @@ function renderModalContent(
   editableDateTime: Date | null,
   userTimezone: string,
   formatDateTimeForInput: (date: Date, tz: string) => string,
-  formatDateTime: (date: Date, tz: string) => string,
+  formatDateTime: (
+    date: Date,
+    tz: string,
+    timeFormat?: "12h" | "24h"
+  ) => string,
+  userTimeFormat: "12h" | "24h",
   handleDateTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
   selectedQueueType: string | null,
   setSelectedQueueType: (value: string | null) => void,
@@ -230,7 +244,7 @@ function renderModalContent(
         </div>
         {editableDateTime ? (
           <div className="text-muted-foreground text-xs">
-            {formatDateTime(editableDateTime, userTimezone)}
+            {formatDateTime(editableDateTime, userTimezone, userTimeFormat)}
           </div>
         ) : null}
       </div>
@@ -433,6 +447,12 @@ export function RescheduleModal({
   const { post, wasAutoScheduled, isEdit } = data;
   const firstMedia = getFirstMedia(data);
   const userTimezone = user?.timezone ?? "Etc/UTC";
+  const userTimeFormat =
+    user && typeof user === "object" && "timeFormat" in user
+      ? user.timeFormat === "24h"
+        ? "24h"
+        : "12h"
+      : "12h";
 
   const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -519,6 +539,7 @@ export function RescheduleModal({
             userTimezone,
             formatDateTimeForInput,
             formatDateTime,
+            userTimeFormat,
             handleDateTimeChange,
             selectedQueueType,
             setSelectedQueueType,

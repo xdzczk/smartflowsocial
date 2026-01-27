@@ -2,6 +2,7 @@ import { useLoaderData, useSearchParams } from "@remix-run/react";
 
 import { NotificationSettings } from "~/components/settings/NotificationSettings";
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
+import { TimeFormatSettings } from "~/components/settings/TimeFormatSettings";
 import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MutedListSettings } from "~/features/engagement";
@@ -297,6 +298,7 @@ export default function SettingsPage() {
     pushNotificationsEnabled?: unknown;
     pushNotifyPublishSuccess?: unknown;
     pushNotifyPublishFailure?: unknown;
+    timeFormat?: unknown;
   };
 
   const {
@@ -326,6 +328,7 @@ export default function SettingsPage() {
     pushNotificationsEnabled,
     pushNotifyPublishSuccess,
     pushNotifyPublishFailure,
+    timeFormat: timeFormatRaw,
   } = data;
 
   const queueTypes = parseQueueTypes(queueTypesRaw);
@@ -389,6 +392,9 @@ export default function SettingsPage() {
         <TabsContent value="general" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
             <TimezoneSettings timezone={timezoneValue} />
+            <TimeFormatSettings
+              timeFormat={timeFormatRaw === "24h" ? "24h" : "12h"}
+            />
             <ScheduleIntervalsSettings
               scheduleIntervals={scheduleIntervalsList}
             />

@@ -30,6 +30,7 @@ interface ContentTableRowProps {
   item: CombinedContent;
   type: "scheduled" | "draft" | "posted";
   userTimezone?: string;
+  userTimeFormat?: "12h" | "24h";
   showBulkActions: boolean;
   selectedItems: Set<string>;
   onToggleSelection?: (id: string) => void;
@@ -46,6 +47,7 @@ export function ContentTableRow({
   item,
   type,
   userTimezone,
+  userTimeFormat = "12h",
   showBulkActions,
   selectedItems,
   onToggleSelection,
@@ -140,10 +142,15 @@ export function ContentTableRow({
       </td>
       <td className="text-foreground p-3">
         {type === "scheduled"
-          ? formatDate(item.scheduledAtUtc ?? undefined, false, userTimezone)
+          ? formatDate(
+              item.scheduledAtUtc ?? undefined,
+              false,
+              userTimezone,
+              userTimeFormat
+            )
           : type === "posted"
-            ? formatDate(item.postedAt, false, userTimezone)
-            : formatDate(item.createdAt, false, userTimezone)}
+            ? formatDate(item.postedAt, false, userTimezone, userTimeFormat)
+            : formatDate(item.createdAt, false, userTimezone, userTimeFormat)}
       </td>
       <td className="p-3 text-center">
         <div className={queueDisplay.className} style={queueDisplay.style}>

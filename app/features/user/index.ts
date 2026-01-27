@@ -60,6 +60,8 @@ export {
   getUserHidePostsFromLowTrustUsers,
   getUserPushNotificationPreferences,
   updateUserPushNotificationPreferences,
+  getUserTimeFormat,
+  updateUserTimeFormat,
 } from "./services/user-settings.server";
 
 // Queue Types

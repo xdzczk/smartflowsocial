@@ -189,7 +189,8 @@ function convertToZonedDateTimeWithFallback(
 export function formatDate(
   date: Date | string | undefined,
   isUnixTimestamp = false,
-  userTimezone?: string
+  userTimezone?: string,
+  timeFormat?: "12h" | "24h" | null
 ): string {
   if (!date) return "-";
 
@@ -202,7 +203,12 @@ export function formatDate(
   const zonedDateTime = convertToZonedDateTime(date, isUnixTimestamp, "UTC");
 
   if (zonedDateTime) {
-    return formatForDisplay(zonedDateTime, timezone, DATE_FORMAT_OPTIONS);
+    return formatForDisplay(
+      zonedDateTime,
+      timezone,
+      DATE_FORMAT_OPTIONS,
+      timeFormat
+    );
   }
 
   // Fallback - still use Temporal for consistency
@@ -212,7 +218,12 @@ export function formatDate(
     timezone
   );
   if (fallbackZoned) {
-    return formatForDisplay(fallbackZoned, timezone, DATE_FORMAT_OPTIONS);
+    return formatForDisplay(
+      fallbackZoned,
+      timezone,
+      DATE_FORMAT_OPTIONS,
+      timeFormat
+    );
   }
 
   // Final fallback

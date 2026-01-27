@@ -399,3 +399,31 @@ export async function getUserHidePostsFromLowTrustUsers(
   });
   return user?.hidePostsFromLowTrustUsers ?? false;
 }
+
+/**
+ * Gets user's time format preference
+ */
+export async function getUserTimeFormat(
+  userId: string
+): Promise<"12h" | "24h"> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { timeFormat: true },
+  });
+  return user?.timeFormat === "24h" ? "24h" : "12h";
+}
+
+/**
+ * Updates user's time format preference
+ */
+export function updateUserTimeFormat(
+  userId: string,
+  timeFormat: "12h" | "24h"
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      timeFormat: timeFormat,
+    },
+  });
+}

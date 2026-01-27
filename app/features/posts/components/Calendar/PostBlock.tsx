@@ -63,11 +63,17 @@ export function PostBlock({
   };
 
   const userTimezone = user?.timezone ?? "Etc/UTC";
+  const userTimeFormat =
+    user && typeof user === "object" && "timeFormat" in user
+      ? user.timeFormat === "24h"
+        ? "24h"
+        : "12h"
+      : "12h";
   const displayTime = getDisplayTime(post, isLongform, isPast);
   const timeString = displayTime.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    hour12: userTimeFormat === "12h",
     timeZone: userTimezone,
   });
 

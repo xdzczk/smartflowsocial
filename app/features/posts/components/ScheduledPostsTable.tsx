@@ -23,6 +23,7 @@ interface ScheduledPostsTableProps {
   onToggleSelectAll: () => void;
   countdowns: Record<string, string>;
   userTimezone?: string | null;
+  userTimeFormat?: "12h" | "24h" | null;
   onPostClick: (post: PostData) => void;
   onEditPost: (post: PostData) => void;
   onReschedulePost: (post: PostData) => void;
@@ -65,6 +66,7 @@ export function ScheduledPostsTable({
   onToggleSelectAll,
   countdowns,
   userTimezone,
+  userTimeFormat,
   onPostClick,
   onEditPost,
   onReschedulePost,
@@ -88,6 +90,8 @@ export function ScheduledPostsTable({
     }
   }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
 
+  const timeFormat = userTimeFormat === "24h" ? "24h" : "12h";
+
   const formatDate = (scheduledAtUtc: Date | null) => {
     try {
       if (!scheduledAtUtc) return "-";
@@ -96,14 +100,19 @@ export function ScheduledPostsTable({
       const zoned = fromDate(scheduledAtUtc, "UTC");
       const userZoned = zoned.withTimeZone(tz);
 
-      return formatForDisplay(userZoned, tz, {
-        month: "2-digit",
-        day: "2-digit",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      return formatForDisplay(
+        userZoned,
+        tz,
+        {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: timeFormat === "12h",
+        },
+        timeFormat
+      );
     } catch {
       // Fallback - still use Temporal for consistency
       try {
@@ -111,14 +120,19 @@ export function ScheduledPostsTable({
         const tz = userTimezone ?? "UTC";
         const zoned = fromDate(scheduledAtUtc, "UTC");
         const userZoned = zoned.withTimeZone(tz);
-        return formatForDisplay(userZoned, tz, {
-          month: "2-digit",
-          day: "2-digit",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        });
+        return formatForDisplay(
+          userZoned,
+          tz,
+          {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: timeFormat === "12h",
+          },
+          timeFormat
+        );
       } catch {
         // Final fallback
         if (!scheduledAtUtc) return "-";
@@ -130,7 +144,7 @@ export function ScheduledPostsTable({
           year: "numeric",
           hour: "numeric",
           minute: "2-digit",
-          hour12: true,
+          hour12: timeFormat === "12h",
         });
       }
     }

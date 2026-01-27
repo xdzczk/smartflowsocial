@@ -31,6 +31,8 @@ model User {
   pushNotificationsEnabled   Boolean        @default(true)
   pushNotifyPublishSuccess   Boolean        @default(true)
   pushNotifyPublishFailure   Boolean        @default(true)
+  // Time format preference (12-hour AM/PM or 24-hour)
+  timeFormat                 String?        @default("12h") // "12h" or "24h"
   // Child/parent self-relation via npub
   isChild                    Boolean        @default(false)
   parentNpub                 String?

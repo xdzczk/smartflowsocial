@@ -31,6 +31,7 @@ interface LongFormListingProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   userTimezone?: string;
+  userTimeFormat?: "12h" | "24h";
   longformRepostFetcher?: PostFetcher;
   longformQuoteFetcher?: PostFetcher;
   onEditPost?: (post: LongFormPostType | LongFormPostData) => void;
@@ -135,6 +136,7 @@ export default function LongFormListing({
   searchTerm = "",
   onSearchChange,
   userTimezone = "UTC",
+  userTimeFormat = "12h",
   longformRepostFetcher,
   longformQuoteFetcher,
   onEditPost,
@@ -168,7 +170,10 @@ export default function LongFormListing({
     }));
   };
 
-  const formatDate = (dateInput?: string | Date | number) => {
+  const formatDate = (
+    dateInput?: string | Date | number,
+    _isUnixTimestamp = false
+  ) => {
     if (!dateInput) return "—";
 
     // Handle different input formats
@@ -203,14 +208,19 @@ export default function LongFormListing({
 
       // Convert to user's timezone for display
       const userZoned = zonedDateTime.withTimeZone(userTimezone);
-      return formatForDisplay(userZoned, userTimezone, {
-        month: "2-digit",
-        day: "2-digit",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      return formatForDisplay(
+        userZoned,
+        userTimezone,
+        {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: userTimeFormat === "12h",
+        },
+        userTimeFormat
+      );
     } catch (error) {
       handleErrorSafely(error, {
         component: "LongFormListing",
@@ -230,7 +240,7 @@ export default function LongFormListing({
           year: "numeric",
           hour: "numeric",
           minute: "2-digit",
-          hour12: true,
+          hour12: userTimeFormat === "12h",
         });
       } catch {
         return "—";

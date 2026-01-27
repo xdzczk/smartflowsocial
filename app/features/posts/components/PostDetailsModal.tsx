@@ -4,7 +4,8 @@ import { useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { formatDate, getImageUrls } from "~/lib/helpers";
+import { formatDate } from "~/features/posts/utils/content-helpers";
+import { getImageUrls } from "~/lib/helpers";
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 
 import { getQueueColor } from "../queue-colors";
@@ -24,6 +25,7 @@ interface PostDetailsModalProps {
   showSignedEvent?: boolean;
   type?: "draft" | "posted" | "scheduled";
   userTimezone?: string;
+  userTimeFormat?: "12h" | "24h";
 }
 
 export default function PostDetailsModal({
@@ -34,6 +36,7 @@ export default function PostDetailsModal({
   showSignedEvent = false,
   type = "posted",
   userTimezone,
+  userTimeFormat = "12h",
 }: PostDetailsModalProps) {
   const deleteFetcher = useFetcher();
   const [isMediaOpen, setIsMediaOpen] = useState(false);
@@ -57,14 +60,19 @@ export default function PostDetailsModal({
       const zoned = fromDate(scheduledAtUtc, "UTC");
       const userZoned = zoned.withTimeZone(timezone);
 
-      return formatForDisplay(userZoned, timezone, {
-        month: "2-digit",
-        day: "2-digit",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      return formatForDisplay(
+        userZoned,
+        timezone,
+        {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: userTimeFormat === "12h",
+        },
+        userTimeFormat
+      );
     } catch {
       // Fallback to simple formatting
       return scheduledAtUtc.toLocaleDateString("en-US", {
@@ -73,7 +81,7 @@ export default function PostDetailsModal({
         year: "numeric",
         hour: "numeric",
         minute: "2-digit",
-        hour12: true,
+        hour12: userTimeFormat === "12h",
       });
     }
   };
@@ -190,7 +198,12 @@ export default function PostDetailsModal({
                     Created
                   </h3>
                   <p className="text-foreground dark:text-white">
-                    {formatDate(post.createdAt)}
+                    {formatDate(
+                      post.createdAt,
+                      false,
+                      userTimezone,
+                      userTimeFormat
+                    )}
                   </p>
                 </div>
               ) : null}
@@ -239,7 +252,12 @@ export default function PostDetailsModal({
                         Posted At
                       </h3>
                       <p className="text-foreground dark:text-white">
-                        {formatDate(post.postedAt)}
+                        {formatDate(
+                          post.postedAt,
+                          false,
+                          userTimezone,
+                          userTimeFormat
+                        )}
                       </p>
                     </div>
                   ) : null}

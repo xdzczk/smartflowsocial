@@ -168,18 +168,29 @@ export function addMonths(
  * @param zonedDateTime - The ZonedDateTime to format
  * @param timezone - Timezone to display in
  * @param options - Intl.DateTimeFormatOptions
+ * @param timeFormat - Optional time format preference ("12h" for AM/PM, "24h" for 24-hour)
  */
 export function formatForDisplay(
   zonedDateTime: Temporal.ZonedDateTime,
   timezone: string,
-  options?: Intl.DateTimeFormatOptions
+  options?: Intl.DateTimeFormatOptions,
+  timeFormat?: "12h" | "24h" | null
 ): string {
   const inTargetTz = zonedDateTime.withTimeZone(timezone);
   const date = toDate(inTargetTz);
 
+  // Determine hour12 based on timeFormat preference
+  const hour12 =
+    timeFormat === "24h"
+      ? false
+      : timeFormat === "12h"
+        ? true
+        : (options?.hour12 ?? true);
+
   return date.toLocaleString("en-US", {
     timeZone: timezone,
     ...options,
+    hour12,
   });
 }
 
