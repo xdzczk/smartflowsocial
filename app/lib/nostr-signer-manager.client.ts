@@ -188,6 +188,11 @@ export function serializeSecretKey(key: Uint8Array): string {
   return bytesToHex(key);
 }
 
+/** Parse hex string to Uint8Array (e.g. for clientSecretKey from storage). */
+export function parseSecretKeyHex(hex: string): Uint8Array {
+  return hexToBytes(hex);
+}
+
 export function clearActiveSignerConfig(): void {
   try {
     sessionStorage.removeItem(STORAGE_KEY);

@@ -21,6 +21,7 @@ import { convertHexToNpub } from "~/lib/nostr-conversion";
 import {
   clearActiveSignerConfig,
   getActiveSignerConfig,
+  parseSecretKeyHex,
   serializeSecretKey,
   setActiveSignerConfig,
 } from "~/lib/nostr-signer-manager.client";
@@ -72,6 +73,9 @@ const DEFAULT_RELAYS = [
 ].join("\n");
 const PROFILE_MISMATCH_MESSAGE =
   "Different signer profile detected — re-authentication required";
+
+/** Survives remount when app is backgrounded on mobile. */
+const PENDING_NIP46_STORAGE_KEY = "__smartflow_pending_nip46_uri_v1";
 
 function formatNpubShort(pubkeyHex?: string | null): string {
   if (!pubkeyHex) return "";
@@ -560,6 +564,43 @@ export default function NostrLoginPanel() {
     }
   }, [signer]);
 
+  /** Pending connection from ref or sessionStorage (survives remount on mobile). */
+  const getPendingNostrConnect = useCallback((): {
+    uri: string;
+    clientSecretKey: Uint8Array;
+    relays: string[];
+  } | null => {
+    if (pendingNostrConnectRef.current) return pendingNostrConnectRef.current;
+    try {
+      const raw = sessionStorage.getItem(PENDING_NIP46_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as {
+        uri: string;
+        clientSecretKeyHex: string;
+        relays: string[];
+      };
+      const clientSecretKey = parseSecretKeyHex(parsed.clientSecretKeyHex);
+      const pending = {
+        uri: parsed.uri,
+        clientSecretKey,
+        relays: parsed.relays,
+      };
+      pendingNostrConnectRef.current = pending;
+      return pending;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const clearPendingNostrConnectStorage = useCallback(() => {
+    pendingNostrConnectRef.current = null;
+    try {
+      sessionStorage.removeItem(PENDING_NIP46_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const resetToSelection = useCallback(async () => {
     // Invalidate any in-flight NIP-46 attempts immediately (before awaiting cleanup)
     nip46AttemptIdRef.current += 1;
@@ -574,12 +615,12 @@ export default function NostrLoginPanel() {
     setSigner(null);
     setPubkey(null);
     setNostrConnectUri(null);
-    pendingNostrConnectRef.current = null;
+    clearPendingNostrConnectStorage();
     setCopyOk(false);
     setError(null);
     setLastFailureOrigin(null);
     setState("signer_selection");
-  }, [cleanup, closeRelaySockets]);
+  }, [cleanup, clearPendingNostrConnectStorage, closeRelaySockets]);
 
   const copyNostrConnectUri = useCallback(async () => {
     if (!nostrConnectUri) return;
@@ -805,7 +846,7 @@ export default function NostrLoginPanel() {
           (state === "awaiting_profile_selection" || state === "failed")
         ) {
           setTimeout(() => {
-            if (pendingNostrConnectRef.current) {
+            if (getPendingNostrConnect()) {
               void resumeNip46Ref.current?.();
             } else {
               const config = getActiveSignerConfig();
@@ -825,7 +866,12 @@ export default function NostrLoginPanel() {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [state, wasHiddenDuringConnection, nostrConnectUri]);
+  }, [
+    getPendingNostrConnect,
+    state,
+    wasHiddenDuringConnection,
+    nostrConnectUri,
+  ]);
 
   // Complex NIP-46 connection logic with retry handling, circuit breaker, mobile optimizations, and multiple connection methods
   const initNip46 = useCallback(
@@ -947,12 +993,25 @@ export default function NostrLoginPanel() {
         });
         if (attemptId !== nip46AttemptIdRef.current) return;
         setNostrConnectUri(created.uri);
-        // Store so we can retry with the same URI after app switch (mobile) without a new approval
-        pendingNostrConnectRef.current = {
+        // Store in ref and sessionStorage so we can retry with the same URI after app switch (mobile)
+        const pending = {
           uri: created.uri,
           clientSecretKey: created.clientSecretKey.slice(0),
           relays: [...created.relays],
         };
+        pendingNostrConnectRef.current = pending;
+        try {
+          sessionStorage.setItem(
+            PENDING_NIP46_STORAGE_KEY,
+            JSON.stringify({
+              uri: pending.uri,
+              clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
+              relays: pending.relays,
+            })
+          );
+        } catch {
+          // ignore
+        }
 
         // Allow cancel by closing relay connections used by the pool.
         let didCancel = false;
@@ -1007,7 +1066,7 @@ export default function NostrLoginPanel() {
           relays: created.relays,
           clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
         });
-        pendingNostrConnectRef.current = null;
+        clearPendingNostrConnectStorage();
         setState("requesting_signature");
       } catch (e) {
         if (attemptId !== nip46AttemptIdRef.current) return;
@@ -1059,17 +1118,26 @@ export default function NostrLoginPanel() {
         }
       }
     },
-    [expectedPubkey, nip46Input, nip46Tab, relayList, nostrConnectUri, state]
+    [
+      clearPendingNostrConnectStorage,
+      expectedPubkey,
+      nip46Input,
+      nip46Tab,
+      relayList,
+      nostrConnectUri,
+      state,
+    ]
   );
 
   /** Retry NIP-46 connection with the same URI (e.g. after app switch on mobile). */
   const resumeNip46WithPendingUri = useCallback(async () => {
-    const pending = pendingNostrConnectRef.current;
+    const pending = getPendingNostrConnect();
     if (!pending) return;
 
     const attemptId = (nip46AttemptIdRef.current += 1);
     setError(null);
     setLastFailureOrigin(null);
+    setNostrConnectUri(pending.uri);
     setState("awaiting_profile_selection");
 
     const timeoutMs = 60_000; // 60s for resume (same as retryCount=1 in progressive)
@@ -1130,7 +1198,7 @@ export default function NostrLoginPanel() {
         relays: pending.relays,
         clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
       });
-      pendingNostrConnectRef.current = null;
+      clearPendingNostrConnectStorage();
       setState("requesting_signature");
     } catch (e) {
       if (attemptId !== nip46AttemptIdRef.current) return;
@@ -1154,7 +1222,7 @@ export default function NostrLoginPanel() {
         nip46CancelRef.current = null;
       }
     }
-  }, [expectedPubkey]);
+  }, [clearPendingNostrConnectStorage, expectedPubkey, getPendingNostrConnect]);
 
   // Update refs so visibility handler and Try again can call them
   initNip46Ref.current = initNip46;
@@ -1275,7 +1343,7 @@ export default function NostrLoginPanel() {
   const handleTryAgain = useCallback(() => {
     if (lastFailureOrigin === "nip46_init") {
       // Reuse same URI if we have one (e.g. after app switch on mobile) so user doesn't re-approve
-      if (pendingNostrConnectRef.current) {
+      if (getPendingNostrConnect()) {
         void resumeNip46WithPendingUri();
       } else {
         void initNip46();
@@ -1292,6 +1360,7 @@ export default function NostrLoginPanel() {
     }
     void resetToSelection();
   }, [
+    getPendingNostrConnect,
     initNip07,
     initNip46,
     lastFailureOrigin,
