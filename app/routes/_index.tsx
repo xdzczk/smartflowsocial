@@ -11,16 +11,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     // Use getUser instead of getUserId to ensure session is actually valid
     // This prevents showing user as logged in when session is invalid/expired
     const user = await getUser(request);
-    return json({ user });
+    return json(
+      { user },
+      {
+        // Prevent caching of authentication state
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     // If error is a Response (e.g., redirect from logout), return it directly
     if (error instanceof Response) {
       return error;
     }
     // If getUser throws (e.g., invalid legacy session), it will have already called logout
-    // For landing page, errors are non-critical - just return empty data
+    // For landing page, errors are non-critical - just return null user
     const { handleLoaderError } = await import("~/lib/error-handler.server");
-    return handleLoaderError(error, {});
+    return handleLoaderError(error, { user: null });
   }
 };
 

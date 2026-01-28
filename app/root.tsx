@@ -64,22 +64,37 @@ const APP_DESCRIPTION =
 
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   try {
-    return json({
-      user: await getUser(request),
-      // Expose Sentry DSN to client (safe - it's a public key)
-      ENV: {
-        SENTRY_DSN: process.env["SENTRY_DSN"] ?? null,
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
-        NODE_ENV: process.env["NODE_ENV"] ?? "development",
+    // Always get fresh user data - getUser returns null for invalid/expired sessions
+    const user = await getUser(request);
+
+    return json(
+      {
+        user,
+        // Expose Sentry DSN to client (safe - it's a public key)
+        ENV: {
+          SENTRY_DSN: process.env["SENTRY_DSN"] ?? null,
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
+          NODE_ENV: process.env["NODE_ENV"] ?? "development",
+        },
+        // Pass CSP nonce to client for inline scripts
+        nonce:
+          typeof context === "object" && "nonce" in context
+            ? (context["nonce"] as string)
+            : undefined,
       },
-      // Pass CSP nonce to client for inline scripts
-      nonce:
-        typeof context === "object" && "nonce" in context
-          ? (context["nonce"] as string)
-          : undefined,
-    });
+      {
+        // Prevent caching of authentication state
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
-    // Handle root loader errors gracefully
+    // If error is a Response (e.g., redirect from logout), return it directly
+    if (error instanceof Response) {
+      return error;
+    }
+    // Handle root loader errors gracefully - always return null user on error
     return handleLoaderError(error, {
       user: null,
       ENV: {

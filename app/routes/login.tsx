@@ -8,8 +8,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     // Use getUser instead of getUserId to ensure session is actually valid
     // getUser will return null for invalid/expired sessions, and will throw/logout for invalid legacy sessions
     const user = await getUser(request);
-    if (user) return redirect("/dashboard");
-    return json({});
+    if (user) {
+      return redirect("/dashboard", {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      });
+    }
+    return json(
+      {},
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     // If error is a Response (e.g., redirect from logout), return it directly
     if (error instanceof Response) {

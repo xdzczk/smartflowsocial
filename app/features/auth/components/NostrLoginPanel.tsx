@@ -364,7 +364,15 @@ export default function NostrLoginPanel() {
   const location = useLocation();
   const redirectTo = useMemo(() => {
     const params = new URLSearchParams(location.search);
-    return params.get("redirectTo") ?? "/dashboard";
+    const raw = params.get("redirectTo");
+    // Decode the redirectTo parameter if it's encoded
+    if (!raw) return "/dashboard";
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      // If decoding fails, use the raw value
+      return raw;
+    }
   }, [location.search]);
   const expectedPubkey = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -1313,7 +1321,18 @@ export default function NostrLoginPanel() {
       });
 
       setState("authenticated");
-      window.location.assign(verify.redirectTo);
+      // Decode redirectTo if it's encoded
+      const decodedRedirect = (() => {
+        try {
+          return decodeURIComponent(verify.redirectTo);
+        } catch {
+          return verify.redirectTo;
+        }
+      })();
+      // Use full page reload to ensure all state is cleared and new session is loaded
+      // This is necessary after authentication to ensure React Query cache and other
+      // client-side state is properly reset with the new session
+      window.location.href = decodedRedirect;
     } catch (e) {
       const n = normalizeError(e);
       // Map a few known server messages to typed errors

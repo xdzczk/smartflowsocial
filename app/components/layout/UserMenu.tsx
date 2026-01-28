@@ -1,4 +1,5 @@
-import { Link, useFetcher } from "@remix-run/react";
+import { Link, useFetcher, useRevalidator } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
 import * as React from "react";
 
@@ -158,6 +159,8 @@ export default function UserMenu() {
   const user = useOptionalUser() as UserWithProfile | null | undefined;
   const subscription = useSubscription();
   const fetcher = useFetcher<{ children: ChildAccount[] }>();
+  const queryClient = useQueryClient();
+  const revalidator = useRevalidator();
   const [open, setOpen] = React.useState(false);
   const [children, setChildren] = React.useState<ChildAccount[]>([]);
 
@@ -388,7 +391,12 @@ export default function UserMenu() {
               action="/logout"
               method="post"
               onSubmit={() => {
+                // Clear client-side state before logout
                 clearActiveSignerConfig();
+                // Clear React Query cache to prevent stale data
+                queryClient.clear();
+                // Revalidate all loaders to ensure fresh data after redirect
+                revalidator.revalidate();
               }}
             >
               <Button

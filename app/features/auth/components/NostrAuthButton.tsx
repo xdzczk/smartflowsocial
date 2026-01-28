@@ -1,4 +1,5 @@
-import { Link, useLocation } from "@remix-run/react";
+import { Link, useLocation, useRevalidator } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -79,6 +80,8 @@ function getUserAvatarFallback(user: unknown): string {
 export default function NostrAuthButton() {
   const user = useOptionalUser() ?? null;
   const location = useLocation();
+  const queryClient = useQueryClient();
+  const revalidator = useRevalidator();
 
   // Always land in the app after sign-in (not back on marketing pages).
   const redirectTo = useMemo(() => encodeURIComponent("/dashboard"), []);
@@ -107,7 +110,12 @@ export default function NostrAuthButton() {
               action="/logout"
               method="post"
               onSubmit={() => {
+                // Clear client-side state before logout
                 clearActiveSignerConfig();
+                // Clear React Query cache to prevent stale data
+                queryClient.clear();
+                // Revalidate all loaders to ensure fresh data after redirect
+                revalidator.revalidate();
               }}
             >
               <Button variant="outline" size="sm" type="submit">
