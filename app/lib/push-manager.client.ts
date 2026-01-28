@@ -79,12 +79,15 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
       return null;
     }
 
-    // Now get service worker registration (after we have permission)
-    // Add timeout to prevent hanging if service worker never becomes ready
-    const registration = await withTimeout(
+    // Ensure service worker is registered, then wait for it to be ready.
+    // If nothing has registered it yet (e.g. user went straight to Settings), register now.
+    let registration = await navigator.serviceWorker.getRegistration();
+    registration ??= await navigator.serviceWorker.register("/sw.js");
+    // Wait for the controlling worker to be ready (with timeout)
+    const readyRegistration = await withTimeout(
       navigator.serviceWorker.ready,
-      10000, // 10 second timeout
-      "Service worker did not become ready within 10 seconds"
+      15000, // 15 second timeout to allow SW to install and activate
+      "Service worker did not become ready within 15 seconds. Try refreshing the page and enabling push notifications again."
     );
 
     // Get VAPID public key from server with timeout
@@ -120,9 +123,9 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
     // Convert VAPID key to Uint8Array
     const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
-    // Subscribe to push with timeout
+    // Subscribe to push with timeout (use ready registration)
     const subscription = await withTimeout(
-      registration.pushManager.subscribe({
+      readyRegistration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
       }),

@@ -44,7 +44,7 @@
     "docker": "docker compose up -d",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .; LINT_EXIT=$?; eslint --format json . > eslint-report.json 2>&1; exit $LINT_EXIT",
+    "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "lint:ci": "eslint . --format json --output-file eslint-report.json || exit 1",
     "start": "cross-env NODE_ENV=production node ./build/server.js & cross-env NODE_ENV=production node ./build/worker.js & wait",
     "start:server": "cross-env NODE_ENV=production node ./build/server.js",
