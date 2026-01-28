@@ -83,6 +83,7 @@ export default function NostrAuthButton() {
   const queryClient = useQueryClient();
   const logoutFetcher = useFetcher();
   const hasReloadedRef = useRef(false);
+  const wasSubmittingRef = useRef(false);
 
   // Always land in the app after sign-in (not back on marketing pages).
   const redirectTo = useMemo(() => encodeURIComponent("/dashboard"), []);
@@ -92,28 +93,23 @@ export default function NostrAuthButton() {
   // Handle logout redirect - force full page reload to clear all state
   // Must be before early return to comply with Rules of Hooks
   useEffect(() => {
-    // When logout completes (idle after submitting), force full page reload
-    const isLogoutComplete =
+    // Track when fetcher transitions from submitting to idle (logout completed)
+    if (logoutFetcher.state === "submitting") {
+      wasSubmittingRef.current = true;
+    } else if (
       logoutFetcher.state === "idle" &&
-      typeof logoutFetcher.formAction === "string" &&
-      logoutFetcher.formAction === "/logout" &&
-      typeof logoutFetcher.formMethod === "string" &&
-      logoutFetcher.formMethod === "POST";
-
-    if (isLogoutComplete && !hasReloadedRef.current) {
+      wasSubmittingRef.current &&
+      !hasReloadedRef.current
+    ) {
       hasReloadedRef.current = true;
+      wasSubmittingRef.current = false;
       // Clear all client-side state
       clearActiveSignerConfig();
       queryClient.clear();
       // Force full page reload to ensure all Remix loader data is fresh
       window.location.href = "/";
     }
-  }, [
-    logoutFetcher.state,
-    logoutFetcher.formAction,
-    logoutFetcher.formMethod,
-    queryClient,
-  ]);
+  }, [logoutFetcher.state, queryClient]);
 
   // Avoid rendering a redundant "Sign in" CTA on the login page itself.
   if (!user && isLoginPage) return null;

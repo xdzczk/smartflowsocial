@@ -25,6 +25,14 @@ import {
   serializeSecretKey,
   setActiveSignerConfig,
 } from "~/lib/nostr-signer-manager.client";
+import {
+  createSession,
+  detectSignerAppName,
+  getAllSessions,
+  setActiveSession,
+  updateSession,
+} from "~/lib/remote-signer-sessions.client";
+import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
 
 import {
   canonicalLoginMessage,
@@ -990,12 +998,46 @@ export default function NostrLoginPanel() {
           });
           setSigner(nip46Signer);
           setPubkey(pk);
-          setActiveSignerConfig({
-            type: "nip46",
-            method: "bunker_input",
+          const config = {
+            type: "nip46" as const,
+            method: "bunker_input" as const,
             bunkerInput: nip46Input.trim(),
             clientSecretKeyHex: serializeSecretKey(clientSecretKey),
+          };
+          setActiveSignerConfig(config);
+
+          // Find existing session with matching config or create new one
+          const allSessions = getAllSessions();
+          const existingSession = allSessions.find(
+            (s) =>
+              s.config.type === "nip46" &&
+              s.config.method === "bunker_input" &&
+              s.config.bunkerInput === config.bunkerInput
+          );
+
+          const session = existingSession ?? createSession(config);
+
+          setActiveSession(session.id);
+
+          // Update session with pubkey and detected app name
+          const detectedAppName = detectSignerAppName(config);
+          updateSession(session.id, {
+            metadata: {
+              ...session.metadata,
+              pubkey: pk,
+              signerAppName: detectedAppName,
+              status: "active",
+              connectedAt: Date.now(),
+              lastActivityAt: Date.now(),
+            },
           });
+
+          // Record connection event
+          recordConnectionEvent(session.id, {
+            type: "connected",
+            pubkey: pk,
+          });
+
           setConnectionStartTime(null);
           setConnectionTimeout(null);
           setState("requesting_signature");
@@ -1074,13 +1116,47 @@ export default function NostrLoginPanel() {
         setConnectionTimeout(null);
         setSigner(nip46Signer);
         setPubkey(pk);
-        setActiveSignerConfig({
-          type: "nip46",
-          method: "nostrconnect_uri",
+        const config = {
+          type: "nip46" as const,
+          method: "nostrconnect_uri" as const,
           uri: created.uri,
           relays: created.relays,
           clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
+        };
+        setActiveSignerConfig(config);
+
+        // Find existing session with matching config or create new one
+        const allSessions = getAllSessions();
+        const existingSession = allSessions.find(
+          (s) =>
+            s.config.type === "nip46" &&
+            s.config.method === "nostrconnect_uri" &&
+            s.config.uri === config.uri
+        );
+
+        const session = existingSession ?? createSession(config);
+
+        setActiveSession(session.id);
+
+        // Update session with pubkey and detected app name
+        const detectedAppName = detectSignerAppName(config);
+        updateSession(session.id, {
+          metadata: {
+            ...session.metadata,
+            pubkey: pk,
+            signerAppName: detectedAppName,
+            status: "active",
+            connectedAt: Date.now(),
+            lastActivityAt: Date.now(),
+          },
         });
+
+        // Record connection event
+        recordConnectionEvent(session.id, {
+          type: "connected",
+          pubkey: pk,
+        });
+
         clearPendingNostrConnectStorage();
         setState("requesting_signature");
       } catch (e) {
@@ -1223,13 +1299,38 @@ export default function NostrLoginPanel() {
       setConnectionTimeout(null);
       setSigner(nip46Signer);
       setPubkey(pk);
-      setActiveSignerConfig({
-        type: "nip46",
-        method: "nostrconnect_uri",
+      const config = {
+        type: "nip46" as const,
+        method: "nostrconnect_uri" as const,
         uri: pending.uri,
         relays: pending.relays,
         clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
+      };
+      setActiveSignerConfig(config);
+
+      // Create or update session
+      const session = createSession(config);
+      setActiveSession(session.id);
+
+      // Update session with pubkey and detected app name
+      const detectedAppName = detectSignerAppName(config);
+      updateSession(session.id, {
+        metadata: {
+          ...session.metadata,
+          pubkey: pk,
+          signerAppName: detectedAppName,
+          status: "active",
+          connectedAt: Date.now(),
+          lastActivityAt: Date.now(),
+        },
       });
+
+      // Record connection event
+      recordConnectionEvent(session.id, {
+        type: "connected",
+        pubkey: pk,
+      });
+
       clearPendingNostrConnectStorage();
       setState("requesting_signature");
     } catch (e) {

@@ -177,6 +177,66 @@ export function NotificationSettings({
     };
   }, [ensureSubscribedWhenGranted]);
 
+  // Helper function to save push notification preference to server
+  const savePushPreference = useCallback(
+    (enabled: boolean) => {
+      const formData = new FormData();
+      formData.append("_action", "update_notification_preferences");
+      formData.append("pushNotificationsEnabled", String(enabled));
+      fetcher.submit(formData, { method: "post" });
+    },
+    [fetcher]
+  );
+
+  // Helper function to poll for subscription when permission is granted
+  const pollForSubscription = async (): Promise<boolean> => {
+    const maxAttempts = 5;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const recheckPermission = getPushPermission();
+      setPermission(recheckPermission);
+
+      if (recheckPermission !== "granted") {
+        continue;
+      }
+
+      const existingSubscription = await getCurrentPushSubscription();
+      if (existingSubscription) {
+        setIsSubscribed(true);
+        savePushPreference(true);
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Helper function to handle successful subscription
+  const handleSubscriptionSuccess = useCallback(() => {
+    setIsSubscribed(true);
+    savePushPreference(true);
+  }, [savePushPreference]);
+
+  // Helper function to handle subscription failure when permission is granted
+  const handleSubscriptionFailureWithPermission = async (
+    currentPermission: NotificationPermission
+  ) => {
+    if (currentPermission === "granted") {
+      const found = await pollForSubscription();
+      if (!found) {
+        console.error(
+          "Permission granted but subscription failed. This may be because:\n" +
+            "1. VAPID keys are not configured on the server (VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY)\n" +
+            "2. Service worker is not registered or not ready\n" +
+            "3. Network error during subscription"
+        );
+      }
+    } else if (currentPermission === "denied") {
+      setPermission("denied");
+    } else {
+      console.warn("Push notification permission not granted");
+    }
+  };
+
   const handleTogglePushNotifications = async (enabled: boolean) => {
     if (isSubscribing) {
       // Prevent multiple simultaneous subscription attempts
@@ -187,31 +247,20 @@ export function NotificationSettings({
       // Subscribe to push
       setIsSubscribing(true);
       try {
+        // Check permission before subscribing (in case it was already granted)
+        const initialPermission = getPushPermission();
+        setPermission(initialPermission);
+
         const subscription = await subscribeToPush();
+
+        // Re-check permission after subscription attempt (iOS may update it asynchronously)
         const currentPermission = getPushPermission();
         setPermission(currentPermission);
 
         if (subscription) {
-          setIsSubscribed(true);
-          // Save preference to server
-          const formData = new FormData();
-          formData.append("_action", "update_notification_preferences");
-          formData.append("pushNotificationsEnabled", "true");
-          fetcher.submit(formData, { method: "post" });
+          handleSubscriptionSuccess();
         } else {
-          // Subscription failed - check why
-          if (currentPermission === "denied") {
-            setPermission("denied");
-          } else {
-            // VAPID keys likely not configured or other issue
-            console.error(
-              "Failed to subscribe to push notifications. This may be because:\n" +
-                "1. VAPID keys are not configured on the server (VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY)\n" +
-                "2. Browser permission was denied\n" +
-                "3. Service worker is not registered"
-            );
-          }
-          // Don't update pushNotificationsEnabled - let the toggle reflect the actual state
+          await handleSubscriptionFailureWithPermission(currentPermission);
         }
       } catch (error) {
         const errorMessage =
@@ -222,14 +271,25 @@ export function NotificationSettings({
         );
         const currentPermission = getPushPermission();
         setPermission(currentPermission);
-        // If error mentions VAPID, update permission state
+
+        // If permission was granted, check if subscription exists anyway
+        if (currentPermission === "granted") {
+          try {
+            const existingSubscription = await getCurrentPushSubscription();
+            if (existingSubscription) {
+              handleSubscriptionSuccess();
+            }
+          } catch (checkError) {
+            console.error("Failed to check existing subscription:", checkError);
+          }
+        }
+
+        // If error mentions VAPID, log server-side configuration issue
         if (errorMessage.includes("VAPID") || errorMessage.includes("503")) {
-          // Server-side configuration issue
           console.error(
             "Push notifications are not configured on the server. Please contact support."
           );
         }
-        // Don't update pushNotificationsEnabled - let the toggle reflect the actual state
       } finally {
         setIsSubscribing(false);
       }

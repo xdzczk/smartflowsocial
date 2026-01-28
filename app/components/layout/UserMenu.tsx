@@ -163,6 +163,7 @@ export default function UserMenu() {
   const logoutFetcher = useFetcher();
   const queryClient = useQueryClient();
   const hasReloadedRef = useRef(false);
+  const wasSubmittingRef = useRef(false);
   const [open, setOpen] = React.useState(false);
   const [children, setChildren] = React.useState<ChildAccount[]>([]);
 
@@ -196,28 +197,23 @@ export default function UserMenu() {
 
   // Handle logout redirect - force full page reload to clear all state
   useEffect(() => {
-    // When logout completes (idle after submitting), force full page reload
-    const isLogoutComplete =
+    // Track when fetcher transitions from submitting to idle (logout completed)
+    if (logoutFetcher.state === "submitting") {
+      wasSubmittingRef.current = true;
+    } else if (
       logoutFetcher.state === "idle" &&
-      typeof logoutFetcher.formAction === "string" &&
-      logoutFetcher.formAction === "/logout" &&
-      typeof logoutFetcher.formMethod === "string" &&
-      logoutFetcher.formMethod === "POST";
-
-    if (isLogoutComplete && !hasReloadedRef.current) {
+      wasSubmittingRef.current &&
+      !hasReloadedRef.current
+    ) {
       hasReloadedRef.current = true;
+      wasSubmittingRef.current = false;
       // Clear all client-side state
       clearActiveSignerConfig();
       queryClient.clear();
       // Force full page reload to ensure all Remix loader data is fresh
       window.location.href = "/";
     }
-  }, [
-    logoutFetcher.state,
-    logoutFetcher.formAction,
-    logoutFetcher.formMethod,
-    queryClient,
-  ]);
+  }, [logoutFetcher.state, queryClient]);
 
   // Don't render if no user
   if (!user) return null;
