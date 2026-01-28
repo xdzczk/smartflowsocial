@@ -92,7 +92,8 @@ export function RemoteSignerSettings() {
     );
     window.addEventListener(REMOTE_SIGNER_TIMEOUT_EVENT, handleTimeout);
 
-    // Poll active session health every 10 seconds
+    // Poll active session health every 2 minutes (avoid prompting signer app too often)
+    const HEALTH_POLL_MS = 2 * 60 * 1000;
     const healthCheckInterval = setInterval(() => {
       const active = getActiveSession();
       if (active?.metadata.status === "active") {
@@ -106,7 +107,7 @@ export function RemoteSignerSettings() {
           loadSessions();
         })();
       }
-    }, 10_000);
+    }, HEALTH_POLL_MS);
 
     return () => {
       window.removeEventListener(

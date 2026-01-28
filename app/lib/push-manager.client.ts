@@ -45,6 +45,9 @@ export function getPushPermission(): NotificationPermission {
 
 /**
  * Subscribe to push notifications
+ * IMPORTANT: Permission must be requested first (while the user gesture is still valid).
+ * If we await serviceWorker.ready or fetch() before requesting permission, the browser
+ * may not show the system prompt.
  */
 export async function subscribeToPush(): Promise<PushSubscription | null> {
   if (!isPushSupported()) {
@@ -53,15 +56,15 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
   }
 
   try {
-    // Get service worker registration
-    const registration = await navigator.serviceWorker.ready;
-
-    // Request permission
+    // Request permission FIRST - must happen during the user gesture or the prompt won't show
     const permission = await requestPushPermission();
     if (permission !== "granted") {
       console.warn("Push notification permission denied");
       return null;
     }
+
+    // Now get service worker registration (after we have permission)
+    const registration = await navigator.serviceWorker.ready;
 
     // Get VAPID public key from server
     const response = await fetch("/api/push-subscribe");

@@ -39,6 +39,10 @@ let connectionCooldownUntil = 0;
 let healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 let connectionEstablishedAt: number | null = null;
 let _lastActivityTime: number | null = null; // Reserved for future metrics/debugging
+let _lastVerificationTime: number | null = null; // Skip verifySignerConnection if recent (avoids spamming signer app)
+
+/** Minimum time between verification checks (avoid prompting signer app too often). */
+const VERIFY_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
 
 /**
  * Clear the in-memory signer cache without removing persisted config.
@@ -46,6 +50,7 @@ let _lastActivityTime: number | null = null; // Reserved for future metrics/debu
  */
 export function resetCachedSigner(): void {
   cachedSigner = null;
+  _lastVerificationTime = null;
 }
 
 /**
@@ -242,18 +247,18 @@ async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
   if (signer.type !== "nip46") return true; // NIP-07 doesn't need verification
 
   try {
-    // Health check: try to get public key with a reasonable timeout
-    // Increased timeout to 5 seconds to account for WebSocket reconnection delays
-    // If the signer app (e.g., Primal) is maintaining connections in the background,
-    // our WebSocket connections to relays might need a moment to re-establish,
-    // but the NIP-46 connection itself might still be valid
+    // Health check: try to get public key with a reasonable timeout.
+    // Calling getPublicKey() can prompt the signer app (e.g. Primal) to "return to app";
+    // we avoid calling this too often via VERIFY_COOLDOWN_MS and less frequent periodic checks.
     await Promise.race([
       signer.getPublicKey(),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("Connection check timeout")), 5000)
       ),
     ]);
-    _lastActivityTime = Date.now();
+    const now = Date.now();
+    _lastActivityTime = now;
+    _lastVerificationTime = now;
     return true;
   } catch {
     // Any error means the connection is stale or unreachable
@@ -269,67 +274,76 @@ async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
 function startHealthCheckMonitoring(): void {
   if (healthCheckInterval) return; // Already monitoring
 
-  healthCheckInterval = setInterval(() => {
-    void (async () => {
-      const config = getActiveSignerConfig();
-      if (config?.type !== "nip46" || !cachedSigner) {
-        // No active NIP-46 connection, stop monitoring
-        if (healthCheckInterval) {
-          clearInterval(healthCheckInterval);
-          healthCheckInterval = null;
-        }
-        return;
-      }
-
-      // Perform health check more frequently to catch stale connections faster
-      // Check connections older than 1 minute (reduced from 5 minutes)
-      // This helps detect when connections are dropped due to phone lock/backgrounding
-      const now = Date.now();
-      const timeSinceLastActivity = _lastActivityTime
-        ? now - _lastActivityTime
-        : Infinity;
-
-      // Check if connection needs health check:
-      // 1. Connection is older than 1 minute, OR
-      // 2. No activity for more than 2 minutes (might be stale)
-      if (
-        connectionEstablishedAt &&
-        (now - connectionEstablishedAt > 1 * 60 * 1000 ||
-          timeSinceLastActivity > 2 * 60 * 1000)
-      ) {
-        // Perform health check
-        const isValid = await verifySignerConnection(cachedSigner);
-        if (!isValid) {
-          // Connection is stale, clear it
-          clearCachedNip46Signer();
-          connectionEstablishedAt = null;
-          _lastActivityTime = null;
-
-          // Update session status
-          const activeSession = getActiveSession();
-          if (activeSession) {
-            recordConnectionEvent(activeSession.id, {
-              type: "health_check",
-              healthy: false,
-              error: "Connection stale",
-            });
+  healthCheckInterval = setInterval(
+    () => {
+      void (async () => {
+        const config = getActiveSignerConfig();
+        if (config?.type !== "nip46" || !cachedSigner) {
+          // No active NIP-46 connection, stop monitoring
+          if (healthCheckInterval) {
+            clearInterval(healthCheckInterval);
+            healthCheckInterval = null;
           }
-
-          // Emit event for connection state change
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(
-              new CustomEvent("nostr-connection-stale", {
-                detail: { signerType: "nip46" },
-              })
-            );
-          }
-        } else {
-          // Connection is healthy, update activity time
-          _lastActivityTime = Date.now();
+          return;
         }
-      }
-    })();
-  }, 15_000); // Check every 15 seconds (increased frequency for faster detection)
+
+        // Run health check only when connection has been idle for a while.
+        // Calling getPublicKey() prompts the signer app (e.g. Primal); we avoid doing this
+        // too often so the user is not asked to "return to app" every minute.
+        const now = Date.now();
+        const timeSinceLastActivity = _lastActivityTime
+          ? now - _lastActivityTime
+          : Infinity;
+        const timeSinceLastVerification = _lastVerificationTime
+          ? now - _lastVerificationTime
+          : Infinity;
+
+        // Only check when: connection is at least 5 min old AND (no activity for 5 min OR last verification was > 5 min ago)
+        const connectionAge = connectionEstablishedAt
+          ? now - connectionEstablishedAt
+          : 0;
+        const idleLongEnough = timeSinceLastActivity > 5 * 60 * 1000;
+        const verificationStale = timeSinceLastVerification > 5 * 60 * 1000;
+
+        if (
+          connectionEstablishedAt &&
+          connectionAge > 5 * 60 * 1000 &&
+          (idleLongEnough || verificationStale)
+        ) {
+          const isValid = await verifySignerConnection(cachedSigner);
+          if (!isValid) {
+            // Connection is stale, clear it
+            clearCachedNip46Signer();
+            connectionEstablishedAt = null;
+            _lastActivityTime = null;
+
+            // Update session status
+            const activeSession = getActiveSession();
+            if (activeSession) {
+              recordConnectionEvent(activeSession.id, {
+                type: "health_check",
+                healthy: false,
+                error: "Connection stale",
+              });
+            }
+
+            // Emit event for connection state change
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("nostr-connection-stale", {
+                  detail: { signerType: "nip46" },
+                })
+              );
+            }
+          } else {
+            // Connection is healthy, update activity time
+            _lastActivityTime = Date.now();
+          }
+        }
+      })();
+    },
+    2 * 60 * 1000
+  ); // Check every 2 minutes (avoid prompting signer app too often)
 }
 
 /**
@@ -345,14 +359,19 @@ function stopHealthCheckMonitoring(): void {
 // Complex signer resolution with caching, health checks, cooldowns, and platform-specific optimizations
 // eslint-disable-next-line sonarjs/cognitive-complexity -- Signer management requires handling multiple connection types, visibility changes, cooldowns, and error recovery
 export async function getActiveSigner(): Promise<NostrSigner | null> {
-  // If we have a cached signer, verify it's still valid before returning it
-  // This is lazy verification - we only check when the signer is actually needed
-  // This allows us to keep the connection even after phone lock, since the signer app
-  // (e.g., Primal) might still be maintaining it in the background
+  // If we have a cached signer, verify it's still valid before returning it,
+  // but not on every call — use a cooldown so we don't prompt the signer app (e.g. Primal) every time.
   if (cachedSigner) {
-    // Health check before critical operations
-    // This helps recover from dropped connections (e.g., phone lock)
-    // The timeout is generous (5s) to allow WebSocket connections to re-establish
+    const now = Date.now();
+    const shouldVerify =
+      _lastVerificationTime == null ||
+      now - _lastVerificationTime > VERIFY_COOLDOWN_MS;
+
+    if (!shouldVerify) {
+      _lastActivityTime = now;
+      return cachedSigner;
+    }
+
     const isValid = await verifySignerConnection(cachedSigner);
     if (isValid) {
       _lastActivityTime = Date.now();
@@ -418,8 +437,10 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
       await inner.connect();
       cachedSigner = new Nip46Signer({ pool, inner });
       pool = null; // Transfer ownership to cachedSigner
-      connectionEstablishedAt = Date.now();
-      _lastActivityTime = Date.now();
+      const nowEst = Date.now();
+      connectionEstablishedAt = nowEst;
+      _lastActivityTime = nowEst;
+      _lastVerificationTime = nowEst; // We just connected; skip verify cooldown until needed
       startHealthCheckMonitoring();
 
       // Get pubkey for session update
@@ -471,8 +492,10 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
     );
     cachedSigner = new Nip46Signer({ pool, inner });
     pool = null; // Transfer ownership to cachedSigner
-    connectionEstablishedAt = Date.now();
-    _lastActivityTime = Date.now();
+    const nowEst = Date.now();
+    connectionEstablishedAt = nowEst;
+    _lastActivityTime = nowEst;
+    _lastVerificationTime = nowEst; // We just connected; skip verify cooldown until needed
     startHealthCheckMonitoring();
 
     // Get pubkey for session update
