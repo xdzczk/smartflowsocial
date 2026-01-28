@@ -20,6 +20,7 @@ import { recordConnectionAttempt } from "~/lib/nostr-connection-metrics.client";
 import { convertHexToNpub } from "~/lib/nostr-conversion";
 import {
   clearActiveSignerConfig,
+  getActiveSignerConfig,
   serializeSecretKey,
   setActiveSignerConfig,
 } from "~/lib/nostr-signer-manager.client";
@@ -638,27 +639,10 @@ export default function NostrLoginPanel() {
     return () => clearInterval(interval);
   }, [connectionStartTime, connectionTimeout, state]);
 
-  // Detect app switching on mobile during connection
-  useEffect(() => {
-    if (state !== "awaiting_profile_selection") {
-      setWasHiddenDuringConnection(false);
-      return;
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setWasHiddenDuringConnection(true);
-      } else if (wasHiddenDuringConnection) {
-        // User returned from signer app
-        setWasHiddenDuringConnection(false);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [state, wasHiddenDuringConnection]);
+  // Store initNip46 in a ref so we can use it in the visibility change handler
+  const initNip46Ref = useRef<((retryCount?: number) => Promise<void>) | null>(
+    null
+  );
 
   // Proactive NIP-07 extension detection
   useEffect(() => {
@@ -770,6 +754,63 @@ export default function NostrLoginPanel() {
       setState("failed");
     }
   }, [expectedPubkey]);
+
+  // Detect app switching on mobile during connection
+  useEffect(() => {
+    // Only handle visibility changes when we're in a connection-related state
+    if (
+      state !== "awaiting_profile_selection" &&
+      state !== "failed" &&
+      state !== "signer_initializing"
+    ) {
+      setWasHiddenDuringConnection(false);
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setWasHiddenDuringConnection(true);
+        // Cancel the connection attempt when app is backgrounded
+        // This prevents "subscription closed" errors when WebSocket connections
+        // are closed by iOS/Android while we're waiting for the signer app
+        if (state === "awaiting_profile_selection") {
+          nip46CancelRef.current?.cancel();
+        }
+      } else if (wasHiddenDuringConnection) {
+        // User returned from signer app
+        setWasHiddenDuringConnection(false);
+
+        // If we have a connection URI and config stored, try to reconnect
+        // The signer app (e.g., Primal) may have approved the connection while we were away
+        // and can restore the session using the same credentials
+        if (nostrConnectUri) {
+          // Wait a moment for WebSocket connections to stabilize
+          setTimeout(() => {
+            // Check if we have a stored config - if so, try to reconnect
+            const config = getActiveSignerConfig();
+            if (
+              config?.type === "nip46" &&
+              config.method === "nostrconnect_uri"
+            ) {
+              // Try to reconnect using the same URI - Primal can restore the session
+              // Only reconnect if we're in a state where reconnection makes sense
+              if (
+                state === "awaiting_profile_selection" ||
+                state === "failed"
+              ) {
+                void initNip46Ref.current?.(0);
+              }
+            }
+          }, 1000);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [state, wasHiddenDuringConnection, nostrConnectUri]);
 
   // Complex NIP-46 connection logic with retry handling, circuit breaker, mobile optimizations, and multiple connection methods
   const initNip46 = useCallback(
@@ -999,6 +1040,9 @@ export default function NostrLoginPanel() {
     [expectedPubkey, nip46Input, nip46Tab, relayList, nostrConnectUri, state]
   );
 
+  // Update ref so visibility handler can call it
+  initNip46Ref.current = initNip46;
+
   const performLogin = useCallback(async () => {
     if (!signer || !pubkey) return;
     setError(null);
@@ -1093,6 +1137,23 @@ export default function NostrLoginPanel() {
       setState("failed");
     }
   }, [pubkey, redirectTo, signer]);
+
+  // When we land on "requesting_signature" (after extension or remote signer is ready),
+  // trigger the actual signature request. The UI shows "Waiting for signature..." but we
+  // must call performLogin() to ask the extension/signer to sign — we were not doing this
+  // before, so the user was stuck with no prompt from the extension.
+  const hasTriggeredLoginRef = useRef(false);
+  useEffect(() => {
+    if (state !== "requesting_signature" || !signer || !pubkey) {
+      if (state !== "requesting_signature") {
+        hasTriggeredLoginRef.current = false;
+      }
+      return;
+    }
+    if (hasTriggeredLoginRef.current) return;
+    hasTriggeredLoginRef.current = true;
+    void performLogin();
+  }, [state, signer, pubkey, performLogin]);
 
   const handleTryAgain = useCallback(() => {
     if (lastFailureOrigin === "nip46_init") {
