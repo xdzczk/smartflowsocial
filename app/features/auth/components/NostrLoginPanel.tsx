@@ -772,9 +772,19 @@ export default function NostrLoginPanel() {
   }, [expectedPubkey]);
 
   // Complex NIP-46 connection logic with retry handling, circuit breaker, mobile optimizations, and multiple connection methods
-  // eslint-disable-next-line sonarjs/cognitive-complexity -- NIP-46 requires handling bunker input, nostrconnect URI, retries, timeouts, and mobile app switching
   const initNip46 = useCallback(
+    // eslint-disable-next-line sonarjs/cognitive-complexity -- NIP-46 requires handling bunker input, nostrconnect URI, retries, timeouts, and mobile app switching
     async (retryCount = 0) => {
+      // If we already have a connection URI and we're in awaiting state, don't restart
+      // This prevents restarting the connection when user returns from signer app
+      if (
+        nostrConnectUri &&
+        state === "awaiting_profile_selection" &&
+        retryCount === 0
+      ) {
+        // Connection attempt is already in progress, don't restart
+        return;
+      }
       const startTime = Date.now();
 
       // Check circuit breaker (only on first attempt, retries are allowed)
@@ -971,7 +981,15 @@ export default function NostrLoginPanel() {
         // This helps with the common issue where the first attempt fails
         // but subsequent attempts succeed after WebSocket connections stabilize
         // iOS needs this more, but Android can also benefit
-        if (isConnectionError && isMobile && retryCount < 2) {
+        // IMPORTANT: Only retry if we don't already have a connection URI set
+        // If we have a URI, the user might be in the middle of approving it in the signer app
+        // Don't restart the connection attempt in that case
+        if (
+          isConnectionError &&
+          isMobile &&
+          retryCount < 2 &&
+          !nostrConnectUri
+        ) {
           // Wait a bit before retrying (exponential backoff)
           const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 4000);
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
@@ -991,7 +1009,7 @@ export default function NostrLoginPanel() {
         }
       }
     },
-    [expectedPubkey, nip46Input, nip46Tab, relayList]
+    [expectedPubkey, nip46Input, nip46Tab, relayList, nostrConnectUri, state]
   );
 
   const performLogin = useCallback(async () => {
@@ -1020,7 +1038,26 @@ export default function NostrLoginPanel() {
         content,
       };
 
-      const signedEvent = await signer.signEvent(event);
+      // Add timeout for signature request to prevent UI freeze
+      // Some extensions (like Keychat on iOS) may hang or be slow to respond
+      const SIGNATURE_TIMEOUT_MS = 60_000; // 60 seconds
+      const signaturePromise = signer.signEvent(event);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                "Signature request timed out. Please try again or check your extension."
+              )
+            ),
+          SIGNATURE_TIMEOUT_MS
+        )
+      );
+
+      const signedEvent = await Promise.race([
+        signaturePromise,
+        timeoutPromise,
+      ]);
 
       setState("verifying_signature");
       const verify = await postJson<{
@@ -1050,6 +1087,16 @@ export default function NostrLoginPanel() {
         setError({
           code: "SIGNATURE_INVALID",
           message: "Signature invalid",
+          details: n.details,
+        });
+      } else if (
+        n.message.toLowerCase().includes("timeout") ||
+        n.message.toLowerCase().includes("timed out")
+      ) {
+        setError({
+          code: "SIGNER_TIMEOUT",
+          message:
+            "Signature request timed out. The extension may be slow to respond. Please try again or check your extension settings.",
           details: n.details,
         });
       } else {
@@ -1465,20 +1512,26 @@ export default function NostrLoginPanel() {
               type="button"
               className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
               onClick={() => void performLogin()}
-              disabled={state === "verifying_signature"}
+              disabled
             >
               {state === "verifying_signature"
                 ? "Verifying…"
-                : "Confirm login signature"}
+                : "Waiting for signature…"}
             </Button>
             <Button
               type="button"
               variant="outline"
               className="border-border bg-card hover:bg-muted hover:text-foreground"
               onClick={() => void resetToSelection()}
+              disabled={state === "verifying_signature"}
             >
-              Back
+              Cancel
             </Button>
+          </div>
+          <div className="text-muted-foreground text-xs">
+            Waiting for your extension to sign the login request. If it
+            doesn&apos;t respond, try canceling and checking your extension
+            settings.
           </div>
         </div>
       ) : null}

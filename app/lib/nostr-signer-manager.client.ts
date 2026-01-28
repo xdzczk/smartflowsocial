@@ -110,9 +110,14 @@ function initVisibilityHandler(): void {
       _lastVisibilityChangeTime = now;
     } else if (wasHidden) {
       // Page became visible again after being hidden
-      // Always clear cached NIP-46 signer to force fresh reconnection
-      // This prevents using stale WebSocket connections
-      clearCachedNip46Signer();
+      // Only clear cached NIP-46 signer if there's an established connection
+      // Don't clear during active connection attempts (when cachedSigner doesn't exist yet)
+      // This prevents interrupting in-progress connection attempts
+      const config = getActiveSignerConfig();
+      if (config?.type === "nip46" && cachedSigner) {
+        // Only clear if we have an established connection, not during an active attempt
+        clearCachedNip46Signer();
+      }
       wasHidden = false;
 
       // Add a cooldown period after becoming visible
@@ -134,7 +139,12 @@ function initVisibilityHandler(): void {
   // Also listen for focus events as a backup (handles some edge cases)
   const handleFocus = () => {
     if (wasHidden) {
-      clearCachedNip46Signer();
+      // Only clear cached signer if there's an established connection
+      // Don't clear during active connection attempts
+      const config = getActiveSignerConfig();
+      if (config?.type === "nip46" && cachedSigner) {
+        clearCachedNip46Signer();
+      }
       wasHidden = false;
       const now = Date.now();
       if (isMobile()) {
