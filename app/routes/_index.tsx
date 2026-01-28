@@ -2,14 +2,26 @@ import { json } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { validateEvent } from "nostr-tools";
 
-import { getUserId } from "~/features/auth";
+import { getUser } from "~/features/auth";
 import { HomePage } from "~/features/marketing";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const userId = await getUserId(request);
-  if (userId) return json({});
-  return json({});
+  try {
+    // Use getUser instead of getUserId to ensure session is actually valid
+    // This prevents showing user as logged in when session is invalid/expired
+    const user = await getUser(request);
+    return json({ user });
+  } catch (error) {
+    // If error is a Response (e.g., redirect from logout), return it directly
+    if (error instanceof Response) {
+      return error;
+    }
+    // If getUser throws (e.g., invalid legacy session), it will have already called logout
+    // For landing page, errors are non-critical - just return empty data
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {});
+  }
 };
 
 export const action = withCSRFProtection(

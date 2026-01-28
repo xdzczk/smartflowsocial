@@ -777,12 +777,15 @@ export default function NostrLoginPanel() {
     async (retryCount = 0) => {
       // If we already have a connection URI and we're in awaiting state, don't restart
       // This prevents restarting the connection when user returns from signer app
+      // Also check if we're waiting for approval (connection in progress)
       if (
         nostrConnectUri &&
-        state === "awaiting_profile_selection" &&
+        (state === "awaiting_profile_selection" ||
+          state === "signer_initializing") &&
         retryCount === 0
       ) {
         // Connection attempt is already in progress, don't restart
+        // The user might be in the middle of approving in the signer app
         return;
       }
       const startTime = Date.now();
@@ -956,13 +959,6 @@ export default function NostrLoginPanel() {
           msgLower.includes("websocket") ||
           msgLower.includes("connection");
 
-        const isMobile =
-          typeof navigator !== "undefined" &&
-          (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent
-          ) ||
-            (navigator.maxTouchPoints && navigator.maxTouchPoints > 1));
-
         // Record failure in circuit breaker and metrics
         if (isConnectionError) {
           recordCircuitBreakerFailure("nip46");
@@ -977,29 +973,20 @@ export default function NostrLoginPanel() {
           retryCount,
         });
 
-        // Auto-retry up to 2 times for connection errors on mobile
-        // This helps with the common issue where the first attempt fails
-        // but subsequent attempts succeed after WebSocket connections stabilize
-        // iOS needs this more, but Android can also benefit
-        // IMPORTANT: Only retry if we don't already have a connection URI set
-        // If we have a URI, the user might be in the middle of approving it in the signer app
-        // Don't restart the connection attempt in that case
+        // No auto-retry - let the user manually retry if needed
+        // Auto-retrying and generating new connection strings is confusing
+        // and can interrupt users who are already in the approval process
+
+        // Only clear connection state if we're not in an awaiting state
+        // If we're awaiting, the connection might still be valid and user might return
         if (
-          isConnectionError &&
-          isMobile &&
-          retryCount < 2 &&
-          !nostrConnectUri
+          state !== "awaiting_profile_selection" &&
+          state !== "signer_initializing"
         ) {
-          // Wait a bit before retrying (exponential backoff)
-          const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 4000);
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
-
-          // Retry the connection
-          return initNip46(retryCount + 1);
+          setConnectionStartTime(null);
+          setConnectionTimeout(null);
+          setNostrConnectUri(null);
         }
-
-        setConnectionStartTime(null);
-        setConnectionTimeout(null);
         setError(n);
         setLastFailureOrigin("nip46_init");
         setState("failed");
@@ -1197,151 +1184,168 @@ export default function NostrLoginPanel() {
         </div>
       ) : null}
 
-      {state === "signer_initializing" && !signer ? (
-        <div className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
-          <div className="space-y-2">
-            <div className="text-foreground text-base font-bold">
-              Remote signer
-            </div>
-            <div className="text-muted-foreground text-sm leading-relaxed">
-              Connect a remote signer and approve a profile. Each profile
-              represents a different identity (pubkey).
-            </div>
-          </div>
+      {(() => {
+        const isInitializing = state === "signer_initializing" && !signer;
+        const isConnectionInProgress =
+          !!nostrConnectUri &&
+          (state === "awaiting_profile_selection" ||
+            state === "requesting_signature" ||
+            state === "verifying_signature");
 
-          <Tabs
-            value={nip46Tab}
-            onValueChange={(v) => setNip46Tab(v as "bunker" | "nostrconnect")}
-          >
-            <TabsList className="border-border bg-muted w-full">
-              <TabsTrigger
-                value="bunker"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1"
-              >
-                Paste bunker input
-              </TabsTrigger>
-              <TabsTrigger
-                value="nostrconnect"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1"
-              >
-                Generate nostrconnect URI
-              </TabsTrigger>
-            </TabsList>
+        if (!isInitializing) return null;
 
-            <TabsContent value="bunker" className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="nip46BunkerInput">Bunker input</Label>
-                <Input
-                  id="nip46BunkerInput"
-                  name="nip46BunkerInput"
-                  value={nip46Input}
-                  onChange={(e) => setNip46Input(e.target.value)}
-                  placeholder="bunker://..."
-                />
+        return (
+          <div className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
+            <div className="space-y-2">
+              <div className="text-foreground text-base font-bold">
+                Remote signer
               </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={() => void initNip46()}
-                  disabled={!nip46Input.trim()}
-                >
-                  Connect
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void resetToSelection()}
-                >
-                  Cancel
-                </Button>
+              <div className="text-muted-foreground text-sm leading-relaxed">
+                Connect a remote signer and approve a profile. Each profile
+                represents a different identity (pubkey).
               </div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="nostrconnect" className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="nip46Relays">Relays</Label>
-                <textarea
-                  id="nip46Relays"
-                  name="nip46Relays"
-                  aria-describedby="nip46RelaysHelp"
-                  className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
-                  value={relayList}
-                  onChange={(e) => setRelayList(e.target.value)}
-                />
-                <div
-                  id="nip46RelaysHelp"
-                  className="text-muted-foreground text-xs"
+            <Tabs
+              value={nip46Tab}
+              onValueChange={(v) => setNip46Tab(v as "bunker" | "nostrconnect")}
+            >
+              <TabsList className="border-border bg-muted w-full">
+                <TabsTrigger
+                  value="bunker"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1"
                 >
-                  If approval gets stuck, try removing unreachable relays or add
-                  alternatives.
+                  Paste bunker input
+                </TabsTrigger>
+                <TabsTrigger
+                  value="nostrconnect"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1"
+                >
+                  Generate nostrconnect URI
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="bunker" className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="nip46BunkerInput">Bunker input</Label>
+                  <Input
+                    id="nip46BunkerInput"
+                    name="nip46BunkerInput"
+                    value={nip46Input}
+                    onChange={(e) => setNip46Input(e.target.value)}
+                    placeholder="bunker://..."
+                  />
                 </div>
-                {relayUrls.length > 0 ? (
-                  <div className="border-border bg-muted/50 dark:bg-muted/30 space-y-2 rounded-md border p-3 pt-2 text-xs">
-                    <div className="text-foreground font-medium">
-                      Relay status (best-effort connectivity check):
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => void initNip46()}
+                    disabled={!nip46Input.trim() || isConnectionInProgress}
+                  >
+                    Connect
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void resetToSelection()}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="nostrconnect" className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="nip46Relays">Relays</Label>
+                  <textarea
+                    id="nip46Relays"
+                    name="nip46Relays"
+                    aria-describedby="nip46RelaysHelp"
+                    className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                    value={relayList}
+                    onChange={(e) => setRelayList(e.target.value)}
+                  />
+                  <div
+                    id="nip46RelaysHelp"
+                    className="text-muted-foreground text-xs"
+                  >
+                    If approval gets stuck, try removing unreachable relays or
+                    add alternatives.
+                  </div>
+                  {relayUrls.length > 0 ? (
+                    <div className="border-border bg-muted/50 dark:bg-muted/30 space-y-2 rounded-md border p-3 pt-2 text-xs">
+                      <div className="text-foreground font-medium">
+                        Relay status (best-effort connectivity check):
+                      </div>
+                      <div className="grid gap-1.5">
+                        {relayUrls.map((url) => {
+                          const s = relayStatuses[url];
+                          const status: RelayCheckStatus =
+                            s?.status ?? "checking";
+                          const color =
+                            status === "connected"
+                              ? "text-success dark:text-success"
+                              : status === "failed"
+                                ? "text-destructive dark:text-destructive"
+                                : "text-muted-foreground";
+                          return (
+                            <div
+                              key={url}
+                              className="flex items-start justify-between gap-2"
+                            >
+                              <div className="truncate font-mono text-xs">
+                                {url}
+                              </div>
+                              <div className={`shrink-0 font-medium ${color}`}>
+                                {getRelayStatusLabel(status)}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="grid gap-1.5">
-                      {relayUrls.map((url) => {
-                        const s = relayStatuses[url];
-                        const status: RelayCheckStatus =
-                          s?.status ?? "checking";
-                        const color =
-                          status === "connected"
-                            ? "text-success dark:text-success"
-                            : status === "failed"
-                              ? "text-destructive dark:text-destructive"
-                              : "text-muted-foreground";
-                        return (
-                          <div
-                            key={url}
-                            className="flex items-start justify-between gap-2"
-                          >
-                            <div className="truncate font-mono text-xs">
-                              {url}
-                            </div>
-                            <div className={`shrink-0 font-medium ${color}`}>
-                              {getRelayStatusLabel(status)}
-                            </div>
-                          </div>
-                        );
-                      })}
+                  ) : null}
+                </div>
+
+                {nostrConnectUri ? (
+                  <div className="space-y-1">
+                    <Label htmlFor="nip46NostrConnectUri">
+                      nostrconnect URI
+                    </Label>
+                    <textarea
+                      id="nip46NostrConnectUri"
+                      readOnly
+                      className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
+                      value={nostrConnectUri}
+                    />
+                    <div className="text-muted-foreground text-xs">
+                      Paste this into your remote signer to approve. Then return
+                      here and wait for approval.
                     </div>
                   </div>
                 ) : null}
-              </div>
 
-              {nostrConnectUri ? (
-                <div className="space-y-1">
-                  <Label htmlFor="nip46NostrConnectUri">nostrconnect URI</Label>
-                  <textarea
-                    id="nip46NostrConnectUri"
-                    readOnly
-                    className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
-                    value={nostrConnectUri}
-                  />
-                  <div className="text-muted-foreground text-xs">
-                    Paste this into your remote signer to approve. Then return
-                    here and wait for approval.
-                  </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => void initNip46()}
+                    disabled={isConnectionInProgress}
+                  >
+                    {nostrConnectUri ? "Retry" : "Generate & wait"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void resetToSelection()}
+                  >
+                    Cancel
+                  </Button>
                 </div>
-              ) : null}
-
-              <div className="flex gap-2">
-                <Button type="button" onClick={() => void initNip46()}>
-                  {nostrConnectUri ? "Retry" : "Generate & wait"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void resetToSelection()}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      ) : null}
+              </TabsContent>
+            </Tabs>
+          </div>
+        );
+      })()}
 
       {state === "awaiting_profile_selection" ? (
         <div

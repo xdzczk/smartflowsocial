@@ -69,6 +69,12 @@ function isMobile(): boolean {
 /**
  * Clear cached NIP-46 signer connections.
  * This is called when we detect the page was hidden or when connections fail.
+ *
+ * IMPORTANT: This only clears the cached signer object, NOT the stored config.
+ * The config (connection URI/credentials) is preserved so that:
+ * - Signer apps like Primal can restore the session using the same credentials
+ * - We can attempt reconnection with the same connection URI
+ * - Users don't need to re-approve if the signer app remembers the connection
  */
 function clearCachedNip46Signer(): void {
   const config = getActiveSignerConfig();
@@ -84,6 +90,7 @@ function clearCachedNip46Signer(): void {
         }
       })();
     }
+    // Clear only the cached signer object, keep the config for reconnection
     resetCachedSigner();
     stopHealthCheckMonitoring();
     connectionEstablishedAt = null;
@@ -110,14 +117,10 @@ function initVisibilityHandler(): void {
       _lastVisibilityChangeTime = now;
     } else if (wasHidden) {
       // Page became visible again after being hidden
-      // Only clear cached NIP-46 signer if there's an established connection
-      // Don't clear during active connection attempts (when cachedSigner doesn't exist yet)
-      // This prevents interrupting in-progress connection attempts
-      const config = getActiveSignerConfig();
-      if (config?.type === "nip46" && cachedSigner) {
-        // Only clear if we have an established connection, not during an active attempt
-        clearCachedNip46Signer();
-      }
+      // DON'T clear the connection immediately - the signer app (e.g., Primal) might
+      // still be maintaining the connection in the background. We'll verify it when
+      // it's actually used (lazy verification in getActiveSigner).
+      // This allows us to reuse the same connection URI if the signer app recognizes it.
       wasHidden = false;
 
       // Add a cooldown period after becoming visible
@@ -126,7 +129,8 @@ function initVisibilityHandler(): void {
       // Android can also have issues, though less frequently
       if (isMobile()) {
         // Mobile devices: longer cooldown (iOS needs more, Android benefits too)
-        const baseCooldown = isIOS() ? 1500 : 800; // iOS: 1.5s, Android: 0.8s
+        // Increased cooldown to give connections more time to recover
+        const baseCooldown = isIOS() ? 3000 : 1500; // iOS: 3s, Android: 1.5s
         const cooldownMs = baseCooldown + Math.random() * 500;
         connectionCooldownUntil = now + cooldownMs;
       } else {
@@ -139,16 +143,12 @@ function initVisibilityHandler(): void {
   // Also listen for focus events as a backup (handles some edge cases)
   const handleFocus = () => {
     if (wasHidden) {
-      // Only clear cached signer if there's an established connection
-      // Don't clear during active connection attempts
-      const config = getActiveSignerConfig();
-      if (config?.type === "nip46" && cachedSigner) {
-        clearCachedNip46Signer();
-      }
+      // DON'T clear the connection immediately - same reasoning as visibility change
+      // The signer app might still be maintaining the connection
       wasHidden = false;
       const now = Date.now();
       if (isMobile()) {
-        const baseCooldown = isIOS() ? 1500 : 800;
+        const baseCooldown = isIOS() ? 3000 : 1500;
         const cooldownMs = baseCooldown + Math.random() * 500;
         connectionCooldownUntil = now + cooldownMs;
       } else {
@@ -232,12 +232,15 @@ async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
   if (signer.type !== "nip46") return true; // NIP-07 doesn't need verification
 
   try {
-    // Quick health check: try to get public key with a short timeout
-    // This will fail if the connection is stale or the signer is unreachable
+    // Health check: try to get public key with a reasonable timeout
+    // Increased timeout to 5 seconds to account for WebSocket reconnection delays
+    // If the signer app (e.g., Primal) is maintaining connections in the background,
+    // our WebSocket connections to relays might need a moment to re-establish,
+    // but the NIP-46 connection itself might still be valid
     await Promise.race([
       signer.getPublicKey(),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Connection check timeout")), 2000)
+        setTimeout(() => reject(new Error("Connection check timeout")), 5000)
       ),
     ]);
     _lastActivityTime = Date.now();
@@ -245,6 +248,7 @@ async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
   } catch {
     // Any error means the connection is stale or unreachable
     // This includes "subscription closed", websocket errors, and other connection issues
+    // However, this doesn't mean we should give up - we can try reconnecting with the same URI
     return false;
   }
 }
@@ -267,13 +271,23 @@ function startHealthCheckMonitoring(): void {
         return;
       }
 
-      // Check if connection is old enough to warrant health check
+      // Perform health check more frequently to catch stale connections faster
+      // Check connections older than 1 minute (reduced from 5 minutes)
+      // This helps detect when connections are dropped due to phone lock/backgrounding
       const now = Date.now();
+      const timeSinceLastActivity = _lastActivityTime
+        ? now - _lastActivityTime
+        : Infinity;
+
+      // Check if connection needs health check:
+      // 1. Connection is older than 1 minute, OR
+      // 2. No activity for more than 2 minutes (might be stale)
       if (
         connectionEstablishedAt &&
-        now - connectionEstablishedAt > 5 * 60 * 1000
+        (now - connectionEstablishedAt > 1 * 60 * 1000 ||
+          timeSinceLastActivity > 2 * 60 * 1000)
       ) {
-        // Connection is older than 5 minutes, perform health check
+        // Perform health check
         const isValid = await verifySignerConnection(cachedSigner);
         if (!isValid) {
           // Connection is stale, clear it
@@ -289,10 +303,13 @@ function startHealthCheckMonitoring(): void {
               })
             );
           }
+        } else {
+          // Connection is healthy, update activity time
+          _lastActivityTime = Date.now();
         }
       }
     })();
-  }, 30_000); // Check every 30 seconds
+  }, 15_000); // Check every 15 seconds (increased frequency for faster detection)
 }
 
 /**
@@ -309,14 +326,23 @@ function stopHealthCheckMonitoring(): void {
 // eslint-disable-next-line sonarjs/cognitive-complexity -- Signer management requires handling multiple connection types, visibility changes, cooldowns, and error recovery
 export async function getActiveSigner(): Promise<NostrSigner | null> {
   // If we have a cached signer, verify it's still valid before returning it
+  // This is lazy verification - we only check when the signer is actually needed
+  // This allows us to keep the connection even after phone lock, since the signer app
+  // (e.g., Primal) might still be maintaining it in the background
   if (cachedSigner) {
-    // Quick health check before critical operations
+    // Health check before critical operations
+    // This helps recover from dropped connections (e.g., phone lock)
+    // The timeout is generous (5s) to allow WebSocket connections to re-establish
     const isValid = await verifySignerConnection(cachedSigner);
     if (isValid) {
       _lastActivityTime = Date.now();
       return cachedSigner;
     }
-    // Connection is stale, clear cache and reconnect
+    // Connection verification failed, but don't give up yet
+    // Clear the cached signer so we can try reconnecting with the same URI
+    // The signer app (e.g., Primal) can restore the session using the same credentials
+    // This is especially useful since Primal keeps track of all connected apps
+    // and can restart sessions even if they were previously stopped
     clearCachedNip46Signer();
 
     // Emit connection stale event
@@ -355,6 +381,10 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
         throw new Error("Invalid bunker input");
       }
       const inner = BunkerSigner.fromBunker(clientSecretKey, bp, { pool });
+      // Reuse the same bunker input - signer apps like Primal keep track of all
+      // connected apps and can restore sessions even if they were previously stopped.
+      // By using the same bunker input and clientSecretKey, Primal will recognize
+      // this as a reconnection attempt and restore the existing session.
       await inner.connect();
       cachedSigner = new Nip46Signer({ pool, inner });
       pool = null; // Transfer ownership to cachedSigner
@@ -375,11 +405,16 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
     }
 
     // nostrconnect_uri
+    // Reuse the same connection URI - signer apps like Primal keep track of all
+    // connected apps and can restore sessions even if they were previously stopped.
+    // By using the same URI and clientSecretKey, Primal will recognize this as a
+    // reconnection attempt and restore the existing session (no re-approval needed).
+    // Increased timeout to 90 seconds to give more time for session restoration.
     const inner = await BunkerSigner.fromURI(
       clientSecretKey,
       config.uri,
       { pool },
-      60_000
+      90_000
     );
     cachedSigner = new Nip46Signer({ pool, inner });
     pool = null; // Transfer ownership to cachedSigner
@@ -411,7 +446,11 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
       }
     }
 
-    // If connection fails, clear the cache to prevent retrying with stale data
+    // If connection fails, clear only the cached signer object, NOT the config
+    // The config (connection URI/credentials) is preserved so that:
+    // 1. Signer apps like Primal can restore the session using the same credentials
+    // 2. We can attempt reconnection with the same connection URI
+    // 3. Users don't need to re-approve the connection if the signer app remembers it
     const errorMessage =
       err instanceof Error
         ? err.message.toLowerCase()
@@ -422,8 +461,11 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
       errorMessage.includes("closed") ||
       errorMessage.includes("connection")
     ) {
-      // Clear cache on connection errors so next attempt will be fresh
+      // Clear only the cached signer object, keep the config for reconnection
+      // This allows signer apps (e.g., Primal) to restore the session
       resetCachedSigner();
+      connectionEstablishedAt = null;
+      _lastActivityTime = null;
 
       // On mobile, extend cooldown period after connection errors
       // This gives more time for WebSocket connections to stabilize
