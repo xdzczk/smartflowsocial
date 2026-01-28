@@ -1,6 +1,6 @@
 import { useLocation } from "@remix-run/react";
 import { AlertTriangle, ExternalLink } from "lucide-react";
-import { generateSecretKey } from "nostr-tools";
+import { generateSecretKey, SimplePool } from "nostr-tools";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "react-qr-code";
 
@@ -122,6 +122,16 @@ function getErrorSuggestions(
       break;
     case "SIGNER_CONNECTION_DROPPED":
       suggestions.push("Try again.");
+      if (
+        typeof navigator !== "undefined" &&
+        /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        )
+      ) {
+        suggestions.push(
+          "On mobile, after approving in the signer app, return here and tap Try again — the same connection string is reused."
+        );
+      }
 
       // Context-aware suggestions
       if (context?.relayStatuses) {
@@ -374,6 +384,12 @@ export default function NostrLoginPanel() {
   const [relayList, setRelayList] = useState(DEFAULT_RELAYS);
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
   const nip46CancelRef = useRef<{ cancel: () => void } | null>(null);
+  /** Stored when we create a nostrconnect URI so we can retry with the same URI after app switch (mobile). */
+  const pendingNostrConnectRef = useRef<{
+    uri: string;
+    clientSecretKey: Uint8Array;
+    relays: string[];
+  } | null>(null);
   const [copyOk, setCopyOk] = useState(false);
   const nip46AttemptIdRef = useRef(0);
   const errorRegionRef = useRef<HTMLDivElement | null>(null);
@@ -558,6 +574,7 @@ export default function NostrLoginPanel() {
     setSigner(null);
     setPubkey(null);
     setNostrConnectUri(null);
+    pendingNostrConnectRef.current = null;
     setCopyOk(false);
     setError(null);
     setLastFailureOrigin(null);
@@ -643,6 +660,7 @@ export default function NostrLoginPanel() {
   const initNip46Ref = useRef<((retryCount?: number) => Promise<void>) | null>(
     null
   );
+  const resumeNip46Ref = useRef<(() => Promise<void>) | null>(null);
 
   // Proactive NIP-07 extension detection
   useEffect(() => {
@@ -780,23 +798,20 @@ export default function NostrLoginPanel() {
         // User returned from signer app
         setWasHiddenDuringConnection(false);
 
-        // If we have a connection URI and config stored, try to reconnect
-        // The signer app (e.g., Primal) may have approved the connection while we were away
-        // and can restore the session using the same credentials
-        if (nostrConnectUri) {
-          // Wait a moment for WebSocket connections to stabilize
+        // Retry with the same URI so the signer's approval is picked up (subscription
+        // was cancelled when we backgrounded, so we start a fresh subscription in foreground).
+        if (
+          nostrConnectUri &&
+          (state === "awaiting_profile_selection" || state === "failed")
+        ) {
           setTimeout(() => {
-            // Check if we have a stored config - if so, try to reconnect
-            const config = getActiveSignerConfig();
-            if (
-              config?.type === "nip46" &&
-              config.method === "nostrconnect_uri"
-            ) {
-              // Try to reconnect using the same URI - Primal can restore the session
-              // Only reconnect if we're in a state where reconnection makes sense
+            if (pendingNostrConnectRef.current) {
+              void resumeNip46Ref.current?.();
+            } else {
+              const config = getActiveSignerConfig();
               if (
-                state === "awaiting_profile_selection" ||
-                state === "failed"
+                config?.type === "nip46" &&
+                config.method === "nostrconnect_uri"
               ) {
                 void initNip46Ref.current?.(0);
               }
@@ -932,6 +947,12 @@ export default function NostrLoginPanel() {
         });
         if (attemptId !== nip46AttemptIdRef.current) return;
         setNostrConnectUri(created.uri);
+        // Store so we can retry with the same URI after app switch (mobile) without a new approval
+        pendingNostrConnectRef.current = {
+          uri: created.uri,
+          clientSecretKey: created.clientSecretKey.slice(0),
+          relays: [...created.relays],
+        };
 
         // Allow cancel by closing relay connections used by the pool.
         let didCancel = false;
@@ -986,6 +1007,7 @@ export default function NostrLoginPanel() {
           relays: created.relays,
           clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
         });
+        pendingNostrConnectRef.current = null;
         setState("requesting_signature");
       } catch (e) {
         if (attemptId !== nip46AttemptIdRef.current) return;
@@ -1040,8 +1062,103 @@ export default function NostrLoginPanel() {
     [expectedPubkey, nip46Input, nip46Tab, relayList, nostrConnectUri, state]
   );
 
-  // Update ref so visibility handler can call it
+  /** Retry NIP-46 connection with the same URI (e.g. after app switch on mobile). */
+  const resumeNip46WithPendingUri = useCallback(async () => {
+    const pending = pendingNostrConnectRef.current;
+    if (!pending) return;
+
+    const attemptId = (nip46AttemptIdRef.current += 1);
+    setError(null);
+    setLastFailureOrigin(null);
+    setState("awaiting_profile_selection");
+
+    const timeoutMs = 60_000; // 60s for resume (same as retryCount=1 in progressive)
+    setConnectionStartTime(Date.now());
+    setConnectionTimeout(timeoutMs);
+
+    const pool = new SimplePool();
+    let didCancel = false;
+    nip46CancelRef.current = {
+      cancel: () => {
+        if (didCancel) return;
+        didCancel = true;
+        try {
+          pool.close(pending.relays);
+        } catch {
+          // ignore
+        }
+      },
+    };
+
+    try {
+      const { signer: nip46Signer, pubkey: pk } =
+        await connectNip46WithNostrConnectUri({
+          uri: pending.uri,
+          clientSecretKey: pending.clientSecretKey,
+          pool,
+          timeoutMs,
+          relaysToCloseOnCancel: pending.relays,
+          retryCount: 1,
+        });
+      if (attemptId !== nip46AttemptIdRef.current) return;
+
+      if (expectedPubkey && pk !== expectedPubkey) {
+        setError({
+          code: "PROFILE_MISMATCH",
+          message: PROFILE_MISMATCH_MESSAGE,
+        });
+        setLastFailureOrigin("nip46_init");
+        setState("failed");
+        return;
+      }
+      recordCircuitBreakerSuccess("nip46");
+      recordConnectionAttempt({
+        signerType: "nip46",
+        method: "nostrconnect_uri",
+        success: true,
+        duration: 0,
+        retryCount: 1,
+      });
+      setConnectionStartTime(null);
+      setConnectionTimeout(null);
+      setSigner(nip46Signer);
+      setPubkey(pk);
+      setActiveSignerConfig({
+        type: "nip46",
+        method: "nostrconnect_uri",
+        uri: pending.uri,
+        relays: pending.relays,
+        clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
+      });
+      pendingNostrConnectRef.current = null;
+      setState("requesting_signature");
+    } catch (e) {
+      if (attemptId !== nip46AttemptIdRef.current) return;
+      const n = normalizeError(e);
+      recordCircuitBreakerFailure("nip46");
+      recordConnectionAttempt({
+        signerType: "nip46",
+        method: "nostrconnect_uri",
+        success: false,
+        errorCode: n.code,
+        duration: 0,
+        retryCount: 1,
+      });
+      setConnectionStartTime(null);
+      setConnectionTimeout(null);
+      setError(n);
+      setLastFailureOrigin("nip46_init");
+      setState("failed");
+    } finally {
+      if (attemptId === nip46AttemptIdRef.current) {
+        nip46CancelRef.current = null;
+      }
+    }
+  }, [expectedPubkey]);
+
+  // Update refs so visibility handler and Try again can call them
   initNip46Ref.current = initNip46;
+  resumeNip46Ref.current = resumeNip46WithPendingUri;
 
   const performLogin = useCallback(async () => {
     if (!signer || !pubkey) return;
@@ -1157,7 +1274,12 @@ export default function NostrLoginPanel() {
 
   const handleTryAgain = useCallback(() => {
     if (lastFailureOrigin === "nip46_init") {
-      void initNip46();
+      // Reuse same URI if we have one (e.g. after app switch on mobile) so user doesn't re-approve
+      if (pendingNostrConnectRef.current) {
+        void resumeNip46WithPendingUri();
+      } else {
+        void initNip46();
+      }
       return;
     }
     if (lastFailureOrigin === "nip07_init") {
@@ -1169,7 +1291,14 @@ export default function NostrLoginPanel() {
       return;
     }
     void resetToSelection();
-  }, [initNip07, initNip46, lastFailureOrigin, performLogin, resetToSelection]);
+  }, [
+    initNip07,
+    initNip46,
+    lastFailureOrigin,
+    performLogin,
+    resetToSelection,
+    resumeNip46WithPendingUri,
+  ]);
 
   return (
     <div className="space-y-4">
