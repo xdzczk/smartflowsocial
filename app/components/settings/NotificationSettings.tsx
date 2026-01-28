@@ -36,14 +36,16 @@ export function NotificationSettings({
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [isSubscribing, setIsSubscribing] = useState(false);
-  // Use lazy initializer to safely get permission on client side only
-  const [permission, setPermission] = useState<NotificationPermission>(() => {
-    if (typeof window === "undefined") return "default";
-    return getPushPermission();
-  });
+  // Always "default" on first render to avoid server/client hydration mismatch
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
+  const [pushConfiguredOnServer, setPushConfiguredOnServer] = useState<
+    boolean | null
+  >(null);
   const autoSubscribeAttempted = useRef(false);
-
-  const isSupported = isPushSupported();
+  // Only after mount do we read client-only values (avoids hydration mismatch)
+  const [hasMounted, setHasMounted] = useState(false);
+  const isSupported = hasMounted ? isPushSupported() : true;
 
   // When permission is granted but we have no subscription, subscribe (no prompt).
   const ensureSubscribedWhenGranted = useCallback(async () => {
@@ -71,13 +73,31 @@ export function NotificationSettings({
     }
   }, [fetcher]);
 
+  // Mark as mounted and sync permission (client-only after first paint to avoid hydration mismatch)
+  useEffect(() => {
+    setHasMounted(true);
+    setPermission(getPushPermission());
+  }, []);
+
   // Check subscription status on mount; if permission already granted but not subscribed, auto-subscribe
   useEffect(() => {
+    if (!hasMounted) return;
     let cancelled = false;
 
     const checkSubscription = async () => {
       setIsChecking(true);
       try {
+        // Probe server: is push configured (VAPID keys)?
+        const probeRes = await fetch("/api/push-subscribe").catch(() => null);
+        if (probeRes && !probeRes.ok) {
+          setPushConfiguredOnServer(false);
+          setIsChecking(false);
+          setIsSubscribed(false);
+          setPermission(getPushPermission());
+          return;
+        }
+        setPushConfiguredOnServer(probeRes?.ok ?? true);
+
         // Check if service worker is supported and registered
         if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
           // Check if service worker is registered
@@ -138,11 +158,15 @@ export function NotificationSettings({
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [ensureSubscribedWhenGranted]);
+  }, [hasMounted, ensureSubscribedWhenGranted]);
 
   // Monitor permission changes (e.g., user allows in browser site settings)
   useEffect(() => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
+    if (
+      !hasMounted ||
+      typeof window === "undefined" ||
+      !("Notification" in window)
+    ) {
       return;
     }
 
@@ -175,7 +199,7 @@ export function NotificationSettings({
     return () => {
       clearInterval(interval);
     };
-  }, [ensureSubscribedWhenGranted]);
+  }, [hasMounted, ensureSubscribedWhenGranted]);
 
   // Helper function to save push notification preference to server
   const savePushPreference = useCallback(
@@ -294,11 +318,12 @@ export function NotificationSettings({
           }
         }
 
-        // If error mentions VAPID, log server-side configuration issue
-        if (errorMessage.includes("VAPID") || errorMessage.includes("503")) {
-          console.error(
-            "Push notifications are not configured on the server. Please contact support."
-          );
+        // If error mentions VAPID, mark server as not configured so UI shows clear message
+        if (
+          errorMessage.includes("VAPID") ||
+          errorMessage.includes("not configured")
+        ) {
+          setPushConfiguredOnServer(false);
         }
       } finally {
         clearTimeout(safetyTimeout);
@@ -342,7 +367,7 @@ export function NotificationSettings({
     fetcher.submit(formData, { method: "post" });
   };
 
-  if (!isSupported) {
+  if (hasMounted && !isSupported) {
     return (
       <div className="border-border bg-card rounded-lg border p-6">
         <div className="flex items-start gap-4">
@@ -379,15 +404,17 @@ export function NotificationSettings({
               <div className="space-y-0.5">
                 <Label htmlFor="push-enabled">Enable Push Notifications</Label>
                 <p className="text-muted-foreground text-xs">
-                  {isChecking
-                    ? "Checking subscription..."
-                    : isSubscribing
-                      ? "Subscribing..."
-                      : isSubscribed
-                        ? "Subscribed and ready"
-                        : permission === "denied"
-                          ? "Permission denied. Please enable in browser settings."
-                          : "Click to subscribe"}
+                  {pushConfiguredOnServer === false
+                    ? "Push notifications are not configured for this server. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY."
+                    : isChecking
+                      ? "Checking subscription..."
+                      : isSubscribing
+                        ? "Subscribing..."
+                        : isSubscribed
+                          ? "Subscribed and ready"
+                          : permission === "denied"
+                            ? "Permission denied. Please enable in browser settings."
+                            : "Click to subscribe"}
                 </p>
               </div>
               <Switch
@@ -397,7 +424,10 @@ export function NotificationSettings({
                   void handleTogglePushNotifications(checked);
                 }}
                 disabled={
-                  isChecking || isSubscribing || permission === "denied"
+                  pushConfiguredOnServer === false ||
+                  isChecking ||
+                  isSubscribing ||
+                  permission === "denied"
                 }
               />
             </div>
