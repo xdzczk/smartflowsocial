@@ -31,8 +31,11 @@ export interface NotificationPayload {
   };
 }
 
+export type SendPushResult = { sent: true } | { sent: false; expired: boolean };
+
 /**
- * Send push notification to a single subscription
+ * Send push notification to a single subscription.
+ * Returns whether it was sent and, if not, whether the subscription is expired (should be removed).
  */
 export async function sendPushNotification(
   subscription: {
@@ -41,7 +44,7 @@ export async function sendPushNotification(
     auth: string;
   },
   payload: NotificationPayload
-): Promise<boolean> {
+): Promise<SendPushResult> {
   try {
     const webPushSubscription: WebPushSubscription = {
       endpoint: subscription.endpoint,
@@ -61,31 +64,28 @@ export async function sendPushNotification(
       }
     );
 
-    return true;
+    return { sent: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-
-    // Handle subscription errors (expired, invalid, etc.)
-    if (
+    const isExpired =
       errorMessage.includes("410") ||
       errorMessage.includes("Gone") ||
-      errorMessage.includes("expired")
-    ) {
-      // Subscription is expired/invalid - will be cleaned up by caller
+      errorMessage.includes("expired");
+
+    if (isExpired) {
       logError(error instanceof Error ? error : new Error(errorMessage), {
         message: "Push notification failed: subscription expired",
         endpoint: subscription.endpoint,
       });
-      return false;
+      return { sent: false, expired: true };
     }
 
-    // Log other errors but don't throw
     logError(error instanceof Error ? error : new Error(errorMessage), {
       message: "Push notification failed",
       endpoint: subscription.endpoint,
       action: payload.data?.action,
     });
-    return false;
+    return { sent: false, expired: false };
   }
 }
 
@@ -121,18 +121,27 @@ export async function sendPushNotificationToUser(
   let failed = 0;
   const expiredSubscriptions: string[] = [];
 
-  results.forEach((result: PromiseSettledResult<boolean>, index: number) => {
-    if (result.status === "fulfilled" && result.value) {
-      sent++;
-    } else {
-      failed++;
-      // Mark subscription for deletion if it failed
-      const sub = subscriptions[index];
-      if (sub) {
-        expiredSubscriptions.push(sub.id);
+  results.forEach(
+    (result: PromiseSettledResult<SendPushResult>, index: number) => {
+      if (result.status === "rejected") {
+        failed++;
+        return;
+      }
+      const value = result.value;
+      if (value.sent) {
+        sent++;
+      } else {
+        failed++;
+        // Only remove subscription if it is actually expired (410 Gone), not on transient failures
+        if (value.expired) {
+          const sub = subscriptions[index];
+          if (sub) {
+            expiredSubscriptions.push(sub.id);
+          }
+        }
       }
     }
-  });
+  );
 
   // Clean up expired subscriptions
   if (expiredSubscriptions.length > 0) {

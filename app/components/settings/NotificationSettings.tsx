@@ -395,7 +395,9 @@ export function NotificationSettings({
               Push Notifications
             </h3>
             <p className="text-muted-foreground mt-1 text-sm">
-              Get notified when your posts are published or fail.
+              Get notified when your posts are published or fail. Enable on each
+              device (e.g. this browser and your phone) to receive notifications
+              everywhere.
             </p>
           </div>
 
