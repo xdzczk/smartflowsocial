@@ -77,22 +77,66 @@ export function NotificationSettings({
 
     const checkSubscription = async () => {
       setIsChecking(true);
-      const subscription = await getCurrentPushSubscription();
-      const currentPermission = getPushPermission();
-      if (!cancelled) {
-        setIsSubscribed(!!subscription);
-        setPermission(currentPermission);
-        setIsChecking(false);
-        if (currentPermission === "granted" && !subscription) {
-          void ensureSubscribedWhenGranted();
+      try {
+        // Check if service worker is supported and registered
+        if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+          // Check if service worker is registered
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (!registration) {
+            // Service worker not registered yet, wait a bit and try again
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            const retryRegistration =
+              await navigator.serviceWorker.getRegistration();
+            if (!retryRegistration && !cancelled) {
+              console.warn(
+                "Service worker not registered. Push notifications require a service worker."
+              );
+              setIsChecking(false);
+              const currentPermission = getPushPermission();
+              setPermission(currentPermission);
+              setIsSubscribed(false);
+              return;
+            }
+          }
+        }
+
+        const subscription = await getCurrentPushSubscription();
+        const currentPermission = getPushPermission();
+        if (!cancelled) {
+          setIsSubscribed(!!subscription);
+          setPermission(currentPermission);
+          setIsChecking(false);
+          if (currentPermission === "granted" && !subscription) {
+            void ensureSubscribedWhenGranted();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check push subscription:", error);
+        if (!cancelled) {
+          const currentPermission = getPushPermission();
+          setIsSubscribed(false);
+          setPermission(currentPermission);
+          setIsChecking(false);
         }
       }
     };
+
+    // Add timeout to prevent hanging forever
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        console.warn("Push subscription check timed out");
+        setIsChecking(false);
+        const currentPermission = getPushPermission();
+        setPermission(currentPermission);
+        setIsSubscribed(false);
+      }
+    }, 10000); // 10 second timeout
 
     void checkSubscription();
 
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [ensureSubscribedWhenGranted]);
 

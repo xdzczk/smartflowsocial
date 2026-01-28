@@ -1,6 +1,7 @@
-import { Link, useFetcher, useRevalidator } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
+import { useEffect, useRef } from "react";
 import * as React from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -159,8 +160,9 @@ export default function UserMenu() {
   const user = useOptionalUser() as UserWithProfile | null | undefined;
   const subscription = useSubscription();
   const fetcher = useFetcher<{ children: ChildAccount[] }>();
+  const logoutFetcher = useFetcher();
   const queryClient = useQueryClient();
-  const revalidator = useRevalidator();
+  const hasReloadedRef = useRef(false);
   const [open, setOpen] = React.useState(false);
   const [children, setChildren] = React.useState<ChildAccount[]>([]);
 
@@ -191,6 +193,31 @@ export default function UserMenu() {
   React.useEffect(() => {
     if (fetcher.data?.children) setChildren(fetcher.data.children);
   }, [fetcher.data]);
+
+  // Handle logout redirect - force full page reload to clear all state
+  useEffect(() => {
+    // When logout completes (idle after submitting), force full page reload
+    const isLogoutComplete =
+      logoutFetcher.state === "idle" &&
+      typeof logoutFetcher.formAction === "string" &&
+      logoutFetcher.formAction === "/logout" &&
+      typeof logoutFetcher.formMethod === "string" &&
+      logoutFetcher.formMethod === "POST";
+
+    if (isLogoutComplete && !hasReloadedRef.current) {
+      hasReloadedRef.current = true;
+      // Clear all client-side state
+      clearActiveSignerConfig();
+      queryClient.clear();
+      // Force full page reload to ensure all Remix loader data is fresh
+      window.location.href = "/";
+    }
+  }, [
+    logoutFetcher.state,
+    logoutFetcher.formAction,
+    logoutFetcher.formMethod,
+    queryClient,
+  ]);
 
   // Don't render if no user
   if (!user) return null;
@@ -387,18 +414,7 @@ export default function UserMenu() {
 
           {/* Logout Button */}
           <div className="border-t pt-4">
-            <form
-              action="/logout"
-              method="post"
-              onSubmit={() => {
-                // Clear client-side state before logout
-                clearActiveSignerConfig();
-                // Clear React Query cache to prevent stale data
-                queryClient.clear();
-                // Revalidate all loaders to ensure fresh data after redirect
-                revalidator.revalidate();
-              }}
-            >
+            <logoutFetcher.Form action="/logout" method="post">
               <Button
                 type="submit"
                 variant="outline"
@@ -408,7 +424,7 @@ export default function UserMenu() {
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </Button>
-            </form>
+            </logoutFetcher.Form>
           </div>
         </div>
       </DialogContent>

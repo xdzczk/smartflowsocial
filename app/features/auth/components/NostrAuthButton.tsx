@@ -1,6 +1,6 @@
-import { Link, useLocation, useRevalidator } from "@remix-run/react";
+import { Link, useLocation, useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -81,12 +81,39 @@ export default function NostrAuthButton() {
   const user = useOptionalUser() ?? null;
   const location = useLocation();
   const queryClient = useQueryClient();
-  const revalidator = useRevalidator();
+  const logoutFetcher = useFetcher();
+  const hasReloadedRef = useRef(false);
 
   // Always land in the app after sign-in (not back on marketing pages).
   const redirectTo = useMemo(() => encodeURIComponent("/dashboard"), []);
 
   const isLoginPage = location.pathname.startsWith("/login");
+
+  // Handle logout redirect - force full page reload to clear all state
+  // Must be before early return to comply with Rules of Hooks
+  useEffect(() => {
+    // When logout completes (idle after submitting), force full page reload
+    const isLogoutComplete =
+      logoutFetcher.state === "idle" &&
+      typeof logoutFetcher.formAction === "string" &&
+      logoutFetcher.formAction === "/logout" &&
+      typeof logoutFetcher.formMethod === "string" &&
+      logoutFetcher.formMethod === "POST";
+
+    if (isLogoutComplete && !hasReloadedRef.current) {
+      hasReloadedRef.current = true;
+      // Clear all client-side state
+      clearActiveSignerConfig();
+      queryClient.clear();
+      // Force full page reload to ensure all Remix loader data is fresh
+      window.location.href = "/";
+    }
+  }, [
+    logoutFetcher.state,
+    logoutFetcher.formAction,
+    logoutFetcher.formMethod,
+    queryClient,
+  ]);
 
   // Avoid rendering a redundant "Sign in" CTA on the login page itself.
   if (!user && isLoginPage) return null;
@@ -106,22 +133,11 @@ export default function NostrAuthButton() {
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
             ) : null}
-            <form
-              action="/logout"
-              method="post"
-              onSubmit={() => {
-                // Clear client-side state before logout
-                clearActiveSignerConfig();
-                // Clear React Query cache to prevent stale data
-                queryClient.clear();
-                // Revalidate all loaders to ensure fresh data after redirect
-                revalidator.revalidate();
-              }}
-            >
+            <logoutFetcher.Form action="/logout" method="post">
               <Button variant="outline" size="sm" type="submit">
                 Logout
               </Button>
-            </form>
+            </logoutFetcher.Form>
           </div>
         </>
       ) : (
