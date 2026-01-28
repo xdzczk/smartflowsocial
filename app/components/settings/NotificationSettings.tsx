@@ -24,19 +24,18 @@ interface NotificationSettingsProps {
 }
 
 export function NotificationSettings({
-  pushNotificationsEnabled: initialEnabled,
+  pushNotificationsEnabled: _initialEnabled,
   pushNotifyPublishSuccess: initialSuccess,
   pushNotifyPublishFailure: initialFailure,
 }: NotificationSettingsProps) {
   const fetcher = useFetcher();
-  const [pushNotificationsEnabled, setPushNotificationsEnabled] =
-    useState(initialEnabled);
   const [pushNotifyPublishSuccess, setPushNotifyPublishSuccess] =
     useState(initialSuccess);
   const [pushNotifyPublishFailure, setPushNotifyPublishFailure] =
     useState(initialFailure);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [isSubscribing, setIsSubscribing] = useState(false);
   // Use lazy initializer to safely get permission on client side only
   const [permission, setPermission] = useState<NotificationPermission>(() => {
     if (typeof window === "undefined") return "default";
@@ -45,14 +44,17 @@ export function NotificationSettings({
 
   const isSupported = isPushSupported();
 
+  // Check subscription status on mount and when permission changes
   useEffect(() => {
     let cancelled = false;
 
     const checkSubscription = async () => {
       setIsChecking(true);
       const subscription = await getCurrentPushSubscription();
+      const currentPermission = getPushPermission();
       if (!cancelled) {
         setIsSubscribed(!!subscription);
+        setPermission(currentPermission);
         setIsChecking(false);
       }
     };
@@ -64,24 +66,68 @@ export function NotificationSettings({
     };
   }, []);
 
+  // Monitor permission changes (e.g., user grants permission in OS settings)
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return;
+    }
+
+    // Check permission periodically to catch changes made outside the app
+    const checkPermission = () => {
+      const currentPermission = getPushPermission();
+      setPermission((prevPermission) => {
+        if (currentPermission !== prevPermission) {
+          // If permission was granted, re-check subscription
+          if (currentPermission === "granted") {
+            void (async () => {
+              const subscription = await getCurrentPushSubscription();
+              setIsSubscribed(!!subscription);
+            })();
+          }
+          return currentPermission;
+        }
+        return prevPermission;
+      });
+    };
+
+    // Check immediately
+    checkPermission();
+
+    // Check periodically (every 2 seconds) to catch permission changes
+    const interval = setInterval(checkPermission, 2000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
   const handleTogglePushNotifications = async (enabled: boolean) => {
-    setPushNotificationsEnabled(enabled);
+    if (isSubscribing) {
+      // Prevent multiple simultaneous subscription attempts
+      return;
+    }
 
     if (enabled) {
       // Subscribe to push
+      setIsSubscribing(true);
       try {
         const subscription = await subscribeToPush();
+        const currentPermission = getPushPermission();
+        setPermission(currentPermission);
+
         if (subscription) {
           setIsSubscribed(true);
-          setPermission("granted");
+          // Save preference to server
+          const formData = new FormData();
+          formData.append("_action", "update_notification_preferences");
+          formData.append("pushNotificationsEnabled", "true");
+          fetcher.submit(formData, { method: "post" });
         } else {
-          setPushNotificationsEnabled(false);
-          // Show error to user - permission might have been denied or VAPID keys not configured
-          const currentPermission = getPushPermission();
+          // Subscription failed - check why
           if (currentPermission === "denied") {
             setPermission("denied");
           } else {
-            // VAPID keys likely not configured
+            // VAPID keys likely not configured or other issue
             console.error(
               "Failed to subscribe to push notifications. This may be because:\n" +
                 "1. VAPID keys are not configured on the server (VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY)\n" +
@@ -89,15 +135,17 @@ export function NotificationSettings({
                 "3. Service worker is not registered"
             );
           }
+          // Don't update pushNotificationsEnabled - let the toggle reflect the actual state
         }
       } catch (error) {
-        setPushNotificationsEnabled(false);
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         console.error(
           "Failed to subscribe to push notifications:",
           errorMessage
         );
+        const currentPermission = getPushPermission();
+        setPermission(currentPermission);
         // If error mentions VAPID, update permission state
         if (errorMessage.includes("VAPID") || errorMessage.includes("503")) {
           // Server-side configuration issue
@@ -105,21 +153,29 @@ export function NotificationSettings({
             "Push notifications are not configured on the server. Please contact support."
           );
         }
+        // Don't update pushNotificationsEnabled - let the toggle reflect the actual state
+      } finally {
+        setIsSubscribing(false);
       }
     } else {
       // Unsubscribe
-      const subscription = await getCurrentPushSubscription();
-      if (subscription) {
-        await unsubscribeFromPush(subscription.endpoint);
+      try {
+        const subscription = await getCurrentPushSubscription();
+        if (subscription) {
+          await unsubscribeFromPush(subscription.endpoint);
+        }
+        setIsSubscribed(false);
+        // Save preference to server
+        const formData = new FormData();
+        formData.append("_action", "update_notification_preferences");
+        formData.append("pushNotificationsEnabled", "false");
+        fetcher.submit(formData, { method: "post" });
+      } catch (error) {
+        console.error("Failed to unsubscribe from push notifications:", error);
+        // On error, still update local state to reflect user intent
         setIsSubscribed(false);
       }
     }
-
-    // Save preference
-    const formData = new FormData();
-    formData.append("_action", "update_notification_preferences");
-    formData.append("pushNotificationsEnabled", String(enabled));
-    fetcher.submit(formData, { method: "post" });
   };
 
   const handleToggleSuccess = (enabled: boolean) => {
@@ -177,24 +233,28 @@ export function NotificationSettings({
                 <p className="text-muted-foreground text-xs">
                   {isChecking
                     ? "Checking subscription..."
-                    : isSubscribed
-                      ? "Subscribed and ready"
-                      : permission === "denied"
-                        ? "Permission denied. Please enable in browser settings."
-                        : "Click to subscribe"}
+                    : isSubscribing
+                      ? "Subscribing..."
+                      : isSubscribed
+                        ? "Subscribed and ready"
+                        : permission === "denied"
+                          ? "Permission denied. Please enable in browser settings."
+                          : "Click to subscribe"}
                 </p>
               </div>
               <Switch
                 id="push-enabled"
-                checked={pushNotificationsEnabled ? isSubscribed : false}
+                checked={isSubscribed}
                 onCheckedChange={(checked) => {
                   void handleTogglePushNotifications(checked);
                 }}
-                disabled={isChecking || permission === "denied"}
+                disabled={
+                  isChecking || isSubscribing || permission === "denied"
+                }
               />
             </div>
 
-            {pushNotificationsEnabled && isSubscribed ? (
+            {isSubscribed ? (
               <>
                 <div className="border-border border-t pt-4" />
                 <div className="flex items-center justify-between">
