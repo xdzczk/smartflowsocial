@@ -44,6 +44,22 @@ export function getPushPermission(): NotificationPermission {
 }
 
 /**
+ * Helper to add timeout to a promise
+ */
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMessage: string
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    ),
+  ]);
+}
+
+/**
  * Subscribe to push notifications
  * IMPORTANT: Permission must be requested first (while the user gesture is still valid).
  * If we await serviceWorker.ready or fetch() before requesting permission, the browser
@@ -64,10 +80,20 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
     }
 
     // Now get service worker registration (after we have permission)
-    const registration = await navigator.serviceWorker.ready;
+    // Add timeout to prevent hanging if service worker never becomes ready
+    const registration = await withTimeout(
+      navigator.serviceWorker.ready,
+      10000, // 10 second timeout
+      "Service worker did not become ready within 10 seconds"
+    );
 
-    // Get VAPID public key from server
-    const response = await fetch("/api/push-subscribe");
+    // Get VAPID public key from server with timeout
+    const response = await withTimeout(
+      fetch("/api/push-subscribe"),
+      10000, // 10 second timeout
+      "Failed to get VAPID public key: Request timed out"
+    );
+
     if (!response.ok) {
       const errorData = (await response.json().catch(() => ({}))) as {
         error?: string;
@@ -94,11 +120,15 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
     // Convert VAPID key to Uint8Array
     const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
-    // Subscribe to push
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
-    });
+    // Subscribe to push with timeout
+    const subscription = await withTimeout(
+      registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
+      }),
+      10000, // 10 second timeout
+      "Push subscription timed out"
+    );
 
     // Extract subscription details
     const p256dhKey = subscription.getKey("p256dh");
@@ -112,22 +142,30 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
       },
     };
 
-    // Send subscription to server
-    const subscribeResponse = await fetch("/api/push-subscribe", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(subscriptionData),
-    });
+    // Send subscription to server with timeout
+    const subscribeResponse = await withTimeout(
+      fetch("/api/push-subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(subscriptionData),
+      }),
+      10000, // 10 second timeout
+      "Failed to save subscription: Request timed out"
+    );
 
     if (!subscribeResponse.ok) {
-      throw new Error("Failed to save subscription");
+      const errorText = await subscribeResponse.text().catch(() => "");
+      throw new Error(
+        `Failed to save subscription: ${subscribeResponse.status} ${errorText}`
+      );
     }
 
     return subscriptionData;
   } catch (error) {
-    console.error("Failed to subscribe to push notifications:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Failed to subscribe to push notifications:", errorMessage);
     return null;
   }
 }

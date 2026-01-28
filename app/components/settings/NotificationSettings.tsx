@@ -246,6 +246,13 @@ export function NotificationSettings({
     if (enabled) {
       // Subscribe to push
       setIsSubscribing(true);
+
+      // Safety timeout to ensure isSubscribing is always reset
+      const safetyTimeout = setTimeout(() => {
+        console.warn("Push subscription process timed out - resetting state");
+        setIsSubscribing(false);
+      }, 30000); // 30 second safety timeout
+
       try {
         // Check permission before subscribing (in case it was already granted)
         const initialPermission = getPushPermission();
@@ -258,11 +265,14 @@ export function NotificationSettings({
         setPermission(currentPermission);
 
         if (subscription) {
+          clearTimeout(safetyTimeout);
           handleSubscriptionSuccess();
         } else {
+          clearTimeout(safetyTimeout);
           await handleSubscriptionFailureWithPermission(currentPermission);
         }
       } catch (error) {
+        clearTimeout(safetyTimeout);
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         console.error(
@@ -291,6 +301,7 @@ export function NotificationSettings({
           );
         }
       } finally {
+        clearTimeout(safetyTimeout);
         setIsSubscribing(false);
       }
     } else {
