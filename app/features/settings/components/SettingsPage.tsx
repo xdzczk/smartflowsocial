@@ -5,6 +5,7 @@ import { RelaysSettings } from "~/components/settings/RelaysSettings";
 import { TimeFormatSettings } from "~/components/settings/TimeFormatSettings";
 import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { RemoteSignerSettings } from "~/features/auth/components/RemoteSignerSettings";
 import { MutedListSettings } from "~/features/engagement";
 import { GiveawayBlacklistSettings } from "~/features/giveaway";
 import { NWCSettings, SubscriptionSettings } from "~/features/payments";
@@ -412,6 +413,7 @@ export default function SettingsPage() {
                 true
               )}
             />
+            <RemoteSignerSettings />
           </div>
         </TabsContent>
 

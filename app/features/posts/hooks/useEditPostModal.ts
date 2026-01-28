@@ -505,16 +505,23 @@ export function useEditPostModal({
       const zoned = fromDate(date, userTimezone);
       return formatForDateTimeLocal(zoned, userTimezone);
     } catch {
-      // Fallback
-      const dateInUserTz = new Date(
-        date.toLocaleString("en-US", { timeZone: userTimezone })
-      );
-      const year = dateInUserTz.getFullYear();
-      const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");
-      const day = String(dateInUserTz.getDate()).padStart(2, "0");
-      const hours = String(dateInUserTz.getHours()).padStart(2, "0");
-      const minutes = String(dateInUserTz.getMinutes()).padStart(2, "0");
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
+      // Fallback - try again with error handling
+      try {
+        const zoned = fromDate(date, "UTC");
+        const userZoned = zoned.withTimeZone(userTimezone);
+        return formatForDateTimeLocal(userZoned, userTimezone);
+      } catch {
+        // Final fallback - manual format (should rarely happen)
+        const dateInUserTz = new Date(
+          date.toLocaleString("en-US", { timeZone: userTimezone })
+        );
+        const year = dateInUserTz.getFullYear();
+        const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");
+        const day = String(dateInUserTz.getDate()).padStart(2, "0");
+        const hours = String(dateInUserTz.getHours()).padStart(2, "0");
+        const minutes = String(dateInUserTz.getMinutes()).padStart(2, "0");
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      }
     }
   };
 

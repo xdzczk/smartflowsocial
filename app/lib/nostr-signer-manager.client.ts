@@ -7,6 +7,11 @@ import {
   type NostrSigner,
 } from "~/features/auth/nostr-signer.client";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import {
+  getActiveSession,
+  updateSession,
+} from "~/lib/remote-signer-sessions.client";
+import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
 
 export type ActiveSignerConfig =
   | { type: "nip07" }
@@ -300,6 +305,16 @@ function startHealthCheckMonitoring(): void {
           connectionEstablishedAt = null;
           _lastActivityTime = null;
 
+          // Update session status
+          const activeSession = getActiveSession();
+          if (activeSession) {
+            recordConnectionEvent(activeSession.id, {
+              type: "health_check",
+              healthy: false,
+              error: "Connection stale",
+            });
+          }
+
           // Emit event for connection state change
           if (typeof window !== "undefined") {
             window.dispatchEvent(
@@ -350,6 +365,16 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
     // and can restart sessions even if they were previously stopped
     clearCachedNip46Signer();
 
+    // Update session status
+    const activeSession = getActiveSession();
+    if (activeSession) {
+      recordConnectionEvent(activeSession.id, {
+        type: "health_check",
+        healthy: false,
+        error: "Connection verification failed",
+      });
+    }
+
     // Emit connection stale event
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -397,6 +422,29 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
       _lastActivityTime = Date.now();
       startHealthCheckMonitoring();
 
+      // Get pubkey for session update
+      const pubkey = await cachedSigner.getPublicKey();
+
+      // Update session if exists
+      const activeSession = getActiveSession();
+      if (activeSession) {
+        updateSession(activeSession.id, {
+          metadata: {
+            ...activeSession.metadata,
+            status: "active",
+            pubkey,
+            connectedAt: Date.now(),
+            lastActivityAt: Date.now(),
+            lastError: null,
+          },
+        });
+
+        recordConnectionEvent(activeSession.id, {
+          type: "connected",
+          pubkey,
+        });
+      }
+
       // Emit connection healthy event
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -426,6 +474,29 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
     connectionEstablishedAt = Date.now();
     _lastActivityTime = Date.now();
     startHealthCheckMonitoring();
+
+    // Get pubkey for session update
+    const pubkey = await cachedSigner.getPublicKey();
+
+    // Update session if exists
+    const activeSession = getActiveSession();
+    if (activeSession) {
+      updateSession(activeSession.id, {
+        metadata: {
+          ...activeSession.metadata,
+          status: "active",
+          pubkey,
+          connectedAt: Date.now(),
+          lastActivityAt: Date.now(),
+          lastError: null,
+        },
+      });
+
+      recordConnectionEvent(activeSession.id, {
+        type: "connected",
+        pubkey,
+      });
+    }
 
     // Emit connection healthy event
     if (typeof window !== "undefined") {
@@ -471,6 +542,17 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
       resetCachedSigner();
       connectionEstablishedAt = null;
       _lastActivityTime = null;
+
+      // Update session with error
+      const activeSession = getActiveSession();
+      if (activeSession) {
+        const fullErrorMessage =
+          err instanceof Error ? err.message : String(err);
+        recordConnectionEvent(activeSession.id, {
+          type: "error",
+          error: fullErrorMessage,
+        });
+      }
 
       // On mobile, extend cooldown period after connection errors
       // This gives more time for WebSocket connections to stabilize

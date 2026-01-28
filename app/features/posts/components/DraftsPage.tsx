@@ -211,6 +211,14 @@ export default function DraftsPage() {
               }
             }}
             bulkDeleteState={bulkDeleteFetcher.state}
+            userTimezone={user?.timezone ?? undefined}
+            userTimeFormat={
+              user && typeof user === "object" && "timeFormat" in user
+                ? user.timeFormat === "24h"
+                  ? "24h"
+                  : "12h"
+                : "12h"
+            }
           />
 
           {selectedPost

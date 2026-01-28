@@ -274,7 +274,8 @@ export default function LongFormDetailsModal({
         year: "numeric",
         hour: "numeric",
         minute: "2-digit",
-        hour12: true,
+        hour12: userTimeFormat === "12h",
+        timeZone: userTimezone,
       });
     }
   };

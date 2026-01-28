@@ -2,7 +2,7 @@
  * Search result component
  */
 
-import { formatDate } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 interface SearchResultData {
   id: string;
   pubkey: string;
@@ -39,6 +39,8 @@ export function SearchResult({
   onScheduleQuote,
   onScheduleRepost,
 }: SearchResultProps) {
+  const { formatDate } = useFormattedDate();
+
   return (
     <div className="bg-card dark:border-border border-border rounded-lg border bg-white p-6">
       {/* Clear button */}
@@ -74,8 +76,10 @@ export function SearchResult({
         <div>
           <p className="font-semibold">{result.authorName}</p>
           <p className="text-muted-foreground dark:text-foreground text-xs">
-            {formatDate(new Date(result.created_at * 1000))} • Kind{" "}
-            {result.kind}
+            {formatDate(result.created_at * 1000, {
+              isUnixTimestamp: false,
+            })}{" "}
+            • Kind {result.kind}
           </p>
         </div>
       </div>

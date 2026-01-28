@@ -1,4 +1,4 @@
-import { formatDate } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 interface Template {
   id: string;
   name: string;
@@ -16,6 +16,8 @@ export function TemplateDetailsModal({
   template,
   onClose,
 }: TemplateDetailsModalProps) {
+  const { formatDate } = useFormattedDate();
+
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
       <div className="dark:bg-card relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6">

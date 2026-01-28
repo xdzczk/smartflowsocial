@@ -27,6 +27,7 @@ import {
   type HashTagPreset,
   type QueueType,
 } from "~/features/posts/ui";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 import {
   extractLongFormPostData,
@@ -44,18 +45,6 @@ function getUserTimezone(user: unknown): string | undefined {
     return user.timezone;
   }
   return undefined;
-}
-
-function getUserTimeFormat(user: unknown): "12h" | "24h" {
-  if (
-    user &&
-    typeof user === "object" &&
-    "timeFormat" in user &&
-    user.timeFormat === "24h"
-  ) {
-    return "24h";
-  }
-  return "12h";
 }
 
 function handleContentSelection(
@@ -323,6 +312,9 @@ export default function DashboardIndexPage() {
     fetchNextPage,
   } = useDashboardInfiniteData();
 
+  // Get user time format preference from hook
+  const { userTimeFormat, userTimezone } = useFormattedDate();
+
   // Get URL params for success messages (not part of query data)
   const [searchParams] = useSearchParams();
   const planActivated = searchParams.get("planActivated");
@@ -466,7 +458,7 @@ export default function DashboardIndexPage() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone ?? undefined}
-          userTimeFormat={getUserTimeFormat(user)}
+          userTimeFormat={userTimeFormat}
           onPostSelect={(content) =>
             handleContentSelection(
               content,
@@ -491,8 +483,8 @@ export default function DashboardIndexPage() {
           filteredPosts,
           sortConfig,
           countdowns,
-          userTimezone: getUserTimezone(user),
-          userTimeFormat: getUserTimeFormat(user),
+          userTimezone: userTimezone,
+          userTimeFormat: userTimeFormat,
           bulkDeleteFetcher,
           setSelectedPost,
           handleEditPost,
@@ -513,8 +505,8 @@ export default function DashboardIndexPage() {
           longformPosts,
           searchTerm,
           setSearchTerm,
-          userTimezone: getUserTimezone(user),
-          userTimeFormat: getUserTimeFormat(user),
+          userTimezone: userTimezone,
+          userTimeFormat: userTimeFormat,
           setSelectedLongFormPost,
           handleEditPost,
           handleReschedulePost,
@@ -545,7 +537,7 @@ export default function DashboardIndexPage() {
         queueTypes: Array.isArray(queueTypes) ? queueTypes : [],
         hashTagPresets: Array.isArray(hashTagPresets) ? hashTagPresets : [],
         userTimezone: getUserTimezone(user),
-        userTimeFormat: getUserTimeFormat(user),
+        userTimeFormat: userTimeFormat,
         handleCloseEditModal,
         handleCloseRescheduleModal,
         handleModalSuccess,

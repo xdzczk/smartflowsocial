@@ -11,7 +11,6 @@ import {
   fromUnixTimestamp,
   nowInTimezone,
   nowSeconds,
-  toDate,
 } from "~/lib/temporal";
 
 import type { PostData } from "../types";
@@ -437,22 +436,14 @@ export function useRecyclablesState({
       const scheduledRepostData = postsData.map(
         (post: PostData, index: number) => {
           const scheduleZoned = addHours(baseTime, index);
-          const scheduleDate = toDate(scheduleZoned);
-
           return {
             caption: "",
             fileUrl: "",
             queueType: post.queueType?.name ?? "unassigned",
-            scheduledFor: scheduleDate
-              .toLocaleString("en-US", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              })
-              .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+            scheduledFor: formatForDateTimeLocal(
+              scheduleZoned,
+              userTimezoneForScheduled
+            ),
             originalPostId: post.id,
             originalEventId:
               post.signedEvent &&

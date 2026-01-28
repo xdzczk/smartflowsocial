@@ -1,5 +1,6 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import { PostBadges } from "./PostBadges";
 import type { PostBlockBaseProps, QueueColorStyle } from "./PostBlock.types";
@@ -26,8 +27,9 @@ export function ThumbnailPostBlock({
   onClick,
   onKeyDown,
   queueColorStyle,
-  userTimezone,
+  userTimezone: _userTimezone,
 }: ThumbnailPostBlockProps) {
+  const { formatDate } = useFormattedDate();
   const firstImage = getFirstImage(post, isLongform ?? false);
   const postPreview = getPostPreview(post, isLongform ?? false);
   const displayTime = getDisplayTime(
@@ -35,6 +37,7 @@ export function ThumbnailPostBlock({
     isLongform ?? false,
     isPast ?? false
   );
+  const formattedTime = formatDate(displayTime);
 
   return (
     <div
@@ -45,14 +48,14 @@ export function ThumbnailPostBlock({
       onKeyDown={onKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={`${isPast ? "View" : "Edit"} ${isLongform ? "longform post" : "post"}: ${postPreview}, ${isPast ? "posted" : isLongform ? "published" : "scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}`}
+      aria-label={`${isPast ? "View" : "Edit"} ${isLongform ? "longform post" : "post"}: ${postPreview}, ${isPast ? "posted" : isLongform ? "published" : "scheduled"} for ${formattedTime}`}
       className={`focus:ring-primary rounded p-1 text-xs transition-opacity focus:ring-2 focus:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer hover:opacity-80"
       } ${
         isDragging ? "opacity-50" : ""
       } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
       style={queueColorStyle ?? {}}
-      title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
+      title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${formattedTime}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
     >
       {firstImage ? (
         <div className="relative">

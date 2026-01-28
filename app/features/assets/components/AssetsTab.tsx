@@ -1,5 +1,5 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { formatDate } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 interface Asset {
   id: string;
   assetType: string;
@@ -46,6 +46,8 @@ export function AssetsTab({
   deleteFetcherForm: DeleteFetcherForm,
   onDeleteAsset,
 }: AssetsTabProps) {
+  const { formatDate } = useFormattedDate();
+
   return (
     <div>
       {/* Search and Controls */}

@@ -12,17 +12,27 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   clearActiveSignerConfig,
   serializeSecretKey,
   setActiveSignerConfig,
+  type ActiveSignerConfig,
 } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   REMOTE_SIGNER_TIMEOUT_EVENT,
   type RemoteSignerTimeoutEventDetail,
 } from "~/lib/remote-signer-reconnect.client";
+import {
+  createSession,
+  detectSignerAppName,
+  getActiveSession,
+  setActiveSession,
+  updateSession,
+} from "~/lib/remote-signer-sessions.client";
+import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
 
 import {
   connectNip46WithBunkerInput,
@@ -39,11 +49,19 @@ const DEFAULT_RELAYS = [
 
 type ConnectState = "idle" | "uri_ready" | "waiting" | "connected" | "failed";
 
-export function RemoteSignerReconnectController() {
+interface RemoteSignerReconnectControllerProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onReconnectSuccess?: (sessionId: string) => void;
+}
+
+export function RemoteSignerReconnectController(
+  props?: RemoteSignerReconnectControllerProps
+) {
   const user = useOptionalUser();
   const expectedPubkey = user?.npub ?? null;
 
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(props?.open ?? false);
 
   // Throttle toasts to avoid spam during rapid retries.
   const lastToastAtRef = useRef(0);
@@ -112,23 +130,31 @@ export function RemoteSignerReconnectController() {
     };
   }, [showReconnectToast]);
 
+  const handleOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    props?.onOpenChange?.(open);
+  };
+
   return (
     <RemoteSignerReconnectDialog
-      open={dialogOpen}
-      onOpenChange={setDialogOpen}
+      open={props?.open ?? dialogOpen}
+      onOpenChange={handleOpenChange}
       expectedPubkey={expectedPubkey}
+      onReconnectSuccess={props?.onReconnectSuccess}
     />
   );
 }
 
-function RemoteSignerReconnectDialog(props: {
+export function RemoteSignerReconnectDialog(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expectedPubkey: string | null;
+  onReconnectSuccess?: (sessionId: string) => void;
 }) {
   const [tab, setTab] = useState<"nostrconnect" | "bunker">("nostrconnect");
   const [relayList, setRelayList] = useState(DEFAULT_RELAYS);
   const [bunkerInput, setBunkerInput] = useState("");
+  const [sessionLabel, setSessionLabel] = useState("");
 
   const [state, setState] = useState<ConnectState>("idle");
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
@@ -144,6 +170,7 @@ function RemoteSignerReconnectDialog(props: {
     setNostrConnectUri(null);
     setError(null);
     setCopyOk(false);
+    setSessionLabel("");
   }, []);
 
   useEffect(() => {
@@ -185,14 +212,40 @@ function RemoteSignerReconnectDialog(props: {
           return;
         }
 
-        setActiveSignerConfig({
+        const config: ActiveSignerConfig = {
           type: "nip46",
           method: "bunker_input",
           bunkerInput: bunkerInput.trim(),
           clientSecretKeyHex: serializeSecretKey(clientSecretKey),
+        };
+
+        // Create or update session
+        const session = createSession(config, sessionLabel || undefined);
+        setActiveSession(session.id);
+
+        // Update session with pubkey and detected app name
+        const detectedAppName = detectSignerAppName(config);
+        updateSession(session.id, {
+          metadata: {
+            ...session.metadata,
+            pubkey,
+            signerAppName: detectedAppName,
+            status: "active",
+            connectedAt: Date.now(),
+            lastActivityAt: Date.now(),
+          },
         });
+
+        // Record connection event
+        recordConnectionEvent(session.id, {
+          type: "connected",
+          pubkey,
+        });
+
+        setActiveSignerConfig(config);
         setState("connected");
         toast.success("Remote signer reconnected. Please retry your action.");
+        props.onReconnectSuccess?.(session.id);
         props.onOpenChange(false);
         return;
       }
@@ -233,24 +286,60 @@ function RemoteSignerReconnectDialog(props: {
         return;
       }
 
-      setActiveSignerConfig({
+      const config: ActiveSignerConfig = {
         type: "nip46",
         method: "nostrconnect_uri",
         uri: created.uri,
         relays: created.relays,
         clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
+      };
+
+      // Create or update session
+      const session = createSession(config, sessionLabel || undefined);
+      setActiveSession(session.id);
+
+      // Update session with pubkey and detected app name
+      const detectedAppName = detectSignerAppName(config);
+      updateSession(session.id, {
+        metadata: {
+          ...session.metadata,
+          pubkey,
+          signerAppName: detectedAppName,
+          status: "active",
+          connectedAt: Date.now(),
+          lastActivityAt: Date.now(),
+        },
       });
 
+      // Record connection event
+      recordConnectionEvent(session.id, {
+        type: "connected",
+        pubkey,
+      });
+
+      setActiveSignerConfig(config);
       setState("connected");
       toast.success("Remote signer reconnected. Please retry your action.");
+      props.onReconnectSuccess?.(session.id);
       props.onOpenChange(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to reconnect signer");
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to reconnect signer";
+      setError(errorMessage);
       setState("failed");
+
+      // Record error if we have an active session
+      const activeSession = getActiveSession();
+      if (activeSession) {
+        recordConnectionEvent(activeSession.id, {
+          type: "error",
+          error: errorMessage,
+        });
+      }
     } finally {
       cancelRef.current = null;
     }
-  }, [bunkerInput, props, relayList, tab]);
+  }, [bunkerInput, props, relayList, sessionLabel, tab]);
 
   const reconnectStartLabel = useMemo(() => {
     if (state === "waiting") return "Waiting for signer…";
@@ -273,6 +362,22 @@ function RemoteSignerReconnectDialog(props: {
             {error}
           </div>
         ) : null}
+
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="session-label">Session Label (Optional)</Label>
+            <Input
+              id="session-label"
+              value={sessionLabel}
+              onChange={(e) => setSessionLabel(e.target.value)}
+              placeholder="e.g., Primal on iPhone"
+              disabled={state === "waiting"}
+            />
+            <p className="text-muted-foreground text-xs">
+              Give this session a name to identify it later
+            </p>
+          </div>
+        </div>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="w-full">

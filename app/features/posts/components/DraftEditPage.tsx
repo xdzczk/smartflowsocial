@@ -233,6 +233,7 @@ export default function DraftEditPage() {
         content={content}
         caption={typedPost.caption ?? ""}
         isSubmitting={isSubmitting}
+        user={typedUser}
         onClose={() => setShowResumeModal(false)}
         onConfirm={() => void handleSignAndResume()}
       />

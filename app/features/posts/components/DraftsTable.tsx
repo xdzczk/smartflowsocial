@@ -24,6 +24,8 @@ interface DraftsTableProps {
   onToggleSelectAll: () => void;
   onPostClick: (post: Post) => void;
   bulkDeleteState: string;
+  userTimezone?: string;
+  userTimeFormat?: "12h" | "24h";
 }
 
 interface SortableHeaderProps {
@@ -61,42 +63,55 @@ export function DraftsTable({
   onToggleSelectAll,
   onPostClick,
   bulkDeleteState,
+  userTimezone = "UTC",
+  userTimeFormat = "12h",
 }: DraftsTableProps) {
   const deleteFetcher = useFetcher();
 
   const formatDate = (isoString: string) => {
     try {
       const zoned = fromISOString(isoString, "UTC");
-      return formatForDisplay(zoned, "UTC", {
-        month: "2-digit",
-        day: "2-digit",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      const userZoned = zoned.withTimeZone(userTimezone);
+      return formatForDisplay(
+        userZoned,
+        userTimezone,
+        {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        },
+        userTimeFormat
+      );
     } catch {
       // Fallback - still use Temporal for consistency
       try {
         const zoned = fromISOString(isoString, "UTC");
-        return formatForDisplay(zoned, "UTC", {
-          month: "2-digit",
-          day: "2-digit",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        });
+        const userZoned = zoned.withTimeZone(userTimezone);
+        return formatForDisplay(
+          userZoned,
+          userTimezone,
+          {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          },
+          userTimeFormat
+        );
       } catch {
         // Final fallback
         const date = new Date(isoString);
         return date.toLocaleString("en-US", {
+          timeZone: userTimezone,
           month: "2-digit",
           day: "2-digit",
           year: "numeric",
           hour: "numeric",
           minute: "2-digit",
-          hour12: true,
+          hour12: userTimeFormat === "12h",
         });
       }
     }

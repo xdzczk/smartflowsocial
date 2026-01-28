@@ -19,6 +19,7 @@ import {
   useScheduledState,
   useScheduledPostsInfiniteData,
 } from "~/features/posts/ui";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 import {
   extractLongFormPostData,
@@ -32,17 +33,6 @@ import {
 } from "../utils/publish-result.utils";
 
 import PublishResultModal from "./PublishResultModal";
-
-/**
- * Helper to extract user time format preference
- */
-function getUserTimeFormat(user: unknown): "12h" | "24h" {
-  return user && typeof user === "object" && "timeFormat" in user
-    ? user.timeFormat === "24h"
-      ? "24h"
-      : "12h"
-    : "12h";
-}
 
 export default function ScheduledPostsPage() {
   // Use infinite query for data fetching with infinite scroll
@@ -210,8 +200,7 @@ export default function ScheduledPostsPage() {
     currentTab,
   });
 
-  const userTimezone = user?.timezone ?? undefined;
-  const userTimeFormat = getUserTimeFormat(user);
+  const { userTimezone, userTimeFormat } = useFormattedDate();
 
   return (
     <div>

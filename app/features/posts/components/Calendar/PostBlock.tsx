@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+
 import { CompactPostBlock } from "./CompactPostBlock";
 import { FullPostBlock } from "./FullPostBlock";
 import { MinimalPostBlock } from "./MinimalPostBlock";
@@ -62,19 +64,13 @@ export function PostBlock({
     }
   };
 
-  const userTimezone = user?.timezone ?? "Etc/UTC";
-  const userTimeFormat =
-    user && typeof user === "object" && "timeFormat" in user
-      ? user.timeFormat === "24h"
-        ? "24h"
-        : "12h"
-      : "12h";
+  const { formatDate, userTimezone } = useFormattedDate();
   const displayTime = getDisplayTime(post, isLongform, isPast);
-  const timeString = displayTime.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: userTimeFormat === "12h",
-    timeZone: userTimezone,
+  const timeString = formatDate(displayTime, {
+    dateFormatOptions: {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
   });
 
   const queueColorStyle = getQueueColorStyle(

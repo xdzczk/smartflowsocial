@@ -2,7 +2,8 @@ import { Link } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queue-colors";
-import { formatDate, getImageUrls } from "~/lib/helpers";
+import { getImageUrls } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 interface Post {
   id: string;
@@ -67,6 +68,8 @@ export function GiveawayTable({
   onRequestSort,
   onPostClick,
 }: GiveawayTableProps) {
+  const { formatDate } = useFormattedDate();
+
   return (
     <>
       {/* Results count */}

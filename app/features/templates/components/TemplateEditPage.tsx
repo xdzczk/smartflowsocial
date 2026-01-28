@@ -2,7 +2,8 @@ import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import React, { useEffect, useState } from "react";
 
 import { getQueueColor } from "~/features/posts/queue-colors";
-import { formatDate, getImageUrls } from "~/lib/helpers";
+import { getImageUrls } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 type LoaderData = unknown;
 type Template = Record<string, unknown> & {
@@ -12,6 +13,7 @@ type Template = Record<string, unknown> & {
 };
 
 export default function TemplateEditPage() {
+  const { formatDate } = useFormattedDate();
   const data = useLoaderData<LoaderData>();
   const template =
     typeof data === "object" &&

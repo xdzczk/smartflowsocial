@@ -662,7 +662,8 @@ export default function LongFormListing({
                             | Date
                             | number
                             | undefined)
-                        : post.createdAt
+                        : post.createdAt,
+                    false
                   )}
                 </td>
                 <td className="p-3 text-center">

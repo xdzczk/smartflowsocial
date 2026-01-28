@@ -12,6 +12,8 @@ import fc from "fast-check";
 import { describe, it } from "vitest";
 
 import { formatDate as formatDateWithTimezone } from "~/features/posts/utils/content-helpers";
+// Note: formatDate from ~/lib/helpers is deprecated - use useFormattedDate() hook in components
+// or formatDateWithTimezone for utility functions
 import { formatDate } from "~/lib/helpers";
 import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
 // Valid IANA timezone identifiers
@@ -136,7 +138,7 @@ describe("Property-Based Tests: Date Formatting", () => {
     });
   });
 
-  describe("formatDate Properties", () => {
+  describe("formatDate Properties (DEPRECATED - use useFormattedDate hook)", () => {
     it("should always produce non-empty string for valid dates", () => {
       fc.assert(
         fc.property(

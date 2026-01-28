@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { useOptionalUser } from "~/lib/remix-utils";
 
 import { formatRelayUrl } from "../utils/publish-result.utils";
 
@@ -407,11 +408,23 @@ export default function PublishResultModal({
     return "publishing";
   }, [action, relayAcks.length, relayStatusCounts]);
 
+  // Call hook before any conditional returns
+  const user = useOptionalUser() ?? null;
+
   // Early return if modal is not open to prevent blocking
-  // Must be after all hooks
   if (!isOpen) {
     return null;
   }
+  const userTimezone =
+    user && typeof user === "object" && "timezone" in user
+      ? (user.timezone ?? "UTC")
+      : "UTC";
+  const userTimeFormat =
+    user && typeof user === "object" && "timeFormat" in user
+      ? user.timeFormat === "24h"
+        ? "24h"
+        : "12h"
+      : "12h";
 
   // Format scheduled time
   const formatScheduledTime = () => {
@@ -420,12 +433,13 @@ export default function PublishResultModal({
       const date =
         scheduledFor instanceof Date ? scheduledFor : new Date(scheduledFor);
       return date.toLocaleString("en-US", {
+        timeZone: userTimezone,
         month: "short",
         day: "numeric",
         year: "numeric",
         hour: "numeric",
         minute: "2-digit",
-        hour12: true,
+        hour12: userTimeFormat === "12h",
       });
     } catch {
       return "";

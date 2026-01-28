@@ -1,5 +1,6 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import { PostBadges } from "./PostBadges";
 import type {
@@ -29,31 +30,23 @@ function getAriaLabel(
   postPreview: string,
   isLongform: boolean,
   isPast: boolean,
-  displayTime: Date,
-  userTimezone: string
+  formattedTime: string
 ): string {
   const action = isPast ? "View" : "Edit";
   const postType = isLongform ? "longform post" : "post";
   const status = isPast ? "posted" : isLongform ? "published" : "scheduled";
-  const timeStr = displayTime.toLocaleString("en-US", {
-    timeZone: userTimezone,
-  });
-  return `${action} ${postType}: ${postPreview}, ${status} for ${timeStr}`;
+  return `${action} ${postType}: ${postPreview}, ${status} for ${formattedTime}`;
 }
 
 function getTitleText(
   postPreview: string,
   isLongform: boolean,
   isPast: boolean,
-  displayTime: Date,
-  userTimezone: string
+  formattedTime: string
 ): string {
   const status = isPast ? "Posted" : isLongform ? "Published" : "Scheduled";
-  const timeStr = displayTime.toLocaleString("en-US", {
-    timeZone: userTimezone,
-  });
   const action = isPast ? "Past post (view only)" : "Click to edit";
-  return `${postPreview}\n${status} for ${timeStr}\n${action}`;
+  return `${postPreview}\n${status} for ${formattedTime}\n${action}`;
 }
 
 function getClassName(
@@ -157,23 +150,18 @@ function UltraCompactLayout({
   onKeyDown,
   queueColorStyle,
   displayTime,
-  userTimezone,
+  userTimezone: _userTimezone,
 }: UltraCompactLayoutProps) {
+  const { formatDate } = useFormattedDate();
+  const formattedTime = formatDate(displayTime);
   const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus:ring-1 focus:ring-primary`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,
     isPast,
-    displayTime,
-    userTimezone
+    formattedTime
   );
-  const title = getTitleText(
-    postPreview,
-    isLongform,
-    isPast,
-    displayTime,
-    userTimezone
-  );
+  const title = getTitleText(postPreview, isLongform, isPast, formattedTime);
 
   return (
     <div
@@ -239,24 +227,19 @@ function RegularLayout({
   onKeyDown,
   queueColorStyle,
   displayTime,
-  userTimezone,
+  userTimezone: _userTimezone,
   hideVideoPlayButton,
 }: RegularLayoutProps) {
+  const { formatDate } = useFormattedDate();
+  const formattedTime = formatDate(displayTime);
   const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} px-2 py-1 focus:ring-2 focus:ring-primary`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,
     isPast,
-    displayTime,
-    userTimezone
+    formattedTime
   );
-  const title = getTitleText(
-    postPreview,
-    isLongform,
-    isPast,
-    displayTime,
-    userTimezone
-  );
+  const title = getTitleText(postPreview, isLongform, isPast, formattedTime);
 
   return (
     <div

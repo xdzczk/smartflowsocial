@@ -64,7 +64,15 @@ export function WeeklyView({
     return days;
   }, [currentDate]);
 
-  // Generate hours (00:00 to 23:30)
+  // Get user time format preference
+  const userTimeFormat =
+    user && typeof user === "object" && "timeFormat" in user
+      ? user.timeFormat === "24h"
+        ? "24h"
+        : "12h"
+      : "12h";
+
+  // Generate hours - keys are always in 24-hour format for grid lookup
   const hours = useMemo(() => {
     const hoursList: string[] = [];
     for (let h = 0; h < 24; h++) {
@@ -73,6 +81,27 @@ export function WeeklyView({
     }
     return hoursList;
   }, []);
+
+  // Generate display labels based on user's time format preference
+  const hourLabels = useMemo(() => {
+    const labels: string[] = [];
+    if (userTimeFormat === "24h") {
+      // 24-hour format: 00:00 to 23:30
+      for (let h = 0; h < 24; h++) {
+        labels.push(`${h.toString().padStart(2, "0")}:00`);
+        labels.push(`${h.toString().padStart(2, "0")}:30`);
+      }
+    } else {
+      // 12-hour format: 12:00 AM to 11:30 PM
+      for (let h = 0; h < 24; h++) {
+        const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        const period = h < 12 ? "AM" : "PM";
+        labels.push(`${hour12}:00 ${period}`);
+        labels.push(`${hour12}:30 ${period}`);
+      }
+    }
+    return labels;
+  }, [userTimeFormat]);
 
   // Group posts by date and time
   const postsGrid = useMemo(() => {
@@ -263,11 +292,11 @@ export function WeeklyView({
       {/* Time grid */}
       <div className="flex-1 overflow-y-auto">
         <div className="relative">
-          {hours.map((time) => (
+          {hours.map((time, index) => (
             <div key={time} className="border-border flex h-12 border-b">
               {/* Time label */}
               <div className="text-muted-foreground w-16 flex-shrink-0 p-2 text-right text-xs">
-                {time}
+                {hourLabels[index]}
               </div>
 
               {/* Day columns */}

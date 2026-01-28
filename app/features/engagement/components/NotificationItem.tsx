@@ -1,4 +1,4 @@
-import { formatDate } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import type { Notification } from "../engagement.server";
 import { useNotificationActions } from "../hooks/useNotificationActions";
@@ -76,6 +76,7 @@ export function NotificationItem({
   userRelays = ["wss://relay.primal.net"],
   trustScores = {},
 }: NotificationItemProps) {
+  const { formatDate } = useFormattedDate();
   const actions = useNotificationActions({
     notification: {
       eventId: notification.eventId,
@@ -144,9 +145,9 @@ export function NotificationItem({
               {typeBadge.label}
             </span>
             <span className="text-muted-foreground text-xs">
-              {formatDate(
-                new Date(notification.createdAt * 1000).toISOString()
-              )}
+              {formatDate(notification.createdAt * 1000, {
+                isUnixTimestamp: false,
+              })}
             </span>
           </div>
 

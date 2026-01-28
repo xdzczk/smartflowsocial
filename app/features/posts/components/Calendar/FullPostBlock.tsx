@@ -1,5 +1,6 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import { PostBadges } from "./PostBadges";
 import type { PostBlockBaseProps, QueueColorStyle } from "./PostBlock.types";
@@ -30,10 +31,11 @@ export function FullPostBlock({
   onClick,
   onKeyDown,
   queueColorStyle,
-  userTimezone,
+  userTimezone: _userTimezone,
   timeString,
   hideVideoPlayButton = false,
 }: FullPostBlockProps) {
+  const { formatDate } = useFormattedDate();
   const firstImage = getFirstImage(post, isLongform ?? false);
   const postPreview = getPostPreview(post, isLongform ?? false);
   const displayTime = getDisplayTime(
@@ -41,6 +43,14 @@ export function FullPostBlock({
     isLongform ?? false,
     isPast ?? false
   );
+  const formattedDateTime = formatDate(displayTime);
+  const formattedDate = formatDate(displayTime, {
+    dateFormatOptions: {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    },
+  });
 
   return (
     <div
@@ -51,7 +61,7 @@ export function FullPostBlock({
       onKeyDown={onKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "posted" : "scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}`}
+      aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "posted" : "scheduled"} for ${formattedDateTime}`}
       className={`border-border focus:ring-primary rounded-lg border p-3 transition-all focus:ring-2 focus:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer"
       } ${
@@ -82,10 +92,7 @@ export function FullPostBlock({
             </div>
           )}
           <span className="text-sm font-medium">
-            {displayTime.toLocaleDateString("en-US", {
-              timeZone: userTimezone,
-            })}{" "}
-            at {timeString}
+            {formattedDate} at {timeString}
           </span>
         </div>
 

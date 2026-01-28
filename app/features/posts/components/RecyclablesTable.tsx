@@ -1,7 +1,8 @@
 import { Link } from "@remix-run/react";
 import type { useFetcher } from "@remix-run/react";
 
-import { formatDate, getImageUrls } from "~/lib/helpers";
+import { getImageUrls } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import { getQueueColor } from "../queue-colors";
 
@@ -83,6 +84,8 @@ export function RecyclablesTable({
   individualRepostFetcher,
   bulkDeleteFetcher,
 }: RecyclablesTableProps) {
+  const { formatDate } = useFormattedDate();
+
   return (
     <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
       <table className="min-w-full align-middle text-sm whitespace-nowrap">

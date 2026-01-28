@@ -5,6 +5,8 @@
 
 import { AssetType } from "@prisma/client";
 
+import { getUserTimezone } from "~/features/user/services/user-settings.server";
+import { formatForDateTimeLocal, nowInTimezone } from "~/lib/temporal";
 import {
   templatesActionSchema,
   validateFormDataOrRespond,
@@ -201,27 +203,19 @@ export async function handleTemplatesAction(
   }
 
   // Prepare template data for scheduling
-  const localDate = new Date();
-  localDate.setHours(localDate.getHours() + 1);
+  // Get user's timezone for proper date handling
+  const userTimezone = (await getUserTimezone(userId)) ?? "UTC";
+  const now = nowInTimezone(userTimezone);
+  const startTime = now.add({ hours: 1 });
 
   const templateData = template.posts.map((post, index) => {
-    const scheduleDate = new Date(localDate);
-    scheduleDate.setHours(scheduleDate.getHours() + index);
+    const scheduleDateTime = startTime.add({ hours: index });
 
     return {
       caption: post.caption ?? "",
       fileUrl: post.fileUrl,
       queueType: post.queueTypeId ?? "unassigned",
-      scheduledFor: scheduleDate
-        .toLocaleString("en-US", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        })
-        .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+      scheduledFor: formatForDateTimeLocal(scheduleDateTime, userTimezone),
     };
   });
 

@@ -17,6 +17,8 @@ import { Toaster } from "react-hot-toast";
 import { LifecycleHandler } from "~/components/lifecycle/LifecycleHandler";
 import { PrefetchManager } from "~/components/prefetch/PrefetchManager";
 import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
+// Import migration to run on app load
+import "~/lib/remote-signer-sessions-migration.client";
 import { getUser } from "~/features/auth/session.server";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";

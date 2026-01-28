@@ -3,7 +3,7 @@ import { nip19 } from "nostr-tools";
 import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { formatDate } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import type { Notification } from "../engagement.server";
 import type { GroupedNotification } from "../types";
@@ -18,10 +18,12 @@ interface GroupedNotificationListProps {
 
 export default function GroupedNotificationList({
   groupedNotifications,
-  userTimezone,
+  userTimezone: _userTimezone,
   userRelays = ["wss://relay.primal.net"],
   trustScores = {},
 }: GroupedNotificationListProps) {
+  const { userTimezone } = useFormattedDate();
+
   if (groupedNotifications.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -67,7 +69,7 @@ export default function GroupedNotificationList({
 
 function GroupedNotificationCard({
   group,
-  userTimezone,
+  userTimezone: _userTimezone,
   userRelays,
   trustScores = {},
 }: {
@@ -76,6 +78,7 @@ function GroupedNotificationCard({
   userRelays?: string[];
   trustScores?: Record<string, number>;
 }) {
+  const { formatDate, userTimezone } = useFormattedDate();
   const { parentPost, notifications } = group;
   const [parentToast, setParentToast] = useState<{
     type: "success" | "error";

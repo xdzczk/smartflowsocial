@@ -1,6 +1,11 @@
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowInTimezone,
+} from "~/lib/temporal";
 import { searchFormClientSchema } from "~/lib/validation";
 import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 interface User {
@@ -102,28 +107,16 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     if (!searchResult) return;
 
     // Prepare scheduled repost data (kind 6)
-    const now = new Date();
     const userTimezone = user?.timezone ?? "UTC";
-    const localDate = new Date(
-      now.toLocaleString("en-US", { timeZone: userTimezone })
-    );
-    localDate.setHours(localDate.getHours() + 1);
+    const now = nowInTimezone(userTimezone);
+    const scheduleDateTime = addHours(now, 1);
 
     const scheduledRepostData = [
       {
         caption: "", // Empty content for kind 6 reposts
         fileUrl: "", // No file URL for kind 6 reposts
         queueType: "unassigned",
-        scheduledFor: localDate
-          .toLocaleString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          })
-          .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+        scheduledFor: formatForDateTimeLocal(scheduleDateTime, userTimezone),
         originalPostId: null, // No local post ID for external events
         originalEventId: searchResult.id,
         originalEventPubkey: searchResult.pubkey,

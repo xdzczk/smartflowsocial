@@ -4,6 +4,8 @@
 
 import { formatForDisplay, fromISOString } from "~/lib/temporal";
 
+import type { UserData } from "../types";
+
 interface ResumeModalProps {
   isOpen: boolean;
   selectedQueue: string;
@@ -11,6 +13,7 @@ interface ResumeModalProps {
   content: string;
   caption: string;
   isSubmitting: boolean;
+  user?: UserData | null;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -22,9 +25,21 @@ export function ResumeModal({
   content,
   caption,
   isSubmitting,
+  user,
   onClose,
   onConfirm,
 }: ResumeModalProps) {
+  const userTimezone =
+    user && typeof user === "object" && "timezone" in user
+      ? (user.timezone ?? "UTC")
+      : "UTC";
+
+  const userTimeFormat =
+    user && typeof user === "object" && "timeFormat" in user
+      ? user.timeFormat === "24h"
+        ? "24h"
+        : "12h"
+      : "12h";
   if (!isOpen) return null;
 
   return (
@@ -80,7 +95,20 @@ export function ResumeModal({
               {(() => {
                 try {
                   const zoned = fromISOString(scheduledFor, "UTC");
-                  return formatForDisplay(zoned, "UTC");
+                  const userZoned = zoned.withTimeZone(userTimezone);
+                  return formatForDisplay(
+                    userZoned,
+                    userTimezone,
+                    {
+                      month: "2-digit",
+                      day: "2-digit",
+                      year: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: userTimeFormat === "12h",
+                    },
+                    userTimeFormat
+                  );
                 } catch {
                   return scheduledFor;
                 }

@@ -1,6 +1,6 @@
 import { Link } from "@remix-run/react";
 
-import { formatDate } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import type { Notification } from "../engagement.server";
 import type {
@@ -87,6 +87,7 @@ function ReplyNotification({
   notification: NotificationReply;
   userTimezone?: string;
 }) {
+  const { formatDate } = useFormattedDate();
   const displayName =
     notification.authorName ??
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
@@ -142,9 +143,9 @@ function ReplyNotification({
 
           <div className="dark:text-muted-foreground text-muted-foreground flex items-center gap-4 text-xs">
             <span>
-              {formatDate(
-                new Date(notification.createdAt * 1000).toISOString()
-              )}
+              {formatDate(notification.createdAt * 1000, {
+                isUnixTimestamp: false,
+              })}
             </span>
             <Link
               to={`https://primal.net/e/${String(notification.eventId)}`}
@@ -168,6 +169,7 @@ function ZapNotification({
   notification: NotificationZap;
   userTimezone?: string;
 }) {
+  const { formatDate } = useFormattedDate();
   const displayName =
     notification.senderName ??
     notification.senderPubkey.substring(0, 8) +
@@ -224,9 +226,9 @@ function ZapNotification({
 
           <div className="dark:text-muted-foreground text-muted-foreground flex items-center gap-4 text-xs">
             <span>
-              {formatDate(
-                new Date(notification.createdAt * 1000).toISOString()
-              )}
+              {formatDate(notification.createdAt * 1000, {
+                isUnixTimestamp: false,
+              })}
             </span>
             <Link
               to={`https://primal.net/e/${String(notification.originalEventId)}`}
@@ -250,6 +252,7 @@ function MentionNotification({
   notification: NotificationMention;
   userTimezone?: string;
 }) {
+  const { formatDate } = useFormattedDate();
   const displayName =
     notification.authorName ??
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
@@ -305,9 +308,9 @@ function MentionNotification({
 
           <div className="dark:text-muted-foreground text-muted-foreground flex items-center gap-4 text-xs">
             <span>
-              {formatDate(
-                new Date(notification.createdAt * 1000).toISOString()
-              )}
+              {formatDate(notification.createdAt * 1000, {
+                isUnixTimestamp: false,
+              })}
             </span>
             <Link
               to={`https://primal.net/e/${String(notification.eventId)}`}

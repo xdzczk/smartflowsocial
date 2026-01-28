@@ -1,6 +1,7 @@
 import { useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 
+import { useOptionalUser } from "~/lib/remix-utils";
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 
 import type { PostData } from "../types";
@@ -14,6 +15,19 @@ interface ScheduledPostsLoaderData {
 export default function ScheduledPosts() {
   const { scheduledPosts } = useLoaderData<ScheduledPostsLoaderData>();
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
+  const user = useOptionalUser() ?? null;
+
+  const userTimezone =
+    user && typeof user === "object" && "timezone" in user
+      ? (user.timezone ?? "UTC")
+      : "UTC";
+
+  const userTimeFormat =
+    user && typeof user === "object" && "timeFormat" in user
+      ? user.timeFormat === "24h"
+        ? "24h"
+        : "12h"
+      : "12h";
 
   return (
     <>
@@ -145,7 +159,20 @@ export default function ScheduledPosts() {
                             if (isNaN(scheduledAtUtc.getTime()))
                               return INVALID_DATE;
                             const zoned = fromDate(scheduledAtUtc, "UTC");
-                            return formatForDisplay(zoned, "UTC");
+                            const userZoned = zoned.withTimeZone(userTimezone);
+                            return formatForDisplay(
+                              userZoned,
+                              userTimezone,
+                              {
+                                month: "2-digit",
+                                day: "2-digit",
+                                year: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: userTimeFormat === "12h",
+                              },
+                              userTimeFormat
+                            );
                           } catch {
                             return INVALID_DATE;
                           }
@@ -270,7 +297,20 @@ export default function ScheduledPosts() {
                         if (isNaN(scheduledAtUtc.getTime()))
                           return INVALID_DATE;
                         const zoned = fromDate(scheduledAtUtc, "UTC");
-                        return formatForDisplay(zoned, "UTC");
+                        const userZoned = zoned.withTimeZone(userTimezone);
+                        return formatForDisplay(
+                          userZoned,
+                          userTimezone,
+                          {
+                            month: "2-digit",
+                            day: "2-digit",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: userTimeFormat === "12h",
+                          },
+                          userTimeFormat
+                        );
                       } catch {
                         return INVALID_DATE;
                       }

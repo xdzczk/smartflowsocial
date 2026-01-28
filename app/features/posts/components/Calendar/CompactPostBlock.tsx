@@ -1,5 +1,6 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import { PostBadges } from "./PostBadges";
 import type {
@@ -30,16 +31,12 @@ function getAriaLabel(
   isPast: boolean | undefined,
   isLongform: boolean | undefined,
   postPreview: string,
-  displayTime: Date,
-  userTimezone: string
+  formattedTime: string
 ): string {
   const action = isPast ? "View" : "Edit";
   const postType = isLongform ? "longform post" : "post";
   const status = isPast ? "posted" : isLongform ? "published" : "scheduled";
-  const timeStr = displayTime.toLocaleString("en-US", {
-    timeZone: userTimezone,
-  });
-  return `${action} ${postType}: ${postPreview}, ${status} for ${timeStr}`;
+  return `${action} ${postType}: ${postPreview}, ${status} for ${formattedTime}`;
 }
 
 function getClassName(
@@ -68,15 +65,11 @@ function getTitle(
   postPreview: string,
   isPast: boolean | undefined,
   isLongform: boolean | undefined,
-  displayTime: Date,
-  userTimezone: string
+  formattedTime: string
 ): string {
   const status = isPast ? "Posted" : isLongform ? "Published" : "Scheduled";
-  const timeStr = displayTime.toLocaleString("en-US", {
-    timeZone: userTimezone,
-  });
   const action = isPast ? "Past post (view only)" : "Click to edit";
-  return `${postPreview}\n${status} for ${timeStr}\n${action}`;
+  return `${postPreview}\n${status} for ${formattedTime}\n${action}`;
 }
 
 function ThumbnailSection({
@@ -180,9 +173,10 @@ export function CompactPostBlock({
   onClick,
   onKeyDown,
   queueColorStyle,
-  userTimezone,
+  userTimezone: _userTimezone,
   timeString,
 }: CompactPostBlockProps) {
+  const { formatDate } = useFormattedDate();
   const firstImage = getFirstImage(post, isLongform ?? false);
   const postPreview = getPostPreview(post, isLongform ?? false);
   const displayTime = getDisplayTime(
@@ -190,6 +184,7 @@ export function CompactPostBlock({
     isLongform ?? false,
     isPast ?? false
   );
+  const formattedTime = formatDate(displayTime);
 
   return (
     <div
@@ -200,13 +195,7 @@ export function CompactPostBlock({
       onKeyDown={onKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={getAriaLabel(
-        isPast,
-        isLongform,
-        postPreview,
-        displayTime,
-        userTimezone
-      )}
+      aria-label={getAriaLabel(isPast, isLongform, postPreview, formattedTime)}
       className={`${getClassName(
         isPast,
         isDragging,
@@ -219,13 +208,7 @@ export function CompactPostBlock({
           ? (queueColorStyle as unknown as React.CSSProperties)
           : undefined
       }
-      title={getTitle(
-        postPreview,
-        isPast,
-        isLongform,
-        displayTime,
-        userTimezone
-      )}
+      title={getTitle(postPreview, isPast, isLongform, formattedTime)}
     >
       <div className="mb-1 flex flex-shrink-0 items-start justify-between">
         <div className="flex items-center space-x-1">

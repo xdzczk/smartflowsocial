@@ -20,6 +20,7 @@ import {
   usePostedPostsInfiniteData,
   useBulkDeletePostsMutation,
 } from "~/features/posts/ui";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 import {
   extractPostData,
@@ -35,17 +36,6 @@ import {
 } from "../utils/publish-result.utils";
 
 import PublishResultModal from "./PublishResultModal";
-
-/**
- * Helper to extract user time format preference
- */
-function getUserTimeFormat(user: unknown): "12h" | "24h" {
-  return user && typeof user === "object" && "timeFormat" in user
-    ? user.timeFormat === "24h"
-      ? "24h"
-      : "12h"
-    : "12h";
-}
 
 function getDateValue(postedAt: Date | string | null | undefined): number {
   if (postedAt instanceof Date) {
@@ -319,6 +309,9 @@ export default function PostedPostsPage() {
     );
   }, [sortedPosts, searchTerm]);
 
+  // Call hook before any conditional returns
+  const { userTimeFormat } = useFormattedDate();
+
   // Handle nullable user - if user is null, we should not render the component
   if (!user) {
     return (
@@ -339,8 +332,6 @@ export default function PostedPostsPage() {
       },
     });
   };
-
-  const userTimeFormat = getUserTimeFormat(user);
 
   return (
     <div>

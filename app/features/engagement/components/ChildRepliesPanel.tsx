@@ -1,4 +1,4 @@
-import { formatDate } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import type { ChildReply } from "../hooks/useNotificationActions";
 interface ChildRepliesPanelProps {
@@ -12,6 +12,8 @@ export function ChildRepliesPanel({
   replies,
   metadata,
 }: ChildRepliesPanelProps) {
+  const { formatDate } = useFormattedDate();
+
   if (isLoading) {
     return (
       <div className="dark:border-primary/30 border-border mt-3 border-l-2 pl-3">
@@ -102,7 +104,9 @@ export function ChildRepliesPanel({
                 {replyAuthorName}
               </span>
               <span className="text-muted-foreground text-xs">
-                {formatDate(new Date(reply.created_at * 1000).toISOString())}
+                {formatDate(reply.created_at * 1000, {
+                  isUnixTimestamp: false,
+                })}
               </span>
             </div>
             <p className="text-foreground text-xs break-words whitespace-pre-wrap">

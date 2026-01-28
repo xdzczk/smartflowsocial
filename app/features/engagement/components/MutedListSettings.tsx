@@ -12,6 +12,7 @@ import {
 } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 interface MutedListSettingsProps {
   mutedList: {
@@ -31,6 +32,29 @@ interface FetcherData {
     npubs: string[];
     lastSynced: string;
   };
+}
+
+function LastSyncedDateDisplay({ lastSyncedDate }: { lastSyncedDate: Date }) {
+  const { formatDate } = useFormattedDate();
+  const formattedDate = formatDate(lastSyncedDate, {
+    dateFormatOptions: {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    },
+  });
+  const formattedTime = formatDate(lastSyncedDate, {
+    dateFormatOptions: {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  });
+
+  return (
+    <p className="text-muted-foreground text-xs">
+      Last synced: {formattedDate} {formattedTime}
+    </p>
+  );
 }
 
 export function MutedListSettings({
@@ -119,10 +143,7 @@ export function MutedListSettings({
           </div>
 
           {lastSyncedDate ? (
-            <p className="text-muted-foreground text-xs">
-              Last synced: {lastSyncedDate.toLocaleDateString()}{" "}
-              {lastSyncedDate.toLocaleTimeString()}
-            </p>
+            <LastSyncedDateDisplay lastSyncedDate={lastSyncedDate} />
           ) : null}
         </div>
 
