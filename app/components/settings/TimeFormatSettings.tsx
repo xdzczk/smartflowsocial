@@ -4,8 +4,8 @@
  */
 
 import { ClockIcon } from "@heroicons/react/20/solid";
-import { useFetcher } from "@remix-run/react";
-import { useState } from "react";
+import { useFetcher, useRevalidator } from "@remix-run/react";
+import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -32,10 +32,19 @@ export function TimeFormatSettings({
   timeFormat: initialTimeFormat,
 }: TimeFormatSettingsProps) {
   const fetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const revalidator = useRevalidator();
   const [timeFormat, setTimeFormat] = useState(initialTimeFormat);
 
   const isSubmitting = fetcher.state === "submitting";
   const hasChanged = timeFormat !== initialTimeFormat;
+
+  // Revalidate root loader after successful save to update user data across the app
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      // Revalidate root loader to refresh user data (including timeFormat)
+      revalidator.revalidate();
+    }
+  }, [fetcher.data?.success, revalidator]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

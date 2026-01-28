@@ -1,4 +1,5 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useRevalidator } from "@remix-run/react";
+import { useEffect } from "react";
 
 import { SearchableTimezoneSelector } from "~/components/settings/SearchableTimezoneSelector";
 import { Button } from "~/components/ui/button";
@@ -27,6 +28,7 @@ interface FetcherData {
 
 export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
+  const revalidator = useRevalidator();
   const form = useZodForm(updateTimezoneClientSchema, {
     defaultValues: {
       timezone: timezone ?? "Etc/UTC",
@@ -35,6 +37,14 @@ export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
 
   const isSubmitting = fetcher.state === "submitting";
   const hasChanged = form.watch("timezone") !== timezone;
+
+  // Revalidate root loader after successful save to update user data across the app
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      // Revalidate root loader to refresh user data (including timezone)
+      revalidator.revalidate();
+    }
+  }, [fetcher.data?.success, revalidator]);
 
   const onSubmit = form.handleSubmit((data) => {
     const formData = formDataToFormData(data, "update_timezone");

@@ -37,9 +37,11 @@ export function NotificationSettings({
     useState(initialFailure);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
-  const [permission, setPermission] = useState<NotificationPermission>(() =>
-    getPushPermission()
-  );
+  // Use lazy initializer to safely get permission on client side only
+  const [permission, setPermission] = useState<NotificationPermission>(() => {
+    if (typeof window === "undefined") return "default";
+    return getPushPermission();
+  });
 
   const isSupported = isPushSupported();
 

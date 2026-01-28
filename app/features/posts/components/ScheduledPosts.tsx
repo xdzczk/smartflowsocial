@@ -1,7 +1,7 @@
 import { useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 
-import { useOptionalUser } from "~/lib/remix-utils";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 
 import type { PostData } from "../types";
@@ -15,19 +15,7 @@ interface ScheduledPostsLoaderData {
 export default function ScheduledPosts() {
   const { scheduledPosts } = useLoaderData<ScheduledPostsLoaderData>();
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
-  const user = useOptionalUser() ?? null;
-
-  const userTimezone =
-    user && typeof user === "object" && "timezone" in user
-      ? (user.timezone ?? "UTC")
-      : "UTC";
-
-  const userTimeFormat =
-    user && typeof user === "object" && "timeFormat" in user
-      ? user.timeFormat === "24h"
-        ? "24h"
-        : "12h"
-      : "12h";
+  const { userTimezone, userTimeFormat } = useFormattedDate();
 
   return (
     <>

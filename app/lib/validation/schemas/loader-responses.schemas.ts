@@ -57,6 +57,7 @@ export const userSchema = z.object({
   updatedAt: z.string().or(z.date()),
   isEnabled: z.boolean(),
   timezone: z.string().nullable(),
+  timeFormat: z.enum(["12h", "24h"]).nullable().optional(),
   userRelays: z.array(z.string()),
   giveawayBlackListed: z.array(z.string()),
   uploadProvider: z.enum(["S3", "BLOSSOM_PRIMAL", "BLOSSOM_BLOSSTR"]),
