@@ -5,7 +5,7 @@
 
 import { BellIcon, BellSlashIcon } from "@heroicons/react/20/solid";
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
@@ -41,10 +41,37 @@ export function NotificationSettings({
     if (typeof window === "undefined") return "default";
     return getPushPermission();
   });
+  const autoSubscribeAttempted = useRef(false);
 
   const isSupported = isPushSupported();
 
-  // Check subscription status on mount and when permission changes
+  // When permission is granted but we have no subscription, subscribe (no prompt).
+  const ensureSubscribedWhenGranted = useCallback(async () => {
+    const currentPermission = getPushPermission();
+    if (currentPermission !== "granted") return;
+    const existing = await getCurrentPushSubscription();
+    if (existing) return;
+    if (autoSubscribeAttempted.current) return;
+    autoSubscribeAttempted.current = true;
+    setIsSubscribing(true);
+    try {
+      const subscription = await subscribeToPush();
+      setPermission(getPushPermission());
+      if (subscription) {
+        setIsSubscribed(true);
+        const formData = new FormData();
+        formData.append("_action", "update_notification_preferences");
+        formData.append("pushNotificationsEnabled", "true");
+        fetcher.submit(formData, { method: "post" });
+      }
+    } catch (error) {
+      console.error("Auto-subscribe for push failed:", error);
+    } finally {
+      setIsSubscribing(false);
+    }
+  }, [fetcher]);
+
+  // Check subscription status on mount; if permission already granted but not subscribed, auto-subscribe
   useEffect(() => {
     let cancelled = false;
 
@@ -56,6 +83,9 @@ export function NotificationSettings({
         setIsSubscribed(!!subscription);
         setPermission(currentPermission);
         setIsChecking(false);
+        if (currentPermission === "granted" && !subscription) {
+          void ensureSubscribedWhenGranted();
+        }
       }
     };
 
@@ -64,42 +94,44 @@ export function NotificationSettings({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [ensureSubscribedWhenGranted]);
 
-  // Monitor permission changes (e.g., user grants permission in OS settings)
+  // Monitor permission changes (e.g., user allows in browser site settings)
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) {
       return;
     }
 
-    // Check permission periodically to catch changes made outside the app
-    const checkPermission = () => {
+    const checkPermission = async () => {
       const currentPermission = getPushPermission();
       setPermission((prevPermission) => {
         if (currentPermission !== prevPermission) {
-          // If permission was granted, re-check subscription
           if (currentPermission === "granted") {
-            void (async () => {
-              const subscription = await getCurrentPushSubscription();
-              setIsSubscribed(!!subscription);
-            })();
+            void ensureSubscribedWhenGranted();
           }
           return currentPermission;
         }
         return prevPermission;
       });
+      if (currentPermission === "granted") {
+        const subscription = await getCurrentPushSubscription();
+        if (!subscription) {
+          void ensureSubscribedWhenGranted();
+        } else {
+          setIsSubscribed(true);
+        }
+      }
     };
 
-    // Check immediately
-    checkPermission();
-
-    // Check periodically (every 2 seconds) to catch permission changes
-    const interval = setInterval(checkPermission, 2000);
+    void checkPermission();
+    const interval = setInterval(() => {
+      void checkPermission();
+    }, 2000);
 
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [ensureSubscribedWhenGranted]);
 
   const handleTogglePushNotifications = async (enabled: boolean) => {
     if (isSubscribing) {
@@ -165,6 +197,7 @@ export function NotificationSettings({
           await unsubscribeFromPush(subscription.endpoint);
         }
         setIsSubscribed(false);
+        autoSubscribeAttempted.current = false;
         // Save preference to server
         const formData = new FormData();
         formData.append("_action", "update_notification_preferences");
@@ -172,8 +205,8 @@ export function NotificationSettings({
         fetcher.submit(formData, { method: "post" });
       } catch (error) {
         console.error("Failed to unsubscribe from push notifications:", error);
-        // On error, still update local state to reflect user intent
         setIsSubscribed(false);
+        autoSubscribeAttempted.current = false;
       }
     }
   };
