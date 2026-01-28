@@ -845,6 +845,13 @@ export default function NostrLoginPanel() {
           nostrConnectUri &&
           (state === "awaiting_profile_selection" || state === "failed")
         ) {
+          // Immediately clear error and show retrying state to avoid showing error briefly
+          if (state === "failed") {
+            setError(null);
+            setState("awaiting_profile_selection");
+          }
+
+          // Short delay to let WebSocket connections stabilize, then retry
           setTimeout(() => {
             if (getPendingNostrConnect()) {
               void resumeNip46Ref.current?.();
@@ -857,7 +864,7 @@ export default function NostrLoginPanel() {
                 void initNip46Ref.current?.(0);
               }
             }
-          }, 1000);
+          }, 500);
         }
       }
     };
@@ -1099,6 +1106,22 @@ export default function NostrLoginPanel() {
         // Auto-retrying and generating new connection strings is confusing
         // and can interrupt users who are already in the approval process
 
+        // If this is a connection error and we have a pending connection stored,
+        // don't show error - stay in awaiting state so visibility handler can retry
+        // This prevents showing error briefly when user returns from signer app
+        const hasPendingConnection = getPendingNostrConnect() !== null;
+        const shouldSuppressError =
+          isConnectionError &&
+          hasPendingConnection &&
+          (state === "awaiting_profile_selection" ||
+            state === "signer_initializing");
+
+        if (shouldSuppressError) {
+          // Stay in awaiting state - visibility handler will retry when user returns
+          // Don't set error or change state to failed
+          return;
+        }
+
         // Only clear connection state if we're not in an awaiting state
         // If we're awaiting, the connection might still be valid and user might return
         if (
@@ -1121,6 +1144,7 @@ export default function NostrLoginPanel() {
     [
       clearPendingNostrConnectStorage,
       expectedPubkey,
+      getPendingNostrConnect,
       nip46Input,
       nip46Tab,
       relayList,
