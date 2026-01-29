@@ -7,7 +7,11 @@ import type { HashTagPreset, QueueType } from "@prisma/client";
 
 import type { RelayIntent } from "~/features/relays/relay-resolution.server";
 import { getRelayIntent } from "~/features/relays/relay-resolution.server";
-import { buildCacheKey, getOrSetJson } from "~/lib/redis-cache.server";
+import {
+  buildCacheKey,
+  deleteFromRedis,
+  getOrSetJson,
+} from "~/lib/redis-cache.server";
 
 import { getUserHashTagPresets } from "./hashtag-presets.server";
 import { getQueueTypes } from "./queue-types.server";
@@ -31,6 +35,20 @@ export async function getQueueTypesCached(
     key: cacheKey,
     ttlSeconds: 5 * 60, // 5 minutes
     compute: () => getQueueTypes(userId),
+  });
+}
+
+/**
+ * Invalidate queue types cache for a user (call after create/update/delete)
+ */
+export async function invalidateQueueTypesCache(userId: string): Promise<void> {
+  const cacheKey = buildCacheKey({
+    namespace: USER_DATA_CACHE,
+    parts: { userId, type: "queueTypes" },
+  });
+  await deleteFromRedis({
+    cache: USER_DATA_CACHE,
+    key: cacheKey,
   });
 }
 

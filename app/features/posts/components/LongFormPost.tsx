@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { AssetBrowser, type Asset } from "~/features/assets";
@@ -175,8 +175,14 @@ export default function LongFormPost({
     }
   }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
 
+  // Sync form -> scheduling only when the form value actually changed (e.g. user
+  // changed dropdown). Avoid running when schedulingQueueType changed from a
+  // button click, which would otherwise overwrite the selection with stale form value.
+  const prevFormQueueTypeRef = useRef(formQueueType);
   useEffect(() => {
-    if (formQueueType && formQueueType !== schedulingQueueType) {
+    const formChanged = prevFormQueueTypeRef.current !== formQueueType;
+    prevFormQueueTypeRef.current = formQueueType;
+    if (formChanged && formQueueType && formQueueType !== schedulingQueueType) {
       void updateDisplayedHashtags(formQueueType);
     }
   }, [formQueueType, schedulingQueueType, updateDisplayedHashtags]);

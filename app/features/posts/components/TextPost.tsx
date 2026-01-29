@@ -91,11 +91,19 @@ export default function TextPost({
     }
   }, [schedulingScheduledFor, form]);
 
-  // Sync scheduling hook when form's scheduledFor changes
+  // Sync scheduling hook when form's scheduledFor changes (only when user
+  // actually changed the form, not when we just set it from the API response).
   const formScheduledFor = form.watch("scheduledFor");
+  const prevFormScheduledForRef = React.useRef(formScheduledFor);
   React.useEffect(() => {
-    if (formScheduledFor !== schedulingScheduledFor) {
-      setSchedulingScheduledFor(formScheduledFor ?? "");
+    const formChanged = prevFormScheduledForRef.current !== formScheduledFor;
+    prevFormScheduledForRef.current = formScheduledFor;
+    if (
+      formChanged &&
+      formScheduledFor !== undefined &&
+      formScheduledFor !== schedulingScheduledFor
+    ) {
+      setSchedulingScheduledFor(formScheduledFor);
     }
   }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
 

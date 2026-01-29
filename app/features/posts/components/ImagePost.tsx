@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-hot-toast";
 
 import { resizeImage } from "~/features/upload/image-resize";
@@ -67,6 +67,13 @@ export default function ImagePost({
   };
 
   const [selectedQueue, setSelectedQueue] = useState(getInitialQueue());
+
+  const queueTypesRef = useRef(queueTypes);
+  const userRef = useRef(user);
+  useEffect(() => {
+    queueTypesRef.current = queueTypes;
+    userRef.current = user;
+  }, [queueTypes, user]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
@@ -181,8 +188,9 @@ export default function ImagePost({
         return;
       }
 
-      // Find the queue type object to get its ID
-      const selectedQueueType = queueTypes.find((qt) => {
+      const queueTypesCurrent = queueTypesRef.current;
+      const userCurrent = userRef.current;
+      const selectedQueueType = queueTypesCurrent.find((qt) => {
         if (typeof qt === "string") {
           return qt === queueTypeName;
         }
@@ -213,11 +221,11 @@ export default function ImagePost({
             queueTypeId,
             queueTypeName, // Keep for backward compatibility
             userId:
-              user &&
-              typeof user === "object" &&
-              "id" in user &&
-              typeof user.id === "string"
-                ? user.id
+              userCurrent &&
+              typeof userCurrent === "object" &&
+              "id" in userCurrent &&
+              typeof userCurrent.id === "string"
+                ? userCurrent.id
                 : undefined,
           }),
         });
@@ -249,7 +257,7 @@ export default function ImagePost({
         );
       }
     },
-    [queueTypes, user]
+    []
   );
 
   useEffect(() => {
@@ -263,8 +271,8 @@ export default function ImagePost({
   }, [selectedQueue, onQueueTypeChange, calculateQueueScheduleTime]);
 
   const handleScheduleIntervalClick = (intervalHours: string | number) => {
-    // Find the currently selected queue type
-    const selectedQueueType = queueTypes.find((qt) => {
+    const queueTypesCurrent = queueTypesRef.current;
+    const selectedQueueType = queueTypesCurrent.find((qt) => {
       if (typeof qt === "string") {
         return qt === selectedQueue;
       }

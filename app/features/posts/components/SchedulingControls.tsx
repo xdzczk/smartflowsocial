@@ -42,6 +42,11 @@ export default function SchedulingControls({
 }: SchedulingControlsProps) {
   const [localScheduledFor, setLocalScheduledFor] = useState(scheduledFor);
 
+  // Sync local state when parent updates scheduledFor (e.g. after queue schedule API)
+  useEffect(() => {
+    setLocalScheduledFor(scheduledFor);
+  }, [scheduledFor]);
+
   const calculateQueueScheduleTime = useCallback(
     async (queueTypeName: string) => {
       if (queueTypeName === "unassigned") {

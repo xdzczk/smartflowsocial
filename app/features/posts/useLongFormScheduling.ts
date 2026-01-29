@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 import {
   addHours,
@@ -35,6 +35,11 @@ export function useLongFormScheduling({
   const [scheduledFor, setScheduledFor] = useState<string | null>("");
   const [displayedHashtags, setDisplayedHashtags] = useState(userTags);
 
+  const queueTypesRef = useRef(queueTypes);
+  useEffect(() => {
+    queueTypesRef.current = queueTypes;
+  }, [queueTypes]);
+
   const calculateQueueScheduleTime = useCallback(
     async (queueTypeName: string) => {
       if (queueTypeName === "Unassigned") {
@@ -42,8 +47,8 @@ export function useLongFormScheduling({
         return;
       }
 
-      // Find the queue type object to get its ID
-      const selectedQueue = queueTypes.find(
+      const queueTypesCurrent = queueTypesRef.current;
+      const selectedQueue = queueTypesCurrent.find(
         (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName
       );
       const queueTypeId =
@@ -83,7 +88,7 @@ export function useLongFormScheduling({
         });
       }
     },
-    [queueTypes]
+    []
   );
 
   const updateDisplayedHashtags = useCallback(
@@ -144,36 +149,30 @@ export function useLongFormScheduling({
 
   const handleScheduleIntervalClick = useCallback(
     (intervalHours: number) => {
-      // Find the currently selected queue type
-      const currentQueueType = queueTypes.find(
+      const queueTypesCurrent = queueTypesRef.current;
+      const currentQueueType = queueTypesCurrent.find(
         (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueueType
       );
 
-      // If this is a fixed slot queue, use the API to get the next scheduled time instead
       if (
         currentQueueType &&
         typeof currentQueueType === "object" &&
         (currentQueueType.scheduleType === "FIXED_SLOTS" ||
           currentQueueType.scheduleType === "WEEKLY_SLOTS")
       ) {
-        // For fixed slot queues, recalculate the schedule time instead of adding hours
         void calculateQueueScheduleTime(currentQueueType.name);
         return;
       }
 
-      // Use Temporal for consistency
       const now = nowInTimezone(userTimezone);
       const hoursLaterZoned = addHours(now, intervalHours);
-
-      // Format the date using Temporal (already in datetime-local format)
       const formattedForInput = formatForDateTimeLocal(
         hoursLaterZoned,
         userTimezone
       );
-
       setScheduledFor(formattedForInput);
     },
-    [queueTypes, selectedQueueType, userTimezone, calculateQueueScheduleTime]
+    [selectedQueueType, userTimezone, calculateQueueScheduleTime]
   );
 
   return {

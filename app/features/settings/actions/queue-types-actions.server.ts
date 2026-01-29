@@ -9,6 +9,7 @@ import {
   hashTagPresetExistsForUser,
   updateQueueType,
 } from "~/features/user";
+import { invalidateQueueTypesCache } from "~/features/user/services/user-cache.server";
 import {
   createQueueTypeSchema,
   updateQueueTypeSchema,
@@ -111,6 +112,7 @@ async function handleCreateQueueType(
     description: data.description,
     hashTagPresetId: data.hashTagPresetId,
   });
+  await invalidateQueueTypesCache(userId);
   return json({ success: true });
 }
 
@@ -142,6 +144,7 @@ async function handleUpdateQueueType(
     isEnabled: data.isEnabled,
     hashTagPresetId: data.hashTagPresetId,
   });
+  await invalidateQueueTypesCache(userId);
   return json({ success: true });
 }
 
@@ -154,6 +157,7 @@ async function handleDeleteQueueType(
     return result.response;
   }
   await deleteQueueType(userId, result.data.id);
+  await invalidateQueueTypesCache(userId);
   return json({ success: true });
 }
 

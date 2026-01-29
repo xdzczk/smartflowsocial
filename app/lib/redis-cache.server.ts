@@ -95,6 +95,21 @@ export async function setJsonInRedis(input: {
   }
 }
 
+export async function deleteFromRedis(input: {
+  cache: string;
+  key: string;
+}): Promise<void> {
+  try {
+    await redis.del(input.key);
+  } catch (error) {
+    logWarning("Redis cache delete failed (bypassing)", {
+      cache: input.cache,
+      key: input.key,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 export async function getOrSetJson<T>(input: {
   cache: string;
   key: string;

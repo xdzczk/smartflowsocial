@@ -154,12 +154,13 @@ export function QueueTypeDialog({
       if (typeof data.success === "boolean" && data.success) {
         const action = isEditing ? "updated" : "created";
         toast.success(`Queue type ${action} successfully!`);
+        onOpenChange(false);
       }
       if (typeof data.error === "string") {
         toast.error(data.error);
       }
     }
-  }, [fetcher.data, isEditing]);
+  }, [fetcher.data, isEditing, onOpenChange]);
 
   const onSubmit = form.handleSubmit((data) => {
     // Transform data for FormData submission
