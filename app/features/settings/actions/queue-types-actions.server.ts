@@ -22,6 +22,53 @@ import { getUserSubscription } from "~/models/payment.server";
 // Helper Functions
 // ============================================================================
 
+/** Serialize a queue type for the client (create/update response) */
+function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
+  id: string;
+  name: string;
+  color: string | null;
+  description: string | null;
+  scheduleType: string;
+  scheduleConfig: unknown;
+  isEnabled: boolean;
+  userId: string;
+  isDefault?: boolean;
+  hashTagPreset?: {
+    id: string;
+    name: string;
+    tags: string;
+    description?: string | null;
+  } | null;
+} {
+  const preset = "hashTagPreset" in qt && qt.hashTagPreset;
+  return {
+    id: qt.id,
+    name: qt.name,
+    color: qt.color,
+    description: qt.description,
+    scheduleType: qt.scheduleType,
+    scheduleConfig: qt.scheduleConfig,
+    isEnabled: qt.isEnabled,
+    userId: qt.userId,
+    isDefault: "isDefault" in qt ? qt.isDefault : false,
+    hashTagPreset:
+      preset && typeof preset === "object" && "id" in preset && "name" in preset
+        ? {
+            id: String(preset.id),
+            name: String(preset.name),
+            tags:
+              "tags" in preset && typeof preset.tags === "string"
+                ? preset.tags
+                : "",
+            description:
+              "description" in preset
+                ? ((preset.description as string | null) ?? null)
+                : null,
+          }
+        : null,
+  };
+}
+
 async function checkFreePlanRestriction(
   userId: string
 ): Promise<Response | null> {
@@ -104,7 +151,7 @@ async function handleCreateQueueType(
 
   const scheduleConfig = buildScheduleConfig(data);
 
-  await updateQueueType(userId, {
+  const created = await updateQueueType(userId, {
     name: data.name,
     scheduleType: data.scheduleType,
     scheduleConfig,
@@ -113,7 +160,10 @@ async function handleCreateQueueType(
     hashTagPresetId: data.hashTagPresetId,
   });
   await invalidateQueueTypesCache(userId);
-  return json({ success: true });
+  return json({
+    success: true,
+    queueType: queueTypeToClient(created),
+  });
 }
 
 async function handleUpdateQueueType(
@@ -134,7 +184,7 @@ async function handleUpdateQueueType(
 
   const scheduleConfig = buildScheduleConfig(data);
 
-  await updateQueueType(userId, {
+  const updated = await updateQueueType(userId, {
     id: data.id,
     name: data.name,
     scheduleType: data.scheduleType,
@@ -145,7 +195,10 @@ async function handleUpdateQueueType(
     hashTagPresetId: data.hashTagPresetId,
   });
   await invalidateQueueTypesCache(userId);
-  return json({ success: true });
+  return json({
+    success: true,
+    queueType: queueTypeToClient(updated),
+  });
 }
 
 async function handleDeleteQueueType(
@@ -156,9 +209,10 @@ async function handleDeleteQueueType(
   if (!result.success) {
     return result.response;
   }
-  await deleteQueueType(userId, result.data.id);
+  const deletedId = result.data.id;
+  await deleteQueueType(userId, deletedId);
   await invalidateQueueTypesCache(userId);
-  return json({ success: true });
+  return json({ success: true, deletedId });
 }
 
 export async function handleQueueTypeAction(

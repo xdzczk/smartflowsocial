@@ -38,16 +38,52 @@ interface QueueTypesSettingsProps {
   }>;
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+  deletedId?: string;
+  queueType?: QueueTypeSettings;
+}
+
+function normalizeQueueTypeFromAction(
+  qt: FetcherData["queueType"]
+): QueueTypeSettings | null {
+  if (!qt || typeof qt !== "object" || !("id" in qt) || !("name" in qt))
+    return null;
+  const raw = qt as unknown as Record<string, unknown>;
+  const scheduleType = raw["scheduleType"];
+  const validScheduleType =
+    scheduleType === "INTERVAL" ||
+    scheduleType === "FIXED_SLOTS" ||
+    scheduleType === "WEEKLY_SLOTS"
+      ? scheduleType
+      : "INTERVAL";
+  return {
+    id: raw["id"] as string,
+    name: raw["name"] as string,
+    color: (raw["color"] as string | null) ?? null,
+    description: (raw["description"] as string | null) ?? null,
+    scheduleType: validScheduleType,
+    scheduleConfig:
+      raw["scheduleConfig"] &&
+      typeof raw["scheduleConfig"] === "object" &&
+      !Array.isArray(raw["scheduleConfig"])
+        ? (raw["scheduleConfig"] as QueueTypeSettings["scheduleConfig"])
+        : undefined,
+    isEnabled: typeof raw["isEnabled"] === "boolean" ? raw["isEnabled"] : true,
+    isDefault: typeof raw["isDefault"] === "boolean" ? raw["isDefault"] : false,
+    hashTagPreset:
+      raw["hashTagPreset"] && typeof raw["hashTagPreset"] === "object"
+        ? (raw["hashTagPreset"] as QueueTypeSettings["hashTagPreset"])
+        : null,
+  };
+}
+
 export function QueueTypesSettings({
   queueTypes,
   hashTagPresets,
 }: QueueTypesSettingsProps) {
-  interface FetcherData {
-    success?: boolean;
-    error?: string;
-  }
-  const createFetcher = useFetcher<FetcherData>();
-  const updateFetcher = useFetcher<FetcherData>();
+  const formFetcher = useFetcher<FetcherData>();
   const deleteFetcher = useFetcher<FetcherData>();
   const revalidator = useRevalidator();
 
@@ -57,21 +93,27 @@ export function QueueTypesSettings({
     null
   );
   const lastHandledDeleteRef = useRef<unknown>(null);
+  const lastHandledFormRef = useRef<unknown>(null);
 
-  const _isCreating = createFetcher.state === "submitting";
-  const _isUpdating = updateFetcher.state === "submitting";
+  const _isCreating = formFetcher.state === "submitting";
+  const _isUpdating = formFetcher.state === "submitting";
   const isDeleting = deleteFetcher.state === "submitting";
 
-  // Sync list when loader data changes (e.g. after revalidation following create/update/delete)
+  // Sync list when loader data changes (e.g. initial load or navigation)
   useEffect(() => {
     setQueueTypesState(queueTypes);
   }, [queueTypes]);
 
-  // Delete: show toast and revalidate only once per success to avoid toast spam on re-renders
+  // Delete: optimistic remove + toast, revalidate in background
   useEffect(() => {
     const data = deleteFetcher.data;
     if (data?.success && lastHandledDeleteRef.current !== data) {
       lastHandledDeleteRef.current = data;
+      if (typeof data.deletedId === "string") {
+        setQueueTypesState((prev) =>
+          prev.filter((q) => q.id !== data.deletedId)
+        );
+      }
       revalidator.revalidate();
       toast.success("Queue type deleted successfully!");
     }
@@ -79,6 +121,30 @@ export function QueueTypesSettings({
       toast.error(data.error);
     }
   }, [deleteFetcher.data, revalidator]);
+
+  // Create/Update: optimistic add or replace so list updates immediately
+  useEffect(() => {
+    const data = formFetcher.data;
+    if (
+      data?.success &&
+      data.queueType &&
+      lastHandledFormRef.current !== data
+    ) {
+      lastHandledFormRef.current = data;
+      const normalized = normalizeQueueTypeFromAction(data.queueType);
+      if (normalized) {
+        setQueueTypesState((prev) => {
+          const idx = prev.findIndex((q) => q.id === normalized.id);
+          if (idx >= 0) return prev.map((q, i) => (i === idx ? normalized : q));
+          return [...prev, normalized];
+        });
+      }
+      revalidator.revalidate();
+    }
+    if (data?.error) {
+      toast.error(data.error);
+    }
+  }, [formFetcher.data, revalidator]);
 
   const handleCreateNew = () => {
     setEditingQueueType(null);
@@ -138,6 +204,7 @@ export function QueueTypesSettings({
         onOpenChange={handleDialogOpenChange}
         queueType={editingQueueType}
         hashTagPresets={hashTagPresets}
+        formFetcher={formFetcher}
       />
     </>
   );

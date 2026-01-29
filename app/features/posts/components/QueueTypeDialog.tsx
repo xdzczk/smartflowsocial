@@ -1,3 +1,4 @@
+import type { FetcherWithComponents } from "@remix-run/react";
 import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -46,6 +47,12 @@ interface QueueTypeDialogQueueType extends QueueType {
   hashTagPresetId?: string;
 }
 
+interface QueueTypeDialogFetcherData {
+  success?: boolean;
+  error?: string;
+  queueType?: unknown;
+}
+
 interface QueueTypeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -56,6 +63,8 @@ interface QueueTypeDialogProps {
     tags: string;
     description?: string;
   }>;
+  /** When provided, form submit uses this fetcher so parent can read response (e.g. for optimistic list update) */
+  formFetcher?: FetcherWithComponents<QueueTypeDialogFetcherData>;
 }
 
 export function QueueTypeDialog({
@@ -63,12 +72,10 @@ export function QueueTypeDialog({
   onOpenChange,
   queueType,
   hashTagPresets,
+  formFetcher: formFetcherProp,
 }: QueueTypeDialogProps) {
-  interface FetcherData {
-    success?: boolean;
-    error?: string;
-  }
-  const fetcher = useFetcher<FetcherData>();
+  const internalFetcher = useFetcher<QueueTypeDialogFetcherData>();
+  const fetcher = formFetcherProp ?? internalFetcher;
   const revalidator = useRevalidator();
   const lastHandledSuccessRef = useRef<unknown>(null);
   const prevFetcherStateRef = useRef<string>(fetcher.state);
@@ -166,7 +173,7 @@ export function QueueTypeDialog({
       typeof fetcherData === "object" &&
       !Array.isArray(fetcherData)
     ) {
-      const data = fetcherData as FetcherData;
+      const data = fetcherData as QueueTypeDialogFetcherData;
       if (typeof data.success === "boolean" && data.success) {
         if (lastHandledSuccessRef.current !== fetcherData) {
           lastHandledSuccessRef.current = fetcherData;
