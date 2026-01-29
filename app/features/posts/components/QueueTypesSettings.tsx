@@ -1,6 +1,6 @@
 import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Plus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
@@ -56,6 +56,7 @@ export function QueueTypesSettings({
   const [editingQueueType, setEditingQueueType] = useState<QueueType | null>(
     null
   );
+  const lastHandledDeleteRef = useRef<unknown>(null);
 
   const _isCreating = createFetcher.state === "submitting";
   const _isUpdating = updateFetcher.state === "submitting";
@@ -66,14 +67,16 @@ export function QueueTypesSettings({
     setQueueTypesState(queueTypes);
   }, [queueTypes]);
 
-  // Delete uses its own fetcher from QueueTypeCard; create/update use the dialog's fetcher
+  // Delete: show toast and revalidate only once per success to avoid toast spam on re-renders
   useEffect(() => {
-    if (deleteFetcher.data?.success) {
+    const data = deleteFetcher.data;
+    if (data?.success && lastHandledDeleteRef.current !== data) {
+      lastHandledDeleteRef.current = data;
       revalidator.revalidate();
       toast.success("Queue type deleted successfully!");
     }
-    if (deleteFetcher.data?.error) {
-      toast.error(deleteFetcher.data.error);
+    if (data?.error) {
+      toast.error(data.error);
     }
   }, [deleteFetcher.data, revalidator]);
 

@@ -38,7 +38,8 @@ export async function getPostedDashboardData({
 }) {
   const page = parseInt(url.searchParams.get("page") ?? "1");
   const limit = 20;
-  const queueType = params.queueType ?? "all";
+  const queueType =
+    params.queueType ?? url.searchParams.get("queueType") ?? "all";
 
   const [{ posts, pagination }, allLongformResultRaw, user, queueTypesRaw] =
     await Promise.all([

@@ -60,7 +60,7 @@ export default function QueueSelectionTabs({
           // Use query parameters for pages without route params, route parameters for pages with route params
           const queueTypePath = useQueryParams
             ? `${basePath}?tab=${currentTab}&queueType=${queueName}`
-            : `${basePath}/scheduled/${queueName}?tab=${currentTab}`;
+            : `${basePath}/${queueName}?tab=${currentTab}`;
 
           if (isSelected && queueColor) {
             // Use inline styles for custom colors

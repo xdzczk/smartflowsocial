@@ -29,8 +29,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Check if user has access to scheduled posts feature
     await requireFeatureAccess(userId, "scheduled");
 
-    const queueType = params["queueType"] ?? "all";
     const url = new URL(request.url);
+    const queueType =
+      params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
     const page = parseInt(url.searchParams.get("page") ?? "1", 10);
     const limit = 20;
 

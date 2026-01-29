@@ -23,7 +23,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Check if user has access to calendar feature
     await requireFeatureAccess(userId, "calendar");
 
-    const queueType = params["queueType"] ?? "all";
+    const url = new URL(request.url);
+    const queueType =
+      params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
 
     const data = await loadCalendarData(userId, queueType);
 

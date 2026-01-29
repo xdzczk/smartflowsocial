@@ -230,7 +230,7 @@ export default function ScheduledPostsPage() {
         <QueueSelectionTabs
           currentTab={currentTab}
           queueTypes={queueTypes}
-          basePath="/dashboard"
+          basePath="/dashboard/scheduled"
         />
       ) : null}
 
