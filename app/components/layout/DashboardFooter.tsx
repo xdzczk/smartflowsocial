@@ -11,17 +11,29 @@ function getTimezoneShortName(timezone: string | undefined): string {
   return parts[parts.length - 1] ?? timezone;
 }
 
+/** Placeholder for clock while hydrating to avoid server/client date mismatch (React hydration errors #418/#425). */
+const CLOCK_PLACEHOLDER = "–";
+
 export default function Footer() {
   const user = useOptionalUser() ?? null;
-  const [time, setTime] = useState(new Date());
+  const [mounted, setMounted] = useState(false);
+  const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    const id = setTimeout(() => {
+      setMounted(true);
+      setTime(new Date());
+    }, 0);
+    return () => clearTimeout(id);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     const timer = setInterval(() => {
       setTime(new Date());
     }, 1000);
-
     return () => clearInterval(timer);
-  }, []);
+  }, [mounted]);
 
   const userTimezone =
     user && typeof user === "object" && "timezone" in user
@@ -35,20 +47,26 @@ export default function Footer() {
         : "12h"
       : "12h";
 
-  const dateString = time.toLocaleDateString("en-US", {
-    timeZone: userTimezone,
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const dateString =
+    mounted && time
+      ? time.toLocaleDateString("en-US", {
+          timeZone: userTimezone,
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : CLOCK_PLACEHOLDER;
 
-  const timeString = time.toLocaleTimeString("en-US", {
-    timeZone: userTimezone,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: userTimeFormat === "12h",
-  });
+  const timeString =
+    mounted && time
+      ? time.toLocaleTimeString("en-US", {
+          timeZone: userTimezone,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: userTimeFormat === "12h",
+        })
+      : CLOCK_PLACEHOLDER;
 
   const timezoneShort = getTimezoneShortName(userTimezone);
 
@@ -66,7 +84,11 @@ export default function Footer() {
           <span className="hidden lg:inline">·</span>
           <ClockIcon className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
           <span className="hidden sm:inline">{dateString}</span>
-          <span className="sm:hidden">{dateString.split(",")[0]}</span>
+          <span className="sm:hidden">
+            {dateString === CLOCK_PLACEHOLDER
+              ? CLOCK_PLACEHOLDER
+              : dateString.split(",")[0]}
+          </span>
           <span className="hidden lg:inline">·</span>
           <span>{timeString}</span>
           {userTimezone ? (

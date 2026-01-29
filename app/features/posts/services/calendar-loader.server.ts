@@ -29,6 +29,9 @@ import { convertJsonValueToScheduleConfig } from "../types";
 
 import { filterPostsByQueueType } from "./post-filtering.server";
 
+/** Max scheduled items to load for calendar (needs all, not just first page). */
+const CALENDAR_SCHEDULED_LIMIT = 5000;
+
 /**
  * Load calendar data for main calendar route
  * Includes scheduled and past posts (30 days back)
@@ -53,8 +56,8 @@ export async function loadCalendarData(userId: string, queueType: string) {
     user,
     queueTypes,
   ] = await Promise.all([
-    getScheduledPosts({ userId }),
-    getScheduledLongFormPosts({ userId }),
+    getScheduledPosts({ userId, limit: CALENDAR_SCHEDULED_LIMIT }),
+    getScheduledLongFormPosts({ userId, limit: CALENDAR_SCHEDULED_LIMIT }),
     getPastPosts({ userId, startDate: thirtyDaysAgo, endDate: now }),
     getPastLongFormPosts({ userId, startDate: thirtyDaysAgo, endDate: now }),
     getUserById(userId),
@@ -397,7 +400,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
  */
 export async function loadCalendarQueueData(userId: string, queueType: string) {
   const [allScheduledPostsResult, user, queueTypes] = await Promise.all([
-    getScheduledPosts({ userId }),
+    getScheduledPosts({ userId, limit: CALENDAR_SCHEDULED_LIMIT }),
     getUserById(userId),
     getQueueTypes(userId),
   ]);

@@ -20,26 +20,22 @@ type SyncState = "synced" | "syncing" | "needs_attention";
 
 export function SyncStatusIndicator() {
   const queryClient = useQueryClient();
-  // Use lazy initializer to avoid SSR issues and ESLint warnings
-  const [syncState, setSyncState] = useState<SyncState>(() => {
-    if (typeof window !== "undefined") {
-      return getSyncState();
-    }
-    return "synced";
-  });
+  // Always start as "synced" so server and client render the same (avoids hydration mismatch).
+  // Real state is applied after mount in useEffect.
+  const [syncState, setSyncState] = useState<SyncState>("synced");
 
   useEffect(() => {
-    // Subscribe to sync state changes
+    const id = setTimeout(() => setSyncState(getSyncState()), 0);
     const unsubscribe = subscribeToSyncState((state) => {
       setSyncState(state);
     });
 
-    // Periodically check for posts that need attention
     const checkInterval = setInterval(() => {
       checkNeedsAttention(queryClient);
-    }, 30000); // Check every 30 seconds
+    }, 30000);
 
     return () => {
+      clearTimeout(id);
       unsubscribe();
       clearInterval(checkInterval);
     };
