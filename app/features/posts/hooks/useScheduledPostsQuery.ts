@@ -50,7 +50,8 @@ export const scheduledPostsKeys = {
 export function useScheduledPostsQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params["queueType"] ?? "all";
+  const queueType =
+    params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
 
   const loaderDataRaw = useLoaderData();
@@ -65,7 +66,12 @@ export function useScheduledPostsQuery() {
   return useQuery({
     queryKey: scheduledPostsKeys.list(queueType, currentTab),
     queryFn: async () => {
-      const url = `/dashboard/scheduled${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}`;
+      const url =
+        queueType !== "all"
+          ? params["queueType"]
+            ? `/dashboard/scheduled/${queueType}?tab=${currentTab}`
+            : `/dashboard/scheduled?tab=${currentTab}&queueType=${queueType}`
+          : `/dashboard/scheduled?tab=${currentTab}`;
       fetcher.load(url);
 
       return new Promise<ScheduledPostsLoaderData>((resolve, reject) => {
@@ -109,7 +115,8 @@ export function useScheduledPostsQuery() {
 export function useScheduledPostsInfiniteQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params["queueType"] ?? "all";
+  const queueType =
+    params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
 
   const loaderDataRaw = useLoaderData();
@@ -144,7 +151,11 @@ export function useScheduledPostsInfiniteQuery() {
       return;
     },
     buildUrl: (pageParam) =>
-      `/dashboard/scheduled${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}`,
+      queueType !== "all"
+        ? params["queueType"]
+          ? `/dashboard/scheduled/${queueType}?tab=${currentTab}&page=${pageParam}`
+          : `/dashboard/scheduled?tab=${currentTab}&queueType=${queueType}&page=${pageParam}`
+        : `/dashboard/scheduled?tab=${currentTab}&page=${pageParam}`,
     staleTime: 30 * 1000, // 30 seconds
     maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
   });

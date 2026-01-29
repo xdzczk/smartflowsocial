@@ -29,10 +29,10 @@ import {
   getUserTimeFormat,
   getUserTimezone,
   getUserUploadProvider,
+  getQueueTypes,
 } from "~/features/user";
 import {
   getRelayIntentCached,
-  getQueueTypesCached,
   getHashTagPresetsCached,
 } from "~/features/user/services/user-cache.server";
 import { prisma } from "~/lib/prisma.server";
@@ -176,7 +176,7 @@ export async function loadSettingsData(
     getGiveawayBlacklist(userId),
     getShowHashTagsInPosts(userId),
     getScheduleInterval(userId),
-    getQueueTypesCached(userId),
+    getQueueTypes(userId),
     getUserUploadProvider(userId),
     getUserEnableMirrorBlossom(userId),
     getUserMirrorUploadUrls(userId),

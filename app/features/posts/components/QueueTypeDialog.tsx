@@ -71,6 +71,7 @@ export function QueueTypeDialog({
   const fetcher = useFetcher<FetcherData>();
   const revalidator = useRevalidator();
   const lastHandledSuccessRef = useRef<unknown>(null);
+  const prevFetcherStateRef = useRef<string>(fetcher.state);
   const isEditing = !!queueType;
 
   const DAY_LABELS = [
@@ -152,8 +153,15 @@ export function QueueTypeDialog({
   }, [open]);
 
   useEffect(() => {
+    const wasLoading =
+      prevFetcherStateRef.current === "submitting" ||
+      prevFetcherStateRef.current === "loading";
+    prevFetcherStateRef.current = fetcher.state;
+
     const fetcherData = fetcher.data;
     if (
+      fetcher.state === "idle" &&
+      wasLoading &&
       fetcherData &&
       typeof fetcherData === "object" &&
       !Array.isArray(fetcherData)
@@ -172,7 +180,7 @@ export function QueueTypeDialog({
         toast.error(data.error);
       }
     }
-  }, [fetcher.data, isEditing, onOpenChange, open, revalidator]);
+  }, [fetcher.state, fetcher.data, isEditing, onOpenChange, open, revalidator]);
 
   const onSubmit = form.handleSubmit((data) => {
     // Transform data for FormData submission

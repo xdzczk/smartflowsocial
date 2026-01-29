@@ -186,7 +186,8 @@ export function useDashboardState({
   const queryClient = useQueryClient();
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params["queueType"] ?? "all";
+  const queueType =
+    params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
 
   const handleBulkDelete = () => {

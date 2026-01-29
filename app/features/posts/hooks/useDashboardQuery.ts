@@ -50,7 +50,8 @@ export const dashboardKeys = {
 export function useDashboardQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params["queueType"] ?? "all";
+  const queueType =
+    params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
 
   const loaderDataRaw = useLoaderData();
@@ -65,7 +66,10 @@ export function useDashboardQuery() {
   return useQuery({
     queryKey: dashboardKeys.list(queueType, currentTab),
     queryFn: async () => {
-      const url = `/dashboard${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}`;
+      const url =
+        queueType !== "all"
+          ? `/dashboard?tab=${currentTab}&queueType=${queueType}`
+          : `/dashboard?tab=${currentTab}`;
       fetcher.load(url);
 
       return new Promise<DashboardLoaderData>((resolve, reject) => {
@@ -109,7 +113,8 @@ export function useDashboardQuery() {
 export function useDashboardInfiniteQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params["queueType"] ?? "all";
+  const queueType =
+    params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
 
   const loaderDataRaw = useLoaderData();
@@ -144,7 +149,9 @@ export function useDashboardInfiniteQuery() {
       return;
     },
     buildUrl: (pageParam) =>
-      `/dashboard${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}`,
+      queueType !== "all"
+        ? `/dashboard?tab=${currentTab}&queueType=${queueType}&page=${pageParam}`
+        : `/dashboard?tab=${currentTab}&page=${pageParam}`,
     staleTime: 30 * 1000, // 30 seconds
     maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
   });

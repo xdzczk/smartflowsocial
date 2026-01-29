@@ -3,7 +3,12 @@
  * Provides caching and background refetching for calendar queue page
  */
 
-import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
@@ -38,7 +43,9 @@ export const calendarQueueKeys = {
  */
 export function useCalendarQueueQuery() {
   const params = useParams();
-  const queueType = params["queueType"] ?? "all";
+  const [searchParams] = useSearchParams();
+  const queueType =
+    params["queueType"] ?? searchParams.get("queueType") ?? "all";
 
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
@@ -53,7 +60,12 @@ export function useCalendarQueueQuery() {
     queryKey: calendarQueueKeys.list(queueType),
     queryFn: async () => {
       // Use fetcher to refetch data
-      const url = `/dashboard/calendar${queueType !== "all" ? `/${queueType}` : ""}`;
+      const url =
+        queueType !== "all"
+          ? params["queueType"]
+            ? `/dashboard/calendar/${queueType}`
+            : `/dashboard/calendar?queueType=${queueType}`
+          : `/dashboard/calendar`;
       fetcher.load(url);
 
       return new Promise<CalendarQueueLoaderData>((resolve, reject) => {
