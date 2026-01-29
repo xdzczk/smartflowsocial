@@ -139,7 +139,7 @@ export function QueueTypesSettings({
   }, [deleteFetcher.data, revalidator]);
 
   // Create/Update: optimistic add or replace so list updates immediately.
-  // Defer setState to avoid synchronous setState in effect (react-hooks/set-state-in-effect).
+  // Direct setState so the new queue appears in the same tick (queueMicrotask delayed paint).
   useEffect(() => {
     const data = formFetcher.data;
     if (
@@ -150,14 +150,13 @@ export function QueueTypesSettings({
       lastHandledFormRef.current = data;
       const normalized = normalizeQueueTypeFromAction(data.queueType);
       if (normalized) {
-        queueMicrotask(() =>
-          setQueueTypesState((prev) => {
-            const idx = prev.findIndex((q) => q.id === normalized.id);
-            if (idx >= 0)
-              return prev.map((q, i) => (i === idx ? normalized : q));
-            return [...prev, normalized];
-          })
-        );
+        /* eslint-disable react-hooks/set-state-in-effect -- single update from fetcher response, needed for immediate create UX */
+        setQueueTypesState((prev) => {
+          const idx = prev.findIndex((q) => q.id === normalized.id);
+          if (idx >= 0) return prev.map((q, i) => (i === idx ? normalized : q));
+          return [...prev, normalized];
+        });
+        /* eslint-enable react-hooks/set-state-in-effect */
       }
       revalidator.revalidate();
     }
