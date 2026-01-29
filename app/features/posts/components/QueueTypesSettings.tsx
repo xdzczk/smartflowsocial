@@ -1,6 +1,6 @@
 import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Plus } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
@@ -138,32 +138,34 @@ export function QueueTypesSettings({
     }
   }, [deleteFetcher.data, revalidator]);
 
-  // Create/Update: optimistic add or replace so list updates immediately.
-  // Direct setState so the new queue appears in the same tick (queueMicrotask delayed paint).
+  // Create/Update: revalidate and errors. Optimistic add happens via onQueueCreatedOrUpdated callback (dialog calls it in its effect).
   useEffect(() => {
     const data = formFetcher.data;
-    if (
-      data?.success &&
-      data.queueType &&
-      lastHandledFormRef.current !== data
-    ) {
-      lastHandledFormRef.current = data;
-      const normalized = normalizeQueueTypeFromAction(data.queueType);
-      if (normalized) {
-        /* eslint-disable react-hooks/set-state-in-effect -- single update from fetcher response, needed for immediate create UX */
-        setQueueTypesState((prev) => {
-          const idx = prev.findIndex((q) => q.id === normalized.id);
-          if (idx >= 0) return prev.map((q, i) => (i === idx ? normalized : q));
-          return [...prev, normalized];
-        });
-        /* eslint-enable react-hooks/set-state-in-effect */
-      }
+    if (data?.success && data.queueType) {
       revalidator.revalidate();
     }
     if (data?.error) {
       toast.error(data.error);
     }
   }, [formFetcher.data, revalidator]);
+
+  const handleQueueCreatedOrUpdated = useCallback(
+    (data: { success?: boolean; error?: string; queueType?: unknown }) => {
+      if (lastHandledFormRef.current === data) return;
+      lastHandledFormRef.current = data;
+      const normalized = normalizeQueueTypeFromAction(
+        data.queueType as FetcherData["queueType"]
+      );
+      if (normalized) {
+        setQueueTypesState((prev) => {
+          const idx = prev.findIndex((q) => q.id === normalized.id);
+          if (idx >= 0) return prev.map((q, i) => (i === idx ? normalized : q));
+          return [...prev, normalized];
+        });
+      }
+    },
+    []
+  );
 
   const handleCreateNew = () => {
     setEditingQueueType(null);
@@ -224,6 +226,7 @@ export function QueueTypesSettings({
         queueType={editingQueueType}
         hashTagPresets={hashTagPresets}
         formFetcher={formFetcher}
+        onQueueCreatedOrUpdated={handleQueueCreatedOrUpdated}
       />
     </>
   );

@@ -65,6 +65,8 @@ interface QueueTypeDialogProps {
   }>;
   /** When provided, form submit uses this fetcher so parent can read response (e.g. for optimistic list update) */
   formFetcher?: FetcherWithComponents<QueueTypeDialogFetcherData>;
+  /** Called with the full fetcher data (includes queueType) so parent can add/update list immediately */
+  onQueueCreatedOrUpdated?: (data: QueueTypeDialogFetcherData) => void;
 }
 
 export function QueueTypeDialog({
@@ -73,6 +75,7 @@ export function QueueTypeDialog({
   queueType,
   hashTagPresets,
   formFetcher: formFetcherProp,
+  onQueueCreatedOrUpdated,
 }: QueueTypeDialogProps) {
   const internalFetcher = useFetcher<QueueTypeDialogFetcherData>();
   const fetcher = formFetcherProp ?? internalFetcher;
@@ -177,6 +180,9 @@ export function QueueTypeDialog({
       if (typeof data.success === "boolean" && data.success) {
         if (lastHandledSuccessRef.current !== fetcherData) {
           lastHandledSuccessRef.current = fetcherData;
+          if (data.queueType && onQueueCreatedOrUpdated) {
+            onQueueCreatedOrUpdated(data);
+          }
           revalidator.revalidate();
           const action = isEditing ? "updated" : "created";
           toast.success(`Queue type ${action} successfully!`);
@@ -187,7 +193,15 @@ export function QueueTypeDialog({
         toast.error(data.error);
       }
     }
-  }, [fetcher.state, fetcher.data, isEditing, onOpenChange, open, revalidator]);
+  }, [
+    fetcher.state,
+    fetcher.data,
+    isEditing,
+    onOpenChange,
+    onQueueCreatedOrUpdated,
+    open,
+    revalidator,
+  ]);
 
   const onSubmit = form.handleSubmit((data) => {
     // Transform data for FormData submission
