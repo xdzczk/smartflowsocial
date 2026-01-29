@@ -67,7 +67,11 @@ function parseQueueType(qt: unknown): QueueTypeSettings | null {
     name: q.name,
     color: q.color,
     description: undefined,
-    scheduleType: q.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined,
+    scheduleType: q.scheduleType as
+      | "INTERVAL"
+      | "FIXED_SLOTS"
+      | "WEEKLY_SLOTS"
+      | undefined,
     scheduleConfig: convertJsonValueToScheduleConfig(q.scheduleConfig),
     isEnabled: q.isEnabled,
     isDefault: q.isDefault ?? false,

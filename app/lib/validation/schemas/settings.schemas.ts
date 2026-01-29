@@ -156,7 +156,16 @@ export const updateBlossomMirrorsSchema = z.object({
 /**
  * Queue type schemas
  */
-export const scheduleTypeSchema = z.enum(["INTERVAL", "FIXED_SLOTS"]);
+export const scheduleTypeSchema = z.enum([
+  "INTERVAL",
+  "FIXED_SLOTS",
+  "WEEKLY_SLOTS",
+]);
+
+const weeklySlotEntrySchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  time: z.string().regex(/^\d{1,2}:\d{2}$/, "Time must be HH:mm"),
+});
 
 export const createQueueTypeSchema = z
   .object({
@@ -193,6 +202,19 @@ export const createQueueTypeSchema = z
           : undefined
       )
       .pipe(z.array(z.string()).optional()),
+    weeklySlots: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (!val) return;
+        try {
+          const parsed = JSON.parse(val) as unknown;
+          return Array.isArray(parsed) ? parsed : undefined;
+        } catch {
+          return;
+        }
+      })
+      .pipe(z.array(weeklySlotEntrySchema).optional()),
   })
   .refine(
     (data) => {
@@ -219,6 +241,19 @@ export const createQueueTypeSchema = z
     {
       message: "Slots are required for FIXED_SLOTS schedule type",
       path: ["slots"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.scheduleType === "WEEKLY_SLOTS") {
+        return data.weeklySlots !== undefined && data.weeklySlots.length > 0;
+      }
+      return true;
+    },
+    {
+      message:
+        "At least one weekly slot (day + time) is required for WEEKLY_SLOTS schedule type",
+      path: ["weeklySlots"],
     }
   );
 
@@ -265,6 +300,19 @@ export const updateQueueTypeSchema = z
           : undefined
       )
       .pipe(z.array(z.string()).optional()),
+    weeklySlots: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (!val) return;
+        try {
+          const parsed = JSON.parse(val) as unknown;
+          return Array.isArray(parsed) ? parsed : undefined;
+        } catch {
+          return;
+        }
+      })
+      .pipe(z.array(weeklySlotEntrySchema).optional()),
   })
   .refine(
     (data) => {
@@ -291,6 +339,19 @@ export const updateQueueTypeSchema = z
     {
       message: "Slots are required for FIXED_SLOTS schedule type",
       path: ["slots"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.scheduleType === "WEEKLY_SLOTS") {
+        return data.weeklySlots !== undefined && data.weeklySlots.length > 0;
+      }
+      return true;
+    },
+    {
+      message:
+        "At least one weekly slot (day + time) is required for WEEKLY_SLOTS schedule type",
+      path: ["weeklySlots"],
     }
   );
 

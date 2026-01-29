@@ -324,6 +324,7 @@ enum AssetType {
 enum ScheduleType {
   INTERVAL
   FIXED_SLOTS
+  WEEKLY_SLOTS
 }
 
 enum Status {

@@ -84,7 +84,8 @@ export default function DraftEditPage() {
         scheduleType:
           typeof raw.scheduleType === "string" &&
           (raw.scheduleType === "INTERVAL" ||
-            raw.scheduleType === "FIXED_SLOTS")
+            raw.scheduleType === "FIXED_SLOTS" ||
+            raw.scheduleType === "WEEKLY_SLOTS")
             ? raw.scheduleType
             : undefined,
         scheduleConfig: convertJsonValueToScheduleConfig(raw.scheduleConfig),

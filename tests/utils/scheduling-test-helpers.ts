@@ -78,6 +78,21 @@ export function createFixedSlotsQueueType(
 }
 
 /**
+ * Create a WEEKLY_SLOTS-based queue type
+ * dayOfWeek: 0 = Sunday, 1 = Monday, ... 6 = Saturday
+ */
+export function createWeeklySlotsQueueType(
+  weeklySlots: Array<{ dayOfWeek: number; time: string }>,
+  overrides: Partial<QueueType> = {}
+): QueueType {
+  return createQueueType({
+    scheduleType: "WEEKLY_SLOTS",
+    scheduleConfig: { weeklySlots },
+    ...overrides,
+  });
+}
+
+/**
  * Create a date relative to BASE_TIME
  */
 export function createTestDate(hoursOffset: number): Date {

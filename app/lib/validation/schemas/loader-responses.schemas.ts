@@ -35,12 +35,15 @@ const queueTypeSchema = z.object({
   name: z.string(),
   color: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
-  scheduleType: z.enum(["INTERVAL", "FIXED_SLOTS"]).optional(),
+  scheduleType: z.enum(["INTERVAL", "FIXED_SLOTS", "WEEKLY_SLOTS"]).optional(),
   scheduleConfig: z
     .object({
       useGlobalInterval: z.boolean().optional(),
       intervalHours: z.number().optional(),
       slots: z.array(z.string()).optional(),
+      weeklySlots: z
+        .array(z.object({ dayOfWeek: z.number(), time: z.string() }))
+        .optional(),
     })
     .optional(),
   isEnabled: z.boolean().optional(),

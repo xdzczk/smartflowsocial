@@ -58,10 +58,11 @@ export function LongFormPublishingOptions({
     (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueueType
   );
 
-  const isFixedSlotQueue =
+  const isSlotBasedQueue =
     currentQueueType &&
     typeof currentQueueType === "object" &&
-    currentQueueType.scheduleType === "FIXED_SLOTS";
+    (currentQueueType.scheduleType === "FIXED_SLOTS" ||
+      currentQueueType.scheduleType === "WEEKLY_SLOTS");
 
   return (
     <div className="dark:bg-card/50 bg-muted space-y-6 rounded-lg p-6">
@@ -184,7 +185,7 @@ export function LongFormPublishingOptions({
           />
         </div>
         <div className="flex flex-wrap gap-2">
-          {isFixedSlotQueue ? (
+          {isSlotBasedQueue ? (
             <Button
               type="button"
               variant="outline"

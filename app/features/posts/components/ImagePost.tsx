@@ -283,9 +283,10 @@ export default function ImagePost({
       selectedQueueType &&
       typeof selectedQueueType === "object" &&
       "scheduleType" in selectedQueueType &&
-      selectedQueueType.scheduleType === "FIXED_SLOTS"
+      (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+        selectedQueueType.scheduleType === "WEEKLY_SLOTS")
     ) {
-      // For fixed slot queues, recalculate the schedule time instead of adding hours
+      // For fixed slot or weekly slot queues, recalculate the schedule time instead of adding hours
       void calculateQueueScheduleTime(selectedQueue);
       return;
     }
@@ -581,7 +582,8 @@ export default function ImagePost({
                 selectedQueueType &&
                 typeof selectedQueueType === "object" &&
                 "scheduleType" in selectedQueueType &&
-                selectedQueueType.scheduleType === "FIXED_SLOTS"
+                (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                  selectedQueueType.scheduleType === "WEEKLY_SLOTS")
               ) {
                 return (
                   <button

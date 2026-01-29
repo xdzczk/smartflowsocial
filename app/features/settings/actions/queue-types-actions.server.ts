@@ -58,19 +58,24 @@ async function validateHashtagPreset(
 }
 
 function buildScheduleConfig(data: {
-  scheduleType: "INTERVAL" | "FIXED_SLOTS";
+  scheduleType: "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS";
   useGlobalInterval?: boolean;
   intervalHours?: number;
   slots?: string[];
+  weeklySlots?: Array<{ dayOfWeek: number; time: string }>;
 }): {
   useGlobalInterval?: boolean;
   intervalHours?: number;
   slots?: string[];
+  weeklySlots?: Array<{ dayOfWeek: number; time: string }>;
 } {
   if (data.scheduleType === "INTERVAL") {
     return data.useGlobalInterval
       ? { useGlobalInterval: true }
       : { intervalHours: data.intervalHours };
+  }
+  if (data.scheduleType === "WEEKLY_SLOTS") {
+    return { weeklySlots: data.weeklySlots! };
   }
   return { slots: data.slots! };
 }

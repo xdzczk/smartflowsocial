@@ -103,11 +103,12 @@ export function usePostScheduling({
       typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue
     );
 
-    // If this is a fixed slot queue, use the API to get the next scheduled time instead
+    // If this is a fixed slot or weekly slot queue, use the API to get the next scheduled time instead
     if (
       selectedQueueType &&
       typeof selectedQueueType === "object" &&
-      selectedQueueType.scheduleType === "FIXED_SLOTS"
+      (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+        selectedQueueType.scheduleType === "WEEKLY_SLOTS")
     ) {
       // For fixed slot queues, recalculate the schedule time instead of adding hours
       void calculateQueueScheduleTime(selectedQueue);

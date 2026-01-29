@@ -28,9 +28,21 @@ export interface FixedSlotsScheduleConfig {
 }
 
 /**
+ * Schedule configuration for WEEKLY_SLOTS schedule type
+ * dayOfWeek: 0 = Sunday, 1 = Monday, ... 6 = Saturday
+ * time: "HH:mm" in user's timezone
+ */
+export interface WeeklySlotsScheduleConfig {
+  weeklySlots: Array<{ dayOfWeek: number; time: string }>;
+}
+
+/**
  * Union type for schedule configurations
  */
-export type ScheduleConfig = IntervalScheduleConfig | FixedSlotsScheduleConfig;
+export type ScheduleConfig =
+  | IntervalScheduleConfig
+  | FixedSlotsScheduleConfig
+  | WeeklySlotsScheduleConfig;
 
 /**
  * Type guard to check if config is IntervalScheduleConfig
@@ -48,10 +60,13 @@ export function isIntervalScheduleConfig(
 
   // Check if it's NOT a FixedSlotsScheduleConfig (doesn't have slots array)
   const hasSlotsArray = Array.isArray(cfg["slots"]);
+  const hasWeeklySlotsArray = Array.isArray(cfg["weeklySlots"]);
 
-  // Must have either useGlobalInterval or intervalHours, but not slots array
+  // Must have either useGlobalInterval or intervalHours, but not slots or weeklySlots arrays
   return (
-    !hasSlotsArray && ("useGlobalInterval" in cfg || "intervalHours" in cfg)
+    !hasSlotsArray &&
+    !hasWeeklySlotsArray &&
+    ("useGlobalInterval" in cfg || "intervalHours" in cfg)
   );
 }
 
@@ -74,6 +89,36 @@ export function isFixedSlotsScheduleConfig(
 }
 
 /**
+ * Type guard to check if config is WeeklySlotsScheduleConfig
+ * Accepts unknown to handle serialized data from Remix loaders
+ */
+export function isWeeklySlotsScheduleConfig(
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- unknown is necessary for runtime type checking of serialized data
+  config: ScheduleConfig | unknown
+): config is WeeklySlotsScheduleConfig {
+  if (typeof config !== "object" || config === null) {
+    return false;
+  }
+
+  const cfg = config as Record<string, unknown>;
+
+  if (!Array.isArray(cfg["weeklySlots"])) {
+    return false;
+  }
+
+  const weeklySlots = cfg["weeklySlots"] as unknown[];
+  return weeklySlots.every(
+    (entry) =>
+      typeof entry === "object" &&
+      entry !== null &&
+      "dayOfWeek" in entry &&
+      "time" in entry &&
+      typeof (entry as { dayOfWeek: unknown }).dayOfWeek === "number" &&
+      typeof (entry as { time: unknown }).time === "string"
+  );
+}
+
+/**
  * Converts JsonValue to ScheduleConfig
  */
 export function convertJsonValueToScheduleConfig(
@@ -88,6 +133,15 @@ export function convertJsonValueToScheduleConfig(
   }
 
   const cfg = config as Record<string, unknown>;
+
+  // Check if it's a WeeklySlotsScheduleConfig (check before slots - different array shape)
+  if (Array.isArray(cfg["weeklySlots"])) {
+    const weeklySlots = cfg["weeklySlots"] as Array<{
+      dayOfWeek: number;
+      time: string;
+    }>;
+    return { weeklySlots };
+  }
 
   // Check if it's a FixedSlotsScheduleConfig
   if (Array.isArray(cfg["slots"])) {
@@ -133,6 +187,7 @@ export function convertPrismaQueueTypeToQueueType(
     scheduleType: prismaQueueType.scheduleType as
       | "INTERVAL"
       | "FIXED_SLOTS"
+      | "WEEKLY_SLOTS"
       | undefined,
     scheduleConfig: convertJsonValueToScheduleConfig(
       prismaQueueType.scheduleConfig
@@ -150,7 +205,7 @@ export interface QueueType {
   name: string;
   color?: string | null;
   description?: string | null;
-  scheduleType?: "INTERVAL" | "FIXED_SLOTS";
+  scheduleType?: "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS";
   scheduleConfig?: ScheduleConfig;
   isEnabled?: boolean;
   userId?: string;

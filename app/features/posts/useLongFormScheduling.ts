@@ -153,7 +153,8 @@ export function useLongFormScheduling({
       if (
         currentQueueType &&
         typeof currentQueueType === "object" &&
-        currentQueueType.scheduleType === "FIXED_SLOTS"
+        (currentQueueType.scheduleType === "FIXED_SLOTS" ||
+          currentQueueType.scheduleType === "WEEKLY_SLOTS")
       ) {
         // For fixed slot queues, recalculate the schedule time instead of adding hours
         void calculateQueueScheduleTime(currentQueueType.name);

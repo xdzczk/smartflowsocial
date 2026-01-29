@@ -480,6 +480,7 @@ export async function loadEngagementFeedData(
           scheduleType: queueType.scheduleType as
             | "INTERVAL"
             | "FIXED_SLOTS"
+            | "WEEKLY_SLOTS"
             | undefined,
           scheduleConfig: convertJsonValueToScheduleConfig(
             queueType.scheduleConfig

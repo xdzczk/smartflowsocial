@@ -159,7 +159,8 @@ export default function NewLongFormPostPage() {
             const scheduleType =
               typeof q.scheduleType === "string" &&
               (q.scheduleType === "INTERVAL" ||
-                q.scheduleType === "FIXED_SLOTS")
+                q.scheduleType === "FIXED_SLOTS" ||
+                q.scheduleType === "WEEKLY_SLOTS")
                 ? q.scheduleType
                 : undefined;
             const scheduleConfig = convertJsonValueToScheduleConfig(

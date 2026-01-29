@@ -60,7 +60,8 @@ function parseQueueType(qt: unknown): string | QueueType {
       scheduleType:
         typeof queueTypeObj["scheduleType"] === "string" &&
         (queueTypeObj["scheduleType"] === "INTERVAL" ||
-          queueTypeObj["scheduleType"] === "FIXED_SLOTS")
+          queueTypeObj["scheduleType"] === "FIXED_SLOTS" ||
+          queueTypeObj["scheduleType"] === "WEEKLY_SLOTS")
           ? queueTypeObj["scheduleType"]
           : undefined,
       scheduleConfig: convertJsonValueToScheduleConfig(

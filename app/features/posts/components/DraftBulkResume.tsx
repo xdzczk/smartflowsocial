@@ -7,6 +7,7 @@ import { useOptionalUser } from "~/lib/remix-utils";
 import {
   addDays,
   addHours,
+  createZonedDateTime,
   formatForDateTimeLocal,
   fromDate,
   nowInTimezone,
@@ -16,7 +17,11 @@ import {
 } from "~/lib/temporal";
 
 import { getSelectedQueueStyle } from "../queue-colors";
-import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
+import {
+  isIntervalScheduleConfig,
+  isFixedSlotsScheduleConfig,
+  isWeeklySlotsScheduleConfig,
+} from "../types";
 import type { QueueType, PostData } from "../types";
 
 interface DraftBulkResumeProps {
@@ -181,6 +186,91 @@ export default function DraftBulkResume({
     return toDate(offsetZoned);
   };
 
+  const userTimezone = user?.timezone ?? "UTC";
+
+  function toTemporalWeekday(dayOfWeek: number): number {
+    return dayOfWeek === 0 ? 7 : dayOfWeek;
+  }
+
+  function findNextWeeklySlotDate(
+    parsedSlots: Array<{ dayOfWeek: number; hours: number; minutes: number }>,
+    afterDate: Date,
+    tz: string
+  ): Date | null {
+    if (parsedSlots.length === 0) return null;
+    const baseZoned = fromDate(afterDate, tz);
+    const candidates: Date[] = [];
+    for (let daysAhead = 0; daysAhead < 8; daysAhead++) {
+      const dateZoned = addDays(baseZoned, daysAhead);
+      const year = dateZoned.year;
+      const month = dateZoned.month;
+      const day = dateZoned.day;
+      const weekday = dateZoned.dayOfWeek;
+      for (const slot of parsedSlots) {
+        if (toTemporalWeekday(slot.dayOfWeek) !== weekday) continue;
+        try {
+          const slotZoned = createZonedDateTime(
+            year,
+            month,
+            day,
+            slot.hours,
+            slot.minutes,
+            tz
+          );
+          const slotDate = toDate(slotZoned);
+          if (slotDate.getTime() > afterDate.getTime()) {
+            candidates.push(slotDate);
+          }
+        } catch {
+          // skip invalid slot
+        }
+      }
+    }
+    candidates.sort((a, b) => a.getTime() - b.getTime());
+    return candidates[0] ?? null;
+  }
+
+  const calculateWeeklySlotsOffset = (
+    baseDate: Date,
+    baseIndex: number,
+    weeklySlots: Array<{ dayOfWeek: number; time: string }>,
+    tz: string
+  ): Date => {
+    const parsedSlots = weeklySlots
+      .map((entry) => {
+        const parts = String(entry.time).trim().split(":");
+        const hours = parts[0] ? Number(parts[0]) : 0;
+        const minutes = parts[1] ? Number(parts[1]) : 0;
+        if (
+          entry.dayOfWeek < 0 ||
+          entry.dayOfWeek > 6 ||
+          Number.isNaN(hours) ||
+          Number.isNaN(minutes) ||
+          hours < 0 ||
+          hours > 23 ||
+          minutes < 0 ||
+          minutes > 59
+        ) {
+          return null;
+        }
+        return { dayOfWeek: entry.dayOfWeek, hours, minutes };
+      })
+      .filter(
+        (s): s is { dayOfWeek: number; hours: number; minutes: number } =>
+          s !== null
+      );
+    if (parsedSlots.length === 0) return baseDate;
+    if (baseIndex === 0) return baseDate;
+    let current = baseDate;
+    let next: Date | null = null;
+    for (let i = 0; i < baseIndex; i++) {
+      next = findNextWeeklySlotDate(parsedSlots, current, tz);
+      if (!next) return baseDate;
+      current = new Date(next.getTime() + 1);
+    }
+    return next ?? baseDate;
+  };
+
   const applyScheduleOffset = (
     baseDate: Date,
     baseIndex: number,
@@ -207,7 +297,17 @@ export default function DraftBulkResume({
       return calculateIntervalOffset(baseDate, baseIndex, config, user);
     }
 
-    // After checking for INTERVAL, scheduleType must be FIXED_SLOTS
+    if (queueType.scheduleType === "WEEKLY_SLOTS") {
+      const weeklySlots =
+        config && isWeeklySlotsScheduleConfig(config) ? config.weeklySlots : [];
+      return calculateWeeklySlotsOffset(
+        baseDate,
+        baseIndex,
+        weeklySlots,
+        userTimezone
+      );
+    }
+
     const slots =
       config && isFixedSlotsScheduleConfig(config) ? config.slots : [];
     return calculateFixedSlotsOffset(baseDate, baseIndex, slots);

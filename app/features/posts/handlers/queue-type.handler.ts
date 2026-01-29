@@ -8,6 +8,7 @@ import { logClientError } from "~/lib/error-handler.client";
 import {
   addDays,
   addHours,
+  createZonedDateTime,
   formatForDateTimeLocal,
   fromDate,
   parseDateTimeLocal,
@@ -15,7 +16,11 @@ import {
 } from "~/lib/temporal";
 
 import type { BulkPostsHandlerDeps } from "../types";
-import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
+import {
+  isIntervalScheduleConfig,
+  isFixedSlotsScheduleConfig,
+  isWeeklySlotsScheduleConfig,
+} from "../types";
 
 import { updateDisplayedHashtags } from "./hashtag.handler";
 
@@ -130,6 +135,110 @@ function calculateFixedSlotsScheduleTime(
   return formatDateToDateTimeLocal(toDate(newZoned), userTimezone);
 }
 
+interface ParsedWeeklySlot {
+  dayOfWeek: number;
+  hours: number;
+  minutes: number;
+}
+
+function parseWeeklySlotEntry(entry: {
+  dayOfWeek: number;
+  time: string;
+}): ParsedWeeklySlot | null {
+  const dayOfWeek = Number(entry.dayOfWeek);
+  if (dayOfWeek < 0 || dayOfWeek > 6 || !Number.isInteger(dayOfWeek)) {
+    return null;
+  }
+  const parts = String(entry.time).trim().split(":");
+  if (parts.length !== 2) {
+    return null;
+  }
+  const hours = Number(parts[0]);
+  const minutes = Number(parts[1]);
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+  return { dayOfWeek, hours, minutes };
+}
+
+function toTemporalWeekday(dayOfWeek: number): number {
+  return dayOfWeek === 0 ? 7 : dayOfWeek;
+}
+
+function findNextWeeklySlotDate(
+  parsedSlots: ParsedWeeklySlot[],
+  afterDate: Date,
+  userTimezone: string
+): Date | null {
+  if (parsedSlots.length === 0) return null;
+  const baseZoned = fromDate(afterDate, userTimezone);
+  const candidates: Date[] = [];
+  for (let daysAhead = 0; daysAhead < 8; daysAhead++) {
+    const dateZoned = addDays(baseZoned, daysAhead);
+    const year = dateZoned.year;
+    const month = dateZoned.month;
+    const day = dateZoned.day;
+    const weekday = dateZoned.dayOfWeek;
+    for (const slot of parsedSlots) {
+      if (toTemporalWeekday(slot.dayOfWeek) !== weekday) continue;
+      try {
+        const slotZoned = createZonedDateTime(
+          year,
+          month,
+          day,
+          slot.hours,
+          slot.minutes,
+          userTimezone
+        );
+        const slotDate = toDate(slotZoned);
+        if (slotDate.getTime() > afterDate.getTime()) {
+          candidates.push(slotDate);
+        }
+      } catch {
+        // skip invalid slot
+      }
+    }
+  }
+  candidates.sort((a, b) => a.getTime() - b.getTime());
+  return candidates[0] ?? null;
+}
+
+function calculateWeeklySlotsScheduleTime(
+  baseDate: Date,
+  index: number,
+  config: unknown,
+  userTimezone: string,
+  fallbackTime: string
+): string {
+  if (!config || !isWeeklySlotsScheduleConfig(config)) {
+    return fallbackTime;
+  }
+  const weeklySlots = config.weeklySlots;
+  const parsedSlots = weeklySlots
+    .map((entry) => parseWeeklySlotEntry(entry))
+    .filter((s): s is ParsedWeeklySlot => s !== null);
+  if (parsedSlots.length === 0) return fallbackTime;
+
+  if (index === 0) {
+    return formatDateToDateTimeLocal(baseDate, userTimezone);
+  }
+  let current = baseDate;
+  let next: Date | null = null;
+  for (let i = 0; i < index; i++) {
+    next = findNextWeeklySlotDate(parsedSlots, current, userTimezone);
+    if (!next) return fallbackTime;
+    current = new Date(next.getTime() + 1);
+  }
+  return next ? formatDateToDateTimeLocal(next, userTimezone) : fallbackTime;
+}
+
 function calculateScheduleTime(
   baseTime: string,
   index: number,
@@ -156,6 +265,16 @@ function calculateScheduleTime(
       baseDate,
       index,
       queueTypeConfig.scheduleConfig,
+      fallbackTime
+    );
+  }
+
+  if (queueTypeConfig.scheduleType === "WEEKLY_SLOTS") {
+    return calculateWeeklySlotsScheduleTime(
+      baseDate,
+      index,
+      queueTypeConfig.scheduleConfig,
+      userTimezone,
       fallbackTime
     );
   }

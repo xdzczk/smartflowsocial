@@ -218,7 +218,8 @@ export function useDraftsData() {
             const scheduleType =
               typeof q.scheduleType === "string" &&
               (q.scheduleType === "INTERVAL" ||
-                q.scheduleType === "FIXED_SLOTS")
+                q.scheduleType === "FIXED_SLOTS" ||
+                q.scheduleType === "WEEKLY_SLOTS")
                 ? q.scheduleType
                 : undefined;
             const scheduleConfig = convertJsonValueToScheduleConfig(
@@ -381,7 +382,8 @@ export function useDraftsInfiniteData() {
             const scheduleType =
               typeof q.scheduleType === "string" &&
               (q.scheduleType === "INTERVAL" ||
-                q.scheduleType === "FIXED_SLOTS")
+                q.scheduleType === "FIXED_SLOTS" ||
+                q.scheduleType === "WEEKLY_SLOTS")
                 ? q.scheduleType
                 : undefined;
             const scheduleConfig = convertJsonValueToScheduleConfig(

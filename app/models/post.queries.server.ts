@@ -491,19 +491,18 @@ export async function getLastPostTimeForQueue({
     return null; // Queue type doesn't exist
   }
 
-  // For FIXED_SLOTS scheduling, we need to consider ALL scheduled posts (both posted and unposted)
-  // to find the actual last scheduled time, regardless of posting status
-  // For INTERVAL scheduling, we can stick with the original logic of only considering unposted posts
+  // For FIXED_SLOTS and WEEKLY_SLOTS, consider ALL scheduled posts (both posted and unposted)
+  // to find the actual last scheduled time. For INTERVAL, only consider unposted posts.
   const whereCondition: Prisma.PostWhereInput = {
     userId,
     queueTypeId: queueType.id,
     // Use currentState as single source of truth
-    // For FIXED_SLOTS: include both SCHEDULED and PUBLISHED (scheduled posts that were published)
     // For INTERVAL: only include SCHEDULED (not yet published)
+    // For FIXED_SLOTS and WEEKLY_SLOTS: include both SCHEDULED and PUBLISHED
     currentState:
       queueType.scheduleType === "INTERVAL"
         ? "SCHEDULED"
-        : { in: ["SCHEDULED", "PUBLISHED"] }, // FIXED_SLOTS can include published posts
+        : { in: ["SCHEDULED", "PUBLISHED"] },
     scheduledAtUtc: {
       not: null,
     },

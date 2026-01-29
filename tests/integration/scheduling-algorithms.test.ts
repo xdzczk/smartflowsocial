@@ -27,6 +27,7 @@ import {
   createQueueType,
   createIntervalQueueType,
   createFixedSlotsQueueType,
+  createWeeklySlotsQueueType,
   createTestDate,
   createDateAtTime,
 } from "../utils/scheduling-test-helpers";
@@ -453,6 +454,82 @@ describe("Scheduling Algorithms", () => {
 
       expect(result.getUTCHours()).toBe(12);
       expect(result.getUTCMinutes()).toBe(0);
+    });
+  });
+
+  describe("WEEKLY_SLOTS-based Scheduling", () => {
+    it("should schedule next post at next matching day and time (Monday 12:00 UTC)", async () => {
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null
+      );
+
+      // BASE_TIME is Monday Jan 15, 2024 10:00 UTC; next Monday 12:00 is same day 12:00 UTC
+      const queueType = createWeeklySlotsQueueType(
+        [{ dayOfWeek: 1, time: "12:00" }],
+        { id: "queue-1", name: "posts" }
+      );
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        userTimezone: "UTC",
+        baseTime: BASE_TIME,
+      });
+
+      expect(result.getUTCDay()).toBe(1); // Monday
+      expect(result.getUTCHours()).toBe(12);
+      expect(result.getUTCMinutes()).toBe(0);
+    });
+
+    it("should schedule next post at Thursday 19:45 when base is Monday", async () => {
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null
+      );
+
+      // BASE_TIME is Monday Jan 15, 2024 10:00 UTC; Thursday = dayOfWeek 4
+      const queueType = createWeeklySlotsQueueType(
+        [{ dayOfWeek: 4, time: "19:45" }],
+        { id: "queue-1", name: "posts" }
+      );
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        userTimezone: "UTC",
+        baseTime: BASE_TIME,
+      });
+
+      expect(result.getUTCDay()).toBe(4); // Thursday
+      expect(result.getUTCHours()).toBe(19);
+      expect(result.getUTCMinutes()).toBe(45);
+    });
+
+    it("should return next slot after last post when last post exists", async () => {
+      const lastPostTime = createDateAtTime(2024, 1, 15, 12, 0); // Monday 12:00 UTC
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        lastPostTime
+      );
+
+      const queueType = createWeeklySlotsQueueType(
+        [
+          { dayOfWeek: 1, time: "09:00" },
+          { dayOfWeek: 1, time: "12:00" },
+          { dayOfWeek: 4, time: "19:45" },
+        ],
+        { id: "queue-1", name: "posts" }
+      );
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        userTimezone: "UTC",
+        baseTime: BASE_TIME,
+      });
+
+      // Next slot after Monday 12:00 is Thursday 19:45
+      expect(result.getUTCDay()).toBe(4);
+      expect(result.getUTCHours()).toBe(19);
+      expect(result.getUTCMinutes()).toBe(45);
     });
   });
 

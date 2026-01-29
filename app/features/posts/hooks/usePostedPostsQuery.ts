@@ -257,7 +257,9 @@ export function usePostedPostsData() {
             : null;
         const scheduleType =
           typeof q.scheduleType === "string" &&
-          (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS")
+          (q.scheduleType === "INTERVAL" ||
+            q.scheduleType === "FIXED_SLOTS" ||
+            q.scheduleType === "WEEKLY_SLOTS")
             ? q.scheduleType
             : undefined;
         const scheduleConfig = convertJsonValueToScheduleConfig(
@@ -376,7 +378,9 @@ function processQueueTypes(queueTypesRaw: unknown[]): QueueType[] {
         : null;
     const scheduleType =
       typeof q.scheduleType === "string" &&
-      (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS")
+      (q.scheduleType === "INTERVAL" ||
+        q.scheduleType === "FIXED_SLOTS" ||
+        q.scheduleType === "WEEKLY_SLOTS")
         ? q.scheduleType
         : undefined;
     const scheduleConfig = convertJsonValueToScheduleConfig(q.scheduleConfig);

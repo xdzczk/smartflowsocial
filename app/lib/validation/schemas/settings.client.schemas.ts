@@ -94,17 +94,23 @@ export const updateTagsClientSchema = z.object({
  * Works with form values directly (not transformed from FormData)
  * Note: intervalHours and slots are kept as strings for form inputs, transformed on submit
  */
+const weeklySlotEntryClientSchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  time: z.string().regex(/^\d{1,2}:\d{2}$/, "Time must be HH:mm"),
+});
+
 export const queueTypeClientSchema = z
   .object({
     name: z.string().min(1, VALIDATION_NAME_REQUIRED).trim(),
     description: z.string().optional(),
     color: z.string().min(1, "Color is required"),
     hashTagPresetId: z.string().optional(),
-    scheduleType: z.enum(["INTERVAL", "FIXED_SLOTS"]),
+    scheduleType: z.enum(["INTERVAL", "FIXED_SLOTS", "WEEKLY_SLOTS"]),
     isEnabled: z.boolean().optional(),
     useGlobalInterval: z.boolean().optional(),
     intervalHours: z.string().optional(),
     slots: z.string().optional(),
+    weeklySlots: z.array(weeklySlotEntryClientSchema).optional(),
   })
   .refine(
     (data) => {
@@ -131,5 +137,18 @@ export const queueTypeClientSchema = z
     {
       message: "Slots are required for FIXED_SLOTS schedule type",
       path: ["slots"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.scheduleType === "WEEKLY_SLOTS") {
+        return data.weeklySlots !== undefined && data.weeklySlots.length > 0;
+      }
+      return true;
+    },
+    {
+      message:
+        "At least one weekly slot (day + time) is required for WEEKLY_SLOTS schedule type",
+      path: ["weeklySlots"],
     }
   );

@@ -1,6 +1,9 @@
 import { useFetcher } from "@remix-run/react";
+import { Plus, X } from "lucide-react";
 import { useEffect } from "react";
+import type { UseFormReturn } from "react-hook-form";
 import { toast } from "react-hot-toast";
+import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -22,10 +25,15 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { queueTypeClientSchema } from "~/lib/validation";
+import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
 import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 import type { QueueType } from "../types";
-import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
+import {
+  isIntervalScheduleConfig,
+  isFixedSlotsScheduleConfig,
+  isWeeklySlotsScheduleConfig,
+} from "../types";
 
 interface QueueTypeDialogQueueType extends QueueType {
   isDefault?: boolean;
@@ -63,6 +71,16 @@ export function QueueTypeDialog({
   const fetcher = useFetcher<FetcherData>();
   const isEditing = !!queueType;
 
+  const DAY_LABELS = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ] as const;
+
   // Initialize form with default values
   const getDefaultValues = () => {
     if (queueType) {
@@ -86,6 +104,10 @@ export function QueueTypeDialog({
           scheduleConfig && isFixedSlotsScheduleConfig(scheduleConfig)
             ? scheduleConfig.slots.join(", ")
             : "",
+        weeklySlots:
+          scheduleConfig && isWeeklySlotsScheduleConfig(scheduleConfig)
+            ? scheduleConfig.weeklySlots
+            : undefined,
       };
     }
     return {
@@ -98,12 +120,23 @@ export function QueueTypeDialog({
       useGlobalInterval: false,
       intervalHours: "",
       slots: "",
+      weeklySlots: undefined as
+        | Array<{ dayOfWeek: number; time: string }>
+        | undefined,
     };
   };
 
   const form = useZodForm(queueTypeClientSchema, {
     defaultValues: getDefaultValues(),
   });
+
+  const { fields, append, remove } = useZodFieldArray<
+    z.infer<typeof queueTypeClientSchema>,
+    "weeklySlots"
+  >(
+    form as unknown as UseFormReturn<z.infer<typeof queueTypeClientSchema>>,
+    "weeklySlots"
+  );
 
   const isSubmitting =
     fetcher.state === "submitting" || fetcher.state === "loading";
@@ -145,6 +178,9 @@ export function QueueTypeDialog({
         : {}),
       ...(data.intervalHours ? { intervalHours: data.intervalHours } : {}),
       ...(data.slots ? { slots: data.slots } : {}),
+      ...(data.scheduleType === "WEEKLY_SLOTS" && data.weeklySlots?.length
+        ? { weeklySlots: JSON.stringify(data.weeklySlots) }
+        : {}),
     };
 
     const formData = formDataToFormData(
@@ -259,10 +295,19 @@ export function QueueTypeDialog({
             <Select
               value={scheduleType}
               onValueChange={(value) => {
-                form.setValue(
-                  "scheduleType",
-                  value as "INTERVAL" | "FIXED_SLOTS"
-                );
+                const newType = value as
+                  | "INTERVAL"
+                  | "FIXED_SLOTS"
+                  | "WEEKLY_SLOTS";
+                form.setValue("scheduleType", newType);
+                if (
+                  newType === "WEEKLY_SLOTS" &&
+                  (form.getValues("weeklySlots")?.length ?? 0) === 0
+                ) {
+                  form.setValue("weeklySlots", [
+                    { dayOfWeek: 1, time: "09:00" },
+                  ]);
+                }
               }}
             >
               <SelectTrigger>
@@ -271,6 +316,9 @@ export function QueueTypeDialog({
               <SelectContent>
                 <SelectItem value="INTERVAL">Interval-based</SelectItem>
                 <SelectItem value="FIXED_SLOTS">Fixed time slots</SelectItem>
+                <SelectItem value="WEEKLY_SLOTS">
+                  Weekly schedule (day + time)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -328,6 +376,74 @@ export function QueueTypeDialog({
               <p className="text-muted-foreground text-xs">
                 Times are in your selected timezone
               </p>
+            </div>
+          ) : null}
+
+          {scheduleType === "WEEKLY_SLOTS" ? (
+            <div className="space-y-2">
+              <Label>Weekly slots (day + time)</Label>
+              <p className="text-muted-foreground text-xs">
+                Add one or more day and time combinations. Times are in your
+                selected timezone.
+              </p>
+              {fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="flex flex-wrap items-center gap-2 sm:flex-nowrap"
+                >
+                  <Select
+                    value={String(
+                      form.watch(`weeklySlots.${index}.dayOfWeek`) ?? 1
+                    )}
+                    onValueChange={(val) =>
+                      form.setValue(
+                        `weeklySlots.${index}.dayOfWeek`,
+                        Number(val)
+                      )
+                    }
+                  >
+                    <SelectTrigger className="w-[140px] shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DAY_LABELS.map((label, i) => (
+                        <SelectItem key={label} value={String(i)}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="time"
+                    className="w-[120px] shrink-0"
+                    {...form.register(`weeklySlots.${index}.time`)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => remove(index)}
+                    disabled={fields.length <= 1}
+                    aria-label="Remove slot"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({ dayOfWeek: 1, time: "09:00" })}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add slot
+              </Button>
+              {form.formState.errors.weeklySlots ? (
+                <p className="text-destructive text-sm">
+                  {form.formState.errors.weeklySlots.message}
+                </p>
+              ) : null}
             </div>
           ) : null}
 

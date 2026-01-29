@@ -35,10 +35,11 @@ export function SchedulingSection({
     typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue
   );
 
-  const isFixedSlotQueue =
+  const isSlotBasedQueue =
     selectedQueueType &&
     typeof selectedQueueType === "object" &&
-    selectedQueueType.scheduleType === "FIXED_SLOTS";
+    (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+      selectedQueueType.scheduleType === "WEEKLY_SLOTS");
 
   return (
     <div className={className}>
@@ -59,7 +60,7 @@ export function SchedulingSection({
       ) : null}
 
       <div className="mt-2 flex flex-wrap gap-2">
-        {isFixedSlotQueue ? (
+        {isSlotBasedQueue ? (
           <Button
             type="button"
             variant="outline"

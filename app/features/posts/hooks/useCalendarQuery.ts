@@ -185,6 +185,7 @@ export function useCalendarData() {
               scheduleType: q.scheduleType as
                 | "INTERVAL"
                 | "FIXED_SLOTS"
+                | "WEEKLY_SLOTS"
                 | undefined,
               scheduleConfig: convertJsonValueToScheduleConfig(
                 q.scheduleConfig

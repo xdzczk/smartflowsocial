@@ -75,6 +75,12 @@ export class QueueTypeFactory {
     return this;
   }
 
+  asWeeklySlots(weeklySlots: Array<{ dayOfWeek: number; time: string }>): this {
+    this.options.scheduleType = "WEEKLY_SLOTS";
+    this.options.scheduleConfig = { weeklySlots };
+    return this;
+  }
+
   withHashTagPreset(hashTagPresetId: string): this {
     this.options.hashTagPresetId = hashTagPresetId;
     return this;
@@ -143,6 +149,16 @@ export const queueTypeFactory = {
    */
   fixedSlots: (slots: string[], overrides?: QueueTypeFactoryOptions) => {
     return new QueueTypeFactory(overrides).asFixedSlots(slots).build();
+  },
+
+  /**
+   * Create a weekly slots queue
+   */
+  weeklySlots: (
+    weeklySlots: Array<{ dayOfWeek: number; time: string }>,
+    overrides?: QueueTypeFactoryOptions
+  ) => {
+    return new QueueTypeFactory(overrides).asWeeklySlots(weeklySlots).build();
   },
 
   /**

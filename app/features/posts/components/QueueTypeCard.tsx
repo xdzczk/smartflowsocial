@@ -5,7 +5,11 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 
-import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
+import {
+  isIntervalScheduleConfig,
+  isFixedSlotsScheduleConfig,
+  isWeeklySlotsScheduleConfig,
+} from "../types";
 import type { QueueType } from "../types";
 interface QueueTypeCardProps {
   queueType: QueueType & {
@@ -30,6 +34,16 @@ export function QueueTypeCard({
     deleteFetcher.submit(formData, { method: "post" });
   };
 
+  const DAY_SHORT_LABELS = [
+    "Sun",
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+  ] as const;
+
   const getScheduleDescription = () => {
     if (!queueType.scheduleConfig) return "No schedule configured";
     if (queueType.scheduleType === "INTERVAL") {
@@ -43,12 +57,20 @@ export function QueueTypeCard({
         return `Every ${String(queueType.scheduleConfig.intervalHours ?? 0)} hours`;
       }
       return "Invalid interval configuration";
-    } else {
-      if (isFixedSlotsScheduleConfig(queueType.scheduleConfig)) {
-        return `Fixed slots: ${queueType.scheduleConfig.slots.join(", ") || "None"}`;
-      }
-      return "Invalid slots configuration";
     }
+    if (queueType.scheduleType === "WEEKLY_SLOTS") {
+      if (isWeeklySlotsScheduleConfig(queueType.scheduleConfig)) {
+        const parts = queueType.scheduleConfig.weeklySlots.map(
+          (slot) => `${DAY_SHORT_LABELS[slot.dayOfWeek] ?? "?"} ${slot.time}`
+        );
+        return `Weekly: ${parts.join(", ") || "None"}`;
+      }
+      return "Invalid weekly slots configuration";
+    }
+    if (isFixedSlotsScheduleConfig(queueType.scheduleConfig)) {
+      return `Fixed slots: ${queueType.scheduleConfig.slots.join(", ") || "None"}`;
+    }
+    return "Invalid slots configuration";
   };
 
   return (

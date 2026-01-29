@@ -14,7 +14,11 @@ import {
 } from "~/lib/temporal";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 
-import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "./types";
+import {
+  isIntervalScheduleConfig,
+  isFixedSlotsScheduleConfig,
+  isWeeklySlotsScheduleConfig,
+} from "./types";
 import type { QueueType as TypedQueueType } from "./types";
 
 interface CalculateNextScheduleTimeParams {
@@ -462,6 +466,159 @@ async function calculateFixedSlotsSchedule(
   );
 }
 
+// ============================================================================
+// Helper Functions for Weekly Slots Schedule Calculation
+// ============================================================================
+
+interface ParsedWeeklySlot {
+  dayOfWeek: number;
+  hours: number;
+  minutes: number;
+}
+
+function parseWeeklySlot(
+  entry: { dayOfWeek: number; time: string },
+  _userId: string
+): ParsedWeeklySlot | null {
+  const dayOfWeek = Number(entry.dayOfWeek);
+  if (dayOfWeek < 0 || dayOfWeek > 6 || !Number.isInteger(dayOfWeek)) {
+    return null;
+  }
+  const parts = String(entry.time).trim().split(":");
+  if (parts.length !== 2) {
+    return null;
+  }
+  const hours = Number(parts[0]);
+  const minutes = Number(parts[1]);
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+  return { dayOfWeek, hours, minutes };
+}
+
+function parseWeeklySlots(
+  weeklySlots: Array<{ dayOfWeek: number; time: string }>,
+  userId: string
+): ParsedWeeklySlot[] {
+  return weeklySlots
+    .map((entry) => parseWeeklySlot(entry, userId))
+    .filter((slot): slot is ParsedWeeklySlot => slot !== null);
+}
+
+/**
+ * Temporal weekday: 1 = Monday, 7 = Sunday.
+ * Our dayOfWeek: 0 = Sunday, 1 = Monday, ... 6 = Saturday.
+ */
+function toTemporalWeekday(dayOfWeek: number): number {
+  return dayOfWeek === 0 ? 7 : dayOfWeek;
+}
+
+function findNextWeeklySlot(
+  parsedSlots: ParsedWeeklySlot[],
+  lastPostTime: Date | null,
+  baseTime: Date,
+  userTimezone: string,
+  userId: string,
+  fallbackTime: Date
+): Date {
+  if (parsedSlots.length === 0) {
+    return fallbackTime;
+  }
+
+  const baseZoned = fromDate(baseTime, userTimezone);
+  const lastPostZoned = lastPostTime
+    ? fromDate(lastPostTime, userTimezone)
+    : null;
+
+  const candidates: Date[] = [];
+
+  for (let daysAhead = 0; daysAhead < 8; daysAhead++) {
+    const dateZoned = addDays(baseZoned, daysAhead);
+    const year = dateZoned.year;
+    const month = dateZoned.month;
+    const day = dateZoned.day;
+    const weekday = dateZoned.dayOfWeek;
+
+    for (const slot of parsedSlots) {
+      if (toTemporalWeekday(slot.dayOfWeek) !== weekday) {
+        continue;
+      }
+      try {
+        const slotZoned = createZonedDateTime(
+          year,
+          month,
+          day,
+          slot.hours,
+          slot.minutes,
+          userTimezone
+        );
+        const slotDate = toDate(slotZoned);
+        if (isValidDate(slotDate)) {
+          candidates.push(slotDate);
+        }
+      } catch (error) {
+        logError(error instanceof Error ? error : new Error(String(error)), {
+          userId,
+          message: "Error creating weekly slot datetime",
+          dayOfWeek: slot.dayOfWeek,
+          hours: slot.hours,
+          minutes: slot.minutes,
+        });
+      }
+    }
+  }
+
+  const baseTimeZoned = fromDate(baseTime, userTimezone);
+  const sortedCandidates = candidates
+    .map((d) => ({ date: d, zoned: fromDate(d, userTimezone) }))
+    .filter(
+      ({ zoned }) =>
+        isAfter(zoned, baseTimeZoned) ||
+        compareZonedDateTime(zoned, baseTimeZoned) === 0
+    )
+    .filter(({ zoned }) => !lastPostZoned || isAfter(zoned, lastPostZoned))
+    .sort((a, b) => compareZonedDateTime(a.zoned, b.zoned));
+
+  const first = sortedCandidates[0];
+  return first ? first.date : fallbackTime;
+}
+
+async function calculateWeeklySlotsSchedule(
+  config: unknown,
+  lastPostTime: Date | null,
+  baseTime: Date,
+  userTimezone: string,
+  userId: string
+): Promise<Date> {
+  const weeklySlots =
+    config &&
+    isWeeklySlotsScheduleConfig(config) &&
+    typeof config === "object" &&
+    "weeklySlots" in config &&
+    Array.isArray(config.weeklySlots)
+      ? config.weeklySlots
+      : [];
+
+  const parsedSlots = parseWeeklySlots(weeklySlots, userId);
+  const fallbackTime = getDefaultFutureTime(baseTime);
+
+  return findNextWeeklySlot(
+    parsedSlots,
+    lastPostTime,
+    baseTime,
+    userTimezone,
+    userId,
+    fallbackTime
+  );
+}
+
 export async function calculateNextScheduleTime({
   queueType,
   userId,
@@ -573,6 +730,16 @@ async function calculateNextScheduleTimeInternal({
 
     if (scheduleType === "FIXED_SLOTS") {
       return await calculateFixedSlotsSchedule(
+        config,
+        lastPostTime,
+        now,
+        userTimezone,
+        userId
+      );
+    }
+
+    if (scheduleType === "WEEKLY_SLOTS") {
+      return await calculateWeeklySlotsSchedule(
         config,
         lastPostTime,
         now,
