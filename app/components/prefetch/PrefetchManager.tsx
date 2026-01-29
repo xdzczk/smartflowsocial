@@ -22,6 +22,11 @@ export function PrefetchManager() {
   const user = useOptionalUser();
   const prefetchedRoutesRef = useRef<Set<string>>(new Set());
   const hasErrorRef = useRef(false);
+  const fetcherRef = useRef(fetcher);
+
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  }, [fetcher]);
 
   useEffect(() => {
     // Only prefetch if user is authenticated
@@ -40,11 +45,11 @@ export function PrefetchManager() {
     }
 
     const prefetchRoutes = () => {
-      // Only prefetch routes we haven't already prefetched
+      const currentFetcher = fetcherRef.current;
       PREFETCH_ROUTES.forEach((route) => {
         if (!prefetchedRoutesRef.current.has(route)) {
           prefetchedRoutesRef.current.add(route);
-          fetcher.load(route);
+          currentFetcher.load(route);
         }
       });
     };
@@ -61,7 +66,8 @@ export function PrefetchManager() {
       const timeout = setTimeout(prefetchRoutes, 2000);
       return () => clearTimeout(timeout);
     }
-  }, [fetcher, user, location.pathname]);
+    // Intentionally omit fetcher so we don't reschedule on every fetcher state change
+  }, [user, location.pathname]);
 
   // Reset error state and prefetched routes when user changes
   useEffect(() => {

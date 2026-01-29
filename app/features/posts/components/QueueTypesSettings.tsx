@@ -94,6 +94,7 @@ export function QueueTypesSettings({
   );
   const lastHandledDeleteRef = useRef<unknown>(null);
   const lastHandledFormRef = useRef<unknown>(null);
+  const lastRevalidatedFormRef = useRef<unknown>(null);
   const prevQueueTypesRef = useRef(queueTypes);
 
   const _isCreating = formFetcher.state === "submitting";
@@ -138,11 +139,14 @@ export function QueueTypesSettings({
     }
   }, [deleteFetcher.data, revalidator]);
 
-  // Create/Update: revalidate and errors. Optimistic add happens via onQueueCreatedOrUpdated callback (dialog calls it in its effect).
+  // Create/Update: revalidate once per success (guard to avoid revalidation loop). Optimistic add via onQueueCreatedOrUpdated.
   useEffect(() => {
     const data = formFetcher.data;
     if (data?.success && data.queueType) {
-      revalidator.revalidate();
+      if (lastRevalidatedFormRef.current !== data) {
+        lastRevalidatedFormRef.current = data;
+        revalidator.revalidate();
+      }
     }
     if (data?.error) {
       toast.error(data.error);

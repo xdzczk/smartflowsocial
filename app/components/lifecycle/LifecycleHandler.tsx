@@ -5,7 +5,7 @@
 
 import { useLocation, useRevalidator } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { getAndClearCorrelationContext } from "~/lib/correlation-id.client";
 import {
@@ -22,6 +22,11 @@ export function LifecycleHandler() {
   const queryClient = useQueryClient();
   const location = useLocation();
   const user = useOptionalUser();
+  const revalidatorRef = useRef(revalidator);
+
+  useEffect(() => {
+    revalidatorRef.current = revalidator;
+  }, [revalidator]);
 
   useEffect(() => {
     // Clear persisted state if user is not authenticated (e.g., on logout or landing page)
@@ -35,21 +40,19 @@ export function LifecycleHandler() {
       // Defer sync to avoid setState during render
       setTimeout(() => {
         void triggerForegroundSync(queryClient);
-        revalidator.revalidate();
+        revalidatorRef.current.revalidate();
       }, 0);
     }
 
-    // Initialize lifecycle handlers
+    // Initialize lifecycle handlers (use ref so effect doesn't re-run when revalidator identity changes)
     return initLifecycleHandlers({
       onVisibilityChange: (isVisible) => {
         if (isVisible) {
-          // Page became visible - trigger sync (defer to avoid setState during render)
           setTimeout(() => {
             void triggerForegroundSync(queryClient);
-            revalidator.revalidate();
+            revalidatorRef.current.revalidate();
           }, 0);
         } else {
-          // Page hidden - persist state only if authenticated
           if (user) {
             persistUIState({
               route: window.location.pathname,
@@ -59,18 +62,15 @@ export function LifecycleHandler() {
         }
       },
       onPageShow: () => {
-        // Page shown (including back/forward navigation)
         const state = getPersistedState();
         if (state.lastSyncTimestamp) {
-          // Trigger sync if we have a last sync timestamp (defer to avoid setState during render)
           setTimeout(() => {
             void triggerForegroundSync(queryClient);
-            revalidator.revalidate();
+            revalidatorRef.current.revalidate();
           }, 0);
         }
       },
       onPageHide: () => {
-        // Only persist state if user is authenticated
         if (user) {
           persistUIState({
             route: window.location.pathname,
@@ -79,14 +79,13 @@ export function LifecycleHandler() {
         }
       },
       onFocus: () => {
-        // Window focused - trigger sync (defer to avoid setState during render)
         setTimeout(() => {
           void triggerForegroundSync(queryClient);
-          revalidator.revalidate();
+          revalidatorRef.current.revalidate();
         }, 0);
       },
     });
-  }, [revalidator, queryClient, user, location.pathname]);
+  }, [queryClient, user, location.pathname]);
 
   return null; // This component doesn't render anything
 }
