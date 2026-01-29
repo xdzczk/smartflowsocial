@@ -103,23 +103,37 @@ function getUserProfilePicture(user: unknown): string | undefined {
   return undefined;
 }
 
+/** Get parsed nostrProfile (handles both string JSON and object) for display helpers. */
+function getParsedNostrProfile(user: unknown): Record<string, unknown> | null {
+  if (typeof user !== "object" || user === null || !("nostrProfile" in user))
+    return null;
+  const raw = (user as { nostrProfile?: unknown }).nostrProfile;
+  if (raw == null) return null;
+  if (typeof raw === "object" && !Array.isArray(raw))
+    return raw as Record<string, unknown>;
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      return typeof parsed === "object" &&
+        parsed !== null &&
+        !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function getUserDisplayName(user: unknown): string {
-  if (
-    typeof user === "object" &&
-    user !== null &&
-    "nostrProfile" in user &&
-    typeof user.nostrProfile === "object" &&
-    user.nostrProfile !== null
-  ) {
-    if ("name" in user.nostrProfile && user.nostrProfile["name"]) {
-      return String(user.nostrProfile["name"]);
-    }
-    if (
-      "display_name" in user.nostrProfile &&
-      user.nostrProfile["display_name"]
-    ) {
-      return String(user.nostrProfile["display_name"]);
-    }
+  const p = getParsedNostrProfile(user);
+  if (p) {
+    const name = p["name"];
+    const displayName = p["display_name"];
+    if (name != null && String(name).trim() !== "") return String(name);
+    if (displayName != null && String(displayName).trim() !== "")
+      return String(displayName);
   }
 
   if (
@@ -128,30 +142,21 @@ function getUserDisplayName(user: unknown): string {
     "npub" in user &&
     user.npub
   ) {
-    const npub = String(user.npub);
-    return `${npub.slice(0, 12)}...${npub.slice(-8)}`;
+    return formatNpubShort(String(user.npub));
   }
 
   return "";
 }
 
 function getUserAvatarFallback(user: unknown): string {
-  if (
-    typeof user === "object" &&
-    user !== null &&
-    "nostrProfile" in user &&
-    typeof user.nostrProfile === "object" &&
-    user.nostrProfile !== null
-  ) {
-    if ("name" in user.nostrProfile && user.nostrProfile["name"]) {
-      return String(user.nostrProfile["name"])[0] ?? "U";
-    }
-    if (
-      "display_name" in user.nostrProfile &&
-      user.nostrProfile["display_name"]
-    ) {
-      return String(user.nostrProfile["display_name"])[0] ?? "U";
-    }
+  const p = getParsedNostrProfile(user);
+  if (p) {
+    const name = p["name"];
+    const displayName = p["display_name"];
+    if (name != null && String(name).trim() !== "")
+      return String(name)[0] ?? "U";
+    if (displayName != null && String(displayName).trim() !== "")
+      return String(displayName)[0] ?? "U";
   }
   return "U";
 }
