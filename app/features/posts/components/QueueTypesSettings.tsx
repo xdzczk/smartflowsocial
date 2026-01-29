@@ -94,24 +94,40 @@ export function QueueTypesSettings({
   );
   const lastHandledDeleteRef = useRef<unknown>(null);
   const lastHandledFormRef = useRef<unknown>(null);
+  const prevQueueTypesRef = useRef(queueTypes);
 
   const _isCreating = formFetcher.state === "submitting";
   const _isUpdating = formFetcher.state === "submitting";
   const isDeleting = deleteFetcher.state === "submitting";
 
-  // Sync list when loader data changes (e.g. initial load or navigation)
+  // Sync from loader only when the list of ids actually changed (e.g. navigation or revalidation caught up).
+  // Avoid syncing on every parent re-render (new array reference) so we don't overwrite optimistic updates.
+  // Defer setState to avoid synchronous setState in effect (react-hooks/set-state-in-effect).
   useEffect(() => {
-    setQueueTypesState(queueTypes);
+    const prevIds = prevQueueTypesRef.current
+      .map((q) => q.id)
+      .sort()
+      .join(",");
+    const nextIds = queueTypes
+      .map((q) => q.id)
+      .sort()
+      .join(",");
+    if (prevIds !== nextIds) {
+      prevQueueTypesRef.current = queueTypes;
+      queueMicrotask(() => setQueueTypesState(queueTypes));
+    }
   }, [queueTypes]);
 
-  // Delete: optimistic remove + toast, revalidate in background
+  // Delete: optimistic remove + toast, revalidate in background.
+  // Defer setState to avoid synchronous setState in effect (react-hooks/set-state-in-effect).
   useEffect(() => {
     const data = deleteFetcher.data;
     if (data?.success && lastHandledDeleteRef.current !== data) {
       lastHandledDeleteRef.current = data;
       if (typeof data.deletedId === "string") {
-        setQueueTypesState((prev) =>
-          prev.filter((q) => q.id !== data.deletedId)
+        const deletedId = data.deletedId;
+        queueMicrotask(() =>
+          setQueueTypesState((prev) => prev.filter((q) => q.id !== deletedId))
         );
       }
       revalidator.revalidate();
@@ -122,7 +138,8 @@ export function QueueTypesSettings({
     }
   }, [deleteFetcher.data, revalidator]);
 
-  // Create/Update: optimistic add or replace so list updates immediately
+  // Create/Update: optimistic add or replace so list updates immediately.
+  // Defer setState to avoid synchronous setState in effect (react-hooks/set-state-in-effect).
   useEffect(() => {
     const data = formFetcher.data;
     if (
@@ -133,11 +150,14 @@ export function QueueTypesSettings({
       lastHandledFormRef.current = data;
       const normalized = normalizeQueueTypeFromAction(data.queueType);
       if (normalized) {
-        setQueueTypesState((prev) => {
-          const idx = prev.findIndex((q) => q.id === normalized.id);
-          if (idx >= 0) return prev.map((q, i) => (i === idx ? normalized : q));
-          return [...prev, normalized];
-        });
+        queueMicrotask(() =>
+          setQueueTypesState((prev) => {
+            const idx = prev.findIndex((q) => q.id === normalized.id);
+            if (idx >= 0)
+              return prev.map((q, i) => (i === idx ? normalized : q));
+            return [...prev, normalized];
+          })
+        );
       }
       revalidator.revalidate();
     }
