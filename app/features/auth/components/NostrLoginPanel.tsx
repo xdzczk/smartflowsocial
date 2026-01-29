@@ -1,4 +1,5 @@
-import { useLocation } from "@remix-run/react";
+import { useLocation, useNavigate } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ExternalLink } from "lucide-react";
 import { generateSecretKey, SimplePool } from "nostr-tools";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -370,6 +371,8 @@ async function postJson<T>(url: string, body?: unknown): Promise<T> {
 // eslint-disable-next-line sonarjs/cognitive-complexity -- Authentication flows require handling many edge cases, error states, and platform-specific behaviors
 export default function NostrLoginPanel() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const redirectTo = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const raw = params.get("redirectTo");
@@ -1430,10 +1433,10 @@ export default function NostrLoginPanel() {
           return verify.redirectTo;
         }
       })();
-      // Use full page reload to ensure all state is cleared and new session is loaded
-      // This is necessary after authentication to ensure React Query cache and other
-      // client-side state is properly reset with the new session
-      window.location.href = decodedRedirect;
+      // Clear React Query cache so new loaders populate fresh data for the new session
+      queryClient.clear();
+      // Client-side navigation avoids full page reload and flicker
+      navigate(decodedRedirect, { replace: true });
     } catch (e) {
       const n = normalizeError(e);
       // Map a few known server messages to typed errors
@@ -1465,7 +1468,7 @@ export default function NostrLoginPanel() {
       setLastFailureOrigin("verify");
       setState("failed");
     }
-  }, [pubkey, redirectTo, signer]);
+  }, [pubkey, redirectTo, signer, queryClient, navigate]);
 
   // When we land on "requesting_signature" (after extension or remote signer is ready),
   // trigger the actual signature request. The UI shows "Waiting for signature..." but we
