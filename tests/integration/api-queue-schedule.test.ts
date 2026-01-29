@@ -107,12 +107,7 @@ describe("API: Queue Schedule", () => {
         mockNextTime,
         "America/New_York"
       );
-      expect(data).toEqual({
-        success: true,
-        data: {
-          scheduledTime: formattedTime,
-        },
-      });
+      expect(data).toEqual({ scheduledTime: formattedTime });
     });
 
     it("should calculate schedule time using queueTypeName (backward compatibility)", async () => {
@@ -166,12 +161,7 @@ describe("API: Queue Schedule", () => {
           : {};
 
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
-      expect(data).toEqual({
-        success: true,
-        data: {
-          scheduledTime: formattedTime,
-        },
-      });
+      expect(data).toEqual({ scheduledTime: formattedTime });
     });
 
     it("should return empty string for unassigned queue type", async () => {

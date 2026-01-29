@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
@@ -49,6 +49,7 @@ export function QueueTypesSettings({
   const createFetcher = useFetcher<FetcherData>();
   const updateFetcher = useFetcher<FetcherData>();
   const deleteFetcher = useFetcher<FetcherData>();
+  const revalidator = useRevalidator();
 
   const [queueTypesState, setQueueTypesState] = useState(queueTypes);
   const [showDialog, setShowDialog] = useState(false);
@@ -60,48 +61,21 @@ export function QueueTypesSettings({
   const _isUpdating = updateFetcher.state === "submitting";
   const isDeleting = deleteFetcher.state === "submitting";
 
+  // Sync list when loader data changes (e.g. after revalidation following create/update/delete)
   useEffect(() => {
-    // Defer to avoid cascading renders
-    setTimeout(() => {
-      setQueueTypesState(queueTypes);
-    }, 0);
+    setQueueTypesState(queueTypes);
   }, [queueTypes]);
 
-  // Close dialog on successful submission
-  useEffect(() => {
-    if (createFetcher.data?.success) {
-      // Defer to avoid cascading renders
-      setTimeout(() => {
-        setShowDialog(false);
-        toast.success("Queue type created successfully!");
-      }, 0);
-    }
-    if (createFetcher.data?.error) {
-      toast.error(createFetcher.data.error);
-    }
-  }, [createFetcher.data]);
-
-  useEffect(() => {
-    if (updateFetcher.data?.success) {
-      // Defer to avoid cascading renders
-      setTimeout(() => {
-        setEditingQueueType(null);
-        toast.success("Queue type updated successfully!");
-      }, 0);
-    }
-    if (updateFetcher.data?.error) {
-      toast.error(updateFetcher.data.error);
-    }
-  }, [updateFetcher.data]);
-
+  // Delete uses its own fetcher from QueueTypeCard; create/update use the dialog's fetcher
   useEffect(() => {
     if (deleteFetcher.data?.success) {
+      revalidator.revalidate();
       toast.success("Queue type deleted successfully!");
     }
     if (deleteFetcher.data?.error) {
       toast.error(deleteFetcher.data.error);
     }
-  }, [deleteFetcher.data]);
+  }, [deleteFetcher.data, revalidator]);
 
   const handleCreateNew = () => {
     setEditingQueueType(null);

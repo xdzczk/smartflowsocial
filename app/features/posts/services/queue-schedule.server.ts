@@ -10,7 +10,6 @@ import {
   getUserTimezone,
   getQueueTypeByIdForUser,
 } from "~/features/user";
-import { createSuccessResponse } from "~/lib/error-handler.server";
 import { NotFoundError, ValidationError } from "~/lib/errors";
 
 import {
@@ -66,7 +65,7 @@ export async function calculateQueueScheduleTime(
     userTimezone ?? "UTC"
   );
 
-  return createSuccessResponse({ scheduledTime: formattedTime });
+  return json({ scheduledTime: formattedTime });
 }
 
 /**

@@ -1,6 +1,6 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import type { z } from "zod";
@@ -69,6 +69,8 @@ export function QueueTypeDialog({
     error?: string;
   }
   const fetcher = useFetcher<FetcherData>();
+  const revalidator = useRevalidator();
+  const lastHandledSuccessRef = useRef<unknown>(null);
   const isEditing = !!queueType;
 
   const DAY_LABELS = [
@@ -144,6 +146,12 @@ export function QueueTypeDialog({
   const hashTagPresetId = form.watch("hashTagPresetId");
 
   useEffect(() => {
+    if (!open) {
+      lastHandledSuccessRef.current = null;
+    }
+  }, [open]);
+
+  useEffect(() => {
     const fetcherData = fetcher.data;
     if (
       fetcherData &&
@@ -152,15 +160,19 @@ export function QueueTypeDialog({
     ) {
       const data = fetcherData as FetcherData;
       if (typeof data.success === "boolean" && data.success) {
-        const action = isEditing ? "updated" : "created";
-        toast.success(`Queue type ${action} successfully!`);
-        onOpenChange(false);
+        if (lastHandledSuccessRef.current !== fetcherData) {
+          lastHandledSuccessRef.current = fetcherData;
+          revalidator.revalidate();
+          const action = isEditing ? "updated" : "created";
+          toast.success(`Queue type ${action} successfully!`);
+          onOpenChange(false);
+        }
       }
       if (typeof data.error === "string") {
         toast.error(data.error);
       }
     }
-  }, [fetcher.data, isEditing, onOpenChange]);
+  }, [fetcher.data, isEditing, onOpenChange, open, revalidator]);
 
   const onSubmit = form.handleSubmit((data) => {
     // Transform data for FormData submission
