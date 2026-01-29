@@ -31,6 +31,7 @@ export {
 // User Profile
 // ============================================================================
 
+export { refreshUserProfileIfEmpty } from "./profile.server";
 export { updateUserProfile } from "~/features/user";
 
 // ============================================================================

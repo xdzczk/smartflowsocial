@@ -16,10 +16,10 @@ import { Toaster } from "react-hot-toast";
 
 import { LifecycleHandler } from "~/components/lifecycle/LifecycleHandler";
 import { PrefetchManager } from "~/components/prefetch/PrefetchManager";
+import { getUser, refreshUserProfileIfEmpty } from "~/features/auth";
 import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
 // Import migration to run on app load
 import "~/lib/remote-signer-sessions-migration.client";
-import { getUser } from "~/features/auth/session.server";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
 import { QueryProvider } from "~/lib/query/QueryProvider";
@@ -65,7 +65,11 @@ const APP_DESCRIPTION =
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   try {
     // Always get fresh user data - getUser returns null for invalid/expired sessions
-    const user = await getUser(request);
+    let user = await getUser(request);
+    // Refresh Nostr profile (pfp, name) from Primal if missing (e.g. logged in before fix or fetch failed)
+    if (user) {
+      user = await refreshUserProfileIfEmpty(user);
+    }
 
     return json(
       {

@@ -10,6 +10,8 @@ import type {
   ProfileData,
   StatsData,
 } from "~/features/nostr/types";
+import type { UserWithHashTagPresets } from "~/features/user";
+import { createUser, getUserById } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
@@ -126,4 +128,51 @@ export async function getCompleteProfile({
     nostrProfile: profile,
     lud16: profile.lud16,
   };
+}
+
+/** True if stored profile has no picture and no name/display_name (UI shows "U" and npub). */
+function isProfileEmpty(nostrProfile: unknown): boolean {
+  if (nostrProfile == null) return true;
+  let p: Record<string, unknown>;
+  if (typeof nostrProfile === "string") {
+    try {
+      p = JSON.parse(nostrProfile) as Record<string, unknown>;
+    } catch {
+      return true;
+    }
+  } else if (typeof nostrProfile === "object" && !Array.isArray(nostrProfile)) {
+    p = nostrProfile as Record<string, unknown>;
+  } else {
+    return true;
+  }
+  const picture = p["picture"];
+  const name = p["name"];
+  const displayName = p["display_name"];
+  return (
+    (picture == null || String(picture).trim() === "") &&
+    (name == null || String(name).trim() === "") &&
+    (displayName == null || String(displayName).trim() === "")
+  );
+}
+
+/**
+ * If the user's stored profile has no picture/name, fetches from Primal cache and updates the user.
+ * Use in root loader so existing users (e.g. logged in before profile fetch worked) get profile on next load.
+ */
+export async function refreshUserProfileIfEmpty(
+  user: UserWithHashTagPresets
+): Promise<UserWithHashTagPresets> {
+  if (!isProfileEmpty(user.nostrProfile)) return user;
+
+  const { nostrProfile } = await getCompleteProfile({ npub: user.npub });
+  const p = nostrProfile as Record<string, unknown>;
+  const picture = p["picture"] != null && String(p["picture"]).trim() !== "";
+  const name = p["name"] != null && String(p["name"]).trim() !== "";
+  const displayName =
+    p["display_name"] != null && String(p["display_name"]).trim() !== "";
+  if (!picture && !name && !displayName) return user;
+
+  await createUser(user.npub, JSON.stringify(nostrProfile));
+  const updated = await getUserById(user.id);
+  return updated ?? user;
 }
