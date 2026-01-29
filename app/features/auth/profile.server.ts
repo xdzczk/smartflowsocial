@@ -1,5 +1,6 @@
 import { nip19 } from "nostr-tools";
 
+import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import type {
   CompleteProfileResult,
   GetCompleteProfileParams,
@@ -11,7 +12,6 @@ import type {
 } from "~/features/nostr/types";
 import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
-import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 
 /**
  * Validates an npub string
@@ -26,7 +26,7 @@ export function validateNpub(npub: string): boolean {
 }
 
 /**
- * Fetches profile data from Primal API using WebSocket
+ * Fetches profile data from Primal cache (HTTP proxy or WebSocket per PRIMAL_CACHING_URL).
  */
 export async function fetchPrimalProfileData(
   npub: string

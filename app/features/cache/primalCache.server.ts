@@ -1,11 +1,15 @@
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 import { fetchJsonWithRetry } from "~/lib/fetch.server";
+import { connectToPrimalCache as connectToPrimalCacheWs } from "~/lib/nostrwebsocket.server";
 import { buildCacheKey, getOrSetJson } from "~/lib/redis-cache.server";
 import { withSentrySpan } from "~/lib/sentry.server";
 
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
+
+const SENTRY_SPAN_NAME_PRIMAL_FETCH = "primal_cache.fetch";
+const SENTRY_SPAN_OP_HTTP_CLIENT = "http.client";
 
 function cacheTtlSecondsForRequestType(requestType: string): {
   ttlSeconds: number | null;
@@ -36,41 +40,82 @@ function isEmptyCacheResponse(value: CacheResponse): boolean {
   return nonEose.length === 0;
 }
 
+/** True if PRIMAL_CACHING_URL is an HTTP(S) proxy (e.g. Cloudflare Worker). */
+function isHttpPrimalUrl(url: string | undefined): boolean {
+  if (!url || typeof url !== "string") return false;
+  const u = url.trim().toLowerCase();
+  return u.startsWith("http://") || u.startsWith("https://");
+}
+
 /**
- * Fetches data from the Primal cache REST API
- * Uses hardened fetch wrapper with retries and timeouts
+ * Fetches via HTTP POST when PRIMAL_CACHING_URL is an HTTP(S) proxy
+ * (e.g. Cloudflare Worker that forwards to WebSocket backends).
+ */
+async function fetchFromPrimalViaHttp(
+  primalUrl: string,
+  requestType: string,
+  params: CacheParams
+): Promise<CacheResponse> {
+  return withSentrySpan(
+    {
+      name: SENTRY_SPAN_NAME_PRIMAL_FETCH,
+      op: SENTRY_SPAN_OP_HTTP_CLIENT,
+      attributes: { requestType, transport: "http" },
+    },
+    () =>
+      fetchJsonWithRetry<CacheResponse>(primalUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestType, params }),
+        timeout: 5000,
+        maxRetries: 2,
+        retryOn5xx: true,
+      })
+  );
+}
+
+/**
+ * Fetches via WebSocket when PRIMAL_CACHING_URL is ws/wss or unset
+ * (direct Primal cache or default public endpoints).
+ */
+async function fetchFromPrimalViaWebSocket(
+  requestType: string,
+  params: CacheParams
+): Promise<CacheResponse> {
+  return withSentrySpan(
+    {
+      name: SENTRY_SPAN_NAME_PRIMAL_FETCH,
+      op: SENTRY_SPAN_OP_HTTP_CLIENT,
+      attributes: { requestType, transport: "websocket" },
+    },
+    () => connectToPrimalCacheWs(requestType, params)
+  );
+}
+
+/**
+ * Fetches data from the Primal cache.
+ * Supports two PRIMAL_CACHING_URL formats:
+ * - https://... (e.g. Cloudflare Worker proxy): HTTP POST with { requestType, params }
+ * - wss://... or unset: WebSocket API (direct cache or default public endpoints)
  */
 export async function fetchFromCache(
   requestType: string,
   params: CacheParams
 ): Promise<CacheResponse> {
-  // Read directly from process.env to support test environment changes
   const primalUrl = process.env["PRIMAL_CACHING_URL"] ?? env.PRIMAL_CACHING_URL;
-  if (!primalUrl) {
-    throw new Error("PRIMAL_CACHING_URL environment variable is not set");
-  }
+  const useHttp = isHttpPrimalUrl(primalUrl);
+
+  const doFetch = (): Promise<CacheResponse> =>
+    useHttp && primalUrl
+      ? fetchFromPrimalViaHttp(primalUrl, requestType, params)
+      : fetchFromPrimalViaWebSocket(requestType, params);
 
   try {
     const { ttlSeconds, negativeTtlSeconds } =
       cacheTtlSecondsForRequestType(requestType);
 
     if (!ttlSeconds) {
-      return await withSentrySpan(
-        {
-          name: "primal_cache.fetch",
-          op: "http.client",
-          attributes: { requestType },
-        },
-        async () =>
-          await fetchJsonWithRetry<CacheResponse>(primalUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ requestType, params }),
-            timeout: 5000,
-            maxRetries: 2,
-            retryOn5xx: true,
-          })
-      );
+      return await doFetch();
     }
 
     const key = buildCacheKey({
@@ -85,39 +130,34 @@ export async function fetchFromCache(
       ttlSeconds,
       negativeTtlSeconds,
       shouldNegativeCache: isEmptyCacheResponse,
-      compute: async () =>
-        await withSentrySpan(
+      compute: () =>
+        withSentrySpan(
           {
-            name: "primal_cache.fetch",
-            op: "http.client",
+            name: SENTRY_SPAN_NAME_PRIMAL_FETCH,
+            op: SENTRY_SPAN_OP_HTTP_CLIENT,
             attributes: { requestType, cache: "redis" },
           },
-          async () =>
-            await fetchJsonWithRetry<CacheResponse>(primalUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ requestType, params }),
-              timeout: 5000,
-              maxRetries: 2,
-              retryOn5xx: true,
-            })
+          doFetch
         ),
     });
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       requestType,
       params,
-      message: "[REST Cache] Failed to fetch",
+      message: "[Primal Cache] Failed to fetch",
     });
     throw error;
   }
 }
 
 /**
- * Connects to the Primal cache REST API and fetches data.
- * Supports request types: thread_view, feed, user_profile, user_infos, events, net_stats, reposts, likes, replies, zaps
+ * Connects to the Primal cache and fetches data.
+ * PRIMAL_CACHING_URL can be:
+ * - https://... — HTTP proxy (e.g. Cloudflare Worker): POST { requestType, params }, returns same array format
+ * - wss://... or unset — WebSocket API (direct cache or default wss://cache1.primal.net/v1, etc.)
+ * Supports: thread_view, feed, user_profile, user_infos, events, get_notifications, net_stats, reposts, likes, replies, zaps
  *
- * @param requestType - The type of request (e.g., "thread_view", "feed", etc.)
+ * @param requestType - The type of request (e.g., "thread_view", "user_profile", etc.)
  * @param params - Parameters for the request (e.g., { event_id: "..." })
  * @returns Array of response events from the cache
  *
@@ -142,7 +182,7 @@ export async function connectToPrimalCache(
       return responses;
     }
 
-    logError(new Error("[REST Cache] Empty response"), {
+    logError(new Error("[Primal Cache] Empty response"), {
       requestType,
       params,
     });
@@ -151,7 +191,7 @@ export async function connectToPrimalCache(
     logError(err instanceof Error ? err : new Error(String(err)), {
       requestType,
       params,
-      message: "[REST Cache] Failed",
+      message: "[Primal Cache] Failed",
     });
     throw err;
   }

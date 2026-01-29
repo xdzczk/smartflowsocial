@@ -201,6 +201,8 @@ export function SearchableTimezoneSelector({
               />
               <Input
                 ref={inputRef}
+                id={id ? `${id}-search` : undefined}
+                name={id ? `${id}-search` : undefined}
                 type="text"
                 placeholder="Search timezones..."
                 value={searchQuery}

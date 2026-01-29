@@ -1,6 +1,5 @@
-import { env } from "~/lib/env.server";
+import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { logError } from "~/lib/error-logger.server";
-import { fetchJsonWithRetry } from "~/lib/fetch.server";
 import {
   buildCacheKey,
   getOrSetJson,
@@ -155,35 +154,18 @@ const CACHE_TTL_SECONDS = 5 * 60;
 const POST_STATS_CACHE = "post-stats";
 
 /**
- * Fetch stats for a single event ID from external API
+ * Fetch stats for a single event ID from Primal cache.
+ * Uses PRIMAL_CACHING_URL: https:// (HTTP proxy) or wss:// / unset (WebSocket).
  */
 async function fetchStatsFromAPI(eventId: string): Promise<PostStats> {
-  const primalUrl = process.env["PRIMAL_CACHING_URL"] ?? env.PRIMAL_CACHING_URL;
-  if (!primalUrl) {
-    return createEmptyStats();
-  }
-
   try {
-    const response = await fetchJsonWithRetry<unknown[]>(primalUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        requestType: "thread_view",
-        params: {
-          event_id: eventId,
-        },
-      }),
-      timeout: 2000, // 2 seconds timeout
-      maxRetries: 0, // No retries to fail faster
+    const response = await connectToPrimalCache("thread_view", {
+      event_id: eventId,
     });
-
     const data: unknown[] = Array.isArray(response) ? response : [];
     const extracted = extractStatsFromEvent(data, eventId);
     return extracted[eventId] ?? createEmptyStats();
   } catch {
-    // Return empty stats on error
     return createEmptyStats();
   }
 }

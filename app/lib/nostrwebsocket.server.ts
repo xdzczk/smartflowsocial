@@ -93,6 +93,40 @@ async function tryConnectToCache(
             ])
           );
           break;
+        case "get_notifications":
+          ws.send(
+            JSON.stringify([
+              "REQ",
+              requestId,
+              {
+                cache: [
+                  "get_notifications",
+                  {
+                    pubkey: params["pubkey"],
+                    limit: params["limit"] ?? 100,
+                  },
+                ],
+              },
+            ])
+          );
+          break;
+        case "mutelist":
+          ws.send(
+            JSON.stringify([
+              "REQ",
+              requestId,
+              {
+                cache: [
+                  "mutelist",
+                  {
+                    pubkey: params["pubkey"],
+                    extended_response: params["extended_response"] ?? true,
+                  },
+                ],
+              },
+            ])
+          );
+          break;
         // ---- Added request types below ----
 
         // Get reposts (kind: 6)

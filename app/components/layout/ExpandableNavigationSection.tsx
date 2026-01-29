@@ -12,6 +12,12 @@ import {
 const TEXT_PRIMARY = "text-primary";
 const TEXT_MUTED_FOREGROUND = "text-muted-foreground";
 
+/** Pathname only (no search or hash) so active state matches when link has query params e.g. /dashboard/giveaway?days=7 */
+function getPathname(href: string): string {
+  const withoutQuery = href.split("?")[0] ?? href;
+  return withoutQuery.split("#")[0] ?? withoutQuery;
+}
+
 interface NavigationChildItem {
   to: string;
   feature: FeatureName;
@@ -89,9 +95,9 @@ export function ExpandableNavigationSection({
 }: ExpandableNavigationSectionProps) {
   const location = useLocation();
 
-  // Check if any child route is active
+  // Check if any child route is active (use pathname only so links with query params e.g. /dashboard/giveaway?days=7 still highlight)
   const isAnyChildActive = items.some((child) =>
-    location.pathname.startsWith(child.to)
+    location.pathname.startsWith(getPathname(child.to))
   );
 
   // Track manual expansion state (user clicked to expand/collapse)
@@ -175,7 +181,9 @@ export function ExpandableNavigationSection({
       >
         <div className="space-y-1 pl-8">
           {items.map((child) => {
-            const isActive = location.pathname.startsWith(child.to);
+            const isActive = location.pathname.startsWith(
+              getPathname(child.to)
+            );
             return (
               <NavigationChildItemComponent
                 key={child.to}

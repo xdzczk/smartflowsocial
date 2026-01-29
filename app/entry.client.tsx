@@ -12,19 +12,18 @@ import { hydrateRoot } from "react-dom/client";
 import { initSentry } from "~/lib/sentry.client";
 initSentry();
 
-// Register service worker as soon as the app loads (don't wait for "load" event).
-// Push notifications require the service worker to be ready; registering early
-// gives it time to activate before the user opens Settings.
+// Register service worker as soon as the app loads so it's ready for push
+// notifications when the user navigates to Settings (even if they landed on /login first).
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   void (async () => {
     try {
+      const registration = await navigator.serviceWorker.register("/sw.js");
       const isPublicPage =
         window.location.pathname === "/" ||
         window.location.pathname.startsWith("/login") ||
         window.location.pathname.startsWith("/plans");
-
+      // Only listen for updates on app pages so we don't reload login/marketing
       if (!isPublicPage) {
-        const registration = await navigator.serviceWorker.register("/sw.js");
         registration.addEventListener("updatefound", () => {
           const newWorker = registration.installing;
           if (newWorker) {

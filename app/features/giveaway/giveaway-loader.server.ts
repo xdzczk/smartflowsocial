@@ -3,6 +3,7 @@
  * Centralized data fetching and processing for giveaway page
  */
 
+import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { calculateTrustScore } from "~/features/engagement/trust-score";
 import type { User } from "~/features/engagement/trust-score";
 import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
@@ -14,7 +15,6 @@ import { getQueueTypesCached } from "~/features/user/services/user-cache.server"
 import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
 import { logError } from "~/lib/error-logger.server";
 import { convertToHex } from "~/lib/helpers";
-import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import { getRecentPostedPosts } from "~/models/post.queries.server";
 
 import { fetchGiveawayParticipants } from "./giveaway.server";

@@ -219,23 +219,21 @@ NODE_ENV=production
 
 ### PRIMAL_CACHING_URL
 
-Primal caching service WebSocket URL(s) for profile and event lookups.
+Primal caching service URL for profile and event lookups. Two formats are supported.
 
-**Format:**
+**1. HTTP(S) proxy (e.g. Cloudflare Worker)**  
+Use when you run a proxy that accepts POST with `{ requestType, params }` and returns the same array
+format as the WebSocket API:
 
+```env
+PRIMAL_CACHING_URL=https://primal-caching-websocket-worker.your-domain.workers.dev
 ```
-wss://cache.example.com/v1
-```
 
-**Single endpoint:**
+**2. WebSocket (direct cache)**  
+Single endpoint or comma-separated list:
 
 ```env
 PRIMAL_CACHING_URL=wss://cache.example.com/v1
-```
-
-**Multiple endpoints (comma-separated):**
-
-```env
 PRIMAL_CACHING_URL=wss://cache1.example.com/v1,wss://cache2.example.com/v1
 ```
 
@@ -244,9 +242,9 @@ PRIMAL_CACHING_URL=wss://cache1.example.com/v1,wss://cache2.example.com/v1
 - `wss://cache1.primal.net/v1`
 - `wss://cache2.primal.net/v1`
 
-**Required for:**
+**Used for:**
 
-- Profile lookups
+- Profile lookups (pfp, display names)
 - Event fetching
 - Thread views
 - Engagement feed

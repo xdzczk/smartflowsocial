@@ -114,14 +114,6 @@ describe("Primal Cache Service", () => {
       expect(result).toEqual(mockResponse);
     });
 
-    it("should throw error if PRIMAL_CACHING_URL is not set", async () => {
-      delete process.env["PRIMAL_CACHING_URL"];
-
-      await expect(
-        fetchFromCache("thread_view", { event_id: "event-123" })
-      ).rejects.toThrow("PRIMAL_CACHING_URL environment variable is not set");
-    });
-
     it("should throw error after max retries", async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,

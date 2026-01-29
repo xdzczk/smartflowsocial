@@ -90,6 +90,7 @@ export function NotificationSettings({
         // Probe server: is push configured (VAPID keys)?
         const probeRes = await fetch("/api/push-subscribe").catch(() => null);
         if (probeRes && !probeRes.ok) {
+          cancelled = true;
           setPushConfiguredOnServer(false);
           setIsChecking(false);
           setIsSubscribed(false);
@@ -100,29 +101,34 @@ export function NotificationSettings({
 
         // Check if service worker is supported and registered
         if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
-          // Check if service worker is registered
-          const registration = await navigator.serviceWorker.getRegistration();
+          let registration = await navigator.serviceWorker.getRegistration();
           if (!registration) {
-            // Service worker not registered yet, wait a bit and try again
+            // Try registering (e.g. user landed on /login first; SW is now registered in entry.client for all pages, but retry helps on first load)
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            registration = await navigator.serviceWorker.getRegistration();
+          }
+          if (!registration) {
+            await navigator.serviceWorker.register("/sw.js").catch(() => null);
             await new Promise((resolve) => setTimeout(resolve, 1000));
-            const retryRegistration =
-              await navigator.serviceWorker.getRegistration();
-            if (!retryRegistration && !cancelled) {
-              console.warn(
-                "Service worker not registered. Push notifications require a service worker."
-              );
-              setIsChecking(false);
-              const currentPermission = getPushPermission();
-              setPermission(currentPermission);
-              setIsSubscribed(false);
-              return;
-            }
+            registration = await navigator.serviceWorker.getRegistration();
+          }
+          if (!registration && !cancelled) {
+            console.warn(
+              "Service worker not registered. Push notifications require a service worker."
+            );
+            cancelled = true;
+            setIsChecking(false);
+            const currentPermission = getPushPermission();
+            setPermission(currentPermission);
+            setIsSubscribed(false);
+            return;
           }
         }
 
         const subscription = await getCurrentPushSubscription();
         const currentPermission = getPushPermission();
         if (!cancelled) {
+          cancelled = true; // Prevent timeout from overwriting state
           setIsSubscribed(!!subscription);
           setPermission(currentPermission);
           setIsChecking(false);
@@ -133,9 +139,9 @@ export function NotificationSettings({
       } catch (error) {
         console.error("Failed to check push subscription:", error);
         if (!cancelled) {
-          const currentPermission = getPushPermission();
+          cancelled = true; // Prevent timeout from firing "timed out" after we already bailed
           setIsSubscribed(false);
-          setPermission(currentPermission);
+          setPermission(getPushPermission());
           setIsChecking(false);
         }
       }
