@@ -41,10 +41,11 @@ import {
   connectNip46WithBunkerInput,
   connectNip46WithNostrConnectUri,
   createNip46NostrConnectUri,
+  getNostrConnectAppMetadata,
   Nip07Signer,
-  parseRelayList,
   type NostrSigner,
 } from "../nostr-signer.client";
+import { parseRelayList } from "../parse-relay-list";
 
 type LoginState =
   | "signer_selection"
@@ -86,6 +87,20 @@ const PROFILE_MISMATCH_MESSAGE =
 
 /** Survives remount when app is backgrounded on mobile. */
 const PENDING_NIP46_STORAGE_KEY = "__smartflow_pending_nip46_uri_v1";
+
+/** Official Primal logo for "Login with Primal" button. */
+function PrimalLogoIcon({ className }: { className?: string }) {
+  return (
+    <img
+      src="/PrimalIcon.png"
+      alt=""
+      className={className}
+      width={20}
+      height={20}
+      aria-hidden
+    />
+  );
+}
 
 /** Append Primal callback param to nostrconnect URI so Primal redirects back to the app. Required for Login with Primal. */
 function appendPrimalCallback(uri: string): string {
@@ -1065,6 +1080,7 @@ export default function NostrLoginPanel() {
         const created = createNip46NostrConnectUri({
           relays,
           appName: "SmartFlowSocial",
+          ...getNostrConnectAppMetadata(),
         });
         if (attemptId !== nip46AttemptIdRef.current) return;
         setNostrConnectUri(created.uri);
@@ -1386,6 +1402,7 @@ export default function NostrLoginPanel() {
     const created = createNip46NostrConnectUri({
       relays,
       appName: "SmartFlowSocial",
+      ...getNostrConnectAppMetadata(),
     });
     const uriWithCallback = appendPrimalCallback(created.uri);
     const pending = {
@@ -1662,6 +1679,7 @@ export default function NostrLoginPanel() {
               onClick={() => handleLoginWithPrimal()}
             >
               <span className="flex items-center justify-center gap-2">
+                <PrimalLogoIcon className="size-5 shrink-0" />
                 Login with Primal
               </span>
             </Button>
@@ -1974,7 +1992,10 @@ export default function NostrLoginPanel() {
                         className="bg-primary text-primary-foreground hover:bg-primary/90"
                         onClick={() => handleLoginWithPrimal()}
                       >
-                        Login with Primal
+                        <span className="flex items-center justify-center gap-2">
+                          <PrimalLogoIcon className="size-5 shrink-0" />
+                          Login with Primal
+                        </span>
                       </Button>
                     ) : null}
                     <div className="text-muted-foreground text-xs">

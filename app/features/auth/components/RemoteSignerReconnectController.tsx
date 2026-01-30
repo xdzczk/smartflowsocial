@@ -39,6 +39,7 @@ import {
   connectNip46WithBunkerInput,
   connectNip46WithNostrConnectUri,
   createNip46NostrConnectUri,
+  getNostrConnectAppMetadata,
   parseRelayList,
 } from "../nostr-signer.client";
 
@@ -428,6 +429,7 @@ export function RemoteSignerReconnectDialog(props: {
       const created = createNip46NostrConnectUri({
         relays,
         appName: "SmartFlowSocial",
+        ...getNostrConnectAppMetadata(),
       });
 
       setNostrConnectUri(created.uri);

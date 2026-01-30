@@ -113,11 +113,19 @@ export function canonicalLoginMessage(input: {
   ].join("\n");
 }
 
-export function parseRelayList(raw: string): string[] {
-  return raw
-    .split(/\r?\n/g)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+export { parseRelayList } from "./parse-relay-list";
+
+/** App URL and icon URL for NIP-46 metadata so signers (e.g. Primal) can show our app name and icon. Client-only. */
+export function getNostrConnectAppMetadata(): {
+  appUrl?: string;
+  appIconUrl?: string;
+} {
+  if (typeof window === "undefined") return {};
+  const origin = window.location.origin;
+  return {
+    appUrl: origin,
+    appIconUrl: `${origin}/apple-touch-icon.png`,
+  };
 }
 
 /**
@@ -134,6 +142,10 @@ function getProgressiveConnectionTimeout(retryCount: number): number {
 export function createNip46NostrConnectUri(input: {
   relays: string[];
   appName?: string;
+  /** App URL for NIP-46 metadata (e.g. https://smartflowsocial.com). Primal shows this and uses it with the icon. */
+  appUrl?: string;
+  /** Absolute URL to app icon (e.g. https://smartflowsocial.com/apple-touch-icon.png). Shown in Primal Connected Apps. */
+  appIconUrl?: string;
 }): {
   uri: string;
   clientSecretKey: Uint8Array;
@@ -151,6 +163,8 @@ export function createNip46NostrConnectUri(input: {
     relays: input.relays,
     secret,
     name: input.appName ?? "SmartFlowSocial",
+    ...(input.appUrl && { url: input.appUrl }),
+    ...(input.appIconUrl && { image: input.appIconUrl }),
   });
 
   return { uri, clientSecretKey, pool, relays: input.relays };
