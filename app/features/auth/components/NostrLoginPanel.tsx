@@ -1448,6 +1448,16 @@ export default function NostrLoginPanel() {
   initNip46Ref.current = initNip46;
   resumeNip46Ref.current = resumeNip46WithPendingUri;
 
+  // After full page load (e.g. redirect back from Primal), restore pending NIP-46 and resume connection
+  useEffect(() => {
+    const pending = getPendingNostrConnect();
+    if (!pending) return;
+    const t = setTimeout(() => {
+      void resumeNip46Ref.current?.();
+    }, 500);
+    return () => clearTimeout(t);
+  }, [getPendingNostrConnect]);
+
   const performLogin = useCallback(async () => {
     if (!signer || !pubkey) return;
     setError(null);
