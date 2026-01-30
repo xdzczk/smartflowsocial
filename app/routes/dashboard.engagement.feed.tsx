@@ -2,6 +2,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import {
+  ENGAGEMENT_FEED_PAGE_SIZE,
   EngagementFeedPage,
   loadEngagementFeedData,
 } from "~/features/engagement";
@@ -16,7 +17,7 @@ async function loaderImpl({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") ?? "1");
-  const limit = 20; // Get last 20 posts
+  const limit = ENGAGEMENT_FEED_PAGE_SIZE;
 
   const data = await loadEngagementFeedData(userId, page, limit);
 

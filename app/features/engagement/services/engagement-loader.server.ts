@@ -16,6 +16,7 @@ import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { getPostedPosts } from "~/models/post.queries.server";
 
+import { ENGAGEMENT_FEED_PAGE_SIZE } from "../constants";
 import {
   groupNotificationsByParent,
   groupNotificationsByType,
@@ -255,7 +256,7 @@ function filterLowTrustNotifications(
 export async function loadEngagementFeedData(
   userId: string,
   page = 1,
-  limit = 20
+  limit = ENGAGEMENT_FEED_PAGE_SIZE
 ) {
   const [{ posts }, userResult] = await Promise.all([
     getPostedPosts({
@@ -654,24 +655,9 @@ export async function loadEngagementFeedData(
     trustScores[pubkey] = score;
   });
 
-  // Convert posts to DTOs (serialize Date objects to strings)
-  // Filter postsAsPostData to only include posts with replies, then convert to DTOs
-  const postsWithRepliesAsPostData = postsAsPostData.filter((post) => {
-    const se = post.signedEvent;
-    if (
-      !se ||
-      typeof se !== "object" ||
-      Array.isArray(se) ||
-      !("id" in se) ||
-      typeof (se as { id: unknown }).id !== "string"
-    ) {
-      return false;
-    }
-    const eventId = (se as { id: string }).id;
-    const postStats = stats[eventId];
-    return postStats && postStats.replies > 0;
-  });
-  const postsAsDTOs = toPostDTOArray(postsWithRepliesAsPostData);
+  // Convert all fetched posts to DTOs so "Posts fetched" reflects how many we checked.
+  // Replies are shown via groupedNotifications; we return all posts for accurate count and modal.
+  const postsAsDTOs = toPostDTOArray(postsAsPostData);
 
   // Serialize dates in groupedNotifications
   const serializedGroupedReplies = groupedByParent.replies.map((group) => ({

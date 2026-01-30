@@ -39,6 +39,7 @@ export { getMutedList } from "./mutedList.server";
 // Engagement Loader
 // ============================================================================
 
+export { ENGAGEMENT_FEED_PAGE_SIZE } from "./constants";
 export {
   loadEngagementData,
   loadEngagementFeedData,

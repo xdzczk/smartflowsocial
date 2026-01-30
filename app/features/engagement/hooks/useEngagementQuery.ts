@@ -16,6 +16,7 @@ import {
   type EngagementLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
+import { ENGAGEMENT_FEED_PAGE_SIZE } from "../constants";
 import type { EventStats, GroupedNotification } from "../types";
 
 // EngagementLoaderData is now exported from schemas
@@ -104,23 +105,15 @@ export function useEngagementInfiniteQuery() {
     queryKey: engagementKeys.list(),
     initialData: validatedLoaderData,
     getNextPageParam: (lastPage, allPages) => {
-      // Engagement loader doesn't return pagination metadata
-      // Check if last page has fewer posts than limit (20) to determine if there's more data
       const posts = Array.isArray(lastPage.posts) ? lastPage.posts : [];
-      const limit = 20;
-
-      // If we got fewer posts than the limit, there's no more data
-      if (posts.length < limit) {
+      if (posts.length < ENGAGEMENT_FEED_PAGE_SIZE) {
         return;
       }
-
-      // Otherwise, continue to next page (simple increment)
-      // maxPages limit is handled by useInfiniteRemixQuery wrapper
       return allPages.length + 1;
     },
     buildUrl: (pageParam) => `/dashboard/engagement/feed?page=${pageParam}`,
     staleTime: 30 * 1000, // 30 seconds
-    maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
+    maxPages: 10, // 10 pages × 50 = 500 posts max
     // Keep previous data visible during refetches for smoother UX
     placeholderData: (previousData) => previousData,
     // Background refetching to keep engagement feed fresh
