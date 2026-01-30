@@ -10,6 +10,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { NostrEvent } from "~/features/nostr/types";
+import { isMobile } from "~/lib/is-mobile";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   canAttemptCircuitBreaker,
@@ -22,7 +23,6 @@ import { convertHexToNpub } from "~/lib/nostr-conversion";
 import {
   clearActiveSignerConfig,
   getActiveSignerConfig,
-  isMobile,
   parseSecretKeyHex,
   serializeSecretKey,
   setActiveSignerConfig,

@@ -7,6 +7,7 @@ import {
   type NostrSigner,
 } from "~/features/auth/nostr-signer.client";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import { isMobile } from "~/lib/is-mobile";
 import {
   getActiveSession,
   updateSession,
@@ -64,18 +65,7 @@ function isIOS(): boolean {
   );
 }
 
-/**
- * Detect if we're on a mobile device (iOS or Android).
- * Exported for UI that should only be shown on mobile (e.g. Login with Primal).
- */
-export function isMobile(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return (
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent
-    ) || !!(navigator.maxTouchPoints && navigator.maxTouchPoints > 1)
-  );
-}
+export { isMobile };
 
 /**
  * Clear cached NIP-46 signer connections.
