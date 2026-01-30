@@ -13,6 +13,7 @@ import type { UserWithHashTagPresets } from "~/features/user";
 import { getUserById } from "~/features/user";
 import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
 import { logError } from "~/lib/error-logger.server";
+import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { getPostedPosts } from "~/models/post.queries.server";
 
 import {
@@ -127,16 +128,17 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
 }
 
 /**
- * Process batch of event IDs to get stats and notifications
+ * Process batch of event IDs to get stats and notifications.
+ * userPubkeyHex: logged-in user's pubkey in hex (for Primal/event comparisons).
  */
-async function processEventBatch(batchIds: string[], userNpub: string) {
+async function processEventBatch(batchIds: string[], userPubkeyHex: string) {
   const notificationPromises = batchIds.map(async (eventId) => {
     try {
       const threadViewData = await getThreadViewWithCache(eventId);
       const notifications = parseThreadViewNotifications(
         Array.isArray(threadViewData) ? threadViewData : [],
         eventId,
-        userNpub
+        userPubkeyHex
       );
 
       const statsEvent = (threadViewData as PrimalEvent[]).find(
@@ -274,6 +276,8 @@ export async function loadEngagementFeedData(
 
   // Ensure user has required properties with safe defaults
   const userNpub = user.npub;
+  // Primal cache and Nostr events use hex pubkeys; decode for API calls and comparisons
+  const userPubkeyHex = nostrAdapter.decodeNpub(userNpub) ?? userNpub;
   const userFilterMuted = user.filterMuted;
   const userHidePostsFromLowTrustUsers = user.hidePostsFromLowTrustUsers;
 
@@ -335,7 +339,7 @@ export async function loadEngagementFeedData(
 
   // Start get_notifications call early (parallel with event processing)
   const notificationsPromise = connectToPrimalCache("get_notifications", {
-    pubkey: userNpub,
+    pubkey: userPubkeyHex,
     limit: 100,
   });
 
@@ -349,7 +353,7 @@ export async function loadEngagementFeedData(
 
     // Process batches in parallel
     const batchPromises = batches.map((batchIds) =>
-      processEventBatch(batchIds, userNpub)
+      processEventBatch(batchIds, userPubkeyHex)
     );
 
     const allBatchResults = await Promise.all(batchPromises);
@@ -549,8 +553,8 @@ export async function loadEngagementFeedData(
 
             const tags = (eventTyped as { tags: NostrTag[] }).tags;
 
-            // Skip if it's the user's own post
-            if (eventTyped.pubkey === userNpub) {
+            // Skip if it's the user's own post (event.pubkey is hex)
+            if (eventTyped.pubkey === userPubkeyHex) {
               return false;
             }
 
@@ -570,12 +574,12 @@ export async function loadEngagementFeedData(
               return false;
             }
 
-            // Check if the mentioned user (p tag) is the current user
+            // Check if the mentioned user (p tag) is the current user (tags use hex)
             const mentionedUserPubkey = tags.find(
               (tag: NostrTag) =>
                 tag[0] === "p" && (tag[3] === "mention" || tag[3] === "")
             )?.[1];
-            return mentionedUserPubkey === userNpub;
+            return mentionedUserPubkey === userPubkeyHex;
           }
           return false;
         })
