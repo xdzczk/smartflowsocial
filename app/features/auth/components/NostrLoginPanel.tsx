@@ -11,6 +11,7 @@ import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { NostrEvent } from "~/features/nostr/types";
 import { isMobile } from "~/lib/is-mobile";
+import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   canAttemptCircuitBreaker,
@@ -102,8 +103,9 @@ function PrimalLogoIcon({ className }: { className?: string }) {
   );
 }
 
-/** Append Primal callback param to nostrconnect URI so Primal redirects back to the app. Required for Login with Primal. */
+/** Append Primal callback param so Primal redirects back to the app. Skipped in PWA so user manually switches back to the same window. */
 function appendPrimalCallback(uri: string): string {
+  if (isStandalonePWA()) return uri;
   const callbackUrl =
     typeof window !== "undefined"
       ? window.location.origin +
@@ -1685,7 +1687,7 @@ export default function NostrLoginPanel() {
             <Button
               type="button"
               variant="default"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto w-full py-3 text-base font-semibold shadow-lg transition-all hover:shadow-xl sm:col-span-2"
+              className="bg-background text-foreground hover:bg-muted border-border h-auto w-full border py-3 text-base font-semibold shadow-lg transition-all hover:shadow-xl sm:col-span-2"
               onClick={() => handleLoginWithPrimal()}
             >
               <span className="flex items-center justify-center gap-2">
@@ -1999,7 +2001,7 @@ export default function NostrLoginPanel() {
                       <Button
                         type="button"
                         variant="default"
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="bg-background text-foreground hover:bg-muted border-border border"
                         onClick={() => handleLoginWithPrimal()}
                       >
                         <span className="flex items-center justify-center gap-2">
