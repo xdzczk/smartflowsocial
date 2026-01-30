@@ -65,9 +65,10 @@ function isIOS(): boolean {
 }
 
 /**
- * Detect if we're on a mobile device (iOS or Android)
+ * Detect if we're on a mobile device (iOS or Android).
+ * Exported for UI that should only be shown on mobile (e.g. Login with Primal).
  */
-function isMobile(): boolean {
+export function isMobile(): boolean {
   if (typeof navigator === "undefined") return false;
   return (
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(

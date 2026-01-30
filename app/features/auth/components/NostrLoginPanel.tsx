@@ -22,6 +22,7 @@ import { convertHexToNpub } from "~/lib/nostr-conversion";
 import {
   clearActiveSignerConfig,
   getActiveSignerConfig,
+  isMobile,
   parseSecretKeyHex,
   serializeSecretKey,
   setActiveSignerConfig,
@@ -85,6 +86,20 @@ const PROFILE_MISMATCH_MESSAGE =
 
 /** Survives remount when app is backgrounded on mobile. */
 const PENDING_NIP46_STORAGE_KEY = "__smartflow_pending_nip46_uri_v1";
+
+/** Append Primal callback param to nostrconnect URI so Primal redirects back to the app. Required for Login with Primal. */
+function appendPrimalCallback(uri: string): string {
+  const callbackUrl =
+    typeof window !== "undefined"
+      ? window.location.origin +
+        window.location.pathname +
+        window.location.search
+      : "";
+  if (!callbackUrl) return uri;
+  if (uri.includes("callback=")) return uri;
+  const sep = uri.includes("?") ? "&" : "?";
+  return `${uri}${sep}callback=${encodeURIComponent(callbackUrl)}`;
+}
 
 function formatNpubShort(pubkeyHex?: string | null): string {
   if (!pubkeyHex) return "";
@@ -1360,6 +1375,58 @@ export default function NostrLoginPanel() {
     }
   }, [clearPendingNostrConnectStorage, expectedPubkey, getPendingNostrConnect]);
 
+  /** Login with Primal: generate nostrconnect URI with callback, store pending, open URI (mobile-only). When already have URI, just ensure callback and open. */
+  const handleLoginWithPrimal = useCallback(() => {
+    if (nostrConnectUri) {
+      window.location.href = appendPrimalCallback(nostrConnectUri);
+      return;
+    }
+    const relays = parseRelayList(relayList);
+    if (relays.length === 0) return;
+    const created = createNip46NostrConnectUri({
+      relays,
+      appName: "SmartFlowSocial",
+    });
+    const uriWithCallback = appendPrimalCallback(created.uri);
+    const pending = {
+      uri: uriWithCallback,
+      clientSecretKey: created.clientSecretKey.slice(0),
+      relays: [...created.relays],
+    };
+    pendingNostrConnectRef.current = pending;
+    try {
+      sessionStorage.setItem(
+        PENDING_NIP46_STORAGE_KEY,
+        JSON.stringify({
+          uri: pending.uri,
+          clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
+          relays: pending.relays,
+        })
+      );
+    } catch {
+      // ignore
+    }
+    try {
+      created.pool.close(created.relays);
+    } catch {
+      // ignore
+    }
+    setNip46Tab("nostrconnect");
+    setNostrConnectUri(uriWithCallback);
+    setState("awaiting_profile_selection");
+    setConnectionStartTime(Date.now());
+    setConnectionTimeout(120_000);
+    window.location.href = uriWithCallback;
+  }, [
+    nostrConnectUri,
+    relayList,
+    setConnectionStartTime,
+    setConnectionTimeout,
+    setNip46Tab,
+    setNostrConnectUri,
+    setState,
+  ]);
+
   // Update refs so visibility handler and Try again can call them
   initNip46Ref.current = initNip46;
   resumeNip46Ref.current = resumeNip46WithPendingUri;
@@ -1587,6 +1654,18 @@ export default function NostrLoginPanel() {
               Remote Signer (NIP-46)
             </Button>
           </div>
+          {isMobile() ? (
+            <Button
+              type="button"
+              variant="default"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto w-full py-3 text-base font-semibold shadow-lg transition-all hover:shadow-xl sm:col-span-2"
+              onClick={() => handleLoginWithPrimal()}
+            >
+              <span className="flex items-center justify-center gap-2">
+                Login with Primal
+              </span>
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
@@ -1888,6 +1967,16 @@ export default function NostrLoginPanel() {
                     >
                       {copyOk ? "Copied" : "Copy"}
                     </Button>
+                    {isMobile() ? (
+                      <Button
+                        type="button"
+                        variant="default"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        onClick={() => handleLoginWithPrimal()}
+                      >
+                        Login with Primal
+                      </Button>
+                    ) : null}
                     <div className="text-muted-foreground text-xs">
                       Scan or paste into your remote signer to approve.
                     </div>
