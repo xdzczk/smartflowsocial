@@ -3,6 +3,8 @@ import { redirect } from "@remix-run/node";
 import { prisma } from "~/lib/prisma.server";
 import { getUserSubscription } from "~/models/payment.server";
 
+export { ensureUserHasFreePlan } from "~/models/payment.server";
+
 import {
   hasFeatureAccess,
   isNewUserWithoutSubscription,

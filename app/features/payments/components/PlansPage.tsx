@@ -126,6 +126,8 @@ export function PlansPage(): ReactNode {
     isPolling,
     handlePlanSelection,
     copyToClipboard,
+    checkPaymentStatusNow,
+    handleCloseModal,
   } = usePlansState({
     user,
     actionData: parseActionData(typedActionData),
@@ -200,6 +202,10 @@ export function PlansPage(): ReactNode {
           timeRemaining={timeRemaining}
           isPolling={isPolling}
           onCopy={copyToClipboard}
+          onCheckPayment={(id) => {
+            void checkPaymentStatusNow(id);
+          }}
+          onClose={handleCloseModal}
         />
       ) : null}
 

@@ -49,10 +49,11 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     setShowInvoice(false);
   }, []);
 
-  const { isPolling, startPaymentPolling } = usePaymentPolling({
-    paymentId: invoiceData?.paymentId ?? null,
-    onPaymentComplete: handlePaymentComplete,
-  });
+  const { isPolling, startPaymentPolling, checkPaymentStatusNow } =
+    usePaymentPolling({
+      paymentId: invoiceData?.paymentId ?? null,
+      onPaymentComplete: handlePaymentComplete,
+    });
 
   // Store startPaymentPolling in a ref to avoid dependency issues
   const startPaymentPollingRef = useRef(startPaymentPolling);
@@ -172,6 +173,12 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     void navigator.clipboard.writeText(text);
   };
 
+  const handleCloseModal = useCallback(() => {
+    setShowInvoice(false);
+    setInvoiceData(null);
+    processedPaymentIdRef.current = null;
+  }, []);
+
   return {
     showInvoice,
     invoiceData,
@@ -182,5 +189,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     setSelectedPlan,
     handlePlanSelection,
     copyToClipboard,
+    checkPaymentStatusNow,
+    handleCloseModal,
   };
 }

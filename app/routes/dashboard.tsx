@@ -5,7 +5,10 @@ import {
 } from "@remix-run/node";
 
 import { requireUser } from "~/features/auth";
-import { requireActiveSubscription } from "~/features/payments";
+import {
+  requireActiveSubscription,
+  ensureUserHasFreePlan,
+} from "~/features/payments";
 import {
   DashboardLayoutPage,
   loadDashboardData,
@@ -17,7 +20,10 @@ import { withCSRFProtection } from "~/lib/csrf";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request);
 
-  // Root dashboard also requires an ACTIVE subscription
+  // New and existing users without a subscription get free plan so they land on dashboard first
+  await ensureUserHasFreePlan(user.id);
+
+  // Root dashboard requires an ACTIVE subscription (including free)
   const subscriptionData = await requireActiveSubscription(user.id);
 
   // Pending parent link requests for this user (as child)

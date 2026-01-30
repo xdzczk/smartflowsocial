@@ -70,10 +70,41 @@ export async function consumeChallengeAndCreateSession(input: {
           }
           return { id: existingUser.id };
         })()
-      : await tx.user.create({
-          data: { npub: input.pubkey, nostrProfile: input.profileJson },
-          select: { id: true },
-        });
+      : await (async () => {
+          const created = await tx.user.create({
+            data: { npub: input.pubkey, nostrProfile: input.profileJson },
+            select: { id: true },
+          });
+          const freePlan = await tx.plan.findUnique({
+            where: { id: "free" },
+            select: { id: true, price: true },
+          });
+          if (freePlan) {
+            const now = new Date();
+            await tx.subscription.create({
+              data: {
+                id: `sub_${created.id}_free_${Date.now()}`,
+                userId: created.id,
+                planId: "free",
+                status: "ACTIVE",
+                startDate: now,
+                currentPeriodStart: now,
+                currentPeriodEnd: new Date(
+                  now.getTime() + 30 * 24 * 60 * 60 * 1000
+                ),
+                lastPaymentDate: now,
+                plan: "free",
+                amountSats: BigInt(0),
+                amountUsd: freePlan.price,
+              },
+            });
+            await tx.user.update({
+              where: { id: created.id },
+              data: { isEnabled: true },
+            });
+          }
+          return created;
+        })();
 
     const expiresAt = new Date(Date.now() + input.sessionTtlMs);
     const created = await tx.session.create({

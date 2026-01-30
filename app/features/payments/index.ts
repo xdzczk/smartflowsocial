@@ -34,6 +34,7 @@ export { PLAN_FEATURES, getUserPlanType, hasFeatureAccess } from "./types";
 // ============================================================================
 
 export {
+  ensureUserHasFreePlan,
   requireFeatureAccess,
   requireAnySubscription,
   requireActiveSubscription,

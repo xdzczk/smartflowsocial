@@ -649,6 +649,56 @@ export async function getUserSubscription(userId: string) {
   });
 }
 
+const FREE_PLAN_ID = "free";
+
+/**
+ * Ensures the user has a free plan subscription (and is enabled).
+ * Idempotent: no-op if user already has a subscription.
+ * Used so new and existing users can land on dashboard first; plans CTA is shown there for upgrades.
+ */
+export async function ensureUserHasFreePlan(userId: string): Promise<void> {
+  const [user, subscription, freePlan] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isEnabled: true },
+    }),
+    getUserSubscription(userId),
+    prisma.plan.findUnique({
+      where: { id: FREE_PLAN_ID },
+      select: { id: true, price: true },
+    }),
+  ]);
+
+  if (!user || subscription || !freePlan) {
+    return;
+  }
+
+  const now = new Date();
+  const subscriptionId = `sub_${userId}_${FREE_PLAN_ID}_${Date.now()}`;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.subscription.create({
+      data: {
+        id: subscriptionId,
+        userId,
+        planId: FREE_PLAN_ID,
+        status: "ACTIVE",
+        startDate: now,
+        currentPeriodStart: now,
+        currentPeriodEnd: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        lastPaymentDate: now,
+        plan: FREE_PLAN_ID,
+        amountSats: BigInt(0),
+        amountUsd: freePlan.price,
+      },
+    });
+    await tx.user.update({
+      where: { id: userId },
+      data: { isEnabled: true },
+    });
+  });
+}
+
 /**
  * Gets all plans from database
  */

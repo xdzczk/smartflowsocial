@@ -11,10 +11,13 @@ interface InvoiceModalProps {
     amountUsd: number;
     expiresAt: string;
     planName: string;
+    paymentId?: string;
   };
   timeRemaining: number;
   isPolling: boolean;
   onCopy: (text: string) => void;
+  onCheckPayment?: (paymentId: string) => void;
+  onClose?: () => void;
 }
 
 export function InvoiceModal({
@@ -23,6 +26,8 @@ export function InvoiceModal({
   timeRemaining,
   isPolling,
   onCopy,
+  onCheckPayment,
+  onClose,
 }: InvoiceModalProps) {
   if (!isOpen) return null;
 
@@ -107,7 +112,7 @@ export function InvoiceModal({
           <p className="dark:text-muted-foreground text-muted-foreground mb-2 text-sm">
             This window will automatically close when payment is received
           </p>
-          <div className="dark:text-muted-foreground text-foreground text-xs">
+          <div className="dark:text-muted-foreground text-foreground mb-4 text-xs">
             {timeRemaining > 0 ? (
               <>
                 Payment expires in {Math.floor(timeRemaining / (1000 * 60))}:
@@ -118,6 +123,26 @@ export function InvoiceModal({
             ) : (
               <span className="text-destructive">Payment expired</span>
             )}
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {invoiceData.paymentId && onCheckPayment ? (
+              <button
+                type="button"
+                onClick={() => onCheckPayment(invoiceData.paymentId!)}
+                className="border-border bg-secondary text-secondary-foreground hover:bg-secondary/90 focus:ring-primary rounded-lg border px-4 py-2 text-sm font-medium focus:ring-1 focus:outline-none"
+              >
+                Check payment
+              </button>
+            ) : null}
+            {onClose ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="border-border bg-muted text-muted-foreground hover:bg-muted/80 focus:ring-primary rounded-lg border px-4 py-2 text-sm font-medium focus:ring-1 focus:outline-none"
+              >
+                Close
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

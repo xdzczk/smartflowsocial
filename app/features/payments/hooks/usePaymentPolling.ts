@@ -153,12 +153,18 @@ export function usePaymentPolling({
     [isPolling, pollingInterval, onPaymentComplete, navigate]
   );
 
-  // Clean up polling on component unmount
+  // Clean up polling on component unmount only. Do NOT set shouldStopPolling
+  // here when deps change: when pollingInterval goes from null to a new
+  // interval, running the previous cleanup would set shouldStopPolling=true
+  // and the next interval tick would exit without fetching (no payment-status
+  // requests visible in Network tab).
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
+    intervalRef.current = pollingInterval;
     return () => {
-      shouldStopPolling.current = true;
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
   }, [pollingInterval]);
