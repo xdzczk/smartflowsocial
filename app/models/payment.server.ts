@@ -304,7 +304,8 @@ export async function createPlanInvoice({
 }
 
 /**
- * Handles completed payments and updates user subscription
+ * Handles completed payments and updates user subscription.
+ * Idempotent: if payment is already COMPLETED, returns without updating.
  */
 export async function handlePaymentCompleted(
   paymentId: string,
@@ -312,6 +313,14 @@ export async function handlePaymentCompleted(
   planId: string
 ): Promise<void> {
   try {
+    const existing = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      select: { status: true },
+    });
+    if (existing?.status === "COMPLETED") {
+      return;
+    }
+
     // Update payment status
     await prisma.payment.update({
       where: { id: paymentId },
@@ -387,14 +396,18 @@ export async function updateUserSubscription(
   const now = new Date();
   const isLifetime = plan.enableLifetimeAccess;
 
+  // Billing period: 30 days for monthly plans. When Plan has billingIntervalMonths
+  // (e.g. for yearly plans), derive period from plan: plan.billingIntervalMonths * 30.
+  const BILLING_PERIOD_DAYS = 30;
+
   // Calculate subscription period
   const currentPeriodStart = now;
   let currentPeriodEnd: Date | null = null;
   let nextPaymentDue: Date | null = null;
 
   if (!isLifetime) {
-    // For non-lifetime plans, set monthly billing
-    currentPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const periodMs = BILLING_PERIOD_DAYS * 24 * 60 * 60 * 1000;
+    currentPeriodEnd = new Date(now.getTime() + periodMs);
     nextPaymentDue = currentPeriodEnd;
   }
 
@@ -611,6 +624,20 @@ export async function manuallyVerifyPayment(paymentId: string): Promise<{
 }
 
 /**
+ * Returns the userId that owns the payment, or null if not found.
+ * Used by API routes to enforce ownership without importing prisma.
+ */
+export async function getPaymentUserId(
+  paymentId: string
+): Promise<string | null> {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: { userId: true },
+  });
+  return payment?.userId ?? null;
+}
+
+/**
  * Checks the status of a payment
  */
 export async function checkPaymentStatus(paymentId: string): Promise<{
@@ -653,7 +680,8 @@ const FREE_PLAN_ID = "free";
 
 /**
  * Ensures the user has a free plan subscription (and is enabled).
- * Idempotent: no-op if user already has a subscription.
+ * - No subscription: create free + enable user.
+ * - Existing free subscription but INACTIVE: set status ACTIVE + enable user.
  * Used so new and existing users can land on dashboard first; plans CTA is shown there for upgrades.
  */
 export async function ensureUserHasFreePlan(userId: string): Promise<void> {
@@ -669,11 +697,38 @@ export async function ensureUserHasFreePlan(userId: string): Promise<void> {
     }),
   ]);
 
-  if (!user || subscription || !freePlan) {
+  if (!user || !freePlan) {
+    return;
+  }
+
+  const isFreeInactive =
+    subscription &&
+    subscription.planId === FREE_PLAN_ID &&
+    subscription.status !== "ACTIVE";
+
+  if (subscription && !isFreeInactive) {
     return;
   }
 
   const now = new Date();
+
+  if (isFreeInactive) {
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { userId },
+        data: {
+          status: "ACTIVE",
+          lastPaymentDate: now,
+        },
+      });
+      await tx.user.update({
+        where: { id: userId },
+        data: { isEnabled: true },
+      });
+    });
+    return;
+  }
+
   const subscriptionId = `sub_${userId}_${FREE_PLAN_ID}_${Date.now()}`;
 
   await prisma.$transaction(async (tx) => {

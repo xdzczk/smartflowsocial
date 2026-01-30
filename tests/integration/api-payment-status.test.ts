@@ -5,17 +5,35 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-// Mock dependencies
+
+const TEST_USER_ID = "test-user-123";
+
 vi.mock("~/models/payment.server", () => ({
   checkPaymentStatus: vi.fn(),
 }));
 
+vi.mock("~/features/auth/session.server", () => ({
+  requireUserId: vi.fn(() => Promise.resolve(TEST_USER_ID)),
+}));
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: {
+    payment: {
+      findUnique: vi.fn(),
+    },
+  },
+}));
+
+import { prisma } from "~/lib/prisma.server";
 import { checkPaymentStatus } from "~/models/payment.server";
 import { action, loader } from "~/routes/api.payment-status";
 
 describe("API: Payment Status", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userId: TEST_USER_ID,
+    });
   });
 
   describe("Action Handler", () => {
@@ -312,6 +330,72 @@ describe("API: Payment Status", () => {
             : data.success === 0 || data.success === false;
         expect(success).toBe(false);
         expect(data.error).toBeDefined();
+      });
+
+      it("should return 404 when payment does not exist", async () => {
+        (
+          prisma.payment.findUnique as ReturnType<typeof vi.fn>
+        ).mockResolvedValue(null);
+
+        const formData = new FormData();
+        formData.append("paymentId", "unknown-payment-id");
+
+        const request = new Request(
+          "http://localhost:3000/api/payment-status",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const actionParams: {
+          request: Request;
+          params: Record<string, string>;
+          context: Record<string, unknown>;
+        } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
+        const dataRaw: unknown = await response.json();
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
+
+        expect(response.status).toBe(404);
+        expect(data.success).toBe(false);
+        expect(data.error).toBe("Payment not found");
+      });
+
+      it("should return 403 when payment belongs to another user", async () => {
+        (
+          prisma.payment.findUnique as ReturnType<typeof vi.fn>
+        ).mockResolvedValue({ userId: "other-user-id" });
+
+        const formData = new FormData();
+        formData.append("paymentId", "payment-123");
+
+        const request = new Request(
+          "http://localhost:3000/api/payment-status",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const actionParams: {
+          request: Request;
+          params: Record<string, string>;
+          context: Record<string, unknown>;
+        } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
+        const dataRaw: unknown = await response.json();
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
+
+        expect(response.status).toBe(403);
+        expect(data.success).toBe(false);
+        expect(data.error).toBe("Forbidden");
       });
     });
   });

@@ -1,7 +1,8 @@
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
-import { checkPaymentStatusById } from "~/features/payments";
+import { requireUserId } from "~/features/auth/session.server";
+import { checkPaymentStatusById, getPaymentUserId } from "~/features/payments";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
 
@@ -16,6 +17,8 @@ type AssertFunction = (
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
+      const userId = await requireUserId(request);
+
       const errorHandler = await import("~/lib/error-handler.server");
       const assert: AssertFunction = errorHandler.assert;
 
@@ -57,6 +60,20 @@ export const action = withCSRFProtection(
       assert(paymentId !== null && paymentId !== "", "Payment ID is required", {
         hasPaymentId: paymentId !== null,
       });
+
+      const paymentUserId = await getPaymentUserId(paymentId);
+      if (!paymentUserId) {
+        return json(
+          { success: false, error: "Payment not found" },
+          { status: 404, headers: { "Content-Type": CONTENT_TYPE_JSON } }
+        );
+      }
+      if (paymentUserId !== userId) {
+        return json(
+          { success: false, error: "Forbidden" },
+          { status: 403, headers: { "Content-Type": CONTENT_TYPE_JSON } }
+        );
+      }
 
       return await checkPaymentStatusById(paymentId);
     } catch (error) {

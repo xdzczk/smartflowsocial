@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
 import { format } from "date-fns";
 import {
   Crown,
@@ -51,65 +51,108 @@ interface SubscriptionSettingsProps {
   paymentHistory: PaymentHistory[];
 }
 
-export function SubscriptionSettings({
-  subscription,
-  availablePlans: _availablePlans,
-  paymentHistory,
-}: SubscriptionSettingsProps) {
+function getStatusColor(status: string) {
+  switch (status.toUpperCase()) {
+    case "ACTIVE":
+      return "text-success bg-success/20 dark:text-success dark:bg-success/20/20";
+    case "CANCELED":
+      return "text-destructive bg-destructive/10 dark:text-destructive dark:bg-destructive/20/20";
+    case "PAST_DUE":
+      return "text-yellow-600 bg-yellow-100 dark:text-foreground dark:bg-muted";
+    case "INACTIVE":
+      return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
+    default:
+      return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
+  }
+}
+
+function formatSubscriptionDate(date: Date | null) {
+  if (!date) return "N/A";
+  return format(new Date(date), "MMM dd, yyyy");
+}
+
+function formatSubscriptionDateTime(date: Date | null) {
+  if (!date) return "N/A";
+  return format(new Date(date), "MMM dd, yyyy 'at' h:mm a");
+}
+
+function formatSubscriptionCurrency(
+  amount: number | null,
+  currency: "USD" | "SATS" = "USD"
+) {
+  if (!amount) return "Free";
+  if (currency === "SATS") {
+    return `${amount.toLocaleString()} sats`;
+  }
+  return `$${Number(amount).toFixed(2)}`;
+}
+
+function NoPaymentHistoryMessage() {
+  return (
+    <div className="py-12 text-center">
+      <Receipt className="text-foreground mx-auto mb-4 h-12 w-12" />
+      <h3 className="mb-2 text-lg font-medium">No Payment History</h3>
+      <p className="text-muted-foreground">
+        Your payment history will appear here once you make your first payment.
+      </p>
+    </div>
+  );
+}
+
+function NoSubscriptionMessage() {
+  return (
+    <div className="py-8 text-center">
+      <Crown className="text-foreground mx-auto mb-4 h-12 w-12" />
+      <h3 className="mb-2 text-lg font-medium">No Active Subscription</h3>
+      <p className="text-muted-foreground mb-6">
+        You don&apos;t have an active subscription. Choose a plan to unlock
+        premium features.
+      </p>
+      <Link
+        to="/plans"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+      >
+        View Plans
+        <ArrowUpRight className="h-4 w-4" />
+      </Link>
+    </div>
+  );
+}
+
+function useCopyToClipboard(): [
+  (text: string, hashId: string) => Promise<void>,
+  string | null,
+] {
   const [copiedHash, setCopiedHash] = React.useState<string | null>(null);
 
-  const copyToClipboard = async (text: string, hashId: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedHash(hashId);
-      setTimeout(() => setCopiedHash(null), 2000);
-    } catch (err) {
-      void (async () => {
+  const copyToClipboard = React.useCallback(
+    async (text: string, hashId: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopiedHash(hashId);
+        setTimeout(() => setCopiedHash(null), 2000);
+      } catch (err) {
         const { handleErrorSafely } =
           await import("~/lib/error-handler.client");
         handleErrorSafely(err, {
           component: "SubscriptionSettings",
           action: "copyToClipboard",
         });
-      })();
-    }
-  };
+      }
+    },
+    []
+  );
 
-  const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "ACTIVE":
-        return "text-success bg-success/20 dark:text-success dark:bg-success/20/20";
-      case "CANCELED":
-        return "text-destructive bg-destructive/10 dark:text-destructive dark:bg-destructive/20/20";
-      case "PAST_DUE":
-        return "text-yellow-600 bg-yellow-100 dark:text-foreground dark:bg-muted";
-      case "INACTIVE":
-        return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
-      default:
-        return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
-    }
-  };
+  return [copyToClipboard, copiedHash];
+}
 
-  const formatDate = (date: Date | null) => {
-    if (!date) return "N/A";
-    return format(new Date(date), "MMM dd, yyyy");
-  };
-
-  const formatDateTime = (date: Date | null) => {
-    if (!date) return "N/A";
-    return format(new Date(date), "MMM dd, yyyy 'at' h:mm a");
-  };
-
-  const formatCurrency = (
-    amount: number | null,
-    currency: "USD" | "SATS" = "USD"
-  ) => {
-    if (!amount) return "Free";
-    if (currency === "SATS") {
-      return `${amount.toLocaleString()} sats`;
-    }
-    return `$${Number(amount).toFixed(2)}`;
-  };
+/* eslint-disable sonarjs/cognitive-complexity -- Refactored: helpers and subcomponents extracted; remaining complexity is from necessary conditional UI (tabs, plan options, payment history). */
+export function SubscriptionSettings({
+  subscription,
+  availablePlans,
+  paymentHistory,
+}: SubscriptionSettingsProps) {
+  const [copyToClipboard, copiedHash] = useCopyToClipboard();
 
   return (
     <div className="bg-card rounded-lg border p-6">
@@ -190,7 +233,7 @@ export function SubscriptionSettings({
                   <div>
                     <p className="font-medium">Subscription Started</p>
                     <p className="text-muted-foreground text-sm">
-                      {formatDate(subscription.startDate)}
+                      {formatSubscriptionDate(subscription.startDate)}
                     </p>
                   </div>
                 </div>
@@ -204,7 +247,7 @@ export function SubscriptionSettings({
                     <div>
                       <p className="font-medium">Next Billing Date</p>
                       <p className="text-muted-foreground text-sm">
-                        {formatDate(
+                        {formatSubscriptionDate(
                           subscription.currentPeriodEnd ??
                             subscription.nextPaymentDue
                         )}
@@ -225,6 +268,85 @@ export function SubscriptionSettings({
                     period
                   </p>
                 </div>
+              </div>
+            ) : null}
+
+            {/* Cancel at period end - only for paid, non-lifetime, active plans */}
+            {subscription.plan?.price &&
+            Number(subscription.plan.price) > 0 &&
+            !subscription.plan.enableLifetimeAccess &&
+            !subscription.cancelAtPeriodEnd ? (
+              <div className="border-border space-y-4 rounded-lg border p-4">
+                <div>
+                  <p className="text-muted-foreground mb-2 text-sm">
+                    You will keep access to {subscription.plan.name} until{" "}
+                    {formatSubscriptionDate(
+                      subscription.currentPeriodEnd ??
+                        subscription.nextPaymentDue
+                    )}
+                    .
+                  </p>
+                  <Form method="post">
+                    <input
+                      type="hidden"
+                      name="_action"
+                      value="cancel_at_period_end"
+                    />
+                    <button
+                      type="submit"
+                      className="text-destructive hover:text-destructive/90 text-sm font-medium"
+                    >
+                      Cancel at period end
+                    </button>
+                  </Form>
+                </div>
+                {/* Downgrade at period end - switch to another plan */}
+                {availablePlans.some(
+                  (p) =>
+                    p.id !== subscription.planId &&
+                    p.id !== subscription.plan?.id
+                ) ? (
+                  <div className="border-border border-t pt-4">
+                    <p className="text-muted-foreground mb-2 text-sm">
+                      Or switch to another plan at period end:
+                    </p>
+                    <Form
+                      method="post"
+                      className="flex flex-wrap items-center gap-2"
+                    >
+                      <input
+                        type="hidden"
+                        name="_action"
+                        value="schedule_downgrade"
+                      />
+                      <select
+                        name="planId"
+                        className="border-border bg-background text-foreground rounded-md border px-3 py-1.5 text-sm"
+                        required
+                      >
+                        <option value="">Choose plan</option>
+                        {availablePlans
+                          .filter(
+                            (p) =>
+                              p.id !== subscription.planId &&
+                              p.id !== subscription.plan?.id
+                          )
+                          .map((plan) => (
+                            <option key={plan.id} value={plan.id}>
+                              {plan.name}
+                              {plan.price === 0 ? " (Free)" : ""}
+                            </option>
+                          ))}
+                      </select>
+                      <button
+                        type="submit"
+                        className="border-border bg-muted text-muted-foreground hover:bg-muted/80 rounded-md border px-3 py-1.5 text-sm font-medium"
+                      >
+                        Switch at period end
+                      </button>
+                    </Form>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -261,7 +383,7 @@ export function SubscriptionSettings({
                             </p>
                           </div>
                           <p className="text-muted-foreground mb-2 text-xs">
-                            {formatDateTime(payment.paidAt)}
+                            {formatSubscriptionDateTime(payment.paidAt)}
                           </p>
 
                           {/* Payment Hash */}
@@ -296,11 +418,14 @@ export function SubscriptionSettings({
                         </div>
                         <div className="text-right">
                           <p className="text-success font-semibold">
-                            {formatCurrency(payment.amountUsd)}
+                            {formatSubscriptionCurrency(payment.amountUsd)}
                           </p>
                           {payment.amount > 0 ? (
                             <p className="text-muted-foreground text-xs">
-                              {formatCurrency(payment.amount, "SATS")}
+                              {formatSubscriptionCurrency(
+                                payment.amount,
+                                "SATS"
+                              )}
                             </p>
                           ) : null}
                         </div>
@@ -317,35 +442,14 @@ export function SubscriptionSettings({
                 ) : null}
               </div>
             ) : (
-              <div className="py-12 text-center">
-                <Receipt className="text-foreground mx-auto mb-4 h-12 w-12" />
-                <h3 className="mb-2 text-lg font-medium">No Payment History</h3>
-                <p className="text-muted-foreground">
-                  Your payment history will appear here once you make your first
-                  payment.
-                </p>
-              </div>
+              <NoPaymentHistoryMessage />
             )}
           </TabsContent>
         </Tabs>
       ) : (
-        /* No Subscription */
-        <div className="py-8 text-center">
-          <Crown className="text-foreground mx-auto mb-4 h-12 w-12" />
-          <h3 className="mb-2 text-lg font-medium">No Active Subscription</h3>
-          <p className="text-muted-foreground mb-6">
-            You don&apos;t have an active subscription. Choose a plan to unlock
-            premium features.
-          </p>
-          <Link
-            to="/plans"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
-          >
-            View Plans
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </div>
+        <NoSubscriptionMessage />
       )}
     </div>
   );
 }
+/* eslint-enable sonarjs/cognitive-complexity */

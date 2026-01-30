@@ -71,7 +71,10 @@ export { getBitcoinRate } from "./btc.rate";
 // Payment Status
 // ============================================================================
 
-export { checkPaymentStatusById } from "./services/payment-status.server";
+export {
+  checkPaymentStatusById,
+  getPaymentUserId,
+} from "./services/payment-status.server";
 
 export { checkAndRenewSubscriptions } from "./services/subscription-renewal.server";
 

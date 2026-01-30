@@ -10,39 +10,54 @@ import { useOptionalUser } from "~/lib/remix-utils";
 // Helper Functions
 // ============================================================================
 
+/** Normalize nostrProfile to object (root loader can pass it as object or JSON string) */
+function getNostrProfileObject(user: unknown): Record<string, unknown> | null {
+  if (typeof user !== "object" || user === null || !("nostrProfile" in user)) {
+    return null;
+  }
+  const raw = (user as { nostrProfile?: unknown }).nostrProfile;
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      return typeof parsed === "object" &&
+        parsed !== null &&
+        !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function getUserProfilePicture(user: unknown): string | undefined {
+  const p = getNostrProfileObject(user);
   if (
-    typeof user === "object" &&
-    user !== null &&
-    "nostrProfile" in user &&
-    typeof user.nostrProfile === "object" &&
-    user.nostrProfile !== null &&
-    "picture" in user.nostrProfile
+    p &&
+    "picture" in p &&
+    typeof p["picture"] === "string" &&
+    p["picture"].trim()
   ) {
-    return String(user.nostrProfile["picture"]);
+    return p["picture"];
   }
   return undefined;
 }
 
 function getUserDisplayName(user: unknown): string {
-  if (
-    typeof user === "object" &&
-    user !== null &&
-    "nostrProfile" in user &&
-    typeof user.nostrProfile === "object" &&
-    user.nostrProfile !== null
-  ) {
-    if ("name" in user.nostrProfile && user.nostrProfile["name"]) {
-      return String(user.nostrProfile["name"]);
+  const p = getNostrProfileObject(user);
+  if (p) {
+    if (typeof p["name"] === "string" && p["name"].trim()) {
+      return p["name"].trim();
     }
-    if (
-      "display_name" in user.nostrProfile &&
-      user.nostrProfile["display_name"]
-    ) {
-      return String(user.nostrProfile["display_name"]);
+    if (typeof p["display_name"] === "string" && p["display_name"].trim()) {
+      return p["display_name"].trim();
     }
   }
-
   if (
     typeof user === "object" &&
     user !== null &&
@@ -52,26 +67,17 @@ function getUserDisplayName(user: unknown): string {
     const npub = String(user.npub);
     return `${npub.slice(0, 12)}...${npub.slice(-8)}`;
   }
-
   return "";
 }
 
 function getUserAvatarFallback(user: unknown): string {
-  if (
-    typeof user === "object" &&
-    user !== null &&
-    "nostrProfile" in user &&
-    typeof user.nostrProfile === "object" &&
-    user.nostrProfile !== null
-  ) {
-    if ("name" in user.nostrProfile && user.nostrProfile["name"]) {
-      return String(user.nostrProfile["name"])[0] ?? "U";
+  const p = getNostrProfileObject(user);
+  if (p) {
+    if (typeof p["name"] === "string" && p["name"].trim()) {
+      return p["name"].trim()[0] ?? "U";
     }
-    if (
-      "display_name" in user.nostrProfile &&
-      user.nostrProfile["display_name"]
-    ) {
-      return String(user.nostrProfile["display_name"])[0] ?? "U";
+    if (typeof p["display_name"] === "string" && p["display_name"].trim()) {
+      return p["display_name"].trim()[0] ?? "U";
     }
   }
   return "U";
@@ -124,7 +130,7 @@ export default function NostrAuthButton() {
               <AvatarFallback>{getUserAvatarFallback(user)}</AvatarFallback>
             </Avatar>
             <span className="hidden sm:inline">{getUserDisplayName(user)}</span>
-            {location.pathname === "/" ? (
+            {location.pathname === "/" || location.pathname === "/plans" ? (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard">Dashboard</Link>
               </Button>

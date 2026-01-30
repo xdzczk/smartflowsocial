@@ -8,8 +8,11 @@ import { json } from "@remix-run/node";
 import { DatabaseError } from "~/lib/errors";
 import {
   checkPaymentStatus,
+  getPaymentUserId,
   manuallyVerifyPayment,
 } from "~/models/payment.server";
+
+export { getPaymentUserId };
 /**
  * Check payment status by payment ID
  * Automatically attempts to verify payment if still PENDING

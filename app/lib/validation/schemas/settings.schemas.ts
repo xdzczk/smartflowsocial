@@ -428,3 +428,11 @@ export const updateTagsSchema = z.object({
 export const switchToFreePlanSchema = z.object({
   planId: z.string().min(1, "Plan ID is required"),
 });
+
+/** No body required; intent is cancel_at_period_end */
+export const cancelAtPeriodEndSchema = z.object({});
+
+/** Schedule downgrade to a plan at period end */
+export const scheduleDowngradeSchema = z.object({
+  planId: z.string().min(1, "Plan ID is required"),
+});

@@ -15,6 +15,7 @@ import { createErrorResponse } from "~/lib/error-handler.server";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
+import { prisma } from "~/lib/prisma.server";
 import {
   createRenewalPayment,
   getOwnerNwcWithRelayOverrides,
@@ -383,6 +384,16 @@ async function handleRenewalWithoutNWC(
   );
 }
 
+function getScheduledPlanId(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return null;
+  }
+  const scheduled = (metadata as Record<string, unknown>)["scheduledPlanId"];
+  return typeof scheduled === "string" && scheduled.length > 0
+    ? scheduled
+    : null;
+}
+
 async function processUserSubscription(
   user: {
     id: string;
@@ -393,6 +404,8 @@ async function processUserSubscription(
       planId: string | null;
       plan: string | null;
       currentPeriodEnd: Date | null;
+      cancelAtPeriodEnd?: boolean;
+      metadata?: unknown;
       Plan?: {
         name: string;
         price: string;
@@ -417,6 +430,40 @@ async function processUserSubscription(
   }
 
   results.expired++;
+
+  if (subscription.cancelAtPeriodEnd) {
+    const scheduledPlanId = getScheduledPlanId(subscription.metadata);
+
+    if (scheduledPlanId) {
+      const plan = await prisma.plan.findUnique({
+        where: { id: scheduledPlanId },
+      });
+      if (plan?.isActive) {
+        const paymentId = `downgrade_${Date.now()}_${user.id}`;
+        await updateUserSubscription(user.id, scheduledPlanId, paymentId);
+        await prisma.subscription.update({
+          where: { userId: user.id },
+          data: {
+            cancelAtPeriodEnd: false,
+            metadata: {},
+          },
+        });
+        return;
+      }
+    }
+
+    await prisma.subscription.update({
+      where: { userId: user.id },
+      data: {
+        status: "CANCELED",
+        endDate: new Date(),
+        cancelAtPeriodEnd: false,
+      },
+    });
+    await disableUserAccount(user.id);
+    results.disabled++;
+    return;
+  }
 
   if (user.nwcEnabled && user.encryptedNwc) {
     await handleRenewalWithNWC(user, subscription, results);
