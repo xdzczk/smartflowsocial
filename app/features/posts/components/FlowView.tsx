@@ -179,7 +179,10 @@ export function FlowView({
     const reduceMotion =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    rowVirtualizer.scrollToIndex(nowSlotIndex, {
+    // Same as initial position: one last past post + Now + future
+    const lastPastSlotIndex = nowSlotIndex - 1;
+    const index = lastPastSlotIndex >= 0 ? lastPastSlotIndex : nowSlotIndex;
+    rowVirtualizer.scrollToIndex(index, {
       align: "start",
       behavior: reduceMotion ? "auto" : "smooth",
     });

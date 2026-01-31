@@ -4,7 +4,7 @@
  * Useful for infinite scroll implementations
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface UseIntersectionObserverOptions {
   threshold?: number;
@@ -14,6 +14,8 @@ interface UseIntersectionObserverOptions {
 
 /**
  * Hook to observe when an element intersects with the viewport
+ * Re-runs the observer when the ref is attached to a new element (e.g. virtualized sentinel mounting later).
+ *
  * @param options - Intersection Observer options
  * @returns Object with ref callback and isIntersecting state
  *
@@ -35,13 +37,15 @@ export function useIntersectionObserver(
 ) {
   const { threshold = 0.8, root = null, rootMargin = "0px" } = options;
   const [isIntersecting, setIsIntersecting] = useState(false);
-  const elementRef = useRef<Element | null>(null);
+  const [element, setElement] = useState<Element | null>(null);
+
+  const ref = useCallback((node: Element | null) => {
+    setElement(node);
+    if (!node) setIsIntersecting(false);
+  }, []);
 
   useEffect(() => {
-    const element = elementRef.current;
-    if (!element) {
-      return;
-    }
+    if (!element) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -62,11 +66,7 @@ export function useIntersectionObserver(
     return () => {
       observer.disconnect();
     };
-  }, [threshold, root, rootMargin]);
-
-  const ref = (node: Element | null) => {
-    elementRef.current = node;
-  };
+  }, [element, threshold, root, rootMargin]);
 
   return { ref, isIntersecting };
 }
