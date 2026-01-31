@@ -382,8 +382,9 @@ export default function TextPost({
         payload["useHashtagPresets"] = "on";
       }
 
-      const isSchedule = submitType === "schedule-text";
-      if (isSchedule && alsoScheduleRepost && repostDelayList.length > 0) {
+      // Repost/quote schedules: use same base time for both "post now" and "schedule"
+      // (post-text: base = now; schedule-text: base = user-selected time)
+      if (alsoScheduleRepost && repostDelayList.length > 0) {
         const repostSchedules = await buildRepostSchedules(
           scheduledForUnix,
           repostDelayList.map((item) => ({
@@ -398,7 +399,7 @@ export default function TextPost({
           payload["repostSchedules"] = JSON.stringify(repostSchedules);
         }
       }
-      if (isSchedule && alsoScheduleQuote && quoteEntries.length > 0) {
+      if (alsoScheduleQuote && quoteEntries.length > 0) {
         const quoteSchedules = await buildQuoteSchedules(
           scheduledForUnix,
           quoteEntries,
