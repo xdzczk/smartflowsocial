@@ -73,6 +73,8 @@ export function createPost(data: CreatePostData): Promise<Post> {
     isRecyclable,
     hashTagPresetId,
     creationIdempotencyKey,
+    repostOfPostId,
+    quoteOfPostId,
   } = data;
 
   // Convert scheduledFor to DateTime for new field
@@ -116,6 +118,16 @@ export function createPost(data: CreatePostData): Promise<Post> {
           connect: {
             id: hashTagPresetId,
           },
+        },
+      }),
+      ...(repostOfPostId && {
+        repostOf: {
+          connect: { id: repostOfPostId },
+        },
+      }),
+      ...(quoteOfPostId && {
+        quoteOf: {
+          connect: { id: quoteOfPostId },
         },
       }),
     },
@@ -174,6 +186,16 @@ export async function createPostWithOutbox(
             connect: {
               id: data.hashTagPresetId,
             },
+          },
+        }),
+        ...(data.repostOfPostId && {
+          repostOf: {
+            connect: { id: data.repostOfPostId },
+          },
+        }),
+        ...(data.quoteOfPostId && {
+          quoteOf: {
+            connect: { id: data.quoteOfPostId },
           },
         }),
       },

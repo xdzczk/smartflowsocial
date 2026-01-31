@@ -28,6 +28,10 @@ export interface CreatePostData {
   hashTagPresetId?: string | null;
   /** Idempotency key for post creation */
   creationIdempotencyKey?: string;
+  /** Source post id when this post is a scheduled repost */
+  repostOfPostId?: string | null;
+  /** Source post id when this post is a scheduled quote */
+  quoteOfPostId?: string | null;
 }
 
 export type PostWithQueueType = Post & { queueType: QueueType | null };

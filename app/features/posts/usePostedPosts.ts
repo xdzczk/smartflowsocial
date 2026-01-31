@@ -315,6 +315,17 @@ export function usePostedPosts({
     if (repostFetcher.data?.scheduledRepostData) {
       const postsData = repostFetcher.data.scheduledRepostData;
 
+      // Only redirect when we have at least one post (avoid empty Bulk Posts)
+      if (postsData.length === 0) {
+        setToast({
+          type: "error",
+          message:
+            "No posts found to schedule. Make sure you selected regular posts (not articles).",
+        });
+        setTimeout(() => setToast(null), 5000);
+        return;
+      }
+
       // Prepare scheduled repost data with 1 hour default scheduling
       const userTimezone = user?.timezone ?? "UTC";
       const now = nowInTimezone(userTimezone);
@@ -354,6 +365,17 @@ export function usePostedPosts({
 
     if (repostFetcher.data?.quotePostData) {
       const quoteData = repostFetcher.data.quotePostData;
+
+      // Only redirect when we have at least one post (avoid empty Bulk Posts)
+      if (quoteData.length === 0) {
+        setToast({
+          type: "error",
+          message:
+            "No posts found to schedule. Make sure you selected regular posts (not articles).",
+        });
+        setTimeout(() => setToast(null), 5000);
+        return;
+      }
 
       // Store quote post data in sessionStorage
       sessionStorage.setItem(

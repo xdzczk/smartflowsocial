@@ -29,6 +29,8 @@ interface ScheduledPostsTableProps {
   onReschedulePost: (post: PostData) => void;
   onMediaClick: (src: string) => void;
   bulkDeleteState: string;
+  onScheduleRepost?: (post: PostData) => void;
+  onScheduleQuote?: (post: PostData) => void;
 }
 
 interface SortableHeaderProps {
@@ -72,6 +74,8 @@ export function ScheduledPostsTable({
   onReschedulePost,
   onMediaClick,
   bulkDeleteState,
+  onScheduleRepost,
+  onScheduleQuote,
 }: ScheduledPostsTableProps) {
   const deleteFetcher = useFetcher<{ success?: boolean }>();
   const queryClient = useQueryClient();
@@ -369,6 +373,30 @@ export function ScheduledPostsTable({
                   >
                     Reschedule
                   </button>
+                  {onScheduleRepost ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onScheduleRepost(post);
+                      }}
+                      className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+                    >
+                      Schedule repost
+                    </button>
+                  ) : null}
+                  {onScheduleQuote ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onScheduleQuote(post);
+                      }}
+                      className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-success/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+                    >
+                      Schedule quote
+                    </button>
+                  ) : null}
                   <deleteFetcher.Form
                     method="post"
                     onClick={(e) => e.stopPropagation()}

@@ -144,6 +144,8 @@ export class CreatePostUseCase {
         tags: input.tags ?? [],
         repost: input.repost ?? false,
         isQuotedPost: input.isQuotedPost ?? false,
+        repostOfPostId: input.repostOfPostId ?? undefined,
+        quoteOfPostId: input.quoteOfPostId ?? undefined,
         // Only include creationIdempotencyKey if the column exists in the database
         ...(columnExists && creationIdempotencyKey
           ? { creationIdempotencyKey }
@@ -173,6 +175,85 @@ export class CreatePostUseCase {
       );
       // Record metrics
       recordPostCreated(input.postType, false);
+    }
+
+    // Optionally create scheduled repost post (second post)
+    if (
+      input.alsoScheduleRepost &&
+      input.repostScheduledFor != null &&
+      input.repostSignedEvent
+    ) {
+      const repostScheduledForDate = toPrismaDate(
+        fromUnixTimestamp(input.repostScheduledFor, "UTC")
+      );
+      const repostPost = await createPostWithOutbox(
+        {
+          userId: input.userId,
+          content: "",
+          caption: "",
+          fileUrl: [],
+          postType: input.postType,
+          queueTypeId,
+          hashTagPresetId: input.hashTagPresetId,
+          isRecyclable: input.isRecyclable,
+          signedEvent: input.repostSignedEvent,
+          nostrEvent: undefined,
+          scheduledFor: repostScheduledForDate,
+          tags: [],
+          repost: true,
+          isQuotedPost: false,
+          repostOfPostId: post.id,
+        },
+        input.repostScheduledFor,
+        correlationId
+      );
+      await this.stateMachine.transition(
+        repostPost.id,
+        input.userId,
+        "SCHEDULED",
+        "Repost created with schedule"
+      );
+      recordPostScheduled(input.postType);
+    }
+
+    // Optionally create scheduled quote post (second post)
+    if (
+      input.alsoScheduleQuote &&
+      input.quoteScheduledFor != null &&
+      input.quoteSignedEvent
+    ) {
+      const quoteScheduledForDate = toPrismaDate(
+        fromUnixTimestamp(input.quoteScheduledFor, "UTC")
+      );
+      const quoteCaption = input.quoteCaption ?? "";
+      const quotePost = await createPostWithOutbox(
+        {
+          userId: input.userId,
+          content: quoteCaption,
+          caption: quoteCaption,
+          fileUrl: [],
+          postType: input.postType,
+          queueTypeId,
+          hashTagPresetId: input.hashTagPresetId,
+          isRecyclable: input.isRecyclable,
+          signedEvent: input.quoteSignedEvent,
+          nostrEvent: undefined,
+          scheduledFor: quoteScheduledForDate,
+          tags: [],
+          repost: false,
+          isQuotedPost: true,
+          quoteOfPostId: post.id,
+        },
+        input.quoteScheduledFor,
+        correlationId
+      );
+      await this.stateMachine.transition(
+        quotePost.id,
+        input.userId,
+        "SCHEDULED",
+        "Quote post created with schedule"
+      );
+      recordPostScheduled(input.postType);
     }
 
     logInfo("CreatePostUseCase: Post created successfully", {

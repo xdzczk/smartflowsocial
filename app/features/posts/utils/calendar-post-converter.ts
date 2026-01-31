@@ -103,6 +103,9 @@ export function longFormPostDataToCalendarPost(
       "isRecyclable" in post && typeof post.isRecyclable === "boolean"
         ? post.isRecyclable
         : false,
+    // Longform has no repost/quote source link
+    repostOfPostId: null,
+    quoteOfPostId: null,
     // CalendarPost specific fields
     title: post.title ?? undefined,
     summary: post.summary ?? undefined,

@@ -23,6 +23,10 @@ import {
 } from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../types";
+import {
+  buildKind6RepostEvent,
+  buildQuoteEvent,
+} from "../../utils/repost-quote-events.client";
 
 import type { CalendarPost } from "./PostBlock.types";
 interface RescheduleData {
@@ -130,6 +134,115 @@ function formatDateTimeForInput(date: Date, userTimezone: string): string {
   // Use Temporal for consistent datetime-local formatting
   const zonedDateTime = fromDate(date, userTimezone);
   return formatForDateTimeLocal(zonedDateTime, userTimezone);
+}
+
+function getRescheduleHeaderTitle(
+  isEdit: boolean,
+  wasAutoScheduled: boolean
+): string {
+  if (isEdit) return "Edit Post Schedule";
+  if (wasAutoScheduled) return "Override Queue Logic?";
+  return "Update Post Time?";
+}
+
+function getConfirmButtonLabel(
+  isEdit: boolean,
+  wasAutoScheduled: boolean,
+  isSigningEvent: boolean,
+  fetcherState: string
+): string {
+  if (isSigningEvent) return "Signing Event...";
+  if (fetcherState === "submitting") return "Updating...";
+  if (isEdit) return "Save Changes";
+  if (wasAutoScheduled) return "Convert to Manual";
+  return "Confirm";
+}
+
+interface SignedEventForRepost {
+  id: string;
+  pubkey: string;
+  created_at?: number;
+  kind?: number;
+  tags?: string[][];
+  content?: string;
+  sig?: string;
+}
+
+function canScheduleRepostQuoteForPost(
+  isLongform: boolean,
+  post: CalendarPost
+): boolean {
+  if (isLongform) return false;
+  const ev = post.signedEvent;
+  if (!ev || typeof ev !== "object") return false;
+  return "id" in ev && "pubkey" in ev;
+}
+
+async function submitRepostSchedule(
+  postId: string,
+  originalSignedEvent: SignedEventForRepost,
+  scheduledForUnix: number,
+  submit: (formData: FormData) => void
+): Promise<void> {
+  const repostEvent = buildKind6RepostEvent(
+    originalSignedEvent as SignedEventForRepost & {
+      created_at: number;
+      kind: number;
+      tags: string[][];
+      content: string;
+      sig: string;
+    },
+    scheduledForUnix
+  );
+  const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
+    content: repostEvent.content,
+    created_at: repostEvent.created_at,
+    kind: repostEvent.kind,
+    tags: repostEvent.tags,
+  });
+  const formData = new FormData();
+  formData.set("_action", "scheduleRepost");
+  formData.set("postId", postId);
+  formData.set("scheduledFor", scheduledForUnix.toString());
+  formData.set("signedEvent", JSON.stringify(repostSignedEvent));
+  submit(formData);
+}
+
+async function submitQuoteSchedule(
+  postId: string,
+  originalSignedEvent: SignedEventForRepost,
+  scheduledForUnix: number,
+  caption: string,
+  submit: (formData: FormData) => void
+): Promise<void> {
+  const tagArray: string[][] = [];
+  const quoteEvent = buildQuoteEvent(
+    originalSignedEvent as SignedEventForRepost & {
+      created_at: number;
+      kind: number;
+      tags: string[][];
+      content: string;
+      sig: string;
+    },
+    caption,
+    scheduledForUnix,
+    tagArray
+  );
+  const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
+    content: quoteEvent.content,
+    created_at: quoteEvent.created_at,
+    kind: quoteEvent.kind,
+    tags: quoteEvent.tags,
+  });
+  const formData = new FormData();
+  formData.set("_action", "scheduleQuote");
+  formData.set("postId", postId);
+  formData.set("scheduledFor", scheduledForUnix.toString());
+  formData.set("signedEvent", JSON.stringify(quoteSignedEvent));
+  if (caption) {
+    formData.set("quoteCaption", caption);
+  }
+  submit(formData);
 }
 
 function renderModalContent(
@@ -415,6 +528,16 @@ export function RescheduleModal({
   const [selectedQueueType, setSelectedQueueType] = useState<string | null>(
     null
   );
+  const [scheduleRepostQuoteMode, setScheduleRepostQuoteMode] = useState<
+    null | "repost" | "quote"
+  >(null);
+  const [repostQuoteScheduledFor, setRepostQuoteScheduledFor] = useState("");
+  const [repostQuoteCaption, setRepostQuoteCaption] = useState("");
+  const scheduleRepostQuoteFetcher = useFetcher<{
+    success?: boolean;
+    postId?: string;
+    error?: string;
+  }>();
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -429,6 +552,21 @@ export function RescheduleModal({
       toast.error(`Reschedule failed: ${fetcher.data.error}`);
     }
   }, [fetcher.data, onConfirm]);
+
+  useEffect(() => {
+    if (scheduleRepostQuoteFetcher.data?.success) {
+      toast.success(
+        scheduleRepostQuoteMode === "repost"
+          ? "Repost scheduled successfully!"
+          : "Quote post scheduled successfully!"
+      );
+      setScheduleRepostQuoteMode(null);
+      onConfirm(true);
+    }
+    if (scheduleRepostQuoteFetcher.data?.error) {
+      toast.error(String(scheduleRepostQuoteFetcher.data.error));
+    }
+  }, [scheduleRepostQuoteFetcher.data, scheduleRepostQuoteMode, onConfirm]);
 
   // Initialize editable datetime and queue type when data changes
   useEffect(() => {
@@ -497,6 +635,75 @@ export function RescheduleModal({
     );
   };
 
+  const submitRepostQuote = (formData: FormData) => {
+    scheduleRepostQuoteFetcher.submit(formData, {
+      method: "post",
+      action: "/dashboard/scheduled",
+    });
+  };
+
+  const handleScheduleRepostQuoteConfirm = async () => {
+    if (!repostQuoteScheduledFor.trim()) {
+      toast.error("Please select a date and time.");
+      return;
+    }
+    const originalSignedEvent = post.signedEvent as
+      | { id: string; pubkey: string; content?: string; tags?: string[][] }
+      | undefined;
+    if (!originalSignedEvent?.id || !originalSignedEvent.pubkey) {
+      toast.error("Original event not found. Cannot schedule repost/quote.");
+      return;
+    }
+    try {
+      setIsSigningEvent(true);
+      setSigningError(null);
+      const zoned = parseDateTimeLocal(repostQuoteScheduledFor, userTimezone);
+      const utcZoned = zoned.withTimeZone("UTC");
+      const scheduledForUnix = toUnixTimestamp(utcZoned);
+      const ev = originalSignedEvent as SignedEventForRepost & {
+        created_at: number;
+        kind: number;
+        tags: string[][];
+        content: string;
+        sig: string;
+      };
+      if (scheduleRepostQuoteMode === "repost") {
+        await submitRepostSchedule(
+          post.id,
+          ev,
+          scheduledForUnix,
+          submitRepostQuote
+        );
+      } else if (scheduleRepostQuoteMode === "quote") {
+        await submitQuoteSchedule(
+          post.id,
+          ev,
+          scheduledForUnix,
+          repostQuoteCaption,
+          submitRepostQuote
+        );
+      }
+    } catch (error) {
+      handleErrorSafely(error, {
+        component: "RescheduleModal",
+        action: "handleScheduleRepostQuoteConfirm",
+      });
+      setSigningError(
+        error instanceof Error
+          ? error.message
+          : "Failed to sign. Please try again."
+      );
+      toast.error("Failed to sign event.");
+    } finally {
+      setIsSigningEvent(false);
+    }
+  };
+
+  const canScheduleRepostQuote = canScheduleRepostQuoteForPost(
+    data.isLongform,
+    post
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="border-border bg-card w-full max-w-md rounded-lg border shadow-xl">
@@ -504,11 +711,7 @@ export function RescheduleModal({
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-foreground text-lg font-semibold">
-              {isEdit
-                ? "Edit Post Schedule"
-                : wasAutoScheduled
-                  ? "Override Queue Logic?"
-                  : "Update Post Time?"}
+              {getRescheduleHeaderTitle(isEdit, wasAutoScheduled)}
             </h3>
             <button
               onClick={onClose}
@@ -531,61 +734,158 @@ export function RescheduleModal({
           </div>
 
           {/* Content */}
-          {renderModalContent(
-            post,
-            firstMedia,
-            isEdit,
-            editableDateTime,
-            userTimezone,
-            formatDateTimeForInput,
-            formatDateTime,
-            userTimeFormat,
-            handleDateTimeChange,
-            selectedQueueType,
-            setSelectedQueueType,
-            queueTypes,
-            validationError,
-            fetcher.data?.error,
-            signingError
+          {scheduleRepostQuoteMode ? (
+            <div className="space-y-4">
+              <p className="text-muted-foreground text-sm">
+                {scheduleRepostQuoteMode === "repost"
+                  ? "Choose when to schedule the repost."
+                  : "Choose when to schedule the quote and add an optional caption."}
+              </p>
+              <div>
+                <label
+                  htmlFor="repostQuoteScheduledFor"
+                  className="text-foreground mb-1 block text-sm font-medium"
+                >
+                  Schedule at
+                </label>
+                <input
+                  id="repostQuoteScheduledFor"
+                  type="datetime-local"
+                  value={repostQuoteScheduledFor}
+                  onChange={(e) => setRepostQuoteScheduledFor(e.target.value)}
+                  className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
+                />
+              </div>
+              {scheduleRepostQuoteMode === "quote" ? (
+                <div>
+                  <label
+                    htmlFor="repostQuoteCaption"
+                    className="text-foreground mb-1 block text-sm font-medium"
+                  >
+                    Quote caption (optional)
+                  </label>
+                  <textarea
+                    id="repostQuoteCaption"
+                    value={repostQuoteCaption}
+                    onChange={(e) => setRepostQuoteCaption(e.target.value)}
+                    placeholder="Add your comment..."
+                    rows={3}
+                    className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
+                  />
+                </div>
+              ) : null}
+              {(scheduleRepostQuoteFetcher.data?.error ?? signingError) ? (
+                <div className="border-destructive/30 bg-destructive/10 rounded-lg border p-3">
+                  <div className="text-destructive text-sm">
+                    {scheduleRepostQuoteFetcher.data?.error ?? signingError}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            renderModalContent(
+              post,
+              firstMedia,
+              isEdit,
+              editableDateTime,
+              userTimezone,
+              formatDateTimeForInput,
+              formatDateTime,
+              userTimeFormat,
+              handleDateTimeChange,
+              selectedQueueType,
+              setSelectedQueueType,
+              queueTypes,
+              validationError,
+              fetcher.data?.error,
+              signingError
+            )
           )}
 
           {/* Actions */}
-          <div className="mt-6 flex items-center justify-end space-x-3">
-            <button
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
-            >
-              Cancel
-            </button>
+          <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
+            {scheduleRepostQuoteMode ? (
+              <>
+                <button
+                  onClick={() => {
+                    setScheduleRepostQuoteMode(null);
+                    setRepostQuoteScheduledFor("");
+                    setRepostQuoteCaption("");
+                  }}
+                  className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => void handleScheduleRepostQuoteConfirm()}
+                  disabled={
+                    scheduleRepostQuoteFetcher.state !== "idle" ||
+                    isSigningEvent ||
+                    !repostQuoteScheduledFor.trim()
+                  }
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                >
+                  {isSigningEvent ||
+                  scheduleRepostQuoteFetcher.state === "submitting"
+                    ? "Signing..."
+                    : scheduleRepostQuoteMode === "repost"
+                      ? "Schedule repost"
+                      : "Schedule quote"}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={onClose}
+                  className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                {canScheduleRepostQuote ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setScheduleRepostQuoteMode("repost")}
+                      className="border-primary/30 text-primary hover:bg-primary/5 rounded-lg border px-4 py-2 text-sm font-medium"
+                    >
+                      Schedule repost
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScheduleRepostQuoteMode("quote")}
+                      className="border-primary/30 text-primary hover:bg-primary/5 rounded-lg border px-4 py-2 text-sm font-medium"
+                    >
+                      Schedule quote
+                    </button>
+                  </>
+                ) : null}
+                {wasAutoScheduled ? (
+                  <button
+                    onClick={() => void handleConfirm(false)}
+                    className="border-primary/30 text-primary hover:bg-primary/5 hover:text-primary/90 rounded-lg border px-4 py-2 text-sm font-medium"
+                  >
+                    Keep Queue Rule
+                  </button>
+                ) : null}
 
-            {wasAutoScheduled ? (
-              <button
-                onClick={() => void handleConfirm(false)}
-                className="border-primary/30 text-primary hover:bg-primary/5 hover:text-primary/90 rounded-lg border px-4 py-2 text-sm font-medium"
-              >
-                Keep Queue Rule
-              </button>
-            ) : null}
-
-            <button
-              onClick={() => void handleConfirm(wasAutoScheduled)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={
-                fetcher.state === "submitting" ||
-                isSigningEvent ||
-                !!validationError
-              }
-            >
-              {isSigningEvent
-                ? "Signing Event..."
-                : fetcher.state === "submitting"
-                  ? "Updating..."
-                  : isEdit
-                    ? "Save Changes"
-                    : wasAutoScheduled
-                      ? "Convert to Manual"
-                      : "Confirm"}
-            </button>
+                <button
+                  onClick={() => void handleConfirm(wasAutoScheduled)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={
+                    fetcher.state === "submitting" ||
+                    isSigningEvent ||
+                    !!validationError
+                  }
+                >
+                  {getConfirmButtonLabel(
+                    isEdit,
+                    wasAutoScheduled,
+                    isSigningEvent,
+                    fetcher.state
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

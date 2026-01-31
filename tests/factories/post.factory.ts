@@ -39,6 +39,8 @@ export interface PostFactoryOptions {
   publishingLockId?: string | null;
   publishingLockExpiresAt?: Date | null;
   publishingStartedAt?: Date | null;
+  repostOfPostId?: string | null;
+  quoteOfPostId?: string | null;
 }
 
 export class PostFactory {
@@ -232,6 +234,8 @@ export class PostFactory {
       publishingLockId: this.options.publishingLockId ?? null,
       publishingLockExpiresAt: this.options.publishingLockExpiresAt ?? null,
       publishingStartedAt: this.options.publishingStartedAt ?? null,
+      repostOfPostId: this.options.repostOfPostId ?? null,
+      quoteOfPostId: this.options.quoteOfPostId ?? null,
     };
     return post;
   }

@@ -161,6 +161,44 @@ export async function handleScheduleImages({
   const fileUrlArray = fileUrl ? (JSON.parse(fileUrl) as string[]) : [];
   const isVideo = isVideoFile(fileUrlArray);
 
+  const alsoScheduleRepost = formData.get("alsoScheduleRepost") === "on";
+  const repostScheduledForStr = formData.get("repostScheduledFor");
+  const repostSignedEventStr = formData.get("repostSignedEvent");
+  const alsoScheduleQuote = formData.get("alsoScheduleQuote") === "on";
+  const quoteScheduledForStr = formData.get("quoteScheduledFor");
+  const quoteSignedEventStr = formData.get("quoteSignedEvent");
+  const quoteCaption = formData.get("quoteCaption");
+
+  let repostScheduledFor: number | undefined;
+  let repostSignedEvent: SignedEvent | undefined;
+  if (alsoScheduleRepost && repostScheduledForStr && repostSignedEventStr) {
+    repostScheduledFor = parseInt(String(repostScheduledForStr), 10);
+    if (!Number.isNaN(repostScheduledFor)) {
+      try {
+        repostSignedEvent = JSON.parse(
+          String(repostSignedEventStr)
+        ) as SignedEvent;
+      } catch {
+        repostSignedEvent = undefined;
+      }
+    }
+  }
+
+  let quoteScheduledFor: number | undefined;
+  let quoteSignedEvent: SignedEvent | undefined;
+  if (alsoScheduleQuote && quoteScheduledForStr && quoteSignedEventStr) {
+    quoteScheduledFor = parseInt(String(quoteScheduledForStr), 10);
+    if (!Number.isNaN(quoteScheduledFor)) {
+      try {
+        quoteSignedEvent = JSON.parse(
+          String(quoteSignedEventStr)
+        ) as SignedEvent;
+      } catch {
+        quoteSignedEvent = undefined;
+      }
+    }
+  }
+
   // Use CreatePostUseCase for post creation with scheduling (handles queue type resolution internally)
   const createPostUseCase = new CreatePostUseCase();
   const result = await createPostUseCase.execute({
@@ -179,6 +217,13 @@ export async function handleScheduleImages({
     hashTagPresetTags,
     showHashTagsinPosts,
     correlationId,
+    alsoScheduleRepost: alsoScheduleRepost && !!repostSignedEvent,
+    repostScheduledFor,
+    repostSignedEvent,
+    alsoScheduleQuote: alsoScheduleQuote && !!quoteSignedEvent,
+    quoteScheduledFor,
+    quoteSignedEvent,
+    quoteCaption: quoteCaption ? String(quoteCaption) : undefined,
   });
 
   // Stay on current page and show modal there

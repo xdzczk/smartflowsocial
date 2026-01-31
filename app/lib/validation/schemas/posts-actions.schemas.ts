@@ -17,6 +17,8 @@ const ACTION_BULK_DELETE = "bulkDelete";
  */
 const ERROR_POST_ID_REQUIRED = "Post ID is required";
 const AT_LEAST_ONE_POST_ID_REQUIRED = "At least one post ID is required";
+const ERROR_SCHEDULED_TIME_REQUIRED = "Scheduled time is required";
+const ERROR_SIGNED_EVENT_REQUIRED = "Signed event is required";
 
 /**
  * Base action schema - validates the _action field
@@ -200,6 +202,27 @@ export const dashboardActionSchema = z.discriminatedUnion("_action", [
 ]);
 
 /**
+ * Schedule repost: create one scheduled repost post from an existing post
+ */
+export const scheduleRepostSchema = z.object({
+  _action: z.literal("scheduleRepost"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
+  scheduledFor: z.string().min(1, ERROR_SCHEDULED_TIME_REQUIRED),
+  signedEvent: z.string().min(1, ERROR_SIGNED_EVENT_REQUIRED),
+});
+
+/**
+ * Schedule quote: create one scheduled quote post from an existing post
+ */
+export const scheduleQuoteSchema = z.object({
+  _action: z.literal("scheduleQuote"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
+  scheduledFor: z.string().min(1, ERROR_SCHEDULED_TIME_REQUIRED),
+  signedEvent: z.string().min(1, ERROR_SIGNED_EVENT_REQUIRED),
+  quoteCaption: z.string().optional(),
+});
+
+/**
  * Union schema for all scheduled actions
  */
 export const scheduledActionSchema = z.discriminatedUnion("_action", [
@@ -208,6 +231,8 @@ export const scheduledActionSchema = z.discriminatedUnion("_action", [
   bulkDeletePostsSchema,
   bulkDeleteLongFormPostsSchema,
   bulkDeleteMixedSchema,
+  scheduleRepostSchema,
+  scheduleQuoteSchema,
 ]);
 
 /**
@@ -262,7 +287,7 @@ export const draftEditResumeSchema = z.object({
   caption: z.string(),
   queueType: z.string().optional().nullable(),
   queueTypeId: z.string().optional().nullable(),
-  scheduledFor: z.string().min(1, "Scheduled time is required"),
+  scheduledFor: z.string().min(1, ERROR_SCHEDULED_TIME_REQUIRED),
   signedEvent: z
     .string()
     .min(1, "Signed event is required")
@@ -287,6 +312,19 @@ export const draftEditResumeSchema = z.object({
     .pipe(nostrEventSchema),
   useHashtagPresets: z.coerce.boolean().default(false).optional(),
   hashTagPresetId: z.string().optional().nullable(),
+  alsoScheduleRepost: z
+    .string()
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
+  repostScheduledFor: z.string().optional(),
+  repostSignedEvent: z.string().optional(),
+  alsoScheduleQuote: z
+    .string()
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
+  quoteScheduledFor: z.string().optional(),
+  quoteSignedEvent: z.string().optional(),
+  quoteCaption: z.string().optional(),
 });
 
 /**

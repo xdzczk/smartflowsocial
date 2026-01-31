@@ -28,6 +28,8 @@ export function deserializePostDTO(dto: PostDTO): PostData {
     publishingStartedAt: dto.publishingStartedAt
       ? toDate(fromISOString(dto.publishingStartedAt, "UTC"))
       : null,
+    repostOfPostId: dto.repostOfPostId ?? null,
+    quoteOfPostId: dto.quoteOfPostId ?? null,
   };
   return result;
 }

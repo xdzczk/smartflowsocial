@@ -41,6 +41,8 @@ interface ContentTableRowProps {
   individualRepostFetcher?: PostFetcher;
   longformRepostFetcher?: PostFetcher;
   longformQuoteFetcher?: PostFetcher;
+  onScheduleRepost?: (post: PostData) => void;
+  onScheduleQuote?: (post: PostData) => void;
 }
 
 export function ContentTableRow({
@@ -58,6 +60,8 @@ export function ContentTableRow({
   individualRepostFetcher,
   longformRepostFetcher,
   longformQuoteFetcher,
+  onScheduleRepost,
+  onScheduleQuote,
 }: ContentTableRowProps) {
   const typeBadge = getContentTypeBadge(item);
   const queueDisplay = getQueueTypeDisplay(item.queueType);
@@ -174,6 +178,8 @@ export function ContentTableRow({
           individualRepostFetcher={individualRepostFetcher}
           longformRepostFetcher={longformRepostFetcher}
           longformQuoteFetcher={longformQuoteFetcher}
+          onScheduleRepost={onScheduleRepost}
+          onScheduleQuote={onScheduleQuote}
         />
       </td>
     </tr>
@@ -189,6 +195,8 @@ function ContentRowActions({
   individualRepostFetcher,
   longformRepostFetcher,
   longformQuoteFetcher,
+  onScheduleRepost,
+  onScheduleQuote,
 }: {
   item: CombinedContent;
   type: "scheduled" | "draft" | "posted";
@@ -198,6 +206,8 @@ function ContentRowActions({
   individualRepostFetcher?: PostFetcher;
   longformRepostFetcher?: PostFetcher;
   longformQuoteFetcher?: PostFetcher;
+  onScheduleRepost?: (post: PostData) => void;
+  onScheduleQuote?: (post: PostData) => void;
 }) {
   return (
     <div className="flex items-center justify-center gap-2">
@@ -288,6 +298,30 @@ function ContentRowActions({
                           : "Quote Post"}
                       </button>
                     </fetcher.Form>
+                    {onScheduleRepost ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onScheduleRepost(item.originalData as PostData);
+                        }}
+                        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                      >
+                        Schedule repost
+                      </button>
+                    ) : null}
+                    {onScheduleQuote ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onScheduleQuote(item.originalData as PostData);
+                        }}
+                        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-success/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                      >
+                        Schedule quote
+                      </button>
+                    ) : null}
                   </>
                 );
               })()
@@ -387,6 +421,30 @@ function ContentRowActions({
           >
             Reschedule
           </button>
+          {item.type === "post" && onScheduleRepost ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onScheduleRepost(item.originalData as PostData);
+              }}
+              className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+            >
+              Schedule repost
+            </button>
+          ) : null}
+          {item.type === "post" && onScheduleQuote ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onScheduleQuote(item.originalData as PostData);
+              }}
+              className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-success/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+            >
+              Schedule quote
+            </button>
+          ) : null}
         </>
       ) : null}
 

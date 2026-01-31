@@ -158,6 +158,13 @@ model Post {
   template                Template?             @relation(fields: [templateId], references: [id])
   user                    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   stateTransitions        PostStateTransition[]
+  // Source post for scheduled repost/quote (multiple reposts/quotes per source allowed)
+  repostOfPostId          String?
+  repostOf                Post?                 @relation("RepostOf", fields: [repostOfPostId], references: [id])
+  reposts                 Post[]                @relation("RepostOf")
+  quoteOfPostId           String?
+  quoteOf                 Post?                 @relation("QuoteOf", fields: [quoteOfPostId], references: [id])
+  quotes                  Post[]                @relation("QuoteOf")
 
   // Indexes for common query patterns
   // State machine indexes (use currentState as single source of truth)
@@ -165,6 +172,8 @@ model Post {
   @@index([currentState, scheduledAtUtc])
   @@index([userId, currentState, scheduledAtUtc])
   @@index([userId, scheduledAtUtc])
+  @@index([repostOfPostId])
+  @@index([quoteOfPostId])
 }
 
 model LongFormPost {

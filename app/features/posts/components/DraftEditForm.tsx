@@ -28,6 +28,16 @@ interface DraftEditFormProps {
   onHashtagPresetSelect: (presetId: string | null, hashtags: string) => void;
   onUseHashtagPresetsChange: (value: boolean) => void;
   onResumeClick: () => void;
+  alsoScheduleRepost?: boolean;
+  onAlsoScheduleRepostChange?: (value: boolean) => void;
+  repostScheduledFor?: string;
+  onRepostScheduledForChange?: (value: string) => void;
+  alsoScheduleQuote?: boolean;
+  onAlsoScheduleQuoteChange?: (value: boolean) => void;
+  quoteScheduledFor?: string;
+  onQuoteScheduledForChange?: (value: string) => void;
+  quoteCaption?: string;
+  onQuoteCaptionChange?: (value: string) => void;
 }
 
 export function DraftEditForm({
@@ -47,6 +57,16 @@ export function DraftEditForm({
   onHashtagPresetSelect,
   onUseHashtagPresetsChange,
   onResumeClick,
+  alsoScheduleRepost = false,
+  onAlsoScheduleRepostChange,
+  repostScheduledFor = "",
+  onRepostScheduledForChange,
+  alsoScheduleQuote = false,
+  onAlsoScheduleQuoteChange,
+  quoteScheduledFor = "",
+  onQuoteScheduledForChange,
+  quoteCaption = "",
+  onQuoteCaptionChange,
 }: DraftEditFormProps) {
   const fetcher = useFetcher();
 
@@ -179,6 +199,96 @@ export function DraftEditForm({
           <p className="text-muted-foreground dark:text-foreground mt-1 text-sm">
             Set a schedule time to resume this draft as a scheduled post
           </p>
+        </div>
+
+        {/* Also schedule repost/quote */}
+        <div className="border-border bg-muted/30 space-y-3 rounded-lg border p-4">
+          <div className="text-foreground text-sm font-medium">
+            Also schedule when resuming
+          </div>
+          {onAlsoScheduleRepostChange ? (
+            <>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={alsoScheduleRepost}
+                  onChange={(e) => onAlsoScheduleRepostChange(e.target.checked)}
+                  className="border-border rounded"
+                />
+                <span className="text-sm">Schedule a repost</span>
+              </label>
+              {alsoScheduleRepost && onRepostScheduledForChange ? (
+                <div>
+                  <Label
+                    htmlFor="draft-repost-scheduled-for"
+                    className="text-muted-foreground text-xs"
+                  >
+                    Repost at
+                  </Label>
+                  <input
+                    id="draft-repost-scheduled-for"
+                    type="datetime-local"
+                    value={repostScheduledFor}
+                    onChange={(e) => onRepostScheduledForChange(e.target.value)}
+                    className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-lg border p-2 text-sm"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              ) : null}
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={alsoScheduleQuote}
+                  onChange={(e) =>
+                    onAlsoScheduleQuoteChange?.(e.target.checked)
+                  }
+                  className="border-border rounded"
+                />
+                <span className="text-sm">Schedule a quote</span>
+              </label>
+              {alsoScheduleQuote && onQuoteScheduledForChange ? (
+                <div className="space-y-1">
+                  <div>
+                    <Label
+                      htmlFor="draft-quote-scheduled-for"
+                      className="text-muted-foreground text-xs"
+                    >
+                      Quote at
+                    </Label>
+                    <input
+                      id="draft-quote-scheduled-for"
+                      type="datetime-local"
+                      value={quoteScheduledFor}
+                      onChange={(e) =>
+                        onQuoteScheduledForChange(e.target.value)
+                      }
+                      className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-lg border p-2 text-sm"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  {onQuoteCaptionChange ? (
+                    <div>
+                      <Label
+                        htmlFor="draft-quote-caption"
+                        className="text-muted-foreground text-xs"
+                      >
+                        Quote caption (optional)
+                      </Label>
+                      <Textarea
+                        id="draft-quote-caption"
+                        value={quoteCaption}
+                        onChange={(e) => onQuoteCaptionChange(e.target.value)}
+                        placeholder="Add your comment..."
+                        rows={2}
+                        className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 w-full rounded-lg border p-2 text-sm"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </>
+          ) : null}
         </div>
 
         {/* Action Buttons */}

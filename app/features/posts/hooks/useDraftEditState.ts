@@ -2,12 +2,18 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import { logClientError } from "~/lib/error-handler.client";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
 import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
 import { useZodForm } from "~/lib/validation/utils.client";
 
 import { signDraftForScheduling } from "../services/draft-sign.server";
 import type { UserData, HashTagPreset, PostData } from "../types";
+import {
+  buildKind6RepostEvent,
+  buildQuoteEvent,
+} from "../utils/repost-quote-events.client";
 
 interface Post {
   content?: string | null;
@@ -71,6 +77,11 @@ export function useDraftEditState({
   const [caption] = useState(post.caption ?? "");
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [selectedHashtags, setSelectedHashtags] = useState("");
+  const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
+  const [repostScheduledFor, setRepostScheduledFor] = useState("");
+  const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
+  const [quoteScheduledFor, setQuoteScheduledFor] = useState("");
+  const [quoteCaption, setQuoteCaption] = useState("");
 
   const isSubmitting = fetcher.state !== "idle";
 
@@ -166,6 +177,57 @@ export function useDraftEditState({
         formData.append("useHashtagPresets", "on");
       }
 
+      const userTimezone = user.timezone ?? "Etc/UTC";
+      const mainSigned = result.signedEvent as {
+        id: string;
+        pubkey: string;
+        created_at: number;
+        kind: number;
+        tags: string[][];
+        content: string;
+        sig: string;
+      };
+
+      if (alsoScheduleRepost && repostScheduledFor.trim()) {
+        const zoned = parseDateTimeLocal(repostScheduledFor, userTimezone);
+        const scheduledForUnix = toUnixTimestamp(zoned.withTimeZone("UTC"));
+        const repostEvent = buildKind6RepostEvent(mainSigned, scheduledForUnix);
+        const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent(
+          {
+            content: repostEvent.content,
+            created_at: repostEvent.created_at,
+            kind: repostEvent.kind,
+            tags: repostEvent.tags,
+          }
+        );
+        formData.append("alsoScheduleRepost", "on");
+        formData.append("repostScheduledFor", scheduledForUnix.toString());
+        formData.append("repostSignedEvent", JSON.stringify(repostSignedEvent));
+      }
+
+      if (alsoScheduleQuote && quoteScheduledFor.trim()) {
+        const zoned = parseDateTimeLocal(quoteScheduledFor, userTimezone);
+        const scheduledForUnix = toUnixTimestamp(zoned.withTimeZone("UTC"));
+        const quoteEvent = buildQuoteEvent(
+          mainSigned,
+          quoteCaption,
+          scheduledForUnix,
+          []
+        );
+        const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
+          content: quoteEvent.content,
+          created_at: quoteEvent.created_at,
+          kind: quoteEvent.kind,
+          tags: quoteEvent.tags,
+        });
+        formData.append("alsoScheduleQuote", "on");
+        formData.append("quoteScheduledFor", scheduledForUnix.toString());
+        formData.append("quoteSignedEvent", JSON.stringify(quoteSignedEvent));
+        if (quoteCaption) {
+          formData.append("quoteCaption", quoteCaption);
+        }
+      }
+
       fetcher.submit(formData, { method: "post" });
       setShowResumeModal(false);
     } catch (error) {
@@ -237,5 +299,15 @@ export function useDraftEditState({
     handleResumeClick,
     handleSignAndResume,
     handleHashtagPresetSelect,
+    alsoScheduleRepost,
+    setAlsoScheduleRepost,
+    repostScheduledFor,
+    setRepostScheduledFor,
+    alsoScheduleQuote,
+    setAlsoScheduleQuote,
+    quoteScheduledFor,
+    setQuoteScheduledFor,
+    quoteCaption,
+    setQuoteCaption,
   };
 }

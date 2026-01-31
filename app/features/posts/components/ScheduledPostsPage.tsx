@@ -33,6 +33,7 @@ import {
 } from "../utils/publish-result.utils";
 
 import PublishResultModal from "./PublishResultModal";
+import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
 export default function ScheduledPostsPage() {
   // Use infinite query for data fetching with infinite scroll
@@ -67,6 +68,10 @@ export default function ScheduledPostsPage() {
     publishAttemptId: string | null;
     currentState?: string | null;
     scheduledAtUtc?: Date | null;
+  } | null>(null);
+  const [scheduleRepostQuote, setScheduleRepostQuote] = useState<{
+    post: PostData;
+    mode: "repost" | "quote";
   } | null>(null);
 
   // Get current tab from URL params - default to "all"
@@ -265,6 +270,18 @@ export default function ScheduledPostsPage() {
           bulkDeleteState={bulkDeleteFetcher.state}
           onEditPost={handleEditPost}
           onReschedulePost={handleReschedulePost}
+          onScheduleRepost={(p) =>
+            setScheduleRepostQuote({
+              post: p,
+              mode: "repost",
+            })
+          }
+          onScheduleQuote={(p) =>
+            setScheduleRepostQuote({
+              post: p,
+              mode: "quote",
+            })
+          }
         />
       ) : currentTab === "posts" ? (
         <div>
@@ -295,6 +312,12 @@ export default function ScheduledPostsPage() {
             }
             onMediaClick={handleMediaClick}
             bulkDeleteState={bulkDeleteFetcher.state}
+            onScheduleRepost={(post) =>
+              setScheduleRepostQuote({ post, mode: "repost" })
+            }
+            onScheduleQuote={(post) =>
+              setScheduleRepostQuote({ post, mode: "quote" })
+            }
           />
 
           {selectedPost ? (
@@ -392,6 +415,18 @@ export default function ScheduledPostsPage() {
           onConfirm={handleModalSuccess}
           user={user ? (validateUserData(user) ?? undefined) : undefined}
           queueTypes={queueTypes}
+        />
+      ) : null}
+
+      {scheduleRepostQuote ? (
+        <ScheduleRepostQuoteModal
+          key={`schedule-repost-quote-${scheduleRepostQuote.post.id}-${scheduleRepostQuote.mode}`}
+          open={true}
+          post={scheduleRepostQuote.post}
+          mode={scheduleRepostQuote.mode}
+          onClose={() => setScheduleRepostQuote(null)}
+          onSuccess={() => setScheduleRepostQuote(null)}
+          user={user ? (validateUserData(user) ?? undefined) : undefined}
         />
       ) : null}
 

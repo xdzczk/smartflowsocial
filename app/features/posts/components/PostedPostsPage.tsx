@@ -36,6 +36,7 @@ import {
 } from "../utils/publish-result.utils";
 
 import PublishResultModal from "./PublishResultModal";
+import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
 function getDateValue(postedAt: Date | string | null | undefined): number {
   if (postedAt instanceof Date) {
@@ -155,6 +156,10 @@ export default function PostedPostsPage() {
     id: string;
     publishAttemptId: string | null;
     currentState?: string | null;
+  } | null>(null);
+  const [scheduleRepostQuote, setScheduleRepostQuote] = useState<{
+    post: PostData;
+    mode: "repost" | "quote";
   } | null>(null);
 
   // Check for published URL param
@@ -392,6 +397,12 @@ export default function PostedPostsPage() {
           onBulkScheduledRepost={handleBulkScheduledRepost}
           onBulkQuote={handleBulkQuote}
           repostFetcher={repostFetcher as PostFetcher}
+          onScheduleRepost={(post) =>
+            setScheduleRepostQuote({ post, mode: "repost" })
+          }
+          onScheduleQuote={(post) =>
+            setScheduleRepostQuote({ post, mode: "quote" })
+          }
         />
       ) : currentTab === "posts" ? (
         <PostedPostsTable
@@ -410,6 +421,12 @@ export default function PostedPostsPage() {
           bulkDeleteFetcher={bulkDeleteFetcher}
           userTimezone={user.timezone ?? undefined}
           userTimeFormat={userTimeFormat}
+          onScheduleRepost={(post) =>
+            setScheduleRepostQuote({ post, mode: "repost" })
+          }
+          onScheduleQuote={(post) =>
+            setScheduleRepostQuote({ post, mode: "quote" })
+          }
         />
       ) : (
         <LongFormListing
@@ -448,6 +465,18 @@ export default function PostedPostsPage() {
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}
           userTimeFormat={userTimeFormat}
+        />
+      ) : null}
+
+      {scheduleRepostQuote ? (
+        <ScheduleRepostQuoteModal
+          key={`schedule-repost-quote-${scheduleRepostQuote.post.id}-${scheduleRepostQuote.mode}`}
+          open={true}
+          post={scheduleRepostQuote.post}
+          mode={scheduleRepostQuote.mode}
+          onClose={() => setScheduleRepostQuote(null)}
+          onSuccess={() => setScheduleRepostQuote(null)}
+          user={user}
         />
       ) : null}
 

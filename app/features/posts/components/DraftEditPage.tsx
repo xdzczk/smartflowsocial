@@ -154,6 +154,16 @@ export default function DraftEditPage() {
     handleResumeClick,
     handleSignAndResume,
     handleHashtagPresetSelect,
+    alsoScheduleRepost,
+    setAlsoScheduleRepost,
+    repostScheduledFor,
+    setRepostScheduledFor,
+    alsoScheduleQuote,
+    setAlsoScheduleQuote,
+    quoteScheduledFor,
+    setQuoteScheduledFor,
+    quoteCaption,
+    setQuoteCaption,
   } = useDraftEditState({
     post: typedPost
       ? {
@@ -224,6 +234,16 @@ export default function DraftEditPage() {
           }
           onUseHashtagPresetsChange={setUseHashtagPresets}
           onResumeClick={handleResumeClick}
+          alsoScheduleRepost={alsoScheduleRepost}
+          onAlsoScheduleRepostChange={setAlsoScheduleRepost}
+          repostScheduledFor={repostScheduledFor}
+          onRepostScheduledForChange={setRepostScheduledFor}
+          alsoScheduleQuote={alsoScheduleQuote}
+          onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+          quoteScheduledFor={quoteScheduledFor}
+          onQuoteScheduledForChange={setQuoteScheduledFor}
+          quoteCaption={quoteCaption}
+          onQuoteCaptionChange={setQuoteCaption}
         />
       </div>
 

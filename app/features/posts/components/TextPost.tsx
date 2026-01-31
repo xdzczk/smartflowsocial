@@ -16,9 +16,134 @@ import { useZodForm } from "~/lib/validation/utils.client-safe";
 
 import { usePostScheduling } from "../hooks/usePostScheduling";
 import type { QueueType } from "../types";
+import {
+  buildKind6RepostEvent,
+  buildQuoteEvent,
+} from "../utils/repost-quote-events.client";
 
 import { QueueSelector } from "./QueueSelector";
 import { SchedulingSection } from "./SchedulingSection";
+
+/** Resolve effective hashtags for submit: manual preset or queue default from API. */
+async function getEffectiveHashtagsForSubmit(
+  useHashtagPresets: boolean,
+  selectedHashtags: string,
+  selectedQueue: string,
+  queueTypes: Array<string | QueueType>,
+  userId: string | undefined,
+  defaultTags: string[]
+): Promise<string> {
+  if (useHashtagPresets) {
+    return selectedHashtags;
+  }
+  const selectedQueueType = queueTypes.find(
+    (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueue
+  );
+  const queueTypeId =
+    typeof selectedQueueType === "object" ? selectedQueueType.id : null;
+  try {
+    const response = await fetch("/api/effective-hashtags", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        queueTypeId,
+        queueTypeName: selectedQueue,
+      }),
+    });
+    if (response.ok) {
+      const data = (await response.json()) as { hashtags?: string };
+      return data.hashtags ?? "";
+    }
+    return defaultTags.join(" ");
+  } catch (error) {
+    const { handleErrorSafely } = await import("~/lib/error-handler.client");
+    handleErrorSafely(error, {
+      component: "TextPost",
+      action: "fetchEffectiveHashtags",
+    });
+    return defaultTags.join(" ");
+  }
+}
+
+interface SignedEventLike {
+  id?: string;
+  pubkey?: string;
+  created_at?: number;
+  kind?: number;
+  tags?: string[][];
+  content?: string;
+  sig?: string;
+}
+
+async function appendRepostToFormData(
+  formData: FormData,
+  repostScheduledFor: string,
+  scheduledForUnix: number,
+  userTimezone: string,
+  signedEvent: SignedEventLike,
+  parseScheduledTime: (s: string, tz: string) => Promise<number>,
+  setSigningError: (msg: string | null) => void
+): Promise<boolean> {
+  const repostTime = await parseScheduledTime(repostScheduledFor, userTimezone);
+  const repostScheduledForUnix = Math.floor(repostTime / 1000);
+  if (repostScheduledForUnix <= scheduledForUnix) {
+    setSigningError("Repost time must be after the main post schedule time.");
+    return false;
+  }
+  const repostEvent = buildKind6RepostEvent(
+    signedEvent,
+    repostScheduledForUnix
+  );
+  const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
+    content: repostEvent.content,
+    created_at: repostEvent.created_at,
+    kind: repostEvent.kind,
+    tags: repostEvent.tags,
+  });
+  formData.set("alsoScheduleRepost", "on");
+  formData.append("repostScheduledFor", repostScheduledForUnix.toString());
+  formData.append("repostSignedEvent", JSON.stringify(repostSignedEvent));
+  return true;
+}
+
+async function appendQuoteToFormData(
+  formData: FormData,
+  quoteScheduledFor: string,
+  scheduledForUnix: number,
+  userTimezone: string,
+  signedEvent: SignedEventLike,
+  quoteCaption: string,
+  tagArray: string[][],
+  parseScheduledTime: (s: string, tz: string) => Promise<number>,
+  setSigningError: (msg: string | null) => void
+): Promise<boolean> {
+  const quoteTime = await parseScheduledTime(quoteScheduledFor, userTimezone);
+  const quoteScheduledForUnix = Math.floor(quoteTime / 1000);
+  if (quoteScheduledForUnix <= scheduledForUnix) {
+    setSigningError("Quote time must be after the main post schedule time.");
+    return false;
+  }
+  const quoteEvent = buildQuoteEvent(
+    signedEvent,
+    quoteCaption,
+    quoteScheduledForUnix,
+    tagArray
+  );
+  const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
+    content: quoteEvent.content,
+    created_at: quoteEvent.created_at,
+    kind: quoteEvent.kind,
+    tags: quoteEvent.tags,
+  });
+  formData.set("alsoScheduleQuote", "on");
+  formData.append("quoteScheduledFor", quoteScheduledForUnix.toString());
+  formData.append("quoteSignedEvent", JSON.stringify(quoteSignedEvent));
+  if (quoteCaption) {
+    formData.append("quoteCaption", quoteCaption);
+  }
+  return true;
+}
 
 interface TextPostProps {
   queueTypes?: Array<string | QueueType>;
@@ -45,6 +170,11 @@ export default function TextPost({
   const tags: string[] = [];
   const [showAssetBrowser, setShowAssetBrowser] = React.useState(false);
   const [selectedHashtags, setSelectedHashtags] = React.useState("");
+  const [alsoScheduleRepost, setAlsoScheduleRepost] = React.useState(false);
+  const [repostScheduledFor, setRepostScheduledFor] = React.useState("");
+  const [alsoScheduleQuote, setAlsoScheduleQuote] = React.useState(false);
+  const [quoteScheduledFor, setQuoteScheduledFor] = React.useState("");
+  const [quoteCaption, setQuoteCaption] = React.useState("");
 
   // Initialize form with React Hook Form
   const form = useZodForm(textPostClientSchema, {
@@ -168,66 +298,20 @@ export default function TextPost({
         submitType === "post-text"
           ? nowMillis()
           : await parseScheduledTime(data.scheduledFor ?? "", userTimezone);
-
       const scheduledForUnix = Math.floor(scheduledTime / 1000);
 
-      // Get effective hashtags - prioritize manual selection over queue defaults
-      let effectiveHashtags = "";
-
-      if (data.useHashtagPresets) {
-        // Manual hashtag presets are enabled
-        if (selectedHashtags) {
-          // Use manually selected hashtag preset
-          effectiveHashtags = selectedHashtags;
-        }
-        // If useHashtagPresets is true but no manual preset selected, use no hashtags
-        // This ensures manual hashtag preset selection overrides queue defaults
-      } else {
-        // Manual hashtag presets are disabled, use queue type's default hashtags
-        // Find the queue type object to get its ID
-        const selectedQueueType = queueTypes.find(
-          (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueue
-        );
-        const queueTypeId =
-          typeof selectedQueueType === "object" ? selectedQueueType.id : null;
-
-        try {
-          const response = await fetch("/api/effective-hashtags", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              userId: user?.id,
-              queueTypeId,
-              queueTypeName: selectedQueue, // Keep for backward compatibility
-            }),
-          });
-
-          if (response.ok) {
-            const data = (await response.json()) as { hashtags?: string };
-            effectiveHashtags = data.hashtags ?? "";
-          } else {
-            // Fallback to user's default hashtags
-            effectiveHashtags = tags.join(" ");
-          }
-        } catch (error) {
-          const { handleErrorSafely } =
-            await import("~/lib/error-handler.client");
-          handleErrorSafely(error, {
-            component: "TextPost",
-            action: "fetchEffectiveHashtags",
-          });
-          // Fallback to user's default hashtags
-          effectiveHashtags = tags.join(" ");
-        }
-      }
-
+      const effectiveHashtags = await getEffectiveHashtagsForSubmit(
+        data.useHashtagPresets,
+        selectedHashtags,
+        selectedQueue,
+        queueTypes,
+        user?.id,
+        tags
+      );
       const tagArray = effectiveHashtags
         .split(" ")
         .filter((tag) => tag.length > 0)
         .map((tag) => ["t", tag.replace("#", "")]);
-
       const contentToSign = user?.showHashTagsinPosts
         ? `${data.content}\n${effectiveHashtags}`
         : data.content;
@@ -253,6 +337,34 @@ export default function TextPost({
       if (data.useHashtagPresets && data.hashTagPresetId) {
         formData.set("hashTagPresetId", data.hashTagPresetId);
         formData.set("useHashtagPresets", "on");
+      }
+
+      const isSchedule = submitType === "schedule-text";
+      if (isSchedule && alsoScheduleRepost && repostScheduledFor) {
+        const ok = await appendRepostToFormData(
+          formData,
+          repostScheduledFor,
+          scheduledForUnix,
+          userTimezone,
+          signedEvent,
+          parseScheduledTime,
+          setSigningError
+        );
+        if (!ok) return;
+      }
+      if (isSchedule && alsoScheduleQuote && quoteScheduledFor) {
+        const ok = await appendQuoteToFormData(
+          formData,
+          quoteScheduledFor,
+          scheduledForUnix,
+          userTimezone,
+          signedEvent,
+          quoteCaption,
+          tagArray,
+          parseScheduledTime,
+          setSigningError
+        );
+        if (!ok) return;
       }
 
       fetcher.submit(formData, { method: "post" });
@@ -472,6 +584,95 @@ export default function TextPost({
               disabled={fetcher.state !== "idle" || isSigning}
               showTimeInput={false}
             />
+            <div className="border-border mt-4 space-y-3 border-t pt-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="alsoScheduleRepost"
+                  checked={alsoScheduleRepost}
+                  onChange={(e) => setAlsoScheduleRepost(e.target.checked)}
+                  disabled={fetcher.state !== "idle" || isSigning}
+                  className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
+                />
+                <Label
+                  htmlFor="alsoScheduleRepost"
+                  className="text-muted-foreground dark:text-foreground text-sm"
+                >
+                  Also schedule a repost
+                </Label>
+              </div>
+              {alsoScheduleRepost ? (
+                <div className="ml-6">
+                  <Label
+                    htmlFor="repostScheduledFor"
+                    className="text-muted-foreground text-xs"
+                  >
+                    Repost at
+                  </Label>
+                  <Input
+                    type="datetime-local"
+                    id="repostScheduledFor"
+                    value={repostScheduledFor}
+                    onChange={(e) => setRepostScheduledFor(e.target.value)}
+                    disabled={fetcher.state !== "idle" || isSigning}
+                    className="mt-1"
+                  />
+                </div>
+              ) : null}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="alsoScheduleQuote"
+                  checked={alsoScheduleQuote}
+                  onChange={(e) => setAlsoScheduleQuote(e.target.checked)}
+                  disabled={fetcher.state !== "idle" || isSigning}
+                  className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
+                />
+                <Label
+                  htmlFor="alsoScheduleQuote"
+                  className="text-muted-foreground dark:text-foreground text-sm"
+                >
+                  Also schedule a quote
+                </Label>
+              </div>
+              {alsoScheduleQuote ? (
+                <div className="ml-6 space-y-2">
+                  <div>
+                    <Label
+                      htmlFor="quoteScheduledFor"
+                      className="text-muted-foreground text-xs"
+                    >
+                      Quote at
+                    </Label>
+                    <Input
+                      type="datetime-local"
+                      id="quoteScheduledFor"
+                      value={quoteScheduledFor}
+                      onChange={(e) => setQuoteScheduledFor(e.target.value)}
+                      disabled={fetcher.state !== "idle" || isSigning}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="quoteCaption"
+                      className="text-muted-foreground text-xs"
+                    >
+                      Quote caption (optional)
+                    </Label>
+                    <Textarea
+                      id="quoteCaption"
+                      value={quoteCaption}
+                      onChange={(e) => setQuoteCaption(e.target.value)}
+                      placeholder="Add your comment..."
+                      rows={2}
+                      disabled={fetcher.state !== "idle" || isSigning}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">

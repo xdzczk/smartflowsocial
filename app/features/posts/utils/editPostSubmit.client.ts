@@ -206,5 +206,9 @@ export async function prepareEditPostSubmission({
     }
   }
 
-  return formData;
+  // Return signedEvent for regular posts so callers can create "also schedule repost/quote"
+  if (isLongform) {
+    return { formData };
+  }
+  return { formData, signedEvent };
 }

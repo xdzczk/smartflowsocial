@@ -40,6 +40,9 @@ interface AllContentListingProps {
   onBulkScheduledRepost?: () => void;
   onBulkQuote?: () => void;
   repostFetcher?: PostFetcher;
+  // Single-post schedule repost/quote (no redirect to bulk)
+  onScheduleRepost?: (post: PostData) => void;
+  onScheduleQuote?: (post: PostData) => void;
   // Edit and reschedule actions for scheduled content
   onEditPost?: (post: PostData | LongFormPostData) => void;
   onReschedulePost?: (post: PostData | LongFormPostData) => void;
@@ -67,6 +70,8 @@ export default function AllContentListing({
   onBulkScheduledRepost,
   onBulkQuote,
   repostFetcher,
+  onScheduleRepost,
+  onScheduleQuote,
   // Edit and reschedule actions
   onEditPost,
   onReschedulePost,
@@ -254,6 +259,8 @@ export default function AllContentListing({
                 individualRepostFetcher={individualRepostFetcher}
                 longformRepostFetcher={longformRepostFetcher}
                 longformQuoteFetcher={longformQuoteFetcher}
+                onScheduleRepost={onScheduleRepost}
+                onScheduleQuote={onScheduleQuote}
               />
             ))}
           </tbody>

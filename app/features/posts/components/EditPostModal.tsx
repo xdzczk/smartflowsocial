@@ -1,8 +1,15 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 
-import { logClientError } from "~/lib/error-handler.client";
-import { parseDateTimeLocal, toDate, fromDate } from "~/lib/temporal";
+import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import {
+  parseDateTimeLocal,
+  toDate,
+  fromDate,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 
 import { useEditPostModal } from "../hooks/useEditPostModal";
 import type {
@@ -13,6 +20,10 @@ import type {
   UserData,
 } from "../types";
 import { prepareEditPostSubmission } from "../utils/editPostSubmit.client";
+import {
+  buildKind6RepostEvent,
+  buildQuoteEvent,
+} from "../utils/repost-quote-events.client";
 
 import { EditLongFormFormFields } from "./EditLongFormFormFields";
 import { EditorJSStyles } from "./EditorJSStyles";
@@ -41,8 +52,18 @@ export function EditPostModal({
   hashTagPresets = [],
 }: EditPostModalProps) {
   const fetcher = useFetcher<FetcherData>();
+  const scheduleRepostQuoteFetcher = useFetcher<{
+    success?: boolean;
+    error?: string;
+  }>();
   const [isSigningEvent, setIsSigningEvent] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
+  // "Also schedule repost/quote" (only for regular posts)
+  const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
+  const [repostScheduledFor, setRepostScheduledFor] = useState("");
+  const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
+  const [quoteScheduledFor, setQuoteScheduledFor] = useState("");
+  const [quoteCaption, setQuoteCaption] = useState("");
 
   // Determine if this is a longform post
   const isLongform = "title" in post;
@@ -114,13 +135,25 @@ export function EditPostModal({
     }
   }, [fetcher.data, onConfirm]);
 
+  useEffect(() => {
+    if (
+      scheduleRepostQuoteFetcher.state === "idle" &&
+      scheduleRepostQuoteFetcher.data?.success
+    ) {
+      toast.success("Repost/quote scheduled successfully!");
+    }
+    if (scheduleRepostQuoteFetcher.data?.error) {
+      toast.error(String(scheduleRepostQuoteFetcher.data.error));
+    }
+  }, [scheduleRepostQuoteFetcher.state, scheduleRepostQuoteFetcher.data]);
+
   const handleSubmit = async () => {
     try {
       setIsSigningEvent(true);
       setSigningError(null);
       setIsUploadingImages(true);
 
-      const formData = await prepareEditPostSubmission({
+      const result = await prepareEditPostSubmission({
         post,
         isLongform,
         caption,
@@ -139,10 +172,116 @@ export function EditPostModal({
         user,
       });
 
+      const formData = "formData" in result ? result.formData : result;
+      const mainSignedEvent =
+        "signedEvent" in result && result.signedEvent
+          ? result.signedEvent
+          : null;
+
       // Signing complete; proceed to submit
       setIsSigningEvent(false);
       setIsUploadingImages(false);
       fetcher.submit(formData, { method: "post" });
+
+      // If "also schedule repost/quote" and we have the re-signed event (regular post only)
+      if (
+        !isLongform &&
+        mainSignedEvent &&
+        (alsoScheduleRepost || alsoScheduleQuote)
+      ) {
+        const userTimezone = user?.timezone ?? "Etc/UTC";
+        try {
+          if (
+            alsoScheduleRepost &&
+            repostScheduledFor.trim() &&
+            mainSignedEvent.id &&
+            mainSignedEvent.pubkey
+          ) {
+            const zoned = parseDateTimeLocal(repostScheduledFor, userTimezone);
+            const scheduledForUnix = toUnixTimestamp(zoned.withTimeZone("UTC"));
+            const repostEvent = buildKind6RepostEvent(
+              mainSignedEvent as {
+                id: string;
+                pubkey: string;
+                created_at: number;
+                kind: number;
+                tags: string[][];
+                content: string;
+                sig: string;
+              },
+              scheduledForUnix
+            );
+            const { signedEvent: repostSignedEvent } =
+              await nostrAdapter.signEvent({
+                content: repostEvent.content,
+                created_at: repostEvent.created_at,
+                kind: repostEvent.kind,
+                tags: repostEvent.tags,
+              });
+            const fd = new FormData();
+            fd.set("_action", "scheduleRepost");
+            fd.set("postId", post.id);
+            fd.set("scheduledFor", scheduledForUnix.toString());
+            fd.set("signedEvent", JSON.stringify(repostSignedEvent));
+            scheduleRepostQuoteFetcher.submit(fd, {
+              method: "post",
+              action: "/dashboard/scheduled",
+            });
+          }
+          if (
+            alsoScheduleQuote &&
+            quoteScheduledFor.trim() &&
+            mainSignedEvent.id &&
+            mainSignedEvent.pubkey
+          ) {
+            const zoned = parseDateTimeLocal(quoteScheduledFor, userTimezone);
+            const scheduledForUnix = toUnixTimestamp(zoned.withTimeZone("UTC"));
+            const quoteEvent = buildQuoteEvent(
+              mainSignedEvent as {
+                id: string;
+                pubkey: string;
+                created_at: number;
+                kind: number;
+                tags: string[][];
+                content: string;
+                sig: string;
+              },
+              quoteCaption,
+              scheduledForUnix,
+              []
+            );
+            const { signedEvent: quoteSignedEvent } =
+              await nostrAdapter.signEvent({
+                content: quoteEvent.content,
+                created_at: quoteEvent.created_at,
+                kind: quoteEvent.kind,
+                tags: quoteEvent.tags,
+              });
+            const fd = new FormData();
+            fd.set("_action", "scheduleQuote");
+            fd.set("postId", post.id);
+            fd.set("scheduledFor", scheduledForUnix.toString());
+            fd.set("signedEvent", JSON.stringify(quoteSignedEvent));
+            if (quoteCaption) {
+              fd.set("quoteCaption", quoteCaption);
+            }
+            scheduleRepostQuoteFetcher.submit(fd, {
+              method: "post",
+              action: "/dashboard/scheduled",
+            });
+          }
+        } catch (err) {
+          handleErrorSafely(err, {
+            component: "EditPostModal",
+            action: "alsoScheduleRepostQuote",
+          });
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : "Failed to schedule repost/quote"
+          );
+        }
+      }
     } catch (error: unknown) {
       logClientError(
         error instanceof Error ? error : new Error(String(error)),
@@ -273,6 +412,85 @@ export function EditPostModal({
                   className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2"
                 />
               </div>
+
+              {/* Also schedule repost/quote - only for regular posts */}
+              {!isLongform ? (
+                <div className="border-border bg-muted/30 space-y-3 rounded-lg border p-4">
+                  <div className="text-foreground text-sm font-medium">
+                    Also schedule
+                  </div>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={alsoScheduleRepost}
+                      onChange={(e) => setAlsoScheduleRepost(e.target.checked)}
+                      className="border-border rounded"
+                    />
+                    <span className="text-sm">Schedule a repost</span>
+                  </label>
+                  {alsoScheduleRepost ? (
+                    <div>
+                      <label
+                        htmlFor="edit-post-repost-scheduled-for"
+                        className="text-muted-foreground mb-1 block text-xs"
+                      >
+                        Repost at
+                      </label>
+                      <input
+                        id="edit-post-repost-scheduled-for"
+                        type="datetime-local"
+                        value={repostScheduledFor}
+                        onChange={(e) => setRepostScheduledFor(e.target.value)}
+                        className="bg-card border-border text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                      />
+                    </div>
+                  ) : null}
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={alsoScheduleQuote}
+                      onChange={(e) => setAlsoScheduleQuote(e.target.checked)}
+                      className="border-border rounded"
+                    />
+                    <span className="text-sm">Schedule a quote</span>
+                  </label>
+                  {alsoScheduleQuote ? (
+                    <div className="space-y-1">
+                      <div>
+                        <label
+                          htmlFor="edit-post-quote-scheduled-for"
+                          className="text-muted-foreground mb-1 block text-xs"
+                        >
+                          Quote at
+                        </label>
+                        <input
+                          id="edit-post-quote-scheduled-for"
+                          type="datetime-local"
+                          value={quoteScheduledFor}
+                          onChange={(e) => setQuoteScheduledFor(e.target.value)}
+                          className="bg-card border-border text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="edit-post-quote-caption"
+                          className="text-muted-foreground mb-1 block text-xs"
+                        >
+                          Quote caption (optional)
+                        </label>
+                        <textarea
+                          id="edit-post-quote-caption"
+                          value={quoteCaption}
+                          onChange={(e) => setQuoteCaption(e.target.value)}
+                          placeholder="Add your comment..."
+                          rows={2}
+                          className="bg-card border-border text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
               {/* Re-signing notice */}
               <div className="border-border bg-muted dark:border-border dark:bg-muted/20 rounded-lg border p-4">

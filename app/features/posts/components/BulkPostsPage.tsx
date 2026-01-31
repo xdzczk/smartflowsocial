@@ -597,6 +597,25 @@ export default function BulkPostsPage() {
             handleBulkRecyclableToggle={handleBulkRecyclableToggle}
           />
 
+          {(mode === "quote" || mode === "repost") && posts.length === 0 ? (
+            <div className="border-border bg-muted/30 rounded-lg border p-6 text-center">
+              <p className="text-foreground mb-2 font-medium">
+                No posts to schedule.
+              </p>
+              <p className="text-muted-foreground mb-4 text-sm">
+                Select regular posts (not articles) from Posted and try
+                &quot;Schedule {mode === "quote" ? "quote" : "repost"}&quot;
+                again.
+              </p>
+              <a
+                href="/dashboard/posted"
+                className="text-primary font-medium hover:underline"
+              >
+                Go to Posted
+              </a>
+            </div>
+          ) : null}
+
           {posts.length > 0 ? (
             <>
               <BulkPostsTable

@@ -28,6 +28,19 @@ export interface CreatePostInput {
   repost?: boolean; // Mark as repost if kind 6
   isQuotedPost?: boolean; // Mark as quoted post
   correlationId?: string; // For request tracking
+  /** Source post id when this post is a scheduled repost */
+  repostOfPostId?: string | null;
+  /** Source post id when this post is a scheduled quote */
+  quoteOfPostId?: string | null;
+  /** When creating/scheduling a new post: also create a scheduled repost */
+  alsoScheduleRepost?: boolean;
+  repostScheduledFor?: number; // Unix timestamp in seconds
+  repostSignedEvent?: SignedEvent;
+  /** When creating/scheduling a new post: also create a scheduled quote */
+  alsoScheduleQuote?: boolean;
+  quoteScheduledFor?: number; // Unix timestamp in seconds
+  quoteSignedEvent?: SignedEvent;
+  quoteCaption?: string;
 }
 
 export interface CreatePostResult {

@@ -75,6 +75,8 @@ interface PostedPostsTableProps {
   bulkDeleteFetcher: PostFetcher;
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
+  onScheduleRepost?: (post: PostData) => void;
+  onScheduleQuote?: (post: PostData) => void;
 }
 
 export default function PostedPostsTable({
@@ -91,6 +93,8 @@ export default function PostedPostsTable({
   bulkDeleteFetcher,
   userTimezone,
   userTimeFormat = "12h",
+  onScheduleRepost,
+  onScheduleQuote,
 }: PostedPostsTableProps) {
   return (
     <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
@@ -412,6 +416,30 @@ export default function PostedPostsTable({
                         </fetcher.Form>
                       );
                     })()}
+                    {onScheduleRepost ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onScheduleRepost(post);
+                        }}
+                        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                      >
+                        Schedule repost
+                      </button>
+                    ) : null}
+                    {onScheduleQuote ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onScheduleQuote(post);
+                        }}
+                        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-success/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                      >
+                        Schedule quote
+                      </button>
+                    ) : null}
                     <deleteFetcher.Form
                       method="post"
                       onClick={(e) => e.stopPropagation()}

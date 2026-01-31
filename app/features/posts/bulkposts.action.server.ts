@@ -221,6 +221,9 @@ export async function handleSignAndSchedule(
         const isVideo = isVideoUrl(fileUrl);
         const postType = isVideo ? "VIDEO" : "IMAGE";
 
+        const originalPostId =
+          index < originalPostIds.length ? originalPostIds[index] : undefined;
+
         // Use CreatePostUseCase for bulk post creation
         const createPostUseCase = new CreatePostUseCase();
         const result = await createPostUseCase.execute({
@@ -237,6 +240,10 @@ export async function handleSignAndSchedule(
           scheduledFor: signedEvent.created_at, // Schedule for the timestamp in the event
           repost: signedEvent.kind === 6, // Mark as repost if it's kind 6
           isQuotedPost: isQuotePost, // Mark as quoted post
+          repostOfPostId:
+            mode === "repost" && originalPostId ? originalPostId : undefined,
+          quoteOfPostId:
+            mode === "quote" && originalPostId ? originalPostId : undefined,
         });
 
         logInfo("Created post", {
