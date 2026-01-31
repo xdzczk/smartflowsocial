@@ -204,14 +204,14 @@ export function FlowView({
       ) : null}
       <div
         ref={setScrollContainerRef}
-        className="overflow-x-auto overflow-y-hidden pb-2"
-        style={{ contain: "strict" }}
+        className="h-[168px] overflow-x-auto overflow-y-hidden pb-2"
       >
         <div
           style={{
-            height: "160px",
-            width: `${rowVirtualizer.getTotalSize()}px`,
+            height: 160,
+            width: rowVirtualizer.getTotalSize(),
             position: "relative",
+            minWidth: "100%",
           }}
         >
           {virtualItems.map((virtualColumn) => {
