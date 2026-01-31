@@ -14,6 +14,11 @@ import type {
   HashTagPreset,
   UserData,
 } from "../types";
+import {
+  delayAfterMainToSeconds,
+  isValidDelayAfterMain,
+  type DelayAfterMain,
+} from "../utils/delay-after-main";
 import { prepareEditPostSubmission } from "../utils/editPostSubmit.client";
 import {
   buildKind6RepostEvent,
@@ -37,15 +42,26 @@ async function scheduleRepostsAndQuotesAfterSubmit(
   mainScheduledUnix: number,
   mainEv: MainEv,
   postId: string,
-  repostHoursList: Array<{ id: string; hours: number }>,
-  quoteEntries: Array<{ id: string; hoursAfterMain: number; caption: string }>,
+  repostDelayList: Array<{
+    id: string;
+    value: number;
+    unit: DelayAfterMain["unit"];
+  }>,
+  quoteEntries: Array<{
+    id: string;
+    value: number;
+    unit: DelayAfterMain["unit"];
+    caption: string;
+  }>,
   alsoScheduleRepost: boolean,
   alsoScheduleQuote: boolean
 ): Promise<void> {
-  if (alsoScheduleRepost && repostHoursList.length > 0) {
-    for (const { hours: h } of repostHoursList) {
-      if (h < 1) continue;
-      const repostScheduledForUnix = mainScheduledUnix + h * 3600;
+  if (alsoScheduleRepost && repostDelayList.length > 0) {
+    for (const item of repostDelayList) {
+      const delay: DelayAfterMain = { value: item.value, unit: item.unit };
+      if (!isValidDelayAfterMain(delay)) continue;
+      const offsetSeconds = delayAfterMainToSeconds(delay);
+      const repostScheduledForUnix = mainScheduledUnix + offsetSeconds;
       const repostEvent = buildKind6RepostEvent(mainEv, repostScheduledForUnix);
       const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
         content: repostEvent.content,
@@ -67,9 +83,10 @@ async function scheduleRepostsAndQuotesAfterSubmit(
   }
   if (alsoScheduleQuote && quoteEntries.length > 0) {
     for (const entry of quoteEntries) {
-      if (entry.hoursAfterMain < 1) continue;
-      const quoteScheduledForUnix =
-        mainScheduledUnix + entry.hoursAfterMain * 3600;
+      const delay: DelayAfterMain = { value: entry.value, unit: entry.unit };
+      if (!isValidDelayAfterMain(delay)) continue;
+      const offsetSeconds = delayAfterMainToSeconds(delay);
+      const quoteScheduledForUnix = mainScheduledUnix + offsetSeconds;
       const quoteEvent = buildQuoteEvent(
         mainEv,
         entry.caption,
@@ -132,13 +149,18 @@ export function EditPostModal({
   const [signingError, setSigningError] = useState<string | null>(null);
   // "Also schedule repost/quote" (only for regular posts) – hours after main post (multiple)
   const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
-  const [repostHoursList, setRepostHoursList] = useState<
-    Array<{ id: string; hours: number }>
-  >([{ id: crypto.randomUUID(), hours: 2 }]);
+  const [repostDelayList, setRepostDelayList] = useState<
+    Array<{ id: string; value: number; unit: DelayAfterMain["unit"] }>
+  >([{ id: crypto.randomUUID(), value: 2, unit: "hours" }]);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const [quoteEntries, setQuoteEntries] = useState<
-    Array<{ id: string; hoursAfterMain: number; caption: string }>
-  >([{ id: crypto.randomUUID(), hoursAfterMain: 2, caption: "" }]);
+    Array<{
+      id: string;
+      value: number;
+      unit: DelayAfterMain["unit"];
+      caption: string;
+    }>
+  >([{ id: crypto.randomUUID(), value: 2, unit: "hours", caption: "" }]);
 
   // Determine if this is a longform post
   const isLongform = "title" in post;
@@ -277,13 +299,13 @@ export function EditPostModal({
               mainScheduledUnix,
               mainEv,
               post.id,
-              repostHoursList,
+              repostDelayList,
               quoteEntries,
               alsoScheduleRepost,
               alsoScheduleQuote
             );
             if (
-              (alsoScheduleRepost && repostHoursList.length > 0) ||
+              (alsoScheduleRepost && repostDelayList.length > 0) ||
               (alsoScheduleQuote && quoteEntries.length > 0)
             ) {
               toast.success("Repost/quote scheduled successfully!");
@@ -450,38 +472,58 @@ export function EditPostModal({
                   {alsoScheduleRepost ? (
                     <div className="space-y-2">
                       <span className="text-muted-foreground mb-1 block text-xs">
-                        Hours after main post (one per repost)
+                        When after main post (one per repost)
                       </span>
-                      {repostHoursList.map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-2">
+                      {repostDelayList.map((item, idx) => (
+                        <div
+                          key={item.id}
+                          className="flex flex-wrap items-center gap-2"
+                        >
                           <input
                             type="number"
                             min={1}
-                            value={item.hours}
-                            aria-label="Hours after main post"
+                            value={item.value}
+                            aria-label="Delay value"
                             onChange={(e) => {
                               const v = Math.max(
                                 1,
                                 parseInt(e.target.value, 10) || 1
                               );
-                              setRepostHoursList((prev) => {
+                              setRepostDelayList((prev) => {
                                 const next = [...prev];
-                                next[idx] = { ...next[idx]!, hours: v };
+                                next[idx] = { ...next[idx]!, value: v };
                                 return next;
                               });
                             }}
                             className="bg-card border-border text-foreground w-20 rounded-md border px-3 py-2 text-sm"
                           />
+                          <select
+                            value={item.unit}
+                            onChange={(e) => {
+                              const unit = e.target
+                                .value as DelayAfterMain["unit"];
+                              setRepostDelayList((prev) => {
+                                const next = [...prev];
+                                next[idx] = { ...next[idx]!, unit };
+                                return next;
+                              });
+                            }}
+                            className="bg-card border-border text-foreground w-24 rounded-md border px-2 py-2 text-sm"
+                            aria-label="Hours or minutes"
+                          >
+                            <option value="hours">hours</option>
+                            <option value="minutes">minutes</option>
+                          </select>
                           <button
                             type="button"
                             onClick={() =>
-                              setRepostHoursList((prev) =>
+                              setRepostDelayList((prev) =>
                                 prev.length > 1
                                   ? prev.filter((_, i) => i !== idx)
                                   : prev
                               )
                             }
-                            disabled={repostHoursList.length <= 1}
+                            disabled={repostDelayList.length <= 1}
                             aria-label="Remove repost"
                             className="text-muted-foreground hover:text-foreground text-xs"
                           >
@@ -492,9 +534,13 @@ export function EditPostModal({
                       <button
                         type="button"
                         onClick={() =>
-                          setRepostHoursList((prev) => [
+                          setRepostDelayList((prev) => [
                             ...prev,
-                            { id: crypto.randomUUID(), hours: 24 },
+                            {
+                              id: crypto.randomUUID(),
+                              value: 24,
+                              unit: "hours",
+                            },
                           ])
                         }
                         className="text-primary text-xs hover:underline"
@@ -522,12 +568,12 @@ export function EditPostModal({
                           key={entry.id}
                           className="border-border space-y-2 rounded border p-3"
                         >
-                          <div className="flex items-center justify-between gap-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
                             <label
-                              htmlFor={`edit-quote-hours-${idx}`}
+                              htmlFor={`edit-quote-value-${idx}`}
                               className="text-muted-foreground text-xs"
                             >
-                              Hours after main
+                              When after main
                             </label>
                             <button
                               type="button"
@@ -544,29 +590,46 @@ export function EditPostModal({
                               Remove
                             </button>
                           </div>
-                          <input
-                            id={`edit-quote-hours-${idx}`}
-                            type="number"
-                            min={1}
-                            value={entry.hoursAfterMain}
-                            onChange={(e) => {
-                              const v = Math.max(
-                                1,
-                                parseInt(e.target.value, 10) || 1
-                              );
-                              setQuoteEntries((prev) => {
-                                const next = [...prev];
-                                const current = next[idx]!;
-                                next[idx] = {
-                                  ...current,
-                                  hoursAfterMain: v,
-                                };
-                                return next;
-                              });
-                            }}
-                            className="bg-card border-border text-foreground w-20 rounded-md border px-3 py-2 text-sm"
-                            aria-label="Hours after main post"
-                          />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input
+                              id={`edit-quote-value-${idx}`}
+                              type="number"
+                              min={1}
+                              value={entry.value}
+                              onChange={(e) => {
+                                const v = Math.max(
+                                  1,
+                                  parseInt(e.target.value, 10) || 1
+                                );
+                                setQuoteEntries((prev) => {
+                                  const next = [...prev];
+                                  const current = next[idx]!;
+                                  next[idx] = { ...current, value: v };
+                                  return next;
+                                });
+                              }}
+                              className="bg-card border-border text-foreground w-20 rounded-md border px-3 py-2 text-sm"
+                              aria-label="Delay value"
+                            />
+                            <select
+                              value={entry.unit}
+                              onChange={(e) => {
+                                const unit = e.target
+                                  .value as DelayAfterMain["unit"];
+                                setQuoteEntries((prev) => {
+                                  const next = [...prev];
+                                  const current = next[idx]!;
+                                  next[idx] = { ...current, unit };
+                                  return next;
+                                });
+                              }}
+                              className="bg-card border-border text-foreground w-24 rounded-md border px-2 py-2 text-sm"
+                              aria-label="Hours or minutes"
+                            >
+                              <option value="hours">hours</option>
+                              <option value="minutes">minutes</option>
+                            </select>
+                          </div>
                           <div>
                             <label
                               htmlFor={`edit-quote-caption-${idx}`}
@@ -602,7 +665,8 @@ export function EditPostModal({
                             ...prev,
                             {
                               id: crypto.randomUUID(),
-                              hoursAfterMain: 24,
+                              value: 24,
+                              unit: "hours",
                               caption: "",
                             },
                           ])

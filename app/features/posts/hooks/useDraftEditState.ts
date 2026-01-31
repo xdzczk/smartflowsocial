@@ -10,6 +10,10 @@ import { useZodForm } from "~/lib/validation/utils.client";
 import { signDraftForScheduling } from "../services/draft-sign.server";
 import type { UserData, HashTagPreset, PostData } from "../types";
 import {
+  delayAfterMainToSeconds,
+  isValidDelayAfterMain,
+} from "../utils/delay-after-main";
+import {
   buildKind6RepostEvent,
   buildQuoteEvent,
 } from "../utils/repost-quote-events.client";
@@ -77,13 +81,18 @@ export function useDraftEditState({
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
-  const [repostHoursList, setRepostHoursList] = useState<
-    Array<{ id: string; hours: number }>
-  >(() => [{ id: crypto.randomUUID(), hours: 2 }]);
+  const [repostDelayList, setRepostDelayList] = useState<
+    Array<{ id: string; value: number; unit: "hours" | "minutes" }>
+  >(() => [{ id: crypto.randomUUID(), value: 2, unit: "hours" }]);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const [quoteEntries, setQuoteEntries] = useState<
-    Array<{ id: string; hoursAfterMain: number; caption: string }>
-  >(() => [{ id: crypto.randomUUID(), hoursAfterMain: 2, caption: "" }]);
+    Array<{
+      id: string;
+      value: number;
+      unit: "hours" | "minutes";
+      caption: string;
+    }>
+  >(() => [{ id: crypto.randomUUID(), value: 2, unit: "hours", caption: "" }]);
 
   const isSubmitting = fetcher.state !== "idle";
 
@@ -190,14 +199,16 @@ export function useDraftEditState({
       };
 
       const mainScheduledUnix = result.scheduledForUnix;
-      if (alsoScheduleRepost && repostHoursList.length > 0) {
+      if (alsoScheduleRepost && repostDelayList.length > 0) {
         const repostSchedules: Array<{
           scheduledFor: number;
           signedEvent: unknown;
         }> = [];
-        for (const { hours: h } of repostHoursList) {
-          if (h < 1) continue;
-          const repostScheduledForUnix = mainScheduledUnix + h * 3600;
+        for (const item of repostDelayList) {
+          const delay = { value: item.value, unit: item.unit };
+          if (!isValidDelayAfterMain(delay)) continue;
+          const offsetSeconds = delayAfterMainToSeconds(delay);
+          const repostScheduledForUnix = mainScheduledUnix + offsetSeconds;
           const repostEvent = buildKind6RepostEvent(
             mainSigned,
             repostScheduledForUnix
@@ -226,9 +237,10 @@ export function useDraftEditState({
           caption?: string;
         }> = [];
         for (const entry of quoteEntries) {
-          if (entry.hoursAfterMain < 1) continue;
-          const quoteScheduledForUnix =
-            mainScheduledUnix + entry.hoursAfterMain * 3600;
+          const delay = { value: entry.value, unit: entry.unit };
+          if (!isValidDelayAfterMain(delay)) continue;
+          const offsetSeconds = delayAfterMainToSeconds(delay);
+          const quoteScheduledForUnix = mainScheduledUnix + offsetSeconds;
           const quoteEvent = buildQuoteEvent(
             mainSigned,
             entry.caption,
@@ -326,8 +338,8 @@ export function useDraftEditState({
     handleHashtagPresetSelect,
     alsoScheduleRepost,
     setAlsoScheduleRepost,
-    repostHoursList,
-    setRepostHoursList,
+    repostDelayList,
+    setRepostDelayList,
     alsoScheduleQuote,
     setAlsoScheduleQuote,
     quoteEntries,

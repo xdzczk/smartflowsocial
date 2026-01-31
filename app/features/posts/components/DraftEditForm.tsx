@@ -30,15 +30,29 @@ interface DraftEditFormProps {
   onResumeClick: () => void;
   alsoScheduleRepost?: boolean;
   onAlsoScheduleRepostChange?: (value: boolean) => void;
-  repostHoursList?: Array<{ id: string; hours: number }>;
-  onRepostHoursListChange?: (
-    value: Array<{ id: string; hours: number }>
+  repostDelayList?: Array<{
+    id: string;
+    value: number;
+    unit: "hours" | "minutes";
+  }>;
+  onRepostDelayListChange?: (
+    value: Array<{ id: string; value: number; unit: "hours" | "minutes" }>
   ) => void;
   alsoScheduleQuote?: boolean;
   onAlsoScheduleQuoteChange?: (value: boolean) => void;
-  quoteEntries?: Array<{ id: string; hoursAfterMain: number; caption: string }>;
+  quoteEntries?: Array<{
+    id: string;
+    value: number;
+    unit: "hours" | "minutes";
+    caption: string;
+  }>;
   onQuoteEntriesChange?: (
-    value: Array<{ id: string; hoursAfterMain: number; caption: string }>
+    value: Array<{
+      id: string;
+      value: number;
+      unit: "hours" | "minutes";
+      caption: string;
+    }>
   ) => void;
 }
 
@@ -61,11 +75,13 @@ export function DraftEditForm({
   onResumeClick,
   alsoScheduleRepost = false,
   onAlsoScheduleRepostChange,
-  repostHoursList = [{ id: "default-repost", hours: 2 }],
-  onRepostHoursListChange,
+  repostDelayList = [{ id: "default-repost", value: 2, unit: "hours" }],
+  onRepostDelayListChange,
   alsoScheduleQuote = false,
   onAlsoScheduleQuoteChange,
-  quoteEntries = [{ id: "default-quote", hoursAfterMain: 2, caption: "" }],
+  quoteEntries = [
+    { id: "default-quote", value: 2, unit: "hours" as const, caption: "" },
+  ],
   onQuoteEntriesChange,
 }: DraftEditFormProps) {
   const fetcher = useFetcher();
@@ -217,42 +233,64 @@ export function DraftEditForm({
                 />
                 <span className="text-sm">Schedule a repost</span>
               </label>
-              {alsoScheduleRepost && onRepostHoursListChange ? (
+              {alsoScheduleRepost && onRepostDelayListChange ? (
                 <div className="space-y-2">
                   <Label className="text-muted-foreground text-xs">
-                    Hours after main post (one per repost)
+                    When after main post (one per repost)
                   </Label>
-                  {repostHoursList.map((item, idx) => (
-                    <div key={item.id} className="flex items-center gap-2">
+                  {repostDelayList.map((item, idx) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-wrap items-center gap-2"
+                    >
                       <input
                         type="number"
                         min={1}
-                        value={item.hours}
+                        value={item.value}
                         onChange={(e) => {
                           const v = Math.max(
                             1,
                             parseInt(e.target.value, 10) || 1
                           );
-                          onRepostHoursListChange(
-                            repostHoursList.map((h, i) =>
-                              i === idx ? { ...h, hours: v } : h
+                          onRepostDelayListChange(
+                            repostDelayList.map((h, i) =>
+                              i === idx ? { ...h, value: v } : h
                             )
                           );
                         }}
                         className="dark:bg-card dark:text-foreground border-border text-foreground w-20 rounded-lg border p-2 text-sm"
                         disabled={isSubmitting}
+                        aria-label="Delay value"
                       />
+                      <select
+                        value={item.unit}
+                        onChange={(e) => {
+                          const unit = e.target.value as "hours" | "minutes";
+                          onRepostDelayListChange(
+                            repostDelayList.map((h, i) =>
+                              i === idx ? { ...h, unit } : h
+                            )
+                          );
+                        }}
+                        className="dark:bg-card dark:text-foreground border-border text-foreground w-24 rounded-lg border p-2 text-sm"
+                        disabled={isSubmitting}
+                        aria-label="Hours or minutes"
+                      >
+                        <option value="hours">hours</option>
+                        <option value="minutes">minutes</option>
+                      </select>
                       <button
                         type="button"
                         onClick={() =>
-                          onRepostHoursListChange(
-                            repostHoursList.length > 1
-                              ? repostHoursList.filter((_, i) => i !== idx)
-                              : repostHoursList
+                          onRepostDelayListChange(
+                            repostDelayList.length > 1
+                              ? repostDelayList.filter((_, i) => i !== idx)
+                              : repostDelayList
                           )
                         }
-                        disabled={isSubmitting || repostHoursList.length <= 1}
+                        disabled={isSubmitting || repostDelayList.length <= 1}
                         className="text-muted-foreground hover:text-foreground text-xs"
+                        aria-label="Remove repost"
                       >
                         Remove
                       </button>
@@ -261,9 +299,9 @@ export function DraftEditForm({
                   <button
                     type="button"
                     onClick={() =>
-                      onRepostHoursListChange([
-                        ...repostHoursList,
-                        { id: crypto.randomUUID(), hours: 24 },
+                      onRepostDelayListChange([
+                        ...repostDelayList,
+                        { id: crypto.randomUUID(), value: 24, unit: "hours" },
                       ])
                     }
                     disabled={isSubmitting}
@@ -294,9 +332,9 @@ export function DraftEditForm({
                       key={entry.id}
                       className="border-border space-y-2 rounded border p-3"
                     >
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <Label className="text-muted-foreground text-xs">
-                          Hours after main
+                          When after main
                         </Label>
                         <button
                           type="button"
@@ -314,25 +352,44 @@ export function DraftEditForm({
                           Remove
                         </button>
                       </div>
-                      <input
-                        type="number"
-                        min={1}
-                        value={entry.hoursAfterMain}
-                        onChange={(e) => {
-                          const v = Math.max(
-                            1,
-                            parseInt(e.target.value, 10) || 1
-                          );
-                          onQuoteEntriesChange(
-                            quoteEntries.map((e, i) =>
-                              i === idx ? { ...e, hoursAfterMain: v } : e
-                            )
-                          );
-                        }}
-                        className="dark:bg-card dark:text-foreground border-border text-foreground w-20 rounded-lg border p-2 text-sm"
-                        disabled={isSubmitting}
-                        aria-label="Hours after main post"
-                      />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          value={entry.value}
+                          onChange={(e) => {
+                            const v = Math.max(
+                              1,
+                              parseInt(e.target.value, 10) || 1
+                            );
+                            onQuoteEntriesChange(
+                              quoteEntries.map((e, i) =>
+                                i === idx ? { ...e, value: v } : e
+                              )
+                            );
+                          }}
+                          className="dark:bg-card dark:text-foreground border-border text-foreground w-20 rounded-lg border p-2 text-sm"
+                          disabled={isSubmitting}
+                          aria-label="Delay value"
+                        />
+                        <select
+                          value={entry.unit}
+                          onChange={(e) => {
+                            const unit = e.target.value as "hours" | "minutes";
+                            onQuoteEntriesChange(
+                              quoteEntries.map((ent, i) =>
+                                i === idx ? { ...ent, unit } : ent
+                              )
+                            );
+                          }}
+                          className="dark:bg-card dark:text-foreground border-border text-foreground w-24 rounded-lg border p-2 text-sm"
+                          disabled={isSubmitting}
+                          aria-label="Hours or minutes"
+                        >
+                          <option value="hours">hours</option>
+                          <option value="minutes">minutes</option>
+                        </select>
+                      </div>
                       <div>
                         <Label className="text-muted-foreground text-xs">
                           Caption (optional)
@@ -363,7 +420,8 @@ export function DraftEditForm({
                         ...quoteEntries,
                         {
                           id: crypto.randomUUID(),
-                          hoursAfterMain: 24,
+                          value: 24,
+                          unit: "hours",
                           caption: "",
                         },
                       ])

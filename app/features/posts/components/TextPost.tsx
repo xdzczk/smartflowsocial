@@ -18,6 +18,11 @@ import { useZodForm } from "~/lib/validation/utils.client-safe";
 import { usePostScheduling } from "../hooks/usePostScheduling";
 import type { QueueType } from "../types";
 import {
+  delayAfterMainToSeconds,
+  isValidDelayAfterMain,
+  type DelayAfterMain,
+} from "../utils/delay-after-main";
+import {
   buildKind6RepostEvent,
   buildQuoteEvent,
 } from "../utils/repost-quote-events.client";
@@ -77,10 +82,10 @@ interface SignedEventLike {
   sig?: string;
 }
 
-/** Build multiple repost schedules: sign one repost per "hours after main". */
+/** Build multiple repost schedules: sign one repost per delay after main. */
 async function buildRepostSchedules(
   mainScheduledUnix: number,
-  hoursList: number[],
+  delayList: DelayAfterMain[],
   mainSignedEvent: SignedEventLike,
   setSigningError: (msg: string | null) => void
 ): Promise<Array<{
@@ -88,14 +93,15 @@ async function buildRepostSchedules(
   signedEvent: SignedEventLike;
 }> | null> {
   const out: Array<{ scheduledFor: number; signedEvent: SignedEventLike }> = [];
-  for (const hours of hoursList) {
-    if (hours < 1) {
+  for (const delay of delayList) {
+    if (!isValidDelayAfterMain(delay)) {
       setSigningError(
-        "Each repost must be at least 1 hour after the main post."
+        "Each repost must be at least 1 (hour or minute) after the main post."
       );
       return null;
     }
-    const scheduledForUnix = mainScheduledUnix + hours * 3600;
+    const offsetSeconds = delayAfterMainToSeconds(delay);
+    const scheduledForUnix = mainScheduledUnix + offsetSeconds;
     if (scheduledForUnix <= mainScheduledUnix) {
       setSigningError("Repost must be scheduled after the main post.");
       return null;
@@ -115,10 +121,14 @@ async function buildRepostSchedules(
   return out;
 }
 
-/** Build multiple quote schedules: sign one quote per entry (hours + caption). */
+/** Build multiple quote schedules: sign one quote per entry (delay + caption). */
 async function buildQuoteSchedules(
   mainScheduledUnix: number,
-  entries: Array<{ hoursAfterMain: number; caption: string }>,
+  entries: Array<{
+    value: number;
+    unit: DelayAfterMain["unit"];
+    caption: string;
+  }>,
   mainSignedEvent: SignedEventLike,
   tagArray: string[][],
   setSigningError: (msg: string | null) => void
@@ -133,13 +143,15 @@ async function buildQuoteSchedules(
     caption?: string;
   }> = [];
   for (const e of entries) {
-    if (e.hoursAfterMain < 1) {
+    const delay: DelayAfterMain = { value: e.value, unit: e.unit };
+    if (!isValidDelayAfterMain(delay)) {
       setSigningError(
-        "Each quote must be at least 1 hour after the main post."
+        "Each quote must be at least 1 (hour or minute) after the main post."
       );
       return null;
     }
-    const scheduledForUnix = mainScheduledUnix + e.hoursAfterMain * 3600;
+    const offsetSeconds = delayAfterMainToSeconds(delay);
+    const scheduledForUnix = mainScheduledUnix + offsetSeconds;
     if (scheduledForUnix <= mainScheduledUnix) {
       setSigningError("Quote must be scheduled after the main post.");
       return null;
@@ -191,13 +203,18 @@ export default function TextPost({
   const [showAssetBrowser, setShowAssetBrowser] = React.useState(false);
   const [selectedHashtags, setSelectedHashtags] = React.useState("");
   const [alsoScheduleRepost, setAlsoScheduleRepost] = React.useState(false);
-  const [repostHoursList, setRepostHoursList] = React.useState<
-    Array<{ id: string; hours: number }>
-  >([{ id: crypto.randomUUID(), hours: 2 }]);
+  const [repostDelayList, setRepostDelayList] = React.useState<
+    Array<{ id: string; value: number; unit: DelayAfterMain["unit"] }>
+  >([{ id: crypto.randomUUID(), value: 2, unit: "hours" }]);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = React.useState(false);
   const [quoteEntries, setQuoteEntries] = React.useState<
-    Array<{ id: string; hoursAfterMain: number; caption: string }>
-  >([{ id: crypto.randomUUID(), hoursAfterMain: 2, caption: "" }]);
+    Array<{
+      id: string;
+      value: number;
+      unit: DelayAfterMain["unit"];
+      caption: string;
+    }>
+  >([{ id: crypto.randomUUID(), value: 2, unit: "hours", caption: "" }]);
 
   // Initialize form with React Hook Form
   const form = useZodForm(textPostClientSchema, {
@@ -366,10 +383,13 @@ export default function TextPost({
       }
 
       const isSchedule = submitType === "schedule-text";
-      if (isSchedule && alsoScheduleRepost && repostHoursList.length > 0) {
+      if (isSchedule && alsoScheduleRepost && repostDelayList.length > 0) {
         const repostSchedules = await buildRepostSchedules(
           scheduledForUnix,
-          repostHoursList.map((item) => item.hours),
+          repostDelayList.map((item) => ({
+            value: item.value,
+            unit: item.unit,
+          })),
           signedEvent,
           setSigningError
         );
@@ -629,34 +649,55 @@ export default function TextPost({
               {alsoScheduleRepost ? (
                 <div className="ml-6 space-y-2">
                   <Label className="text-muted-foreground text-xs">
-                    Hours after main post (one per repost)
+                    When after main post (one per repost)
                   </Label>
-                  {repostHoursList.map((item, idx) => (
-                    <div key={item.id} className="flex items-center gap-2">
+                  {repostDelayList.map((item, idx) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-wrap items-center gap-2"
+                    >
                       <Input
                         type="number"
                         min={1}
-                        value={item.hours}
+                        value={item.value}
                         onChange={(e) => {
                           const v = Math.max(
                             1,
                             parseInt(e.target.value, 10) || 1
                           );
-                          setRepostHoursList((prev) => {
+                          setRepostDelayList((prev) => {
                             const next = [...prev];
-                            next[idx] = { ...next[idx]!, hours: v };
+                            next[idx] = { ...next[idx]!, value: v };
                             return next;
                           });
                         }}
                         disabled={fetcher.state !== "idle" || isSigning}
                         className="w-20"
+                        aria-label="Delay value"
                       />
+                      <select
+                        value={item.unit}
+                        onChange={(e) => {
+                          const unit = e.target.value as DelayAfterMain["unit"];
+                          setRepostDelayList((prev) => {
+                            const next = [...prev];
+                            next[idx] = { ...next[idx]!, unit };
+                            return next;
+                          });
+                        }}
+                        disabled={fetcher.state !== "idle" || isSigning}
+                        className="border-border bg-background text-foreground h-9 w-24 rounded-md border px-2 text-sm"
+                        aria-label="Hours or minutes"
+                      >
+                        <option value="hours">hours</option>
+                        <option value="minutes">minutes</option>
+                      </select>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() =>
-                          setRepostHoursList((prev) =>
+                          setRepostDelayList((prev) =>
                             prev.length > 1
                               ? prev.filter((_, i) => i !== idx)
                               : prev
@@ -665,7 +706,7 @@ export default function TextPost({
                         disabled={
                           fetcher.state !== "idle" ||
                           isSigning ||
-                          repostHoursList.length <= 1
+                          repostDelayList.length <= 1
                         }
                         className="text-muted-foreground hover:text-foreground"
                       >
@@ -678,9 +719,9 @@ export default function TextPost({
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setRepostHoursList((prev) => [
+                      setRepostDelayList((prev) => [
                         ...prev,
-                        { id: crypto.randomUUID(), hours: 24 },
+                        { id: crypto.randomUUID(), value: 24, unit: "hours" },
                       ])
                     }
                     disabled={fetcher.state !== "idle" || isSigning}
@@ -715,9 +756,9 @@ export default function TextPost({
                       key={entry.id}
                       className="border-border space-y-2 rounded border p-3"
                     >
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <Label className="text-muted-foreground text-xs">
-                          Hours after main
+                          When after main
                         </Label>
                         <Button
                           type="button"
@@ -740,28 +781,47 @@ export default function TextPost({
                           Remove
                         </Button>
                       </div>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={entry.hoursAfterMain}
-                        onChange={(e) => {
-                          const v = Math.max(
-                            1,
-                            parseInt(e.target.value, 10) || 1
-                          );
-                          setQuoteEntries((prev) => {
-                            const next = [...prev];
-                            const current = next[idx]!;
-                            next[idx] = {
-                              ...current,
-                              hoursAfterMain: v,
-                            };
-                            return next;
-                          });
-                        }}
-                        disabled={fetcher.state !== "idle" || isSigning}
-                        className="w-20"
-                      />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          value={entry.value}
+                          onChange={(e) => {
+                            const v = Math.max(
+                              1,
+                              parseInt(e.target.value, 10) || 1
+                            );
+                            setQuoteEntries((prev) => {
+                              const next = [...prev];
+                              const current = next[idx]!;
+                              next[idx] = { ...current, value: v };
+                              return next;
+                            });
+                          }}
+                          disabled={fetcher.state !== "idle" || isSigning}
+                          className="w-20"
+                          aria-label="Delay value"
+                        />
+                        <select
+                          value={entry.unit}
+                          onChange={(e) => {
+                            const unit = e.target
+                              .value as DelayAfterMain["unit"];
+                            setQuoteEntries((prev) => {
+                              const next = [...prev];
+                              const current = next[idx]!;
+                              next[idx] = { ...current, unit };
+                              return next;
+                            });
+                          }}
+                          disabled={fetcher.state !== "idle" || isSigning}
+                          className="border-border bg-background text-foreground h-9 w-24 rounded-md border px-2 text-sm"
+                          aria-label="Hours or minutes"
+                        >
+                          <option value="hours">hours</option>
+                          <option value="minutes">minutes</option>
+                        </select>
+                      </div>
                       <div>
                         <Label className="text-muted-foreground text-xs">
                           Caption (optional)
@@ -796,7 +856,8 @@ export default function TextPost({
                         ...prev,
                         {
                           id: crypto.randomUUID(),
-                          hoursAfterMain: 24,
+                          value: 24,
+                          unit: "hours",
                           caption: "",
                         },
                       ])

@@ -156,8 +156,8 @@ export default function DraftEditPage() {
     handleHashtagPresetSelect,
     alsoScheduleRepost,
     setAlsoScheduleRepost,
-    repostHoursList,
-    setRepostHoursList,
+    repostDelayList,
+    setRepostDelayList,
     alsoScheduleQuote,
     setAlsoScheduleQuote,
     quoteEntries,
@@ -234,8 +234,8 @@ export default function DraftEditPage() {
           onResumeClick={handleResumeClick}
           alsoScheduleRepost={alsoScheduleRepost}
           onAlsoScheduleRepostChange={setAlsoScheduleRepost}
-          repostHoursList={repostHoursList}
-          onRepostHoursListChange={setRepostHoursList}
+          repostDelayList={repostDelayList}
+          onRepostDelayListChange={setRepostDelayList}
           alsoScheduleQuote={alsoScheduleQuote}
           onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
           quoteEntries={quoteEntries}
