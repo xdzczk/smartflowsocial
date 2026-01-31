@@ -2,7 +2,7 @@
  * Pricing card component
  */
 
-import { Form } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
 interface Plan {
   id: string;
@@ -59,9 +59,12 @@ export function PricingCard({
       </div>
 
       {isCurrentPlan ? (
-        <div className="bg-muted border-border text-muted-foreground w-full rounded-lg border px-4 py-3 text-center font-medium">
-          Current Plan
-        </div>
+        <Link
+          to="/dashboard"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center rounded-lg px-4 py-3 font-medium transition-colors"
+        >
+          Continue with Current Plan
+        </Link>
       ) : (
         <Form method="post">
           <input type="hidden" name="intent" value="select_plan" />

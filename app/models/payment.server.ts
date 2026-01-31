@@ -678,6 +678,60 @@ export async function getUserSubscription(userId: string) {
 
 const FREE_PLAN_ID = "free";
 
+/** Minimal free plan data so dashboard can assign new users even if seed wasn't run. */
+const FREE_PLAN_SEED = {
+  id: FREE_PLAN_ID,
+  name: "Free",
+  price: 0,
+  description: "Perfect for getting started",
+  features: {
+    basicScheduling: true,
+    multipleQueues: false,
+    bulkScheduling: false,
+    repostsAndQuotes: false,
+    engagementFeed: true,
+    giveaways: true,
+    commissions: "High",
+    leaderboards: false,
+    advancedAnalytics: false,
+    multiAccountSwitching: false,
+    wolfFilteringAndVortex: false,
+    nativeS3BlossomStorage: false,
+    relayBlast: false,
+    visualPerks: false,
+    lifetimeAccess: false,
+  },
+  maxPostsPerMonth: 10,
+  maxQueueTypes: 1,
+  maxTemplates: 3,
+  maxAssets: 10,
+  maxLongFormPosts: 2,
+  enableBasicScheduling: true,
+  enableMultipleQueues: false,
+  enableBulkScheduling: false,
+  enableRepostsAndQuotes: false,
+  enableEngagementFeed: true,
+  enableGiveaways: true,
+  enableCommissions: false,
+  enableLeaderboards: false,
+  enableAdvancedAnalytics: false,
+  enableMultiAccountSwitching: false,
+  enableWolfFilteringAndVortex: false,
+  enableNativeS3BlossomStorage: false,
+  enableRelayBlast: false,
+  enableVisualPerks: false,
+  enableLifetimeAccess: false,
+};
+
+/** Ensures the free plan exists in DB (idempotent). Call before assigning free subscription. */
+async function ensureFreePlanExists(): Promise<void> {
+  await prisma.plan.upsert({
+    where: { id: FREE_PLAN_ID },
+    create: { ...FREE_PLAN_SEED, updatedAt: new Date() },
+    update: {},
+  });
+}
+
 /**
  * Ensures the user has a free plan subscription (and is enabled).
  * - No subscription: create free + enable user.
@@ -685,6 +739,8 @@ const FREE_PLAN_ID = "free";
  * Used so new and existing users can land on dashboard first; plans CTA is shown there for upgrades.
  */
 export async function ensureUserHasFreePlan(userId: string): Promise<void> {
+  await ensureFreePlanExists();
+
   const [user, subscription, freePlan] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },

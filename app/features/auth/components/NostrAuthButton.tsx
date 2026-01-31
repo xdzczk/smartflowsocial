@@ -65,6 +65,10 @@ function getUserDisplayName(user: unknown): string {
     user.npub
   ) {
     const npub = String(user.npub);
+    // If it looks like a hex pubkey (64 hex chars), show a short label instead of raw hex
+    if (/^[0-9a-fA-F]{64}$/.test(npub)) {
+      return "Account";
+    }
     return `${npub.slice(0, 12)}...${npub.slice(-8)}`;
   }
   return "";
@@ -79,6 +83,15 @@ function getUserAvatarFallback(user: unknown): string {
     if (typeof p["display_name"] === "string" && p["display_name"].trim()) {
       return p["display_name"].trim()[0] ?? "U";
     }
+  }
+  if (
+    typeof user === "object" &&
+    user !== null &&
+    "npub" in user &&
+    typeof (user as { npub: string }).npub === "string"
+  ) {
+    const npub = (user as { npub: string }).npub;
+    if (/^[0-9a-fA-F]{64}$/.test(npub)) return "A";
   }
   return "U";
 }
@@ -130,8 +143,14 @@ export default function NostrAuthButton() {
               <AvatarFallback>{getUserAvatarFallback(user)}</AvatarFallback>
             </Avatar>
             <span className="hidden sm:inline">{getUserDisplayName(user)}</span>
-            {location.pathname === "/" || location.pathname === "/plans" ? (
-              <Button variant="outline" size="sm" asChild>
+            {location.pathname === "/" ||
+            location.pathname.startsWith("/plans") ? (
+              <Button
+                variant="default"
+                size="sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                asChild
+              >
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
             ) : null}
