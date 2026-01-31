@@ -1,210 +1,87 @@
 import { redirect } from "@remix-run/node";
 
 import { prisma } from "~/lib/prisma.server";
-import { getUserSubscription } from "~/models/payment.server";
+import {
+  ensureUserHasFreePlan,
+  getUserSubscription,
+} from "~/models/payment.server";
 
 export { ensureUserHasFreePlan } from "~/models/payment.server";
 
-import {
-  hasFeatureAccess,
-  isNewUserWithoutSubscription,
-  type FeatureName,
-  type SubscriptionData,
-} from "./types";
+import type { FeatureName, SubscriptionData } from "./types";
+
+/** Redirect when user account is disabled (never to /plans). */
+const LANDING = "/";
 
 /**
- * Check if a user has access to a specific feature and redirect if not
+ * Ensure user has free plan, then get subscription data. Throws redirect if user is disabled.
+ */
+async function ensureFreeAndGetSubscriptionData(
+  userId: string
+): Promise<SubscriptionData> {
+  await ensureUserHasFreePlan(userId);
+  const data = await getSubscriptionData(userId);
+  if (!data.user?.isEnabled) {
+    throw redirect(LANDING);
+  }
+  return data;
+}
+
+/**
+ * Ensure user has at least a free subscription, then return subscription data.
+ * Never redirects to /plans; missing or inactive subscription is handled by
+ * ensuring free plan. Callers use returned data to show banners (e.g. free plan, expired paid).
  */
 export async function requireFeatureAccess(
   userId: string,
-  feature: FeatureName,
-  redirectTo = "/plans"
+  _feature: FeatureName
 ): Promise<SubscriptionData> {
-  // Get user's enabled status and subscription
-  const [user, currentSubscription] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { isEnabled: true },
-    }),
-    getUserSubscription(userId),
-  ]);
-
-  // Check if user exists and is enabled
-  if (!user?.isEnabled) {
-    throw redirect(redirectTo);
-  }
-
-  const subscriptionData: SubscriptionData = {
-    user: { id: userId, isEnabled: user.isEnabled },
-    currentSubscription:
-      currentSubscription && currentSubscription.planId
-        ? {
-            planId: currentSubscription.planId,
-            status: currentSubscription.status,
-            Plan: currentSubscription.Plan
-              ? {
-                  name: currentSubscription.Plan.name,
-                  id: currentSubscription.Plan.id,
-                }
-              : undefined,
-          }
-        : null,
-  };
-
-  // Check if user has access to the feature
-  if (!hasFeatureAccess(subscriptionData.currentSubscription, feature)) {
-    throw redirect(redirectTo);
-  }
-
-  return subscriptionData;
+  return ensureFreeAndGetSubscriptionData(userId);
 }
 
 /**
- * Check if user is new without subscription and redirect if accessing restricted routes
+ * Ensure user has at least a free subscription. Never redirects to /plans.
  */
 export async function checkNewUserAccess(
-  userId: string,
-  redirectTo = "/plans"
+  userId: string
 ): Promise<SubscriptionData> {
-  // Get user's enabled status and subscription
-  const [user, currentSubscription] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { isEnabled: true },
-    }),
-    getUserSubscription(userId),
-  ]);
-
-  // Check if user exists and is enabled
-  if (!user?.isEnabled) {
-    throw redirect(redirectTo);
-  }
-
-  const subscriptionData: SubscriptionData = {
-    user: { id: userId, isEnabled: user.isEnabled },
-    currentSubscription:
-      currentSubscription && currentSubscription.planId
-        ? {
-            planId: currentSubscription.planId,
-            status: currentSubscription.status,
-            Plan: currentSubscription.Plan
-              ? {
-                  name: currentSubscription.Plan.name,
-                  id: currentSubscription.Plan.id,
-                }
-              : undefined,
-          }
-        : null,
-  };
-
-  // Check if user is new without subscription
-  if (isNewUserWithoutSubscription(subscriptionData)) {
-    throw redirect(redirectTo);
-  }
-
-  return subscriptionData;
+  return ensureFreeAndGetSubscriptionData(userId);
 }
 
 /**
- * Require that the user has any subscription; if the current request is for a
- * dashboard child route and the user has no subscription, redirect to /plans.
- *
- * A "dashboard child" is any path that starts with "/dashboard/" (note the trailing slash).
+ * Ensure user has at least a free subscription for dashboard child routes.
+ * Never redirects to /plans.
  */
 export async function requireSubscriptionForDashboardChild(
-  request: Request,
-  userId: string,
-  redirectTo = "/plans"
+  userId: string
 ): Promise<SubscriptionData> {
-  const subscriptionData = await getSubscriptionData(userId);
-
-  // Check if user exists and is enabled
-  if (!subscriptionData.user?.isEnabled) {
-    throw redirect(redirectTo);
-  }
-
-  const url = new URL(request.url);
-  const pathname = url.pathname;
-  const isDashboardChild =
-    pathname !== "/dashboard" && pathname.startsWith("/dashboard");
-
-  if (isDashboardChild && !subscriptionData.currentSubscription) {
-    throw redirect(redirectTo);
-  }
-
-  return subscriptionData;
+  return ensureFreeAndGetSubscriptionData(userId);
 }
 
 /**
- * Require that the user has any subscription; if not, redirect to /plans.
+ * Ensure user has at least a free subscription. Never redirects to /plans.
  */
-export async function requireAnySubscription(
-  userId: string,
-  redirectTo = "/plans"
-): Promise<void> {
-  // Get user's enabled status and subscription
-  const [user, currentSubscription] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { isEnabled: true },
-    }),
-    getUserSubscription(userId),
-  ]);
+export async function requireAnySubscription(userId: string): Promise<void> {
+  await ensureUserHasFreePlan(userId);
 
-  // Check if user exists and is enabled
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isEnabled: true },
+  });
+
   if (!user?.isEnabled) {
-    throw redirect(redirectTo);
-  }
-
-  if (!currentSubscription) {
-    throw redirect(redirectTo);
+    throw redirect(LANDING);
   }
 }
 
 /**
- * Require that the user has an ACTIVE subscription; otherwise redirect to /plans.
- * Returns subscription data for convenience.
+ * Ensure user has at least a free subscription; return subscription data.
+ * If paid plan has expired (status !== ACTIVE), we do not redirect; UI shows an expired banner.
  */
 export async function requireActiveSubscription(
-  userId: string,
-  redirectTo = "/plans"
+  userId: string
 ): Promise<SubscriptionData> {
-  // Get user's enabled status and subscription
-  const [user, currentSubscription] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { isEnabled: true },
-    }),
-    getUserSubscription(userId),
-  ]);
-
-  // Check if user exists and is enabled
-  if (!user?.isEnabled) {
-    throw redirect(redirectTo);
-  }
-
-  const subscriptionData: SubscriptionData = {
-    user: { id: userId, isEnabled: user.isEnabled },
-    currentSubscription:
-      currentSubscription && currentSubscription.planId
-        ? {
-            planId: currentSubscription.planId,
-            status: currentSubscription.status,
-            Plan: currentSubscription.Plan
-              ? {
-                  name: currentSubscription.Plan.name,
-                  id: currentSubscription.Plan.id,
-                }
-              : undefined,
-          }
-        : null,
-  };
-
-  if (subscriptionData.currentSubscription?.status !== "ACTIVE") {
-    throw redirect(redirectTo);
-  }
-
-  return subscriptionData;
+  return ensureFreeAndGetSubscriptionData(userId);
 }
 
 /**

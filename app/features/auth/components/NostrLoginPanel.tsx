@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { NostrEvent } from "~/features/nostr/types";
 import { isMobile } from "~/lib/is-mobile";
 import { isStandalonePWA } from "~/lib/is-standalone-pwa";
+import { clearPersistedState } from "~/lib/lifecycle-manager.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   canAttemptCircuitBreaker,
@@ -404,18 +405,6 @@ async function postJson<T>(url: string, body?: unknown): Promise<T> {
 export default function NostrLoginPanel() {
   const location = useLocation();
   const queryClient = useQueryClient();
-  const redirectTo = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    const raw = params.get("redirectTo");
-    // Decode the redirectTo parameter if it's encoded
-    if (!raw) return "/dashboard";
-    try {
-      return decodeURIComponent(raw);
-    } catch {
-      // If decoding fails, use the raw value
-      return raw;
-    }
-  }, [location.search]);
   const expectedPubkey = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const raw = params.get("expectedPubkey");
@@ -1516,24 +1505,13 @@ export default function NostrLoginPanel() {
         challengeId: challenge.challengeId,
         pubkey,
         signedEvent,
-        redirectTo,
       });
 
       setState("authenticated");
-      // Decode redirectTo if it's encoded
-      const decodedRedirect = (() => {
-        try {
-          return decodeURIComponent(verify.redirectTo);
-        } catch {
-          return verify.redirectTo;
-        }
-      })();
-      // Clear React Query cache so new session gets fresh data
+      // Always redirect to dashboard after sign-in (server returns redirectTo: "/dashboard")
       queryClient.clear();
-      // Force full page reload so all Remix loader data and client state are fresh for the new account.
-      // Client-side navigate() can reuse cached/prefetched data from the previous session, causing
-      // posts, settings, and queues from another account to appear (same fix as logout).
-      window.location.href = decodedRedirect;
+      clearPersistedState();
+      window.location.href = verify.redirectTo;
     } catch (e) {
       const n = normalizeError(e);
       // Map a few known server messages to typed errors
@@ -1565,7 +1543,7 @@ export default function NostrLoginPanel() {
       setLastFailureOrigin("verify");
       setState("failed");
     }
-  }, [pubkey, redirectTo, signer, queryClient]);
+  }, [pubkey, signer, queryClient]);
 
   // When we land on "requesting_signature" (after extension or remote signer is ready),
   // trigger the actual signature request. The UI shows "Waiting for signature..." but we

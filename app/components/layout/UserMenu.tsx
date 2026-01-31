@@ -227,7 +227,7 @@ export default function UserMenu() {
     try {
       await fetch("/logout", { method: "POST", credentials: "same-origin" });
       window.location.assign(
-        `/login?redirectTo=${encodeURIComponent("/dashboard")}&expectedPubkey=${encodeURIComponent(childNpub)}`
+        `/login?expectedPubkey=${encodeURIComponent(childNpub)}`
       );
     } catch (e) {
       const { handleErrorSafely } = require("~/lib/error-handler.client") as {
@@ -248,7 +248,7 @@ export default function UserMenu() {
     try {
       await fetch("/logout", { method: "POST", credentials: "same-origin" });
       window.location.assign(
-        `/login?redirectTo=${encodeURIComponent("/dashboard")}&expectedPubkey=${encodeURIComponent(parentNpub)}`
+        `/login?expectedPubkey=${encodeURIComponent(parentNpub)}`
       );
     } catch (e) {
       const { handleErrorSafely } = require("~/lib/error-handler.client") as {

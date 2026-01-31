@@ -162,38 +162,30 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // HTML and app shell - stale-while-revalidate
+  // HTML and navigation - network first, never cache. Auth-dependent content must
+  // always come from the network so we never serve stale user/session (e.g. after
+  // logout or sign-in with different account on mobile PWA).
   if (
     request.headers.get("accept")?.includes("text/html") ||
     url.pathname === "/" ||
     !url.pathname.includes(".")
   ) {
     event.respondWith(
-      caches.open(APP_SHELL_CACHE).then((cache) => {
-        return cache.match(request).then((cachedResponse) => {
-          const fetchPromise = fetch(request)
-            .then((response) => {
-              if (response.ok) {
-                cache.put(request, response.clone());
-              }
-              return response;
-            })
-            .catch(() => {
-              // If network fails and we have cache, return cache
+      fetch(request)
+        .then((response) => response)
+        .catch(() => {
+          return caches.open(APP_SHELL_CACHE).then((cache) => {
+            return cache.match(request).then((cachedResponse) => {
               if (cachedResponse) {
                 return cachedResponse;
               }
-              // Otherwise return offline fallback
               return new Response("Offline", {
                 status: 503,
                 statusText: "Service Unavailable",
               });
             });
-
-          // Return cached version immediately, update in background
-          return cachedResponse || fetchPromise;
-        });
-      })
+          });
+        })
     );
     return;
   }

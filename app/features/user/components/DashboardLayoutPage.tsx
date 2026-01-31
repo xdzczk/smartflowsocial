@@ -33,6 +33,8 @@ export function DashboardLayoutPage(): ReactNode {
   const { currentSubscription, pendingParentUsers } =
     useLoaderData<typeof dashboardLoader>();
   const isFreePlan = currentSubscription?.planId === "free";
+  const isSubscriptionExpired =
+    currentSubscription && currentSubscription.status !== "ACTIVE";
   const navigation = useNavigation();
   const navAction =
     (navigation.formData?.get("_action") as string) || undefined;
@@ -119,7 +121,26 @@ export function DashboardLayoutPage(): ReactNode {
             </div>
           ) : null}
 
-          {isFreePlan ? (
+          {isSubscriptionExpired ? (
+            <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
+              <div className="border-border bg-muted text-muted-foreground mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
+                <div>
+                  <p className="font-medium">Your subscription has expired</p>
+                  <p className="text-sm opacity-90">
+                    You’re on the Free plan now. Resubscribe to restore your
+                    previous plan benefits.
+                  </p>
+                </div>
+                <Link
+                  prefetch="intent"
+                  to="/plans"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                >
+                  View plans
+                </Link>
+              </div>
+            </div>
+          ) : isFreePlan ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
               <div className="border-border bg-muted text-muted-foreground mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
                 <div>

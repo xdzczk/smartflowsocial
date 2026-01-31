@@ -35,8 +35,30 @@ interface RemoteSignerSessionsStorage {
   version: number;
 }
 
-const STORAGE_KEY = "__smartflow_remote_signer_sessions_v1";
+const STORAGE_KEY_PREFIX = "__smartflow_remote_signer_sessions_v1";
 const MAX_HISTORY_ENTRIES = 100;
+
+/**
+ * Current user npub for per-profile storage. When set, sessions are keyed by
+ * this npub so each account has its own list on the same device. When null
+ * (e.g. logged out or login page), we use a device-scoped key for backward compat.
+ */
+let currentUserNpub: string | null = null;
+
+/**
+ * Set the current user's npub so session storage is read/written for that profile.
+ * Call with the logged-in user's npub; call with null on logout or when no user.
+ */
+export function setCurrentUserNpub(npub: string | null): void {
+  currentUserNpub = npub;
+}
+
+function getStorageKey(): string {
+  if (currentUserNpub) {
+    return `${STORAGE_KEY_PREFIX}_${currentUserNpub}`;
+  }
+  return STORAGE_KEY_PREFIX;
+}
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
@@ -48,7 +70,8 @@ function getStorage(): RemoteSignerSessionsStorage {
   }
 
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const key = getStorageKey();
+    const stored = localStorage.getItem(key);
     if (!stored) {
       return { sessions: [], activeSessionId: null, version: 1 };
     }
@@ -64,7 +87,7 @@ function saveStorage(storage: RemoteSignerSessionsStorage): void {
   }
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+    localStorage.setItem(getStorageKey(), JSON.stringify(storage));
   } catch (error) {
     console.warn("Failed to save remote signer sessions:", error);
   }

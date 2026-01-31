@@ -39,14 +39,10 @@ vi.mock("~/features/auth/session.server", async () => {
     return session.get("userId");
   };
 
-  const requireUserId = async (
-    request: Request,
-    redirectTo: string = new URL(request.url).pathname
-  ) => {
+  const requireUserId = async (request: Request) => {
     const userId: string | undefined = await getUserId(request);
     if (!userId) {
-      const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-      throw redirect(`/login?${searchParams}`);
+      throw redirect("/login");
     }
     return userId;
   };

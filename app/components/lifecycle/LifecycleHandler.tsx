@@ -5,7 +5,7 @@
 
 import { useLocation, useRevalidator } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { getAndClearCorrelationContext } from "~/lib/correlation-id.client";
 import {
@@ -15,7 +15,11 @@ import {
   clearPersistedState,
 } from "~/lib/lifecycle-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { setCurrentUserNpub } from "~/lib/remote-signer-sessions.client";
 import { triggerForegroundSync } from "~/lib/sync-manager.client";
+
+/** Minimum ms between revalidates when app becomes visible (reduces PFP flicker on mobile PWA). */
+const REVALIDATE_DEBOUNCE_MS = 1500;
 
 export function LifecycleHandler() {
   const revalidator = useRevalidator();
@@ -23,10 +27,25 @@ export function LifecycleHandler() {
   const location = useLocation();
   const user = useOptionalUser();
   const revalidatorRef = useRef(revalidator);
+  const lastRevalidateAtRef = useRef(0);
 
   useEffect(() => {
     revalidatorRef.current = revalidator;
   }, [revalidator]);
+
+  const runRevalidate = useCallback(() => {
+    const now = Date.now();
+    if (now - lastRevalidateAtRef.current < REVALIDATE_DEBOUNCE_MS) {
+      return;
+    }
+    lastRevalidateAtRef.current = now;
+    void triggerForegroundSync(queryClient);
+    revalidatorRef.current.revalidate();
+  }, [queryClient]);
+
+  useEffect(() => {
+    setCurrentUserNpub(user?.npub ?? null);
+  }, [user?.npub]);
 
   useEffect(() => {
     // Clear persisted state if user is not authenticated (e.g., on logout or landing page)
@@ -48,10 +67,7 @@ export function LifecycleHandler() {
     return initLifecycleHandlers({
       onVisibilityChange: (isVisible) => {
         if (isVisible) {
-          setTimeout(() => {
-            void triggerForegroundSync(queryClient);
-            revalidatorRef.current.revalidate();
-          }, 0);
+          setTimeout(runRevalidate, 0);
         } else {
           if (user) {
             persistUIState({
@@ -64,10 +80,7 @@ export function LifecycleHandler() {
       onPageShow: () => {
         const state = getPersistedState();
         if (state.lastSyncTimestamp) {
-          setTimeout(() => {
-            void triggerForegroundSync(queryClient);
-            revalidatorRef.current.revalidate();
-          }, 0);
+          setTimeout(runRevalidate, 0);
         }
       },
       onPageHide: () => {
@@ -79,13 +92,10 @@ export function LifecycleHandler() {
         }
       },
       onFocus: () => {
-        setTimeout(() => {
-          void triggerForegroundSync(queryClient);
-          revalidatorRef.current.revalidate();
-        }, 0);
+        setTimeout(runRevalidate, 0);
       },
     });
-  }, [queryClient, user, location.pathname]);
+  }, [queryClient, user, location.pathname, runRevalidate]);
 
   return null; // This component doesn't render anything
 }

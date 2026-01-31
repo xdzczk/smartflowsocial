@@ -104,8 +104,7 @@ export async function getUser(request: Request) {
 }
 
 export async function requireSession(
-  request: Request,
-  redirectTo: string = new URL(request.url).pathname
+  request: Request
 ): Promise<{ userId: User["id"]; pubkey: string; sessionId: string }> {
   const session = await getSession(request);
   const sessionId = session.get(SESSION_ID_KEY);
@@ -127,8 +126,7 @@ export async function requireSession(
       dbSession.revokedAt ||
       dbSession.expiresAt.getTime() <= Date.now()
     ) {
-      const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-      throw redirect(`/login?${searchParams.toString()}`);
+      throw redirect("/login");
     }
 
     return {
@@ -146,15 +144,11 @@ export async function requireSession(
     return { userId: legacyUserId, pubkey: user.npub, sessionId: "legacy" };
   }
 
-  const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-  throw redirect(`/login?${searchParams.toString()}`);
+  throw redirect("/login");
 }
 
-export async function requireUserId(
-  request: Request,
-  redirectTo: string = new URL(request.url).pathname
-) {
-  const { userId } = await requireSession(request, redirectTo);
+export async function requireUserId(request: Request) {
+  const { userId } = await requireSession(request);
   return userId;
 }
 

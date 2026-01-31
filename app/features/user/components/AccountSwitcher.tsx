@@ -60,7 +60,7 @@ export default function AccountSwitcher() {
       // Switching accounts is an identity change: logout + re-authenticate.
       await fetch("/logout", { method: "POST", credentials: "same-origin" });
       window.location.assign(
-        `/login?redirectTo=${encodeURIComponent("/dashboard")}&expectedPubkey=${encodeURIComponent(childNpub)}`
+        `/login?expectedPubkey=${encodeURIComponent(childNpub)}`
       );
     } catch (e) {
       const { handleErrorSafely } =

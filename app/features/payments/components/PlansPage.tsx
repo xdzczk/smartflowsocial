@@ -1,9 +1,4 @@
-import {
-  Link,
-  useActionData,
-  useLoaderData,
-  useNavigation,
-} from "@remix-run/react";
+import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import type { ReactNode } from "react";
 
 import Footer from "~/components/layout/FrontendFooter";
@@ -145,17 +140,6 @@ export function PlansPage(): ReactNode {
         <div className="from-secondary/20 to-background dark:from-background/20 absolute inset-0 bg-gradient-to-b via-transparent" />
 
         <Header />
-
-        {user ? (
-          <div className="relative z-10 mx-4 mt-4 flex justify-center lg:mx-8">
-            <Link
-              to="/dashboard"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm"
-            >
-              Go to Dashboard
-            </Link>
-          </div>
-        ) : null}
 
         <div className="relative container mx-auto px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl">
           <div className="mb-16 text-center">

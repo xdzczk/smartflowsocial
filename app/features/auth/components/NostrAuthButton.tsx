@@ -1,11 +1,13 @@
 import { Link, useLocation, useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
+import { clearAllClientCacheOnLogout } from "~/lib/clear-client-cache.client";
 import { clearActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { setCurrentUserNpub } from "~/lib/remote-signer-sessions.client";
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -104,9 +106,6 @@ export default function NostrAuthButton() {
   const hasReloadedRef = useRef(false);
   const wasSubmittingRef = useRef(false);
 
-  // Always land in the app after sign-in (not back on marketing pages).
-  const redirectTo = useMemo(() => encodeURIComponent("/dashboard"), []);
-
   const isLoginPage = location.pathname.startsWith("/login");
 
   // Handle logout redirect - force full page reload to clear all state
@@ -122,8 +121,10 @@ export default function NostrAuthButton() {
     ) {
       hasReloadedRef.current = true;
       wasSubmittingRef.current = false;
-      // Clear all client-side state
+      // Clear all client-side state so no account A data can leak into account B session
       clearActiveSignerConfig();
+      setCurrentUserNpub(null);
+      clearAllClientCacheOnLogout();
       queryClient.clear();
       // Force full page reload to ensure all Remix loader data is fresh
       window.location.href = "/";
@@ -166,7 +167,7 @@ export default function NostrAuthButton() {
           className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
           asChild
         >
-          <Link to={`/login?redirectTo=${redirectTo}`}>Sign in</Link>
+          <Link to="/login">Sign in</Link>
         </Button>
       )}
     </>

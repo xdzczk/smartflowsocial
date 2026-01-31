@@ -11,7 +11,6 @@ import { getSession, sessionStorage } from "~/features/auth/session.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { AuthenticationError, ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
-import { safeRedirect } from "~/lib/remix-utils";
 
 const PURPOSE_LOGIN = "login";
 const LOGIN_EVENT_KIND = 27235;
@@ -77,10 +76,6 @@ export const action = withCSRFProtection(
 
       const challengeId =
         typeof body.challengeId === "string" ? body.challengeId : "";
-      const redirectTo = safeRedirect(
-        typeof body.redirectTo === "string" ? body.redirectTo : undefined,
-        "/dashboard"
-      );
 
       if (!challengeId) {
         throw new ValidationError("Missing challengeId");
@@ -171,7 +166,7 @@ export const action = withCSRFProtection(
       return json(
         {
           success: true,
-          redirectTo,
+          redirectTo: "/dashboard",
           sessionId,
           pubkey,
         },
