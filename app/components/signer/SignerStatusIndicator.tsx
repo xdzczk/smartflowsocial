@@ -10,11 +10,13 @@ import {
 } from "@heroicons/react/20/solid";
 import { useEffect, useState } from "react";
 
-import type { Nip07Readiness } from "~/lib/nip07-readiness.client";
 import { getActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
 import { getActiveSession } from "~/lib/remote-signer-sessions.client";
 import type { ConnectionStatus } from "~/lib/remote-signer-sessions.client";
-import { useNip07Readiness } from "~/lib/useNip07Readiness.client";
+import {
+  type Nip07Readiness,
+  useNip07Readiness,
+} from "~/lib/useNip07Readiness";
 
 function Nip46Status({ status }: { status: ConnectionStatus }) {
   if (status === "active") {

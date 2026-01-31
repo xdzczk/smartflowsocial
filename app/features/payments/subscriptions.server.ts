@@ -42,25 +42,6 @@ export async function requireFeatureAccess(
 /**
  * Ensure user has at least a free subscription. Never redirects to /plans.
  */
-export async function checkNewUserAccess(
-  userId: string
-): Promise<SubscriptionData> {
-  return ensureFreeAndGetSubscriptionData(userId);
-}
-
-/**
- * Ensure user has at least a free subscription for dashboard child routes.
- * Never redirects to /plans.
- */
-export async function requireSubscriptionForDashboardChild(
-  userId: string
-): Promise<SubscriptionData> {
-  return ensureFreeAndGetSubscriptionData(userId);
-}
-
-/**
- * Ensure user has at least a free subscription. Never redirects to /plans.
- */
 export async function requireAnySubscription(userId: string): Promise<void> {
   await ensureUserHasFreePlan(userId);
 
