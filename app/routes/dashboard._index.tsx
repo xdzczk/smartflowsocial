@@ -6,11 +6,31 @@ import {
 
 import { requireUserId } from "~/features/auth";
 import { requireFeatureAccess } from "~/features/payments";
-import { handleDashboardAction, loadFlowData } from "~/features/posts/server";
+import {
+  getContentStatistics,
+  handleDashboardAction,
+  loadFlowData,
+} from "~/features/posts/server";
 import { DashboardIndexPage } from "~/features/posts/ui";
 import { withCSRFProtection } from "~/lib/csrf";
+import { logWarning } from "~/lib/error-logger.server";
+import { ValidationError } from "~/lib/errors";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { flowLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+
+const EMPTY_STATS = { scheduledCount: 0, successCount: 0 };
+
+const FALLBACK_FLOW = {
+  flowItems: [],
+  hasMorePast: false,
+  hasMoreFuture: false,
+  pastCursor: null,
+  futureCursor: null,
+  user: null,
+  queueTypes: [],
+  hashTagPresets: [],
+  postStatistics: EMPTY_STATS,
+};
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   try {
@@ -25,19 +45,42 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const before = url.searchParams.get("before") ?? undefined;
     const after = url.searchParams.get("after") ?? undefined;
 
-    const data = await loadFlowData({
-      userId,
-      queueType,
-      pastLimit: 20,
-      futureLimit: 30,
-      before,
-      after,
-    });
+    const [data, postStatistics] = await Promise.all([
+      loadFlowData({
+        userId,
+        queueType,
+        pastLimit: 20,
+        futureLimit: 30,
+        before,
+        after,
+      }),
+      getContentStatistics(userId),
+    ]);
 
     // Validate loader response with Zod schema
-    const validatedData = validateLoaderResponse(data, flowLoaderDataSchema);
+    let validatedData;
+    try {
+      validatedData = validateLoaderResponse(data, flowLoaderDataSchema);
+    } catch (validationErr) {
+      // Always return 200 with fallback so the page loads; 400 would break the document request
+      logWarning("Dashboard flow loader validation failed", {
+        message:
+          validationErr instanceof Error ? validationErr.message : "Unknown",
+        context:
+          validationErr instanceof ValidationError
+            ? validationErr.context
+            : undefined,
+      });
+      return json({
+        ...FALLBACK_FLOW,
+        postStatistics,
+      });
+    }
 
-    return json(validatedData);
+    return json({
+      ...validatedData,
+      postStatistics,
+    });
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
@@ -46,14 +89,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Use dynamic import to avoid bundling issues
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {
-      flowItems: [],
-      hasMorePast: false,
-      hasMoreFuture: false,
-      pastCursor: null,
-      futureCursor: null,
-      user: null,
-      queueTypes: [],
-      hashTagPresets: [],
+      ...FALLBACK_FLOW,
     });
   }
 };

@@ -786,3 +786,34 @@ export function getPastLongFormPosts({
     ...(takeLimit !== undefined ? { take: takeLimit } : {}),
   });
 }
+
+export interface LongFormStatistics {
+  scheduledCount: number;
+  successCount: number;
+}
+
+export async function getLongFormStatistics({
+  userId,
+}: {
+  userId: string;
+}): Promise<LongFormStatistics> {
+  try {
+    const [scheduledCount, successCount] = await Promise.all([
+      prisma.longFormPost.count({
+        where: {
+          userId,
+          currentState: "SCHEDULED",
+        },
+      }),
+      prisma.longFormPost.count({
+        where: {
+          userId,
+          currentState: "PUBLISHED",
+        },
+      }),
+    ]);
+    return { scheduledCount, successCount };
+  } catch {
+    return { scheduledCount: 0, successCount: 0 };
+  }
+}

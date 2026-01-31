@@ -137,6 +137,10 @@ export {
 
 export { loadDashboardData } from "./services/dashboard-loader.server";
 export {
+  getContentStatistics,
+  type ContentStatistics,
+} from "./services/content-statistics.server";
+export {
   loadFlowData,
   type LoadFlowDataParams,
   type LoadFlowDataResult,
