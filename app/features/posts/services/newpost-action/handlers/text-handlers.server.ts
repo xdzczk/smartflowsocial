@@ -16,6 +16,117 @@ import { applyHashtags } from "../hashtag-utils.server";
 const ERROR_INVALID_SIGNED_EVENT_FORMAT =
   "Invalid signedEvent or nostrEvent format";
 
+interface RepostScheduleItem {
+  scheduledFor: number;
+  signedEvent: SignedEvent;
+}
+interface QuoteScheduleItem {
+  scheduledFor: number;
+  signedEvent: SignedEvent;
+  caption?: string;
+}
+
+function parseRepostSchedulesFromForm(
+  formData: FormData
+): RepostScheduleItem[] {
+  const repostSchedulesStr = formData.get("repostSchedules");
+  const alsoScheduleRepost = formData.get("alsoScheduleRepost") === "on";
+  const repostScheduledForStr = formData.get("repostScheduledFor");
+  const repostSignedEventStr = formData.get("repostSignedEvent");
+  let list: RepostScheduleItem[] = [];
+  if (repostSchedulesStr && typeof repostSchedulesStr === "string") {
+    try {
+      const parsed = JSON.parse(repostSchedulesStr) as unknown;
+      if (Array.isArray(parsed)) {
+        list = parsed.filter(
+          (p): p is RepostScheduleItem =>
+            typeof p === "object" &&
+            p !== null &&
+            "scheduledFor" in p &&
+            "signedEvent" in p &&
+            typeof (p as RepostScheduleItem).scheduledFor === "number" &&
+            typeof (p as RepostScheduleItem).signedEvent === "object"
+        );
+      }
+    } catch {
+      list = [];
+    }
+  }
+  if (
+    list.length === 0 &&
+    alsoScheduleRepost &&
+    repostScheduledForStr &&
+    repostSignedEventStr
+  ) {
+    const repostScheduledFor = parseInt(String(repostScheduledForStr), 10);
+    if (!Number.isNaN(repostScheduledFor)) {
+      try {
+        const repostSignedEvent = JSON.parse(
+          String(repostSignedEventStr)
+        ) as SignedEvent;
+        list = [
+          { scheduledFor: repostScheduledFor, signedEvent: repostSignedEvent },
+        ];
+      } catch {
+        // keep empty
+      }
+    }
+  }
+  return list;
+}
+
+function parseQuoteSchedulesFromForm(formData: FormData): QuoteScheduleItem[] {
+  const quoteSchedulesStr = formData.get("quoteSchedules");
+  const alsoScheduleQuote = formData.get("alsoScheduleQuote") === "on";
+  const quoteScheduledForStr = formData.get("quoteScheduledFor");
+  const quoteSignedEventStr = formData.get("quoteSignedEvent");
+  const quoteCaption = formData.get("quoteCaption");
+  let list: QuoteScheduleItem[] = [];
+  if (quoteSchedulesStr && typeof quoteSchedulesStr === "string") {
+    try {
+      const parsed = JSON.parse(quoteSchedulesStr) as unknown;
+      if (Array.isArray(parsed)) {
+        list = parsed.filter(
+          (p): p is QuoteScheduleItem =>
+            typeof p === "object" &&
+            p !== null &&
+            "scheduledFor" in p &&
+            "signedEvent" in p &&
+            typeof (p as QuoteScheduleItem).scheduledFor === "number" &&
+            typeof (p as QuoteScheduleItem).signedEvent === "object"
+        );
+      }
+    } catch {
+      list = [];
+    }
+  }
+  if (
+    list.length === 0 &&
+    alsoScheduleQuote &&
+    quoteScheduledForStr &&
+    quoteSignedEventStr
+  ) {
+    const quoteScheduledFor = parseInt(String(quoteScheduledForStr), 10);
+    if (!Number.isNaN(quoteScheduledFor)) {
+      try {
+        const quoteSignedEvent = JSON.parse(
+          String(quoteSignedEventStr)
+        ) as SignedEvent;
+        list = [
+          {
+            scheduledFor: quoteScheduledFor,
+            signedEvent: quoteSignedEvent,
+            caption: quoteCaption ? String(quoteCaption) : undefined,
+          },
+        ];
+      } catch {
+        // keep empty
+      }
+    }
+  }
+  return list;
+}
+
 interface TextHandlerParams {
   userId: string;
   sessionPubkey: string;
@@ -127,43 +238,8 @@ export async function handlePostOrScheduleText({
     showHashTagsinPosts
   );
 
-  const alsoScheduleRepost = formData.get("alsoScheduleRepost") === "on";
-  const repostScheduledForStr = formData.get("repostScheduledFor");
-  const repostSignedEventStr = formData.get("repostSignedEvent");
-  const alsoScheduleQuote = formData.get("alsoScheduleQuote") === "on";
-  const quoteScheduledForStr = formData.get("quoteScheduledFor");
-  const quoteSignedEventStr = formData.get("quoteSignedEvent");
-  const quoteCaption = formData.get("quoteCaption");
-
-  let repostScheduledFor: number | undefined;
-  let repostSignedEvent: SignedEvent | undefined;
-  if (alsoScheduleRepost && repostScheduledForStr && repostSignedEventStr) {
-    repostScheduledFor = parseInt(String(repostScheduledForStr), 10);
-    if (!Number.isNaN(repostScheduledFor)) {
-      try {
-        repostSignedEvent = JSON.parse(
-          String(repostSignedEventStr)
-        ) as SignedEvent;
-      } catch {
-        repostSignedEvent = undefined;
-      }
-    }
-  }
-
-  let quoteScheduledFor: number | undefined;
-  let quoteSignedEvent: SignedEvent | undefined;
-  if (alsoScheduleQuote && quoteScheduledForStr && quoteSignedEventStr) {
-    quoteScheduledFor = parseInt(String(quoteScheduledForStr), 10);
-    if (!Number.isNaN(quoteScheduledFor)) {
-      try {
-        quoteSignedEvent = JSON.parse(
-          String(quoteSignedEventStr)
-        ) as SignedEvent;
-      } catch {
-        quoteSignedEvent = undefined;
-      }
-    }
-  }
+  const repostSchedules = parseRepostSchedulesFromForm(formData);
+  const quoteSchedules = parseQuoteSchedulesFromForm(formData);
 
   // Use CreatePostUseCase for post creation (handles queue type resolution internally)
   const createPostUseCase = new CreatePostUseCase();
@@ -183,13 +259,8 @@ export async function handlePostOrScheduleText({
       action === "schedule-text" ? signedEventJson.created_at : undefined,
     hashTagPresetTags,
     showHashTagsinPosts,
-    alsoScheduleRepost: alsoScheduleRepost && !!repostSignedEvent,
-    repostScheduledFor,
-    repostSignedEvent,
-    alsoScheduleQuote: alsoScheduleQuote && !!quoteSignedEvent,
-    quoteScheduledFor,
-    quoteSignedEvent,
-    quoteCaption: quoteCaption ? String(quoteCaption) : undefined,
+    repostSchedules: repostSchedules.length > 0 ? repostSchedules : undefined,
+    quoteSchedules: quoteSchedules.length > 0 ? quoteSchedules : undefined,
   });
 
   if (action === "post-text") {

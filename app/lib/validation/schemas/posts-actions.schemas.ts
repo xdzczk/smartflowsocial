@@ -318,6 +318,8 @@ export const draftEditResumeSchema = z.object({
     .transform((v) => v === "on" || v === "true"),
   repostScheduledFor: z.string().optional(),
   repostSignedEvent: z.string().optional(),
+  /** JSON array of { scheduledFor, signedEvent } for multiple reposts */
+  repostSchedules: z.string().optional(),
   alsoScheduleQuote: z
     .string()
     .optional()
@@ -325,6 +327,8 @@ export const draftEditResumeSchema = z.object({
   quoteScheduledFor: z.string().optional(),
   quoteSignedEvent: z.string().optional(),
   quoteCaption: z.string().optional(),
+  /** JSON array of { scheduledFor, signedEvent, caption? } for multiple quotes */
+  quoteSchedules: z.string().optional(),
 });
 
 /**

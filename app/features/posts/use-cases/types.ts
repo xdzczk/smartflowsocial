@@ -36,11 +36,19 @@ export interface CreatePostInput {
   alsoScheduleRepost?: boolean;
   repostScheduledFor?: number; // Unix timestamp in seconds
   repostSignedEvent?: SignedEvent;
+  /** Multiple scheduled reposts: [{ scheduledFor, signedEvent }, ...] */
+  repostSchedules?: Array<{ scheduledFor: number; signedEvent: SignedEvent }>;
   /** When creating/scheduling a new post: also create a scheduled quote */
   alsoScheduleQuote?: boolean;
   quoteScheduledFor?: number; // Unix timestamp in seconds
   quoteSignedEvent?: SignedEvent;
   quoteCaption?: string;
+  /** Multiple scheduled quotes: [{ scheduledFor, signedEvent, caption? }, ...] */
+  quoteSchedules?: Array<{
+    scheduledFor: number;
+    signedEvent: SignedEvent;
+    caption?: string;
+  }>;
 }
 
 export interface CreatePostResult {

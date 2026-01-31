@@ -4,12 +4,7 @@ import { toast } from "react-hot-toast";
 
 import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import {
-  parseDateTimeLocal,
-  toDate,
-  fromDate,
-  toUnixTimestamp,
-} from "~/lib/temporal";
+import { parseDateTimeLocal, toDate, fromDate } from "~/lib/temporal";
 
 import { useEditPostModal } from "../hooks/useEditPostModal";
 import type {
@@ -25,7 +20,84 @@ import {
   buildQuoteEvent,
 } from "../utils/repost-quote-events.client";
 
+// eslint-disable-next-line import/order -- parent and sibling groups adjacent
 import { EditLongFormFormFields } from "./EditLongFormFormFields";
+
+interface MainEv {
+  id: string;
+  pubkey: string;
+  created_at: number;
+  kind: number;
+  tags: string[][];
+  content: string;
+  sig: string;
+}
+
+async function scheduleRepostsAndQuotesAfterSubmit(
+  mainScheduledUnix: number,
+  mainEv: MainEv,
+  postId: string,
+  repostHoursList: Array<{ id: string; hours: number }>,
+  quoteEntries: Array<{ id: string; hoursAfterMain: number; caption: string }>,
+  alsoScheduleRepost: boolean,
+  alsoScheduleQuote: boolean
+): Promise<void> {
+  if (alsoScheduleRepost && repostHoursList.length > 0) {
+    for (const { hours: h } of repostHoursList) {
+      if (h < 1) continue;
+      const repostScheduledForUnix = mainScheduledUnix + h * 3600;
+      const repostEvent = buildKind6RepostEvent(mainEv, repostScheduledForUnix);
+      const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
+        content: repostEvent.content,
+        created_at: repostEvent.created_at,
+        kind: repostEvent.kind,
+        tags: repostEvent.tags,
+      });
+      const fd = new FormData();
+      fd.set("_action", "scheduleRepost");
+      fd.set("postId", postId);
+      fd.set("scheduledFor", repostScheduledForUnix.toString());
+      fd.set("signedEvent", JSON.stringify(repostSignedEvent));
+      const res = await fetch("/dashboard/scheduled", {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) throw new Error("Failed to schedule repost");
+    }
+  }
+  if (alsoScheduleQuote && quoteEntries.length > 0) {
+    for (const entry of quoteEntries) {
+      if (entry.hoursAfterMain < 1) continue;
+      const quoteScheduledForUnix =
+        mainScheduledUnix + entry.hoursAfterMain * 3600;
+      const quoteEvent = buildQuoteEvent(
+        mainEv,
+        entry.caption,
+        quoteScheduledForUnix,
+        []
+      );
+      const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
+        content: quoteEvent.content,
+        created_at: quoteEvent.created_at,
+        kind: quoteEvent.kind,
+        tags: quoteEvent.tags,
+      });
+      const fd = new FormData();
+      fd.set("_action", "scheduleQuote");
+      fd.set("postId", postId);
+      fd.set("scheduledFor", quoteScheduledForUnix.toString());
+      fd.set("signedEvent", JSON.stringify(quoteSignedEvent));
+      if (entry.caption) {
+        fd.set("quoteCaption", entry.caption);
+      }
+      const res = await fetch("/dashboard/scheduled", {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) throw new Error("Failed to schedule quote");
+    }
+  }
+}
 import { EditorJSStyles } from "./EditorJSStyles";
 import { EditPostFormFields } from "./EditPostFormFields";
 interface EditPostModalProps {
@@ -58,12 +130,15 @@ export function EditPostModal({
   }>();
   const [isSigningEvent, setIsSigningEvent] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
-  // "Also schedule repost/quote" (only for regular posts)
+  // "Also schedule repost/quote" (only for regular posts) – hours after main post (multiple)
   const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
-  const [repostScheduledFor, setRepostScheduledFor] = useState("");
+  const [repostHoursList, setRepostHoursList] = useState<
+    Array<{ id: string; hours: number }>
+  >([{ id: crypto.randomUUID(), hours: 2 }]);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
-  const [quoteScheduledFor, setQuoteScheduledFor] = useState("");
-  const [quoteCaption, setQuoteCaption] = useState("");
+  const [quoteEntries, setQuoteEntries] = useState<
+    Array<{ id: string; hoursAfterMain: number; caption: string }>
+  >([{ id: crypto.randomUUID(), hoursAfterMain: 2, caption: "" }]);
 
   // Determine if this is a longform post
   const isLongform = "title" in post;
@@ -183,103 +258,47 @@ export function EditPostModal({
       setIsUploadingImages(false);
       fetcher.submit(formData, { method: "post" });
 
-      // If "also schedule repost/quote" and we have the re-signed event (regular post only)
       if (
         !isLongform &&
         mainSignedEvent &&
         (alsoScheduleRepost || alsoScheduleQuote)
       ) {
-        const userTimezone = user?.timezone ?? "Etc/UTC";
-        try {
-          if (
-            alsoScheduleRepost &&
-            repostScheduledFor.trim() &&
-            mainSignedEvent.id &&
-            mainSignedEvent.pubkey
-          ) {
-            const zoned = parseDateTimeLocal(repostScheduledFor, userTimezone);
-            const scheduledForUnix = toUnixTimestamp(zoned.withTimeZone("UTC"));
-            const repostEvent = buildKind6RepostEvent(
-              mainSignedEvent as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                tags: string[][];
-                content: string;
-                sig: string;
-              },
-              scheduledForUnix
+        const mainScheduledForStr = formData.get("scheduledFor");
+        const mainScheduledUnix =
+          typeof mainScheduledForStr === "string"
+            ? parseInt(mainScheduledForStr, 10)
+            : NaN;
+        const hasMainScheduled =
+          !Number.isNaN(mainScheduledUnix) && mainScheduledUnix > 0;
+        const mainEv = mainSignedEvent as MainEv;
+        if (hasMainScheduled && mainEv.id && mainEv.pubkey) {
+          try {
+            await scheduleRepostsAndQuotesAfterSubmit(
+              mainScheduledUnix,
+              mainEv,
+              post.id,
+              repostHoursList,
+              quoteEntries,
+              alsoScheduleRepost,
+              alsoScheduleQuote
             );
-            const { signedEvent: repostSignedEvent } =
-              await nostrAdapter.signEvent({
-                content: repostEvent.content,
-                created_at: repostEvent.created_at,
-                kind: repostEvent.kind,
-                tags: repostEvent.tags,
-              });
-            const fd = new FormData();
-            fd.set("_action", "scheduleRepost");
-            fd.set("postId", post.id);
-            fd.set("scheduledFor", scheduledForUnix.toString());
-            fd.set("signedEvent", JSON.stringify(repostSignedEvent));
-            scheduleRepostQuoteFetcher.submit(fd, {
-              method: "post",
-              action: "/dashboard/scheduled",
-            });
-          }
-          if (
-            alsoScheduleQuote &&
-            quoteScheduledFor.trim() &&
-            mainSignedEvent.id &&
-            mainSignedEvent.pubkey
-          ) {
-            const zoned = parseDateTimeLocal(quoteScheduledFor, userTimezone);
-            const scheduledForUnix = toUnixTimestamp(zoned.withTimeZone("UTC"));
-            const quoteEvent = buildQuoteEvent(
-              mainSignedEvent as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                tags: string[][];
-                content: string;
-                sig: string;
-              },
-              quoteCaption,
-              scheduledForUnix,
-              []
-            );
-            const { signedEvent: quoteSignedEvent } =
-              await nostrAdapter.signEvent({
-                content: quoteEvent.content,
-                created_at: quoteEvent.created_at,
-                kind: quoteEvent.kind,
-                tags: quoteEvent.tags,
-              });
-            const fd = new FormData();
-            fd.set("_action", "scheduleQuote");
-            fd.set("postId", post.id);
-            fd.set("scheduledFor", scheduledForUnix.toString());
-            fd.set("signedEvent", JSON.stringify(quoteSignedEvent));
-            if (quoteCaption) {
-              fd.set("quoteCaption", quoteCaption);
+            if (
+              (alsoScheduleRepost && repostHoursList.length > 0) ||
+              (alsoScheduleQuote && quoteEntries.length > 0)
+            ) {
+              toast.success("Repost/quote scheduled successfully!");
             }
-            scheduleRepostQuoteFetcher.submit(fd, {
-              method: "post",
-              action: "/dashboard/scheduled",
+          } catch (err) {
+            handleErrorSafely(err, {
+              component: "EditPostModal",
+              action: "alsoScheduleRepostQuote",
             });
+            toast.error(
+              err instanceof Error
+                ? err.message
+                : "Failed to schedule repost/quote"
+            );
           }
-        } catch (err) {
-          handleErrorSafely(err, {
-            component: "EditPostModal",
-            action: "alsoScheduleRepostQuote",
-          });
-          toast.error(
-            err instanceof Error
-              ? err.message
-              : "Failed to schedule repost/quote"
-          );
         }
       }
     } catch (error: unknown) {
@@ -429,20 +448,59 @@ export function EditPostModal({
                     <span className="text-sm">Schedule a repost</span>
                   </label>
                   {alsoScheduleRepost ? (
-                    <div>
-                      <label
-                        htmlFor="edit-post-repost-scheduled-for"
-                        className="text-muted-foreground mb-1 block text-xs"
+                    <div className="space-y-2">
+                      <span className="text-muted-foreground mb-1 block text-xs">
+                        Hours after main post (one per repost)
+                      </span>
+                      {repostHoursList.map((item, idx) => (
+                        <div key={item.id} className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min={1}
+                            value={item.hours}
+                            aria-label="Hours after main post"
+                            onChange={(e) => {
+                              const v = Math.max(
+                                1,
+                                parseInt(e.target.value, 10) || 1
+                              );
+                              setRepostHoursList((prev) => {
+                                const next = [...prev];
+                                next[idx] = { ...next[idx]!, hours: v };
+                                return next;
+                              });
+                            }}
+                            className="bg-card border-border text-foreground w-20 rounded-md border px-3 py-2 text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRepostHoursList((prev) =>
+                                prev.length > 1
+                                  ? prev.filter((_, i) => i !== idx)
+                                  : prev
+                              )
+                            }
+                            disabled={repostHoursList.length <= 1}
+                            aria-label="Remove repost"
+                            className="text-muted-foreground hover:text-foreground text-xs"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRepostHoursList((prev) => [
+                            ...prev,
+                            { id: crypto.randomUUID(), hours: 24 },
+                          ])
+                        }
+                        className="text-primary text-xs hover:underline"
                       >
-                        Repost at
-                      </label>
-                      <input
-                        id="edit-post-repost-scheduled-for"
-                        type="datetime-local"
-                        value={repostScheduledFor}
-                        onChange={(e) => setRepostScheduledFor(e.target.value)}
-                        className="bg-card border-border text-foreground w-full rounded-md border px-3 py-2 text-sm"
-                      />
+                        Add another repost
+                      </button>
                     </div>
                   ) : null}
                   <label className="flex items-center gap-2">
@@ -455,38 +513,104 @@ export function EditPostModal({
                     <span className="text-sm">Schedule a quote</span>
                   </label>
                   {alsoScheduleQuote ? (
-                    <div className="space-y-1">
-                      <div>
-                        <label
-                          htmlFor="edit-post-quote-scheduled-for"
-                          className="text-muted-foreground mb-1 block text-xs"
+                    <div className="space-y-3">
+                      <span className="text-muted-foreground mb-1 block text-xs">
+                        Quote times and captions (one per quote)
+                      </span>
+                      {quoteEntries.map((entry, idx) => (
+                        <div
+                          key={entry.id}
+                          className="border-border space-y-2 rounded border p-3"
                         >
-                          Quote at
-                        </label>
-                        <input
-                          id="edit-post-quote-scheduled-for"
-                          type="datetime-local"
-                          value={quoteScheduledFor}
-                          onChange={(e) => setQuoteScheduledFor(e.target.value)}
-                          className="bg-card border-border text-foreground w-full rounded-md border px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="edit-post-quote-caption"
-                          className="text-muted-foreground mb-1 block text-xs"
-                        >
-                          Quote caption (optional)
-                        </label>
-                        <textarea
-                          id="edit-post-quote-caption"
-                          value={quoteCaption}
-                          onChange={(e) => setQuoteCaption(e.target.value)}
-                          placeholder="Add your comment..."
-                          rows={2}
-                          className="bg-card border-border text-foreground w-full rounded-md border px-3 py-2 text-sm"
-                        />
-                      </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <label
+                              htmlFor={`edit-quote-hours-${idx}`}
+                              className="text-muted-foreground text-xs"
+                            >
+                              Hours after main
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setQuoteEntries((prev) =>
+                                  prev.length > 1
+                                    ? prev.filter((_, i) => i !== idx)
+                                    : prev
+                                )
+                              }
+                              disabled={quoteEntries.length <= 1}
+                              className="text-muted-foreground hover:text-foreground text-xs"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <input
+                            id={`edit-quote-hours-${idx}`}
+                            type="number"
+                            min={1}
+                            value={entry.hoursAfterMain}
+                            onChange={(e) => {
+                              const v = Math.max(
+                                1,
+                                parseInt(e.target.value, 10) || 1
+                              );
+                              setQuoteEntries((prev) => {
+                                const next = [...prev];
+                                const current = next[idx]!;
+                                next[idx] = {
+                                  ...current,
+                                  hoursAfterMain: v,
+                                };
+                                return next;
+                              });
+                            }}
+                            className="bg-card border-border text-foreground w-20 rounded-md border px-3 py-2 text-sm"
+                            aria-label="Hours after main post"
+                          />
+                          <div>
+                            <label
+                              htmlFor={`edit-quote-caption-${idx}`}
+                              className="text-muted-foreground text-xs"
+                            >
+                              Caption (optional)
+                            </label>
+                            <textarea
+                              id={`edit-quote-caption-${idx}`}
+                              value={entry.caption}
+                              onChange={(e) =>
+                                setQuoteEntries((prev) => {
+                                  const next = [...prev];
+                                  const current = next[idx]!;
+                                  next[idx] = {
+                                    ...current,
+                                    caption: e.target.value,
+                                  };
+                                  return next;
+                                })
+                              }
+                              placeholder="Add your comment..."
+                              rows={2}
+                              className="bg-card border-border text-foreground mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setQuoteEntries((prev) => [
+                            ...prev,
+                            {
+                              id: crypto.randomUUID(),
+                              hoursAfterMain: 24,
+                              caption: "",
+                            },
+                          ])
+                        }
+                        className="text-primary text-xs hover:underline"
+                      >
+                        Add another quote
+                      </button>
                     </div>
                   ) : null}
                 </div>

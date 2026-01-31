@@ -30,14 +30,16 @@ interface DraftEditFormProps {
   onResumeClick: () => void;
   alsoScheduleRepost?: boolean;
   onAlsoScheduleRepostChange?: (value: boolean) => void;
-  repostScheduledFor?: string;
-  onRepostScheduledForChange?: (value: string) => void;
+  repostHoursList?: Array<{ id: string; hours: number }>;
+  onRepostHoursListChange?: (
+    value: Array<{ id: string; hours: number }>
+  ) => void;
   alsoScheduleQuote?: boolean;
   onAlsoScheduleQuoteChange?: (value: boolean) => void;
-  quoteScheduledFor?: string;
-  onQuoteScheduledForChange?: (value: string) => void;
-  quoteCaption?: string;
-  onQuoteCaptionChange?: (value: string) => void;
+  quoteEntries?: Array<{ id: string; hoursAfterMain: number; caption: string }>;
+  onQuoteEntriesChange?: (
+    value: Array<{ id: string; hoursAfterMain: number; caption: string }>
+  ) => void;
 }
 
 export function DraftEditForm({
@@ -59,14 +61,12 @@ export function DraftEditForm({
   onResumeClick,
   alsoScheduleRepost = false,
   onAlsoScheduleRepostChange,
-  repostScheduledFor = "",
-  onRepostScheduledForChange,
+  repostHoursList = [{ id: "default-repost", hours: 2 }],
+  onRepostHoursListChange,
   alsoScheduleQuote = false,
   onAlsoScheduleQuoteChange,
-  quoteScheduledFor = "",
-  onQuoteScheduledForChange,
-  quoteCaption = "",
-  onQuoteCaptionChange,
+  quoteEntries = [{ id: "default-quote", hoursAfterMain: 2, caption: "" }],
+  onQuoteEntriesChange,
 }: DraftEditFormProps) {
   const fetcher = useFetcher();
 
@@ -217,22 +217,60 @@ export function DraftEditForm({
                 />
                 <span className="text-sm">Schedule a repost</span>
               </label>
-              {alsoScheduleRepost && onRepostScheduledForChange ? (
-                <div>
-                  <Label
-                    htmlFor="draft-repost-scheduled-for"
-                    className="text-muted-foreground text-xs"
-                  >
-                    Repost at
+              {alsoScheduleRepost && onRepostHoursListChange ? (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground text-xs">
+                    Hours after main post (one per repost)
                   </Label>
-                  <input
-                    id="draft-repost-scheduled-for"
-                    type="datetime-local"
-                    value={repostScheduledFor}
-                    onChange={(e) => onRepostScheduledForChange(e.target.value)}
-                    className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-lg border p-2 text-sm"
+                  {repostHoursList.map((item, idx) => (
+                    <div key={item.id} className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        value={item.hours}
+                        onChange={(e) => {
+                          const v = Math.max(
+                            1,
+                            parseInt(e.target.value, 10) || 1
+                          );
+                          onRepostHoursListChange(
+                            repostHoursList.map((h, i) =>
+                              i === idx ? { ...h, hours: v } : h
+                            )
+                          );
+                        }}
+                        className="dark:bg-card dark:text-foreground border-border text-foreground w-20 rounded-lg border p-2 text-sm"
+                        disabled={isSubmitting}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onRepostHoursListChange(
+                            repostHoursList.length > 1
+                              ? repostHoursList.filter((_, i) => i !== idx)
+                              : repostHoursList
+                          )
+                        }
+                        disabled={isSubmitting || repostHoursList.length <= 1}
+                        className="text-muted-foreground hover:text-foreground text-xs"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onRepostHoursListChange([
+                        ...repostHoursList,
+                        { id: crypto.randomUUID(), hours: 24 },
+                      ])
+                    }
                     disabled={isSubmitting}
-                  />
+                    className="text-primary text-xs hover:underline"
+                  >
+                    Add another repost
+                  </button>
                 </div>
               ) : null}
               <label className="flex items-center gap-2">
@@ -246,45 +284,95 @@ export function DraftEditForm({
                 />
                 <span className="text-sm">Schedule a quote</span>
               </label>
-              {alsoScheduleQuote && onQuoteScheduledForChange ? (
-                <div className="space-y-1">
-                  <div>
-                    <Label
-                      htmlFor="draft-quote-scheduled-for"
-                      className="text-muted-foreground text-xs"
+              {alsoScheduleQuote && onQuoteEntriesChange ? (
+                <div className="space-y-3">
+                  <Label className="text-muted-foreground text-xs">
+                    Quote times and captions (one per quote)
+                  </Label>
+                  {quoteEntries.map((entry, idx) => (
+                    <div
+                      key={entry.id}
+                      className="border-border space-y-2 rounded border p-3"
                     >
-                      Quote at
-                    </Label>
-                    <input
-                      id="draft-quote-scheduled-for"
-                      type="datetime-local"
-                      value={quoteScheduledFor}
-                      onChange={(e) =>
-                        onQuoteScheduledForChange(e.target.value)
-                      }
-                      className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-lg border p-2 text-sm"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  {onQuoteCaptionChange ? (
-                    <div>
-                      <Label
-                        htmlFor="draft-quote-caption"
-                        className="text-muted-foreground text-xs"
-                      >
-                        Quote caption (optional)
-                      </Label>
-                      <Textarea
-                        id="draft-quote-caption"
-                        value={quoteCaption}
-                        onChange={(e) => onQuoteCaptionChange(e.target.value)}
-                        placeholder="Add your comment..."
-                        rows={2}
-                        className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 w-full rounded-lg border p-2 text-sm"
+                      <div className="flex items-center justify-between gap-2">
+                        <Label className="text-muted-foreground text-xs">
+                          Hours after main
+                        </Label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onQuoteEntriesChange(
+                              quoteEntries.length > 1
+                                ? quoteEntries.filter((_, i) => i !== idx)
+                                : quoteEntries
+                            )
+                          }
+                          disabled={isSubmitting || quoteEntries.length <= 1}
+                          className="text-muted-foreground hover:text-foreground text-xs"
+                          aria-label="Remove quote"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        min={1}
+                        value={entry.hoursAfterMain}
+                        onChange={(e) => {
+                          const v = Math.max(
+                            1,
+                            parseInt(e.target.value, 10) || 1
+                          );
+                          onQuoteEntriesChange(
+                            quoteEntries.map((e, i) =>
+                              i === idx ? { ...e, hoursAfterMain: v } : e
+                            )
+                          );
+                        }}
+                        className="dark:bg-card dark:text-foreground border-border text-foreground w-20 rounded-lg border p-2 text-sm"
                         disabled={isSubmitting}
+                        aria-label="Hours after main post"
                       />
+                      <div>
+                        <Label className="text-muted-foreground text-xs">
+                          Caption (optional)
+                        </Label>
+                        <Textarea
+                          value={entry.caption}
+                          onChange={(ev) =>
+                            onQuoteEntriesChange(
+                              quoteEntries.map((ent, i) =>
+                                i === idx
+                                  ? { ...ent, caption: ev.target.value }
+                                  : ent
+                              )
+                            )
+                          }
+                          placeholder="Add your comment..."
+                          rows={2}
+                          className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 w-full rounded-lg border p-2 text-sm"
+                          disabled={isSubmitting}
+                        />
+                      </div>
                     </div>
-                  ) : null}
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onQuoteEntriesChange([
+                        ...quoteEntries,
+                        {
+                          id: crypto.randomUUID(),
+                          hoursAfterMain: 24,
+                          caption: "",
+                        },
+                      ])
+                    }
+                    disabled={isSubmitting}
+                    className="text-primary text-xs hover:underline"
+                  >
+                    Add another quote
+                  </button>
                 </div>
               ) : null}
             </>

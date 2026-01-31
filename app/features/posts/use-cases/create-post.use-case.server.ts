@@ -4,6 +4,9 @@
  * Handles post creation with idempotency and optional scheduling.
  */
 
+import type { Post } from "@prisma/client";
+
+import type { SignedEvent } from "~/features/nostr/types";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
@@ -11,6 +14,7 @@ import {
   recordPostCreated,
   recordPostScheduled,
 } from "~/lib/metrics/business-metrics.server";
+import { prisma } from "~/lib/prisma.server";
 import { fromUnixTimestamp, toPrismaDate } from "~/lib/temporal";
 import { createPostWithOutbox } from "~/models/post.commands.server";
 
@@ -29,6 +33,48 @@ function applyHashtags(
   return showHashTagsinPosts && hashTagPresetTags
     ? `${content}\n${hashTagPresetTags}`
     : content;
+}
+
+async function findExistingByIdempotency(
+  prismaClient: typeof prisma,
+  creationIdempotencyKey: string | null
+): Promise<{ existing: Post | null; columnExists: boolean }> {
+  let existing: Post | null = null;
+  let columnExists = true;
+  if (!creationIdempotencyKey) {
+    return { existing, columnExists };
+  }
+  try {
+    const rawResults = await prismaClient.$queryRawUnsafe(
+      `SELECT id FROM "Post" WHERE "creationIdempotencyKey" = $1 LIMIT 1`,
+      creationIdempotencyKey
+    );
+    const results = rawResults as Array<{ id: string }>;
+    if (results.length > 0) {
+      const first = results[0];
+      if (first) {
+        existing = await prismaClient.post.findUnique({
+          where: { id: first.id },
+        });
+      }
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorString = String(error);
+    const isColumnError =
+      errorMessage.includes("does not exist") ||
+      errorMessage.includes("column") ||
+      errorString.includes("does not exist") ||
+      errorString.includes("column") ||
+      errorString.includes("(not available)");
+    if (isColumnError) {
+      columnExists = false;
+      existing = null;
+    } else {
+      throw error;
+    }
+  }
+  return { existing, columnExists };
 }
 
 export class CreatePostUseCase {
@@ -69,51 +115,10 @@ export class CreatePostUseCase {
       input.scheduledFor
     );
 
-    // Check for existing post with same idempotency key
-    // Handle case where column might not exist in test databases
-    const { prisma } = await import("~/lib/prisma.server");
-    let existing = null;
-    let columnExists = true; // Track if column exists
-
-    // Only check idempotency if we have a key
-    if (creationIdempotencyKey) {
-      try {
-        // Use raw query to avoid Prisma schema validation issues in test databases
-        // This allows the query to work even if the column doesn't exist yet
-        const results = (await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-          `SELECT id FROM "Post" WHERE "creationIdempotencyKey" = $1 LIMIT 1`,
-          creationIdempotencyKey
-        )) as Array<{ id: string }>;
-        if (results.length > 0) {
-          // Fetch the full post using the found ID
-          existing = await prisma.post.findUnique({
-            where: { id: results[0]!.id },
-          });
-        }
-      } catch (error) {
-        // If column doesn't exist (e.g., in test databases that aren't fully migrated),
-        // skip idempotency check and continue with creation
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        const errorString = String(error);
-        // Check for various forms of "column doesn't exist" errors
-        const isColumnError =
-          errorMessage.includes("does not exist") ||
-          errorMessage.includes("column") ||
-          errorString.includes("does not exist") ||
-          errorString.includes("column") ||
-          errorString.includes("(not available)");
-
-        if (isColumnError) {
-          // Column doesn't exist, skip idempotency check and don't pass key to create
-          columnExists = false;
-          existing = null;
-        } else {
-          // Re-throw other errors
-          throw error;
-        }
-      }
-    }
+    const { existing, columnExists } = await findExistingByIdempotency(
+      prisma,
+      creationIdempotencyKey
+    );
 
     if (existing) {
       // Use currentState as single source of truth
@@ -177,15 +182,48 @@ export class CreatePostUseCase {
       recordPostCreated(input.postType, false);
     }
 
-    // Optionally create scheduled repost post (second post)
-    if (
-      input.alsoScheduleRepost &&
-      input.repostScheduledFor != null &&
-      input.repostSignedEvent
-    ) {
+    // Normalize to arrays: support both single (legacy) and multiple repost/quote
+    const repostList: Array<{
+      scheduledFor: number;
+      signedEvent: SignedEvent;
+    }> =
+      Array.isArray(input.repostSchedules) && input.repostSchedules.length > 0
+        ? input.repostSchedules
+        : input.alsoScheduleRepost &&
+            input.repostScheduledFor != null &&
+            input.repostSignedEvent
+          ? [
+              {
+                scheduledFor: input.repostScheduledFor,
+                signedEvent: input.repostSignedEvent,
+              },
+            ]
+          : [];
+    const quoteList: Array<{
+      scheduledFor: number;
+      signedEvent: SignedEvent;
+      caption?: string;
+    }> =
+      Array.isArray(input.quoteSchedules) && input.quoteSchedules.length > 0
+        ? input.quoteSchedules
+        : input.alsoScheduleQuote &&
+            input.quoteScheduledFor != null &&
+            input.quoteSignedEvent
+          ? [
+              {
+                scheduledFor: input.quoteScheduledFor,
+                signedEvent: input.quoteSignedEvent,
+                caption: input.quoteCaption ?? "",
+              },
+            ]
+          : [];
+
+    for (const item of repostList) {
       const repostScheduledForDate = toPrismaDate(
-        fromUnixTimestamp(input.repostScheduledFor, "UTC")
+        fromUnixTimestamp(item.scheduledFor, "UTC")
       );
+
+      const repostSignedEv = item.signedEvent;
       const repostPost = await createPostWithOutbox(
         {
           userId: input.userId,
@@ -196,7 +234,8 @@ export class CreatePostUseCase {
           queueTypeId,
           hashTagPresetId: input.hashTagPresetId,
           isRecyclable: input.isRecyclable,
-          signedEvent: input.repostSignedEvent,
+
+          signedEvent: repostSignedEv,
           nostrEvent: undefined,
           scheduledFor: repostScheduledForDate,
           tags: [],
@@ -204,7 +243,7 @@ export class CreatePostUseCase {
           isQuotedPost: false,
           repostOfPostId: post.id,
         },
-        input.repostScheduledFor,
+        item.scheduledFor,
         correlationId
       );
       await this.stateMachine.transition(
@@ -216,16 +255,13 @@ export class CreatePostUseCase {
       recordPostScheduled(input.postType);
     }
 
-    // Optionally create scheduled quote post (second post)
-    if (
-      input.alsoScheduleQuote &&
-      input.quoteScheduledFor != null &&
-      input.quoteSignedEvent
-    ) {
+    for (const item of quoteList) {
       const quoteScheduledForDate = toPrismaDate(
-        fromUnixTimestamp(input.quoteScheduledFor, "UTC")
+        fromUnixTimestamp(item.scheduledFor, "UTC")
       );
-      const quoteCaption = input.quoteCaption ?? "";
+      const quoteCaption = item.caption ?? "";
+
+      const quoteSignedEv = item.signedEvent;
       const quotePost = await createPostWithOutbox(
         {
           userId: input.userId,
@@ -236,7 +272,8 @@ export class CreatePostUseCase {
           queueTypeId,
           hashTagPresetId: input.hashTagPresetId,
           isRecyclable: input.isRecyclable,
-          signedEvent: input.quoteSignedEvent,
+
+          signedEvent: quoteSignedEv,
           nostrEvent: undefined,
           scheduledFor: quoteScheduledForDate,
           tags: [],
@@ -244,7 +281,7 @@ export class CreatePostUseCase {
           isQuotedPost: true,
           quoteOfPostId: post.id,
         },
-        input.quoteScheduledFor,
+        item.scheduledFor,
         correlationId
       );
       await this.stateMachine.transition(

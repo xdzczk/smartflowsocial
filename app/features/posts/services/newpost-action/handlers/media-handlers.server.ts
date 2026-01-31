@@ -17,6 +17,115 @@ import { isVideoFile } from "../media-utils.server";
 const ERROR_INVALID_SIGNED_EVENT_FORMAT =
   "Invalid signedEvent or nostrEvent format";
 
+function parseRepostSchedulesFromForm(formData: FormData): Array<{
+  scheduledFor: number;
+  signedEvent: SignedEvent;
+}> {
+  const repostSchedulesStr = formData.get("repostSchedules");
+  const alsoScheduleRepost = formData.get("alsoScheduleRepost") === "on";
+  const repostScheduledForStr = formData.get("repostScheduledFor");
+  const repostSignedEventStr = formData.get("repostSignedEvent");
+  let list: Array<{ scheduledFor: number; signedEvent: SignedEvent }> = [];
+  if (repostSchedulesStr && typeof repostSchedulesStr === "string") {
+    try {
+      const parsed = JSON.parse(repostSchedulesStr) as Array<{
+        scheduledFor: number;
+        signedEvent: SignedEvent;
+      }>;
+      if (Array.isArray(parsed)) {
+        list = parsed.filter(
+          (p) =>
+            typeof p.scheduledFor === "number" &&
+            typeof p.signedEvent === "object"
+        );
+      }
+    } catch {
+      list = [];
+    }
+  }
+  if (
+    list.length === 0 &&
+    alsoScheduleRepost &&
+    repostScheduledForStr &&
+    repostSignedEventStr
+  ) {
+    const repostScheduledFor = parseInt(String(repostScheduledForStr), 10);
+    if (!Number.isNaN(repostScheduledFor)) {
+      try {
+        const repostSignedEvent = JSON.parse(
+          String(repostSignedEventStr)
+        ) as SignedEvent;
+        list = [
+          { scheduledFor: repostScheduledFor, signedEvent: repostSignedEvent },
+        ];
+      } catch {
+        // keep empty
+      }
+    }
+  }
+  return list;
+}
+
+function parseQuoteSchedulesFromForm(formData: FormData): Array<{
+  scheduledFor: number;
+  signedEvent: SignedEvent;
+  caption?: string;
+}> {
+  const quoteSchedulesStr = formData.get("quoteSchedules");
+  const alsoScheduleQuote = formData.get("alsoScheduleQuote") === "on";
+  const quoteScheduledForStr = formData.get("quoteScheduledFor");
+  const quoteSignedEventStr = formData.get("quoteSignedEvent");
+  const quoteCaption = formData.get("quoteCaption");
+  let list: Array<{
+    scheduledFor: number;
+    signedEvent: SignedEvent;
+    caption?: string;
+  }> = [];
+  if (quoteSchedulesStr && typeof quoteSchedulesStr === "string") {
+    try {
+      const parsed = JSON.parse(quoteSchedulesStr) as Array<{
+        scheduledFor: number;
+        signedEvent: SignedEvent;
+        caption?: string;
+      }>;
+      if (Array.isArray(parsed)) {
+        list = parsed.filter(
+          (p) =>
+            typeof p.scheduledFor === "number" &&
+            typeof p.signedEvent === "object"
+        );
+      }
+    } catch {
+      list = [];
+    }
+  }
+  if (
+    list.length === 0 &&
+    alsoScheduleQuote &&
+    quoteScheduledForStr &&
+    quoteSignedEventStr
+  ) {
+    const quoteScheduledFor = parseInt(String(quoteScheduledForStr), 10);
+    if (!Number.isNaN(quoteScheduledFor)) {
+      try {
+        const quoteSignedEvent = JSON.parse(
+          String(quoteSignedEventStr)
+        ) as SignedEvent;
+        list = [
+          {
+            scheduledFor: quoteScheduledFor,
+            signedEvent: quoteSignedEvent,
+            caption: quoteCaption ? String(quoteCaption) : undefined,
+          },
+        ];
+      } catch {
+        // keep empty
+      }
+    }
+  }
+  return list;
+}
+
 interface MediaHandlerParams {
   userId: string;
   sessionPubkey: string;
@@ -161,43 +270,8 @@ export async function handleScheduleImages({
   const fileUrlArray = fileUrl ? (JSON.parse(fileUrl) as string[]) : [];
   const isVideo = isVideoFile(fileUrlArray);
 
-  const alsoScheduleRepost = formData.get("alsoScheduleRepost") === "on";
-  const repostScheduledForStr = formData.get("repostScheduledFor");
-  const repostSignedEventStr = formData.get("repostSignedEvent");
-  const alsoScheduleQuote = formData.get("alsoScheduleQuote") === "on";
-  const quoteScheduledForStr = formData.get("quoteScheduledFor");
-  const quoteSignedEventStr = formData.get("quoteSignedEvent");
-  const quoteCaption = formData.get("quoteCaption");
-
-  let repostScheduledFor: number | undefined;
-  let repostSignedEvent: SignedEvent | undefined;
-  if (alsoScheduleRepost && repostScheduledForStr && repostSignedEventStr) {
-    repostScheduledFor = parseInt(String(repostScheduledForStr), 10);
-    if (!Number.isNaN(repostScheduledFor)) {
-      try {
-        repostSignedEvent = JSON.parse(
-          String(repostSignedEventStr)
-        ) as SignedEvent;
-      } catch {
-        repostSignedEvent = undefined;
-      }
-    }
-  }
-
-  let quoteScheduledFor: number | undefined;
-  let quoteSignedEvent: SignedEvent | undefined;
-  if (alsoScheduleQuote && quoteScheduledForStr && quoteSignedEventStr) {
-    quoteScheduledFor = parseInt(String(quoteScheduledForStr), 10);
-    if (!Number.isNaN(quoteScheduledFor)) {
-      try {
-        quoteSignedEvent = JSON.parse(
-          String(quoteSignedEventStr)
-        ) as SignedEvent;
-      } catch {
-        quoteSignedEvent = undefined;
-      }
-    }
-  }
+  const repostSchedules = parseRepostSchedulesFromForm(formData);
+  const quoteSchedules = parseQuoteSchedulesFromForm(formData);
 
   // Use CreatePostUseCase for post creation with scheduling (handles queue type resolution internally)
   const createPostUseCase = new CreatePostUseCase();
@@ -217,13 +291,8 @@ export async function handleScheduleImages({
     hashTagPresetTags,
     showHashTagsinPosts,
     correlationId,
-    alsoScheduleRepost: alsoScheduleRepost && !!repostSignedEvent,
-    repostScheduledFor,
-    repostSignedEvent,
-    alsoScheduleQuote: alsoScheduleQuote && !!quoteSignedEvent,
-    quoteScheduledFor,
-    quoteSignedEvent,
-    quoteCaption: quoteCaption ? String(quoteCaption) : undefined,
+    repostSchedules: repostSchedules.length > 0 ? repostSchedules : undefined,
+    quoteSchedules: quoteSchedules.length > 0 ? quoteSchedules : undefined,
   });
 
   // Stay on current page and show modal there

@@ -3,6 +3,7 @@
  * Centralized action processing for draft edit page
  */
 
+import type { SignedEvent } from "~/features/nostr/types";
 import {
   draftEditActionSchema,
   validateFormDataOrRespond,
@@ -135,86 +136,227 @@ export async function handleDraftEditAction(
     "Draft resumed and scheduled"
   );
 
-  // Optional: create repost/quote posts when "also schedule repost/quote" was selected
   const sourcePost = await getPostById({ id: postId, userId });
   if (!sourcePost) {
     return { redirect: "/dashboard/scheduled" };
   }
+  await createRepostAndQuotePostsFromResume(
+    resumeData,
+    sourcePost,
+    postId,
+    userId,
+    stateMachine
+  );
+  return { redirect: "/dashboard/scheduled" };
+}
 
+interface ResumeRepostQuoteData {
+  repostSchedules?: string;
+  alsoScheduleRepost?: boolean;
+  repostSignedEvent?: string;
+  repostScheduledFor?: string;
+  quoteSchedules?: string;
+  alsoScheduleQuote?: boolean;
+  quoteSignedEvent?: string;
+  quoteScheduledFor?: string;
+  quoteCaption?: string;
+}
+
+async function createRepostAndQuotePostsFromResume(
+  resumeData: ResumeRepostQuoteData,
+  sourcePost: NonNullable<Awaited<ReturnType<typeof getPostById>>>,
+  postId: string,
+  userId: string,
+  stateMachine: PostStateMachine
+): Promise<void> {
+  const repostList = parseRepostListFromResume(resumeData);
+  for (const item of repostList) {
+    if (!item.signedEvent) continue;
+    const scheduledAtUtc = new Date(item.scheduledFor * 1000);
+    const repostPost = await createPostWithOutbox(
+      {
+        userId,
+        content: "",
+        caption: "",
+        fileUrl: [],
+        postType: sourcePost.postType,
+        queueTypeId: sourcePost.queueTypeId,
+        scheduledFor: scheduledAtUtc,
+        tags: [],
+        repost: true,
+        isQuotedPost: false,
+        repostOfPostId: postId,
+        signedEvent: item.signedEvent as SignedEvent,
+      },
+      item.scheduledFor
+    );
+    await stateMachine.transition(
+      repostPost.id,
+      userId,
+      "SCHEDULED",
+      "Repost created"
+    );
+  }
+  const quoteList = parseQuoteListFromResume(resumeData);
+  for (const item of quoteList) {
+    if (!item.signedEvent) continue;
+    const scheduledAtUtc = new Date(item.scheduledFor * 1000);
+    const quoteCaption = item.caption ?? "";
+    const quotePost = await createPostWithOutbox(
+      {
+        userId,
+        content: quoteCaption,
+        caption: quoteCaption,
+        fileUrl: [],
+        postType: sourcePost.postType,
+        queueTypeId: sourcePost.queueTypeId,
+        scheduledFor: scheduledAtUtc,
+        tags: [],
+        repost: false,
+        isQuotedPost: true,
+        quoteOfPostId: postId,
+        signedEvent: item.signedEvent as SignedEvent,
+      },
+      item.scheduledFor
+    );
+    await stateMachine.transition(
+      quotePost.id,
+      userId,
+      "SCHEDULED",
+      "Quote post created"
+    );
+  }
+}
+
+function parseRepostListFromResume(resumeData: {
+  repostSchedules?: string;
+  alsoScheduleRepost?: boolean;
+  repostSignedEvent?: string;
+  repostScheduledFor?: string;
+}): Array<{
+  scheduledFor: number;
+  signedEvent: ReturnType<typeof parseSignedEvent>;
+}> {
+  let list: Array<{
+    scheduledFor: number;
+    signedEvent: ReturnType<typeof parseSignedEvent>;
+  }> = [];
   if (
+    resumeData.repostSchedules &&
+    typeof resumeData.repostSchedules === "string"
+  ) {
+    try {
+      const parsed = JSON.parse(resumeData.repostSchedules) as Array<{
+        scheduledFor: number;
+        signedEvent: string;
+      }>;
+      if (Array.isArray(parsed)) {
+        list = parsed
+          .filter((p) => typeof p.scheduledFor === "number" && p.signedEvent)
+          .map((p) => ({
+            scheduledFor: p.scheduledFor,
+            signedEvent: parseSignedEvent(
+              typeof p.signedEvent === "string"
+                ? p.signedEvent
+                : JSON.stringify(p.signedEvent)
+            ),
+          }))
+          .filter(
+            (
+              p
+            ): p is {
+              scheduledFor: number;
+              signedEvent: NonNullable<ReturnType<typeof parseSignedEvent>>;
+            } => p.signedEvent != null
+          );
+      }
+    } catch {
+      list = [];
+    }
+  }
+  if (
+    list.length === 0 &&
     resumeData.alsoScheduleRepost &&
     resumeData.repostSignedEvent &&
     resumeData.repostScheduledFor
   ) {
     const repostSignedEvent = parseSignedEvent(resumeData.repostSignedEvent);
-    if (repostSignedEvent) {
-      const scheduledForUnix = parseInt(resumeData.repostScheduledFor, 10);
-      if (!Number.isNaN(scheduledForUnix)) {
-        const scheduledAtUtc = new Date(scheduledForUnix * 1000);
-        const repostPost = await createPostWithOutbox(
-          {
-            userId,
-            content: "",
-            caption: "",
-            fileUrl: [],
-            postType: sourcePost.postType,
-            queueTypeId: sourcePost.queueTypeId,
-            scheduledFor: scheduledAtUtc,
-            tags: [],
-            repost: true,
-            isQuotedPost: false,
-            repostOfPostId: postId,
-            signedEvent: repostSignedEvent,
-          },
-          scheduledForUnix
-        );
-        await stateMachine.transition(
-          repostPost.id,
-          userId,
-          "SCHEDULED",
-          "Repost created"
-        );
-      }
+    const scheduledForUnix = parseInt(resumeData.repostScheduledFor, 10);
+    if (repostSignedEvent && !Number.isNaN(scheduledForUnix)) {
+      list = [
+        { scheduledFor: scheduledForUnix, signedEvent: repostSignedEvent },
+      ];
     }
   }
+  return list;
+}
 
+function parseQuoteListFromResume(resumeData: {
+  quoteSchedules?: string;
+  alsoScheduleQuote?: boolean;
+  quoteSignedEvent?: string;
+  quoteScheduledFor?: string;
+  quoteCaption?: string;
+}): Array<{
+  scheduledFor: number;
+  signedEvent: ReturnType<typeof parseSignedEvent>;
+  caption?: string;
+}> {
+  let list: Array<{
+    scheduledFor: number;
+    signedEvent: ReturnType<typeof parseSignedEvent>;
+    caption?: string;
+  }> = [];
   if (
+    resumeData.quoteSchedules &&
+    typeof resumeData.quoteSchedules === "string"
+  ) {
+    try {
+      const parsed = JSON.parse(resumeData.quoteSchedules) as Array<{
+        scheduledFor: number;
+        signedEvent: string;
+        caption?: string;
+      }>;
+      if (Array.isArray(parsed)) {
+        const mapped = parsed
+          .filter((p) => typeof p.scheduledFor === "number" && p.signedEvent)
+          .map((p) => ({
+            scheduledFor: p.scheduledFor,
+            signedEvent: parseSignedEvent(
+              typeof p.signedEvent === "string"
+                ? p.signedEvent
+                : JSON.stringify(p.signedEvent)
+            ),
+            caption: p.caption,
+          }))
+          .filter((p) => p.signedEvent != null);
+        list = mapped as Array<{
+          scheduledFor: number;
+          signedEvent: NonNullable<ReturnType<typeof parseSignedEvent>>;
+          caption?: string;
+        }>;
+      }
+    } catch {
+      list = [];
+    }
+  }
+  if (
+    list.length === 0 &&
     resumeData.alsoScheduleQuote &&
     resumeData.quoteSignedEvent &&
     resumeData.quoteScheduledFor
   ) {
     const quoteSignedEvent = parseSignedEvent(resumeData.quoteSignedEvent);
-    if (quoteSignedEvent) {
-      const scheduledForUnix = parseInt(resumeData.quoteScheduledFor, 10);
-      if (!Number.isNaN(scheduledForUnix)) {
-        const scheduledAtUtc = new Date(scheduledForUnix * 1000);
-        const quoteCaption = resumeData.quoteCaption ?? "";
-        const quotePost = await createPostWithOutbox(
-          {
-            userId,
-            content: quoteCaption,
-            caption: quoteCaption,
-            fileUrl: [],
-            postType: sourcePost.postType,
-            queueTypeId: sourcePost.queueTypeId,
-            scheduledFor: scheduledAtUtc,
-            tags: [],
-            repost: false,
-            isQuotedPost: true,
-            quoteOfPostId: postId,
-            signedEvent: quoteSignedEvent,
-          },
-          scheduledForUnix
-        );
-        await stateMachine.transition(
-          quotePost.id,
-          userId,
-          "SCHEDULED",
-          "Quote post created"
-        );
-      }
+    const scheduledForUnix = parseInt(resumeData.quoteScheduledFor, 10);
+    if (quoteSignedEvent && !Number.isNaN(scheduledForUnix)) {
+      list = [
+        {
+          scheduledFor: scheduledForUnix,
+          signedEvent: quoteSignedEvent,
+          caption: resumeData.quoteCaption ?? "",
+        },
+      ];
     }
   }
-
-  return { redirect: "/dashboard/scheduled" };
+  return list;
 }

@@ -8,6 +8,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
+import type { SignedEvent } from "~/features/nostr/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { nowMillis, parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
@@ -76,73 +77,92 @@ interface SignedEventLike {
   sig?: string;
 }
 
-async function appendRepostToFormData(
-  formData: FormData,
-  repostScheduledFor: string,
-  scheduledForUnix: number,
-  userTimezone: string,
-  signedEvent: SignedEventLike,
-  parseScheduledTime: (s: string, tz: string) => Promise<number>,
+/** Build multiple repost schedules: sign one repost per "hours after main". */
+async function buildRepostSchedules(
+  mainScheduledUnix: number,
+  hoursList: number[],
+  mainSignedEvent: SignedEventLike,
   setSigningError: (msg: string | null) => void
-): Promise<boolean> {
-  const repostTime = await parseScheduledTime(repostScheduledFor, userTimezone);
-  const repostScheduledForUnix = Math.floor(repostTime / 1000);
-  if (repostScheduledForUnix <= scheduledForUnix) {
-    setSigningError("Repost time must be after the main post schedule time.");
-    return false;
+): Promise<Array<{
+  scheduledFor: number;
+  signedEvent: SignedEventLike;
+}> | null> {
+  const out: Array<{ scheduledFor: number; signedEvent: SignedEventLike }> = [];
+  for (const hours of hoursList) {
+    if (hours < 1) {
+      setSigningError(
+        "Each repost must be at least 1 hour after the main post."
+      );
+      return null;
+    }
+    const scheduledForUnix = mainScheduledUnix + hours * 3600;
+    if (scheduledForUnix <= mainScheduledUnix) {
+      setSigningError("Repost must be scheduled after the main post.");
+      return null;
+    }
+    const repostEvent = buildKind6RepostEvent(
+      mainSignedEvent as SignedEvent,
+      scheduledForUnix
+    );
+    const { signedEvent } = await nostrAdapter.signEvent({
+      content: repostEvent.content,
+      created_at: repostEvent.created_at,
+      kind: repostEvent.kind,
+      tags: repostEvent.tags,
+    });
+    out.push({ scheduledFor: scheduledForUnix, signedEvent });
   }
-  const repostEvent = buildKind6RepostEvent(
-    signedEvent,
-    repostScheduledForUnix
-  );
-  const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
-    content: repostEvent.content,
-    created_at: repostEvent.created_at,
-    kind: repostEvent.kind,
-    tags: repostEvent.tags,
-  });
-  formData.set("alsoScheduleRepost", "on");
-  formData.append("repostScheduledFor", repostScheduledForUnix.toString());
-  formData.append("repostSignedEvent", JSON.stringify(repostSignedEvent));
-  return true;
+  return out;
 }
 
-async function appendQuoteToFormData(
-  formData: FormData,
-  quoteScheduledFor: string,
-  scheduledForUnix: number,
-  userTimezone: string,
-  signedEvent: SignedEventLike,
-  quoteCaption: string,
+/** Build multiple quote schedules: sign one quote per entry (hours + caption). */
+async function buildQuoteSchedules(
+  mainScheduledUnix: number,
+  entries: Array<{ hoursAfterMain: number; caption: string }>,
+  mainSignedEvent: SignedEventLike,
   tagArray: string[][],
-  parseScheduledTime: (s: string, tz: string) => Promise<number>,
   setSigningError: (msg: string | null) => void
-): Promise<boolean> {
-  const quoteTime = await parseScheduledTime(quoteScheduledFor, userTimezone);
-  const quoteScheduledForUnix = Math.floor(quoteTime / 1000);
-  if (quoteScheduledForUnix <= scheduledForUnix) {
-    setSigningError("Quote time must be after the main post schedule time.");
-    return false;
+): Promise<Array<{
+  scheduledFor: number;
+  signedEvent: SignedEventLike;
+  caption?: string;
+}> | null> {
+  const out: Array<{
+    scheduledFor: number;
+    signedEvent: SignedEventLike;
+    caption?: string;
+  }> = [];
+  for (const e of entries) {
+    if (e.hoursAfterMain < 1) {
+      setSigningError(
+        "Each quote must be at least 1 hour after the main post."
+      );
+      return null;
+    }
+    const scheduledForUnix = mainScheduledUnix + e.hoursAfterMain * 3600;
+    if (scheduledForUnix <= mainScheduledUnix) {
+      setSigningError("Quote must be scheduled after the main post.");
+      return null;
+    }
+    const quoteEvent = buildQuoteEvent(
+      mainSignedEvent as SignedEvent,
+      e.caption,
+      scheduledForUnix,
+      tagArray
+    );
+    const { signedEvent } = await nostrAdapter.signEvent({
+      content: quoteEvent.content,
+      created_at: quoteEvent.created_at,
+      kind: quoteEvent.kind,
+      tags: quoteEvent.tags,
+    });
+    out.push({
+      scheduledFor: scheduledForUnix,
+      signedEvent,
+      caption: e.caption || undefined,
+    });
   }
-  const quoteEvent = buildQuoteEvent(
-    signedEvent,
-    quoteCaption,
-    quoteScheduledForUnix,
-    tagArray
-  );
-  const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
-    content: quoteEvent.content,
-    created_at: quoteEvent.created_at,
-    kind: quoteEvent.kind,
-    tags: quoteEvent.tags,
-  });
-  formData.set("alsoScheduleQuote", "on");
-  formData.append("quoteScheduledFor", quoteScheduledForUnix.toString());
-  formData.append("quoteSignedEvent", JSON.stringify(quoteSignedEvent));
-  if (quoteCaption) {
-    formData.append("quoteCaption", quoteCaption);
-  }
-  return true;
+  return out;
 }
 
 interface TextPostProps {
@@ -171,10 +191,13 @@ export default function TextPost({
   const [showAssetBrowser, setShowAssetBrowser] = React.useState(false);
   const [selectedHashtags, setSelectedHashtags] = React.useState("");
   const [alsoScheduleRepost, setAlsoScheduleRepost] = React.useState(false);
-  const [repostScheduledFor, setRepostScheduledFor] = React.useState("");
+  const [repostHoursList, setRepostHoursList] = React.useState<
+    Array<{ id: string; hours: number }>
+  >([{ id: crypto.randomUUID(), hours: 2 }]);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = React.useState(false);
-  const [quoteScheduledFor, setQuoteScheduledFor] = React.useState("");
-  const [quoteCaption, setQuoteCaption] = React.useState("");
+  const [quoteEntries, setQuoteEntries] = React.useState<
+    Array<{ id: string; hoursAfterMain: number; caption: string }>
+  >([{ id: crypto.randomUUID(), hoursAfterMain: 2, caption: "" }]);
 
   // Initialize form with React Hook Form
   const form = useZodForm(textPostClientSchema, {
@@ -324,50 +347,52 @@ export default function TextPost({
         tags: tagArray,
       });
 
-      const formData = new FormData();
-      formData.set("_action", submitType);
-      formData.set("content", data.content);
-      formData.set("queueType", data.queueType);
-      formData.append("nostrEvent", JSON.stringify(nostrEvent));
-      formData.append("signedEvent", JSON.stringify(signedEvent));
-      formData.append("scheduledFor", scheduledForUnix.toString());
-      if (data.isRecyclable) {
-        formData.set("isRecyclable", "on");
+      // Use plain object so server gets application/x-www-form-urlencoded and
+      // preserves all fields (parseMultipartFormData can drop non-file fields).
+      const payload: Record<string, string> = {
+        _action: submitType,
+        content: data.content,
+        queueType: data.queueType,
+        nostrEvent: JSON.stringify(nostrEvent),
+        signedEvent: JSON.stringify(signedEvent),
+        scheduledFor: scheduledForUnix.toString(),
+      };
+      if (data["isRecyclable"]) {
+        payload["isRecyclable"] = "on";
       }
-      if (data.useHashtagPresets && data.hashTagPresetId) {
-        formData.set("hashTagPresetId", data.hashTagPresetId);
-        formData.set("useHashtagPresets", "on");
+      if (data["useHashtagPresets"] && data["hashTagPresetId"]) {
+        payload["hashTagPresetId"] = data["hashTagPresetId"];
+        payload["useHashtagPresets"] = "on";
       }
 
       const isSchedule = submitType === "schedule-text";
-      if (isSchedule && alsoScheduleRepost && repostScheduledFor) {
-        const ok = await appendRepostToFormData(
-          formData,
-          repostScheduledFor,
+      if (isSchedule && alsoScheduleRepost && repostHoursList.length > 0) {
+        const repostSchedules = await buildRepostSchedules(
           scheduledForUnix,
-          userTimezone,
+          repostHoursList.map((item) => item.hours),
           signedEvent,
-          parseScheduledTime,
           setSigningError
         );
-        if (!ok) return;
+        if (repostSchedules == null) return;
+        if (repostSchedules.length > 0) {
+          payload["repostSchedules"] = JSON.stringify(repostSchedules);
+        }
       }
-      if (isSchedule && alsoScheduleQuote && quoteScheduledFor) {
-        const ok = await appendQuoteToFormData(
-          formData,
-          quoteScheduledFor,
+      if (isSchedule && alsoScheduleQuote && quoteEntries.length > 0) {
+        const quoteSchedules = await buildQuoteSchedules(
           scheduledForUnix,
-          userTimezone,
+          quoteEntries,
           signedEvent,
-          quoteCaption,
           tagArray,
-          parseScheduledTime,
           setSigningError
         );
-        if (!ok) return;
+        if (quoteSchedules == null) return;
+        if (quoteSchedules.length > 0) {
+          payload["quoteSchedules"] = JSON.stringify(quoteSchedules);
+        }
       }
 
-      fetcher.submit(formData, { method: "post" });
+      fetcher.submit(payload, { method: "post" });
     } catch (error) {
       const { handleAsyncError } = await import("~/lib/error-handler.client");
       handleAsyncError(
@@ -602,21 +627,66 @@ export default function TextPost({
                 </Label>
               </div>
               {alsoScheduleRepost ? (
-                <div className="ml-6">
-                  <Label
-                    htmlFor="repostScheduledFor"
-                    className="text-muted-foreground text-xs"
-                  >
-                    Repost at
+                <div className="ml-6 space-y-2">
+                  <Label className="text-muted-foreground text-xs">
+                    Hours after main post (one per repost)
                   </Label>
-                  <Input
-                    type="datetime-local"
-                    id="repostScheduledFor"
-                    value={repostScheduledFor}
-                    onChange={(e) => setRepostScheduledFor(e.target.value)}
+                  {repostHoursList.map((item, idx) => (
+                    <div key={item.id} className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={item.hours}
+                        onChange={(e) => {
+                          const v = Math.max(
+                            1,
+                            parseInt(e.target.value, 10) || 1
+                          );
+                          setRepostHoursList((prev) => {
+                            const next = [...prev];
+                            next[idx] = { ...next[idx]!, hours: v };
+                            return next;
+                          });
+                        }}
+                        disabled={fetcher.state !== "idle" || isSigning}
+                        className="w-20"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setRepostHoursList((prev) =>
+                            prev.length > 1
+                              ? prev.filter((_, i) => i !== idx)
+                              : prev
+                          )
+                        }
+                        disabled={
+                          fetcher.state !== "idle" ||
+                          isSigning ||
+                          repostHoursList.length <= 1
+                        }
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setRepostHoursList((prev) => [
+                        ...prev,
+                        { id: crypto.randomUUID(), hours: 24 },
+                      ])
+                    }
                     disabled={fetcher.state !== "idle" || isSigning}
-                    className="mt-1"
-                  />
+                  >
+                    Add another repost
+                  </Button>
                 </div>
               ) : null}
               <div className="flex items-center gap-2">
@@ -636,40 +706,105 @@ export default function TextPost({
                 </Label>
               </div>
               {alsoScheduleQuote ? (
-                <div className="ml-6 space-y-2">
-                  <div>
-                    <Label
-                      htmlFor="quoteScheduledFor"
-                      className="text-muted-foreground text-xs"
+                <div className="ml-6 space-y-3">
+                  <Label className="text-muted-foreground text-xs">
+                    Quote times and captions (one per quote)
+                  </Label>
+                  {quoteEntries.map((entry, idx) => (
+                    <div
+                      key={entry.id}
+                      className="border-border space-y-2 rounded border p-3"
                     >
-                      Quote at
-                    </Label>
-                    <Input
-                      type="datetime-local"
-                      id="quoteScheduledFor"
-                      value={quoteScheduledFor}
-                      onChange={(e) => setQuoteScheduledFor(e.target.value)}
-                      disabled={fetcher.state !== "idle" || isSigning}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="quoteCaption"
-                      className="text-muted-foreground text-xs"
-                    >
-                      Quote caption (optional)
-                    </Label>
-                    <Textarea
-                      id="quoteCaption"
-                      value={quoteCaption}
-                      onChange={(e) => setQuoteCaption(e.target.value)}
-                      placeholder="Add your comment..."
-                      rows={2}
-                      disabled={fetcher.state !== "idle" || isSigning}
-                      className="mt-1"
-                    />
-                  </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <Label className="text-muted-foreground text-xs">
+                          Hours after main
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setQuoteEntries((prev) =>
+                              prev.length > 1
+                                ? prev.filter((_, i) => i !== idx)
+                                : prev
+                            )
+                          }
+                          disabled={
+                            fetcher.state !== "idle" ||
+                            isSigning ||
+                            quoteEntries.length <= 1
+                          }
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={entry.hoursAfterMain}
+                        onChange={(e) => {
+                          const v = Math.max(
+                            1,
+                            parseInt(e.target.value, 10) || 1
+                          );
+                          setQuoteEntries((prev) => {
+                            const next = [...prev];
+                            const current = next[idx]!;
+                            next[idx] = {
+                              ...current,
+                              hoursAfterMain: v,
+                            };
+                            return next;
+                          });
+                        }}
+                        disabled={fetcher.state !== "idle" || isSigning}
+                        className="w-20"
+                      />
+                      <div>
+                        <Label className="text-muted-foreground text-xs">
+                          Caption (optional)
+                        </Label>
+                        <Textarea
+                          value={entry.caption}
+                          onChange={(e) =>
+                            setQuoteEntries((prev) => {
+                              const next = [...prev];
+                              const current = next[idx]!;
+                              next[idx] = {
+                                ...current,
+                                caption: e.target.value,
+                              };
+                              return next;
+                            })
+                          }
+                          placeholder="Add your comment..."
+                          rows={2}
+                          disabled={fetcher.state !== "idle" || isSigning}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setQuoteEntries((prev) => [
+                        ...prev,
+                        {
+                          id: crypto.randomUUID(),
+                          hoursAfterMain: 24,
+                          caption: "",
+                        },
+                      ])
+                    }
+                    disabled={fetcher.state !== "idle" || isSigning}
+                  >
+                    Add another quote
+                  </Button>
                 </div>
               ) : null}
             </div>

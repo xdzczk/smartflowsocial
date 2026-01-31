@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-import { parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
 import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
 import { useZodForm } from "~/lib/validation/utils.client";
 
@@ -78,10 +77,13 @@ export function useDraftEditState({
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
-  const [repostScheduledFor, setRepostScheduledFor] = useState("");
+  const [repostHoursList, setRepostHoursList] = useState<
+    Array<{ id: string; hours: number }>
+  >(() => [{ id: crypto.randomUUID(), hours: 2 }]);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
-  const [quoteScheduledFor, setQuoteScheduledFor] = useState("");
-  const [quoteCaption, setQuoteCaption] = useState("");
+  const [quoteEntries, setQuoteEntries] = useState<
+    Array<{ id: string; hoursAfterMain: number; caption: string }>
+  >(() => [{ id: crypto.randomUUID(), hoursAfterMain: 2, caption: "" }]);
 
   const isSubmitting = fetcher.state !== "idle";
 
@@ -177,7 +179,6 @@ export function useDraftEditState({
         formData.append("useHashtagPresets", "on");
       }
 
-      const userTimezone = user.timezone ?? "Etc/UTC";
       const mainSigned = result.signedEvent as {
         id: string;
         pubkey: string;
@@ -188,43 +189,67 @@ export function useDraftEditState({
         sig: string;
       };
 
-      if (alsoScheduleRepost && repostScheduledFor.trim()) {
-        const zoned = parseDateTimeLocal(repostScheduledFor, userTimezone);
-        const scheduledForUnix = toUnixTimestamp(zoned.withTimeZone("UTC"));
-        const repostEvent = buildKind6RepostEvent(mainSigned, scheduledForUnix);
-        const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent(
-          {
-            content: repostEvent.content,
-            created_at: repostEvent.created_at,
-            kind: repostEvent.kind,
-            tags: repostEvent.tags,
-          }
-        );
-        formData.append("alsoScheduleRepost", "on");
-        formData.append("repostScheduledFor", scheduledForUnix.toString());
-        formData.append("repostSignedEvent", JSON.stringify(repostSignedEvent));
+      const mainScheduledUnix = result.scheduledForUnix;
+      if (alsoScheduleRepost && repostHoursList.length > 0) {
+        const repostSchedules: Array<{
+          scheduledFor: number;
+          signedEvent: unknown;
+        }> = [];
+        for (const { hours: h } of repostHoursList) {
+          if (h < 1) continue;
+          const repostScheduledForUnix = mainScheduledUnix + h * 3600;
+          const repostEvent = buildKind6RepostEvent(
+            mainSigned,
+            repostScheduledForUnix
+          );
+          const { signedEvent: repostSignedEvent } =
+            await nostrAdapter.signEvent({
+              content: repostEvent.content,
+              created_at: repostEvent.created_at,
+              kind: repostEvent.kind,
+              tags: repostEvent.tags,
+            });
+          repostSchedules.push({
+            scheduledFor: repostScheduledForUnix,
+            signedEvent: repostSignedEvent,
+          });
+        }
+        if (repostSchedules.length > 0) {
+          formData.append("repostSchedules", JSON.stringify(repostSchedules));
+        }
       }
 
-      if (alsoScheduleQuote && quoteScheduledFor.trim()) {
-        const zoned = parseDateTimeLocal(quoteScheduledFor, userTimezone);
-        const scheduledForUnix = toUnixTimestamp(zoned.withTimeZone("UTC"));
-        const quoteEvent = buildQuoteEvent(
-          mainSigned,
-          quoteCaption,
-          scheduledForUnix,
-          []
-        );
-        const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
-          content: quoteEvent.content,
-          created_at: quoteEvent.created_at,
-          kind: quoteEvent.kind,
-          tags: quoteEvent.tags,
-        });
-        formData.append("alsoScheduleQuote", "on");
-        formData.append("quoteScheduledFor", scheduledForUnix.toString());
-        formData.append("quoteSignedEvent", JSON.stringify(quoteSignedEvent));
-        if (quoteCaption) {
-          formData.append("quoteCaption", quoteCaption);
+      if (alsoScheduleQuote && quoteEntries.length > 0) {
+        const quoteSchedules: Array<{
+          scheduledFor: number;
+          signedEvent: unknown;
+          caption?: string;
+        }> = [];
+        for (const entry of quoteEntries) {
+          if (entry.hoursAfterMain < 1) continue;
+          const quoteScheduledForUnix =
+            mainScheduledUnix + entry.hoursAfterMain * 3600;
+          const quoteEvent = buildQuoteEvent(
+            mainSigned,
+            entry.caption,
+            quoteScheduledForUnix,
+            []
+          );
+          const { signedEvent: quoteSignedEvent } =
+            await nostrAdapter.signEvent({
+              content: quoteEvent.content,
+              created_at: quoteEvent.created_at,
+              kind: quoteEvent.kind,
+              tags: quoteEvent.tags,
+            });
+          quoteSchedules.push({
+            scheduledFor: quoteScheduledForUnix,
+            signedEvent: quoteSignedEvent,
+            caption: entry.caption || undefined,
+          });
+        }
+        if (quoteSchedules.length > 0) {
+          formData.append("quoteSchedules", JSON.stringify(quoteSchedules));
         }
       }
 
@@ -301,13 +326,11 @@ export function useDraftEditState({
     handleHashtagPresetSelect,
     alsoScheduleRepost,
     setAlsoScheduleRepost,
-    repostScheduledFor,
-    setRepostScheduledFor,
+    repostHoursList,
+    setRepostHoursList,
     alsoScheduleQuote,
     setAlsoScheduleQuote,
-    quoteScheduledFor,
-    setQuoteScheduledFor,
-    quoteCaption,
-    setQuoteCaption,
+    quoteEntries,
+    setQuoteEntries,
   };
 }
