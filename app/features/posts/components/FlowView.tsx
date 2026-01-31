@@ -64,6 +64,7 @@ export function FlowView({
 }: FlowViewProps): React.ReactNode {
   const [nowMs] = useState(() => NOW_MS());
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const initialScrollDoneRef = useRef(false);
   const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
     null
   );
@@ -152,6 +153,27 @@ export function FlowView({
     (hasMorePast ? 1 : 0) +
     (firstFutureIndex < 0 ? flowItems.length : firstFutureIndex);
   const hasNowMarker = firstFutureIndex >= 0;
+
+  // On first load, scroll so we show one last past post + Now + future (like the screenshot)
+  useEffect(() => {
+    if (
+      initialScrollDoneRef.current ||
+      flowItems.length === 0 ||
+      !hasNowMarker ||
+      nowSlotIndex <= 0
+    ) {
+      return;
+    }
+    initialScrollDoneRef.current = true;
+    const lastPastSlotIndex = nowSlotIndex - 1;
+    const raf = requestAnimationFrame(() => {
+      rowVirtualizer.scrollToIndex(lastPastSlotIndex, {
+        align: "start",
+        behavior: "auto",
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [flowItems.length, hasNowMarker, nowSlotIndex, rowVirtualizer]);
 
   const handleSkipToNow = useCallback(() => {
     const reduceMotion =
