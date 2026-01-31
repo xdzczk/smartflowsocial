@@ -192,6 +192,40 @@ export function normalizeLoaderResponseData(data: unknown): unknown {
       } else {
         normalized[key] = value;
       }
+    } else if (key === "flowItems") {
+      // Flow items: array of { type, data } where data has signedEvent/nostrEvent
+      if (Array.isArray(value)) {
+        normalized[key] = value.map((item) => {
+          if (
+            item &&
+            typeof item === "object" &&
+            !Array.isArray(item) &&
+            "data" in item &&
+            (item as Record<string, unknown>)["data"] &&
+            typeof (item as Record<string, unknown>)["data"] === "object"
+          ) {
+            const itemObj = item as Record<string, unknown>;
+            const dataObj = itemObj["data"] as Record<string, unknown>;
+            const normalizedData: Record<string, unknown> = {};
+            for (const [dataKey, dataValue] of Object.entries(dataObj)) {
+              if (dataValue instanceof Date) {
+                normalizedData[dataKey] = dataValue;
+              } else if (
+                dataKey === "signedEvent" ||
+                dataKey === "nostrEvent"
+              ) {
+                normalizedData[dataKey] = normalizeEvent(dataValue);
+              } else {
+                normalizedData[dataKey] = dataValue;
+              }
+            }
+            return { ...itemObj, data: normalizedData };
+          }
+          return item;
+        });
+      } else {
+        normalized[key] = value;
+      }
     } else {
       // For other fields, check if they need normalization
       // Check if this is an object that might contain events
