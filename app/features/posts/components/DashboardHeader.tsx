@@ -16,7 +16,7 @@ export function DashboardHeader({
   longformCount,
 }: DashboardHeaderProps) {
   const getTitle = () => {
-    if (currentTab === "all") return "All Scheduled Content";
+    if (currentTab === "all") return "Your flow";
     if (currentTab === "posts") return "Scheduled Posts";
     return "Scheduled Longform";
   };
@@ -28,7 +28,7 @@ export function DashboardHeader({
   };
 
   const getItemType = () => {
-    if (currentTab === "all") return "items";
+    if (currentTab === "all") return "items in your flow";
     if (currentTab === "posts") return "posts";
     return "longform posts";
   };
@@ -40,7 +40,7 @@ export function DashboardHeader({
         <h4 className="text-muted-foreground text-sm font-medium">
           You have{" "}
           <span className="text-foreground">
-            {getCount()} scheduled {getItemType()}
+            {getCount()} {getItemType()}
           </span>
         </h4>
       </div>

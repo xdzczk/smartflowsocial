@@ -136,6 +136,12 @@ export {
 // ============================================================================
 
 export { loadDashboardData } from "./services/dashboard-loader.server";
+export {
+  loadFlowData,
+  type LoadFlowDataParams,
+  type LoadFlowDataResult,
+  type FlowItemDTO,
+} from "./services/flow-loader.server";
 
 export { handleDashboardAction } from "./services/dashboard-action.server";
 

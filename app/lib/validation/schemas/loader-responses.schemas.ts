@@ -534,3 +534,33 @@ export const calendarLoaderDataSchema = z.object({
 });
 
 export type CalendarLoaderData = z.infer<typeof calendarLoaderDataSchema>;
+
+/**
+ * Flow item: post or longform DTO with type discriminator
+ */
+const flowItemSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("post"),
+    data: postDTOSchema,
+  }),
+  z.object({
+    type: z.literal("longform"),
+    data: longFormPostDTOSchema,
+  }),
+]);
+
+/**
+ * Schema for Flow loader data (dashboard Flow view)
+ */
+export const flowLoaderDataSchema = z.object({
+  flowItems: z.array(flowItemSchema),
+  hasMorePast: z.boolean(),
+  hasMoreFuture: z.boolean(),
+  pastCursor: z.string().nullable(),
+  futureCursor: z.string().nullable(),
+  user: userSchema.nullable(),
+  queueTypes: z.array(queueTypeSchema),
+  hashTagPresets: z.array(hashTagPresetSchema),
+});
+
+export type FlowLoaderData = z.infer<typeof flowLoaderDataSchema>;

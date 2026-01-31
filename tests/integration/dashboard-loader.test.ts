@@ -25,18 +25,16 @@ vi.mock("~/features/payments/subscriptions.server", () => ({
   requireFeatureAccess: vi.fn(),
 }));
 
-vi.mock("~/features/posts/services/dashboard-loader.server", () => ({
-  loadDashboardData: vi.fn(),
+vi.mock("~/features/posts/server", () => ({
+  loadFlowData: vi.fn(),
+  handleDashboardAction: vi.fn(),
 }));
 
-import {
-  createValidUserMock,
-  createValidPostDTOMock,
-} from "../utils/test-helpers";
+import { createValidUserMock } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
-import { loadDashboardData } from "~/features/posts/services/dashboard-loader.server";
+import { loadFlowData } from "~/features/posts/server";
 import { loader } from "~/routes/dashboard._index";
 
 describe("Dashboard Loader Integration", () => {
@@ -48,17 +46,15 @@ describe("Dashboard Loader Integration", () => {
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
-    (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue({
-      scheduledPosts: [],
-      longformPosts: [],
+    (loadFlowData as ReturnType<typeof vi.fn>).mockResolvedValue({
+      flowItems: [],
+      hasMorePast: false,
+      hasMoreFuture: false,
+      pastCursor: null,
+      futureCursor: null,
       user: createValidUserMock(),
       queueTypes: [],
       hashTagPresets: [],
-      postStatistics: {
-        scheduledCount: 0,
-        successCount: 0,
-      },
-      selectedQueueType: "all",
     });
   });
 
@@ -83,9 +79,15 @@ describe("Dashboard Loader Integration", () => {
         "user-123",
         "dashboard"
       );
-      expect(loadDashboardData).toHaveBeenCalledWith("user-123", "all");
-      expect(data).toHaveProperty("scheduledPosts");
-      expect(data).toHaveProperty("longformPosts");
+      expect(loadFlowData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-123",
+          queueType: "all",
+        })
+      );
+      expect(data).toHaveProperty("flowItems");
+      expect(data).toHaveProperty("hasMorePast");
+      expect(data).toHaveProperty("hasMoreFuture");
       expect(data).toHaveProperty("user");
       expect(data).toHaveProperty("queueTypes");
     });
@@ -103,73 +105,29 @@ describe("Dashboard Loader Integration", () => {
           ? (dataRaw as Record<string, unknown>)
           : {};
 
-      expect(loadDashboardData).toHaveBeenCalledWith("user-123", "posts");
+      expect(loadFlowData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-123",
+          queueType: "posts",
+        })
+      );
       expect(data).toBeDefined();
     });
 
-    it("should handle planActivated query parameter", async () => {
-      const request = new Request(
-        "http://localhost:3000/dashboard?planActivated=true"
-      );
-      const loaderArgs: LoaderFunctionArgs = {
-        request,
-        params: {},
-        context: {},
-      };
-      const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
-      const data =
-        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as Record<string, unknown>)
-          : {};
-
-      const planActivated =
-        typeof data["planActivated"] === "string" ? data["planActivated"] : "";
-      expect(planActivated).toBe("true");
-    });
-
-    it("should handle successMessage query parameter", async () => {
-      const request = new Request(
-        "http://localhost:3000/dashboard?message=success"
-      );
-      const loaderArgs: LoaderFunctionArgs = {
-        request,
-        params: {},
-        context: {},
-      };
-      const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
-      const data =
-        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as Record<string, unknown>)
-          : {};
-
-      const successMessage =
-        typeof data["successMessage"] === "string"
-          ? data["successMessage"]
-          : "";
-      expect(successMessage).toBe("success");
-    });
-
-    it("should return proper data structure", async () => {
+    it("should return proper Flow data structure", async () => {
+      const mockUser = createValidUserMock({ timezone: "America/New_York" });
       const mockData = {
-        scheduledPosts: [
-          createValidPostDTOMock({ id: "1", caption: "Test post" }),
-        ],
-        longformPosts: [],
-        user: createValidUserMock({ timezone: "America/New_York" }),
+        flowItems: [],
+        hasMorePast: false,
+        hasMoreFuture: false,
+        pastCursor: null,
+        futureCursor: null,
+        user: mockUser,
         queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         hashTagPresets: [],
-        postStatistics: {
-          scheduledCount: 1,
-          successCount: 0,
-        },
-        selectedQueueType: "all",
       };
 
-      (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData
-      );
+      (loadFlowData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard");
       const loaderArgs: LoaderFunctionArgs = {
@@ -184,17 +142,11 @@ describe("Dashboard Loader Integration", () => {
           ? (dataRaw as Record<string, unknown>)
           : {};
 
-      const scheduledPosts = Array.isArray(data["scheduledPosts"])
-        ? data["scheduledPosts"]
-        : [];
-      expect(scheduledPosts).toHaveLength(1);
-      const firstPost =
-        scheduledPosts[0] &&
-        typeof scheduledPosts[0] === "object" &&
-        !Array.isArray(scheduledPosts[0])
-          ? (scheduledPosts[0] as { id?: unknown })
-          : {};
-      expect(firstPost).toHaveProperty("id", "1");
+      expect(response.status).toBe(200);
+      expect(data).toHaveProperty("flowItems");
+      expect(Array.isArray(data["flowItems"])).toBe(true);
+      expect(data).toHaveProperty("hasMorePast", false);
+      expect(data).toHaveProperty("hasMoreFuture", false);
       const user =
         data["user"] &&
         typeof data["user"] === "object" &&
@@ -222,7 +174,12 @@ describe("Dashboard Loader Integration", () => {
       const response = await loader(loaderArgs);
 
       expect(response.status).toBe(200);
-      expect(loadDashboardData).toHaveBeenCalledWith("user-123", "all");
+      expect(loadFlowData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-123",
+          queueType: "all",
+        })
+      );
     });
 
     it("should handle 'posts' queue type", async () => {
@@ -237,7 +194,12 @@ describe("Dashboard Loader Integration", () => {
       const response = await loader(loaderArgs);
 
       expect(response.status).toBe(200);
-      expect(loadDashboardData).toHaveBeenCalledWith("user-123", "posts");
+      expect(loadFlowData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-123",
+          queueType: "posts",
+        })
+      );
     });
 
     it("should handle 'longform' queue type", async () => {
@@ -252,7 +214,12 @@ describe("Dashboard Loader Integration", () => {
       const response = await loader(loaderArgs);
 
       expect(response.status).toBe(200);
-      expect(loadDashboardData).toHaveBeenCalledWith("user-123", "longform");
+      expect(loadFlowData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-123",
+          queueType: "longform",
+        })
+      );
     });
   });
 
@@ -290,7 +257,7 @@ describe("Dashboard Loader Integration", () => {
     });
 
     it("should handle data loading errors", async () => {
-      (loadDashboardData as ReturnType<typeof vi.fn>).mockRejectedValue(
+      (loadFlowData as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error("Database error")
       );
 

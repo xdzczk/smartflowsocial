@@ -6,16 +6,11 @@ import {
 
 import { requireUserId } from "~/features/auth";
 import { requireFeatureAccess } from "~/features/payments";
-import {
-  handleDashboardAction,
-  loadDashboardData,
-  type LongFormPostType as _LongFormPostType,
-  type UserData as _UserData,
-} from "~/features/posts/server";
+import { handleDashboardAction, loadFlowData } from "~/features/posts/server";
 import { DashboardIndexPage } from "~/features/posts/ui";
 import { withCSRFProtection } from "~/lib/csrf";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import { dashboardLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import { flowLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   try {
@@ -24,31 +19,23 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Check if user has access to the dashboard feature
     await requireFeatureAccess(userId, "dashboard");
 
-    // Check for success message in URL params
     const url = new URL(request.url);
-    const planActivated = url.searchParams.get("planActivated");
-    const successMessage = url.searchParams.get("message");
-
-    // Get queueType from URL params (query string) or route params, default to "all"
     const queueType =
       url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
-    const page = parseInt(url.searchParams.get("page") ?? "1", 10);
-    const limit = 20;
+    const before = url.searchParams.get("before") ?? undefined;
+    const after = url.searchParams.get("after") ?? undefined;
 
-    const data = await loadDashboardData(userId, queueType, page, limit);
-
-    // Add URL params to data before validation
-    const dataWithParams = {
-      ...data,
-      planActivated,
-      successMessage,
-    };
+    const data = await loadFlowData({
+      userId,
+      queueType,
+      pastLimit: 20,
+      futureLimit: 30,
+      before,
+      after,
+    });
 
     // Validate loader response with Zod schema
-    const validatedData = validateLoaderResponse(
-      dataWithParams,
-      dashboardLoaderDataSchema
-    );
+    const validatedData = validateLoaderResponse(data, flowLoaderDataSchema);
 
     return json(validatedData);
   } catch (error) {
@@ -59,13 +46,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Use dynamic import to avoid bundling issues
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {
-      scheduledPosts: [],
-      longformPosts: [],
+      flowItems: [],
+      hasMorePast: false,
+      hasMoreFuture: false,
+      pastCursor: null,
+      futureCursor: null,
       user: null,
       queueTypes: [],
       hashTagPresets: [],
-      postStatistics: undefined,
-      selectedQueueType: "all",
     });
   }
 };

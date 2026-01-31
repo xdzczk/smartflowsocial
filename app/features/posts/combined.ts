@@ -19,7 +19,7 @@ function nullToUndefined<T>(value: T | null): T | undefined {
  * Converts a Post to CombinedContent format
  * Client-side version (duplicated from server to avoid importing .server.ts)
  */
-function postToCombinedContent(post: PostData): CombinedContent {
+export function postToCombinedContent(post: PostData): CombinedContent {
   const result: CombinedContent = {
     id: post.id,
     type: "post",
@@ -83,7 +83,7 @@ function postToCombinedContent(post: PostData): CombinedContent {
  * Converts a LongFormPost to CombinedContent format
  * Client-side version (duplicated from server to avoid importing .server.ts)
  */
-function longFormPostToCombinedContent(
+export function longFormPostToCombinedContent(
   longFormPost: LongFormPostData
 ): CombinedContent {
   return {

@@ -607,14 +607,19 @@ export async function getScheduledLongFormPosts({
   page = 1,
   limit = 20,
   since,
+  afterScheduledAtUtc,
+  queueType,
 }: {
   userId: User["id"];
   page?: number;
   limit?: number;
   since?: number; // Unix timestamp in milliseconds for delta sync
+  /** When set, return only posts with scheduledAtUtc > this date (for cursor-based load more). */
+  afterScheduledAtUtc?: Date;
+  queueType?: string;
 }) {
   try {
-    const skip = (page - 1) * limit;
+    const skip = afterScheduledAtUtc ? 0 : (page - 1) * limit;
 
     const where: Prisma.LongFormPostWhereInput = {
       userId,
@@ -627,6 +632,20 @@ export async function getScheduledLongFormPosts({
       const sinceDate = new Date(since);
       where.updatedAt = {
         gte: sinceDate,
+      };
+    }
+
+    // Cursor-based: only posts after this date (for Flow load more future)
+    if (afterScheduledAtUtc !== undefined) {
+      where.scheduledAtUtc = {
+        gt: afterScheduledAtUtc,
+      };
+    }
+
+    // Add queue type filter if specified
+    if (queueType && queueType !== "all") {
+      where.queueType = {
+        name: queueType,
       };
     }
 
@@ -704,36 +723,52 @@ export function getPastLongFormPosts({
   startDate,
   endDate,
   queueType,
+  beforeDate,
+  limit: takeLimit,
 }: {
   userId: string;
   startDate: Date;
   endDate: Date;
   queueType?: string;
+  /** When set, return only posts with postedAt < beforeDate (for Flow load more past). */
+  beforeDate?: Date;
+  /** Max number of posts to return (for Flow load more past). */
+  limit?: number;
 }): Promise<LongFormPost[]> {
   const whereClause: Prisma.LongFormPostWhereInput = {
     userId,
-    // Use currentState as single source of truth
     currentState: "PUBLISHED",
-    // Check both postedAt and publishedAt for date filtering
-    OR: [
-      {
-        postedAt: {
-          gte: startDate,
-          lte: endDate,
-          not: null,
-        },
-      },
-      {
-        publishedAt: {
-          gte: startDate,
-          lte: endDate,
-          not: null,
-        },
-      },
-    ],
+    ...(beforeDate
+      ? {
+          OR: [
+            {
+              postedAt: { gte: startDate, lt: beforeDate, not: null },
+            },
+            {
+              publishedAt: { gte: startDate, lt: beforeDate, not: null },
+            },
+          ],
+        }
+      : {
+          OR: [
+            {
+              postedAt: {
+                gte: startDate,
+                lte: endDate,
+                not: null,
+              },
+            },
+            {
+              publishedAt: {
+                gte: startDate,
+                lte: endDate,
+                not: null,
+              },
+            },
+          ],
+        }),
   };
 
-  // Add queue type filter if specified
   if (queueType && queueType !== "all") {
     whereClause.queueType = {
       name: queueType,
@@ -748,5 +783,6 @@ export function getPastLongFormPosts({
     orderBy: {
       postedAt: "desc",
     },
+    ...(takeLimit !== undefined ? { take: takeLimit } : {}),
   });
 }
