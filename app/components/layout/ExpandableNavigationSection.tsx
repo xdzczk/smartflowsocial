@@ -30,6 +30,7 @@ interface ExpandableNavigationSectionProps {
   icon: React.ReactNode;
   items: NavigationChildItem[];
   onUpgradeClick: (feature: FeatureName, featureName: string) => void;
+  collapsed?: boolean;
 }
 
 // Separate component for child items to properly use hooks
@@ -37,10 +38,12 @@ function NavigationChildItemComponent({
   child,
   isActive,
   onUpgradeClick,
+  collapsed = false,
 }: {
   child: NavigationChildItem;
   isActive: boolean;
   onUpgradeClick: (feature: FeatureName, featureName: string) => void;
+  collapsed?: boolean;
 }) {
   const hasAccessByPlan = useFeatureAccess(child.feature);
   const subscription = useSubscription();
@@ -54,7 +57,13 @@ function NavigationChildItemComponent({
     }
   };
 
-  const childLinkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
+  const title = !hasAccess
+    ? `Requires ${getMinimumPlanForFeature(child.feature)} plan`
+    : child.label;
+
+  const childLinkClass = `group flex items-center rounded-lg border border-transparent text-sm font-medium relative ${
+    collapsed ? "justify-center px-0 py-2" : "gap-2 px-2.5"
+  } ${
     isActive
       ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
       : hasAccess
@@ -68,20 +77,20 @@ function NavigationChildItemComponent({
       to={hasAccess ? child.to : "#"}
       className={childLinkClass}
       onClick={handleChildClick}
-      title={
-        !hasAccess
-          ? `Requires ${getMinimumPlanForFeature(child.feature)} plan`
-          : undefined
-      }
+      title={title}
     >
       <span
-        className={`flex flex-none items-center ${isActive ? "text-foreground dark:text-primary" : TEXT_MUTED_FOREGROUND}`}
+        className={`flex flex-none shrink-0 items-center ${isActive ? "text-foreground dark:text-primary" : TEXT_MUTED_FOREGROUND}`}
       >
         {child.icon}
       </span>
-      <span className="grow py-2">{child.label}</span>
-      {!hasAccess ? (
-        <Lock className="h-4 w-4 flex-shrink-0 text-amber-500" />
+      {!collapsed ? (
+        <>
+          <span className="grow py-2">{child.label}</span>
+          {!hasAccess ? (
+            <Lock className="h-4 w-4 flex-shrink-0 text-amber-500" />
+          ) : null}
+        </>
       ) : null}
     </Link>
   );
@@ -92,6 +101,7 @@ export function ExpandableNavigationSection({
   icon,
   items,
   onUpgradeClick,
+  collapsed = false,
 }: ExpandableNavigationSectionProps) {
   const location = useLocation();
 
@@ -127,6 +137,26 @@ export function ExpandableNavigationSection({
   // Hide section if no children are accessible
   if (!hasAnyAccessibleChild) {
     return null;
+  }
+
+  // Collapsed: show only icon-only child links (no parent button, no expand/collapse)
+  if (collapsed) {
+    return (
+      <div className="space-y-1">
+        {items.map((child) => {
+          const isActive = location.pathname.startsWith(getPathname(child.to));
+          return (
+            <NavigationChildItemComponent
+              key={child.to}
+              child={child}
+              isActive={isActive}
+              onUpgradeClick={onUpgradeClick}
+              collapsed
+            />
+          );
+        })}
+      </div>
+    );
   }
 
   const toggleExpanded = () => {

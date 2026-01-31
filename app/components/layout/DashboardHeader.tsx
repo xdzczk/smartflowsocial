@@ -39,6 +39,7 @@ interface NavigationItemProps {
   children: React.ReactNode;
   isActive?: boolean;
   onUpgradeClick: (feature: FeatureName, featureName: string) => void;
+  collapsed?: boolean;
 }
 
 function NavigationItem({
@@ -48,6 +49,7 @@ function NavigationItem({
   children,
   isActive,
   onUpgradeClick,
+  collapsed = false,
 }: NavigationItemProps) {
   const hasAccessByPlan = useFeatureAccess(feature);
   const subscription = useSubscription();
@@ -69,6 +71,8 @@ function NavigationItem({
   };
 
   const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
+    collapsed ? "justify-center px-0 py-2" : ""
+  } ${
     isActive
       ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
       : hasAccess
@@ -76,34 +80,54 @@ function NavigationItem({
         : "text-muted-foreground/50 cursor-not-allowed opacity-60"
   }`;
 
+  const title = !hasAccess
+    ? `Requires ${getMinimumPlanForFeature(feature)} plan`
+    : (children as string);
+
   return (
     <Link
       prefetch="intent"
       to={hasAccess ? to : "#"}
       className={linkClass}
       onClick={handleClick}
-      title={
-        !hasAccess
-          ? `Requires ${getMinimumPlanForFeature(feature)} plan`
-          : undefined
-      }
+      title={title}
     >
       <span
         className={`flex flex-none items-center ${isActive ? "text-foreground dark:text-primary" : "text-muted-foreground"}`}
       >
         {icon}
       </span>
-      <span className="grow py-2">{children}</span>
-      {!hasAccess ? (
-        <Lock className="h-4 w-4 flex-shrink-0 text-amber-500" />
+      {!collapsed ? (
+        <>
+          <span className="grow py-2">{children}</span>
+          {!hasAccess ? (
+            <Lock className="h-4 w-4 flex-shrink-0 text-amber-500" />
+          ) : null}
+        </>
       ) : null}
     </Link>
   );
 }
 
-export default function Header() {
+interface HeaderProps {
+  desktopSidebarOpen?: boolean;
+  onDesktopSidebarToggle?: () => void;
+}
+
+export default function Header({
+  desktopSidebarOpen = true,
+  onDesktopSidebarToggle,
+}: HeaderProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [desktopOpen, setDesktopOpen] = useState(desktopSidebarOpen);
+
+  // Sync with controlled prop when provided (e.g. from layout)
+  const isDesktopExpanded =
+    onDesktopSidebarToggle !== undefined ? desktopSidebarOpen : desktopOpen;
+  const handleDesktopSidebarToggle = () => {
+    if (onDesktopSidebarToggle) onDesktopSidebarToggle();
+    else setDesktopOpen((prev) => !prev);
+  };
   const [upgradePrompt, setUpgradePrompt] = useState<{
     isOpen: boolean;
     feature: FeatureName | null;
@@ -133,23 +157,32 @@ export default function Header() {
       <nav
         id="page-sidebar"
         aria-label="Main Sidebar Navigation"
-        className={`border-border bg-card text-foreground fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r transition-transform duration-500 ease-out lg:w-64 ${
-          desktopSidebarOpen ? "lg:translate-x-0" : "lg:-translate-x-full"
+        className={`border-border bg-card text-foreground fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r transition-[width,transform] duration-300 ease-out lg:translate-x-0 ${
+          isDesktopExpanded ? "lg:w-64" : "lg:w-16"
         } ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* Sidebar Header */}
-        <div className="bg-card flex h-16 w-full flex-none items-center justify-between px-4 lg:justify-center">
+        <div
+          className={`bg-card lg:border-border flex h-16 w-full flex-none items-center justify-between border-b border-transparent px-4 transition-[padding] duration-300 lg:justify-center ${
+            isDesktopExpanded ? "lg:px-4" : "lg:px-0"
+          }`}
+        >
           {/* Brand */}
           <Link
             prefetch="intent"
             to="/dashboard"
-            className="group text-foreground hover:text-primary inline-flex items-center gap-2 transition-colors"
+            className={`group text-foreground hover:text-primary inline-flex items-center transition-colors ${
+              isDesktopExpanded ? "gap-2" : "w-full justify-center"
+            }`}
+            title="SmartFlow Social"
           >
             <Logo
               lightSrc="/logos/Logo-Full-LightMode.svg"
               darkSrc="/logos/Logo-Full-DarkMode.svg"
               alt="SmartFlow Social"
-              className="h-9 w-auto lg:h-10"
+              className={`h-9 w-auto lg:h-10 ${
+                isDesktopExpanded ? "" : "lg:h-8 lg:w-8 lg:object-contain"
+              }`}
             />
           </Link>
           {/* END Brand */}
@@ -170,15 +203,22 @@ export default function Header() {
         {/* END Sidebar Header */}
 
         {/* Sidebar Navigation */}
-        <div className="overflow-y-auto">
-          <div className="w-full p-4">
+        <div className="overflow-x-hidden overflow-y-auto">
+          <div
+            className={`w-full transition-[padding] duration-300 ${
+              isDesktopExpanded ? "p-4" : "p-2 lg:px-2 lg:py-3"
+            }`}
+          >
             <nav className="space-y-1">
               <NavigationItem
                 to="/dashboard"
                 feature="dashboard"
                 isActive={location.pathname === "/dashboard"}
                 onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineHome className="inline-block size-5" />}
+                icon={
+                  <HiOutlineHome className="inline-block size-5 shrink-0" />
+                }
+                collapsed={!isDesktopExpanded}
               >
                 Dashboard
               </NavigationItem>
@@ -187,6 +227,7 @@ export default function Header() {
               <ExpandableNavigationSection
                 title="Create"
                 icon={<HiOutlineCloudArrowUp className="inline-block size-5" />}
+                collapsed={!isDesktopExpanded}
                 items={[
                   {
                     to: "/dashboard/newpost",
@@ -237,7 +278,10 @@ export default function Header() {
                 feature="calendar"
                 isActive={location.pathname.startsWith("/dashboard/calendar")}
                 onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineCalendarDays className="inline-block size-5" />}
+                icon={
+                  <HiOutlineCalendarDays className="inline-block size-5 shrink-0" />
+                }
+                collapsed={!isDesktopExpanded}
               >
                 Calendar
               </NavigationItem>
@@ -247,7 +291,10 @@ export default function Header() {
                 feature="scheduled"
                 isActive={location.pathname.startsWith("/dashboard/scheduled")}
                 onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineCalendar className="inline-block size-5" />}
+                icon={
+                  <HiOutlineCalendar className="inline-block size-5 shrink-0" />
+                }
+                collapsed={!isDesktopExpanded}
               >
                 Scheduled
               </NavigationItem>
@@ -257,7 +304,10 @@ export default function Header() {
                 feature="posted"
                 isActive={location.pathname.startsWith("/dashboard/posted")}
                 onUpgradeClick={handleUpgradeClick}
-                icon={<HiOutlineClock className="inline-block size-5" />}
+                icon={
+                  <HiOutlineClock className="inline-block size-5 shrink-0" />
+                }
+                collapsed={!isDesktopExpanded}
               >
                 Posted
               </NavigationItem>
@@ -266,6 +316,7 @@ export default function Header() {
               <ExpandableNavigationSection
                 title="Engagement"
                 icon={<HiOutlineFire className="inline-block size-5" />}
+                collapsed={!isDesktopExpanded}
                 items={[
                   {
                     to: "/dashboard/engagement/feed",
@@ -288,13 +339,20 @@ export default function Header() {
         {/* END Sidebar Navigation */}
 
         {/* Settings at Bottom */}
-        <div className="mt-auto p-4">
+        <div
+          className={`mt-auto transition-[padding] duration-300 ${
+            isDesktopExpanded ? "p-4" : "p-2 lg:px-2 lg:py-3"
+          }`}
+        >
           <NavigationItem
             to="/dashboard/settings"
             feature="settings"
             isActive={location.pathname === "/dashboard/settings"}
             onUpgradeClick={handleUpgradeClick}
-            icon={<HiOutlineCog6Tooth className="inline-block size-5" />}
+            icon={
+              <HiOutlineCog6Tooth className="inline-block size-5 shrink-0" />
+            }
+            collapsed={!isDesktopExpanded}
           >
             Settings
           </NavigationItem>
@@ -305,7 +363,7 @@ export default function Header() {
       {/* Page Header */}
       <header
         id="page-header"
-        className={`bg-background border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b shadow-sm ${desktopSidebarOpen ? "lg:pl-64" : ""}`}
+        className={`bg-background border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b shadow-sm transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
       >
         <div className="max-w-10xl mx-auto flex w-full justify-between px-3 sm:px-4 lg:px-8">
           {/* Left Section */}
@@ -313,7 +371,7 @@ export default function Header() {
             {/* Toggle Sidebar on Desktop */}
             <div className="hidden lg:block">
               <Button
-                onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)}
+                onClick={handleDesktopSidebarToggle}
                 variant="outline"
                 size="sm"
               >
@@ -338,7 +396,7 @@ export default function Header() {
 
           {/* Center Section - Global Search */}
           <div className="flex flex-1 items-center justify-center px-2 sm:px-3 lg:px-6">
-            <GlobalSearchBar className="w-full max-w-2xl" />
+            <GlobalSearchBar className="w-full min-w-0" />
           </div>
           {/* END Center Section - Global Search */}
 

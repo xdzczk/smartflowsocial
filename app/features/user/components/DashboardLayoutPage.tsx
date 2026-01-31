@@ -5,11 +5,14 @@ import {
   Form,
   useNavigation,
 } from "@remix-run/react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
+
+const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
 
 function ProfileBits({ nostrProfile }: { nostrProfile: unknown }): ReactNode {
   let name: string | undefined;
@@ -43,13 +46,28 @@ export function DashboardLayoutPage(): ReactNode {
   const navDecision =
     (navigation.formData?.get("decision") as string) || undefined;
 
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem(DESKTOP_SIDEBAR_OPEN_KEY) !== "false";
+  });
+  const handleDesktopSidebarToggle = () => {
+    setDesktopSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem(DESKTOP_SIDEBAR_OPEN_KEY, String(next));
+      return next;
+    });
+  };
+
   return (
     <>
       <div
         id="page-container"
-        className="bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col lg:pl-64"
+        className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
       >
-        <Header />
+        <Header
+          desktopSidebarOpen={desktopSidebarOpen}
+          onDesktopSidebarToggle={handleDesktopSidebarToggle}
+        />
 
         <main
           id="page-content"
