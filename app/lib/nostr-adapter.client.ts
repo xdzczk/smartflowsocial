@@ -10,6 +10,7 @@
  */
 
 import { nip19 } from "nostr-tools";
+import { toast } from "react-hot-toast";
 
 import type {
   NostrEvent,
@@ -18,7 +19,15 @@ import type {
   NostrEventData,
   LongFormEventData,
 } from "~/features/nostr/types";
-import { RemoteSignerTimeoutError } from "~/lib/errors";
+import {
+  Nip07AccountMismatchError,
+  RemoteSignerTimeoutError,
+} from "~/lib/errors";
+import {
+  checkNip07Readiness,
+  getExpectedPubkeyHexForGuard,
+  getNip07Readiness,
+} from "~/lib/nip07-readiness.client";
 import { emitRemoteSignerTimeoutEvent } from "~/lib/remote-signer-reconnect.client";
 
 import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
@@ -253,6 +262,24 @@ async function signEventWithRetryLogic(
   nostrEvent: NostrEvent,
   maxRetries = 5
 ): Promise<SignedEvent> {
+  const signerManager = await import("~/lib/nostr-signer-manager.client");
+  const config =
+    typeof signerManager.getActiveSignerConfig === "function"
+      ? signerManager.getActiveSignerConfig()
+      : null;
+  if (config?.type === "nip07") {
+    const expectedHex = getExpectedPubkeyHexForGuard();
+    if (expectedHex) {
+      await checkNip07Readiness(expectedHex);
+    }
+    if (getNip07Readiness() === "account_mismatch") {
+      const message =
+        "Extension account does not match. Switch back to the correct account in your extension or re-login.";
+      toast.error(message);
+      throw new Nip07AccountMismatchError(message);
+    }
+  }
+
   let retries = 0;
 
   while (retries < maxRetries) {

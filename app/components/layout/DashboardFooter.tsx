@@ -1,8 +1,9 @@
-import { ClockIcon } from "@heroicons/react/20/solid";
+import { ClockIcon, ExclamationTriangleIcon } from "@heroicons/react/20/solid";
 import { useState, useEffect } from "react";
 
-import { SyncStatusIndicator } from "~/components/sync/SyncStatusIndicator";
+import { SignerStatusIndicator } from "~/components/signer/SignerStatusIndicator";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { getSyncState, subscribeToSyncState } from "~/lib/sync-manager.client";
 
 // Helper to extract city name from timezone (e.g., "Africa/Cairo" -> "Cairo")
 function getTimezoneShortName(timezone: string | undefined): string {
@@ -18,6 +19,7 @@ export default function Footer() {
   const user = useOptionalUser() ?? null;
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState<Date | null>(null);
+  const [syncNeedsAttention, setSyncNeedsAttention] = useState(false);
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -26,6 +28,21 @@ export default function Footer() {
     }, 0);
     return () => clearTimeout(id);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const id = setTimeout(
+      () => setSyncNeedsAttention(getSyncState() === "needs_attention"),
+      0
+    );
+    const unsubscribe = subscribeToSyncState((state) => {
+      setSyncNeedsAttention(state === "needs_attention");
+    });
+    return () => {
+      clearTimeout(id);
+      unsubscribe();
+    };
+  }, [mounted]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -80,7 +97,16 @@ export default function Footer() {
           SmartFlow Social © {new Date().getFullYear()}
         </div>
         <div className="text-muted-foreground flex items-center justify-center gap-1.5 sm:gap-2">
-          <SyncStatusIndicator />
+          <SignerStatusIndicator />
+          {syncNeedsAttention ? (
+            <>
+              <span className="hidden lg:inline">·</span>
+              <div className="flex items-center gap-1 text-xs">
+                <ExclamationTriangleIcon className="h-3 w-3 text-yellow-500" />
+                <span className="hidden sm:inline">Needs attention</span>
+              </div>
+            </>
+          ) : null}
           <span className="hidden lg:inline">·</span>
           <ClockIcon className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
           <span className="hidden sm:inline">{dateString}</span>

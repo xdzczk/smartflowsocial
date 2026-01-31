@@ -100,6 +100,19 @@ export class RemoteSignerTimeoutError extends AppError {
 }
 
 /**
+ * NIP-07 extension account mismatch (401)
+ * Used when the extension's current account differs from the logged-in user (user switched account in extension).
+ */
+export class Nip07AccountMismatchError extends AppError {
+  constructor(
+    message = "Extension account does not match. Switch back to the correct account in your extension or re-login.",
+    context?: Record<string, unknown>
+  ) {
+    super(message, 401, "NIP07_ACCOUNT_MISMATCH", true, context);
+  }
+}
+
+/**
  * Authorization errors (403)
  */
 export class AuthorizationError extends AppError {
@@ -314,6 +327,7 @@ export const ErrorCodes = {
   DATABASE_ERROR: "DATABASE_ERROR",
   INTERNAL_ERROR: "INTERNAL_ERROR",
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
+  NIP07_ACCOUNT_MISMATCH: "NIP07_ACCOUNT_MISMATCH",
 };
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
