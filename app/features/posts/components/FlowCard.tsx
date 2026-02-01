@@ -137,7 +137,7 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-[260px] w-[200px] flex-shrink-0 flex-col overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:outline-none ${proximityBorder}`}
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-[160px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:outline-none ${proximityBorder}`}
       style={
         queueColor
           ? {
@@ -149,23 +149,8 @@ function FlowCardInner({
       aria-label={ariaLabel ?? defaultAriaLabel}
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
-      {isLastPosted ? (
-        <span className="text-muted-foreground bg-muted/50 px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
-          Last post
-        </span>
-      ) : null}
-      {/* Time-first: time (primary), status, queue, then media */}
-      <div className="flex flex-1 flex-col gap-1 p-3 text-left">
-        <span className="text-foreground text-base leading-tight font-bold">
-          {timeLabel}
-        </span>
-        <span className="text-muted-foreground text-xs">
-          {statusLabel}
-          {queueName ? ` · ${queueName}` : ""}
-        </span>
-      </div>
-      {/* Media preview (secondary, smaller) */}
-      <div className="bg-muted/50 flex h-20 w-full flex-shrink-0 items-center justify-center overflow-hidden rounded-b-md">
+      {/* Media on left */}
+      <div className="bg-muted/50 flex h-full w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md">
         {firstImage ? (
           <MediaThumbnail
             src={firstImage}
@@ -178,10 +163,25 @@ function FlowCardInner({
             }
           />
         ) : (
-          <span className="text-muted-foreground text-lg">
+          <span className="text-muted-foreground text-2xl">
             {item.type === "longform" ? "📄" : "📝"}
           </span>
         )}
+      </div>
+      {/* Text on right */}
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-3 text-left">
+        {isLastPosted ? (
+          <span className="text-muted-foreground bg-muted/50 mb-1 self-start px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+            Last post
+          </span>
+        ) : null}
+        <span className="text-foreground text-sm leading-tight font-bold">
+          {timeLabel}
+        </span>
+        <span className="text-muted-foreground text-xs">
+          {statusLabel}
+          {queueName ? ` · ${queueName}` : ""}
+        </span>
       </div>
     </button>
   );

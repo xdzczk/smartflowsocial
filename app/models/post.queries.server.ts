@@ -276,6 +276,38 @@ export async function getRecentPostedPosts({
   });
 }
 
+export interface ScheduledCountByQueueRow {
+  queueTypeId: string | null;
+  count: number;
+}
+
+export async function getScheduledPostsCountByQueue({
+  userId,
+}: {
+  userId: string;
+}): Promise<ScheduledCountByQueueRow[]> {
+  try {
+    const rows = await prisma.post.groupBy({
+      by: ["queueTypeId"],
+      where: {
+        userId,
+        currentState: "SCHEDULED",
+      },
+      _count: { id: true },
+    });
+    return rows.map((r) => ({
+      queueTypeId: r.queueTypeId,
+      count: r._count.id,
+    }));
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching scheduled posts count by queue",
+      userId,
+    });
+    return [];
+  }
+}
+
 export async function getPostStatistics({
   userId,
 }: {

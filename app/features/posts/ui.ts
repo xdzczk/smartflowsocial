@@ -107,11 +107,16 @@ export { default as PostDetailsModal } from "./components/PostDetailsModal";
 export { default as PublishResultModal } from "./components/PublishResultModal";
 export { PostsSearch } from "./components/PostsSearch";
 export { default as PostTypeTabs } from "./components/PostTypeTabs";
+export { default as QueueHealth } from "./components/QueueHealth";
 export { default as QueueSelectionTabs } from "./components/QueueSelectionTabs";
 export { ScheduledPostsTable } from "./components/ScheduledPostsTable";
 export { SimpleRescheduleModal } from "./components/SimpleRescheduleModal";
 export { default as Statistics } from "./components/Statistics";
 export { SuccessMessage } from "./components/SuccessMessage";
+export {
+  default as TopPostsList,
+  type TopPostItemDTO,
+} from "./components/TopPostsList";
 export { default as DraftBulkResume } from "./components/DraftBulkResume";
 export { DraftsBulkActions } from "./components/DraftsBulkActions";
 export { ErrorMessage } from "./components/ErrorMessage";

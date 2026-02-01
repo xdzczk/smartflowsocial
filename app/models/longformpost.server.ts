@@ -792,6 +792,34 @@ export interface LongFormStatistics {
   successCount: number;
 }
 
+export interface ScheduledLongFormCountByQueueRow {
+  queueTypeId: string | null;
+  count: number;
+}
+
+export async function getScheduledLongFormCountByQueue({
+  userId,
+}: {
+  userId: string;
+}): Promise<ScheduledLongFormCountByQueueRow[]> {
+  try {
+    const rows = await prisma.longFormPost.groupBy({
+      by: ["queueTypeId"],
+      where: {
+        userId,
+        currentState: "SCHEDULED",
+      },
+      _count: { id: true },
+    });
+    return rows.map((r) => ({
+      queueTypeId: r.queueTypeId,
+      count: r._count.id,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getLongFormStatistics({
   userId,
 }: {

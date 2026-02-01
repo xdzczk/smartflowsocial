@@ -8,6 +8,8 @@ import { requireUserId } from "~/features/auth";
 import { requireFeatureAccess } from "~/features/payments";
 import {
   getContentStatistics,
+  getQueueCountsForDashboard,
+  getTopPostedPostsByEngagement,
   handleDashboardAction,
   loadFlowData,
 } from "~/features/posts/server";
@@ -30,6 +32,9 @@ const FALLBACK_FLOW = {
   queueTypes: [],
   hashTagPresets: [],
   postStatistics: EMPTY_STATS,
+  queueCountsByQueue: [] as Array<{ queueName: string; count: number }>,
+  topPosts: [] as Array<{ post: unknown; stats: unknown }>,
+  topPostsTimeframe: 7,
 };
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -44,18 +49,29 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
     const before = url.searchParams.get("before") ?? undefined;
     const after = url.searchParams.get("after") ?? undefined;
+    const topPostsDaysParam = url.searchParams.get("topPostsDays");
+    const topPostsDays =
+      topPostsDaysParam === "30" ? 30 : topPostsDaysParam === "7" ? 7 : 7;
 
-    const [data, postStatistics] = await Promise.all([
-      loadFlowData({
-        userId,
-        queueType,
-        pastLimit: 20,
-        futureLimit: 30,
-        before,
-        after,
-      }),
-      getContentStatistics(userId),
-    ]);
+    const [data, postStatistics, queueCountsByQueue, topPostsResult] =
+      await Promise.all([
+        loadFlowData({
+          userId,
+          queueType,
+          pastLimit: 20,
+          futureLimit: 30,
+          before,
+          after,
+        }),
+        getContentStatistics(userId),
+        getQueueCountsForDashboard(userId),
+        getTopPostedPostsByEngagement({
+          userId,
+          days: topPostsDays,
+          limit: 5,
+        }),
+      ]);
+    const { topPosts, timeframeDays: topPostsTimeframe } = topPostsResult;
 
     // Validate loader response with Zod schema
     let validatedData;
@@ -74,12 +90,18 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       return json({
         ...FALLBACK_FLOW,
         postStatistics,
+        queueCountsByQueue,
+        topPosts,
+        topPostsTimeframe,
       });
     }
 
     return json({
       ...validatedData,
       postStatistics,
+      queueCountsByQueue,
+      topPosts,
+      topPostsTimeframe,
     });
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
@@ -90,6 +112,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {
       ...FALLBACK_FLOW,
+      postStatistics: EMPTY_STATS,
+      queueCountsByQueue: [],
+      topPosts: [],
+      topPostsTimeframe: 7,
     });
   }
 };

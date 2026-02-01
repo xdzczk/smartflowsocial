@@ -138,7 +138,9 @@ export {
 export { loadDashboardData } from "./services/dashboard-loader.server";
 export {
   getContentStatistics,
+  getQueueCountsForDashboard,
   type ContentStatistics,
+  type QueueCountItem,
 } from "./services/content-statistics.server";
 export {
   loadFlowData,
@@ -146,6 +148,10 @@ export {
   type LoadFlowDataResult,
   type FlowItemDTO,
 } from "./services/flow-loader.server";
+export {
+  getTopPostedPostsByEngagement,
+  type TopPostItem,
+} from "./services/top-posts.server";
 
 export { handleDashboardAction } from "./services/dashboard-action.server";
 

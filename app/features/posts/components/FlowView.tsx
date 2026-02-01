@@ -8,8 +8,8 @@ import type { CombinedContent } from "../types";
 
 import { FlowCard } from "./FlowCard";
 
-const CARD_WIDTH = 200;
-const GAP = 16;
+const CARD_WIDTH = 280;
+const GAP = 24;
 const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
 const SENTINEL_WIDTH = 120 + GAP;
 
@@ -219,12 +219,12 @@ export function FlowView({
       ) : null}
       <div
         ref={setScrollContainerRef}
-        className="min-h-[260px] flex-1 overflow-x-auto overflow-y-hidden pb-2"
+        className="min-h-[160px] flex-1 overflow-x-auto overflow-y-hidden pb-2"
       >
         <div
           style={{
             height: "100%",
-            minHeight: 260,
+            minHeight: 160,
             width: rowVirtualizer.getTotalSize(),
             position: "relative",
             minWidth: "100%",

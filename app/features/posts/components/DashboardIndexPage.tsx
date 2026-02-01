@@ -1,4 +1,5 @@
 import {
+  useLoaderData,
   useNavigation,
   useRevalidator,
   useSearchParams,
@@ -13,10 +14,13 @@ import {
   FlowView,
   LongFormDetailsModal,
   PostDetailsModal,
+  QueueHealth,
   QueueSelectionTabs,
   SimpleRescheduleModal,
   Statistics,
   SuccessMessage,
+  TopPostsList,
+  type TopPostItemDTO,
   useFlowData,
 } from "~/features/posts/ui";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -70,6 +74,22 @@ export default function DashboardIndexPage() {
     fetchMorePast,
     fetchMoreFuture,
   } = useFlowData();
+
+  const loaderData = useLoaderData<{
+    queueCountsByQueue?: Array<{ queueName: string; count: number }>;
+    topPosts?: Array<{ post: unknown; stats: unknown }>;
+    topPostsTimeframe?: number;
+  }>();
+  const queueCountsByQueue = Array.isArray(loaderData.queueCountsByQueue)
+    ? loaderData.queueCountsByQueue
+    : [];
+  const topPosts = Array.isArray(loaderData.topPosts)
+    ? loaderData.topPosts
+    : [];
+  const topPostsTimeframe =
+    typeof loaderData.topPostsTimeframe === "number"
+      ? loaderData.topPostsTimeframe
+      : 7;
 
   const { userTimeFormat } = useFormattedDate();
   const navigation = useNavigation();
@@ -157,6 +177,20 @@ export default function DashboardIndexPage() {
     return latest;
   }, [flowItems]);
 
+  const [nowMs, setNowMs] = useState<number | null>(null);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setNowMs(Date.now());
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+  const runwayDays = useMemo((): number | null => {
+    if (!flowRunsUntil || nowMs === null) return null;
+    const then = flowRunsUntil.getTime();
+    if (then <= nowMs) return null;
+    return Math.ceil((then - nowMs) / (24 * 60 * 60 * 1000));
+  }, [flowRunsUntil, nowMs]);
+
   return (
     <>
       {showSuccessMessage && successMessage ? (
@@ -169,7 +203,7 @@ export default function DashboardIndexPage() {
       <div className="flex min-h-[calc(100dvh-12rem)] flex-col">
         <div className="flex-shrink-0 space-y-0">
           <div className="mt-2">
-            <Statistics />
+            <Statistics runwayDays={runwayDays} />
           </div>
           <div className="mt-2 flex flex-col gap-0 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
             <DashboardHeader
@@ -236,6 +270,18 @@ export default function DashboardIndexPage() {
               onFetchMoreFuture={fetchMoreFuture}
             />
           )}
+        </div>
+
+        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:gap-6">
+          <QueueHealth
+            queueCounts={queueCountsByQueue}
+            queueTypes={queueTypesFiltered}
+          />
+          <TopPostsList
+            topPosts={topPosts as TopPostItemDTO[]}
+            timeframeDays={topPostsTimeframe}
+            userTimezone={getUserTimezone(user)}
+          />
         </div>
       </div>
 
