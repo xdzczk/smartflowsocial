@@ -204,10 +204,10 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      {/* Dashboard spacing: blank space below header then KPI (layout pt-12 + content pt-4 + mt-2), Flow header single line, Flow container mt-2 pt-2 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
+      {/* Dashboard spacing: blank space below header then KPI (layout pt-16 + content pt-6 + mt-3), Flow header single line, Flow container mt-2 pt-2 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
       <div className="flex min-h-[calc(100dvh-12rem)] flex-col">
         <div className="flex-shrink-0 space-y-0">
-          <div className="mt-2">
+          <div className="mt-3">
             <Statistics runwayDays={runwayDays} />
           </div>
           <div className="min-h-[1.5rem] flex-1" aria-hidden />
