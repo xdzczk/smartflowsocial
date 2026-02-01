@@ -1,5 +1,7 @@
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+
 /**
- * Dashboard header component showing title and count
+ * Dashboard header component showing title and one-line operational telemetry
  */
 
 interface DashboardHeaderProps {
@@ -7,42 +9,43 @@ interface DashboardHeaderProps {
   allContentCount: number;
   postsCount: number;
   longformCount: number;
+  /** Last future item's scheduled time — used for "Flow runs until" telemetry */
+  flowRunsUntil?: Date | string | null;
 }
 
 export function DashboardHeader({
   currentTab,
-  allContentCount,
-  postsCount,
-  longformCount,
+  flowRunsUntil,
 }: DashboardHeaderProps) {
+  const { formatDate, userTimezone } = useFormattedDate();
+
   const getTitle = () => {
     if (currentTab === "all") return "Your flow";
     if (currentTab === "posts") return "Scheduled Posts";
     return "Scheduled Longform";
   };
 
-  const getCount = () => {
-    if (currentTab === "all") return allContentCount;
-    if (currentTab === "posts") return postsCount;
-    return longformCount;
+  const getTelemetry = (): string => {
+    if (currentTab !== "all") return "";
+    if (flowRunsUntil == null) return "Nothing scheduled.";
+    const date =
+      flowRunsUntil instanceof Date ? flowRunsUntil : new Date(flowRunsUntil);
+    if (Number.isNaN(date.getTime())) return "Nothing scheduled.";
+    const formatted = formatDate(date, { timezone: userTimezone });
+    return `Flow runs until ${formatted}`;
   };
 
-  const getItemType = () => {
-    if (currentTab === "all") return "items in your flow";
-    if (currentTab === "posts") return "posts";
-    return "longform posts";
-  };
+  const telemetry = getTelemetry();
 
   return (
-    <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+    <div className="mt-4 mb-3 flex flex-col gap-1 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
       <div>
-        <h3 className="mb-1 font-semibold">{getTitle()}</h3>
-        <h4 className="text-muted-foreground text-sm font-medium">
-          You have{" "}
-          <span className="text-foreground">
-            {getCount()} {getItemType()}
-          </span>
-        </h4>
+        <h3 className="mb-0.5 font-semibold">{getTitle()}</h3>
+        {telemetry ? (
+          <p className="text-muted-foreground text-sm" aria-live="polite">
+            {telemetry}
+          </p>
+        ) : null}
       </div>
     </div>
   );

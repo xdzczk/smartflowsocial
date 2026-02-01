@@ -27,18 +27,18 @@ export default function QueueSelectionTabs({
   const useQueryParams = !params["queueType"];
 
   const baseClasses =
-    "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium capitalize";
+    "whitespace-nowrap border-b-2 px-1 py-1.5 text-xs font-medium capitalize";
   const unselectedClasses =
     "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
   return (
-    <div className="border-border mb-6 border-b">
-      <nav className="-mb-px flex space-x-8" aria-label="Queue Types">
+    <div className="border-border mb-3 border-b">
+      <nav className="-mb-px flex space-x-6" aria-label="Queue Types">
         <Link
           to={`${basePath}?tab=${currentTab}`}
           prefetch="intent"
           onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
-          className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+          className={`border-b-2 px-1 py-1.5 text-xs font-medium whitespace-nowrap ${
             (!params["queueType"] && !searchParams.get("queueType")) ||
             searchParams.get("queueType") === "all"
               ? "border-border text-foreground dark:border-primary dark:text-primary"

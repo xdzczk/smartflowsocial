@@ -12,14 +12,13 @@ export default function Statistics() {
 
   return (
     <>
-      {/* Statistics: Simple with Icons */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:gap-8">
-        {/* Card */}
+      {/* Statistics: supporting info, reduced dominance */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:gap-6">
         <Card>
-          <CardContent className="flex grow items-center justify-between p-5">
-            <div className="bg-muted text-muted-foreground flex size-16 items-center justify-center rounded-xl">
+          <CardContent className="flex grow items-center justify-between p-3">
+            <div className="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-lg">
               <svg
-                className="hi-solid hi-clock inline-block size-8"
+                className="hi-solid hi-clock inline-block size-6"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -31,24 +30,22 @@ export default function Statistics() {
                 />
               </svg>
             </div>
-            <dl className="space-y-1 text-right">
-              <dt className="text-foreground text-2xl font-bold">
+            <dl className="space-y-0.5 text-right">
+              <dt className="text-foreground text-xl font-semibold">
                 {stats.scheduledCount}
               </dt>
-              <dd className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+              <dd className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Scheduled Posts
               </dd>
             </dl>
           </CardContent>
         </Card>
-        {/* END Card */}
 
-        {/* Card */}
         <Card>
-          <CardContent className="flex grow items-center justify-between p-5">
-            <div className="bg-success/20 text-success dark:text-success flex size-16 items-center justify-center rounded-xl">
+          <CardContent className="flex grow items-center justify-between p-3">
+            <div className="bg-success/20 text-success dark:text-success flex size-12 items-center justify-center rounded-lg">
               <svg
-                className="hi-solid hi-check-circle inline-block size-8"
+                className="hi-solid hi-check-circle inline-block size-6"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -60,28 +57,26 @@ export default function Statistics() {
                 />
               </svg>
             </div>
-            <dl className="space-y-1 text-right">
-              <dt className="text-foreground text-2xl font-bold">
+            <dl className="space-y-0.5 text-right">
+              <dt className="text-foreground text-xl font-semibold">
                 {stats.successCount}
               </dt>
-              <dd className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+              <dd className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Posted Successfully
               </dd>
             </dl>
           </CardContent>
         </Card>
-        {/* END Card */}
 
-        {/* Create New Post Button Card */}
-        <Card className="border-primary bg-primary hover:bg-primary/90 transition-all hover:scale-105 hover:shadow-xl">
+        <Card className="border-primary/80 bg-primary/90 hover:bg-primary transition-colors">
           <CardContent className="p-0">
             <Link
               to="/dashboard/newpost"
-              className="text-primary-foreground hover:text-primary-foreground/90 flex grow items-center justify-between p-5"
+              className="text-primary-foreground hover:text-primary-foreground/90 flex grow items-center justify-between p-3"
             >
-              <div className="bg-primary-foreground/20 text-primary-foreground flex size-16 items-center justify-center rounded-xl">
+              <div className="bg-primary-foreground/20 text-primary-foreground flex size-12 items-center justify-center rounded-lg">
                 <svg
-                  className="hi-solid hi-plus-circle inline-block size-8"
+                  className="hi-solid hi-plus-circle inline-block size-6"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="currentColor"
@@ -93,20 +88,18 @@ export default function Statistics() {
                   />
                 </svg>
               </div>
-              <dl className="space-y-1 text-right">
-                <dt className="text-primary-foreground text-2xl font-bold">
+              <dl className="space-y-0.5 text-right">
+                <dt className="text-primary-foreground text-xl font-semibold">
                   New
                 </dt>
-                <dd className="text-primary-foreground/80 text-sm font-semibold tracking-wider uppercase">
-                  Create Post
+                <dd className="text-primary-foreground/80 text-xs font-medium tracking-wide uppercase">
+                  Add to Flow
                 </dd>
               </dl>
             </Link>
           </CardContent>
         </Card>
-        {/* END Create New Post Button Card */}
       </div>
-      {/* END Statistics: Simple with Icons */}
     </>
   );
 }

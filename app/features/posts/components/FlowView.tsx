@@ -12,7 +12,6 @@ const CARD_WIDTH = 200;
 const GAP = 16;
 const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
 const SENTINEL_WIDTH = 120 + GAP;
-const NOW_WIDTH = 8 + GAP;
 
 const LOADING_LABEL = "Loading…";
 
@@ -32,7 +31,6 @@ function getGoLiveAt(item: CombinedContent): number {
 type SlotType =
   | typeof SLOT_PAST_SENTINEL
   | "card"
-  | "now"
   | typeof SLOT_FUTURE_SENTINEL;
 
 interface FlowSlot {
@@ -87,9 +85,6 @@ export function FlowView({
       firstFutureIndex < 0 ? flowItems : flowItems.slice(0, firstFutureIndex);
     for (const item of pastItems) {
       result.push({ type: "card", item, size: CARD_SLOT_SIZE });
-    }
-    if (firstFutureIndex >= 0) {
-      result.push({ type: "now", size: NOW_WIDTH });
     }
     const futureItems =
       firstFutureIndex >= 0 ? flowItems.slice(firstFutureIndex) : [];
@@ -149,44 +144,38 @@ export function FlowView({
     onFetchMoreFuture,
   ]);
 
-  const nowSlotIndex =
-    (hasMorePast ? 1 : 0) +
-    (firstFutureIndex < 0 ? flowItems.length : firstFutureIndex);
-  const hasNowMarker = firstFutureIndex >= 0;
+  const hasLiveEdge = firstFutureIndex >= 0;
+  const scrollToLiveIndex =
+    firstFutureIndex <= 0 ? 0 : (hasMorePast ? 1 : 0) + firstFutureIndex - 1;
 
-  // On first load, scroll so we show one last past post + Now + future (like the screenshot)
+  // On first load, scroll so we show last past post + first future (live edge)
   useEffect(() => {
     if (
       initialScrollDoneRef.current ||
       flowItems.length === 0 ||
-      !hasNowMarker ||
-      nowSlotIndex <= 0
+      !hasLiveEdge
     ) {
       return;
     }
     initialScrollDoneRef.current = true;
-    const lastPastSlotIndex = nowSlotIndex - 1;
     const raf = requestAnimationFrame(() => {
-      rowVirtualizer.scrollToIndex(lastPastSlotIndex, {
+      rowVirtualizer.scrollToIndex(scrollToLiveIndex, {
         align: "start",
         behavior: "auto",
       });
     });
     return () => cancelAnimationFrame(raf);
-  }, [flowItems.length, hasNowMarker, nowSlotIndex, rowVirtualizer]);
+  }, [flowItems.length, hasLiveEdge, scrollToLiveIndex, rowVirtualizer]);
 
-  const handleSkipToNow = useCallback(() => {
+  const handleScrollToLatest = useCallback(() => {
     const reduceMotion =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // Same as initial position: one last past post + Now + future
-    const lastPastSlotIndex = nowSlotIndex - 1;
-    const index = lastPastSlotIndex >= 0 ? lastPastSlotIndex : nowSlotIndex;
-    rowVirtualizer.scrollToIndex(index, {
+    rowVirtualizer.scrollToIndex(scrollToLiveIndex, {
       align: "start",
       behavior: reduceMotion ? "auto" : "smooth",
     });
-  }, [nowSlotIndex, rowVirtualizer]);
+  }, [scrollToLiveIndex, rowVirtualizer]);
 
   if (flowItems.length === 0) {
     return (
@@ -216,24 +205,24 @@ export function FlowView({
       role="region"
       aria-label="Post timeline: past and scheduled"
     >
-      {hasNowMarker ? (
+      {hasLiveEdge ? (
         <div className="flex justify-end px-4">
           <button
             type="button"
-            onClick={handleSkipToNow}
+            onClick={handleScrollToLatest}
             className="text-muted-foreground hover:text-foreground focus:ring-primary rounded text-xs underline focus:ring-2 focus:ring-offset-2 focus:outline-none"
           >
-            Skip to Now
+            Scroll to latest
           </button>
         </div>
       ) : null}
       <div
         ref={setScrollContainerRef}
-        className="h-[168px] overflow-x-auto overflow-y-hidden pb-2"
+        className="h-[184px] overflow-x-auto overflow-y-hidden pb-2"
       >
         <div
           style={{
-            height: 160,
+            height: 176,
             width: rowVirtualizer.getTotalSize(),
             position: "relative",
             minWidth: "100%",
@@ -302,21 +291,22 @@ export function FlowView({
                       </span>
                     )}
                   </div>
-                ) : slot.type === "now" ? (
-                  <div
-                    className="bg-primary/80 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded px-1"
-                    aria-label="Now"
-                    title="Now"
-                  >
-                    <span className="text-primary-foreground/90 text-xs font-medium">
-                      Now
-                    </span>
-                  </div>
                 ) : slot.item ? (
                   <div className="flex flex-shrink-0 items-stretch px-0.5">
                     <FlowCard
                       item={slot.item}
                       onClick={() => onCardClick(slot.item!)}
+                      isLastPosted={
+                        firstFutureIndex >= 1
+                          ? virtualColumn.index ===
+                            (hasMorePast ? 1 : 0) + firstFutureIndex - 1
+                          : null
+                      }
+                      minutesUntil={(() => {
+                        const goLive = getGoLiveAt(slot.item);
+                        if (goLive <= nowMs) return;
+                        return Math.round((goLive - nowMs) / 60000);
+                      })()}
                     />
                   </div>
                 ) : null}

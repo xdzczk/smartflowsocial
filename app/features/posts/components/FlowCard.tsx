@@ -57,15 +57,32 @@ export interface FlowCardProps {
   item: CombinedContent;
   onClick: () => void;
   "aria-label"?: string;
+  /** When true, shows a small "Last post" marker (last posted item before upcoming) */
+  isLastPosted?: boolean;
+  /** Minutes until scheduled (future items only); used for proximity emphasis */
+  minutesUntil?: number;
 }
+
+function getStatusLabel(
+  item: CombinedContent
+): "Scheduled" | "Posted" | "Failed" {
+  if (item.postedAt) return "Posted";
+  const state = (item.currentState ?? item.status).toLowerCase();
+  if (state.includes("fail")) return "Failed";
+  return "Scheduled";
+}
+
+const MINUTES_DAY = 24 * 60;
+const MINUTES_WEEK = 7 * MINUTES_DAY;
 
 function FlowCardInner({
   item,
   onClick,
   "aria-label": ariaLabel,
+  isLastPosted = false,
+  minutesUntil,
 }: FlowCardProps): ReactNode {
   const { formatDate, userTimezone } = useFormattedDate();
-  const isPast = Boolean(item.postedAt);
   const displayTime = getFlowDisplayTime(item);
   const formattedTime = formatDate(displayTime, {
     timezone: userTimezone,
@@ -73,15 +90,24 @@ function FlowCardInner({
   const preview = getFlowPreview(item);
   const firstImage = getFirstImageUrl(item);
   const queueColor = item.queueType?.color;
-
-  const statusLabel = isPast ? "Posted" : "Scheduled";
+  const queueName = item.queueType?.name ?? "";
+  const statusLabel = getStatusLabel(item);
   const defaultAriaLabel = `${item.type === "longform" ? "Longform" : "Post"}: ${preview}, ${statusLabel} ${formattedTime}`;
+
+  const proximityBorder =
+    minutesUntil != null
+      ? minutesUntil < MINUTES_DAY
+        ? "border-primary/40"
+        : minutesUntil > MINUTES_WEEK
+          ? "border-border/80"
+          : ""
+      : "";
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="border-border bg-card hover:border-primary/50 focus:ring-primary flex h-[140px] w-[200px] flex-shrink-0 flex-col overflow-hidden rounded-lg border shadow-sm transition-shadow hover:shadow-md focus:ring-2 focus:outline-none"
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-[140px] w-[200px] flex-shrink-0 flex-col overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:outline-none ${proximityBorder}`}
       style={
         queueColor
           ? {
@@ -93,8 +119,23 @@ function FlowCardInner({
       aria-label={ariaLabel ?? defaultAriaLabel}
       title={`${preview}\n${statusLabel} ${formattedTime}`}
     >
-      {/* Thumbnail or icon area */}
-      <div className="bg-muted/50 flex h-16 w-full flex-shrink-0 items-center justify-center overflow-hidden">
+      {isLastPosted ? (
+        <span className="text-muted-foreground bg-muted/50 px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+          Last post
+        </span>
+      ) : null}
+      {/* Time-first: time (primary), status, queue, then media */}
+      <div className="flex flex-1 flex-col gap-0.5 p-2 text-left">
+        <span className="text-foreground text-sm leading-tight font-bold">
+          {formattedTime}
+        </span>
+        <span className="text-muted-foreground text-xs">
+          {statusLabel}
+          {queueName ? ` · ${queueName}` : ""}
+        </span>
+      </div>
+      {/* Media preview (secondary, smaller) */}
+      <div className="bg-muted/50 flex h-12 w-full flex-shrink-0 items-center justify-center overflow-hidden rounded-b-md">
         {firstImage ? (
           <MediaThumbnail
             src={firstImage}
@@ -107,22 +148,10 @@ function FlowCardInner({
             }
           />
         ) : (
-          <span className="text-muted-foreground text-2xl">
+          <span className="text-muted-foreground text-lg">
             {item.type === "longform" ? "📄" : "📝"}
           </span>
         )}
-      </div>
-      {/* Preview and time */}
-      <div className="flex flex-1 flex-col gap-1 p-2 text-left">
-        <span
-          className="text-foreground line-clamp-2 text-xs font-medium"
-          title={preview}
-        >
-          {preview}
-        </span>
-        <span className="text-muted-foreground text-xs">
-          {statusLabel} · {formattedTime}
-        </span>
       </div>
     </button>
   );

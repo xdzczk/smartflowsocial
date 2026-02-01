@@ -3,7 +3,7 @@ import {
   useRevalidator,
   useSearchParams,
 } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { CombinedContent, QueueType } from "~/features/posts/types";
@@ -144,6 +144,19 @@ export default function DashboardIndexPage() {
     ? (hashTagPresets as Parameters<typeof EditPostModal>[0]["hashTagPresets"])
     : [];
 
+  const flowRunsUntil = useMemo(() => {
+    let latest: Date | null = null;
+    for (const item of flowItems) {
+      const at = item.scheduledAtUtc
+        ? new Date(item.scheduledAtUtc).getTime()
+        : 0;
+      if (at > 0 && (!latest || at > latest.getTime())) {
+        latest = new Date(at);
+      }
+    }
+    return latest;
+  }, [flowItems]);
+
   return (
     <>
       {showSuccessMessage && successMessage ? (
@@ -160,6 +173,7 @@ export default function DashboardIndexPage() {
         allContentCount={flowItems.length}
         postsCount={flowItems.filter((i) => i.type === "post").length}
         longformCount={flowItems.filter((i) => i.type === "longform").length}
+        flowRunsUntil={flowRunsUntil}
       />
 
       <QueueSelectionTabs
@@ -168,50 +182,53 @@ export default function DashboardIndexPage() {
         basePath="/dashboard"
       />
 
-      {flowError ? (
-        <div
-          className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
-          role="alert"
-        >
-          <p className="text-destructive text-sm font-medium">
-            {flowError.message}
-          </p>
-          <button
-            type="button"
-            onClick={() => revalidator.revalidate()}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
+      <div className="mt-2 mb-4">
+        {flowError ? (
+          <div
+            className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
+            role="alert"
           >
-            Retry
-          </button>
-        </div>
-      ) : null}
+            <p className="text-destructive text-sm font-medium">
+              {flowError.message}
+            </p>
+            <button
+              type="button"
+              onClick={() => revalidator.revalidate()}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
+            >
+              Retry
+            </button>
+          </div>
+        ) : null}
 
-      {flowError ? null : isNavigatingToDashboard && flowItems.length === 0 ? (
-        <div
-          className="border-border flex h-[160px] w-full items-center justify-center rounded-lg border border-dashed p-8"
-          role="status"
-          aria-label="Loading timeline"
-        >
-          <p className="text-muted-foreground text-sm">Loading timeline…</p>
-        </div>
-      ) : (
-        <FlowView
-          flowItems={flowItems}
-          hasMorePast={hasMorePast}
-          hasMoreFuture={hasMoreFuture}
-          isLoadingMorePast={isLoadingMorePast}
-          isLoadingMoreFuture={isLoadingMoreFuture}
-          onCardClick={(item) =>
-            handleContentSelection(
-              item,
-              setSelectedPost,
-              setSelectedLongFormPost
-            )
-          }
-          onFetchMorePast={fetchMorePast}
-          onFetchMoreFuture={fetchMoreFuture}
-        />
-      )}
+        {flowError ? null : isNavigatingToDashboard &&
+          flowItems.length === 0 ? (
+          <div
+            className="border-border flex h-[160px] w-full items-center justify-center rounded-lg border border-dashed p-8"
+            role="status"
+            aria-label="Loading timeline"
+          >
+            <p className="text-muted-foreground text-sm">Loading timeline…</p>
+          </div>
+        ) : (
+          <FlowView
+            flowItems={flowItems}
+            hasMorePast={hasMorePast}
+            hasMoreFuture={hasMoreFuture}
+            isLoadingMorePast={isLoadingMorePast}
+            isLoadingMoreFuture={isLoadingMoreFuture}
+            onCardClick={(item) =>
+              handleContentSelection(
+                item,
+                setSelectedPost,
+                setSelectedLongFormPost
+              )
+            }
+            onFetchMorePast={fetchMorePast}
+            onFetchMoreFuture={fetchMoreFuture}
+          />
+        )}
+      </div>
 
       {selectedPost ? (
         <PostDetailsModal
