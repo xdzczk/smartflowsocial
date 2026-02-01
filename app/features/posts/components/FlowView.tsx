@@ -190,7 +190,7 @@ export function FlowView({
         </p>
         <Link
           to="/dashboard/newpost"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium"
+          className="border-border text-foreground hover:bg-muted/50 focus:ring-primary rounded-md border px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
         >
           Create post
         </Link>
@@ -201,11 +201,7 @@ export function FlowView({
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   return (
-    <div
-      className="flex min-h-0 w-full flex-1 flex-col gap-6"
-      role="region"
-      aria-label="Post timeline: past and scheduled"
-    >
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-6">
       {hasLiveEdge ? (
         <div className="flex flex-shrink-0 justify-end px-4">
           <button
@@ -220,6 +216,8 @@ export function FlowView({
       ) : null}
       <div
         ref={setScrollContainerRef}
+        role="region"
+        aria-label="Post timeline: past and scheduled"
         className="min-h-[220px] flex-1 overflow-x-auto overflow-y-hidden pb-2"
       >
         <div

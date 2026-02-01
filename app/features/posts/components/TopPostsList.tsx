@@ -51,10 +51,12 @@ export default function TopPostsList({
         <nav className="flex gap-1 text-xs" aria-label="Top posts timeframe">
           <Link
             to={linkParams(7)}
+            title="Last 7 days"
+            aria-label="Last 7 days"
             className={
               timeframeDays === 7
-                ? "text-foreground font-medium underline"
-                : "text-muted-foreground/80 hover:text-muted-foreground"
+                ? "text-foreground focus:ring-primary rounded font-medium underline focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                : "text-muted-foreground/80 hover:text-muted-foreground focus:ring-primary rounded focus:ring-2 focus:ring-offset-2 focus:outline-none"
             }
           >
             7d
@@ -64,10 +66,12 @@ export default function TopPostsList({
           </span>
           <Link
             to={linkParams(30)}
+            title="Last 30 days"
+            aria-label="Last 30 days"
             className={
               timeframeDays === 30
-                ? "text-foreground font-medium underline"
-                : "text-muted-foreground/80 hover:text-muted-foreground"
+                ? "text-foreground focus:ring-primary rounded font-medium underline focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                : "text-muted-foreground/80 hover:text-muted-foreground focus:ring-primary rounded focus:ring-2 focus:ring-offset-2 focus:outline-none"
             }
           >
             30d
@@ -92,12 +96,16 @@ export default function TopPostsList({
                   <button
                     type="button"
                     onClick={() => setSelectedItem(item)}
-                    className="border-border/60 hover:bg-muted/40 w-full rounded border p-1.5 text-left text-xs transition-colors"
+                    className="border-border/60 hover:bg-muted/40 focus:ring-primary w-full rounded border p-1.5 text-left text-xs transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                    aria-label={`${preview}, Likes ${likes}, Replies ${replies}, Zaps ${zaps}`}
                   >
                     <p className="text-muted-foreground min-w-0 truncate font-medium">
                       {preview}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-[11px]">
+                    <p
+                      className="text-muted-foreground/80 mt-0.5 text-[11px]"
+                      aria-hidden
+                    >
                       ♥ {likes} · 💬 {replies} · ⚡ {zaps}
                     </p>
                   </button>

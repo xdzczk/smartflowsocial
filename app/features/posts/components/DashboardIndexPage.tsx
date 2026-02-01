@@ -200,6 +200,7 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
+      {/* Dashboard spacing: KPI row mt-2, Flow container mt-8 py-6, bottom row mt-6 gap-3 lg:gap-4 */}
       <div className="flex min-h-[calc(100dvh-12rem)] flex-col">
         <div className="flex-shrink-0 space-y-0">
           <div className="mt-2">
@@ -236,7 +237,7 @@ export default function DashboardIndexPage() {
               <button
                 type="button"
                 onClick={() => revalidator.revalidate()}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
               >
                 Retry
               </button>
@@ -249,6 +250,7 @@ export default function DashboardIndexPage() {
               className="border-border flex h-[160px] w-full items-center justify-center rounded-lg border border-dashed p-8"
               role="status"
               aria-label="Loading timeline"
+              aria-live="polite"
             >
               <p className="text-muted-foreground text-sm">Loading timeline…</p>
             </div>

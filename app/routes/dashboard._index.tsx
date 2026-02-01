@@ -3,7 +3,9 @@ import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
 } from "@remix-run/node";
+import { useNavigation } from "@remix-run/react";
 
+import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import { requireUserId } from "~/features/auth";
 import { requireFeatureAccess } from "~/features/payments";
 import {
@@ -144,4 +146,16 @@ export const action = withCSRFProtection(
     }
   }
 );
-export default DashboardIndexPage;
+function DashboardIndexRoute() {
+  const navigation = useNavigation();
+  const isNavigatingToDashboard =
+    navigation.state === "loading" &&
+    navigation.location.pathname.split("?")[0] === "/dashboard";
+
+  if (isNavigatingToDashboard) {
+    return <DashboardSkeleton />;
+  }
+  return <DashboardIndexPage />;
+}
+
+export default DashboardIndexRoute;

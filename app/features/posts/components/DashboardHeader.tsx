@@ -44,7 +44,7 @@ export function DashboardHeader({
     <div
       className={`flex flex-shrink-0 flex-col gap-1 text-center sm:flex-row sm:items-center sm:text-left ${className ?? ""}`}
     >
-      <div>
+      <div className="mb-2">
         <h3 className="mb-0.5 font-semibold">{getTitle()}</h3>
         {telemetry ? (
           <p className="text-muted-foreground text-sm" aria-live="polite">
