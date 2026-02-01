@@ -20,16 +20,16 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
       : "No scheduled";
 
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
-      <Card className="border-primary/80 bg-primary/90 hover:bg-primary transition-colors">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+      <Card className="border-primary/80 bg-primary/90 hover:bg-primary min-h-[96px] transition-colors">
         <CardContent className="p-0">
           <Link
             to="/dashboard/newpost"
-            className="text-primary-foreground hover:text-primary-foreground/90 flex grow items-center justify-between p-2"
+            className="text-primary-foreground hover:text-primary-foreground/90 flex min-h-[96px] grow items-center justify-between p-4"
           >
-            <div className="bg-primary-foreground/20 text-primary-foreground flex size-10 items-center justify-center rounded-md">
+            <div className="bg-primary-foreground/20 text-primary-foreground flex size-14 items-center justify-center rounded-lg">
               <svg
-                className="hi-solid hi-plus-circle inline-block size-5"
+                className="hi-solid hi-plus-circle inline-block size-7"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -42,10 +42,10 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
               </svg>
             </div>
             <dl className="space-y-0 text-right">
-              <dt className="text-primary-foreground text-lg font-semibold">
+              <dt className="text-primary-foreground text-xl font-semibold">
                 Compose
               </dt>
-              <dd className="text-primary-foreground/80 text-[10px] font-medium tracking-wide uppercase">
+              <dd className="text-primary-foreground/80 text-xs font-medium tracking-wide uppercase">
                 Add to Flow
               </dd>
             </dl>
@@ -53,15 +53,15 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="min-h-[96px]">
         <CardContent className="p-0">
           <Link
             to="/dashboard/scheduled"
-            className="hover:bg-muted/50 flex grow items-center justify-between p-2 transition-colors"
+            className="hover:bg-muted/50 flex min-h-[96px] grow items-center justify-between p-4 transition-colors"
           >
-            <div className="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-md">
+            <div className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-lg">
               <svg
-                className="hi-solid hi-clock inline-block size-5"
+                className="hi-solid hi-clock inline-block size-7"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -74,10 +74,10 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
               </svg>
             </div>
             <dl className="space-y-0 text-right">
-              <dt className="text-foreground text-lg font-semibold">
+              <dt className="text-foreground text-xl font-semibold">
                 {stats.scheduledCount}
               </dt>
-              <dd className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+              <dd className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Scheduled
               </dd>
             </dl>
@@ -85,15 +85,15 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="min-h-[96px]">
         <CardContent className="p-0">
           <Link
             to="/dashboard/posted"
-            className="hover:bg-muted/50 flex grow items-center justify-between p-2 transition-colors"
+            className="hover:bg-muted/50 flex min-h-[96px] grow items-center justify-between p-4 transition-colors"
           >
-            <div className="bg-success/20 text-success dark:text-success flex size-10 items-center justify-center rounded-md">
+            <div className="bg-success/20 text-success dark:text-success flex size-14 items-center justify-center rounded-lg">
               <svg
-                className="hi-solid hi-check-circle inline-block size-5"
+                className="hi-solid hi-check-circle inline-block size-7"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -106,10 +106,10 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
               </svg>
             </div>
             <dl className="space-y-0 text-right">
-              <dt className="text-foreground text-lg font-semibold">
+              <dt className="text-foreground text-xl font-semibold">
                 {stats.successCount}
               </dt>
-              <dd className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+              <dd className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Published
               </dd>
             </dl>
@@ -117,11 +117,11 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="flex grow items-center justify-between p-2">
-          <div className="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-md">
+      <Card className="min-h-[96px]">
+        <CardContent className="flex min-h-[96px] grow items-center justify-between p-4">
+          <div className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-lg">
             <svg
-              className="hi-solid hi-calendar-days inline-block size-5"
+              className="hi-solid hi-calendar-days inline-block size-7"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="currentColor"
@@ -134,10 +134,10 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
             </svg>
           </div>
           <dl className="space-y-0 text-right">
-            <dt className="text-foreground text-lg font-semibold">
+            <dt className="text-foreground text-xl font-semibold">
               {runwayLabel}
             </dt>
-            <dd className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+            <dd className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Runway
             </dd>
           </dl>

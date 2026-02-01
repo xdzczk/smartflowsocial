@@ -137,7 +137,7 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-[160px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:outline-none ${proximityBorder}`}
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-full min-h-[220px] w-[320px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:outline-none ${proximityBorder}`}
       style={
         queueColor
           ? {
@@ -150,7 +150,7 @@ function FlowCardInner({
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
       {/* Media on left */}
-      <div className="bg-muted/50 flex h-full w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md">
+      <div className="bg-muted/50 flex h-full w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md">
         {firstImage ? (
           <MediaThumbnail
             src={firstImage}
@@ -169,16 +169,16 @@ function FlowCardInner({
         )}
       </div>
       {/* Text on right */}
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-3 text-left">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 p-4 text-left">
         {isLastPosted ? (
-          <span className="text-muted-foreground bg-muted/50 mb-1 self-start px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+          <span className="text-muted-foreground bg-muted/50 mb-1 self-start px-2 py-0.5 text-xs font-medium tracking-wide uppercase">
             Last post
           </span>
         ) : null}
-        <span className="text-foreground text-sm leading-tight font-bold">
+        <span className="text-foreground text-base leading-tight font-bold">
           {timeLabel}
         </span>
-        <span className="text-muted-foreground text-xs">
+        <span className="text-muted-foreground text-sm">
           {statusLabel}
           {queueName ? ` · ${queueName}` : ""}
         </span>
