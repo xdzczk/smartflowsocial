@@ -107,7 +107,7 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-[140px] w-[200px] flex-shrink-0 flex-col overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:outline-none ${proximityBorder}`}
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-[220px] w-[220px] flex-shrink-0 flex-col overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:outline-none ${proximityBorder}`}
       style={
         queueColor
           ? {
@@ -125,8 +125,8 @@ function FlowCardInner({
         </span>
       ) : null}
       {/* Time-first: time (primary), status, queue, then media */}
-      <div className="flex flex-1 flex-col gap-0.5 p-2 text-left">
-        <span className="text-foreground text-sm leading-tight font-bold">
+      <div className="flex flex-1 flex-col gap-1 p-3 text-left">
+        <span className="text-foreground text-base leading-tight font-bold">
           {formattedTime}
         </span>
         <span className="text-muted-foreground text-xs">
@@ -135,7 +135,7 @@ function FlowCardInner({
         </span>
       </div>
       {/* Media preview (secondary, smaller) */}
-      <div className="bg-muted/50 flex h-12 w-full flex-shrink-0 items-center justify-center overflow-hidden rounded-b-md">
+      <div className="bg-muted/50 flex h-16 w-full flex-shrink-0 items-center justify-center overflow-hidden rounded-b-md">
         {firstImage ? (
           <MediaThumbnail
             src={firstImage}

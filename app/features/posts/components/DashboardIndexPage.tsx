@@ -166,68 +166,77 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      <Statistics />
+      <div className="flex min-h-[calc(100dvh-12rem)] flex-col">
+        <div className="flex-shrink-0 space-y-0">
+          <div className="mt-2">
+            <Statistics />
+          </div>
+          <div className="mt-2 flex flex-col gap-0 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
+            <DashboardHeader
+              currentTab="all"
+              allContentCount={flowItems.length}
+              postsCount={flowItems.filter((i) => i.type === "post").length}
+              longformCount={
+                flowItems.filter((i) => i.type === "longform").length
+              }
+              flowRunsUntil={flowRunsUntil}
+              className="min-w-0"
+            />
+            <QueueSelectionTabs
+              currentTab="all"
+              queueTypes={queueTypesFiltered}
+              basePath="/dashboard"
+            />
+          </div>
+        </div>
 
-      <DashboardHeader
-        currentTab="all"
-        allContentCount={flowItems.length}
-        postsCount={flowItems.filter((i) => i.type === "post").length}
-        longformCount={flowItems.filter((i) => i.type === "longform").length}
-        flowRunsUntil={flowRunsUntil}
-      />
-
-      <QueueSelectionTabs
-        currentTab="all"
-        queueTypes={queueTypesFiltered}
-        basePath="/dashboard"
-      />
-
-      <div className="mt-2 mb-4">
-        {flowError ? (
-          <div
-            className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
-            role="alert"
-          >
-            <p className="text-destructive text-sm font-medium">
-              {flowError.message}
-            </p>
-            <button
-              type="button"
-              onClick={() => revalidator.revalidate()}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
+        <div className="mt-2 flex min-h-0 flex-1 flex-col">
+          {flowError ? (
+            <div
+              className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
+              role="alert"
             >
-              Retry
-            </button>
-          </div>
-        ) : null}
+              <p className="text-destructive text-sm font-medium">
+                {flowError.message}
+              </p>
+              <button
+                type="button"
+                onClick={() => revalidator.revalidate()}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          ) : null}
 
-        {flowError ? null : isNavigatingToDashboard &&
-          flowItems.length === 0 ? (
-          <div
-            className="border-border flex h-[160px] w-full items-center justify-center rounded-lg border border-dashed p-8"
-            role="status"
-            aria-label="Loading timeline"
-          >
-            <p className="text-muted-foreground text-sm">Loading timeline…</p>
-          </div>
-        ) : (
-          <FlowView
-            flowItems={flowItems}
-            hasMorePast={hasMorePast}
-            hasMoreFuture={hasMoreFuture}
-            isLoadingMorePast={isLoadingMorePast}
-            isLoadingMoreFuture={isLoadingMoreFuture}
-            onCardClick={(item) =>
-              handleContentSelection(
-                item,
-                setSelectedPost,
-                setSelectedLongFormPost
-              )
-            }
-            onFetchMorePast={fetchMorePast}
-            onFetchMoreFuture={fetchMoreFuture}
-          />
-        )}
+          {flowError ? null : isNavigatingToDashboard &&
+            flowItems.length === 0 ? (
+            <div
+              className="border-border flex h-[160px] w-full items-center justify-center rounded-lg border border-dashed p-8"
+              role="status"
+              aria-label="Loading timeline"
+            >
+              <p className="text-muted-foreground text-sm">Loading timeline…</p>
+            </div>
+          ) : (
+            <FlowView
+              flowItems={flowItems}
+              hasMorePast={hasMorePast}
+              hasMoreFuture={hasMoreFuture}
+              isLoadingMorePast={isLoadingMorePast}
+              isLoadingMoreFuture={isLoadingMoreFuture}
+              onCardClick={(item) =>
+                handleContentSelection(
+                  item,
+                  setSelectedPost,
+                  setSelectedLongFormPost
+                )
+              }
+              onFetchMorePast={fetchMorePast}
+              onFetchMoreFuture={fetchMoreFuture}
+            />
+          )}
+        </div>
       </div>
 
       {selectedPost ? (

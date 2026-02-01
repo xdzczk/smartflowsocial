@@ -11,11 +11,14 @@ interface DashboardHeaderProps {
   longformCount: number;
   /** Last future item's scheduled time — used for "Flow runs until" telemetry */
   flowRunsUntil?: Date | string | null;
+  /** Optional class for layout (e.g. flex-shrink-0 when in a row with tabs) */
+  className?: string;
 }
 
 export function DashboardHeader({
   currentTab,
   flowRunsUntil,
+  className,
 }: DashboardHeaderProps) {
   const { formatDate, userTimezone } = useFormattedDate();
 
@@ -38,7 +41,9 @@ export function DashboardHeader({
   const telemetry = getTelemetry();
 
   return (
-    <div className="mt-4 mb-3 flex flex-col gap-1 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+    <div
+      className={`flex flex-shrink-0 flex-col gap-1 text-center sm:flex-row sm:items-center sm:text-left ${className ?? ""}`}
+    >
       <div>
         <h3 className="mb-0.5 font-semibold">{getTitle()}</h3>
         {telemetry ? (

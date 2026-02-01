@@ -12,13 +12,13 @@ export default function Statistics() {
 
   return (
     <>
-      {/* Statistics: supporting info, reduced dominance */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:gap-6">
+      {/* Statistics: compact band, minimal dominance */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:gap-4">
         <Card>
-          <CardContent className="flex grow items-center justify-between p-3">
-            <div className="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-lg">
+          <CardContent className="flex grow items-center justify-between p-2">
+            <div className="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-md">
               <svg
-                className="hi-solid hi-clock inline-block size-6"
+                className="hi-solid hi-clock inline-block size-5"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -30,11 +30,11 @@ export default function Statistics() {
                 />
               </svg>
             </div>
-            <dl className="space-y-0.5 text-right">
-              <dt className="text-foreground text-xl font-semibold">
+            <dl className="space-y-0 text-right">
+              <dt className="text-foreground text-lg font-semibold">
                 {stats.scheduledCount}
               </dt>
-              <dd className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              <dd className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                 Scheduled Posts
               </dd>
             </dl>
@@ -42,10 +42,10 @@ export default function Statistics() {
         </Card>
 
         <Card>
-          <CardContent className="flex grow items-center justify-between p-3">
-            <div className="bg-success/20 text-success dark:text-success flex size-12 items-center justify-center rounded-lg">
+          <CardContent className="flex grow items-center justify-between p-2">
+            <div className="bg-success/20 text-success dark:text-success flex size-10 items-center justify-center rounded-md">
               <svg
-                className="hi-solid hi-check-circle inline-block size-6"
+                className="hi-solid hi-check-circle inline-block size-5"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -57,11 +57,11 @@ export default function Statistics() {
                 />
               </svg>
             </div>
-            <dl className="space-y-0.5 text-right">
-              <dt className="text-foreground text-xl font-semibold">
+            <dl className="space-y-0 text-right">
+              <dt className="text-foreground text-lg font-semibold">
                 {stats.successCount}
               </dt>
-              <dd className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              <dd className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                 Posted Successfully
               </dd>
             </dl>
@@ -72,11 +72,11 @@ export default function Statistics() {
           <CardContent className="p-0">
             <Link
               to="/dashboard/newpost"
-              className="text-primary-foreground hover:text-primary-foreground/90 flex grow items-center justify-between p-3"
+              className="text-primary-foreground hover:text-primary-foreground/90 flex grow items-center justify-between p-2"
             >
-              <div className="bg-primary-foreground/20 text-primary-foreground flex size-12 items-center justify-center rounded-lg">
+              <div className="bg-primary-foreground/20 text-primary-foreground flex size-10 items-center justify-center rounded-md">
                 <svg
-                  className="hi-solid hi-plus-circle inline-block size-6"
+                  className="hi-solid hi-plus-circle inline-block size-5"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="currentColor"
@@ -88,11 +88,11 @@ export default function Statistics() {
                   />
                 </svg>
               </div>
-              <dl className="space-y-0.5 text-right">
-                <dt className="text-primary-foreground text-xl font-semibold">
+              <dl className="space-y-0 text-right">
+                <dt className="text-primary-foreground text-lg font-semibold">
                   New
                 </dt>
-                <dd className="text-primary-foreground/80 text-xs font-medium tracking-wide uppercase">
+                <dd className="text-primary-foreground/80 text-[10px] font-medium tracking-wide uppercase">
                   Add to Flow
                 </dd>
               </dl>

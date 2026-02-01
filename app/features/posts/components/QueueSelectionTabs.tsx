@@ -32,8 +32,11 @@ export default function QueueSelectionTabs({
     "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
   return (
-    <div className="border-border mb-3 border-b">
-      <nav className="-mb-px flex space-x-6" aria-label="Queue Types">
+    <div className="border-border mb-2 min-w-0 flex-shrink-0 border-b lg:mb-0">
+      <nav
+        className="-mb-px flex space-x-6 overflow-x-auto"
+        aria-label="Queue Types"
+      >
         <Link
           to={`${basePath}?tab=${currentTab}`}
           prefetch="intent"

@@ -8,7 +8,7 @@ import type { CombinedContent } from "../types";
 
 import { FlowCard } from "./FlowCard";
 
-const CARD_WIDTH = 200;
+const CARD_WIDTH = 220;
 const GAP = 16;
 const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
 const SENTINEL_WIDTH = 120 + GAP;
@@ -211,6 +211,7 @@ export function FlowView({
             type="button"
             onClick={handleScrollToLatest}
             className="text-muted-foreground hover:text-foreground focus:ring-primary rounded text-xs underline focus:ring-2 focus:ring-offset-2 focus:outline-none"
+            aria-label="Scroll timeline to latest posts"
           >
             Scroll to latest
           </button>
@@ -218,11 +219,11 @@ export function FlowView({
       ) : null}
       <div
         ref={setScrollContainerRef}
-        className="h-[184px] overflow-x-auto overflow-y-hidden pb-2"
+        className="h-[260px] overflow-x-auto overflow-y-hidden pb-2"
       >
         <div
           style={{
-            height: 176,
+            height: 252,
             width: rowVirtualizer.getTotalSize(),
             position: "relative",
             minWidth: "100%",
@@ -300,7 +301,7 @@ export function FlowView({
                         firstFutureIndex >= 1
                           ? virtualColumn.index ===
                             (hasMorePast ? 1 : 0) + firstFutureIndex - 1
-                          : null
+                          : undefined
                       }
                       minutesUntil={(() => {
                         const goLive = getGoLiveAt(slot.item);
