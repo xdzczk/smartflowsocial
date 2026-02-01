@@ -239,12 +239,12 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const virtualItems = rowVirtualizer.getVirtualItems();
 
     return (
-      <div className="flex min-h-0 w-full flex-1 flex-col">
+      <div className="flex min-h-0 w-full flex-col">
         <div
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="min-h-[232px] flex-1 overflow-x-auto overflow-y-hidden pb-2"
+          className="min-h-[232px] w-full overflow-x-auto overflow-y-hidden pb-2"
         >
           <div
             style={{

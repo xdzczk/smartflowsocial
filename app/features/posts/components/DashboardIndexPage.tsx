@@ -204,44 +204,47 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      {/* Dashboard spacing: KPI row aligns with sidebar top (-mt cancels layout pt), Flow header+row mt-2, Flow container mt-2 pt-2 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
-      <div className="-mt-4 flex min-h-[calc(100dvh-12rem)] flex-col lg:-mt-8">
+      {/* Dashboard spacing: KPI row has same top space as sidebar (layout pt), Flow header+row mt-2, Flow container mt-2 pt-2 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
+      <div className="flex min-h-[calc(100dvh-12rem)] flex-col">
         <div className="flex-shrink-0 space-y-0">
-          <div>
+          <div className="mt-2">
             <Statistics runwayDays={runwayDays} />
           </div>
-          <div className="mt-2 flex flex-col gap-0 lg:flex-row lg:items-end lg:gap-4">
-            <DashboardHeader
-              currentTab="all"
-              allContentCount={flowItems.length}
-              postsCount={flowItems.filter((i) => i.type === "post").length}
-              longformCount={
-                flowItems.filter((i) => i.type === "longform").length
-              }
-              flowRunsUntil={flowRunsUntil}
-              className="min-w-0"
-            />
-            <div className="min-w-0 flex-1">
+          <div className="min-h-[1.5rem] flex-1" aria-hidden />
+          <div className="mt-2 flex flex-col gap-0 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
+            <div className="flex min-w-0 flex-shrink-0 items-end gap-3">
+              <DashboardHeader
+                currentTab="all"
+                allContentCount={flowItems.length}
+                postsCount={flowItems.filter((i) => i.type === "post").length}
+                longformCount={
+                  flowItems.filter((i) => i.type === "longform").length
+                }
+                flowRunsUntil={flowRunsUntil}
+                className="min-w-0"
+              />
+              {hasLiveEdge ? (
+                <button
+                  type="button"
+                  onClick={() => flowViewRef.current?.scrollToLatest()}
+                  className="text-muted-foreground hover:text-foreground focus:ring-primary flex-shrink-0 rounded text-xs underline focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  aria-label="Scroll timeline to latest posts"
+                >
+                  Scroll to latest
+                </button>
+              ) : null}
+            </div>
+            <div className="min-w-0 flex-shrink-0">
               <QueueSelectionTabs
                 currentTab="all"
                 queueTypes={queueTypesFiltered}
                 basePath="/dashboard"
               />
             </div>
-            {hasLiveEdge ? (
-              <button
-                type="button"
-                onClick={() => flowViewRef.current?.scrollToLatest()}
-                className="text-muted-foreground hover:text-foreground focus:ring-primary flex-shrink-0 rounded text-xs underline focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                aria-label="Scroll timeline to latest posts"
-              >
-                Scroll to latest
-              </button>
-            ) : null}
           </div>
         </div>
 
-        <div className="mt-2 flex min-h-0 flex-1 flex-col pt-2 pb-8">
+        <div className="mt-2 flex min-h-0 flex-1 flex-col justify-center pt-2 pb-8">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
