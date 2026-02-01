@@ -11,7 +11,7 @@ import { FlowCard } from "./FlowCard";
 const CARD_WIDTH = 320;
 const GAP = 28;
 const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
-const CARD_MIN_HEIGHT = 220;
+const CARD_MIN_HEIGHT = 248;
 const SENTINEL_WIDTH = 120 + GAP;
 
 const LOADING_LABEL = "Loading…";
@@ -218,7 +218,7 @@ export function FlowView({
         ref={setScrollContainerRef}
         role="region"
         aria-label="Post timeline: past and scheduled"
-        className="min-h-[220px] flex-1 overflow-x-auto overflow-y-hidden pb-2"
+        className="min-h-[248px] flex-1 overflow-x-auto overflow-y-hidden pb-2"
       >
         <div
           style={{
@@ -308,6 +308,7 @@ export function FlowView({
                         if (goLive <= nowMs) return;
                         return Math.round((goLive - nowMs) / 60000);
                       })()}
+                      nowMs={nowMs}
                     />
                   </div>
                 ) : null}

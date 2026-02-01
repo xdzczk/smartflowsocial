@@ -43,9 +43,9 @@ export default function TopPostsList({
   };
 
   return (
-    <Card className="flex min-w-0 flex-1 flex-col">
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-3 pb-1">
-        <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+    <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-0.5">
+        <h3 className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
           Top Posts
         </h3>
         <nav className="flex gap-1 text-xs" aria-label="Top posts timeframe">
@@ -78,14 +78,14 @@ export default function TopPostsList({
           </Link>
         </nav>
       </CardHeader>
-      <CardContent className="px-4 pt-0 pb-4">
+      <CardContent className="px-4 pt-0 pb-3">
         {topPosts.length === 0 ? (
-          <p className="text-muted-foreground/80 text-xs">
+          <p className="text-muted-foreground/80 text-[11px]">
             No posted content in this period.
           </p>
         ) : (
           <ul
-            className="flex flex-col gap-1"
+            className="flex flex-col gap-0.5"
             aria-label="Top posts by engagement"
           >
             {topPosts.map((item) => {
@@ -96,14 +96,14 @@ export default function TopPostsList({
                   <button
                     type="button"
                     onClick={() => setSelectedItem(item)}
-                    className="border-border/60 hover:bg-muted/40 focus:ring-primary w-full rounded border p-1.5 text-left text-xs transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                    className="border-border/60 hover:bg-muted/40 focus:ring-primary w-full rounded border p-1 text-left text-[11px] transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     aria-label={`${preview}, Likes ${likes}, Replies ${replies}, Zaps ${zaps}`}
                   >
-                    <p className="text-muted-foreground min-w-0 truncate font-medium">
+                    <p className="text-muted-foreground min-w-0 truncate text-[11px] font-medium">
                       {preview}
                     </p>
                     <p
-                      className="text-muted-foreground/80 mt-0.5 text-[11px]"
+                      className="text-muted-foreground/80 mt-0.5 text-[10px]"
                       aria-hidden
                     >
                       ♥ {likes} · 💬 {replies} · ⚡ {zaps}

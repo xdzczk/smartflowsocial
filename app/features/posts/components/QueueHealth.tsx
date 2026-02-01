@@ -31,19 +31,19 @@ export default function QueueHealth({
 
   return (
     <Card className="flex min-w-0 flex-1 flex-col">
-      <CardHeader className="px-4 pt-3 pb-1">
+      <CardHeader className="px-3 pt-2 pb-0.5">
         <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
           Queue Health
         </h3>
       </CardHeader>
-      <CardContent className="flex flex-col gap-1.5 px-4 pt-0 pb-4">
+      <CardContent className="flex flex-col gap-1 px-3 pt-0 pb-3">
         {queueCounts.length === 0 ? (
           <p className="text-muted-foreground text-xs">
             No queues with scheduled posts.
           </p>
         ) : (
           <ul
-            className="flex flex-col gap-1.5"
+            className="flex flex-col gap-1"
             aria-label="Scheduled posts per queue"
           >
             {queueCounts.map(({ queueName, count }) => {

@@ -200,7 +200,7 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      {/* Dashboard spacing: KPI row mt-2, Flow header+cards mt-2 pt-2 pb-6, bottom row mt-6 gap-3 lg:gap-4 */}
+      {/* Dashboard spacing: KPI row mt-2, Flow mt-6 pt-6 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
       <div className="flex min-h-[calc(100dvh-12rem)] flex-col">
         <div className="flex-shrink-0 space-y-0">
           <div className="mt-2">
@@ -225,7 +225,7 @@ export default function DashboardIndexPage() {
           </div>
         </div>
 
-        <div className="mt-2 flex min-h-0 flex-1 flex-col pt-2 pb-6">
+        <div className="mt-6 flex min-h-0 flex-1 flex-col pt-6 pb-8">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
@@ -274,7 +274,7 @@ export default function DashboardIndexPage() {
           )}
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:gap-4">
+        <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:gap-4">
           <QueueHealth
             queueCounts={queueCountsByQueue}
             queueTypes={queueTypesFiltered}

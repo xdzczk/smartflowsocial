@@ -19,11 +19,11 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
       ? `${runwayDays} day${runwayDays !== 1 ? "s" : ""}`
       : "No scheduled";
 
-  const cardBase = "min-h-[96px]";
+  const cardBase = "min-h-[72px]";
   const contentBase =
-    "hover:bg-muted/50 flex min-h-[96px] grow items-center justify-between p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
-  const iconBase = "flex size-14 items-center justify-center rounded-lg";
-  const dtBase = "text-foreground text-xl font-semibold";
+    "hover:bg-muted/50 flex min-h-[72px] grow items-center justify-between p-3 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
+  const iconBase = "flex size-12 items-center justify-center rounded-lg";
+  const dtBase = "text-foreground text-lg font-semibold";
   const ddBase =
     "text-muted-foreground text-xs font-medium tracking-wide uppercase";
 
@@ -38,7 +38,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
           >
             <div className={`${iconBase} bg-muted text-muted-foreground`}>
               <svg
-                className="hi-solid hi-plus-circle inline-block size-7"
+                className="hi-solid hi-plus-circle inline-block size-6"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -67,7 +67,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
           >
             <div className={`${iconBase} bg-muted text-muted-foreground`}>
               <svg
-                className="hi-solid hi-clock inline-block size-7"
+                className="hi-solid hi-clock inline-block size-6"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -96,7 +96,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
           >
             <div className={`${iconBase} bg-muted text-muted-foreground`}>
               <svg
-                className="hi-solid hi-check-circle inline-block size-7"
+                className="hi-solid hi-check-circle inline-block size-6"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -120,7 +120,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
         <CardContent className={contentBase}>
           <div className={`${iconBase} bg-muted text-muted-foreground`}>
             <svg
-              className="hi-solid hi-calendar-days inline-block size-7"
+              className="hi-solid hi-calendar-days inline-block size-6"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="currentColor"

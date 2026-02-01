@@ -61,6 +61,8 @@ export interface FlowCardProps {
   isLastPosted?: boolean;
   /** Minutes until scheduled (future items only); used for proximity emphasis */
   minutesUntil?: number;
+  /** Current time in ms (from parent) for past-post relative labels; avoids Date.now() in render */
+  nowMs?: number;
 }
 
 function getStatusLabel(
@@ -79,7 +81,8 @@ const MINUTES_48H = 48 * 60;
 function getRelativeTimeLabel(
   minutesUntil: number,
   displayTime: Date,
-  timezone: string
+  timezone: string,
+  timeFormat: "12h" | "24h"
 ): string {
   if (minutesUntil < 1) return "in < 1 min";
   if (minutesUntil < 60) return `in ${Math.round(minutesUntil)} min`;
@@ -91,8 +94,32 @@ function getRelativeTimeLabel(
       timeZone: timezone,
       hour: "numeric",
       minute: "2-digit",
+      hour12: timeFormat === "12h",
     }).format(displayTime);
     return `tomorrow at ${timeStr}`;
+  }
+  return "";
+}
+
+function getRelativeTimeLabelForPast(
+  minutesAgo: number,
+  displayTime: Date,
+  timezone: string,
+  timeFormat: "12h" | "24h"
+): string {
+  if (minutesAgo < 1) return "just now";
+  if (minutesAgo < 60) return `${Math.round(minutesAgo)} min ago`;
+  if (minutesAgo < 120) return "1 hour ago";
+  if (minutesAgo < MINUTES_DAY)
+    return `${Math.round(minutesAgo / 60)} hours ago`;
+  if (minutesAgo < MINUTES_48H) {
+    const timeStr = new Intl.DateTimeFormat(undefined, {
+      timeZone: timezone,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: timeFormat === "12h",
+    }).format(displayTime);
+    return `yesterday at ${timeStr}`;
   }
   return "";
 }
@@ -103,19 +130,37 @@ function FlowCardInner({
   "aria-label": ariaLabel,
   isLastPosted = false,
   minutesUntil,
+  nowMs: nowMsProp,
 }: FlowCardProps): ReactNode {
-  const { formatDate, userTimezone } = useFormattedDate();
+  const { formatDate, userTimezone, userTimeFormat } = useFormattedDate();
   const displayTime = getFlowDisplayTime(item);
   const formattedTime = formatDate(displayTime, {
     timezone: userTimezone,
+    timeFormat: userTimeFormat,
   });
   const isScheduled = !item.postedAt;
-  const timeLabel =
-    isScheduled &&
-    minutesUntil != null &&
-    minutesUntil >= 0 &&
-    minutesUntil < MINUTES_48H
-      ? getRelativeTimeLabel(minutesUntil, displayTime, userTimezone)
+  const displayTimeMs = displayTime.getTime();
+  const minutesAgo =
+    nowMsProp != null && nowMsProp > 0
+      ? (nowMsProp - displayTimeMs) / 60000
+      : -1;
+
+  const timeLabel = isScheduled
+    ? minutesUntil != null && minutesUntil >= 0 && minutesUntil < MINUTES_48H
+      ? getRelativeTimeLabel(
+          minutesUntil,
+          displayTime,
+          userTimezone,
+          userTimeFormat
+        )
+      : formattedTime
+    : minutesAgo >= 0 && minutesAgo < MINUTES_48H
+      ? getRelativeTimeLabelForPast(
+          minutesAgo,
+          displayTime,
+          userTimezone,
+          userTimeFormat
+        )
       : formattedTime;
   const preview = getFlowPreview(item);
   const firstImage = getFirstImageUrl(item);
@@ -137,7 +182,7 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-full min-h-[220px] w-[320px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${proximityBorder}`}
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-full min-h-[248px] w-[320px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${proximityBorder}`}
       style={
         queueColor
           ? {
@@ -150,7 +195,7 @@ function FlowCardInner({
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
       {/* Media on left */}
-      <div className="bg-muted/50 flex h-full w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md">
+      <div className="bg-muted/50 flex h-full w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md">
         {firstImage ? (
           <MediaThumbnail
             src={firstImage}
@@ -175,7 +220,7 @@ function FlowCardInner({
             Last post
           </span>
         ) : null}
-        <span className="text-foreground text-base leading-tight font-bold">
+        <span className="text-foreground text-lg leading-tight font-bold">
           {timeLabel}
         </span>
         <span className="text-muted-foreground text-sm">

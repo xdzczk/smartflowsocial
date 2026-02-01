@@ -12,10 +12,10 @@ export function DashboardSkeleton() {
           {Array.from({ length: 4 }, (_, i) => (
             <div
               key={`kpi-${i}`}
-              className="border-border bg-card min-h-[96px] rounded-xl border p-4 shadow"
+              className="border-border bg-card min-h-[72px] rounded-xl border p-3 shadow"
             >
-              <div className="flex min-h-[72px] items-center justify-between">
-                <div className="bg-muted size-14 rounded-lg" />
+              <div className="flex min-h-[56px] items-center justify-between">
+                <div className="bg-muted size-12 rounded-lg" />
                 <div className="flex flex-col items-end gap-1">
                   <div className="bg-muted h-6 w-16 rounded" />
                   <div className="bg-muted h-3 w-20 rounded" />
@@ -36,15 +36,15 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Flow section */}
-      <div className="mt-8 flex min-h-0 flex-1 flex-col gap-6 py-6">
-        <div className="min-h-[220px] flex-1 overflow-hidden pb-2">
+      <div className="mt-6 flex min-h-0 flex-1 flex-col gap-6 pt-6 pb-8">
+        <div className="min-h-[248px] flex-1 overflow-hidden pb-2">
           <div className="flex gap-3">
             {Array.from({ length: 4 }, (_, i) => (
               <div
                 key={`flow-${i}`}
-                className="border-border bg-card flex h-[220px] w-[320px] flex-shrink-0 overflow-hidden rounded-lg border"
+                className="border-border bg-card flex h-[248px] w-[320px] flex-shrink-0 overflow-hidden rounded-lg border"
               >
-                <div className="bg-muted w-28 flex-shrink-0 rounded-l-md" />
+                <div className="bg-muted w-24 flex-shrink-0 rounded-l-md" />
                 <div className="flex flex-1 flex-col justify-center gap-2 p-4">
                   <div className="bg-muted h-4 w-20 rounded" />
                   <div className="bg-muted h-4 w-32 rounded" />
@@ -57,7 +57,7 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Bottom row: Queue Health + Top Posts */}
-      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:gap-4">
+      <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:gap-4">
         <div className="border-border bg-card min-w-0 flex-1 flex-col rounded-xl border shadow">
           <div className="px-4 pt-3 pb-1">
             <div className="bg-muted h-3 w-24 rounded" />
