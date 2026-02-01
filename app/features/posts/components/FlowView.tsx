@@ -8,7 +8,7 @@ import type { CombinedContent } from "../types";
 
 import { FlowCard } from "./FlowCard";
 
-const CARD_WIDTH = 220;
+const CARD_WIDTH = 200;
 const GAP = 16;
 const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
 const SENTINEL_WIDTH = 120 + GAP;
@@ -201,12 +201,12 @@ export function FlowView({
 
   return (
     <div
-      className="flex w-full flex-col gap-4"
+      className="flex min-h-0 w-full flex-1 flex-col gap-4"
       role="region"
       aria-label="Post timeline: past and scheduled"
     >
       {hasLiveEdge ? (
-        <div className="flex justify-end px-4">
+        <div className="flex flex-shrink-0 justify-end px-4">
           <button
             type="button"
             onClick={handleScrollToLatest}
@@ -219,11 +219,12 @@ export function FlowView({
       ) : null}
       <div
         ref={setScrollContainerRef}
-        className="h-[260px] overflow-x-auto overflow-y-hidden pb-2"
+        className="min-h-[260px] flex-1 overflow-x-auto overflow-y-hidden pb-2"
       >
         <div
           style={{
-            height: 252,
+            height: "100%",
+            minHeight: 260,
             width: rowVirtualizer.getTotalSize(),
             position: "relative",
             minWidth: "100%",

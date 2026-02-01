@@ -74,6 +74,28 @@ function getStatusLabel(
 
 const MINUTES_DAY = 24 * 60;
 const MINUTES_WEEK = 7 * MINUTES_DAY;
+const MINUTES_48H = 48 * 60;
+
+function getRelativeTimeLabel(
+  minutesUntil: number,
+  displayTime: Date,
+  timezone: string
+): string {
+  if (minutesUntil < 1) return "in < 1 min";
+  if (minutesUntil < 60) return `in ${Math.round(minutesUntil)} min`;
+  if (minutesUntil < 120) return "in 1 hour";
+  if (minutesUntil < MINUTES_DAY)
+    return `in ${Math.round(minutesUntil / 60)} hours`;
+  if (minutesUntil < MINUTES_48H) {
+    const timeStr = new Intl.DateTimeFormat(undefined, {
+      timeZone: timezone,
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(displayTime);
+    return `tomorrow at ${timeStr}`;
+  }
+  return "";
+}
 
 function FlowCardInner({
   item,
@@ -87,12 +109,20 @@ function FlowCardInner({
   const formattedTime = formatDate(displayTime, {
     timezone: userTimezone,
   });
+  const isScheduled = !item.postedAt;
+  const timeLabel =
+    isScheduled &&
+    minutesUntil != null &&
+    minutesUntil >= 0 &&
+    minutesUntil < MINUTES_48H
+      ? getRelativeTimeLabel(minutesUntil, displayTime, userTimezone)
+      : formattedTime;
   const preview = getFlowPreview(item);
   const firstImage = getFirstImageUrl(item);
   const queueColor = item.queueType?.color;
   const queueName = item.queueType?.name ?? "";
   const statusLabel = getStatusLabel(item);
-  const defaultAriaLabel = `${item.type === "longform" ? "Longform" : "Post"}: ${preview}, ${statusLabel} ${formattedTime}`;
+  const defaultAriaLabel = `${item.type === "longform" ? "Longform" : "Post"}: ${preview}, ${statusLabel} ${timeLabel}`;
 
   const proximityBorder =
     minutesUntil != null
@@ -107,7 +137,7 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-[220px] w-[220px] flex-shrink-0 flex-col overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:outline-none ${proximityBorder}`}
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-[260px] w-[200px] flex-shrink-0 flex-col overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:outline-none ${proximityBorder}`}
       style={
         queueColor
           ? {
@@ -117,7 +147,7 @@ function FlowCardInner({
           : undefined
       }
       aria-label={ariaLabel ?? defaultAriaLabel}
-      title={`${preview}\n${statusLabel} ${formattedTime}`}
+      title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
       {isLastPosted ? (
         <span className="text-muted-foreground bg-muted/50 px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
@@ -127,7 +157,7 @@ function FlowCardInner({
       {/* Time-first: time (primary), status, queue, then media */}
       <div className="flex flex-1 flex-col gap-1 p-3 text-left">
         <span className="text-foreground text-base leading-tight font-bold">
-          {formattedTime}
+          {timeLabel}
         </span>
         <span className="text-muted-foreground text-xs">
           {statusLabel}
@@ -135,7 +165,7 @@ function FlowCardInner({
         </span>
       </div>
       {/* Media preview (secondary, smaller) */}
-      <div className="bg-muted/50 flex h-16 w-full flex-shrink-0 items-center justify-center overflow-hidden rounded-b-md">
+      <div className="bg-muted/50 flex h-20 w-full flex-shrink-0 items-center justify-center overflow-hidden rounded-b-md">
         {firstImage ? (
           <MediaThumbnail
             src={firstImage}
