@@ -71,7 +71,7 @@ export function DashboardLayoutPage(): ReactNode {
 
         <main
           id="page-content"
-          className="flex max-w-full flex-auto flex-col pt-16"
+          className="flex max-w-full flex-auto flex-col pt-8"
         >
           {pendingParentUsers.length > 0 ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
@@ -179,7 +179,7 @@ export function DashboardLayoutPage(): ReactNode {
             </div>
           ) : null}
 
-          <div className="max-w-10xl mx-auto w-full p-4 pb-24 lg:p-8 lg:pb-24">
+          <div className="max-w-10xl mx-auto w-full px-4 pt-2 pb-24 lg:px-8 lg:pt-2 lg:pb-24">
             <Outlet />
           </div>
         </main>

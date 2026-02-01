@@ -25,11 +25,9 @@ export function DashboardHeader({
 
   return (
     <div
-      className={`flex flex-shrink-0 flex-col gap-1 text-center sm:flex-row sm:items-center sm:text-left ${className ?? ""}`}
+      className={`flex flex-shrink-0 flex-row items-center text-left ${className ?? ""}`}
     >
-      <div className="mb-2">
-        <h3 className="mb-0.5 font-semibold">{getTitle()}</h3>
-      </div>
+      <h3 className="font-semibold">{getTitle()}</h3>
     </div>
   );
 }

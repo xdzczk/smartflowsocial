@@ -32,7 +32,7 @@ export default function QueueSelectionTabs({
     "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
   return (
-    <div className="border-border mb-2 min-w-0 flex-shrink-0 border-b lg:mb-0">
+    <div className="border-border min-w-0 flex-shrink-0 border-b">
       <nav
         className="-mb-px flex space-x-6 overflow-x-auto"
         aria-label="Queue Types"

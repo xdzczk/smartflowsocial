@@ -204,15 +204,15 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      {/* Dashboard spacing: KPI row has same top space as sidebar (layout pt), Flow header+row mt-2, Flow container mt-2 pt-2 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
+      {/* Dashboard spacing: KPI row reduced top space (layout pt-8 + content pt-2 + mt-1), Flow header single line, Flow container mt-2 pt-2 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
       <div className="flex min-h-[calc(100dvh-12rem)] flex-col">
         <div className="flex-shrink-0 space-y-0">
-          <div className="mt-2">
+          <div className="mt-1">
             <Statistics runwayDays={runwayDays} />
           </div>
           <div className="min-h-[1.5rem] flex-1" aria-hidden />
-          <div className="mt-2 flex flex-col gap-0 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
-            <div className="flex min-w-0 flex-shrink-0 items-end gap-3">
+          <div className="mt-2 flex flex-row flex-nowrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-shrink-0 items-center gap-3">
               <DashboardHeader
                 currentTab="all"
                 allContentCount={flowItems.length}
