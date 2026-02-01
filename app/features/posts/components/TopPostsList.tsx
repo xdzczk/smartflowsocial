@@ -44,42 +44,44 @@ export default function TopPostsList({
 
   return (
     <Card className="flex min-w-0 flex-1 flex-col">
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
-        <h3 className="text-foreground text-sm font-semibold">Top Posts</h3>
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-3 pb-1">
+        <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+          Top Posts
+        </h3>
         <nav className="flex gap-1 text-xs" aria-label="Top posts timeframe">
           <Link
             to={linkParams(7)}
             className={
               timeframeDays === 7
-                ? "text-primary font-medium underline"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-foreground font-medium underline"
+                : "text-muted-foreground/80 hover:text-muted-foreground"
             }
           >
-            7 days
+            7d
           </Link>
-          <span className="text-muted-foreground" aria-hidden>
+          <span className="text-muted-foreground/60" aria-hidden>
             |
           </span>
           <Link
             to={linkParams(30)}
             className={
               timeframeDays === 30
-                ? "text-primary font-medium underline"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-foreground font-medium underline"
+                : "text-muted-foreground/80 hover:text-muted-foreground"
             }
           >
-            30 days
+            30d
           </Link>
         </nav>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pt-0 pb-4">
         {topPosts.length === 0 ? (
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground/80 text-xs">
             No posted content in this period.
           </p>
         ) : (
           <ul
-            className="flex flex-col gap-2"
+            className="flex flex-col gap-1"
             aria-label="Top posts by engagement"
           >
             {topPosts.map((item) => {
@@ -90,12 +92,12 @@ export default function TopPostsList({
                   <button
                     type="button"
                     onClick={() => setSelectedItem(item)}
-                    className="border-border hover:bg-muted/50 w-full rounded border p-2 text-left text-xs transition-colors"
+                    className="border-border/60 hover:bg-muted/40 w-full rounded border p-1.5 text-left text-xs transition-colors"
                   >
-                    <p className="text-foreground min-w-0 truncate font-medium">
+                    <p className="text-muted-foreground min-w-0 truncate font-medium">
                       {preview}
                     </p>
-                    <p className="text-muted-foreground mt-0.5">
+                    <p className="text-muted-foreground/80 mt-0.5 text-[11px]">
                       ♥ {likes} · 💬 {replies} · ⚡ {zaps}
                     </p>
                   </button>

@@ -224,7 +224,7 @@ export default function DashboardIndexPage() {
           </div>
         </div>
 
-        <div className="mt-2 flex min-h-0 flex-1 flex-col">
+        <div className="mt-8 flex min-h-0 flex-1 flex-col py-6">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
@@ -272,7 +272,7 @@ export default function DashboardIndexPage() {
           )}
         </div>
 
-        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:gap-6">
+        <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:gap-4">
           <QueueHealth
             queueCounts={queueCountsByQueue}
             queueTypes={queueTypesFiltered}

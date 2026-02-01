@@ -9,7 +9,7 @@ import type { CombinedContent } from "../types";
 import { FlowCard } from "./FlowCard";
 
 const CARD_WIDTH = 320;
-const GAP = 24;
+const GAP = 28;
 const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
 const CARD_MIN_HEIGHT = 220;
 const SENTINEL_WIDTH = 120 + GAP;
@@ -202,7 +202,7 @@ export function FlowView({
 
   return (
     <div
-      className="flex min-h-0 w-full flex-1 flex-col gap-4"
+      className="flex min-h-0 w-full flex-1 flex-col gap-6"
       role="region"
       aria-label="Post timeline: past and scheduled"
     >
