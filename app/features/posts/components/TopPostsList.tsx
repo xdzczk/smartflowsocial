@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import type { PostDTO } from "../dtos";
 import { deserializePostDTO } from "../dtos.client";
 import type { PostStats } from "../stats.server";
-import type { PostData } from "../types";
 
 import PostDetailsModal from "./PostDetailsModal";
 
@@ -35,10 +34,7 @@ export default function TopPostsList({
   userTimezone,
 }: TopPostsListProps) {
   const [searchParams] = useSearchParams();
-  const [selectedPost, setSelectedPost] = useState<{
-    post: PostData;
-    stats: PostStats;
-  } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<TopPostItemDTO | null>(null);
 
   const linkParams = (days: number) => {
     const next = new URLSearchParams(searchParams);
@@ -87,16 +83,13 @@ export default function TopPostsList({
             aria-label="Top posts by engagement"
           >
             {topPosts.map((item) => {
-              const postData = deserializePostDTO(item.post);
               const preview = getPreview(item.post);
               const { likes, replies, zaps } = item.stats;
               return (
                 <li key={item.post.id}>
                   <button
                     type="button"
-                    onClick={() =>
-                      setSelectedPost({ post: postData, stats: item.stats })
-                    }
+                    onClick={() => setSelectedItem(item)}
                     className="border-border hover:bg-muted/50 w-full rounded border p-2 text-left text-xs transition-colors"
                   >
                     <p className="text-foreground min-w-0 truncate font-medium">
@@ -113,11 +106,11 @@ export default function TopPostsList({
         )}
       </CardContent>
 
-      {selectedPost ? (
+      {selectedItem ? (
         <PostDetailsModal
-          post={selectedPost.post}
-          stats={selectedPost.stats}
-          onClose={() => setSelectedPost(null)}
+          post={deserializePostDTO(selectedItem.post)}
+          stats={selectedItem.stats}
+          onClose={() => setSelectedItem(null)}
           showStats={true}
           showSignedEvent={true}
           type="posted"
