@@ -62,7 +62,7 @@ export function DashboardLayoutPage(): ReactNode {
     <>
       <div
         id="page-container"
-        className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
+        className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col lg:h-dvh lg:overflow-hidden ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
       >
         <Header
           desktopSidebarOpen={desktopSidebarOpen}
@@ -71,7 +71,7 @@ export function DashboardLayoutPage(): ReactNode {
 
         <main
           id="page-content"
-          className="flex max-w-full flex-auto flex-col pt-[3.25rem]"
+          className="flex min-h-0 max-w-full flex-1 flex-col pt-[3.25rem]"
         >
           {pendingParentUsers.length > 0 ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
@@ -179,7 +179,7 @@ export function DashboardLayoutPage(): ReactNode {
             </div>
           ) : null}
 
-          <div className="max-w-10xl mx-auto w-full px-4 pt-4.5 pb-24 lg:px-8 lg:pt-4.5 lg:pb-24">
+          <div className="max-w-10xl mx-auto flex w-full flex-1 flex-col px-4 pt-4.5 pb-24 lg:min-h-0 lg:overflow-hidden lg:px-8 lg:pt-4.5 lg:pb-24">
             <Outlet />
           </div>
         </main>

@@ -59,7 +59,9 @@ export interface FlowCardProps {
   "aria-label"?: string;
   /** When true, shows a small "Last post" marker (last posted item before upcoming) */
   isLastPosted?: boolean;
-  /** Minutes until scheduled (future items only); used for proximity emphasis */
+  /** When true, this is the single next scheduled card; shows subtle glow (speed from minutesUntil) */
+  isNextScheduled?: boolean;
+  /** Minutes until scheduled (future items only); used for relative time and glow speed */
   minutesUntil?: number;
   /** Current time in ms (from parent) for past-post relative labels; avoids Date.now() in render */
   nowMs?: number;
@@ -75,7 +77,6 @@ function getStatusLabel(
 }
 
 const MINUTES_DAY = 24 * 60;
-const MINUTES_WEEK = 7 * MINUTES_DAY;
 const MINUTES_48H = 48 * 60;
 
 function getRelativeTimeLabel(
@@ -124,11 +125,21 @@ function getRelativeTimeLabelForPast(
   return "";
 }
 
+/** Glow duration in ms: 4000 when 24+ hours away, down to 1000 when imminent */
+function getNextGlowDurationMs(minutesUntil: number): number {
+  const minMs = 1000;
+  const maxMs = 4000;
+  if (minutesUntil >= MINUTES_DAY) return maxMs;
+  const t = Math.max(0, minutesUntil / MINUTES_DAY);
+  return Math.round(minMs + (maxMs - minMs) * t);
+}
+
 function FlowCardInner({
   item,
   onClick,
   "aria-label": ariaLabel,
   isLastPosted = false,
+  isNextScheduled = false,
   minutesUntil,
   nowMs: nowMsProp,
 }: FlowCardProps): ReactNode {
@@ -169,25 +180,25 @@ function FlowCardInner({
   const statusLabel = getStatusLabel(item);
   const defaultAriaLabel = `${item.type === "longform" ? "Longform" : "Post"}: ${preview}, ${statusLabel} ${timeLabel}`;
 
-  const proximityBorder =
-    minutesUntil != null
-      ? minutesUntil < MINUTES_DAY
-        ? "border-primary/40"
-        : minutesUntil > MINUTES_WEEK
-          ? "border-border/80"
-          : ""
-      : "";
+  const glowStyle =
+    isNextScheduled && minutesUntil != null && minutesUntil >= 0
+      ? {
+          ["--flow-glow-duration" as string]: `${getNextGlowDurationMs(minutesUntil)}ms`,
+        }
+      : undefined;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${proximityBorder}`}
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${isNextScheduled && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
-        queueColor
+        queueColor || glowStyle
           ? {
-              borderLeftWidth: 4,
-              borderLeftColor: queueColor,
+              ...(queueColor
+                ? { borderLeftWidth: 4, borderLeftColor: queueColor }
+                : {}),
+              ...(glowStyle ?? {}),
             }
           : undefined
       }

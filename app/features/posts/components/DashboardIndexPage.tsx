@@ -204,8 +204,8 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      {/* Dashboard spacing: blank space below header then KPI (layout pt-[3.25rem] + content pt-4.5 + mt-2.5), Flow header single line, Flow container mt-2 pt-2 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
-      <div className="flex min-h-[calc(100dvh-12rem)] flex-col">
+      {/* Dashboard spacing: on desktop no vertical page scroll (lg:h-full lg:min-h-0); blank space below header then KPI, Flow header single line, Flow container mt-2 pt-2 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
+      <div className="flex min-h-[calc(100dvh-12rem)] flex-col lg:h-full lg:min-h-0">
         <div className="flex-shrink-0 space-y-0">
           <div className="mt-2.5">
             <Statistics runwayDays={runwayDays} />
@@ -295,7 +295,7 @@ export default function DashboardIndexPage() {
           )}
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:gap-4">
+        <div className="mt-8 flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-y-auto">
           <QueueHealth
             queueCounts={queueCountsByQueue}
             queueTypes={queueTypesFiltered}

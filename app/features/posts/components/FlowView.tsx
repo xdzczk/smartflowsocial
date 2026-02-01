@@ -244,7 +244,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="min-h-[232px] w-full overflow-x-auto overflow-y-hidden pb-2"
+          className="scrollbar-hide min-h-[232px] w-full overflow-x-auto overflow-y-hidden pb-2"
         >
           <div
             style={{
@@ -328,6 +328,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                             ? virtualColumn.index ===
                               (hasMorePast ? 1 : 0) + firstFutureIndex - 1
                             : undefined
+                        }
+                        isNextScheduled={
+                          virtualColumn.index ===
+                          (hasMorePast ? 1 : 0) + firstFutureIndex
                         }
                         minutesUntil={(() => {
                           const goLive = getGoLiveAt(slot.item);
