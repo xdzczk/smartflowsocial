@@ -125,13 +125,20 @@ function getRelativeTimeLabelForPast(
   return "";
 }
 
-/** Glow duration in ms: 4000 when 24+ hours away, down to 1000 when imminent */
+/** Glow duration: 4s when 24+ h away, ~2s at 1h, 1s only right before publish (last ~15 min) */
 function getNextGlowDurationMs(minutesUntil: number): number {
-  const minMs = 1000;
+  const imminentMs = 1000;
+  const oneHourMs = 2000;
   const maxMs = 4000;
+  const imminentThreshold = 15; // minutes; only then does glow reach fastest (1s)
   if (minutesUntil >= MINUTES_DAY) return maxMs;
-  const t = Math.max(0, minutesUntil / MINUTES_DAY);
-  return Math.round(minMs + (maxMs - minMs) * t);
+  if (minutesUntil <= imminentThreshold)
+    return Math.round(
+      imminentMs + (oneHourMs - imminentMs) * (minutesUntil / imminentThreshold)
+    );
+  const t =
+    (minutesUntil - imminentThreshold) / (MINUTES_DAY - imminentThreshold);
+  return Math.round(oneHourMs + (maxMs - oneHourMs) * t);
 }
 
 function FlowCardInner({
