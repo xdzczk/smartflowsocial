@@ -182,7 +182,7 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-full min-h-[248px] w-[320px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${proximityBorder}`}
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${proximityBorder}`}
       style={
         queueColor
           ? {

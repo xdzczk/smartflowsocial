@@ -12,9 +12,9 @@ export function DashboardSkeleton() {
           {Array.from({ length: 4 }, (_, i) => (
             <div
               key={`kpi-${i}`}
-              className="border-border bg-card min-h-[72px] rounded-xl border p-3 shadow"
+              className="border-border bg-card min-h-[64px] rounded-xl border p-3 shadow"
             >
-              <div className="flex min-h-[56px] items-center justify-between">
+              <div className="flex min-h-[48px] items-center justify-between">
                 <div className="bg-muted size-12 rounded-lg" />
                 <div className="flex flex-col items-end gap-1">
                   <div className="bg-muted h-6 w-16 rounded" />
@@ -37,12 +37,12 @@ export function DashboardSkeleton() {
 
       {/* Flow section */}
       <div className="mt-6 flex min-h-0 flex-1 flex-col gap-6 pt-6 pb-8">
-        <div className="min-h-[248px] flex-1 overflow-hidden pb-2">
+        <div className="min-h-[232px] flex-1 overflow-hidden pb-2">
           <div className="flex gap-3">
             {Array.from({ length: 4 }, (_, i) => (
               <div
                 key={`flow-${i}`}
-                className="border-border bg-card flex h-[248px] w-[320px] flex-shrink-0 overflow-hidden rounded-lg border"
+                className="border-border bg-card flex h-[232px] w-[352px] flex-shrink-0 overflow-hidden rounded-lg border"
               >
                 <div className="bg-muted w-24 flex-shrink-0 rounded-l-md" />
                 <div className="flex flex-1 flex-col justify-center gap-2 p-4">

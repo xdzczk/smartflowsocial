@@ -19,9 +19,9 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
       ? `${runwayDays} day${runwayDays !== 1 ? "s" : ""}`
       : "No scheduled";
 
-  const cardBase = "min-h-[72px]";
+  const cardBase = "min-h-[64px]";
   const contentBase =
-    "hover:bg-muted/50 flex min-h-[72px] grow items-center justify-between p-3 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
+    "hover:bg-muted/50 flex min-h-[64px] grow items-center justify-between p-3 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
   const iconBase = "flex size-12 items-center justify-center rounded-lg";
   const dtBase = "text-foreground text-lg font-semibold";
   const ddBase =

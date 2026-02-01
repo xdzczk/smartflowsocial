@@ -99,7 +99,11 @@ export { default as AllContentListing } from "./components/AllContentListing";
 export { BulkDeleteBar } from "./components/BulkDeleteBar";
 export { DashboardHeader } from "./components/DashboardHeader";
 export { EditPostModal } from "./components/EditPostModal";
-export { FlowView } from "./components/FlowView";
+export {
+  FlowView,
+  getGoLiveAt,
+  type FlowViewHandle,
+} from "./components/FlowView";
 export { FlowCard } from "./components/FlowCard";
 export { default as LongFormDetailsModal } from "./components/LongFormDetailsModal";
 export { default as LongFormListing } from "./components/LongFormListing";
