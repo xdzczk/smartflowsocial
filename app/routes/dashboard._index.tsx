@@ -55,13 +55,16 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const topPostsDays =
       topPostsDaysParam === "30" ? 30 : topPostsDaysParam === "7" ? 7 : 7;
 
+    // Initial load: fetch only ~5–8 visible cards + buffer for fast TTI; load-more fills the rest
+    const initialPastLimit = before !== undefined ? 20 : 6;
+    const initialFutureLimit = after !== undefined ? 30 : 10;
     const [data, postStatistics, queueCountsByQueue, topPostsResult] =
       await Promise.all([
         loadFlowData({
           userId,
           queueType,
-          pastLimit: 20,
-          futureLimit: 30,
+          pastLimit: initialPastLimit,
+          futureLimit: initialFutureLimit,
           before,
           after,
         }),

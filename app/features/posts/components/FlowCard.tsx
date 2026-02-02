@@ -198,12 +198,12 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${isNextScheduled && glowStyle ? "animate-flow-next-glow" : ""}`}
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary relative flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${isNextScheduled && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
         queueColor || glowStyle
           ? {
               ...(queueColor
-                ? { borderLeftWidth: 4, borderLeftColor: queueColor }
+                ? { ["--queue-color" as string]: queueColor }
                 : {}),
               ...(glowStyle ?? {}),
             }
@@ -212,8 +212,15 @@ function FlowCardInner({
       aria-label={ariaLabel ?? defaultAriaLabel}
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
+      {/* Queue tint overlay: 2% light / 3% dark */}
+      {queueColor ? (
+        <div
+          className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_2%,transparent)] dark:bg-[color-mix(in_srgb,var(--queue-color)_3%,transparent)]"
+          aria-hidden
+        />
+      ) : null}
       {/* Media on left */}
-      <div className="bg-muted/50 flex h-full w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md">
+      <div className="bg-muted/50 relative z-10 flex h-full w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md">
         {firstImage ? (
           <MediaThumbnail
             src={firstImage}
@@ -232,7 +239,7 @@ function FlowCardInner({
         )}
       </div>
       {/* Text on right */}
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 p-4 text-left">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1 p-4 text-left">
         {isLastPosted ? (
           <span className="text-muted-foreground bg-muted/50 mb-1 self-start px-2 py-0.5 text-xs font-medium tracking-wide uppercase">
             Last post
