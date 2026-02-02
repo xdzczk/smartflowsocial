@@ -192,10 +192,10 @@ export default function Header({
             <Button
               onClick={() => setMobileSidebarOpen(false)}
               variant="outline"
-              size="sm"
-              className="border-border bg-background text-foreground hover:bg-muted"
+              size="icon"
+              className="h-9 w-9 rounded-lg shadow-none"
             >
-              <HiOutlineXMark className="-mx-0.5 inline-block size-5" />
+              <HiOutlineXMark className="inline-block size-5" />
             </Button>
           </div>
           {/* END Close Sidebar on Mobile */}

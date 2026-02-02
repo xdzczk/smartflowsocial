@@ -5,7 +5,13 @@
  */
 
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
-import { useCallback, useEffect, useState, startTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  startTransition,
+} from "react";
 
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
@@ -84,6 +90,13 @@ export function useFlowData(): UseFlowDataResult {
 
   const pastFetcher = useFetcher<FlowLoaderData>();
   const futureFetcher = useFetcher<FlowLoaderData>();
+  const pastFetcherRef = useRef(pastFetcher);
+  const futureFetcherRef = useRef(futureFetcher);
+
+  useEffect(() => {
+    pastFetcherRef.current = pastFetcher;
+    futureFetcherRef.current = futureFetcher;
+  });
 
   // Sync from loader data (initial load or queueType change)
   useEffect(() => {
@@ -133,20 +146,20 @@ export function useFlowData(): UseFlowDataResult {
   }, [futureFetcher.state, futureFetcher.data]);
 
   const fetchMorePast = useCallback(() => {
-    if (pastFetcher.state !== "idle" || !pastCursor) return;
+    if (pastFetcherRef.current.state !== "idle" || !pastCursor) return;
     const params = new URLSearchParams();
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("before", pastCursor);
-    pastFetcher.load(`/dashboard?${params.toString()}`);
-  }, [pastCursor, queueType, pastFetcher]);
+    pastFetcherRef.current.load(`/dashboard?${params.toString()}`);
+  }, [pastCursor, queueType]);
 
   const fetchMoreFuture = useCallback(() => {
-    if (futureFetcher.state !== "idle" || !futureCursor) return;
+    if (futureFetcherRef.current.state !== "idle" || !futureCursor) return;
     const params = new URLSearchParams();
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("after", futureCursor);
-    futureFetcher.load(`/dashboard?${params.toString()}`);
-  }, [futureCursor, queueType, futureFetcher]);
+    futureFetcherRef.current.load(`/dashboard?${params.toString()}`);
+  }, [futureCursor, queueType]);
 
   const isLoading =
     pastFetcher.state === "loading" || futureFetcher.state === "loading";

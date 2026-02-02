@@ -83,7 +83,7 @@ export default function QueueHealth({
                       {Array.from({ length: displayCount }, (_, i) => (
                         <span
                           key={`${queueName}-${i}`}
-                          className={`h-1.5 w-1.5 shrink-0 rounded-sm ${customColor ? "" : getBlockFillClass(queueName)}`}
+                          className={`h-1.5 w-3 shrink-0 rounded-sm ${customColor ? "" : getBlockFillClass(queueName)}`}
                           style={
                             customColor
                               ? { backgroundColor: customColor }

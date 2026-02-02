@@ -60,12 +60,13 @@ export interface FlowViewProps {
   onCardClick: (item: CombinedContent) => void;
   onFetchMorePast: () => void;
   onFetchMoreFuture: () => void;
-  /** Called when hasLiveEdge (future items exist) changes; used to show Scroll to latest in header */
+  /** Called when hasLiveEdge (future items exist) changes; used to show Scroll to next in header */
   onHasLiveEdgeChange?: (hasLiveEdge: boolean) => void;
 }
 
 export interface FlowViewHandle {
-  scrollToLatest: () => void;
+  /** On mobile scrolls to next scheduled (first future); on desktop to live edge (last past + first future) */
+  scrollToNext: () => void;
 }
 
 const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
@@ -93,6 +94,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const initialScrollDoneRef = useRef(false);
     /** Block load-more until initial scroll has had time; prevents request loop when scrollToIndex fails */
     const allowFetchRef = useRef(false);
+    /** Only fetch past when we've scrolled away from left (initial scroll succeeded); prevents loop when stuck at scroll 0 */
+    const hasScrolledAwayFromLeftRef = useRef(false);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
       null
     );
@@ -168,6 +171,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     useEffect(() => {
       if (
         !allowFetchRef.current ||
+        !hasScrolledAwayFromLeftRef.current ||
         !isPastSentinelVisible ||
         !hasMorePast ||
         isLoadingMorePast
@@ -210,7 +214,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       : scrollToLiveIndex;
 
     // On first load, scroll: desktop = live edge (last past + first future); mobile = next scheduled first.
-    // Defer scroll so virtualizer/scroll container can measure; then allow load-more after a short delay to avoid request loop when scroll fails.
+    // Defer scroll so virtualizer/scroll container can measure; only allow past-fetch when we've scrolled away from left to avoid request loop when scroll fails.
     useEffect(() => {
       if (
         initialScrollDoneRef.current ||
@@ -220,8 +224,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         return;
       }
       initialScrollDoneRef.current = true;
-      const scrollDelay = 150;
-      const allowFetchDelay = 500;
+      const scrollDelay = 200;
+      const allowFetchDelay = 600;
       const scrollId = setTimeout(() => {
         rowVirtualizer.scrollToIndex(initialScrollIndex, {
           align: "start",
@@ -231,11 +235,32 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const allowId = setTimeout(() => {
         allowFetchRef.current = true;
       }, allowFetchDelay);
+      // Only allow past-fetch when scroll has moved away from 0 (initial scroll succeeded); prevents loop when stuck at left
+      const checkScrollId = setTimeout(() => {
+        const el = scrollContainerRef.current;
+        if (el && el.scrollLeft > 10) {
+          hasScrolledAwayFromLeftRef.current = true;
+        }
+      }, scrollDelay + 350);
       return () => {
         clearTimeout(scrollId);
         clearTimeout(allowId);
+        clearTimeout(checkScrollId);
       };
     }, [flowItems.length, hasLiveEdge, initialScrollIndex, rowVirtualizer]);
+
+    // Mark that we've scrolled away from left when user scrolls (so past-fetch is allowed when they scroll back left)
+    useEffect(() => {
+      const el = scrollElement;
+      if (!el) return;
+      const onScroll = () => {
+        if (el.scrollLeft > 10) {
+          hasScrolledAwayFromLeftRef.current = true;
+        }
+      };
+      el.addEventListener("scroll", onScroll, { passive: true });
+      return () => el.removeEventListener("scroll", onScroll);
+    }, [scrollElement]);
 
     // When there's no live edge (only past or only future), allow load-more after a short delay so fetch isn't blocked
     useEffect(() => {
@@ -243,26 +268,28 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       if (hasLiveEdge) return;
       const allowId = setTimeout(() => {
         allowFetchRef.current = true;
+        hasScrolledAwayFromLeftRef.current = true;
       }, 500);
       return () => clearTimeout(allowId);
     }, [flowItems.length, hasLiveEdge]);
 
-    const handleScrollToLatest = useCallback(() => {
+    const handleScrollToNext = useCallback(() => {
       const reduceMotion =
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      rowVirtualizer.scrollToIndex(scrollToLiveIndex, {
+      const index = isMobile ? scrollToFirstFutureIndex : scrollToLiveIndex;
+      rowVirtualizer.scrollToIndex(index, {
         align: "start",
         behavior: reduceMotion ? "auto" : "smooth",
       });
-    }, [scrollToLiveIndex, rowVirtualizer]);
+    }, [isMobile, scrollToFirstFutureIndex, scrollToLiveIndex, rowVirtualizer]);
 
     useImperativeHandle(
       ref,
       () => ({
-        scrollToLatest: handleScrollToLatest,
+        scrollToNext: handleScrollToNext,
       }),
-      [handleScrollToLatest]
+      [handleScrollToNext]
     );
 
     useEffect(() => {
@@ -298,7 +325,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="scrollbar-hide min-h-[232px] w-full overflow-x-auto overflow-y-hidden pb-2"
+          className="scrollbar-hide min-h-[232px] w-full overflow-x-auto overflow-y-hidden pt-2 pb-2"
         >
           <div
             style={{
@@ -307,7 +334,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               width: rowVirtualizer.getTotalSize(),
               position: "relative",
               minWidth: "100%",
-              paddingTop: 4,
+              paddingTop: 6,
             }}
           >
             {virtualItems.map((virtualColumn) => {

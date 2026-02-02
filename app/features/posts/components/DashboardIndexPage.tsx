@@ -226,11 +226,11 @@ export default function DashboardIndexPage() {
               {hasLiveEdge ? (
                 <button
                   type="button"
-                  onClick={() => flowViewRef.current?.scrollToLatest()}
+                  onClick={() => flowViewRef.current?.scrollToNext()}
                   className="text-muted-foreground hover:text-foreground focus:ring-primary flex-shrink-0 rounded text-xs underline focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                  aria-label="Scroll timeline to latest posts"
+                  aria-label="Scroll timeline to next posts"
                 >
-                  Scroll to latest
+                  Scroll to next
                 </button>
               ) : null}
             </div>
