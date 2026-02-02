@@ -241,17 +241,22 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const allowId = setTimeout(() => {
         allowFetchRef.current = true;
       }, allowFetchDelay);
-      // Only allow past-fetch when scroll has moved away from 0 (initial scroll succeeded); prevents loop when stuck at left
+      // Allow past-fetch when scroll has moved away from 0 (initial scroll succeeded)
       const checkScrollId = setTimeout(() => {
         const el = scrollContainerRef.current;
         if (el && el.scrollLeft > 10) {
           hasScrolledAwayFromLeftRef.current = true;
         }
       }, scrollDelay + 350);
+      // Fallback: if initial scroll didn't move (e.g. virtualizer slow), allow past-fetch after 1.5s so scrolling left can load older posts
+      const fallbackId = setTimeout(() => {
+        hasScrolledAwayFromLeftRef.current = true;
+      }, 1500);
       return () => {
         clearTimeout(scrollId);
         clearTimeout(allowId);
         clearTimeout(checkScrollId);
+        clearTimeout(fallbackId);
       };
     }, [flowItems.length, hasLiveEdge, initialScrollIndex, rowVirtualizer]);
 

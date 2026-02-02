@@ -219,7 +219,7 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card focus:ring-primary relative flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${queueColor ? "hover:border-[color:var(--queue-color)]" : "hover:border-border"} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
+      className={`border-border bg-card focus:ring-primary relative flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${queueColor ? "hover:border-[color:var(--queue-color)]" : "hover:border-primary/50"} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
         queueColor || glowStyle
           ? {
@@ -269,9 +269,11 @@ function FlowCardInner({
         <span className="text-foreground text-lg leading-tight font-bold">
           {timeLabel}
         </span>
-        <span className="text-muted-foreground line-clamp-3 text-sm">
-          {contentSummaryText}
-        </span>
+        {firstImage ? (
+          <span className="text-muted-foreground line-clamp-3 text-sm">
+            {contentSummaryText}
+          </span>
+        ) : null}
         <span className="text-muted-foreground text-xs">{formattedTime}</span>
         <span className="text-muted-foreground text-sm">
           {statusLabel}
