@@ -30,6 +30,18 @@ function getFlowPreview(item: CombinedContent): string {
   return "Text post";
 }
 
+/** Text for content summary (right column) and text-as-surface (left column). Prefer real content; fallback to getFlowPreview. */
+function getContentSummaryText(item: CombinedContent): string {
+  if (item.type === "longform") {
+    if (item.title?.trim()) return item.title;
+    if (item.summary?.trim()) return item.summary;
+    return getFlowPreview(item);
+  }
+  if (item.caption?.trim()) return item.caption;
+  if (item.content?.trim()) return item.content;
+  return getFlowPreview(item);
+}
+
 function getFlowDisplayTime(item: CombinedContent): Date {
   const raw = item.postedAt ?? item.scheduledAtUtc ?? item.createdAt;
   return raw instanceof Date ? raw : new Date(raw);
@@ -183,6 +195,7 @@ function FlowCardInner({
         userTimeFormat
       );
   const preview = getFlowPreview(item);
+  const contentSummaryText = getContentSummaryText(item);
   const firstImage = getFirstImageUrl(item);
   const queueColor = item.queueType?.color;
   const queueName = item.queueType?.name ?? "";
@@ -198,6 +211,7 @@ function FlowCardInner({
   const glowStyle = isNextScheduledAndFuture
     ? {
         ["--flow-glow-duration" as string]: `${getNextGlowDurationMs(minutesUntil)}ms`,
+        ["--flow-glow-color" as string]: queueColor ?? "hsl(var(--primary))",
       }
     : undefined;
 
@@ -205,7 +219,7 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary relative flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
+      className={`border-border bg-card focus:ring-primary relative flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${queueColor ? "hover:border-[color:var(--queue-color)]" : "hover:border-border"} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
         queueColor || glowStyle
           ? {
@@ -226,25 +240,25 @@ function FlowCardInner({
           aria-hidden
         />
       ) : null}
-      {/* Media on left */}
-      <div className="bg-muted/50 relative z-10 flex h-full w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md">
-        {firstImage ? (
+      {/* Visual anchor: image edge-to-edge or text-as-surface */}
+      {firstImage ? (
+        <div className="relative z-10 flex h-full w-28 min-w-[120px] flex-shrink-0 overflow-hidden rounded-none">
           <MediaThumbnail
             src={firstImage}
             alt=""
-            className="h-full w-full object-cover"
+            className="h-full min-h-full w-full object-cover"
             forceType={isVideoFile(firstImage) ? "video" : "image"}
             hidePlayButton={true}
-            fallback={
-              <div className="bg-muted h-full w-full flex-shrink-0 rounded" />
-            }
+            fallback={<div className="bg-muted h-full w-full flex-shrink-0" />}
           />
-        ) : (
-          <span className="text-muted-foreground text-2xl">
-            {item.type === "longform" ? "📄" : "📝"}
+        </div>
+      ) : (
+        <div className="bg-muted/50 relative z-10 flex h-full w-28 min-w-[120px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-md p-3">
+          <span className="text-muted-foreground line-clamp-4 text-sm">
+            {contentSummaryText}
           </span>
-        )}
-      </div>
+        </div>
+      )}
       {/* Text on right */}
       <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1 p-4 text-left">
         {isLastPosted ? (
@@ -254,6 +268,9 @@ function FlowCardInner({
         ) : null}
         <span className="text-foreground text-lg leading-tight font-bold">
           {timeLabel}
+        </span>
+        <span className="text-muted-foreground line-clamp-3 text-sm">
+          {contentSummaryText}
         </span>
         <span className="text-muted-foreground text-xs">{formattedTime}</span>
         <span className="text-muted-foreground text-sm">

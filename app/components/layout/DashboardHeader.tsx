@@ -177,8 +177,16 @@ export default function Header({
             title="SmartFlow Social"
           >
             <Logo
-              lightSrc="/logos/Logo-Full-LightMode.svg"
-              darkSrc="/logos/Logo-Full-DarkMode.svg"
+              lightSrc={
+                isDesktopExpanded
+                  ? "/logos/Logo-Full-LightMode.svg"
+                  : "/Logo-NoText.svg"
+              }
+              darkSrc={
+                isDesktopExpanded
+                  ? "/logos/Logo-Full-DarkMode.svg"
+                  : "/Logo-NoText.svg"
+              }
               alt="SmartFlow Social"
               className={`h-9 w-auto lg:h-10 ${
                 isDesktopExpanded ? "" : "lg:h-8 lg:w-8 lg:object-contain"

@@ -92,6 +92,9 @@ export function useFlowData(): UseFlowDataResult {
   const futureFetcher = useFetcher<FlowLoaderData>();
   const pastFetcherRef = useRef(pastFetcher);
   const futureFetcherRef = useRef(futureFetcher);
+  /** Cursor we've sent for past; clear when response is processed to avoid duplicate requests */
+  const pastSentinelInFlightRef = useRef<string | null>(null);
+  const futureSentinelInFlightRef = useRef<string | null>(null);
 
   useEffect(() => {
     pastFetcherRef.current = pastFetcher;
@@ -113,14 +116,21 @@ export function useFlowData(): UseFlowDataResult {
     });
   }, [validatedLoaderData]);
 
-  // Merge past fetcher result when load more past completes
+  // Merge past fetcher result when load more past completes.
+  // Do not clear pastSentinelInFlightRef here: setPastCursor runs in startTransition
+  // (deferred), so another effect can run with stale pastCursor and re-request the
+  // same cursor. Keeping the ref blocks duplicate requests until state has updated.
   useEffect(() => {
     if (pastFetcher.state !== "idle" || !pastFetcher.data) return;
     const data = safeValidateLoaderResponse(
       pastFetcher.data,
       flowLoaderDataSchema
     );
-    if (!data || data.flowItems.length === 0) return;
+    if (!data) return;
+    if (data.flowItems.length === 0) {
+      startTransition(() => setHasMorePast(false));
+      return;
+    }
     const newItems = flowItemsToCombinedContent(data.flowItems);
     startTransition(() => {
       setFlowItems((prev) => [...newItems, ...prev]);
@@ -129,14 +139,19 @@ export function useFlowData(): UseFlowDataResult {
     });
   }, [pastFetcher.state, pastFetcher.data]);
 
-  // Merge future fetcher result when load more future completes
+  // Merge future fetcher result when load more future completes.
+  // Do not clear futureSentinelInFlightRef here (same reason as past).
   useEffect(() => {
     if (futureFetcher.state !== "idle" || !futureFetcher.data) return;
     const data = safeValidateLoaderResponse(
       futureFetcher.data,
       flowLoaderDataSchema
     );
-    if (!data || data.flowItems.length === 0) return;
+    if (!data) return;
+    if (data.flowItems.length === 0) {
+      startTransition(() => setHasMoreFuture(false));
+      return;
+    }
     const newItems = flowItemsToCombinedContent(data.flowItems);
     startTransition(() => {
       setFlowItems((prev) => [...prev, ...newItems]);
@@ -147,6 +162,8 @@ export function useFlowData(): UseFlowDataResult {
 
   const fetchMorePast = useCallback(() => {
     if (pastFetcherRef.current.state !== "idle" || !pastCursor) return;
+    if (pastSentinelInFlightRef.current === pastCursor) return;
+    pastSentinelInFlightRef.current = pastCursor;
     const params = new URLSearchParams();
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("before", pastCursor);
@@ -155,6 +172,8 @@ export function useFlowData(): UseFlowDataResult {
 
   const fetchMoreFuture = useCallback(() => {
     if (futureFetcherRef.current.state !== "idle" || !futureCursor) return;
+    if (futureSentinelInFlightRef.current === futureCursor) return;
+    futureSentinelInFlightRef.current = futureCursor;
     const params = new URLSearchParams();
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("after", futureCursor);

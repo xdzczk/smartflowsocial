@@ -214,7 +214,7 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      {/* Dashboard spacing: on desktop no vertical page scroll (lg:h-full lg:min-h-0); blank space below header then KPI, Flow header single line, Flow container mt-2 pt-2 pb-8, bottom row mt-8 gap-3 lg:gap-4 */}
+      {/* Dashboard spacing: Flow as working surface (bg-muted/dark:bg-card, no box); Flow container mt-8 pt-2 pb-8, bottom row mt-16 */}
       <div className="flex min-h-[calc(100dvh-12rem)] flex-col lg:h-full lg:min-h-0">
         <div className="flex-shrink-0 space-y-0">
           <div className="mt-2.5">
@@ -254,7 +254,7 @@ export default function DashboardIndexPage() {
           </div>
         </div>
 
-        <div className="mt-2 flex min-h-0 flex-1 flex-col justify-center pt-2 pb-8">
+        <div className="bg-muted dark:bg-card mt-8 flex min-h-0 flex-1 flex-col justify-center pt-2 pb-8">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
@@ -305,7 +305,7 @@ export default function DashboardIndexPage() {
           )}
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-y-auto">
+        <div className="mt-16 flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-y-auto">
           <QueueHealth
             queueCounts={queueCountsByQueue}
             queueTypes={queueTypesFiltered}

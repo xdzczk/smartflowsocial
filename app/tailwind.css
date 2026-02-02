@@ -32,14 +32,14 @@
     animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  /* Subtle glow for next scheduled Flow card (duration set inline from time until publish) */
+  /* Subtle glow for next scheduled Flow card (duration set inline; color from --flow-glow-color, queue or primary) */
   @keyframes flow-next-glow {
     0%,
     100% {
-      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.08);
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--flow-glow-color, hsl(var(--primary))) 8%, transparent);
     }
     50% {
-      box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--flow-glow-color, hsl(var(--primary))) 20%, transparent);
     }
   }
 
