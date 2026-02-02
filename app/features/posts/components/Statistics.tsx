@@ -28,7 +28,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
     "text-muted-foreground text-xs font-medium tracking-wide uppercase";
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
       <Card className={cardBase}>
         <CardContent className="p-0">
           <Link

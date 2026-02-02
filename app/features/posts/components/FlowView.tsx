@@ -10,6 +10,9 @@ import {
   useState,
 } from "react";
 
+/** Mobile breakpoint (px); below this we scroll to next scheduled on load */
+const MOBILE_BREAKPOINT_PX = 768;
+
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 
 import type { CombinedContent } from "../types";
@@ -81,11 +84,25 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     ref
   ): React.ReactNode {
     const [nowMs] = useState(() => NOW_MS());
+    const [isMobile, setIsMobile] = useState(() =>
+      typeof window !== "undefined"
+        ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches
+        : false
+    );
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const initialScrollDoneRef = useRef(false);
+    /** Block load-more until initial scroll has had time; prevents request loop when scrollToIndex fails */
+    const allowFetchRef = useRef(false);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
       null
     );
+
+    useEffect(() => {
+      const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`);
+      const fn = () => setIsMobile(mq.matches);
+      mq.addEventListener("change", fn);
+      return () => mq.removeEventListener("change", fn);
+    }, []);
     const setScrollContainerRef = useCallback((node: HTMLDivElement | null) => {
       scrollContainerRef.current = node;
       setScrollElement(node);
@@ -149,9 +166,15 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       });
 
     useEffect(() => {
-      if (isPastSentinelVisible && hasMorePast && !isLoadingMorePast) {
-        onFetchMorePast();
+      if (
+        !allowFetchRef.current ||
+        !isPastSentinelVisible ||
+        !hasMorePast ||
+        isLoadingMorePast
+      ) {
+        return;
       }
+      onFetchMorePast();
     }, [
       isPastSentinelVisible,
       hasMorePast,
@@ -160,9 +183,15 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     ]);
 
     useEffect(() => {
-      if (isFutureSentinelVisible && hasMoreFuture && !isLoadingMoreFuture) {
-        onFetchMoreFuture();
+      if (
+        !allowFetchRef.current ||
+        !isFutureSentinelVisible ||
+        !hasMoreFuture ||
+        isLoadingMoreFuture
+      ) {
+        return;
       }
+      onFetchMoreFuture();
     }, [
       isFutureSentinelVisible,
       hasMoreFuture,
@@ -173,8 +202,15 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const hasLiveEdge = firstFutureIndex >= 0;
     const scrollToLiveIndex =
       firstFutureIndex <= 0 ? 0 : (hasMorePast ? 1 : 0) + firstFutureIndex - 1;
+    // On mobile, show next scheduled first (first future card at start)
+    const scrollToFirstFutureIndex =
+      firstFutureIndex < 0 ? 0 : (hasMorePast ? 1 : 0) + firstFutureIndex;
+    const initialScrollIndex = isMobile
+      ? scrollToFirstFutureIndex
+      : scrollToLiveIndex;
 
-    // On first load, scroll so we show last past post + first future (live edge)
+    // On first load, scroll: desktop = live edge (last past + first future); mobile = next scheduled first.
+    // Defer scroll so virtualizer/scroll container can measure; then allow load-more after a short delay to avoid request loop when scroll fails.
     useEffect(() => {
       if (
         initialScrollDoneRef.current ||
@@ -184,14 +220,32 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         return;
       }
       initialScrollDoneRef.current = true;
-      const raf = requestAnimationFrame(() => {
-        rowVirtualizer.scrollToIndex(scrollToLiveIndex, {
+      const scrollDelay = 150;
+      const allowFetchDelay = 500;
+      const scrollId = setTimeout(() => {
+        rowVirtualizer.scrollToIndex(initialScrollIndex, {
           align: "start",
           behavior: "auto",
         });
-      });
-      return () => cancelAnimationFrame(raf);
-    }, [flowItems.length, hasLiveEdge, scrollToLiveIndex, rowVirtualizer]);
+      }, scrollDelay);
+      const allowId = setTimeout(() => {
+        allowFetchRef.current = true;
+      }, allowFetchDelay);
+      return () => {
+        clearTimeout(scrollId);
+        clearTimeout(allowId);
+      };
+    }, [flowItems.length, hasLiveEdge, initialScrollIndex, rowVirtualizer]);
+
+    // When there's no live edge (only past or only future), allow load-more after a short delay so fetch isn't blocked
+    useEffect(() => {
+      if (flowItems.length === 0) return;
+      if (hasLiveEdge) return;
+      const allowId = setTimeout(() => {
+        allowFetchRef.current = true;
+      }, 500);
+      return () => clearTimeout(allowId);
+    }, [flowItems.length, hasLiveEdge]);
 
     const handleScrollToLatest = useCallback(() => {
       const reduceMotion =
@@ -253,6 +307,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               width: rowVirtualizer.getTotalSize(),
               position: "relative",
               minWidth: "100%",
+              paddingTop: 4,
             }}
           >
             {virtualItems.map((virtualColumn) => {

@@ -2,8 +2,21 @@ import { Link } from "@remix-run/react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-import { getQueueColor } from "../queue-colors";
 import type { QueueType } from "../types";
+
+const BLOCK_CAP = 24;
+
+/** Solid Tailwind background class per named queue for block fill (no arbitrary values). */
+const BLOCK_FILL_CLASS: Record<string, string> = {
+  main: "bg-primary",
+  memes: "bg-success",
+  quotes: "bg-accent",
+  unassigned: "bg-muted",
+};
+
+function getBlockFillClass(queueName: string): string {
+  return BLOCK_FILL_CLASS[queueName.toLowerCase()] ?? "bg-muted";
+}
 
 export interface QueueHealthProps {
   queueCounts: Array<{ queueName: string; count: number }>;
@@ -27,11 +40,9 @@ export default function QueueHealth({
   queueCounts,
   queueTypes,
 }: QueueHealthProps) {
-  const maxCount = Math.max(...queueCounts.map((q) => q.count), 1);
-
   return (
     <Card className="flex min-w-0 flex-1 flex-col">
-      <CardHeader className="px-3 pt-2 pb-0.5">
+      <CardHeader className="px-3 pt-2 pb-1.5">
         <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
           Queue Health
         </h3>
@@ -43,18 +54,14 @@ export default function QueueHealth({
           </p>
         ) : (
           <ul
-            className="flex flex-col gap-1"
+            className="flex flex-col gap-1.5"
             aria-label="Scheduled posts per queue"
           >
             {queueCounts.map(({ queueName, count }) => {
               const customColor = getQueueColorHex(queueName, queueTypes);
-              const colors = getQueueColor(queueName, customColor) ?? {
-                bg: "bg-muted",
-                text: "text-muted-foreground",
-                hover: "hover:bg-muted/80",
-                border: "border-border",
-              };
-              const widthPercent = maxCount > 0 ? (count / maxCount) * 100 : 0;
+              const displayCount = Math.min(count, BLOCK_CAP);
+              const overflow = count > BLOCK_CAP ? count - BLOCK_CAP : 0;
+
               return (
                 <li key={queueName} className="flex flex-col gap-0.5">
                   <div className="flex items-center justify-between gap-2 text-xs">
@@ -68,15 +75,29 @@ export default function QueueHealth({
                       {count}
                     </span>
                   </div>
-                  <div
-                    className="bg-muted h-1 w-full overflow-hidden rounded-full"
-                    role="presentation"
-                  >
+                  {count > 0 ? (
                     <div
-                      className={`h-full rounded-full ${colors.bg} ${colors.border} border`}
-                      style={{ width: `${widthPercent}%` }}
-                    />
-                  </div>
+                      className="flex flex-wrap items-center gap-0.5"
+                      aria-hidden="true"
+                    >
+                      {Array.from({ length: displayCount }, (_, i) => (
+                        <span
+                          key={`${queueName}-${i}`}
+                          className={`h-1.5 w-1.5 shrink-0 rounded-sm ${customColor ? "" : getBlockFillClass(queueName)}`}
+                          style={
+                            customColor
+                              ? { backgroundColor: customColor }
+                              : undefined
+                          }
+                        />
+                      ))}
+                      {overflow > 0 ? (
+                        <span className="text-muted-foreground text-[10px] leading-none">
+                          +{overflow}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </li>
               );
             })}

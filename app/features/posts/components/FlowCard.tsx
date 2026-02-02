@@ -77,52 +77,53 @@ function getStatusLabel(
 }
 
 const MINUTES_DAY = 24 * 60;
-const MINUTES_48H = 48 * 60;
+const MINUTES_MONTH = 30 * MINUTES_DAY;
+const MINUTES_YEAR = 365 * MINUTES_DAY;
 
 function getRelativeTimeLabel(
   minutesUntil: number,
-  displayTime: Date,
-  timezone: string,
-  timeFormat: "12h" | "24h"
+  _displayTime: Date,
+  _timezone: string,
+  _timeFormat: "12h" | "24h"
 ): string {
   if (minutesUntil < 1) return "in < 1 min";
   if (minutesUntil < 60) return `in ${Math.round(minutesUntil)} min`;
   if (minutesUntil < 120) return "in 1 hour";
   if (minutesUntil < MINUTES_DAY)
     return `in ${Math.round(minutesUntil / 60)} hours`;
-  if (minutesUntil < MINUTES_48H) {
-    const timeStr = new Intl.DateTimeFormat(undefined, {
-      timeZone: timezone,
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: timeFormat === "12h",
-    }).format(displayTime);
-    return `tomorrow at ${timeStr}`;
+  if (minutesUntil < MINUTES_MONTH) {
+    const days = Math.round(minutesUntil / MINUTES_DAY);
+    return days === 1 ? "in 1 day" : `in ${days} days`;
   }
-  return "";
+  if (minutesUntil < MINUTES_YEAR) {
+    const months = Math.round(minutesUntil / MINUTES_MONTH);
+    return months === 1 ? "in 1 month" : `in ${months} months`;
+  }
+  const years = Math.round(minutesUntil / MINUTES_YEAR);
+  return years === 1 ? "in 1 year" : `in ${years} years`;
 }
 
 function getRelativeTimeLabelForPast(
   minutesAgo: number,
-  displayTime: Date,
-  timezone: string,
-  timeFormat: "12h" | "24h"
+  _displayTime: Date,
+  _timezone: string,
+  _timeFormat: "12h" | "24h"
 ): string {
   if (minutesAgo < 1) return "just now";
   if (minutesAgo < 60) return `${Math.round(minutesAgo)} min ago`;
   if (minutesAgo < 120) return "1 hour ago";
   if (minutesAgo < MINUTES_DAY)
     return `${Math.round(minutesAgo / 60)} hours ago`;
-  if (minutesAgo < MINUTES_48H) {
-    const timeStr = new Intl.DateTimeFormat(undefined, {
-      timeZone: timezone,
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: timeFormat === "12h",
-    }).format(displayTime);
-    return `yesterday at ${timeStr}`;
+  if (minutesAgo < MINUTES_MONTH) {
+    const days = Math.round(minutesAgo / MINUTES_DAY);
+    return days === 1 ? "1 day ago" : `${days} days ago`;
   }
-  return "";
+  if (minutesAgo < MINUTES_YEAR) {
+    const months = Math.round(minutesAgo / MINUTES_MONTH);
+    return months === 1 ? "1 month ago" : `${months} months ago`;
+  }
+  const years = Math.round(minutesAgo / MINUTES_YEAR);
+  return years === 1 ? "1 year ago" : `${years} years ago`;
 }
 
 /** Glow duration: 4s when 24+ h away, ~2s at 1h, 1s only right before publish (last ~15 min) */
@@ -158,28 +159,29 @@ function FlowCardInner({
   });
   const isScheduled = !item.postedAt;
   const displayTimeMs = displayTime.getTime();
-  const minutesAgo =
-    nowMsProp != null && nowMsProp > 0
-      ? (nowMsProp - displayTimeMs) / 60000
-      : -1;
+  // Use parent-provided nowMs to stay pure; fallback to displayTime so relative label is neutral ("just now" / "in < 1 min")
+  const nowMs = nowMsProp != null && nowMsProp > 0 ? nowMsProp : displayTimeMs;
+  const minutesAgo = (nowMs - displayTimeMs) / 60000;
+  const minutesUntilComputed =
+    displayTimeMs > nowMs ? (displayTimeMs - nowMs) / 60000 : 0;
+  const effectiveMinutesUntil =
+    minutesUntil != null && minutesUntil >= 0
+      ? minutesUntil
+      : minutesUntilComputed;
 
   const timeLabel = isScheduled
-    ? minutesUntil != null && minutesUntil >= 0 && minutesUntil < MINUTES_48H
-      ? getRelativeTimeLabel(
-          minutesUntil,
-          displayTime,
-          userTimezone,
-          userTimeFormat
-        )
-      : formattedTime
-    : minutesAgo >= 0 && minutesAgo < MINUTES_48H
-      ? getRelativeTimeLabelForPast(
-          minutesAgo,
-          displayTime,
-          userTimezone,
-          userTimeFormat
-        )
-      : formattedTime;
+    ? getRelativeTimeLabel(
+        effectiveMinutesUntil,
+        displayTime,
+        userTimezone,
+        userTimeFormat
+      )
+    : getRelativeTimeLabelForPast(
+        minutesAgo,
+        displayTime,
+        userTimezone,
+        userTimeFormat
+      );
   const preview = getFlowPreview(item);
   const firstImage = getFirstImageUrl(item);
   const queueColor = item.queueType?.color;
@@ -248,6 +250,7 @@ function FlowCardInner({
         <span className="text-foreground text-lg leading-tight font-bold">
           {timeLabel}
         </span>
+        <span className="text-muted-foreground text-xs">{formattedTime}</span>
         <span className="text-muted-foreground text-sm">
           {statusLabel}
           {queueName ? ` · ${queueName}` : ""}

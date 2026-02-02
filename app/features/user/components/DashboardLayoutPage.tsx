@@ -3,6 +3,7 @@ import {
   useLoaderData,
   Link,
   Form,
+  useLocation,
   useNavigation,
 } from "@remix-run/react";
 import { useState } from "react";
@@ -32,10 +33,18 @@ function ProfileBits({ nostrProfile }: { nostrProfile: unknown }): ReactNode {
   return <>{name ?? display_name ?? "Unknown User"}</>;
 }
 
+/** Dashboard index is the only route that should not scroll vertically on large screens; other dashboard pages need to scroll. */
+function isDashboardIndexPath(pathname: string): boolean {
+  const normalized = pathname.replace(/\/$/, "") || "/";
+  return normalized === "/dashboard";
+}
+
 export function DashboardLayoutPage(): ReactNode {
+  const location = useLocation();
   const { currentSubscription, pendingParentUsers } =
     useLoaderData<typeof dashboardLoader>();
   const isFreePlan = currentSubscription?.planId === "free";
+  const isDashboardIndex = isDashboardIndexPath(location.pathname);
   const isSubscriptionExpired =
     currentSubscription && currentSubscription.status !== "ACTIVE";
   const navigation = useNavigation();
@@ -62,7 +71,7 @@ export function DashboardLayoutPage(): ReactNode {
     <>
       <div
         id="page-container"
-        className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col lg:h-dvh lg:overflow-hidden ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
+        className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
       >
         <Header
           desktopSidebarOpen={desktopSidebarOpen}
@@ -179,7 +188,9 @@ export function DashboardLayoutPage(): ReactNode {
             </div>
           ) : null}
 
-          <div className="max-w-10xl mx-auto flex w-full flex-1 flex-col px-4 pt-4.5 pb-24 lg:min-h-0 lg:overflow-hidden lg:px-8 lg:pt-4.5 lg:pb-24">
+          <div
+            className={`max-w-10xl mx-auto flex w-full flex-1 flex-col px-4 pt-4.5 pb-24 lg:px-8 lg:pt-4.5 lg:pb-24 ${isDashboardIndex ? "lg:min-h-0 lg:overflow-hidden" : ""}`}
+          >
             <Outlet />
           </div>
         </main>

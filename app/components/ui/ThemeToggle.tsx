@@ -39,7 +39,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="border-input bg-background hover:bg-muted inline-flex h-9 w-9 items-center justify-center rounded-md border"
+        className="border-input bg-background hover:bg-muted inline-flex h-9 w-9 items-center justify-center rounded-lg border"
         aria-label="Toggle theme"
         type="button"
       >
@@ -51,7 +51,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="border-input bg-background hover:bg-muted inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors"
+      className="border-input bg-background hover:bg-muted inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors"
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
       type="button"
     >

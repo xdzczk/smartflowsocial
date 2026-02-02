@@ -363,7 +363,7 @@ export default function Header({
       {/* Page Header */}
       <header
         id="page-header"
-        className={`bg-background border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b shadow-sm transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
+        className={`bg-background border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
       >
         <div className="max-w-10xl mx-auto flex w-full justify-between px-3 sm:px-4 lg:px-8">
           {/* Left Section */}
@@ -373,7 +373,8 @@ export default function Header({
               <Button
                 onClick={handleDesktopSidebarToggle}
                 variant="outline"
-                size="sm"
+                size="icon"
+                className="h-9 w-9 rounded-lg shadow-none"
               >
                 <HiOutlineBars3 className="inline-block size-5" />
               </Button>
@@ -385,7 +386,8 @@ export default function Header({
               <Button
                 onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
                 variant="outline"
-                size="sm"
+                size="icon"
+                className="h-9 w-9 rounded-lg shadow-none"
               >
                 <HiOutlineBars3 className="inline-block size-5" />
               </Button>
