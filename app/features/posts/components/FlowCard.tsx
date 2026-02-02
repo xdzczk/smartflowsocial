@@ -189,18 +189,23 @@ function FlowCardInner({
   const statusLabel = getStatusLabel(item);
   const defaultAriaLabel = `${item.type === "longform" ? "Longform" : "Post"}: ${preview}, ${statusLabel} ${timeLabel}`;
 
-  const glowStyle =
-    isNextScheduled && minutesUntil != null && minutesUntil >= 0
-      ? {
-          ["--flow-glow-duration" as string]: `${getNextGlowDurationMs(minutesUntil)}ms`,
-        }
-      : undefined;
+  // Only the next scheduled (first future) post glows; stop glowing as soon as it's posted
+  const isNextScheduledAndFuture =
+    isNextScheduled &&
+    !item.postedAt &&
+    minutesUntil != null &&
+    minutesUntil >= 0;
+  const glowStyle = isNextScheduledAndFuture
+    ? {
+        ["--flow-glow-duration" as string]: `${getNextGlowDurationMs(minutesUntil)}ms`,
+      }
+    : undefined;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card hover:border-primary/50 focus:ring-primary relative flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${isNextScheduled && glowStyle ? "animate-flow-next-glow" : ""}`}
+      className={`border-border bg-card hover:border-primary/50 focus:ring-primary relative flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
         queueColor || glowStyle
           ? {

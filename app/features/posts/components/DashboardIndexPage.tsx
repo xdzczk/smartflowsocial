@@ -141,6 +141,16 @@ export default function DashboardIndexPage() {
 
   const revalidator = useRevalidator();
 
+  // Revalidate every minute so relative times stay fresh and newly posted items move to "Last posted" in real time
+  useEffect(() => {
+    if (flowItems.length === 0) return;
+    const interval = setInterval(() => {
+      revalidator.revalidate();
+    }, 60_000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- revalidator identity can change; we only want one interval per flowItems.length
+  }, [flowItems.length]);
+
   const handleModalSuccess = () => {
     handleCloseEditModal();
     handleCloseRescheduleModal();

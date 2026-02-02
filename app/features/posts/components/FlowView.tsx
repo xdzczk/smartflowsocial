@@ -84,7 +84,13 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     },
     ref
   ): React.ReactNode {
-    const [nowMs] = useState(() => NOW_MS());
+    const [nowMs, setNowMs] = useState(() => NOW_MS());
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setNowMs(NOW_MS());
+      }, 60_000);
+      return () => clearInterval(interval);
+    }, []);
     const [isMobile, setIsMobile] = useState(() =>
       typeof window !== "undefined"
         ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches

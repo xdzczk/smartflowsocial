@@ -226,12 +226,12 @@ function calculateWeeklySlotsScheduleTime(
     .filter((s): s is ParsedWeeklySlot => s !== null);
   if (parsedSlots.length === 0) return fallbackTime;
 
-  if (index === 0) {
-    return formatDateToDateTimeLocal(baseDate, userTimezone);
-  }
-  let current = baseDate;
+  // For all indices (including 0), use the next available weekly slot from baseDate.
+  // Search from 1ms before baseDate so a slot exactly at baseDate is included.
+  const searchFrom = index === 0 ? new Date(baseDate.getTime() - 1) : baseDate;
+  let current = searchFrom;
   let next: Date | null = null;
-  for (let i = 0; i < index; i++) {
+  for (let i = 0; i <= index; i++) {
     next = findNextWeeklySlotDate(parsedSlots, current, userTimezone);
     if (!next) return fallbackTime;
     current = new Date(next.getTime() + 1);

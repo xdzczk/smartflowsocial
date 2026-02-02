@@ -75,29 +75,30 @@ export default function QueueHealth({
                       {count}
                     </span>
                   </div>
-                  {count > 0 ? (
-                    <div
-                      className="flex flex-wrap items-center gap-0.5"
-                      aria-hidden="true"
-                    >
-                      {Array.from({ length: displayCount }, (_, i) => (
+                  <div
+                    className="flex w-full items-center gap-0.5"
+                    aria-hidden="true"
+                  >
+                    {Array.from({ length: BLOCK_CAP }, (_, i) => {
+                      const filled = count > 0 && i < displayCount;
+                      return (
                         <span
                           key={`${queueName}-${i}`}
-                          className={`h-1.5 w-3 shrink-0 rounded-sm ${customColor ? "" : getBlockFillClass(queueName)}`}
+                          className={`h-1.5 min-w-0 flex-1 rounded-none ${filled ? (customColor ? "" : getBlockFillClass(queueName)) : "bg-muted/30"}`}
                           style={
-                            customColor
+                            filled && customColor
                               ? { backgroundColor: customColor }
                               : undefined
                           }
                         />
-                      ))}
-                      {overflow > 0 ? (
-                        <span className="text-muted-foreground text-[10px] leading-none">
-                          +{overflow}
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
+                      );
+                    })}
+                    {overflow > 0 ? (
+                      <span className="text-muted-foreground ml-0.5 shrink-0 text-[10px] leading-none">
+                        +{overflow}
+                      </span>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
