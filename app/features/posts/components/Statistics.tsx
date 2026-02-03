@@ -48,7 +48,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
             aria-label="Compose, Add to Flow"
           >
             <div
-              className={`${iconBase} bg-muted text-muted-foreground dark:bg-muted/80`}
+              className={`${iconBase} bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-400`}
             >
               <svg
                 className="hi-solid hi-plus-circle inline-block size-6"

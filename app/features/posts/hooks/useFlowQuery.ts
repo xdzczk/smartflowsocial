@@ -97,6 +97,8 @@ export function useFlowData(): UseFlowDataResult {
   const futureSentinelInFlightRef = useRef<string | null>(null);
   const flowItemsLengthRef = useRef(0);
   const lastSyncedQueueTypeRef = useRef(queueType);
+  /** True after we've merged any load-more response; prevents revalidation from overwriting cursors (refs update sync, state in startTransition is deferred). */
+  const hasMergedLoadMoreRef = useRef(false);
 
   useEffect(() => {
     flowItemsLengthRef.current = flowItems.length;
@@ -108,14 +110,13 @@ export function useFlowData(): UseFlowDataResult {
   });
 
   // Sync from loader data (initial load or queueType change).
-  // When revalidate() runs every 60s, loader returns the initial window (no before/after) and would
-  // overwrite our merged load-more state and reset pastCursor, causing the same before= request to
-  // repeat. Skip overwriting flow items and cursors when we have more items than the loader (revalidation).
+  // When revalidate() runs (e.g. every 60s), loader returns the initial window (no before/after) and would
+  // overwrite our merged load-more state and reset pastCursor, causing the same before= request to repeat.
+  // Skip overwriting flow items and cursors when we've already merged load-more and queue is unchanged.
   useEffect(() => {
     if (!validatedLoaderData) return;
-    const loaderCount = validatedLoaderData.flowItems.length;
     const queueUnchanged = lastSyncedQueueTypeRef.current === queueType;
-    if (queueUnchanged && flowItemsLengthRef.current > loaderCount) {
+    if (queueUnchanged && hasMergedLoadMoreRef.current) {
       startTransition(() => {
         setUser(validatedLoaderData.user);
         setQueueTypes(validatedLoaderData.queueTypes);
@@ -124,6 +125,7 @@ export function useFlowData(): UseFlowDataResult {
       return;
     }
     lastSyncedQueueTypeRef.current = queueType;
+    hasMergedLoadMoreRef.current = false;
     startTransition(() => {
       setFlowItems(flowItemsToCombinedContent(validatedLoaderData.flowItems));
       setHasMorePast(validatedLoaderData.hasMorePast);
@@ -147,10 +149,17 @@ export function useFlowData(): UseFlowDataResult {
       flowLoaderDataSchema
     );
     if (!data) return;
+    const sentCursor = pastSentinelInFlightRef.current;
+    if (data.pastCursor !== null && data.pastCursor === sentCursor) {
+      startTransition(() => setHasMorePast(false));
+      pastSentinelInFlightRef.current = null;
+      return;
+    }
     if (data.flowItems.length === 0) {
       startTransition(() => setHasMorePast(false));
       return;
     }
+    hasMergedLoadMoreRef.current = true;
     const newItems = flowItemsToCombinedContent(data.flowItems);
     startTransition(() => {
       setFlowItems((prev) => [...newItems, ...prev]);
@@ -168,10 +177,17 @@ export function useFlowData(): UseFlowDataResult {
       flowLoaderDataSchema
     );
     if (!data) return;
+    const sentCursor = futureSentinelInFlightRef.current;
+    if (data.futureCursor !== null && data.futureCursor === sentCursor) {
+      startTransition(() => setHasMoreFuture(false));
+      futureSentinelInFlightRef.current = null;
+      return;
+    }
     if (data.flowItems.length === 0) {
       startTransition(() => setHasMoreFuture(false));
       return;
     }
+    hasMergedLoadMoreRef.current = true;
     const newItems = flowItemsToCombinedContent(data.flowItems);
     startTransition(() => {
       setFlowItems((prev) => [...prev, ...newItems]);
