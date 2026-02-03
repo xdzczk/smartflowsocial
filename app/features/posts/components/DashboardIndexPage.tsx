@@ -214,7 +214,7 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      {/* Dashboard spacing: Flow as working surface (bg-muted/dark:bg-card, no box); Flow container mt-8 pt-2 pb-8, bottom row mt-16 */}
+      {/* Dashboard spacing: Flow section = desk/work surface (subtle bg); bottom row mt-16 */}
       <div className="flex min-h-[calc(100dvh-12rem)] flex-col lg:h-full lg:min-h-0">
         <div className="flex-shrink-0 space-y-0">
           <div className="mt-2.5">
@@ -254,7 +254,8 @@ export default function DashboardIndexPage() {
           </div>
         </div>
 
-        <div className="border-border bg-muted/90 dark:bg-card mt-8 flex min-h-0 flex-1 flex-col rounded-xl border pt-2 pb-8 shadow-sm dark:shadow-none">
+        {/* Flow section: desk/work surface (subtle background only, no card styling) */}
+        <div className="bg-muted/30 dark:bg-muted/15 mt-8 flex min-h-0 flex-1 flex-col pt-2 pb-8">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
@@ -284,7 +285,7 @@ export default function DashboardIndexPage() {
               <p className="text-muted-foreground text-sm">Loading timeline…</p>
             </div>
           ) : (
-            <div className="flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               <FlowView
                 ref={flowViewRef}
                 flowItems={flowItems}

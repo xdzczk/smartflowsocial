@@ -19,6 +19,17 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
       ? `${runwayDays} day${runwayDays !== 1 ? "s" : ""}`
       : "No scheduled";
 
+  // Runway icon color: subtle amber when low, yellow-amber when medium, green when healthy
+  const runwayDaysNum = runwayDays ?? 0;
+  const runwayIconClass =
+    runwayDaysNum <= 0
+      ? "bg-muted text-muted-foreground dark:bg-muted/80"
+      : runwayDaysNum <= 7
+        ? "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400"
+        : runwayDaysNum <= 21
+          ? "bg-amber-400/10 text-amber-500 dark:bg-amber-300/15 dark:text-amber-300"
+          : "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400";
+
   const cardBase = "min-h-[72px] shadow-sm dark:shadow-none";
   const contentBase =
     "hover:bg-muted/50 flex min-h-[72px] grow items-center justify-between p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
@@ -37,7 +48,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
             aria-label="Compose, Add to Flow"
           >
             <div
-              className={`${iconBase} bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary`}
+              className={`${iconBase} bg-muted text-muted-foreground dark:bg-muted/80`}
             >
               <svg
                 className="hi-solid hi-plus-circle inline-block size-6"
@@ -68,7 +79,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
             aria-label={`Scheduled, ${stats.scheduledCount} posts`}
           >
             <div
-              className={`${iconBase} bg-muted text-muted-foreground dark:bg-muted/80`}
+              className={`${iconBase} bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400`}
             >
               <svg
                 className="hi-solid hi-clock inline-block size-6"
@@ -99,7 +110,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
             aria-label={`Published, ${stats.successCount} posts`}
           >
             <div
-              className={`${iconBase} bg-muted text-muted-foreground dark:bg-muted/80`}
+              className={`${iconBase} bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400`}
             >
               <svg
                 className="hi-solid hi-check-circle inline-block size-6"
@@ -124,9 +135,7 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
 
       <Card className={cardBase} aria-label={`Runway, ${runwayLabel}`}>
         <CardContent className={contentBase}>
-          <div
-            className={`${iconBase} bg-muted text-muted-foreground dark:bg-muted/80`}
-          >
+          <div className={`${iconBase} ${runwayIconClass}`}>
             <svg
               className="hi-solid hi-calendar-days inline-block size-6"
               xmlns="http://www.w3.org/2000/svg"

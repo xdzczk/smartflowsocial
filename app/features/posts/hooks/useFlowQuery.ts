@@ -95,15 +95,35 @@ export function useFlowData(): UseFlowDataResult {
   /** Cursor we've sent for past; clear when response is processed to avoid duplicate requests */
   const pastSentinelInFlightRef = useRef<string | null>(null);
   const futureSentinelInFlightRef = useRef<string | null>(null);
+  const flowItemsLengthRef = useRef(0);
+  const lastSyncedQueueTypeRef = useRef(queueType);
+
+  useEffect(() => {
+    flowItemsLengthRef.current = flowItems.length;
+  }, [flowItems.length]);
 
   useEffect(() => {
     pastFetcherRef.current = pastFetcher;
     futureFetcherRef.current = futureFetcher;
   });
 
-  // Sync from loader data (initial load or queueType change)
+  // Sync from loader data (initial load or queueType change).
+  // When revalidate() runs every 60s, loader returns the initial window (no before/after) and would
+  // overwrite our merged load-more state and reset pastCursor, causing the same before= request to
+  // repeat. Skip overwriting flow items and cursors when we have more items than the loader (revalidation).
   useEffect(() => {
     if (!validatedLoaderData) return;
+    const loaderCount = validatedLoaderData.flowItems.length;
+    const queueUnchanged = lastSyncedQueueTypeRef.current === queueType;
+    if (queueUnchanged && flowItemsLengthRef.current > loaderCount) {
+      startTransition(() => {
+        setUser(validatedLoaderData.user);
+        setQueueTypes(validatedLoaderData.queueTypes);
+        setHashTagPresets(validatedLoaderData.hashTagPresets);
+      });
+      return;
+    }
+    lastSyncedQueueTypeRef.current = queueType;
     startTransition(() => {
       setFlowItems(flowItemsToCombinedContent(validatedLoaderData.flowItems));
       setHasMorePast(validatedLoaderData.hasMorePast);
@@ -114,7 +134,7 @@ export function useFlowData(): UseFlowDataResult {
       setQueueTypes(validatedLoaderData.queueTypes);
       setHashTagPresets(validatedLoaderData.hashTagPresets);
     });
-  }, [validatedLoaderData]);
+  }, [validatedLoaderData, queueType]);
 
   // Merge past fetcher result when load more past completes.
   // Do not clear pastSentinelInFlightRef here: setPastCursor runs in startTransition

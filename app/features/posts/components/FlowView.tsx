@@ -32,6 +32,12 @@ const CARD_MIN_HEIGHT_MOBILE = 200; /* ~14% shorter than desktop */
 
 const SENTINEL_WIDTH = 120 + GAP;
 
+/** Rubber-band overscroll: max pull (px) and resistance factor */
+const OVERSCROLL_MAX_PX = 56;
+const OVERSCROLL_RESISTANCE = 0.35;
+const OVERSCROLL_SPRING_MS = 350;
+const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+
 const LOADING_LABEL = "Loading…";
 
 const SLOT_PAST_SENTINEL = "past-sentinel";
@@ -105,12 +111,132 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     );
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const initialScrollDoneRef = useRef(false);
+    /** Rubber-band overscroll offset (px); negative = pulled from left, positive = from right */
+    const [overscrollPx, setOverscrollPx] = useState(0);
+    const [isOverscrollSpringing, setIsOverscrollSpringing] = useState(false);
+    const overscrollPxRef = useRef(0);
+    const springBackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
+    const rubberBandWrapperRef = useRef<HTMLDivElement | null>(null);
+    const touchStartXRef = useRef(0);
     /** Block load-more until initial scroll has had time; prevents request loop when scrollToIndex fails */
     const allowFetchRef = useRef(false);
     /** Only fetch past when we've scrolled away from left (initial scroll succeeded); prevents loop when stuck at scroll 0 */
     const hasScrolledAwayFromLeftRef = useRef(false);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
       null
+    );
+
+    useEffect(() => {
+      overscrollPxRef.current = overscrollPx;
+    }, [overscrollPx]);
+
+    const scheduleOverscrollSpringBack = useCallback(() => {
+      if (springBackTimeoutRef.current)
+        clearTimeout(springBackTimeoutRef.current);
+      springBackTimeoutRef.current = setTimeout(() => {
+        springBackTimeoutRef.current = null;
+        if (overscrollPxRef.current !== 0) {
+          setIsOverscrollSpringing(true);
+          setOverscrollPx(0);
+        }
+      }, 120);
+    }, []);
+
+    useEffect(() => {
+      const el = scrollContainerRef.current;
+      if (!el) return;
+
+      const handleWheel = (e: WheelEvent) => {
+        const { scrollLeft, scrollWidth, clientWidth } = el;
+        const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+        const atLeft = scrollLeft <= 2;
+        const atRight = maxScrollLeft <= 2 || scrollLeft >= maxScrollLeft - 2;
+        const deltaX = e.deltaX;
+        const current = overscrollPxRef.current;
+
+        if (atLeft && deltaX < 0) {
+          e.preventDefault();
+          const next = Math.min(
+            OVERSCROLL_MAX_PX,
+            current - deltaX * OVERSCROLL_RESISTANCE
+          );
+          setOverscrollPx(next);
+          scheduleOverscrollSpringBack();
+        } else if (atRight && deltaX > 0) {
+          e.preventDefault();
+          const next = Math.max(
+            -OVERSCROLL_MAX_PX,
+            current - deltaX * OVERSCROLL_RESISTANCE
+          );
+          setOverscrollPx(next);
+          scheduleOverscrollSpringBack();
+        }
+      };
+
+      const handleTouchStart = (e: TouchEvent) => {
+        touchStartXRef.current = e.touches[0]?.clientX ?? 0;
+        if (springBackTimeoutRef.current) {
+          clearTimeout(springBackTimeoutRef.current);
+          springBackTimeoutRef.current = null;
+        }
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        const { scrollLeft, scrollWidth, clientWidth } = el;
+        const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+        const atLeft = scrollLeft <= 2;
+        const atRight = maxScrollLeft <= 2 || scrollLeft >= maxScrollLeft - 2;
+        const touch = e.touches[0];
+        if (!touch) return;
+        const prevX = touchStartXRef.current;
+        touchStartXRef.current = touch.clientX;
+        const moveX = touch.clientX - prevX;
+        const current = overscrollPxRef.current;
+
+        if (atLeft && moveX > 0) {
+          const next = Math.min(
+            OVERSCROLL_MAX_PX,
+            current + moveX * OVERSCROLL_RESISTANCE
+          );
+          setOverscrollPx(next);
+        } else if (atRight && moveX < 0) {
+          const next = Math.max(
+            -OVERSCROLL_MAX_PX,
+            current + moveX * OVERSCROLL_RESISTANCE
+          );
+          setOverscrollPx(next);
+        }
+      };
+
+      const handleTouchEnd = () => {
+        if (overscrollPxRef.current !== 0) {
+          setIsOverscrollSpringing(true);
+          setOverscrollPx(0);
+        }
+      };
+
+      el.addEventListener("wheel", handleWheel, { passive: false });
+      el.addEventListener("touchstart", handleTouchStart, { passive: true });
+      el.addEventListener("touchmove", handleTouchMove, { passive: true });
+      el.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+      return () => {
+        el.removeEventListener("wheel", handleWheel);
+        el.removeEventListener("touchstart", handleTouchStart);
+        el.removeEventListener("touchmove", handleTouchMove);
+        el.removeEventListener("touchend", handleTouchEnd);
+        if (springBackTimeoutRef.current)
+          clearTimeout(springBackTimeoutRef.current);
+      };
+    }, [scheduleOverscrollSpringBack]);
+
+    const handleOverscrollTransitionEnd = useCallback(
+      (e: React.TransitionEvent) => {
+        if (e.propertyName === "transform") setIsOverscrollSpringing(false);
+      },
+      []
     );
 
     useEffect(() => {
@@ -339,15 +465,21 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const virtualItems = rowVirtualizer.getVirtualItems();
 
     return (
-      <div className="flex min-h-0 w-full flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:h-full">
         <div
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="scrollbar-hide min-h-[200px] w-full flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain pt-2 pb-2 md:min-h-[232px]"
+          className="scrollbar-hide h-full min-h-[200px] min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain pt-2 pb-2 md:min-h-[232px]"
         >
           <div
+            ref={rubberBandWrapperRef}
+            role="presentation"
             style={{
+              transform: `translateX(${overscrollPx}px)`,
+              transition: isOverscrollSpringing
+                ? `transform ${OVERSCROLL_SPRING_MS}ms ${OVERSCROLL_SPRING_CURVE}`
+                : "none",
               height: "100%",
               minHeight: isMobile ? CARD_MIN_HEIGHT_MOBILE : CARD_MIN_HEIGHT,
               width: rowVirtualizer.getTotalSize(),
@@ -355,6 +487,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               minWidth: "100%",
               paddingTop: 6,
             }}
+            onTransitionEnd={handleOverscrollTransitionEnd}
           >
             {virtualItems.map((virtualColumn) => {
               const slot = slots[virtualColumn.index];
