@@ -200,6 +200,7 @@ export function useFlowData(): UseFlowDataResult {
     if (pastFetcherRef.current.state !== "idle" || !pastCursor) return;
     if (pastSentinelInFlightRef.current === pastCursor) return;
     pastSentinelInFlightRef.current = pastCursor;
+    hasMergedLoadMoreRef.current = true;
     const params = new URLSearchParams();
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("before", pastCursor);
@@ -210,6 +211,7 @@ export function useFlowData(): UseFlowDataResult {
     if (futureFetcherRef.current.state !== "idle" || !futureCursor) return;
     if (futureSentinelInFlightRef.current === futureCursor) return;
     futureSentinelInFlightRef.current = futureCursor;
+    hasMergedLoadMoreRef.current = true;
     const params = new URLSearchParams();
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("after", futureCursor);
