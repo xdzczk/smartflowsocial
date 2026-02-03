@@ -41,7 +41,7 @@ export default function QueueHealth({
   queueTypes,
 }: QueueHealthProps) {
   return (
-    <Card className="flex min-w-0 flex-1 flex-col">
+    <Card className="flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
       <CardHeader className="px-3 pt-2 pb-1.5">
         <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
           Queue Health

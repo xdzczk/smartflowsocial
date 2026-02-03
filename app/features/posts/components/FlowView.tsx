@@ -23,6 +23,13 @@ const CARD_WIDTH = 352;
 const GAP = 28;
 const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
 const CARD_MIN_HEIGHT = 232;
+
+/** Mobile: smaller cards so ~1.3–1.5 cards visible; reduces “trapped” feel */
+const CARD_WIDTH_MOBILE = 280;
+const GAP_MOBILE = 20;
+const CARD_SLOT_SIZE_MOBILE = CARD_WIDTH_MOBILE + GAP_MOBILE;
+const CARD_MIN_HEIGHT_MOBILE = 200; /* ~14% shorter than desktop */
+
 const SENTINEL_WIDTH = 120 + GAP;
 
 const LOADING_LABEL = "Loading…";
@@ -123,6 +130,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const pastCount =
       firstFutureIndex < 0 ? flowItems.length : firstFutureIndex;
 
+    const cardSlotSize = isMobile ? CARD_SLOT_SIZE_MOBILE : CARD_SLOT_SIZE;
     const slots = useMemo((): FlowSlot[] => {
       const result: FlowSlot[] = [];
       if (hasMorePast) {
@@ -131,24 +139,24 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const pastItems =
         firstFutureIndex < 0 ? flowItems : flowItems.slice(0, firstFutureIndex);
       for (const item of pastItems) {
-        result.push({ type: "card", item, size: CARD_SLOT_SIZE });
+        result.push({ type: "card", item, size: cardSlotSize });
       }
       const futureItems =
         firstFutureIndex >= 0 ? flowItems.slice(firstFutureIndex) : [];
       for (const item of futureItems) {
-        result.push({ type: "card", item, size: CARD_SLOT_SIZE });
+        result.push({ type: "card", item, size: cardSlotSize });
       }
       if (hasMoreFuture) {
         result.push({ type: SLOT_FUTURE_SENTINEL, size: SENTINEL_WIDTH });
       }
       return result;
-    }, [flowItems, firstFutureIndex, hasMorePast, hasMoreFuture]);
+    }, [flowItems, firstFutureIndex, hasMorePast, hasMoreFuture, cardSlotSize]);
 
     /* eslint-disable react-hooks/incompatible-library -- TanStack Virtual returns functions; we accept non-memoized updates */
     const rowVirtualizer = useVirtualizer({
       count: slots.length,
       getScrollElement: () => scrollContainerRef.current,
-      estimateSize: (index) => slots[index]?.size ?? CARD_SLOT_SIZE,
+      estimateSize: (index) => slots[index]?.size ?? cardSlotSize,
       horizontal: true,
       overscan: 2,
       getItemKey: (index) => {
@@ -174,10 +182,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         root: scrollElement,
       });
 
+    // Past-fetch when past sentinel is visible. Duplicate requests are prevented by pastSentinelInFlightRef in useFlowQuery.
     useEffect(() => {
       if (
         !allowFetchRef.current ||
-        !hasScrolledAwayFromLeftRef.current ||
         !isPastSentinelVisible ||
         !hasMorePast ||
         isLoadingMorePast
@@ -331,17 +339,17 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const virtualItems = rowVirtualizer.getVirtualItems();
 
     return (
-      <div className="flex min-h-0 w-full flex-col">
+      <div className="flex min-h-0 w-full flex-1 flex-col">
         <div
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="scrollbar-hide min-h-[232px] w-full overflow-x-auto overflow-y-hidden pt-2 pb-2"
+          className="scrollbar-hide min-h-[200px] w-full flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain pt-2 pb-2 md:min-h-[232px]"
         >
           <div
             style={{
               height: "100%",
-              minHeight: CARD_MIN_HEIGHT,
+              minHeight: isMobile ? CARD_MIN_HEIGHT_MOBILE : CARD_MIN_HEIGHT,
               width: rowVirtualizer.getTotalSize(),
               position: "relative",
               minWidth: "100%",

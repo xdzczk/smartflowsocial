@@ -219,7 +219,7 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card focus:ring-primary relative flex h-full min-h-[232px] w-[352px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none ${queueColor ? "hover:border-[color:var(--queue-color)]" : "hover:border-primary/50"} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
+      className={`border-border bg-card focus:ring-primary relative flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm transition-[box-shadow,border-color] hover:shadow-md focus:ring-2 focus:ring-offset-2 focus:outline-none md:min-h-[232px] md:w-[352px] ${queueColor ? "hover:border-[color:var(--queue-color)]" : "hover:border-primary/50"} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
         queueColor || glowStyle
           ? {
@@ -240,42 +240,44 @@ function FlowCardInner({
           aria-hidden
         />
       ) : null}
-      {/* Visual anchor: image edge-to-edge or text-as-surface */}
+      {/* Visual anchor: image with intentional crop (object-center), rounded mask; narrower on mobile */}
       {firstImage ? (
-        <div className="relative z-10 flex h-full w-28 min-w-[120px] flex-shrink-0 overflow-hidden rounded-none">
+        <div className="relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 overflow-hidden rounded-l-xl md:w-32 md:min-w-[128px]">
           <MediaThumbnail
             src={firstImage}
             alt=""
-            className="h-full min-h-full w-full object-cover"
+            className="h-full min-h-full w-full object-cover object-center"
             forceType={isVideoFile(firstImage) ? "video" : "image"}
             hidePlayButton={true}
             fallback={<div className="bg-muted h-full w-full flex-shrink-0" />}
           />
         </div>
       ) : (
-        <div className="bg-muted/50 relative z-10 flex h-full w-28 min-w-[120px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-md p-3">
+        <div className="bg-muted/50 relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-xl p-2 md:w-32 md:min-w-[128px] md:p-3">
           <span className="text-muted-foreground line-clamp-4 text-sm">
             {contentSummaryText}
           </span>
         </div>
       )}
-      {/* Text on right */}
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1 p-4 text-left">
+      {/* Text on right: tighter padding on mobile so next card peeks; clearer hierarchy */}
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1 p-3 text-left md:gap-1.5 md:p-5">
         {isLastPosted ? (
-          <span className="text-muted-foreground bg-muted/50 mb-1 self-start px-2 py-0.5 text-xs font-medium tracking-wide uppercase">
+          <span className="text-muted-foreground bg-muted/50 mb-0.5 self-start rounded px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
             Last post
           </span>
         ) : null}
-        <span className="text-foreground text-lg leading-tight font-bold">
+        <span className="text-foreground text-xl leading-tight font-bold tabular-nums">
           {timeLabel}
         </span>
         {firstImage ? (
-          <span className="text-muted-foreground line-clamp-3 text-sm">
+          <span className="text-muted-foreground line-clamp-2 text-sm">
             {contentSummaryText}
           </span>
         ) : null}
-        <span className="text-muted-foreground text-xs">{formattedTime}</span>
-        <span className="text-muted-foreground text-sm">
+        <span className="text-muted-foreground mt-0.5 text-[11px]">
+          {formattedTime}
+        </span>
+        <span className="text-muted-foreground text-xs">
           {statusLabel}
           {queueName ? ` · ${queueName}` : ""}
         </span>

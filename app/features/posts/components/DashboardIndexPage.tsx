@@ -254,7 +254,7 @@ export default function DashboardIndexPage() {
           </div>
         </div>
 
-        <div className="bg-muted dark:bg-card mt-8 flex min-h-0 flex-1 flex-col justify-center pt-2 pb-8">
+        <div className="border-border bg-muted/90 dark:bg-card mt-8 flex min-h-0 flex-1 flex-col rounded-xl border pt-2 pb-8 shadow-sm dark:shadow-none">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
@@ -284,24 +284,26 @@ export default function DashboardIndexPage() {
               <p className="text-muted-foreground text-sm">Loading timeline…</p>
             </div>
           ) : (
-            <FlowView
-              ref={flowViewRef}
-              flowItems={flowItems}
-              hasMorePast={hasMorePast}
-              hasMoreFuture={hasMoreFuture}
-              isLoadingMorePast={isLoadingMorePast}
-              isLoadingMoreFuture={isLoadingMoreFuture}
-              onCardClick={(item) =>
-                handleContentSelection(
-                  item,
-                  setSelectedPost,
-                  setSelectedLongFormPost
-                )
-              }
-              onFetchMorePast={fetchMorePast}
-              onFetchMoreFuture={fetchMoreFuture}
-              onHasLiveEdgeChange={setHasLiveEdge}
-            />
+            <div className="flex min-h-0 flex-1 flex-col">
+              <FlowView
+                ref={flowViewRef}
+                flowItems={flowItems}
+                hasMorePast={hasMorePast}
+                hasMoreFuture={hasMoreFuture}
+                isLoadingMorePast={isLoadingMorePast}
+                isLoadingMoreFuture={isLoadingMoreFuture}
+                onCardClick={(item) =>
+                  handleContentSelection(
+                    item,
+                    setSelectedPost,
+                    setSelectedLongFormPost
+                  )
+                }
+                onFetchMorePast={fetchMorePast}
+                onFetchMoreFuture={fetchMoreFuture}
+                onHasLiveEdgeChange={setHasLiveEdge}
+              />
+            </div>
           )}
         </div>
 

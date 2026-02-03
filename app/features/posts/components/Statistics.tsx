@@ -19,13 +19,13 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
       ? `${runwayDays} day${runwayDays !== 1 ? "s" : ""}`
       : "No scheduled";
 
-  const cardBase = "min-h-[64px]";
+  const cardBase = "min-h-[72px] shadow-sm dark:shadow-none";
   const contentBase =
-    "hover:bg-muted/50 flex min-h-[64px] grow items-center justify-between p-3 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
-  const iconBase = "flex size-12 items-center justify-center rounded-lg";
-  const dtBase = "text-foreground text-lg font-semibold";
+    "hover:bg-muted/50 flex min-h-[72px] grow items-center justify-between p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
+  const iconBase = "flex size-12 items-center justify-center rounded-xl";
+  const dtBase = "text-foreground text-2xl font-bold tabular-nums";
   const ddBase =
-    "text-muted-foreground text-xs font-medium tracking-wide uppercase";
+    "text-muted-foreground text-[11px] font-medium uppercase tracking-tight";
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
@@ -36,7 +36,9 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
             className={contentBase}
             aria-label="Compose, Add to Flow"
           >
-            <div className={`${iconBase} bg-muted text-muted-foreground`}>
+            <div
+              className={`${iconBase} bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary`}
+            >
               <svg
                 className="hi-solid hi-plus-circle inline-block size-6"
                 xmlns="http://www.w3.org/2000/svg"
@@ -65,7 +67,9 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
             className={contentBase}
             aria-label={`Scheduled, ${stats.scheduledCount} posts`}
           >
-            <div className={`${iconBase} bg-muted text-muted-foreground`}>
+            <div
+              className={`${iconBase} bg-muted text-muted-foreground dark:bg-muted/80`}
+            >
               <svg
                 className="hi-solid hi-clock inline-block size-6"
                 xmlns="http://www.w3.org/2000/svg"
@@ -94,7 +98,9 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
             className={contentBase}
             aria-label={`Published, ${stats.successCount} posts`}
           >
-            <div className={`${iconBase} bg-muted text-muted-foreground`}>
+            <div
+              className={`${iconBase} bg-muted text-muted-foreground dark:bg-muted/80`}
+            >
               <svg
                 className="hi-solid hi-check-circle inline-block size-6"
                 xmlns="http://www.w3.org/2000/svg"
@@ -118,7 +124,9 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
 
       <Card className={cardBase} aria-label={`Runway, ${runwayLabel}`}>
         <CardContent className={contentBase}>
-          <div className={`${iconBase} bg-muted text-muted-foreground`}>
+          <div
+            className={`${iconBase} bg-muted text-muted-foreground dark:bg-muted/80`}
+          >
             <svg
               className="hi-solid hi-calendar-days inline-block size-6"
               xmlns="http://www.w3.org/2000/svg"
