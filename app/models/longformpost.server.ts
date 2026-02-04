@@ -688,6 +688,35 @@ export async function getScheduledLongFormPosts({
   }
 }
 
+/**
+ * Returns the latest scheduledAtUtc among future scheduled longform posts (for runway KPI).
+ * Respects queueType filter; use queueType "all" for no filter.
+ */
+export async function getLatestScheduledLongFormAtUtc({
+  userId,
+  queueType = "all",
+  now,
+}: {
+  userId: User["id"];
+  queueType?: string;
+  now: Date;
+}): Promise<Date | null> {
+  const where: Prisma.LongFormPostWhereInput = {
+    userId,
+    currentState: "SCHEDULED",
+    scheduledAtUtc: { gt: now },
+  };
+  if (queueType && queueType !== "all") {
+    where.queueType = { name: queueType };
+  }
+  const post = await prisma.longFormPost.findFirst({
+    where,
+    orderBy: { scheduledAtUtc: "desc" },
+    select: { scheduledAtUtc: true },
+  });
+  return post?.scheduledAtUtc ?? null;
+}
+
 export async function getLongFormPostsByIds({
   ids,
   userId,

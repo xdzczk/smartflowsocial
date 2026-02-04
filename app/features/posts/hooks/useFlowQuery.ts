@@ -61,6 +61,8 @@ export interface UseFlowDataResult {
   hasMoreFuture: boolean;
   pastCursor: string | null;
   futureCursor: string | null;
+  /** Latest scheduled date (ms) for runway KPI; null when no future scheduled. From server so runway is correct on first load. */
+  lastScheduledAtUtc: number | null;
   user: FlowLoaderData["user"];
   queueTypes: FlowLoaderData["queueTypes"];
   hashTagPresets: FlowLoaderData["hashTagPresets"];
@@ -100,6 +102,9 @@ export function useFlowData(): UseFlowDataResult {
   const [hashTagPresets, setHashTagPresets] = useState<
     FlowLoaderData["hashTagPresets"]
   >([]);
+  const [lastScheduledAtUtc, setLastScheduledAtUtc] = useState<number | null>(
+    null
+  );
   const [pastLoadMoreLoading, setPastLoadMoreLoading] = useState(false);
   const [futureLoadMoreLoading, setFutureLoadMoreLoading] = useState(false);
   const [lastPrependedPastCount, setLastPrependedPastCount] = useState(0);
@@ -135,6 +140,7 @@ export function useFlowData(): UseFlowDataResult {
         setUser(validated.user);
         setQueueTypes(validated.queueTypes);
         setHashTagPresets(validated.hashTagPresets);
+        setLastScheduledAtUtc(validated.lastScheduledAtUtc ?? null);
       });
       return;
     }
@@ -146,6 +152,7 @@ export function useFlowData(): UseFlowDataResult {
       setHasMoreFuture(validated.hasMoreFuture);
       setPastCursor(validated.pastCursor);
       setFutureCursor(validated.futureCursor);
+      setLastScheduledAtUtc(validated.lastScheduledAtUtc ?? null);
       setUser(validated.user);
       setQueueTypes(validated.queueTypes);
       setHashTagPresets(validated.hashTagPresets);
@@ -265,6 +272,7 @@ export function useFlowData(): UseFlowDataResult {
     hasMoreFuture,
     pastCursor,
     futureCursor,
+    lastScheduledAtUtc,
     user,
     queueTypes,
     hashTagPresets,

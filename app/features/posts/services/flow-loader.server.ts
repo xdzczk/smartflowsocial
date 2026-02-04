@@ -17,8 +17,13 @@ import {
 import {
   getScheduledLongFormPosts,
   getPastLongFormPosts,
+  getLatestScheduledLongFormAtUtc,
 } from "~/models/longformpost.server";
-import { getScheduledPosts, getPastPosts } from "~/models/post.queries.server";
+import {
+  getScheduledPosts,
+  getPastPosts,
+  getLatestScheduledAtUtc,
+} from "~/models/post.queries.server";
 
 import {
   postToCombinedContent,
@@ -45,6 +50,22 @@ function getGoLiveAt(item: CombinedContent): number {
     ? new Date(item.scheduledAtUtc).getTime()
     : 0;
   return posted || scheduled || 0;
+}
+
+/** Latest scheduled date (ms) across posts and longform for runway KPI. */
+async function getLastScheduledAtUtcMs(
+  userId: string,
+  queueType: string,
+  now: Date
+): Promise<number | null> {
+  const [postDate, longFormDate] = await Promise.all([
+    getLatestScheduledAtUtc({ userId, queueType, now }),
+    getLatestScheduledLongFormAtUtc({ userId, queueType, now }),
+  ]);
+  const postMs = postDate?.getTime() ?? 0;
+  const longFormMs = longFormDate?.getTime() ?? 0;
+  const max = Math.max(postMs, longFormMs);
+  return max > 0 ? max : null;
 }
 
 function toPostData(post: {
@@ -118,6 +139,8 @@ export interface LoadFlowDataResult {
   hasMoreFuture: boolean;
   pastCursor: string | null;
   futureCursor: string | null;
+  /** Latest scheduled date (ms) for runway KPI; null when no future scheduled. */
+  lastScheduledAtUtc: number | null;
   user: Awaited<ReturnType<typeof getUserById>>;
   queueTypes: Awaited<ReturnType<typeof getQueueTypesCached>>;
   hashTagPresets: Awaited<ReturnType<typeof getHashTagPresetsCached>>;
@@ -203,12 +226,19 @@ export async function loadFlowData({
       return { type: "longform", data: dto };
     });
 
+    const lastScheduledAtUtc = await getLastScheduledAtUtcMs(
+      userId,
+      queueType,
+      new Date()
+    );
+
     return {
       flowItems,
       hasMorePast,
       hasMoreFuture: false,
       pastCursor,
       futureCursor: null,
+      lastScheduledAtUtc,
       user,
       queueTypes: enabledQueueTypes,
       hashTagPresets,
@@ -275,12 +305,19 @@ export async function loadFlowData({
       return { type: "longform", data: dto };
     });
 
+    const lastScheduledAtUtc = await getLastScheduledAtUtcMs(
+      userId,
+      queueType,
+      new Date()
+    );
+
     return {
       flowItems,
       hasMorePast: false,
       hasMoreFuture,
       pastCursor: null,
       futureCursor,
+      lastScheduledAtUtc,
       user,
       queueTypes: enabledQueueTypes,
       hashTagPresets,
@@ -378,12 +415,19 @@ export async function loadFlowData({
     return { type: "longform", data: dto };
   });
 
+  const lastScheduledAtUtc = await getLastScheduledAtUtcMs(
+    userId,
+    queueType,
+    now
+  );
+
   return {
     flowItems,
     hasMorePast,
     hasMoreFuture,
     pastCursor,
     futureCursor,
+    lastScheduledAtUtc,
     user,
     queueTypes: enabledQueueTypes,
     hashTagPresets,

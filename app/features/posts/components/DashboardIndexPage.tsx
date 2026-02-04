@@ -66,6 +66,7 @@ export default function DashboardIndexPage() {
     flowItems,
     hasMorePast,
     hasMoreFuture,
+    lastScheduledAtUtc: lastScheduledAtUtcMs,
     user,
     queueTypes,
     hashTagPresets,
@@ -177,19 +178,6 @@ export default function DashboardIndexPage() {
     ? (hashTagPresets as Parameters<typeof EditPostModal>[0]["hashTagPresets"])
     : [];
 
-  const flowRunsUntil = useMemo(() => {
-    let latest: Date | null = null;
-    for (const item of flowItems) {
-      const at = item.scheduledAtUtc
-        ? new Date(item.scheduledAtUtc).getTime()
-        : 0;
-      if (at > 0 && (!latest || at > latest.getTime())) {
-        latest = new Date(at);
-      }
-    }
-    return latest;
-  }, [flowItems]);
-
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -197,12 +185,42 @@ export default function DashboardIndexPage() {
     });
     return () => cancelAnimationFrame(id);
   }, []);
+
+  // Runway from server (lastScheduledAtUtcMs) so it's correct on first load; fallback to client max from loaded flowItems
   const runwayDays = useMemo((): number | null => {
-    if (!flowRunsUntil || nowMs === null) return null;
-    const then = flowRunsUntil.getTime();
-    if (then <= nowMs) return null;
-    return Math.ceil((then - nowMs) / (24 * 60 * 60 * 1000));
-  }, [flowRunsUntil, nowMs]);
+    const thenMs =
+      lastScheduledAtUtcMs ??
+      (() => {
+        let latest = 0;
+        for (const item of flowItems) {
+          const at = item.scheduledAtUtc
+            ? new Date(item.scheduledAtUtc).getTime()
+            : 0;
+          if (at > latest) latest = at;
+        }
+        return latest > 0 ? latest : null;
+      })();
+    if (thenMs == null || nowMs === null) return null;
+    if (thenMs <= nowMs) return null;
+    return Math.ceil((thenMs - nowMs) / (24 * 60 * 60 * 1000));
+  }, [lastScheduledAtUtcMs, flowItems, nowMs]);
+
+  /** For DashboardHeader (unused there; runway KPI uses runwayDays). */
+  const flowRunsUntil = useMemo((): Date | null => {
+    const ms =
+      lastScheduledAtUtcMs ??
+      (() => {
+        let latest = 0;
+        for (const item of flowItems) {
+          const at = item.scheduledAtUtc
+            ? new Date(item.scheduledAtUtc).getTime()
+            : 0;
+          if (at > latest) latest = at;
+        }
+        return latest;
+      })();
+    return ms > 0 ? new Date(ms) : null;
+  }, [lastScheduledAtUtcMs, flowItems]);
 
   const flowViewRef = useRef<FlowViewHandle | null>(null);
   const [hasLiveEdge, setHasLiveEdge] = useState(false);

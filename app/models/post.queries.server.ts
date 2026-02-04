@@ -102,6 +102,35 @@ export async function getScheduledPosts({
   }
 }
 
+/**
+ * Returns the latest scheduledAtUtc among future scheduled posts (for runway KPI).
+ * Respects queueType filter; use queueType "all" for no filter.
+ */
+export async function getLatestScheduledAtUtc({
+  userId,
+  queueType = "all",
+  now,
+}: {
+  userId: string;
+  queueType?: string;
+  now: Date;
+}): Promise<Date | null> {
+  const whereClause: Prisma.PostWhereInput = {
+    userId,
+    currentState: "SCHEDULED",
+    scheduledAtUtc: { gt: now },
+  };
+  if (queueType && queueType !== "all") {
+    whereClause.queueType = { name: queueType };
+  }
+  const post = await prisma.post.findFirst({
+    where: whereClause,
+    orderBy: { scheduledAtUtc: "desc" },
+    select: { scheduledAtUtc: true },
+  });
+  return post?.scheduledAtUtc ?? null;
+}
+
 export async function getDraftPosts({
   userId,
   page = 1,

@@ -558,6 +558,8 @@ export const flowLoaderDataSchema = z.object({
   hasMoreFuture: z.boolean(),
   pastCursor: z.string().nullable(),
   futureCursor: z.string().nullable(),
+  /** Latest scheduled date (ms) for runway KPI; null when no future scheduled. */
+  lastScheduledAtUtc: z.number().nullable(),
   user: userSchema.nullable(),
   queueTypes: z.array(queueTypeSchema),
   hashTagPresets: z.array(hashTagPresetSchema),

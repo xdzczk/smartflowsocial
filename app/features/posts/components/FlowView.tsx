@@ -35,11 +35,12 @@ const CARD_MIN_HEIGHT_MOBILE = 200; /* ~14% shorter than desktop */
 
 const SENTINEL_WIDTH = 120 + GAP;
 
-/** Rubber-band overscroll: max pull (px) and resistance factor */
-const OVERSCROLL_MAX_PX = 56;
-const OVERSCROLL_RESISTANCE = 0.35;
-const OVERSCROLL_SPRING_MS = 220;
-const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+/** Rubber-band overscroll: iOS-like stretch (max pull and resistance tuned to feel like native iOS elastic) */
+const OVERSCROLL_MAX_PX = 180;
+const OVERSCROLL_RESISTANCE = 0.65;
+/** Spring-back: slightly longer + gentle overshoot for buttery iOS-like feel */
+const OVERSCROLL_SPRING_MS = 280;
+const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.33, 1.1, 0.64, 1)";
 /** Delay (ms) after last gesture before spring-back; 0 = next tick (iOS-like, spring back as soon as you stop) */
 const OVERSCROLL_SPRING_BACK_DELAY_MS = 0;
 /** Edge threshold (px); wider so Chrome/macOS and sub-pixel scroll still trigger overscroll */
@@ -137,6 +138,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const [overscrollPx, setOverscrollPx] = useState(0);
     const [isOverscrollSpringing, setIsOverscrollSpringing] = useState(false);
     const overscrollPxRef = useRef(0);
+    const overscrollRafIdRef = useRef<number | null>(null);
     const springBackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
       null
     );
@@ -181,19 +183,21 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
 
       const applyOverscroll = (deltaX: number) => {
         const current = overscrollPxRef.current;
-        if (deltaX < 0) {
-          const next = Math.min(
-            OVERSCROLL_MAX_PX,
-            current - deltaX * OVERSCROLL_RESISTANCE
-          );
-          setOverscrollPx(next);
-        } else {
-          const next = Math.max(
-            -OVERSCROLL_MAX_PX,
-            current - deltaX * OVERSCROLL_RESISTANCE
-          );
-          setOverscrollPx(next);
-        }
+        const next =
+          deltaX < 0
+            ? Math.min(
+                OVERSCROLL_MAX_PX,
+                current - deltaX * OVERSCROLL_RESISTANCE
+              )
+            : Math.max(
+                -OVERSCROLL_MAX_PX,
+                current - deltaX * OVERSCROLL_RESISTANCE
+              );
+        overscrollPxRef.current = next;
+        overscrollRafIdRef.current ??= requestAnimationFrame(() => {
+          overscrollRafIdRef.current = null;
+          setOverscrollPx(overscrollPxRef.current);
+        });
         scheduleOverscrollSpringBack();
       };
 
@@ -285,7 +289,11 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             OVERSCROLL_MAX_PX,
             current + moveX * OVERSCROLL_RESISTANCE
           );
-          setOverscrollPx(next);
+          overscrollPxRef.current = next;
+          overscrollRafIdRef.current ??= requestAnimationFrame(() => {
+            overscrollRafIdRef.current = null;
+            setOverscrollPx(overscrollPxRef.current);
+          });
           scheduleOverscrollSpringBack();
         } else if (atRight && moveX < 0) {
           if (el.scrollLeft < maxScrollLeft) el.scrollLeft = maxScrollLeft;
@@ -293,7 +301,11 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             -OVERSCROLL_MAX_PX,
             current + moveX * OVERSCROLL_RESISTANCE
           );
-          setOverscrollPx(next);
+          overscrollPxRef.current = next;
+          overscrollRafIdRef.current ??= requestAnimationFrame(() => {
+            overscrollRafIdRef.current = null;
+            setOverscrollPx(overscrollPxRef.current);
+          });
           scheduleOverscrollSpringBack();
         }
       };
@@ -329,6 +341,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         el.removeEventListener("touchstart", handleTouchStart);
         el.removeEventListener("touchmove", handleTouchMove);
         el.removeEventListener("touchend", handleTouchEnd);
+        if (overscrollRafIdRef.current !== null)
+          cancelAnimationFrame(overscrollRafIdRef.current);
         if (springBackTimeoutRef.current)
           clearTimeout(springBackTimeoutRef.current);
       };
@@ -381,7 +395,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       return result;
     }, [flowItems, firstFutureIndex, hasMorePast, hasMoreFuture, cardSlotSize]);
 
-    /* eslint-disable react-hooks/incompatible-library -- TanStack Virtual returns functions; we accept non-memoized updates */
     const rowVirtualizer = useVirtualizer({
       count: slots.length,
       getScrollElement: () => scrollContainerRef.current,
@@ -396,7 +409,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         return `${String(slot.type)}-${index}`;
       },
     });
-    /* eslint-enable react-hooks/incompatible-library */
 
     const pastSentinelIndex = hasMorePast ? 0 : -1;
     const futureSentinelIndex = hasMoreFuture
@@ -723,6 +735,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               transition: isOverscrollSpringing
                 ? `transform ${OVERSCROLL_SPRING_MS}ms ${OVERSCROLL_SPRING_CURVE}`
                 : "none",
+              willChange:
+                overscrollPx !== 0 || isOverscrollSpringing
+                  ? "transform"
+                  : "auto",
               height: "100%",
               minHeight: isMobile ? CARD_MIN_HEIGHT_MOBILE : CARD_MIN_HEIGHT,
               width: rowVirtualizer.getTotalSize(),
