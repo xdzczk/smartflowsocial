@@ -136,6 +136,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     );
     const rubberBandWrapperRef = useRef<HTMLDivElement | null>(null);
     const touchStartXRef = useRef(0);
+    const pointerStartXRef = useRef(0);
+    const pointerStartScrollLeftRef = useRef(0);
     /** Block load-more until initial scroll has had time; prevents request loop when scrollToIndex fails */
     const allowFetchRef = useRef(false);
     /** State so fetch effect re-runs when we allow fetch (ref alone doesn't trigger re-render) */
@@ -164,13 +166,34 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       }, 120);
     }, []);
 
-    // Rubber-band overscroll: depend on scrollElement so we attach when the scroll container exists (after ref is set).
-    // Use capture: true for wheel so we see the event before Chrome/macOS native rubber-band and can preventDefault.
+    // Rubber-band overscroll: depend on scrollElement so we attach when the scroll container exists.
+    // 1) Document-level wheel in capture so we see events before Chrome/macOS native rubber-band (Chrome may not target our div).
+    // 2) Pointer events for click-and-drag overscroll (works when wheel doesn't fire deltaX).
     useEffect(() => {
       const el = scrollElement ?? scrollContainerRef.current;
       if (!el) return;
 
+      const applyOverscroll = (deltaX: number) => {
+        const current = overscrollPxRef.current;
+        if (deltaX < 0) {
+          const next = Math.min(
+            OVERSCROLL_MAX_PX,
+            current - deltaX * OVERSCROLL_RESISTANCE
+          );
+          setOverscrollPx(next);
+        } else {
+          const next = Math.max(
+            -OVERSCROLL_MAX_PX,
+            current - deltaX * OVERSCROLL_RESISTANCE
+          );
+          setOverscrollPx(next);
+        }
+        scheduleOverscrollSpringBack();
+      };
+
       const handleWheel = (e: WheelEvent) => {
+        const target = e.target as Node;
+        if (!el.contains(target)) return;
         const { scrollLeft, scrollWidth, clientWidth } = el;
         const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
         const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
@@ -178,26 +201,49 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           maxScrollLeft <= OVERSCROLL_EDGE_PX ||
           scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
         const deltaX = e.deltaX;
-        const current = overscrollPxRef.current;
-
+        if (deltaX === 0) return;
         if (atLeft && deltaX < 0) {
           e.preventDefault();
           e.stopPropagation();
-          const next = Math.min(
-            OVERSCROLL_MAX_PX,
-            current - deltaX * OVERSCROLL_RESISTANCE
-          );
-          setOverscrollPx(next);
-          scheduleOverscrollSpringBack();
+          applyOverscroll(deltaX);
         } else if (atRight && deltaX > 0) {
           e.preventDefault();
           e.stopPropagation();
-          const next = Math.max(
-            -OVERSCROLL_MAX_PX,
-            current - deltaX * OVERSCROLL_RESISTANCE
-          );
-          setOverscrollPx(next);
-          scheduleOverscrollSpringBack();
+          applyOverscroll(deltaX);
+        }
+      };
+
+      const handlePointerDown = (e: PointerEvent) => {
+        if (e.button !== 0) return;
+        pointerStartXRef.current = e.clientX;
+        pointerStartScrollLeftRef.current = el.scrollLeft;
+        el.setPointerCapture(e.pointerId);
+      };
+
+      const handlePointerMove = (e: PointerEvent) => {
+        const { scrollLeft, scrollWidth, clientWidth } = el;
+        const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+        const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
+        const atRight =
+          maxScrollLeft <= OVERSCROLL_EDGE_PX ||
+          scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
+        const deltaX = e.clientX - pointerStartXRef.current;
+        if (atLeft && deltaX > 0) {
+          e.preventDefault();
+          applyOverscroll(-deltaX);
+          pointerStartXRef.current = e.clientX;
+        } else if (atRight && deltaX < 0) {
+          e.preventDefault();
+          applyOverscroll(-deltaX);
+          pointerStartXRef.current = e.clientX;
+        }
+      };
+
+      const handlePointerUp = (e: PointerEvent) => {
+        el.releasePointerCapture(e.pointerId);
+        if (overscrollPxRef.current !== 0) {
+          setIsOverscrollSpringing(true);
+          requestAnimationFrame(() => setOverscrollPx(0));
         }
       };
 
@@ -241,9 +287,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const handleTouchEnd = () => {
         if (overscrollPxRef.current !== 0) {
           setIsOverscrollSpringing(true);
-          requestAnimationFrame(() => {
-            setOverscrollPx(0);
-          });
+          requestAnimationFrame(() => setOverscrollPx(0));
         }
       };
 
@@ -251,13 +295,23 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         passive: false,
         capture: true,
       };
-      el.addEventListener("wheel", handleWheel, wheelOpts);
+      document.addEventListener("wheel", handleWheel, wheelOpts);
+      el.addEventListener("pointerdown", handlePointerDown, { passive: true });
+      el.addEventListener("pointermove", handlePointerMove, {
+        passive: false,
+      });
+      el.addEventListener("pointerup", handlePointerUp, { passive: true });
+      el.addEventListener("pointercancel", handlePointerUp, { passive: true });
       el.addEventListener("touchstart", handleTouchStart, { passive: true });
       el.addEventListener("touchmove", handleTouchMove, { passive: true });
       el.addEventListener("touchend", handleTouchEnd, { passive: true });
 
       return () => {
-        el.removeEventListener("wheel", handleWheel, wheelOpts);
+        document.removeEventListener("wheel", handleWheel, wheelOpts);
+        el.removeEventListener("pointerdown", handlePointerDown);
+        el.removeEventListener("pointermove", handlePointerMove);
+        el.removeEventListener("pointerup", handlePointerUp);
+        el.removeEventListener("pointercancel", handlePointerUp);
         el.removeEventListener("touchstart", handleTouchStart);
         el.removeEventListener("touchmove", handleTouchMove);
         el.removeEventListener("touchend", handleTouchEnd);
