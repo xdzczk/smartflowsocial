@@ -55,8 +55,6 @@ export const flowKeys = {
 
 /** Remix route ID for dashboard index (flow data); useRouteLoaderData(id) returns this route's loader data. */
 const DASHBOARD_INDEX_ROUTE_ID = "routes/dashboard._index";
-/** Query param so fetcher gets JSON from dashboard._index loader, not HTML or layout-only data */
-const DASHBOARD_FLOW_DATA_PARAM = "_data=routes%2Fdashboard._index";
 
 export interface UseFlowDataResult {
   flowItems: CombinedContent[];
@@ -228,11 +226,10 @@ export function useFlowData(): UseFlowDataResult {
     pastSentinelInFlightRef.current = pastCursor;
     hasMergedLoadMoreRef.current = true;
     const params = new URLSearchParams();
+    params.set("_data", "routes/dashboard._index");
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("before", pastCursor);
-    pastFetcherRef.current.load(
-      `/dashboard?${params.toString()}&${DASHBOARD_FLOW_DATA_PARAM}`
-    );
+    pastFetcherRef.current.load(`/dashboard?${params.toString()}`);
   }, [pastCursor, queueType]);
 
   const fetchMoreFuture = useCallback(() => {
@@ -241,11 +238,10 @@ export function useFlowData(): UseFlowDataResult {
     futureSentinelInFlightRef.current = futureCursor;
     hasMergedLoadMoreRef.current = true;
     const params = new URLSearchParams();
+    params.set("_data", "routes/dashboard._index");
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("after", futureCursor);
-    futureFetcherRef.current.load(
-      `/dashboard?${params.toString()}&${DASHBOARD_FLOW_DATA_PARAM}`
-    );
+    futureFetcherRef.current.load(`/dashboard?${params.toString()}`);
   }, [futureCursor, queueType]);
 
   const isLoading =
