@@ -287,7 +287,7 @@ export async function loadFlowData({
     };
   }
 
-  // Initial load: past + future
+  // Initial load: past + future. Request futureLimit+1 so we can set hasMoreFuture when there are more.
   const [
     pastPostsRaw,
     pastLongFormRaw,
@@ -312,13 +312,13 @@ export async function loadFlowData({
       userId,
       queueType,
       page: 1,
-      limit: futureLimit,
+      limit: futureLimit + 1,
     }),
     getScheduledLongFormPosts({
       userId,
       queueType,
       page: 1,
-      limit: futureLimit,
+      limit: futureLimit + 1,
     }),
   ]);
 
