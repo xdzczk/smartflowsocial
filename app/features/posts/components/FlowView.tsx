@@ -582,16 +582,29 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           </div>
         </div>
 
-        {pastCount === 0 && flowItems.length > 0 && !hasMorePast ? (
-          <p className="text-muted-foreground px-4 text-xs">No recent posts.</p>
-        ) : null}
-        {firstFutureIndex < 0 && flowItems.length > 0 ? (
-          <p className="text-muted-foreground px-4 text-xs">
-            Nothing scheduled yet.{" "}
-            <Link to="/dashboard/newpost" className="underline">
-              Schedule a post
-            </Link>
-          </p>
+        {/* Footer strip: flex-shrink-0 so it never steals space from the scroll area */}
+        {(pastCount === 0 && flowItems.length > 0 && !hasMorePast) ||
+        (firstFutureIndex < 0 && flowItems.length > 0) ? (
+          <div
+            className="border-border/60 text-muted-foreground flex flex-shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-t px-4 py-2 text-xs"
+            role="status"
+            aria-live="polite"
+          >
+            {pastCount === 0 && flowItems.length > 0 && !hasMorePast ? (
+              <span>No recent posts.</span>
+            ) : null}
+            {firstFutureIndex < 0 && flowItems.length > 0 ? (
+              <span>
+                Nothing scheduled yet.{" "}
+                <Link
+                  to="/dashboard/newpost"
+                  className="text-foreground/80 hover:text-foreground underline"
+                >
+                  Schedule a post
+                </Link>
+              </span>
+            ) : null}
+          </div>
         ) : null}
       </div>
     );

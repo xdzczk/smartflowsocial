@@ -90,51 +90,56 @@ function StatusDescription({
 }) {
   const contentType = postType === "longform" ? "article" : "post";
 
+  // Use <span> so we can be used inside DialogDescription (which renders <p>); <p> cannot contain <p>
   if (action === "schedule") {
     if (bulkCount && bulkCount > 1) {
       return (
-        <p>
+        <span>
           Your {bulkCount} {contentType}s have been scheduled successfully. The
           first post will be published at{" "}
           <strong>{formatScheduledTime()}</strong>.
-        </p>
+        </span>
       );
     }
     return (
-      <p>
+      <span>
         Your {contentType} has been scheduled and will be published at{" "}
         <strong>{formatScheduledTime()}</strong>.
-      </p>
+      </span>
     );
   }
 
   if (status === "publishing") {
     return (
-      <p>
+      <span>
         Your {contentType} is being published to relays. This may take a few
         moments...
-      </p>
+      </span>
     );
   }
 
   if (status === "success") {
     return (
-      <p>Your {contentType} has been successfully published to all relays.</p>
+      <span>
+        Your {contentType} has been successfully published to all relays.
+      </span>
     );
   }
 
   if (status === "partial") {
     return (
-      <p>
+      <span>
         Your {contentType} was published to some relays, but some failed or
         timed out.
-      </p>
+      </span>
     );
   }
 
   // status must be "failed" at this point
   return (
-    <p>Your {contentType} failed to publish to any relays. Please try again.</p>
+    <span>
+      Your {contentType} failed to publish to any relays. Please try again.
+    </span>
   );
 }
 
@@ -473,9 +478,9 @@ export default function PublishResultModal({
             />
             {hasTimedOut &&
             (status === "publishing" || status === "partial") ? (
-              <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
+              <span className="mt-2 block text-sm text-yellow-600 dark:text-yellow-400">
                 Still waiting for some relays to respond...
-              </p>
+              </span>
             ) : null}
           </DialogDescription>
         </DialogHeader>

@@ -532,6 +532,11 @@ async function run() {
   // Bulk post creation: More lenient frequency limit
   app.use("/dashboard/bulkposts", bulkPostLimiter);
 
+  // Chrome DevTools requests this URL; respond with 204 to avoid 404 noise in console/Issues
+  app.get("/.well-known/appspecific/com.chrome.devtools.json", (_req, res) => {
+    res.sendStatus(204);
+  });
+
   // Express 5: Use app.use() without path for catch-all route handler
   app.use(remixHandler);
 

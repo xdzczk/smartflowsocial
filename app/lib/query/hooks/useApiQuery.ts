@@ -95,6 +95,14 @@ export async function getUploadProvider(): Promise<UploadProviderData> {
 }
 
 /**
+ * Clear the upload provider cache (e.g. after user changes provider in Settings).
+ * Call this so the next getUploadProvider() fetches fresh data.
+ */
+export function clearUploadProviderCache(): void {
+  _uploadProviderCache = null;
+}
+
+/**
  * Hook to fetch thread view data
  * Cached for 2 minutes
  */

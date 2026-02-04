@@ -47,9 +47,14 @@ export function LifecycleHandler() {
     setCurrentUserNpub(user?.npub ?? null);
   }, [user?.npub]);
 
+  // Use stable identity (npub string) so revalidation doesn't re-run this effect and cause a loop.
+  // Root loader returns a new user object on every load; we only care when the actual user changes.
+  const userNpub = user?.npub ?? null;
+  const pathname = location.pathname;
+
   useEffect(() => {
     // Clear persisted state if user is not authenticated (e.g., on logout or landing page)
-    if (!user && location.pathname !== "/login") {
+    if (!userNpub && pathname !== "/login") {
       clearPersistedState();
     }
 
@@ -69,7 +74,7 @@ export function LifecycleHandler() {
         if (isVisible) {
           setTimeout(runRevalidate, 0);
         } else {
-          if (user) {
+          if (userNpub) {
             persistUIState({
               route: window.location.pathname,
               lastSyncTimestamp: Date.now(),
@@ -84,7 +89,7 @@ export function LifecycleHandler() {
         }
       },
       onPageHide: () => {
-        if (user) {
+        if (userNpub) {
           persistUIState({
             route: window.location.pathname,
             lastSyncTimestamp: Date.now(),
@@ -95,7 +100,7 @@ export function LifecycleHandler() {
         setTimeout(runRevalidate, 0);
       },
     });
-  }, [queryClient, user, location.pathname, runRevalidate]);
+  }, [queryClient, userNpub, pathname, runRevalidate]);
 
   return null; // This component doesn't render anything
 }

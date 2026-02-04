@@ -8,7 +8,9 @@ import {
 
 import { requireUserId } from "~/features/auth";
 import { createUploadHandler } from "~/features/upload/s3.server";
+import { loadUploadProviderSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
+import { env } from "~/lib/env.server";
 import { ExternalServiceError } from "~/lib/errors";
 
 const CONTENT_TYPE_MULTIPART_FORM_DATA = "multipart/form-data";
@@ -19,6 +21,15 @@ type AssertFunction = (
   context?: Record<string, unknown>
 ) => asserts condition;
 
+function isS3Configured(): boolean {
+  return !!(
+    env.STORAGE_REGION?.trim() &&
+    env.STORAGE_BUCKET?.trim() &&
+    env.STORAGE_ACCESS_KEY?.trim() &&
+    env.STORAGE_SECRET?.trim()
+  );
+}
+
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
@@ -28,6 +39,35 @@ export const action = withCSRFProtection(
 
       // Ensure user is authenticated
       const userId = await requireUserId(request);
+
+      // If user's upload provider is Blossom, they should use /api/upload-blossom (client sends JSON, not multipart)
+      const { provider } = await loadUploadProviderSettings(userId);
+      if (
+        provider === "BLOSSOM_PRIMAL" ||
+        provider === "BLOSSOM_BLOSSTR" ||
+        provider === "BLOSSOM"
+      ) {
+        const { createErrorResponse } =
+          await import("~/lib/error-handler.server");
+        return createErrorResponse(
+          new Error(
+            "Upload provider is set to Primal Blossom. Use Blossom upload (refresh the page if bulk upload still calls S3)."
+          ),
+          400
+        );
+      }
+
+      // S3 path: require S3 env vars so we fail fast with a clear message instead of "Region is missing"
+      if (!isS3Configured()) {
+        const { createErrorResponse } =
+          await import("~/lib/error-handler.server");
+        return createErrorResponse(
+          new Error(
+            "S3 storage is not configured. Set STORAGE_REGION, STORAGE_BUCKET, STORAGE_ACCESS_KEY, and STORAGE_SECRET in your .env, or switch to Primal Blossom in Settings."
+          ),
+          503
+        );
+      }
 
       // Validate content type
       const contentType = request.headers.get("content-type") ?? "";

@@ -88,8 +88,36 @@ async function uploadFileToS3(file: File): Promise<UploadResult> {
     success?: boolean;
     data?: { fileUrl?: string };
     fileUrl?: string;
-    error?: string;
+    error?: string | { message?: string };
   };
+
+  // Server may return 400 "Use Blossom upload" when provider was switched but client cache was stale
+  const errorMessage =
+    typeof result.error === "string"
+      ? result.error
+      : (result.error?.message ?? "");
+  if (
+    response.status === 400 &&
+    (errorMessage.includes("Blossom") ||
+      errorMessage.includes("upload-blossom"))
+  ) {
+    const { getUploadProvider, clearUploadProviderCache } =
+      await import("~/lib/query");
+    clearUploadProviderCache();
+    const data = await getUploadProvider();
+    const isBlossom =
+      data.provider === "BLOSSOM_PRIMAL" ||
+      data.provider === "BLOSSOM_BLOSSTR" ||
+      data.provider === "BLOSSOM";
+    if (isBlossom) {
+      return await uploadFileToBlossom(
+        file,
+        data.provider ?? "BLOSSOM_PRIMAL",
+        data.enableMirrorBlossom ?? false,
+        data.mirrorUploadUrls ?? []
+      );
+    }
+  }
 
   const fileUrl = result.data?.fileUrl ?? result.fileUrl;
   if (result.success && fileUrl) {
@@ -106,7 +134,7 @@ async function uploadFileToS3(file: File): Promise<UploadResult> {
   } else {
     return {
       success: false,
-      error: result.error ?? "S3 upload failed",
+      error: errorMessage || "S3 upload failed",
     };
   }
 }

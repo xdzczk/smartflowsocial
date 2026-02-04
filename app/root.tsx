@@ -207,6 +207,7 @@ export default function App() {
           {nonce ? (
             <script
               nonce={nonce}
+              suppressHydrationWarning
               dangerouslySetInnerHTML={{
                 __html: `window.ENV = ${JSON.stringify(ENV)}`,
               }}

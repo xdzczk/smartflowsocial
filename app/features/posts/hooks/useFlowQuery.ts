@@ -113,30 +113,37 @@ export function useFlowData(): UseFlowDataResult {
   // When revalidate() runs (e.g. every 60s), loader returns the initial window (no before/after) and would
   // overwrite our merged load-more state and reset pastCursor, causing the same before= request to repeat.
   // Skip overwriting flow items and cursors when we've already merged load-more and queue is unchanged.
+  // Depend on loaderDataRaw (stable until loader revalidates), not validatedLoaderData, to avoid infinite
+  // loop: safeValidateLoaderResponse returns a new object every render, so [validatedLoaderData] would
+  // re-run this effect every time and cause "Maximum update depth exceeded".
   useEffect(() => {
-    if (!validatedLoaderData) return;
+    const validated = safeValidateLoaderResponse(
+      loaderDataRaw,
+      flowLoaderDataSchema
+    );
+    if (!validated) return;
     const queueUnchanged = lastSyncedQueueTypeRef.current === queueType;
     if (queueUnchanged && hasMergedLoadMoreRef.current) {
       startTransition(() => {
-        setUser(validatedLoaderData.user);
-        setQueueTypes(validatedLoaderData.queueTypes);
-        setHashTagPresets(validatedLoaderData.hashTagPresets);
+        setUser(validated.user);
+        setQueueTypes(validated.queueTypes);
+        setHashTagPresets(validated.hashTagPresets);
       });
       return;
     }
     lastSyncedQueueTypeRef.current = queueType;
     hasMergedLoadMoreRef.current = false;
     startTransition(() => {
-      setFlowItems(flowItemsToCombinedContent(validatedLoaderData.flowItems));
-      setHasMorePast(validatedLoaderData.hasMorePast);
-      setHasMoreFuture(validatedLoaderData.hasMoreFuture);
-      setPastCursor(validatedLoaderData.pastCursor);
-      setFutureCursor(validatedLoaderData.futureCursor);
-      setUser(validatedLoaderData.user);
-      setQueueTypes(validatedLoaderData.queueTypes);
-      setHashTagPresets(validatedLoaderData.hashTagPresets);
+      setFlowItems(flowItemsToCombinedContent(validated.flowItems));
+      setHasMorePast(validated.hasMorePast);
+      setHasMoreFuture(validated.hasMoreFuture);
+      setPastCursor(validated.pastCursor);
+      setFutureCursor(validated.futureCursor);
+      setUser(validated.user);
+      setQueueTypes(validated.queueTypes);
+      setHashTagPresets(validated.hashTagPresets);
     });
-  }, [validatedLoaderData, queueType]);
+  }, [loaderDataRaw, queueType]);
 
   // Merge past fetcher result when load more past completes.
   // Do not clear pastSentinelInFlightRef here: setPastCursor runs in startTransition
