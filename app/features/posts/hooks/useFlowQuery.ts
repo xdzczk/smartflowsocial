@@ -48,6 +48,9 @@ export const flowKeys = {
   list: (queueType?: string) => [...flowKeys.all, "list", queueType] as const,
 };
 
+/** Remix route ID for /dashboard so fetcher gets JSON from dashboard._index loader, not HTML or layout-only data */
+const DASHBOARD_FLOW_DATA_PARAM = "_data=routes%2Fdashboard._index";
+
 export interface UseFlowDataResult {
   flowItems: CombinedContent[];
   hasMorePast: boolean;
@@ -155,7 +158,10 @@ export function useFlowData(): UseFlowDataResult {
       pastFetcher.data,
       flowLoaderDataSchema
     );
-    if (!data) return;
+    if (!data) {
+      pastSentinelInFlightRef.current = null;
+      return;
+    }
     const sentCursor = pastSentinelInFlightRef.current;
     if (data.pastCursor !== null && data.pastCursor === sentCursor) {
       startTransition(() => setHasMorePast(false));
@@ -183,7 +189,10 @@ export function useFlowData(): UseFlowDataResult {
       futureFetcher.data,
       flowLoaderDataSchema
     );
-    if (!data) return;
+    if (!data) {
+      futureSentinelInFlightRef.current = null;
+      return;
+    }
     const sentCursor = futureSentinelInFlightRef.current;
     if (data.futureCursor !== null && data.futureCursor === sentCursor) {
       startTransition(() => setHasMoreFuture(false));
@@ -211,7 +220,9 @@ export function useFlowData(): UseFlowDataResult {
     const params = new URLSearchParams();
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("before", pastCursor);
-    pastFetcherRef.current.load(`/dashboard?${params.toString()}`);
+    pastFetcherRef.current.load(
+      `/dashboard?${params.toString()}&${DASHBOARD_FLOW_DATA_PARAM}`
+    );
   }, [pastCursor, queueType]);
 
   const fetchMoreFuture = useCallback(() => {
@@ -222,7 +233,9 @@ export function useFlowData(): UseFlowDataResult {
     const params = new URLSearchParams();
     if (queueType !== "all") params.set("queueType", queueType);
     params.set("after", futureCursor);
-    futureFetcherRef.current.load(`/dashboard?${params.toString()}`);
+    futureFetcherRef.current.load(
+      `/dashboard?${params.toString()}&${DASHBOARD_FLOW_DATA_PARAM}`
+    );
   }, [futureCursor, queueType]);
 
   const isLoading =
