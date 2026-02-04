@@ -1,5 +1,6 @@
 import { Link } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { Plus } from "lucide-react";
 import {
   forwardRef,
   useCallback,
@@ -9,6 +10,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 
 /** Mobile breakpoint (px); below this we scroll to next scheduled on load */
@@ -36,8 +38,10 @@ const SENTINEL_WIDTH = 120 + GAP;
 /** Rubber-band overscroll: max pull (px) and resistance factor */
 const OVERSCROLL_MAX_PX = 56;
 const OVERSCROLL_RESISTANCE = 0.35;
-const OVERSCROLL_SPRING_MS = 350;
+const OVERSCROLL_SPRING_MS = 220;
 const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+/** Delay (ms) after last gesture before spring-back; short so it feels responsive */
+const OVERSCROLL_SPRING_BACK_DELAY_MS = 60;
 /** Edge threshold (px); wider so Chrome/macOS and sub-pixel scroll still trigger overscroll */
 const OVERSCROLL_EDGE_PX = 16;
 
@@ -45,6 +49,7 @@ const LOADING_LABEL = "Loading…";
 
 const SLOT_PAST_SENTINEL = "past-sentinel";
 const SLOT_FUTURE_SENTINEL = "future-sentinel";
+const SLOT_CTA = "cta";
 
 const NOW_MS = () => Date.now();
 
@@ -59,7 +64,8 @@ export function getGoLiveAt(item: CombinedContent): number {
 type SlotType =
   | typeof SLOT_PAST_SENTINEL
   | "card"
-  | typeof SLOT_FUTURE_SENTINEL;
+  | typeof SLOT_FUTURE_SENTINEL
+  | typeof SLOT_CTA;
 
 interface FlowSlot {
   type: SlotType;
@@ -163,7 +169,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             setOverscrollPx(0);
           });
         }
-      }, 120);
+      }, OVERSCROLL_SPRING_BACK_DELAY_MS);
     }, []);
 
     // Rubber-band overscroll: depend on scrollElement so we attach when the scroll container exists.
@@ -205,10 +211,12 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         if (atLeft && deltaX < 0) {
           e.preventDefault();
           e.stopPropagation();
+          if (el.scrollLeft > 0) el.scrollLeft = 0;
           applyOverscroll(deltaX);
         } else if (atRight && deltaX > 0) {
           e.preventDefault();
           e.stopPropagation();
+          if (el.scrollLeft < maxScrollLeft) el.scrollLeft = maxScrollLeft;
           applyOverscroll(deltaX);
         }
       };
@@ -230,10 +238,12 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         const deltaX = e.clientX - pointerStartXRef.current;
         if (atLeft && deltaX > 0) {
           e.preventDefault();
+          if (el.scrollLeft > 0) el.scrollLeft = 0;
           applyOverscroll(-deltaX);
           pointerStartXRef.current = e.clientX;
         } else if (atRight && deltaX < 0) {
           e.preventDefault();
+          if (el.scrollLeft < maxScrollLeft) el.scrollLeft = maxScrollLeft;
           applyOverscroll(-deltaX);
           pointerStartXRef.current = e.clientX;
         }
@@ -270,17 +280,21 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         const current = overscrollPxRef.current;
 
         if (atLeft && moveX > 0) {
+          if (el.scrollLeft > 0) el.scrollLeft = 0;
           const next = Math.min(
             OVERSCROLL_MAX_PX,
             current + moveX * OVERSCROLL_RESISTANCE
           );
           setOverscrollPx(next);
+          scheduleOverscrollSpringBack();
         } else if (atRight && moveX < 0) {
+          if (el.scrollLeft < maxScrollLeft) el.scrollLeft = maxScrollLeft;
           const next = Math.max(
             -OVERSCROLL_MAX_PX,
             current + moveX * OVERSCROLL_RESISTANCE
           );
           setOverscrollPx(next);
+          scheduleOverscrollSpringBack();
         }
       };
 
@@ -363,6 +377,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       if (hasMoreFuture) {
         result.push({ type: SLOT_FUTURE_SENTINEL, size: SENTINEL_WIDTH });
       }
+      result.push({ type: SLOT_CTA, size: cardSlotSize });
       return result;
     }, [flowItems, firstFutureIndex, hasMorePast, hasMoreFuture, cardSlotSize]);
 
@@ -377,13 +392,16 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         const slot = slots[index];
         if (!slot) return String(index);
         if (slot.type === "card" && slot.item) return slot.item.id;
+        if (slot.type === SLOT_CTA) return "flow-cta-create-post";
         return `${String(slot.type)}-${index}`;
       },
     });
     /* eslint-enable react-hooks/incompatible-library */
 
     const pastSentinelIndex = hasMorePast ? 0 : -1;
-    const futureSentinelIndex = hasMoreFuture ? slots.length - 1 : -1;
+    const futureSentinelIndex = hasMoreFuture
+      ? slots.length - 2
+      : -1; /* CTA is last */
 
     const { ref: pastSentinelRef, isIntersecting: isPastSentinelVisible } =
       useIntersectionObserver({
@@ -572,6 +590,100 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       onHasLiveEdgeChange?.(hasLiveEdge);
     }, [hasLiveEdge, onHasLiveEdgeChange]);
 
+    const renderSlotContent = useCallback(
+      (slot: FlowSlot, virtualColumnIndex: number): ReactNode => {
+        if (slot.type === SLOT_PAST_SENTINEL) {
+          return (
+            <div className="flex min-w-0 flex-1 items-center justify-center">
+              {isLoadingMorePast ? (
+                <span className="text-muted-foreground text-sm">
+                  {LOADING_LABEL}
+                </span>
+              ) : (
+                <span className="text-muted-foreground text-sm" aria-hidden>
+                  •
+                </span>
+              )}
+            </div>
+          );
+        }
+        if (slot.type === SLOT_FUTURE_SENTINEL) {
+          return (
+            <div className="flex min-w-0 flex-1 items-center justify-center">
+              {isLoadingMoreFuture ? (
+                <span className="text-muted-foreground text-sm">
+                  {LOADING_LABEL}
+                </span>
+              ) : (
+                <span className="text-muted-foreground text-sm" aria-hidden>
+                  •
+                </span>
+              )}
+            </div>
+          );
+        }
+        if (slot.type === SLOT_CTA) {
+          return (
+            <div className="flex flex-shrink-0 items-stretch px-0.5">
+              <Link
+                to="/dashboard/newpost"
+                className="border-border bg-card hover:bg-muted/30 focus:ring-primary flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm transition-[box-shadow,border-color,background-color] hover:shadow-md focus:ring-2 focus:ring-offset-2 focus:outline-none md:min-h-[232px] md:w-[352px]"
+                aria-label="Create a new post"
+              >
+                <Plus
+                  className="text-muted-foreground h-12 w-12 md:h-14 md:w-14"
+                  aria-hidden
+                />
+                <div className="flex flex-col items-start gap-0.5 text-left">
+                  <span className="text-foreground font-semibold">
+                    Create new post
+                  </span>
+                  <span className="text-muted-foreground text-sm">
+                    Schedule or publish
+                  </span>
+                </div>
+              </Link>
+            </div>
+          );
+        }
+        if (slot.item) {
+          const firstFutureOffset = hasMorePast ? 1 : 0;
+          const goLive = getGoLiveAt(slot.item);
+          const minutesUntil =
+            goLive > nowMs ? Math.round((goLive - nowMs) / 60000) : undefined;
+          return (
+            <div className="flex flex-shrink-0 items-stretch px-0.5">
+              <FlowCard
+                item={slot.item}
+                onClick={() => onCardClick(slot.item!)}
+                isLastPosted={
+                  firstFutureIndex >= 1 &&
+                  virtualColumnIndex ===
+                    firstFutureOffset + firstFutureIndex - 1
+                    ? true
+                    : undefined
+                }
+                isNextScheduled={
+                  virtualColumnIndex === firstFutureOffset + firstFutureIndex
+                }
+                minutesUntil={minutesUntil}
+                nowMs={nowMs}
+              />
+            </div>
+          );
+        }
+        return null;
+      },
+      [
+        isLoadingMorePast,
+        isLoadingMoreFuture,
+        hasMorePast,
+        firstFutureIndex,
+        nowMs,
+        onCardClick,
+      ]
+    );
+
     if (flowItems.length === 0) {
       return (
         <div
@@ -653,60 +765,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                     alignItems: "stretch",
                   }}
                 >
-                  {slot.type === SLOT_PAST_SENTINEL ? (
-                    <div className="flex min-w-0 flex-1 items-center justify-center">
-                      {isLoadingMorePast ? (
-                        <span className="text-muted-foreground text-sm">
-                          {LOADING_LABEL}
-                        </span>
-                      ) : (
-                        <span
-                          className="text-muted-foreground text-sm"
-                          aria-hidden
-                        >
-                          •
-                        </span>
-                      )}
-                    </div>
-                  ) : slot.type === SLOT_FUTURE_SENTINEL ? (
-                    <div className="flex min-w-0 flex-1 items-center justify-center">
-                      {isLoadingMoreFuture ? (
-                        <span className="text-muted-foreground text-sm">
-                          {LOADING_LABEL}
-                        </span>
-                      ) : (
-                        <span
-                          className="text-muted-foreground text-sm"
-                          aria-hidden
-                        >
-                          •
-                        </span>
-                      )}
-                    </div>
-                  ) : slot.item ? (
-                    <div className="flex flex-shrink-0 items-stretch px-0.5">
-                      <FlowCard
-                        item={slot.item}
-                        onClick={() => onCardClick(slot.item!)}
-                        isLastPosted={
-                          firstFutureIndex >= 1
-                            ? virtualColumn.index ===
-                              (hasMorePast ? 1 : 0) + firstFutureIndex - 1
-                            : undefined
-                        }
-                        isNextScheduled={
-                          virtualColumn.index ===
-                          (hasMorePast ? 1 : 0) + firstFutureIndex
-                        }
-                        minutesUntil={(() => {
-                          const goLive = getGoLiveAt(slot.item);
-                          if (goLive <= nowMs) return;
-                          return Math.round((goLive - nowMs) / 60000);
-                        })()}
-                        nowMs={nowMs}
-                      />
-                    </div>
-                  ) : null}
+                  {renderSlotContent(slot, virtualColumn.index)}
                 </div>
               );
             })}
