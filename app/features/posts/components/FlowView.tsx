@@ -40,8 +40,8 @@ const OVERSCROLL_MAX_PX = 56;
 const OVERSCROLL_RESISTANCE = 0.35;
 const OVERSCROLL_SPRING_MS = 220;
 const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.34, 1.56, 0.64, 1)";
-/** Delay (ms) after last gesture before spring-back; short so it feels responsive */
-const OVERSCROLL_SPRING_BACK_DELAY_MS = 60;
+/** Delay (ms) after last gesture before spring-back; 0 = next tick (iOS-like, spring back as soon as you stop) */
+const OVERSCROLL_SPRING_BACK_DELAY_MS = 0;
 /** Edge threshold (px); wider so Chrome/macOS and sub-pixel scroll still trigger overscroll */
 const OVERSCROLL_EDGE_PX = 16;
 
