@@ -38,8 +38,8 @@ const OVERSCROLL_MAX_PX = 56;
 const OVERSCROLL_RESISTANCE = 0.35;
 const OVERSCROLL_SPRING_MS = 350;
 const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.34, 1.56, 0.64, 1)";
-/** Edge threshold (px); wider so Chrome/sub-pixel scroll still triggers overscroll */
-const OVERSCROLL_EDGE_PX = 8;
+/** Edge threshold (px); wider so Chrome/macOS and sub-pixel scroll still trigger overscroll */
+const OVERSCROLL_EDGE_PX = 16;
 
 const LOADING_LABEL = "Loading…";
 
@@ -164,8 +164,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       }, 120);
     }, []);
 
+    // Rubber-band overscroll: depend on scrollElement so we attach when the scroll container exists (after ref is set).
+    // Use capture: true for wheel so we see the event before Chrome/macOS native rubber-band and can preventDefault.
     useEffect(() => {
-      const el = scrollContainerRef.current;
+      const el = scrollElement ?? scrollContainerRef.current;
       if (!el) return;
 
       const handleWheel = (e: WheelEvent) => {
@@ -180,6 +182,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
 
         if (atLeft && deltaX < 0) {
           e.preventDefault();
+          e.stopPropagation();
           const next = Math.min(
             OVERSCROLL_MAX_PX,
             current - deltaX * OVERSCROLL_RESISTANCE
@@ -188,6 +191,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           scheduleOverscrollSpringBack();
         } else if (atRight && deltaX > 0) {
           e.preventDefault();
+          e.stopPropagation();
           const next = Math.max(
             -OVERSCROLL_MAX_PX,
             current - deltaX * OVERSCROLL_RESISTANCE
@@ -243,20 +247,24 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         }
       };
 
-      el.addEventListener("wheel", handleWheel, { passive: false });
+      const wheelOpts: AddEventListenerOptions = {
+        passive: false,
+        capture: true,
+      };
+      el.addEventListener("wheel", handleWheel, wheelOpts);
       el.addEventListener("touchstart", handleTouchStart, { passive: true });
       el.addEventListener("touchmove", handleTouchMove, { passive: true });
       el.addEventListener("touchend", handleTouchEnd, { passive: true });
 
       return () => {
-        el.removeEventListener("wheel", handleWheel);
+        el.removeEventListener("wheel", handleWheel, wheelOpts);
         el.removeEventListener("touchstart", handleTouchStart);
         el.removeEventListener("touchmove", handleTouchMove);
         el.removeEventListener("touchend", handleTouchEnd);
         if (springBackTimeoutRef.current)
           clearTimeout(springBackTimeoutRef.current);
       };
-    }, [scheduleOverscrollSpringBack]);
+    }, [scheduleOverscrollSpringBack, scrollElement]);
 
     const handleOverscrollTransitionEnd = useCallback(
       (e: React.TransitionEvent) => {
