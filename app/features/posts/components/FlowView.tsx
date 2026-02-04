@@ -69,6 +69,8 @@ interface FlowSlot {
 
 /** rootMargin to trigger past/future fetch before sentinel is at the edge (prefetch) */
 const SENTINEL_PREFETCH_ROOT_MARGIN_PX = 400;
+/** When within this many px of the right edge, trigger future fetch (scroll-based; future sentinel may not be in DOM). */
+const RIGHT_EDGE_FETCH_THRESHOLD_PX = 600;
 
 export interface FlowViewProps {
   flowItems: CombinedContent[];
@@ -432,17 +434,17 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     }, [flowItems.length, hasLiveEdge, initialScrollIndex, rowVirtualizer]);
 
     // Scroll: (1) mark scrolled away from left for past-fetch; (2) trigger future-fetch when near right edge (future sentinel may not be in DOM due to virtualizer).
+    // Poll when we can load more future so we don't rely solely on scroll events (e.g. small viewport or programmatic scroll).
     useEffect(() => {
       const el = scrollElement;
       if (!el) return;
       const checkNearRight = () => {
-        if (
-          allowFetch &&
-          hasMoreFuture &&
-          !isLoadingMoreFuture &&
-          el.scrollWidth - (el.scrollLeft + el.clientWidth) <=
-            SENTINEL_PREFETCH_ROOT_MARGIN_PX
-        ) {
+        if (!allowFetch || !hasMoreFuture || isLoadingMoreFuture) {
+          return;
+        }
+        const distanceFromRight =
+          el.scrollWidth - (el.scrollLeft + el.clientWidth);
+        if (distanceFromRight <= RIGHT_EDGE_FETCH_THRESHOLD_PX) {
           onFetchMoreFuture();
         }
       };
@@ -454,7 +456,11 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       };
       checkNearRight();
       el.addEventListener("scroll", onScroll, { passive: true });
-      return () => el.removeEventListener("scroll", onScroll);
+      const pollId = setInterval(checkNearRight, 400);
+      return () => {
+        el.removeEventListener("scroll", onScroll);
+        clearInterval(pollId);
+      };
     }, [
       scrollElement,
       allowFetch,
