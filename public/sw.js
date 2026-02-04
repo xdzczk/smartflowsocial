@@ -162,6 +162,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Dashboard (and other) data requests with ?_data= - do not intercept; let the browser
+  // fetch directly so Remix fetcher gets a clean response and we avoid ERR_FAILED / SW issues.
+  if (url.searchParams.has("_data")) {
+    return;
+  }
+
   // HTML and navigation - network first, never cache. Auth-dependent content must
   // always come from the network so we never serve stale user/session (e.g. after
   // logout or sign-in with different account on mobile PWA).
