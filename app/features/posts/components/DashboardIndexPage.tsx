@@ -72,6 +72,8 @@ export default function DashboardIndexPage() {
     isLoadingMorePast,
     isLoadingMoreFuture,
     error: flowError,
+    lastPrependedPastCount,
+    clearPrependedPastCount,
     fetchMorePast,
     fetchMoreFuture,
   } = useFlowData();
@@ -302,6 +304,8 @@ export default function DashboardIndexPage() {
                 }
                 onFetchMorePast={fetchMorePast}
                 onFetchMoreFuture={fetchMoreFuture}
+                lastPrependedPastCount={lastPrependedPastCount}
+                onPrependedPastCompensated={clearPrependedPastCount}
                 onHasLiveEdgeChange={setHasLiveEdge}
               />
             </div>

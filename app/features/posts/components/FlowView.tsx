@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -66,12 +67,19 @@ interface FlowSlot {
   size: number;
 }
 
+/** rootMargin to trigger past/future fetch before sentinel is at the edge (prefetch) */
+const SENTINEL_PREFETCH_ROOT_MARGIN_PX = 400;
+
 export interface FlowViewProps {
   flowItems: CombinedContent[];
   hasMorePast: boolean;
   hasMoreFuture: boolean;
   isLoadingMorePast?: boolean;
   isLoadingMoreFuture?: boolean;
+  /** Number of items just prepended; used to compensate scroll so position doesn't jump */
+  lastPrependedPastCount?: number;
+  /** Called after scroll was compensated for prepended past items */
+  onPrependedPastCompensated?: () => void;
   onCardClick: (item: CombinedContent) => void;
   onFetchMorePast: () => void;
   onFetchMoreFuture: () => void;
@@ -92,6 +100,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       hasMoreFuture,
       isLoadingMorePast = false,
       isLoadingMoreFuture = false,
+      lastPrependedPastCount = 0,
+      onPrependedPastCompensated,
       onCardClick,
       onFetchMorePast,
       onFetchMoreFuture,
@@ -313,12 +323,24 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       useIntersectionObserver({
         threshold: 0.3,
         root: scrollElement,
+        rootMargin: `0px 0px 0px ${SENTINEL_PREFETCH_ROOT_MARGIN_PX}px`,
       });
     const { ref: futureSentinelRef, isIntersecting: isFutureSentinelVisible } =
       useIntersectionObserver({
         threshold: 0.3,
         root: scrollElement,
+        rootMargin: `0px ${SENTINEL_PREFETCH_ROOT_MARGIN_PX}px 0px 0px`,
       });
+
+    // When older posts are prepended, shift scroll so the user's view doesn't jump.
+    useLayoutEffect(() => {
+      if (lastPrependedPastCount <= 0) return;
+      const el = scrollContainerRef.current;
+      if (!el) return;
+      const delta = lastPrependedPastCount * cardSlotSize;
+      el.scrollLeft += delta;
+      onPrependedPastCompensated?.();
+    }, [lastPrependedPastCount, cardSlotSize, onPrependedPastCompensated]);
 
     // Past-fetch when past sentinel is visible. Duplicate requests are prevented by pastSentinelInFlightRef in useFlowQuery.
     useEffect(() => {
@@ -409,18 +431,37 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       };
     }, [flowItems.length, hasLiveEdge, initialScrollIndex, rowVirtualizer]);
 
-    // Mark that we've scrolled away from left when user scrolls (so past-fetch is allowed when they scroll back left)
+    // Scroll: (1) mark scrolled away from left for past-fetch; (2) trigger future-fetch when near right edge (future sentinel may not be in DOM due to virtualizer).
     useEffect(() => {
       const el = scrollElement;
       if (!el) return;
+      const checkNearRight = () => {
+        if (
+          allowFetch &&
+          hasMoreFuture &&
+          !isLoadingMoreFuture &&
+          el.scrollWidth - (el.scrollLeft + el.clientWidth) <=
+            SENTINEL_PREFETCH_ROOT_MARGIN_PX
+        ) {
+          onFetchMoreFuture();
+        }
+      };
       const onScroll = () => {
         if (el.scrollLeft > 10) {
           hasScrolledAwayFromLeftRef.current = true;
         }
+        checkNearRight();
       };
+      checkNearRight();
       el.addEventListener("scroll", onScroll, { passive: true });
       return () => el.removeEventListener("scroll", onScroll);
-    }, [scrollElement]);
+    }, [
+      scrollElement,
+      allowFetch,
+      hasMoreFuture,
+      isLoadingMoreFuture,
+      onFetchMoreFuture,
+    ]);
 
     // When there's no live edge (only past or only future), allow load-more after a short delay so fetch isn't blocked
     useEffect(() => {

@@ -42,31 +42,27 @@ export const action = withCSRFProtection(
 
       // If user's upload provider is Blossom, they should use /api/upload-blossom (client sends JSON, not multipart)
       const { provider } = await loadUploadProviderSettings(userId);
-      if (
-        provider === "BLOSSOM_PRIMAL" ||
-        provider === "BLOSSOM_BLOSSTR" ||
-        provider === "BLOSSOM"
-      ) {
+      if (provider === "BLOSSOM_PRIMAL" || provider === "BLOSSOM_BLOSSTR") {
         const { createErrorResponse } =
           await import("~/lib/error-handler.server");
-        return createErrorResponse(
+        const [errorResponse] = createErrorResponse(
           new Error(
             "Upload provider is set to Primal Blossom. Use Blossom upload (refresh the page if bulk upload still calls S3)."
-          ),
-          400
+          )
         );
+        return json(errorResponse, { status: 400 });
       }
 
       // S3 path: require S3 env vars so we fail fast with a clear message instead of "Region is missing"
       if (!isS3Configured()) {
         const { createErrorResponse } =
           await import("~/lib/error-handler.server");
-        return createErrorResponse(
+        const [errorResponse] = createErrorResponse(
           new Error(
             "S3 storage is not configured. Set STORAGE_REGION, STORAGE_BUCKET, STORAGE_ACCESS_KEY, and STORAGE_SECRET in your .env, or switch to Primal Blossom in Settings."
-          ),
-          503
+          )
         );
+        return json(errorResponse, { status: 503 });
       }
 
       // Validate content type

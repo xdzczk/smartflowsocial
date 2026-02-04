@@ -68,6 +68,9 @@ export interface UseFlowDataResult {
   isLoadingMorePast: boolean;
   isLoadingMoreFuture: boolean;
   error: Error | null;
+  /** Number of items just prepended (older posts); FlowView uses this to compensate scroll position. Cleared after compensation. */
+  lastPrependedPastCount: number;
+  clearPrependedPastCount: () => void;
   fetchMorePast: () => void;
   fetchMoreFuture: () => void;
 }
@@ -99,6 +102,7 @@ export function useFlowData(): UseFlowDataResult {
   >([]);
   const [pastLoadMoreLoading, setPastLoadMoreLoading] = useState(false);
   const [futureLoadMoreLoading, setFutureLoadMoreLoading] = useState(false);
+  const [lastPrependedPastCount, setLastPrependedPastCount] = useState(0);
 
   /** Cursor we've sent for past; clear when response is processed to avoid duplicate requests */
   const pastSentinelInFlightRef = useRef<string | null>(null);
@@ -168,11 +172,12 @@ export function useFlowData(): UseFlowDataResult {
     hasMergedLoadMoreRef.current = true;
     setPastLoadMoreLoading(true);
     const url = buildFlowLoadMoreUrl({ before: pastCursor });
-    fetch(url, { credentials: "same-origin" })
-      .then((r) =>
-        r.ok ? r.json() : Promise.reject(new Error(String(r.status)))
-      )
-      .then((raw: unknown) => {
+
+    const run = async () => {
+      try {
+        const r = await fetch(url, { credentials: "same-origin" });
+        if (!r.ok) throw new Error(String(r.status));
+        const raw: unknown = await r.json();
         const data = safeValidateLoaderResponse(raw, flowLoaderDataSchema);
         if (!data) {
           pastSentinelInFlightRef.current = null;
@@ -191,16 +196,17 @@ export function useFlowData(): UseFlowDataResult {
         const newItems = flowItemsToCombinedContent(data.flowItems);
         startTransition(() => {
           setFlowItems((prev) => [...newItems, ...prev]);
+          setLastPrependedPastCount(newItems.length);
           setHasMorePast(data.hasMorePast);
           if (data.pastCursor != null) setPastCursor(data.pastCursor);
         });
-      })
-      .catch(() => {
+      } catch {
         pastSentinelInFlightRef.current = null;
-      })
-      .finally(() => {
+      } finally {
         setPastLoadMoreLoading(false);
-      });
+      }
+    };
+    void run();
   }, [pastCursor, pastLoadMoreLoading, buildFlowLoadMoreUrl]);
 
   const fetchMoreFuture = useCallback(() => {
@@ -210,11 +216,12 @@ export function useFlowData(): UseFlowDataResult {
     hasMergedLoadMoreRef.current = true;
     setFutureLoadMoreLoading(true);
     const url = buildFlowLoadMoreUrl({ after: futureCursor });
-    fetch(url, { credentials: "same-origin" })
-      .then((r) =>
-        r.ok ? r.json() : Promise.reject(new Error(String(r.status)))
-      )
-      .then((raw: unknown) => {
+
+    const run = async () => {
+      try {
+        const r = await fetch(url, { credentials: "same-origin" });
+        if (!r.ok) throw new Error(String(r.status));
+        const raw: unknown = await r.json();
         const data = safeValidateLoaderResponse(raw, flowLoaderDataSchema);
         if (!data) {
           futureSentinelInFlightRef.current = null;
@@ -236,13 +243,13 @@ export function useFlowData(): UseFlowDataResult {
           setHasMoreFuture(data.hasMoreFuture);
           if (data.futureCursor != null) setFutureCursor(data.futureCursor);
         });
-      })
-      .catch(() => {
+      } catch {
         futureSentinelInFlightRef.current = null;
-      })
-      .finally(() => {
+      } finally {
         setFutureLoadMoreLoading(false);
-      });
+      }
+    };
+    void run();
   }, [futureCursor, futureLoadMoreLoading, buildFlowLoadMoreUrl]);
 
   const isLoading = pastLoadMoreLoading || futureLoadMoreLoading;
@@ -265,6 +272,8 @@ export function useFlowData(): UseFlowDataResult {
     isLoadingMorePast,
     isLoadingMoreFuture,
     error,
+    lastPrependedPastCount,
+    clearPrependedPastCount: () => setLastPrependedPastCount(0),
     fetchMorePast,
     fetchMoreFuture,
   };
