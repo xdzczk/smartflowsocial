@@ -71,6 +71,8 @@ interface FlowSlot {
 const SENTINEL_PREFETCH_ROOT_MARGIN_PX = 400;
 /** When within this many px of the right edge, trigger future fetch (scroll-based; future sentinel may not be in DOM). */
 const RIGHT_EDGE_FETCH_THRESHOLD_PX = 600;
+/** Also trigger when within one viewport width of the right (catches wide viewports). */
+const RIGHT_EDGE_VIEWPORT_MULTIPLIER = 1;
 
 export interface FlowViewProps {
   flowItems: CombinedContent[];
@@ -434,31 +436,35 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     }, [flowItems.length, hasLiveEdge, initialScrollIndex, rowVirtualizer]);
 
     // Scroll: (1) mark scrolled away from left for past-fetch; (2) trigger future-fetch when near right edge (future sentinel may not be in DOM due to virtualizer).
-    // Poll when we can load more future so we don't rely solely on scroll events (e.g. small viewport or programmatic scroll).
+    // Poll when we can load more future; read scroll container from ref each time so dimensions are fresh.
     useEffect(() => {
-      const el = scrollElement;
-      if (!el) return;
+      if (!scrollElement) return;
       const checkNearRight = () => {
-        if (!allowFetch || !hasMoreFuture || isLoadingMoreFuture) {
-          return;
-        }
+        if (!allowFetch || !hasMoreFuture || isLoadingMoreFuture) return;
+        const el = scrollContainerRef.current;
+        if (!el) return;
         const distanceFromRight =
           el.scrollWidth - (el.scrollLeft + el.clientWidth);
-        if (distanceFromRight <= RIGHT_EDGE_FETCH_THRESHOLD_PX) {
+        const threshold = Math.max(
+          RIGHT_EDGE_FETCH_THRESHOLD_PX,
+          el.clientWidth * RIGHT_EDGE_VIEWPORT_MULTIPLIER
+        );
+        if (distanceFromRight <= threshold) {
           onFetchMoreFuture();
         }
       };
       const onScroll = () => {
-        if (el.scrollLeft > 10) {
+        const el = scrollContainerRef.current;
+        if (el && el.scrollLeft > 10) {
           hasScrolledAwayFromLeftRef.current = true;
         }
         checkNearRight();
       };
       checkNearRight();
-      el.addEventListener("scroll", onScroll, { passive: true });
-      const pollId = setInterval(checkNearRight, 400);
+      scrollElement.addEventListener("scroll", onScroll, { passive: true });
+      const pollId = setInterval(checkNearRight, 300);
       return () => {
-        el.removeEventListener("scroll", onScroll);
+        scrollElement.removeEventListener("scroll", onScroll);
         clearInterval(pollId);
       };
     }, [
