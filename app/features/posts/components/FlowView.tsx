@@ -37,6 +37,8 @@ const OVERSCROLL_MAX_PX = 56;
 const OVERSCROLL_RESISTANCE = 0.35;
 const OVERSCROLL_SPRING_MS = 350;
 const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+/** Edge threshold (px); wider so Chrome/sub-pixel scroll still triggers overscroll */
+const OVERSCROLL_EDGE_PX = 8;
 
 const LOADING_LABEL = "Loading…";
 
@@ -139,7 +141,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         springBackTimeoutRef.current = null;
         if (overscrollPxRef.current !== 0) {
           setIsOverscrollSpringing(true);
-          setOverscrollPx(0);
+          requestAnimationFrame(() => {
+            setOverscrollPx(0);
+          });
         }
       }, 120);
     }, []);
@@ -151,8 +155,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const handleWheel = (e: WheelEvent) => {
         const { scrollLeft, scrollWidth, clientWidth } = el;
         const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
-        const atLeft = scrollLeft <= 2;
-        const atRight = maxScrollLeft <= 2 || scrollLeft >= maxScrollLeft - 2;
+        const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
+        const atRight =
+          maxScrollLeft <= OVERSCROLL_EDGE_PX ||
+          scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
         const deltaX = e.deltaX;
         const current = overscrollPxRef.current;
 
@@ -186,8 +192,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const handleTouchMove = (e: TouchEvent) => {
         const { scrollLeft, scrollWidth, clientWidth } = el;
         const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
-        const atLeft = scrollLeft <= 2;
-        const atRight = maxScrollLeft <= 2 || scrollLeft >= maxScrollLeft - 2;
+        const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
+        const atRight =
+          maxScrollLeft <= OVERSCROLL_EDGE_PX ||
+          scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
         const touch = e.touches[0];
         if (!touch) return;
         const prevX = touchStartXRef.current;
@@ -213,7 +221,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const handleTouchEnd = () => {
         if (overscrollPxRef.current !== 0) {
           setIsOverscrollSpringing(true);
-          setOverscrollPx(0);
+          requestAnimationFrame(() => {
+            setOverscrollPx(0);
+          });
         }
       };
 
