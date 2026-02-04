@@ -5,7 +5,6 @@
  */
 
 import {
-  useFetcher,
   useLoaderData,
   useRouteLoaderData,
   useSearchParams,
@@ -98,11 +97,9 @@ export function useFlowData(): UseFlowDataResult {
   const [hashTagPresets, setHashTagPresets] = useState<
     FlowLoaderData["hashTagPresets"]
   >([]);
+  const [pastLoadMoreLoading, setPastLoadMoreLoading] = useState(false);
+  const [futureLoadMoreLoading, setFutureLoadMoreLoading] = useState(false);
 
-  const pastFetcher = useFetcher<FlowLoaderData>();
-  const futureFetcher = useFetcher<FlowLoaderData>();
-  const pastFetcherRef = useRef(pastFetcher);
-  const futureFetcherRef = useRef(futureFetcher);
   /** Cursor we've sent for past; clear when response is processed to avoid duplicate requests */
   const pastSentinelInFlightRef = useRef<string | null>(null);
   const futureSentinelInFlightRef = useRef<string | null>(null);
@@ -114,11 +111,6 @@ export function useFlowData(): UseFlowDataResult {
   useEffect(() => {
     flowItemsLengthRef.current = flowItems.length;
   }, [flowItems.length]);
-
-  useEffect(() => {
-    pastFetcherRef.current = pastFetcher;
-    futureFetcherRef.current = futureFetcher;
-  });
 
   // Sync from loader data (initial load or queueType change).
   // When revalidate() runs (e.g. every 60s), loader returns the initial window (no before/after) and would
@@ -156,98 +148,106 @@ export function useFlowData(): UseFlowDataResult {
     });
   }, [loaderDataRaw, queueType]);
 
-  // Merge past fetcher result when load more past completes.
-  // Do not clear pastSentinelInFlightRef here: setPastCursor runs in startTransition
-  // (deferred), so another effect can run with stale pastCursor and re-request the
-  // same cursor. Keeping the ref blocks duplicate requests until state has updated.
-  useEffect(() => {
-    if (pastFetcher.state !== "idle" || !pastFetcher.data) return;
-    const data = safeValidateLoaderResponse(
-      pastFetcher.data,
-      flowLoaderDataSchema
-    );
-    if (!data) {
-      pastSentinelInFlightRef.current = null;
-      return;
-    }
-    const sentCursor = pastSentinelInFlightRef.current;
-    if (data.pastCursor !== null && data.pastCursor === sentCursor) {
-      startTransition(() => setHasMorePast(false));
-      pastSentinelInFlightRef.current = null;
-      return;
-    }
-    if (data.flowItems.length === 0) {
-      startTransition(() => setHasMorePast(false));
-      return;
-    }
-    hasMergedLoadMoreRef.current = true;
-    const newItems = flowItemsToCombinedContent(data.flowItems);
-    startTransition(() => {
-      setFlowItems((prev) => [...newItems, ...prev]);
-      setHasMorePast(data.hasMorePast);
-      if (data.pastCursor != null) setPastCursor(data.pastCursor);
-    });
-  }, [pastFetcher.state, pastFetcher.data]);
-
-  // Merge future fetcher result when load more future completes.
-  // Do not clear futureSentinelInFlightRef here (same reason as past).
-  useEffect(() => {
-    if (futureFetcher.state !== "idle" || !futureFetcher.data) return;
-    const data = safeValidateLoaderResponse(
-      futureFetcher.data,
-      flowLoaderDataSchema
-    );
-    if (!data) {
-      futureSentinelInFlightRef.current = null;
-      return;
-    }
-    const sentCursor = futureSentinelInFlightRef.current;
-    if (data.futureCursor !== null && data.futureCursor === sentCursor) {
-      startTransition(() => setHasMoreFuture(false));
-      futureSentinelInFlightRef.current = null;
-      return;
-    }
-    if (data.flowItems.length === 0) {
-      startTransition(() => setHasMoreFuture(false));
-      return;
-    }
-    hasMergedLoadMoreRef.current = true;
-    const newItems = flowItemsToCombinedContent(data.flowItems);
-    startTransition(() => {
-      setFlowItems((prev) => [...prev, ...newItems]);
-      setHasMoreFuture(data.hasMoreFuture);
-      if (data.futureCursor != null) setFutureCursor(data.futureCursor);
-    });
-  }, [futureFetcher.state, futureFetcher.data]);
+  /** Build URL for dashboard index loader so we get flow JSON; use raw fetch() so Remix cannot overwrite _data */
+  const buildFlowLoadMoreUrl = useCallback(
+    (params: { before?: string; after?: string }) => {
+      const search = new URLSearchParams();
+      search.set("_data", "routes/dashboard._index");
+      if (queueType !== "all") search.set("queueType", queueType);
+      if (params.before != null) search.set("before", params.before);
+      if (params.after != null) search.set("after", params.after);
+      return `/dashboard?${search.toString()}`;
+    },
+    [queueType]
+  );
 
   const fetchMorePast = useCallback(() => {
-    if (pastFetcherRef.current.state !== "idle" || !pastCursor) return;
+    if (pastLoadMoreLoading || !pastCursor) return;
     if (pastSentinelInFlightRef.current === pastCursor) return;
     pastSentinelInFlightRef.current = pastCursor;
     hasMergedLoadMoreRef.current = true;
-    const params = new URLSearchParams();
-    params.set("_data", "routes/dashboard._index");
-    if (queueType !== "all") params.set("queueType", queueType);
-    params.set("before", pastCursor);
-    pastFetcherRef.current.load(`/dashboard?${params.toString()}`);
-  }, [pastCursor, queueType]);
+    setPastLoadMoreLoading(true);
+    const url = buildFlowLoadMoreUrl({ before: pastCursor });
+    fetch(url, { credentials: "same-origin" })
+      .then((r) =>
+        r.ok ? r.json() : Promise.reject(new Error(String(r.status)))
+      )
+      .then((raw: unknown) => {
+        const data = safeValidateLoaderResponse(raw, flowLoaderDataSchema);
+        if (!data) {
+          pastSentinelInFlightRef.current = null;
+          return;
+        }
+        const sentCursor = pastSentinelInFlightRef.current;
+        if (data.pastCursor !== null && data.pastCursor === sentCursor) {
+          startTransition(() => setHasMorePast(false));
+          pastSentinelInFlightRef.current = null;
+          return;
+        }
+        if (data.flowItems.length === 0) {
+          startTransition(() => setHasMorePast(false));
+          return;
+        }
+        const newItems = flowItemsToCombinedContent(data.flowItems);
+        startTransition(() => {
+          setFlowItems((prev) => [...newItems, ...prev]);
+          setHasMorePast(data.hasMorePast);
+          if (data.pastCursor != null) setPastCursor(data.pastCursor);
+        });
+      })
+      .catch(() => {
+        pastSentinelInFlightRef.current = null;
+      })
+      .finally(() => {
+        setPastLoadMoreLoading(false);
+      });
+  }, [pastCursor, pastLoadMoreLoading, buildFlowLoadMoreUrl]);
 
   const fetchMoreFuture = useCallback(() => {
-    if (futureFetcherRef.current.state !== "idle" || !futureCursor) return;
+    if (futureLoadMoreLoading || !futureCursor) return;
     if (futureSentinelInFlightRef.current === futureCursor) return;
     futureSentinelInFlightRef.current = futureCursor;
     hasMergedLoadMoreRef.current = true;
-    const params = new URLSearchParams();
-    params.set("_data", "routes/dashboard._index");
-    if (queueType !== "all") params.set("queueType", queueType);
-    params.set("after", futureCursor);
-    futureFetcherRef.current.load(`/dashboard?${params.toString()}`);
-  }, [futureCursor, queueType]);
+    setFutureLoadMoreLoading(true);
+    const url = buildFlowLoadMoreUrl({ after: futureCursor });
+    fetch(url, { credentials: "same-origin" })
+      .then((r) =>
+        r.ok ? r.json() : Promise.reject(new Error(String(r.status)))
+      )
+      .then((raw: unknown) => {
+        const data = safeValidateLoaderResponse(raw, flowLoaderDataSchema);
+        if (!data) {
+          futureSentinelInFlightRef.current = null;
+          return;
+        }
+        const sentCursor = futureSentinelInFlightRef.current;
+        if (data.futureCursor !== null && data.futureCursor === sentCursor) {
+          startTransition(() => setHasMoreFuture(false));
+          futureSentinelInFlightRef.current = null;
+          return;
+        }
+        if (data.flowItems.length === 0) {
+          startTransition(() => setHasMoreFuture(false));
+          return;
+        }
+        const newItems = flowItemsToCombinedContent(data.flowItems);
+        startTransition(() => {
+          setFlowItems((prev) => [...prev, ...newItems]);
+          setHasMoreFuture(data.hasMoreFuture);
+          if (data.futureCursor != null) setFutureCursor(data.futureCursor);
+        });
+      })
+      .catch(() => {
+        futureSentinelInFlightRef.current = null;
+      })
+      .finally(() => {
+        setFutureLoadMoreLoading(false);
+      });
+  }, [futureCursor, futureLoadMoreLoading, buildFlowLoadMoreUrl]);
 
-  const isLoading =
-    pastFetcher.state === "loading" || futureFetcher.state === "loading";
-  const isLoadingMorePast = pastFetcher.state === "loading";
-  const isLoadingMoreFuture = futureFetcher.state === "loading";
+  const isLoading = pastLoadMoreLoading || futureLoadMoreLoading;
+  const isLoadingMorePast = pastLoadMoreLoading;
+  const isLoadingMoreFuture = futureLoadMoreLoading;
   const error = validatedLoaderData
     ? null
     : new Error("Invalid flow loader data");
