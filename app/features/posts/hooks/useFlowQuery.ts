@@ -4,7 +4,12 @@
  * scroll-triggered load more (fetchMorePast / fetchMoreFuture) with merge.
  */
 
-import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useRouteLoaderData,
+  useSearchParams,
+} from "@remix-run/react";
 import {
   useCallback,
   useEffect,
@@ -48,7 +53,9 @@ export const flowKeys = {
   list: (queueType?: string) => [...flowKeys.all, "list", queueType] as const,
 };
 
-/** Remix route ID for /dashboard so fetcher gets JSON from dashboard._index loader, not HTML or layout-only data */
+/** Remix route ID for dashboard index (flow data); useRouteLoaderData(id) returns this route's loader data. */
+const DASHBOARD_INDEX_ROUTE_ID = "routes/dashboard._index";
+/** Query param so fetcher gets JSON from dashboard._index loader, not HTML or layout-only data */
 const DASHBOARD_FLOW_DATA_PARAM = "_data=routes%2Fdashboard._index";
 
 export interface UseFlowDataResult {
@@ -72,7 +79,10 @@ export function useFlowData(): UseFlowDataResult {
   const [searchParams] = useSearchParams();
   const queueType = searchParams.get("queueType") ?? "all";
 
-  const loaderDataRaw = useLoaderData();
+  // Prefer index route loader data so we get flowItems/pastCursor/hasMorePast (layout may not expose them)
+  const indexLoaderData = useRouteLoaderData(DASHBOARD_INDEX_ROUTE_ID);
+  const fallbackLoaderData = useLoaderData();
+  const loaderDataRaw = indexLoaderData ?? fallbackLoaderData;
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
     flowLoaderDataSchema

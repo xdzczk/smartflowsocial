@@ -124,6 +124,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const touchStartXRef = useRef(0);
     /** Block load-more until initial scroll has had time; prevents request loop when scrollToIndex fails */
     const allowFetchRef = useRef(false);
+    /** State so fetch effect re-runs when we allow fetch (ref alone doesn't trigger re-render) */
+    const [allowFetch, setAllowFetch] = useState(false);
     /** Only fetch past when we've scrolled away from left (initial scroll succeeded); prevents loop when stuck at scroll 0 */
     const hasScrolledAwayFromLeftRef = useRef(false);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
@@ -321,7 +323,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     // Past-fetch when past sentinel is visible. Duplicate requests are prevented by pastSentinelInFlightRef in useFlowQuery.
     useEffect(() => {
       if (
-        !allowFetchRef.current ||
+        !allowFetch ||
         !isPastSentinelVisible ||
         !hasMorePast ||
         isLoadingMorePast
@@ -330,6 +332,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       }
       onFetchMorePast();
     }, [
+      allowFetch,
       isPastSentinelVisible,
       hasMorePast,
       isLoadingMorePast,
@@ -338,7 +341,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
 
     useEffect(() => {
       if (
-        !allowFetchRef.current ||
+        !allowFetch ||
         !isFutureSentinelVisible ||
         !hasMoreFuture ||
         isLoadingMoreFuture
@@ -347,6 +350,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       }
       onFetchMoreFuture();
     }, [
+      allowFetch,
       isFutureSentinelVisible,
       hasMoreFuture,
       isLoadingMoreFuture,
@@ -384,6 +388,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       }, scrollDelay);
       const allowId = setTimeout(() => {
         allowFetchRef.current = true;
+        setAllowFetch(true);
       }, allowFetchDelay);
       // Allow past-fetch when scroll has moved away from 0 (initial scroll succeeded)
       const checkScrollId = setTimeout(() => {
@@ -423,6 +428,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       if (hasLiveEdge) return;
       const allowId = setTimeout(() => {
         allowFetchRef.current = true;
+        setAllowFetch(true);
         hasScrolledAwayFromLeftRef.current = true;
       }, 500);
       return () => clearTimeout(allowId);
