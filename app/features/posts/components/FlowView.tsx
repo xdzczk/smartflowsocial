@@ -41,8 +41,10 @@ const OVERSCROLL_RESISTANCE = 0.65;
 /** Spring-back: slightly longer + gentle overshoot for buttery iOS-like feel */
 const OVERSCROLL_SPRING_MS = 280;
 const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.33, 1.1, 0.64, 1)";
-/** Delay (ms) after last gesture before spring-back; short so slow overscroll doesn't spring between events */
-const OVERSCROLL_SPRING_BACK_DELAY_MS = 80;
+/** Delay (ms) after last gesture before spring-back when overscroll is small (slow drag) */
+const OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS = 80;
+/** When overscroll exceeds this (px), use 0ms delay so fast/far pull springs back immediately */
+const OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX = 40;
 /** Edge threshold (px); wider so Chrome/macOS and sub-pixel scroll still trigger overscroll */
 const OVERSCROLL_EDGE_PX = 16;
 
@@ -163,6 +165,11 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const scheduleOverscrollSpringBack = useCallback(() => {
       if (springBackTimeoutRef.current)
         clearTimeout(springBackTimeoutRef.current);
+      const delay =
+        Math.abs(overscrollPxRef.current) >=
+        OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX
+          ? 0
+          : OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS;
       springBackTimeoutRef.current = setTimeout(() => {
         springBackTimeoutRef.current = null;
         if (overscrollPxRef.current !== 0) {
@@ -175,7 +182,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             setOverscrollPx(0);
           });
         }
-      }, OVERSCROLL_SPRING_BACK_DELAY_MS);
+      }, delay);
     }, []);
 
     // Rubber-band overscroll: depend on scrollElement so we attach when the scroll container exists.

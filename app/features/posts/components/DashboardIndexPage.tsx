@@ -234,9 +234,9 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      {/* Dashboard spacing: Flow section = desk/work surface (subtle bg); bottom row mt-16 */}
+      {/* Dashboard spacing: Flow section = full-bleed; top/bottom sections use padded container */}
       <div className="flex min-h-[calc(100dvh-12rem)] flex-col lg:h-full lg:min-h-0">
-        <div className="flex-shrink-0 space-y-0">
+        <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-0 px-4 lg:px-8">
           <div className="mt-2.5">
             <Statistics runwayDays={runwayDays} />
           </div>
@@ -274,11 +274,11 @@ export default function DashboardIndexPage() {
           </div>
         </div>
 
-        {/* Flow section: desk/work surface (subtle background only, no card styling) */}
+        {/* Flow section: full-bleed edge-to-edge (no horizontal padding) */}
         <div className="bg-muted/30 dark:bg-muted/15 mt-8 flex min-h-0 flex-1 flex-col pt-2 pb-8">
           {flowError ? (
             <div
-              className="border-destructive bg-destructive/10 flex flex-col gap-2 rounded-lg border p-4"
+              className="border-destructive bg-destructive/10 mx-4 flex flex-col gap-2 rounded-lg border p-4 lg:mx-8"
               role="alert"
             >
               <p className="text-destructive text-sm font-medium">
@@ -297,7 +297,7 @@ export default function DashboardIndexPage() {
           {flowError ? null : isNavigatingToDashboard &&
             flowItems.length === 0 ? (
             <div
-              className="border-border flex h-[160px] w-full items-center justify-center rounded-lg border border-dashed p-8"
+              className="border-border mx-4 flex h-[160px] w-full items-center justify-center rounded-lg border border-dashed p-8 lg:mx-8"
               role="status"
               aria-label="Loading timeline"
               aria-live="polite"
@@ -330,16 +330,18 @@ export default function DashboardIndexPage() {
           )}
         </div>
 
-        <div className="mt-16 flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-y-auto">
-          <QueueHealth
-            queueCounts={queueCountsByQueue}
-            queueTypes={queueTypesFiltered}
-          />
-          <TopPostsList
-            topPosts={topPosts as TopPostItemDTO[]}
-            timeframeDays={topPostsTimeframe}
-            userTimezone={getUserTimezone(user)}
-          />
+        <div className="max-w-10xl mx-auto mt-16 w-full px-4 lg:px-8">
+          <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-y-auto">
+            <QueueHealth
+              queueCounts={queueCountsByQueue}
+              queueTypes={queueTypesFiltered}
+            />
+            <TopPostsList
+              topPosts={topPosts as TopPostItemDTO[]}
+              timeframeDays={topPostsTimeframe}
+              userTimezone={getUserTimezone(user)}
+            />
+          </div>
         </div>
       </div>
 
