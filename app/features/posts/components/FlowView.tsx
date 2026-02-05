@@ -478,6 +478,15 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       ? slots.length - 2
       : -1; /* CTA is last */
 
+    const firstFutureSlotIndex =
+      firstFutureIndex >= 0 ? (hasMorePast ? 1 : 0) + firstFutureIndex : -1;
+    const futureSurfaceLeft =
+      firstFutureSlotIndex >= 0
+        ? slots
+            .slice(0, firstFutureSlotIndex)
+            .reduce((sum, s) => sum + s.size, 0)
+        : 0;
+
     const { ref: pastSentinelRef, isIntersecting: isPastSentinelVisible } =
       useIntersectionObserver({
         threshold: 0.3,
@@ -753,28 +762,44 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         }
         if (slot.item) {
           const firstFutureOffset = hasMorePast ? 1 : 0;
+          const firstFutureSlotIndex = firstFutureOffset + firstFutureIndex;
+          const isFirstFutureSlot =
+            firstFutureIndex >= 0 &&
+            virtualColumnIndex === firstFutureSlotIndex;
           const goLive = getGoLiveAt(slot.item);
           const minutesUntil =
             goLive > nowMs ? Math.round((goLive - nowMs) / 60000) : undefined;
+          const card = (
+            <FlowCard
+              item={slot.item}
+              onClick={() => onCardClick(slot.item!)}
+              isLastPosted={
+                firstFutureIndex >= 1 &&
+                virtualColumnIndex === firstFutureOffset + firstFutureIndex - 1
+                  ? true
+                  : undefined
+              }
+              isNextScheduled={
+                virtualColumnIndex === firstFutureOffset + firstFutureIndex
+              }
+              minutesUntil={minutesUntil}
+              nowMs={nowMs}
+              tabIndex={focusableTabIndex}
+            />
+          );
           return (
             <div className="flex flex-shrink-0 items-stretch px-0.5">
-              <FlowCard
-                item={slot.item}
-                onClick={() => onCardClick(slot.item!)}
-                isLastPosted={
-                  firstFutureIndex >= 1 &&
-                  virtualColumnIndex ===
-                    firstFutureOffset + firstFutureIndex - 1
-                    ? true
-                    : undefined
-                }
-                isNextScheduled={
-                  virtualColumnIndex === firstFutureOffset + firstFutureIndex
-                }
-                minutesUntil={minutesUntil}
-                nowMs={nowMs}
-                tabIndex={focusableTabIndex}
-              />
+              {isFirstFutureSlot ? (
+                <>
+                  <div
+                    aria-hidden
+                    className="bg-border/40 w-[3px] flex-shrink-0 self-stretch"
+                  />
+                  {card}
+                </>
+              ) : (
+                card
+              )}
             </div>
           );
         }
@@ -842,6 +867,16 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             }}
             onTransitionEnd={handleOverscrollTransitionEnd}
           >
+            {firstFutureIndex >= 0 ? (
+              <div
+                aria-hidden
+                className="bg-muted/10 pointer-events-none absolute inset-y-0 z-0"
+                style={{
+                  left: futureSurfaceLeft,
+                  right: 0,
+                }}
+              />
+            ) : null}
             {virtualItems.map((virtualColumn) => {
               const slot = slots[virtualColumn.index];
               if (!slot) return null;

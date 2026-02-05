@@ -307,7 +307,7 @@ export default function DashboardIndexPage() {
               <p className="text-muted-foreground text-sm">Loading timeline…</p>
             </div>
           ) : (
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <div className="bg-muted/20 flex min-h-0 min-w-0 flex-1 flex-col shadow-inner">
               <FlowView
                 ref={flowViewRef}
                 flowItems={flowItems}

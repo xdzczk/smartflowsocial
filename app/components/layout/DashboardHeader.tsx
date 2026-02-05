@@ -70,7 +70,7 @@ function NavigationItem({
     }
   };
 
-  const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
+  const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-primary ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
@@ -171,7 +171,7 @@ export default function Header({
           <Link
             prefetch="intent"
             to="/dashboard"
-            className={`group text-foreground hover:text-primary inline-flex items-center transition-colors ${
+            className={`group text-foreground hover:text-primary focus:ring-primary inline-flex items-center rounded-lg transition-colors focus:ring-2 focus:outline-none ${
               isDesktopExpanded ? "gap-2" : "w-full justify-center"
             }`}
             title="SmartFlow Social"

@@ -64,7 +64,7 @@ function NavigationChildItemComponent({
     ? `Requires ${getMinimumPlanForFeature(child.feature)} plan`
     : child.label;
 
-  const childLinkClass = `group flex items-center rounded-lg border border-transparent text-sm font-medium relative ${
+  const childLinkClass = `group flex items-center rounded-lg border border-transparent text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-primary ${
     collapsed ? "justify-center px-0 py-2" : "gap-2 px-2.5"
   } ${
     isActive
@@ -188,7 +188,7 @@ export function ExpandableNavigationSection({
     }, 0);
   };
 
-  const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer ${
+  const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${
     isAnyChildActive
       ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
       : "text-muted-foreground hover:bg-muted hover:text-foreground active:border-border"
