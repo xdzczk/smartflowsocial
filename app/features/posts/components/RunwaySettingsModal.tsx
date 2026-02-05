@@ -52,6 +52,8 @@ export function RunwaySettingsModal({
   );
 
   const prevOpenRef = useRef(false);
+  const didSubmitRef = useRef(false);
+
   useEffect(() => {
     if (open && !prevOpenRef.current) {
       const names = queueTypes.map((qt) => qt.name);
@@ -64,18 +66,25 @@ export function RunwaySettingsModal({
         setSelectedQueueNames(initial);
         setMode(nextMode);
       });
+      didSubmitRef.current = false;
     }
     prevOpenRef.current = open;
   }, [open, queueTypes, runwaySettings]);
 
   useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
+    if (
+      didSubmitRef.current &&
+      fetcher.state === "idle" &&
+      fetcher.data?.success
+    ) {
+      didSubmitRef.current = false;
       onSuccess?.();
       onOpenChange(false);
     }
   }, [fetcher.state, fetcher.data, onSuccess, onOpenChange]);
 
   const handleSave = () => {
+    didSubmitRef.current = true;
     const formData = new FormData();
     formData.set("_action", "updateRunwaySettings");
     formData.set("mode", mode);
@@ -106,6 +115,11 @@ export function RunwaySettingsModal({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {fetcher.data?.error ? (
+            <p className="text-destructive text-sm" role="alert">
+              {fetcher.data.error}
+            </p>
+          ) : null}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Queues that count</Label>
