@@ -269,10 +269,11 @@
     color: hsl(var(--foreground));
     font-family: var(--font-sans);
   }
-  /* Show focus ring only for keyboard focus, not after mouse/touch click */
+  /* Show focus ring only for keyboard focus, not after mouse/touch click.
+     !important overrides Tailwind's focus:ring-* utilities so the ring is hidden after click. */
   *:focus:not(:focus-visible) {
-    outline: none;
-    box-shadow: none;
+    outline: none !important;
+    box-shadow: none !important;
   }
 }
 

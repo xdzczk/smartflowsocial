@@ -33,12 +33,13 @@ export default function Statistics({
       ? `${runwayDays} day${runwayDays !== 1 ? "s" : ""}`
       : "0 days";
 
-  // Runway icon color: red when ≤ redThreshold, orange when ≤ orangeThreshold, amber otherwise
+  // Runway icon color: muted only when 0 days and no scheduled posts; red when 0 days but posts are scheduled; else red/orange/amber by thresholds
   const runwayDaysNum = runwayDays ?? 0;
+  const hasScheduledPosts = stats.scheduledCount > 0;
   const runwayIconClass =
-    runwayDaysNum <= 0
+    runwayDaysNum <= 0 && !hasScheduledPosts
       ? "bg-muted text-muted-foreground dark:bg-muted/80"
-      : runwayDaysNum <= runwayRedThresholdDays
+      : runwayDaysNum <= 0 || runwayDaysNum <= runwayRedThresholdDays
         ? "bg-red-500/15 text-red-600 dark:bg-red-400/20 dark:text-red-400"
         : runwayDaysNum <= runwayOrangeThresholdDays
           ? "bg-orange-500/15 text-orange-600 dark:bg-orange-400/20 dark:text-orange-400"
