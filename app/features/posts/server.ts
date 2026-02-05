@@ -148,6 +148,7 @@ export {
   type LoadFlowDataResult,
   type FlowItemDTO,
 } from "./services/flow-loader.server";
+export { getRunwayLastScheduledAtUtcMs } from "./services/runway.server";
 export {
   getTopPostedPostsByEngagement,
   type TopPostItem,

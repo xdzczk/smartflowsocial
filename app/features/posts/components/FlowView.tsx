@@ -42,11 +42,14 @@ const OVERSCROLL_RESISTANCE = 0.65;
 const OVERSCROLL_SPRING_MS = 280;
 const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.33, 1.1, 0.64, 1)";
 /** Delay (ms) after last gesture before spring-back when overscroll is small (slow drag) */
-const OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS = 80;
+const OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS = 140;
 /** When overscroll exceeds this (px), use 0ms delay so fast/far pull springs back immediately */
 const OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX = 40;
 /** Edge threshold (px); wider so Chrome/macOS and sub-pixel scroll still trigger overscroll */
 const OVERSCROLL_EDGE_PX = 16;
+
+/** Inset (px) from left edge for initial position and "Scroll to next": last-posted card sits away from sidebar */
+const SCROLL_EDGE_OFFSET_PX = 24;
 
 const LOADING_LABEL = "Loading…";
 
@@ -172,13 +175,15 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           : OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS;
       springBackTimeoutRef.current = setTimeout(() => {
         springBackTimeoutRef.current = null;
-        if (overscrollPxRef.current !== 0) {
+        const current = overscrollPxRef.current;
+        if (current !== 0) {
           if (overscrollRafIdRef.current !== null) {
             cancelAnimationFrame(overscrollRafIdRef.current);
             overscrollRafIdRef.current = null;
           }
-          setIsOverscrollSpringing(true);
+          setOverscrollPx(current);
           requestAnimationFrame(() => {
+            setIsOverscrollSpringing(true);
             setOverscrollPx(0);
           });
         }
@@ -519,11 +524,18 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       initialScrollDoneRef.current = true;
       const scrollDelay = 200;
       const allowFetchDelay = 600;
+      let offsetId: ReturnType<typeof setTimeout> | null = null;
       const scrollId = setTimeout(() => {
         rowVirtualizer.scrollToIndex(initialScrollIndex, {
           align: "start",
           behavior: "auto",
         });
+        offsetId = setTimeout(() => {
+          const el = scrollContainerRef.current;
+          if (el) {
+            el.scrollLeft = Math.max(0, el.scrollLeft - SCROLL_EDGE_OFFSET_PX);
+          }
+        }, 50);
       }, scrollDelay);
       const allowId = setTimeout(() => {
         allowFetchRef.current = true;
@@ -542,6 +554,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       }, 1500);
       return () => {
         clearTimeout(scrollId);
+        if (offsetId !== null) clearTimeout(offsetId);
         clearTimeout(allowId);
         clearTimeout(checkScrollId);
         clearTimeout(fallbackId);
@@ -609,6 +622,13 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         align: "start",
         behavior: reduceMotion ? "auto" : "smooth",
       });
+      const delay = reduceMotion ? 50 : 450;
+      setTimeout(() => {
+        const el = scrollContainerRef.current;
+        if (el) {
+          el.scrollLeft = Math.max(0, el.scrollLeft - SCROLL_EDGE_OFFSET_PX);
+        }
+      }, delay);
     }, [isMobile, scrollToFirstFutureIndex, scrollToLiveIndex, rowVirtualizer]);
 
     useImperativeHandle(

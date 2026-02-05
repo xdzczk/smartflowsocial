@@ -192,6 +192,15 @@ export const calendarRescheduleLongformSchema = z.object({
 });
 
 /**
+ * Update runway settings (which queues count, mode)
+ */
+export const updateRunwaySettingsSchema = z.object({
+  _action: z.literal("updateRunwaySettings"),
+  queueNames: z.array(z.string()),
+  mode: z.enum(["last-post", "first-queue-empty"]),
+});
+
+/**
  * Union schema for all dashboard actions
  */
 export const dashboardActionSchema = z.discriminatedUnion("_action", [
@@ -199,6 +208,7 @@ export const dashboardActionSchema = z.discriminatedUnion("_action", [
   deleteLongFormPostSchema,
   bulkDeletePostsSchema,
   bulkDeleteLongFormPostsSchema,
+  updateRunwaySettingsSchema,
 ]);
 
 /**

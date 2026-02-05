@@ -6,9 +6,14 @@ import type { PostStatistics } from "~/models/post.types";
 export interface StatisticsProps {
   /** Runway in days until last scheduled post; null when none or in the past */
   runwayDays?: number | null;
+  /** Called when the Runway card is clicked (open settings modal) */
+  onRunwayClick?: () => void;
 }
 
-export default function Statistics({ runwayDays }: StatisticsProps) {
+export default function Statistics({
+  runwayDays,
+  onRunwayClick,
+}: StatisticsProps) {
   const { postStatistics } = useLoaderData<{
     postStatistics: PostStatistics | undefined;
   }>();
@@ -133,26 +138,33 @@ export default function Statistics({ runwayDays }: StatisticsProps) {
         </CardContent>
       </Card>
 
-      <Card className={cardBase} aria-label={`Runway, ${runwayLabel}`}>
-        <CardContent className={contentBase}>
-          <div className={`${iconBase} ${runwayIconClass}`}>
-            <svg
-              className="hi-solid hi-calendar-days inline-block size-6"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <dl className="space-y-0 text-right">
-            <dt className={dtBase}>{runwayLabel}</dt>
-            <dd className={ddBase}>Runway</dd>
-          </dl>
+      <Card className={cardBase}>
+        <CardContent className="p-0">
+          <button
+            type="button"
+            onClick={onRunwayClick}
+            aria-label={`Runway, ${runwayLabel}. Configure which queues count.`}
+            className={`${contentBase} w-full cursor-pointer text-left`}
+          >
+            <div className={`${iconBase} ${runwayIconClass}`}>
+              <svg
+                className="hi-solid hi-calendar-days inline-block size-6"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <dl className="space-y-0 text-right">
+              <dt className={dtBase}>{runwayLabel}</dt>
+              <dd className={ddBase}>Runway</dd>
+            </dl>
+          </button>
         </CardContent>
       </Card>
     </div>

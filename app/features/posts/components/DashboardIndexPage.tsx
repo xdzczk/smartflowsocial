@@ -16,6 +16,7 @@ import {
   PostDetailsModal,
   QueueHealth,
   QueueSelectionTabs,
+  RunwaySettingsModal,
   SimpleRescheduleModal,
   Statistics,
   SuccessMessage,
@@ -70,6 +71,7 @@ export default function DashboardIndexPage() {
     user,
     queueTypes,
     hashTagPresets,
+    runwaySettings,
     isLoadingMorePast,
     isLoadingMoreFuture,
     error: flowError,
@@ -78,6 +80,8 @@ export default function DashboardIndexPage() {
     fetchMorePast,
     fetchMoreFuture,
   } = useFlowData();
+
+  const [runwayModalOpen, setRunwayModalOpen] = useState(false);
 
   const loaderData = useLoaderData<{
     queueCountsByQueue?: Array<{ queueName: string; count: number }>;
@@ -238,7 +242,10 @@ export default function DashboardIndexPage() {
       <div className="flex min-h-[calc(100dvh-12rem)] flex-col lg:h-full lg:min-h-0">
         <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-0 px-4 lg:px-8">
           <div className="mt-2.5">
-            <Statistics runwayDays={runwayDays} />
+            <Statistics
+              runwayDays={runwayDays}
+              onRunwayClick={() => setRunwayModalOpen(true)}
+            />
           </div>
           <div className="min-h-[1.5rem] flex-1" aria-hidden />
           <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-3">
@@ -274,8 +281,8 @@ export default function DashboardIndexPage() {
           </div>
         </div>
 
-        {/* Flow section: full-bleed edge-to-edge (no horizontal padding) */}
-        <div className="bg-muted/30 dark:bg-muted/15 mt-8 flex min-h-0 flex-1 flex-col pt-2 pb-8">
+        {/* Flow section: full-bleed edge-to-edge (min-height so cards are not clipped) */}
+        <div className="bg-muted/30 dark:bg-muted/15 mt-8 flex min-h-[216px] flex-1 flex-col pt-2 pb-8 md:min-h-[248px]">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 mx-4 flex flex-col gap-2 rounded-lg border p-4 lg:mx-8"
@@ -344,6 +351,14 @@ export default function DashboardIndexPage() {
           </div>
         </div>
       </div>
+
+      <RunwaySettingsModal
+        open={runwayModalOpen}
+        onOpenChange={setRunwayModalOpen}
+        queueTypes={queueTypesFiltered}
+        runwaySettings={runwaySettings ?? undefined}
+        onSuccess={() => revalidator.revalidate()}
+      />
 
       {selectedPost ? (
         <PostDetailsModal

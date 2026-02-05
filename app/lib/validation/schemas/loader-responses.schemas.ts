@@ -549,8 +549,15 @@ const flowItemSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+/** Runway settings (dashboard index may include for modal initial state) */
+export const runwaySettingsSchema = z.object({
+  queueNames: z.array(z.string()),
+  mode: z.enum(["last-post", "first-queue-empty"]),
+});
+
 /**
- * Schema for Flow loader data (dashboard Flow view)
+ * Schema for Flow loader data (dashboard Flow view).
+ * Optional runway fields are set by dashboard index loader only.
  */
 export const flowLoaderDataSchema = z.object({
   flowItems: z.array(flowItemSchema),
@@ -563,6 +570,10 @@ export const flowLoaderDataSchema = z.object({
   user: userSchema.nullable(),
   queueTypes: z.array(queueTypeSchema),
   hashTagPresets: z.array(hashTagPresetSchema),
+  /** Runway KPI: computed from user runway settings; only from dashboard index loader. */
+  runwayLastScheduledAtUtc: z.number().nullable().optional(),
+  /** Runway settings for modal; only from dashboard index loader. */
+  runwaySettings: runwaySettingsSchema.optional(),
 });
 
 export type FlowLoaderData = z.infer<typeof flowLoaderDataSchema>;

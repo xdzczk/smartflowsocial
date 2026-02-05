@@ -12,10 +12,12 @@ import {
   getContentStatistics,
   getQueueCountsForDashboard,
   getTopPostedPostsByEngagement,
+  getRunwayLastScheduledAtUtcMs,
   handleDashboardAction,
   loadFlowData,
 } from "~/features/posts/server";
 import { DashboardIndexPage } from "~/features/posts/ui";
+import { getRunwaySettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { logWarning } from "~/lib/error-logger.server";
 import { ValidationError } from "~/lib/errors";
@@ -33,6 +35,10 @@ const FALLBACK_FLOW = {
   user: null,
   queueTypes: [],
   hashTagPresets: [],
+  runwayLastScheduledAtUtc: null as number | null,
+  runwaySettings: undefined as
+    | { queueNames: string[]; mode: "last-post" | "first-queue-empty" }
+    | undefined,
   postStatistics: EMPTY_STATS,
   queueCountsByQueue: [] as Array<{ queueName: string; count: number }>,
   topPosts: [] as Array<{ post: unknown; stats: unknown }>,
@@ -101,8 +107,18 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       });
     }
 
+    const now = new Date();
+    const runwaySettings = await getRunwaySettings(userId);
+    const runwayLastScheduledAtUtc = await getRunwayLastScheduledAtUtcMs(
+      userId,
+      now,
+      runwaySettings
+    );
+
     return json({
       ...validatedData,
+      runwayLastScheduledAtUtc,
+      runwaySettings,
       postStatistics,
       queueCountsByQueue,
       topPosts,
@@ -117,6 +133,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {
       ...FALLBACK_FLOW,
+      runwayLastScheduledAtUtc: null,
+      runwaySettings: undefined,
       postStatistics: EMPTY_STATS,
       queueCountsByQueue: [],
       topPosts: [],

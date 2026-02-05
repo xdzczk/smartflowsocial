@@ -66,6 +66,8 @@ export interface UseFlowDataResult {
   user: FlowLoaderData["user"];
   queueTypes: FlowLoaderData["queueTypes"];
   hashTagPresets: FlowLoaderData["hashTagPresets"];
+  /** Runway settings (which queues, mode); from dashboard index loader for modal. */
+  runwaySettings: FlowLoaderData["runwaySettings"];
   isLoading: boolean;
   isLoadingMorePast: boolean;
   isLoadingMoreFuture: boolean;
@@ -105,6 +107,8 @@ export function useFlowData(): UseFlowDataResult {
   const [lastScheduledAtUtc, setLastScheduledAtUtc] = useState<number | null>(
     null
   );
+  const [runwaySettings, setRunwaySettings] =
+    useState<FlowLoaderData["runwaySettings"]>();
   const [pastLoadMoreLoading, setPastLoadMoreLoading] = useState(false);
   const [futureLoadMoreLoading, setFutureLoadMoreLoading] = useState(false);
   const [lastPrependedPastCount, setLastPrependedPastCount] = useState(0);
@@ -135,12 +139,17 @@ export function useFlowData(): UseFlowDataResult {
     );
     if (!validated) return;
     const queueUnchanged = lastSyncedQueueTypeRef.current === queueType;
+    const runwayMs =
+      validated.runwayLastScheduledAtUtc ??
+      validated.lastScheduledAtUtc ??
+      null;
     if (queueUnchanged && hasMergedLoadMoreRef.current) {
       startTransition(() => {
         setUser(validated.user);
         setQueueTypes(validated.queueTypes);
         setHashTagPresets(validated.hashTagPresets);
-        setLastScheduledAtUtc(validated.lastScheduledAtUtc ?? null);
+        setLastScheduledAtUtc(runwayMs);
+        setRunwaySettings(validated.runwaySettings);
       });
       return;
     }
@@ -152,10 +161,11 @@ export function useFlowData(): UseFlowDataResult {
       setHasMoreFuture(validated.hasMoreFuture);
       setPastCursor(validated.pastCursor);
       setFutureCursor(validated.futureCursor);
-      setLastScheduledAtUtc(validated.lastScheduledAtUtc ?? null);
+      setLastScheduledAtUtc(runwayMs);
       setUser(validated.user);
       setQueueTypes(validated.queueTypes);
       setHashTagPresets(validated.hashTagPresets);
+      setRunwaySettings(validated.runwaySettings);
     });
   }, [loaderDataRaw, queueType]);
 
@@ -276,6 +286,7 @@ export function useFlowData(): UseFlowDataResult {
     user,
     queueTypes,
     hashTagPresets,
+    runwaySettings,
     isLoading,
     isLoadingMorePast,
     isLoadingMoreFuture,

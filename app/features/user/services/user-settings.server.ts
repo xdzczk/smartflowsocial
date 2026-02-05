@@ -427,3 +427,57 @@ export function updateUserTimeFormat(
     },
   });
 }
+
+export type RunwayMode = "last-post" | "first-queue-empty";
+
+export interface RunwaySettings {
+  queueNames: string[];
+  mode: RunwayMode;
+}
+
+const DEFAULT_RUNWAY_SETTINGS: RunwaySettings = {
+  queueNames: [],
+  mode: "last-post",
+};
+
+/**
+ * Gets user's runway KPI settings.
+ * Empty queueNames means "all queues". Default mode is "last-post".
+ */
+export async function getRunwaySettings(
+  userId: string
+): Promise<RunwaySettings> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { runwaySettings: true },
+  });
+  const raw = user?.runwaySettings;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ...DEFAULT_RUNWAY_SETTINGS };
+  }
+  const obj = raw as Record<string, unknown>;
+  const queueNames = Array.isArray(obj["queueNames"])
+    ? (obj["queueNames"] as string[]).filter((n) => typeof n === "string")
+    : [];
+  const mode =
+    obj["mode"] === "first-queue-empty" ? "first-queue-empty" : "last-post";
+  return { queueNames, mode };
+}
+
+/**
+ * Updates user's runway KPI settings.
+ */
+export function updateRunwaySettings(
+  userId: string,
+  settings: RunwaySettings
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      runwaySettings: {
+        queueNames: settings.queueNames,
+        mode: settings.mode,
+      },
+    },
+  });
+}

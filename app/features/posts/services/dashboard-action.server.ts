@@ -3,6 +3,7 @@
  * Centralized action processing for dashboard index page
  */
 
+import { updateRunwaySettings } from "~/features/user";
 import {
   dashboardActionSchema,
   validateFormDataOrRespond,
@@ -38,6 +39,14 @@ export async function handleDashboardAction(
     );
     const deletedCount = results.filter((post) => post !== null).length;
     return { success: true, deletedCount };
+  }
+
+  if (_action === "updateRunwaySettings") {
+    await updateRunwaySettings(userId, {
+      queueNames: result.data.queueNames,
+      mode: result.data.mode,
+    });
+    return { success: true };
   }
 
   // TypeScript guarantees this is "bulkDeleteLongForm" after previous checks
