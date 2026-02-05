@@ -190,24 +190,13 @@ export default function DashboardIndexPage() {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  // Runway from server (lastScheduledAtUtcMs) so it's correct on first load; fallback to client max from loaded flowItems
+  // Runway from server only (no fallback). When mode is "first-queue-empty" and any selected queue is empty, server returns null → show 0 days.
   const runwayDays = useMemo((): number | null => {
-    const thenMs =
-      lastScheduledAtUtcMs ??
-      (() => {
-        let latest = 0;
-        for (const item of flowItems) {
-          const at = item.scheduledAtUtc
-            ? new Date(item.scheduledAtUtc).getTime()
-            : 0;
-          if (at > latest) latest = at;
-        }
-        return latest > 0 ? latest : null;
-      })();
+    const thenMs = lastScheduledAtUtcMs;
     if (thenMs == null || nowMs === null) return null;
-    if (thenMs <= nowMs) return null;
+    if (thenMs <= nowMs) return 0;
     return Math.ceil((thenMs - nowMs) / (24 * 60 * 60 * 1000));
-  }, [lastScheduledAtUtcMs, flowItems, nowMs]);
+  }, [lastScheduledAtUtcMs, nowMs]);
 
   /** For DashboardHeader (unused there; runway KPI uses runwayDays). */
   const flowRunsUntil = useMemo((): Date | null => {
