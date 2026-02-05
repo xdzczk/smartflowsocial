@@ -223,7 +223,7 @@ function FlowCardInner({
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`border-border bg-card focus:ring-primary relative flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm transition-[box-shadow,border-color] hover:shadow-md focus:ring-2 focus:outline-none md:min-h-[232px] md:w-[352px] ${queueColor ? "hover:border-[color:var(--queue-color)]" : "hover:border-primary/50"} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
+      className={`card-lift border-border-subtle bg-card focus:ring-primary relative flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:min-h-[232px] md:w-[352px] ${queueColor ? "hover:border-[color:var(--queue-color)]" : "hover:border-primary/50"} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
         queueColor || glowStyle
           ? {
@@ -274,14 +274,14 @@ function FlowCardInner({
           {timeLabel}
         </span>
         {firstImage ? (
-          <span className="text-muted-foreground line-clamp-2 text-sm">
+          <span className="text-muted-foreground/90 line-clamp-2 text-sm">
             {contentSummaryText}
           </span>
         ) : null}
-        <span className="text-muted-foreground mt-0.5 text-[11px]">
+        <span className="text-muted-foreground/90 mt-0.5 text-[11px] leading-snug">
           {formattedTime}
         </span>
-        <span className="text-muted-foreground text-xs">
+        <span className="text-muted-foreground/90 text-xs leading-snug">
           {statusLabel}
           {queueName ? ` · ${queueName}` : ""}
         </span>

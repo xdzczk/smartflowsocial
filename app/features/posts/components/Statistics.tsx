@@ -35,13 +35,13 @@ export default function Statistics({
           ? "bg-amber-400/10 text-amber-500 dark:bg-amber-300/15 dark:text-amber-300"
           : "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400";
 
-  const cardBase = "min-h-[72px] shadow-sm dark:shadow-none";
+  const cardBase = "card-lift min-h-[72px] shadow-sm dark:shadow-none";
   const contentBase =
     "hover:bg-muted/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-primary";
   const iconBase = "flex size-12 items-center justify-center rounded-xl";
   const dtBase = "text-foreground text-2xl font-bold tabular-nums";
   const ddBase =
-    "text-muted-foreground text-[11px] font-medium uppercase tracking-tight";
+    "text-muted-foreground/90 text-[11px] font-medium uppercase tracking-tight leading-snug";
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">

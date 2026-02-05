@@ -478,15 +478,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       ? slots.length - 2
       : -1; /* CTA is last */
 
-    const firstFutureSlotIndex =
-      firstFutureIndex >= 0 ? (hasMorePast ? 1 : 0) + firstFutureIndex : -1;
-    const futureSurfaceLeft =
-      firstFutureSlotIndex >= 0
-        ? slots
-            .slice(0, firstFutureSlotIndex)
-            .reduce((sum, s) => sum + s.size, 0)
-        : 0;
-
     const { ref: pastSentinelRef, isIntersecting: isPastSentinelVisible } =
       useIntersectionObserver({
         threshold: 0.3,
@@ -741,7 +732,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               <Link
                 to="/dashboard/newpost"
                 tabIndex={focusableTabIndex}
-                className="border-border bg-card hover:bg-muted/30 focus:ring-primary flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm transition-[box-shadow,border-color,background-color] hover:shadow-md focus:ring-2 focus:outline-none md:min-h-[232px] md:w-[352px]"
+                className="card-lift border-border-subtle bg-card hover:bg-muted/30 focus:ring-primary flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm focus:ring-2 focus:outline-none md:min-h-[232px] md:w-[352px]"
                 aria-label="Create a new post"
               >
                 <Plus
@@ -752,7 +743,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                   <span className="text-foreground font-semibold">
                     Create new post
                   </span>
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-muted-foreground/90 text-sm">
                     Schedule or publish
                   </span>
                 </div>
@@ -762,44 +753,28 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         }
         if (slot.item) {
           const firstFutureOffset = hasMorePast ? 1 : 0;
-          const firstFutureSlotIndex = firstFutureOffset + firstFutureIndex;
-          const isFirstFutureSlot =
-            firstFutureIndex >= 0 &&
-            virtualColumnIndex === firstFutureSlotIndex;
           const goLive = getGoLiveAt(slot.item);
           const minutesUntil =
             goLive > nowMs ? Math.round((goLive - nowMs) / 60000) : undefined;
-          const card = (
-            <FlowCard
-              item={slot.item}
-              onClick={() => onCardClick(slot.item!)}
-              isLastPosted={
-                firstFutureIndex >= 1 &&
-                virtualColumnIndex === firstFutureOffset + firstFutureIndex - 1
-                  ? true
-                  : undefined
-              }
-              isNextScheduled={
-                virtualColumnIndex === firstFutureOffset + firstFutureIndex
-              }
-              minutesUntil={minutesUntil}
-              nowMs={nowMs}
-              tabIndex={focusableTabIndex}
-            />
-          );
           return (
             <div className="flex flex-shrink-0 items-stretch px-0.5">
-              {isFirstFutureSlot ? (
-                <>
-                  <div
-                    aria-hidden
-                    className="bg-border/40 w-[3px] flex-shrink-0 self-stretch"
-                  />
-                  {card}
-                </>
-              ) : (
-                card
-              )}
+              <FlowCard
+                item={slot.item}
+                onClick={() => onCardClick(slot.item!)}
+                isLastPosted={
+                  firstFutureIndex >= 1 &&
+                  virtualColumnIndex ===
+                    firstFutureOffset + firstFutureIndex - 1
+                    ? true
+                    : undefined
+                }
+                isNextScheduled={
+                  virtualColumnIndex === firstFutureOffset + firstFutureIndex
+                }
+                minutesUntil={minutesUntil}
+                nowMs={nowMs}
+                tabIndex={focusableTabIndex}
+              />
             </div>
           );
         }
@@ -818,17 +793,17 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     if (flowItems.length === 0) {
       return (
         <div
-          className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-12 text-center"
+          className="border-border-subtle flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-12 text-center"
           role="region"
           aria-label="Post timeline"
         >
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground/90 text-sm">
             No posts yet. Create your first post or schedule one to see your
             flow.
           </p>
           <Link
             to="/dashboard/newpost"
-            className="border-border text-foreground hover:bg-muted/50 focus:ring-primary rounded-md border px-4 py-2 text-sm font-medium focus:ring-2 focus:outline-none"
+            className="card-lift border-border-subtle text-foreground hover:bg-muted/50 focus:ring-primary rounded-xl border px-4 py-2 text-sm font-medium shadow-sm focus:ring-2 focus:outline-none"
           >
             Create post
           </Link>
@@ -867,16 +842,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             }}
             onTransitionEnd={handleOverscrollTransitionEnd}
           >
-            {firstFutureIndex >= 0 ? (
-              <div
-                aria-hidden
-                className="bg-muted/10 pointer-events-none absolute inset-y-0 z-0"
-                style={{
-                  left: futureSurfaceLeft,
-                  right: 0,
-                }}
-              />
-            ) : null}
             {virtualItems.map((virtualColumn) => {
               const slot = slots[virtualColumn.index];
               if (!slot) return null;

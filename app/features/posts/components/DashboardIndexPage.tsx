@@ -234,7 +234,7 @@ export default function DashboardIndexPage() {
       ) : null}
 
       {/* Dashboard spacing: Flow section = full-bleed; top/bottom sections use padded container */}
-      <div className="flex min-h-[calc(100dvh-12rem)] flex-col lg:h-full lg:min-h-0">
+      <div className="dashboard-canvas flex min-h-[calc(100dvh-12rem)] flex-col lg:h-full lg:min-h-0">
         <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-0 px-4 lg:px-8">
           <div className="mt-2.5">
             <Statistics
@@ -276,8 +276,8 @@ export default function DashboardIndexPage() {
           </div>
         </div>
 
-        {/* Flow section: full-bleed edge-to-edge (min-height so cards are not clipped) */}
-        <div className="bg-muted/30 dark:bg-muted/15 mt-8 flex min-h-[216px] flex-1 flex-col pt-2 pb-8 md:min-h-[248px]">
+        {/* Flow section: recessed zone (stronger wash + inset shadow) */}
+        <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-8 flex min-h-[216px] flex-1 flex-col pt-2 pb-8 md:min-h-[248px]">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 mx-4 flex flex-col gap-2 rounded-lg border p-4 lg:mx-8"
@@ -299,7 +299,7 @@ export default function DashboardIndexPage() {
           {flowError ? null : isNavigatingToDashboard &&
             flowItems.length === 0 ? (
             <div
-              className="border-border mx-4 flex h-[160px] w-full items-center justify-center rounded-lg border border-dashed p-8 lg:mx-8"
+              className="border-border-subtle mx-4 flex h-[160px] w-full items-center justify-center rounded-xl border border-dashed p-8 lg:mx-8"
               role="status"
               aria-label="Loading timeline"
               aria-live="polite"
@@ -307,7 +307,7 @@ export default function DashboardIndexPage() {
               <p className="text-muted-foreground text-sm">Loading timeline…</p>
             </div>
           ) : (
-            <div className="bg-muted/20 flex min-h-0 min-w-0 flex-1 flex-col shadow-inner">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               <FlowView
                 ref={flowViewRef}
                 flowItems={flowItems}

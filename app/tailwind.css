@@ -125,6 +125,7 @@
   --color-checkbox: hsl(var(--checkbox));
   --color-checkbox-foreground: hsl(var(--checkbox-foreground));
   --color-border: hsl(var(--border));
+  --color-border-subtle: hsl(var(--border-subtle));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --color-chart-1: hsl(var(--chart-1));
@@ -195,6 +196,7 @@
     --checkbox: 0 0% 50%;                  /* Neutral gray for checkboxes */
     --checkbox-foreground: 0 0% 100%;      /* White checkmark */
     --border: 0 0% 90%;                     /* Neutral border */
+    --border-subtle: 0 0% 92%;              /* Softer border for cards/surfaces (~30% less contrast) */
     --input: 0 0% 90%;                      /* Neutral input border */
     --ring: 255 97% 51%;                    /* Action purple for focus states */
     --chart-1: 255 97% 51%;                 /* Brand primary */
@@ -202,7 +204,7 @@
     --chart-3: 250 100% 31%;                 /* Deep indigo #1E03A0 */
     --chart-4: 250 25% 80%;                 /* Light lavender */
     --chart-5: 250 100% 5%;                 /* Dark indigo */
-    --radius: 0.5rem;
+    --radius: 0.625rem;                      /* Softer corners (was 0.5rem) */
     
     /* Landing page specific variables */
     --landing-card-elevated: 0 0% 99%;
@@ -222,6 +224,7 @@
     --muted: 0 0% 7.5%;                    /* Between surface and elevated */
     --muted-foreground: 30 5% 60%;         /* Warm grey #9A948F for secondary text */
     --border: 0 0% 9.5%;                   /* Borders/dividers - subtle, felt not seen */
+    --border-subtle: 0 0% 7%;              /* Softer border for cards (~30% less contrast) */
     --input: 0 0% 9.5%;                    /* Input borders - matches border */
     
     /* Brand colors - two-purple system */
@@ -309,6 +312,38 @@
       radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.05) 1px, transparent 0);
   }
 
+  /* Dashboard base canvas: 1–2% grain so base feels crafted, not flat */
+  .dashboard-canvas {
+    background-color: hsl(var(--background));
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(var(--foreground) / 0.015) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
+  }
+
+  .dark .dashboard-canvas {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(var(--foreground) / 0.025) 1px,
+      transparent 0
+    );
+  }
+
+  /* Flow zone: subtle inset shadow so strip feels recessed */
+  .flow-zone {
+    box-shadow:
+      inset 0 1px 0 0 hsl(var(--foreground) / 0.03),
+      inset 0 -1px 0 0 hsl(var(--foreground) / 0.03);
+  }
+
+  .dark .flow-zone {
+    box-shadow:
+      inset 0 1px 0 0 hsl(var(--foreground) / 0.04),
+      inset 0 -1px 0 0 hsl(var(--foreground) / 0.04);
+  }
+
   /* Hero gradient utilities - neutral gradients only */
   .hero-gradient-light {
     background: linear-gradient(
@@ -340,13 +375,23 @@
     background-clip: text;
   }
 
-  /* Card lift animation */
+  /* Card lift: micro-depth on hover (shadow shift, slight lift); respect reduced motion */
   .card-lift {
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   }
-  
+
   .card-lift:hover {
-    transform: translateY(-2px);
+    box-shadow: 0 4px 12px hsl(var(--foreground) / 0.08);
+  }
+
+  .dark .card-lift:hover {
+    box-shadow: 0 4px 12px hsl(var(--foreground) / 0.12);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .card-lift:hover {
+      transform: translateY(-2px);
+    }
   }
 
   /* Arrow pulse animation */
