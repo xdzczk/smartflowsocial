@@ -108,7 +108,7 @@ export default function QueueSelectionTabs({
   return (
     <div className="border-border min-w-0 flex-shrink-0 border-b">
       <nav
-        className="-mb-px flex space-x-6 overflow-x-auto"
+        className="scrollbar-hide -mb-px flex space-x-6 overflow-x-auto"
         aria-label="Queue Types"
       >
         <Link

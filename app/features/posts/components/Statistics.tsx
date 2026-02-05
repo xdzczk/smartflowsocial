@@ -8,11 +8,20 @@ export interface StatisticsProps {
   runwayDays?: number | null;
   /** Called when the Runway card is clicked (open settings modal) */
   onRunwayClick?: () => void;
+  /** Red when runway ≤ this (default 3). */
+  runwayRedThresholdDays?: number;
+  /** Orange when runway ≤ this (default 7). */
+  runwayOrangeThresholdDays?: number;
 }
+
+const DEFAULT_RUNWAY_RED_DAYS = 3;
+const DEFAULT_RUNWAY_ORANGE_DAYS = 7;
 
 export default function Statistics({
   runwayDays,
   onRunwayClick,
+  runwayRedThresholdDays = DEFAULT_RUNWAY_RED_DAYS,
+  runwayOrangeThresholdDays = DEFAULT_RUNWAY_ORANGE_DAYS,
 }: StatisticsProps) {
   const { postStatistics } = useLoaderData<{
     postStatistics: PostStatistics | undefined;
@@ -24,16 +33,16 @@ export default function Statistics({
       ? `${runwayDays} day${runwayDays !== 1 ? "s" : ""}`
       : "0 days";
 
-  // Runway icon color: subtle amber when low, yellow-amber when medium, green when healthy
+  // Runway icon color: red when ≤ redThreshold, orange when ≤ orangeThreshold, amber otherwise
   const runwayDaysNum = runwayDays ?? 0;
   const runwayIconClass =
     runwayDaysNum <= 0
       ? "bg-muted text-muted-foreground dark:bg-muted/80"
-      : runwayDaysNum <= 7
-        ? "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400"
-        : runwayDaysNum <= 21
-          ? "bg-amber-400/10 text-amber-500 dark:bg-amber-300/15 dark:text-amber-300"
-          : "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400";
+      : runwayDaysNum <= runwayRedThresholdDays
+        ? "bg-red-500/15 text-red-600 dark:bg-red-400/20 dark:text-red-400"
+        : runwayDaysNum <= runwayOrangeThresholdDays
+          ? "bg-orange-500/15 text-orange-600 dark:bg-orange-400/20 dark:text-orange-400"
+          : "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400";
 
   const cardBase = "card-lift min-h-[72px] shadow-sm dark:shadow-none";
   const contentBase =

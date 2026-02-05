@@ -45,6 +45,8 @@ export async function handleDashboardAction(
     await updateRunwaySettings(userId, {
       queueNames: result.data.queueNames,
       mode: result.data.mode,
+      redThresholdDays: result.data.redThresholdDays,
+      orangeThresholdDays: result.data.orangeThresholdDays,
     });
     return { success: true };
   }

@@ -43,7 +43,7 @@ export default function TopPostsList({
   };
 
   return (
-    <Card className="card-lift bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
+    <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-0.5">
         <h3 className="text-muted-foreground/90 text-[11px] font-semibold tracking-wide uppercase">
           Top Posts

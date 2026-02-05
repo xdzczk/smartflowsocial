@@ -233,16 +233,17 @@ export default function DashboardIndexPage() {
         />
       ) : null}
 
-      {/* Dashboard spacing: Flow section = full-bleed; top/bottom sections use padded container */}
+      {/* Dashboard: top block (Statistics + Your Flow row), scrollable Flow section, bottom block (Queue Health + Top Posts) */}
       <div className="dashboard-canvas flex min-h-[calc(100dvh-12rem)] flex-col lg:h-full lg:min-h-0">
         <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-0 px-4 lg:px-8">
           <div className="mt-2.5">
             <Statistics
               runwayDays={runwayDays}
               onRunwayClick={() => setRunwayModalOpen(true)}
+              runwayRedThresholdDays={runwaySettings?.redThresholdDays}
+              runwayOrangeThresholdDays={runwaySettings?.orangeThresholdDays}
             />
           </div>
-          <div className="min-h-[1.5rem] flex-1" aria-hidden />
           <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <DashboardHeader
@@ -276,8 +277,8 @@ export default function DashboardIndexPage() {
           </div>
         </div>
 
-        {/* Flow section: recessed zone (stronger wash + inset shadow) */}
-        <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-8 flex min-h-[216px] flex-1 flex-col pt-2 pb-8 md:min-h-[248px]">
+        {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
+        <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-4 flex min-h-[216px] flex-1 flex-col overflow-y-auto pt-2 pb-8 md:min-h-[248px]">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 mx-4 flex flex-col gap-2 rounded-lg border p-4 lg:mx-8"
@@ -332,8 +333,8 @@ export default function DashboardIndexPage() {
           )}
         </div>
 
-        <div className="max-w-10xl mx-auto mt-16 w-full px-4 lg:px-8">
-          <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-y-auto">
+        <div className="max-w-10xl mx-auto mt-6 w-full flex-shrink-0 px-4 lg:px-8">
+          <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
             <QueueHealth
               queueCounts={queueCountsByQueue}
               queueTypes={queueTypesFiltered}

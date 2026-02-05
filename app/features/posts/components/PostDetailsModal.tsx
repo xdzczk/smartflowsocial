@@ -116,7 +116,7 @@ export default function PostDetailsModal({
       case "draft":
         return (
           <span
-            className={`${badgeClasses} border-border text-foreground dark:bg-muted dark:text-foreground bg-transparent dark:border-transparent`}
+            className={`${badgeClasses} border-border bg-muted/50 text-foreground`}
           >
             Draft
           </span>
@@ -124,7 +124,7 @@ export default function PostDetailsModal({
       case "scheduled":
         return (
           <span
-            className={`${badgeClasses} dark:bg-muted dark:text-muted-foreground border-border text-muted-foreground bg-transparent dark:border-transparent`}
+            className={`${badgeClasses} border-border bg-muted/50 text-muted-foreground`}
           >
             Scheduled
           </span>
@@ -132,7 +132,7 @@ export default function PostDetailsModal({
       default:
         return (
           <span
-            className={`${badgeClasses} border-success text-success dark:bg-success/20 dark:text-success bg-transparent dark:border-transparent`}
+            className={`${badgeClasses} border-success bg-success/10 text-success`}
           >
             Posted
           </span>
@@ -142,25 +142,25 @@ export default function PostDetailsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="dark:bg-card mx-4 flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="dark:border-border dark:bg-card/95 border-border sticky top-0 z-10 border-b bg-white/95 px-6 py-4 backdrop-blur-sm">
+      <div className="bg-card text-card-foreground mx-4 flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl shadow-2xl">
+        <div className="border-border bg-card/95 sticky top-0 z-10 border-b px-6 py-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h2 className="text-foreground text-xl font-semibold dark:text-white">
+              <h2 className="text-foreground text-xl font-semibold">
                 {getModalTitle()}
               </h2>
               {getStatusBadge()}
             </div>
             <button
               onClick={onClose}
-              className="text-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex h-8 w-8 items-center justify-center rounded-full transition-colors"
+              className="text-foreground hover:bg-muted flex h-8 w-8 items-center justify-center rounded-full transition-colors"
             >
               ✕
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="bg-card flex-1 overflow-y-auto px-6 py-6">
           {post.fileUrl && post.fileUrl.length > 0 ? (
             <div className="mb-6">
               <div className="flex gap-3 overflow-x-auto pb-2">
@@ -170,7 +170,7 @@ export default function PostDetailsModal({
                     key={index}
                     src={url}
                     alt={`Post media ${index + 1}`}
-                    className="h-48 w-auto flex-shrink-0 rounded-lg object-cover ring-1 shadow-sm ring-gray-200 dark:ring-gray-700"
+                    className="ring-border h-48 w-auto flex-shrink-0 rounded-lg object-cover ring-1 shadow-sm"
                     onClick={() => {
                       setActiveMediaSrc(url);
                       setIsMediaOpen(true);
@@ -182,22 +182,20 @@ export default function PostDetailsModal({
           ) : null}
 
           <div className="space-y-6">
-            <div className="dark:bg-card/50 bg-muted rounded-lg p-4">
-              <h3 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
+            <div className="bg-muted/50 rounded-lg p-4">
+              <h3 className="text-muted-foreground mb-2 text-sm font-medium">
                 Caption
               </h3>
-              <p className="text-foreground leading-relaxed dark:text-white">
-                {post.caption}
-              </p>
+              <p className="text-foreground leading-relaxed">{post.caption}</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               {type === "draft" ? (
-                <div className="border-border dark:border-border rounded-lg border p-4">
-                  <h3 className="text-muted-foreground dark:text-foreground mb-1 text-sm font-medium">
+                <div className="border-border bg-muted/30 rounded-lg border p-4">
+                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                     Created
                   </h3>
-                  <p className="text-foreground dark:text-white">
+                  <p className="text-foreground">
                     {formatDate(
                       post.createdAt,
                       false,
@@ -211,19 +209,19 @@ export default function PostDetailsModal({
               {type === "scheduled" ? (
                 <>
                   {"scheduledAtUtc" in post && post.scheduledAtUtc ? (
-                    <div className="border-border dark:border-border rounded-lg border p-4">
-                      <h3 className="text-muted-foreground dark:text-foreground mb-1 text-sm font-medium">
+                    <div className="border-border bg-muted/30 rounded-lg border p-4">
+                      <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                         Scheduled For
                       </h3>
-                      <p className="text-foreground dark:text-white">
+                      <p className="text-foreground">
                         {formatScheduledDate(post.scheduledAtUtc)}
                       </p>
                     </div>
                   ) : null}
 
                   {queueType ? (
-                    <div className="border-border dark:border-border rounded-lg border p-4">
-                      <h3 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
+                    <div className="border-border bg-muted/30 rounded-lg border p-4">
+                      <h3 className="text-muted-foreground mb-2 text-sm font-medium">
                         Queue Type
                       </h3>
                       {(() => {
@@ -247,11 +245,11 @@ export default function PostDetailsModal({
               {type === "posted" ? (
                 <>
                   {post.postedAt ? (
-                    <div className="border-border dark:border-border rounded-lg border p-4">
-                      <h3 className="text-muted-foreground dark:text-foreground mb-1 text-sm font-medium">
+                    <div className="border-border bg-muted/30 rounded-lg border p-4">
+                      <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                         Posted At
                       </h3>
-                      <p className="text-foreground dark:text-white">
+                      <p className="text-foreground">
                         {formatDate(
                           post.postedAt,
                           false,
@@ -263,8 +261,8 @@ export default function PostDetailsModal({
                   ) : null}
 
                   {queueType ? (
-                    <div className="border-border dark:border-border rounded-lg border p-4">
-                      <h3 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
+                    <div className="border-border bg-muted/30 rounded-lg border p-4">
+                      <h3 className="text-muted-foreground mb-2 text-sm font-medium">
                         Queue Type
                       </h3>
                       {(() => {
@@ -286,8 +284,8 @@ export default function PostDetailsModal({
               ) : null}
 
               {type === "draft" && queueType ? (
-                <div className="border-border dark:border-border rounded-lg border p-4">
-                  <h3 className="text-muted-foreground dark:text-foreground mb-2 text-sm font-medium">
+                <div className="border-border bg-muted/30 rounded-lg border p-4">
+                  <h3 className="text-muted-foreground mb-2 text-sm font-medium">
                     Queue Type
                   </h3>
                   {(() => {
@@ -308,15 +306,15 @@ export default function PostDetailsModal({
             </div>
 
             {post.tags && post.tags.length > 0 && !post.repost ? (
-              <div className="border-border dark:border-border rounded-lg border p-4">
-                <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
+              <div className="border-border bg-muted/30 rounded-lg border p-4">
+                <h3 className="text-muted-foreground mb-3 text-sm font-medium">
                   Tags
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {post.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="bg-muted text-foreground dark:bg-muted/30 dark:text-foreground rounded-full px-3 py-1 text-sm font-medium"
+                      className="bg-muted text-foreground rounded-full px-3 py-1 text-sm font-medium"
                     >
                       #{tag}
                     </span>
@@ -326,69 +324,57 @@ export default function PostDetailsModal({
             ) : null}
 
             {showStats && stats ? (
-              <div className="border-border dark:border-border rounded-lg border p-4">
-                <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
+              <div className="border-border bg-muted/30 rounded-lg border p-4">
+                <h3 className="text-muted-foreground mb-3 text-sm font-medium">
                   Engagement Stats
                 </h3>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                   <div className="text-center">
-                    <p className="text-foreground text-2xl font-bold dark:text-white">
+                    <p className="text-foreground text-2xl font-bold">
                       {stats.likes}
                     </p>
-                    <p className="text-foreground dark:text-foreground text-sm">
-                      Likes
-                    </p>
+                    <p className="text-muted-foreground text-sm">Likes</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-foreground text-2xl font-bold dark:text-white">
+                    <p className="text-foreground text-2xl font-bold">
                       {stats.replies}
                     </p>
-                    <p className="text-foreground dark:text-foreground text-sm">
-                      Replies
-                    </p>
+                    <p className="text-muted-foreground text-sm">Replies</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-foreground text-2xl font-bold dark:text-white">
+                    <p className="text-foreground text-2xl font-bold">
                       {stats.mentions}
                     </p>
-                    <p className="text-foreground dark:text-foreground text-sm">
-                      Mentions
-                    </p>
+                    <p className="text-muted-foreground text-sm">Mentions</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-foreground text-2xl font-bold dark:text-white">
+                    <p className="text-foreground text-2xl font-bold">
                       {stats.reposts}
                     </p>
-                    <p className="text-foreground dark:text-foreground text-sm">
-                      Reposts
-                    </p>
+                    <p className="text-muted-foreground text-sm">Reposts</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-foreground text-2xl font-bold dark:text-white">
+                    <p className="text-foreground text-2xl font-bold">
                       {stats.zaps}
                     </p>
-                    <p className="text-foreground dark:text-foreground text-sm">
-                      Zaps
-                    </p>
+                    <p className="text-muted-foreground text-sm">Zaps</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-foreground text-2xl font-bold dark:text-white">
+                    <p className="text-foreground text-2xl font-bold">
                       {stats.satszapped}
                     </p>
-                    <p className="text-foreground dark:text-foreground text-sm">
-                      Sats Zapped
-                    </p>
+                    <p className="text-muted-foreground text-sm">Sats Zapped</p>
                   </div>
                 </div>
               </div>
             ) : null}
 
             {showSignedEvent && post.signedEvent ? (
-              <div className="border-border dark:border-border rounded-lg border p-4">
-                <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
+              <div className="border-border bg-muted/30 rounded-lg border p-4">
+                <h3 className="text-muted-foreground mb-3 text-sm font-medium">
                   Signed Event Data
                 </h3>
-                <pre className="dark:bg-card bg-muted text-foreground dark:text-foreground max-h-96 overflow-auto rounded-md p-3 text-xs break-words whitespace-pre-wrap">
+                <pre className="bg-muted/50 text-foreground max-h-96 overflow-auto rounded-md p-3 text-xs break-words whitespace-pre-wrap">
                   {JSON.stringify(post.signedEvent, null, 2)}
                 </pre>
               </div>
@@ -396,7 +382,7 @@ export default function PostDetailsModal({
           </div>
         </div>
 
-        <div className="dark:border-border dark:bg-card/95 border-border sticky bottom-0 border-t bg-white/95 px-6 py-4 backdrop-blur-sm">
+        <div className="border-border bg-card/95 sticky bottom-0 border-t px-6 py-4 backdrop-blur-sm">
           <div className="flex justify-end gap-3">
             {type === "posted" &&
             post.signedEvent &&
@@ -407,7 +393,7 @@ export default function PostDetailsModal({
                 to={`https://primal.net/e/${post.signedEvent.id}`}
                 target="_blank"
                 rel="noreferrer"
-                className="dark:bg-muted dark:hover:bg-muted bg-muted hover:bg-muted focus:ring-primary inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                className="bg-muted text-foreground hover:bg-muted/80 focus:ring-primary inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
               >
                 View Note
               </Link>
@@ -422,7 +408,7 @@ export default function PostDetailsModal({
               <button
                 type="submit"
                 disabled={deleteFetcher.state !== "idle"}
-                className="dark:bg-card border-destructive text-destructive hover:bg-destructive/10 focus:ring-primary dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
+                className="border-destructive text-destructive hover:bg-destructive/10 focus:ring-primary focus:ring-offset-background inline-flex items-center rounded-lg border bg-transparent px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
               >
                 {deleteFetcher.state !== "idle" &&
                 deleteFetcher.formData?.get("postId") === post.id

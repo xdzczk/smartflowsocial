@@ -430,14 +430,24 @@ export function updateUserTimeFormat(
 
 export type RunwayMode = "last-post" | "first-queue-empty";
 
+/** Days thresholds for KPI color: red when runway ≤ redThresholdDays, orange when ≤ orangeThresholdDays, amber otherwise. */
 export interface RunwaySettings {
   queueNames: string[];
   mode: RunwayMode;
+  /** Red when runway ≤ this (default 3). */
+  redThresholdDays?: number;
+  /** Orange when runway ≤ this (default 7); must be ≥ redThresholdDays. */
+  orangeThresholdDays?: number;
 }
+
+const DEFAULT_RED_THRESHOLD_DAYS = 3;
+const DEFAULT_ORANGE_THRESHOLD_DAYS = 7;
 
 const DEFAULT_RUNWAY_SETTINGS: RunwaySettings = {
   queueNames: [],
   mode: "last-post",
+  redThresholdDays: DEFAULT_RED_THRESHOLD_DAYS,
+  orangeThresholdDays: DEFAULT_ORANGE_THRESHOLD_DAYS,
 };
 
 /**
@@ -463,7 +473,24 @@ export async function getRunwaySettings(
       : [];
     const mode =
       obj["mode"] === "first-queue-empty" ? "first-queue-empty" : "last-post";
-    return { queueNames, mode };
+    const redThresholdDays =
+      typeof obj["redThresholdDays"] === "number" &&
+      Number.isInteger(obj["redThresholdDays"]) &&
+      obj["redThresholdDays"] >= 0
+        ? obj["redThresholdDays"]
+        : DEFAULT_RED_THRESHOLD_DAYS;
+    const orangeThresholdDays =
+      typeof obj["orangeThresholdDays"] === "number" &&
+      Number.isInteger(obj["orangeThresholdDays"]) &&
+      obj["orangeThresholdDays"] >= 0
+        ? obj["orangeThresholdDays"]
+        : DEFAULT_ORANGE_THRESHOLD_DAYS;
+    return {
+      queueNames,
+      mode,
+      redThresholdDays,
+      orangeThresholdDays,
+    };
   } catch (err) {
     const code =
       err && typeof err === "object" && "code" in err ? err.code : null;
@@ -492,6 +519,10 @@ export async function updateRunwaySettings(
         runwaySettings: {
           queueNames: settings.queueNames,
           mode: settings.mode,
+          redThresholdDays:
+            settings.redThresholdDays ?? DEFAULT_RED_THRESHOLD_DAYS,
+          orangeThresholdDays:
+            settings.orangeThresholdDays ?? DEFAULT_ORANGE_THRESHOLD_DAYS,
         },
       },
     });

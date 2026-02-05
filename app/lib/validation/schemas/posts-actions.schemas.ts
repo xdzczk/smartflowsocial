@@ -192,12 +192,28 @@ export const calendarRescheduleLongformSchema = z.object({
 });
 
 /**
- * Update runway settings (which queues count, mode)
+ * Update runway settings (which queues count, mode, KPI color thresholds)
  */
 export const updateRunwaySettingsSchema = z.object({
   _action: z.literal("updateRunwaySettings"),
   queueNames: z.array(z.string()),
   mode: z.enum(["last-post", "first-queue-empty"]),
+  /** Red when runway ≤ this (0–365). */
+  redThresholdDays: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(365)
+    .optional()
+    .default(3),
+  /** Orange when runway ≤ this (0–365); should be ≥ redThresholdDays. */
+  orangeThresholdDays: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(365)
+    .optional()
+    .default(7),
 });
 
 /**

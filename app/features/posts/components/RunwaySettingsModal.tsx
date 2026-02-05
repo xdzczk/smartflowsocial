@@ -16,6 +16,8 @@ import { Label } from "~/components/ui/label";
 interface RunwaySettings {
   queueNames: string[];
   mode: "last-post" | "first-queue-empty";
+  redThresholdDays?: number;
+  orangeThresholdDays?: number;
 }
 interface QueueTypeItem {
   id: string;
@@ -50,6 +52,12 @@ export function RunwaySettingsModal({
   const [mode, setMode] = useState<RunwaySettings["mode"]>(
     runwaySettings?.mode ?? "last-post"
   );
+  const [redThresholdDays, setRedThresholdDays] = useState(
+    runwaySettings?.redThresholdDays ?? 3
+  );
+  const [orangeThresholdDays, setOrangeThresholdDays] = useState(
+    runwaySettings?.orangeThresholdDays ?? 7
+  );
 
   const prevOpenRef = useRef(false);
   const didSubmitRef = useRef(false);
@@ -62,9 +70,13 @@ export function RunwaySettingsModal({
           ? names
           : runwaySettings.queueNames.filter((n) => names.includes(n));
       const nextMode = runwaySettings?.mode ?? "last-post";
+      const nextRed = runwaySettings?.redThresholdDays ?? 3;
+      const nextOrange = runwaySettings?.orangeThresholdDays ?? 7;
       queueMicrotask(() => {
         setSelectedQueueNames(initial);
         setMode(nextMode);
+        setRedThresholdDays(nextRed);
+        setOrangeThresholdDays(nextOrange);
       });
       didSubmitRef.current = false;
     }
@@ -88,6 +100,8 @@ export function RunwaySettingsModal({
     const formData = new FormData();
     formData.set("_action", "updateRunwaySettings");
     formData.set("mode", mode);
+    formData.set("redThresholdDays", String(redThresholdDays));
+    formData.set("orangeThresholdDays", String(orangeThresholdDays));
     selectedQueueNames.forEach((name) => formData.append("queueNames", name));
     fetcher.submit(formData, { method: "post" });
   };
@@ -198,6 +212,73 @@ export function RunwaySettingsModal({
               </label>
             </div>
           </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">
+              KPI color thresholds (days)
+            </Label>
+            <p className="text-muted-foreground text-xs">
+              Runway card is red when ≤ first value, orange when ≤ second value,
+              amber otherwise.
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="runway-red-threshold"
+                  className="text-muted-foreground shrink-0 text-sm"
+                >
+                  Red when ≤
+                </Label>
+                <input
+                  id="runway-red-threshold"
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={redThresholdDays}
+                  onChange={(e) =>
+                    setRedThresholdDays(
+                      Math.min(
+                        365,
+                        Math.max(0, parseInt(e.target.value, 10) || 0)
+                      )
+                    )
+                  }
+                  className="border-input bg-background w-16 rounded-md border px-2 py-1.5 text-sm tabular-nums"
+                />
+                <span className="text-muted-foreground text-sm">days</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="runway-orange-threshold"
+                  className="text-muted-foreground shrink-0 text-sm"
+                >
+                  Orange when ≤
+                </Label>
+                <input
+                  id="runway-orange-threshold"
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={orangeThresholdDays}
+                  onChange={(e) =>
+                    setOrangeThresholdDays(
+                      Math.min(
+                        365,
+                        Math.max(0, parseInt(e.target.value, 10) || 0)
+                      )
+                    )
+                  }
+                  className="border-input bg-background w-16 rounded-md border px-2 py-1.5 text-sm tabular-nums"
+                />
+                <span className="text-muted-foreground text-sm">days</span>
+              </div>
+            </div>
+            {orangeThresholdDays < redThresholdDays ? (
+              <p className="text-destructive text-xs" role="alert">
+                Orange threshold should be ≥ red threshold.
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <DialogFooter>
@@ -211,7 +292,11 @@ export function RunwaySettingsModal({
           <Button
             type="button"
             onClick={handleSave}
-            disabled={fetcher.state !== "idle" || isNoneSelected}
+            disabled={
+              fetcher.state !== "idle" ||
+              isNoneSelected ||
+              orangeThresholdDays < redThresholdDays
+            }
           >
             {fetcher.state !== "idle" ? "Saving…" : "Save"}
           </Button>

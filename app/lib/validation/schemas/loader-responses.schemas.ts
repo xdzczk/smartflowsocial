@@ -553,6 +553,8 @@ const flowItemSchema = z.discriminatedUnion("type", [
 export const runwaySettingsSchema = z.object({
   queueNames: z.array(z.string()),
   mode: z.enum(["last-post", "first-queue-empty"]),
+  redThresholdDays: z.number().int().min(0).max(365).optional(),
+  orangeThresholdDays: z.number().int().min(0).max(365).optional(),
 });
 
 /**
