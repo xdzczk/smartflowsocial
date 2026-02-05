@@ -112,7 +112,7 @@ export default function PostedPostsTable({
                     : false
                 }
                 onChange={toggleSelectAll}
-                className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
+                className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
               />
             </th>
             <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
@@ -201,7 +201,7 @@ export default function PostedPostsTable({
                     checked={selectedPosts.has(post.id)}
                     onChange={() => togglePostSelection(post.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="border-border accent-checkbox focus:ring-checkbox h-4 w-4 rounded"
+                    className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
                   />
                 </td>
                 <td className="p-3">
@@ -371,7 +371,7 @@ export default function PostedPostsTable({
                                   post.id
                                 : false)
                             }
-                            className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                            className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-primary active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                           >
                             {fetcher.state !== "idle" &&
                             (formData
@@ -403,7 +403,7 @@ export default function PostedPostsTable({
                                   post.id
                                 : false)
                             }
-                            className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-success/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                            className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-primary/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                           >
                             {fetcher.state !== "idle" &&
                             (formData
@@ -423,7 +423,7 @@ export default function PostedPostsTable({
                           e.stopPropagation();
                           onScheduleRepost(post);
                         }}
-                        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-primary active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         Schedule repost
                       </button>
@@ -435,7 +435,7 @@ export default function PostedPostsTable({
                           e.stopPropagation();
                           onScheduleQuote(post);
                         }}
-                        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-success/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-primary/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         Schedule quote
                       </button>
@@ -452,7 +452,7 @@ export default function PostedPostsTable({
                           deleteFetcher.state !== "idle" ||
                           bulkDeleteFetcher.state !== "idle"
                         }
-                        className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-destructive/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                        className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-primary/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         {deleteFetcher.state !== "idle" &&
                         deleteFetcher.formData?.get("postId") === post.id

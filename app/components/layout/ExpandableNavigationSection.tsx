@@ -39,11 +39,14 @@ function NavigationChildItemComponent({
   isActive,
   onUpgradeClick,
   collapsed = false,
+  sectionExpanded = true,
 }: {
   child: NavigationChildItem;
   isActive: boolean;
   onUpgradeClick: (feature: FeatureName, featureName: string) => void;
   collapsed?: boolean;
+  /** When false, link is not focusable (tabIndex=-1) so keyboard nav doesn't land on hidden items */
+  sectionExpanded?: boolean;
 }) {
   const hasAccessByPlan = useFeatureAccess(child.feature);
   const subscription = useSubscription();
@@ -78,6 +81,7 @@ function NavigationChildItemComponent({
       className={childLinkClass}
       onClick={handleChildClick}
       title={title}
+      tabIndex={sectionExpanded ? undefined : -1}
     >
       <span
         className={`flex flex-none shrink-0 items-center ${isActive ? "text-foreground dark:text-primary" : TEXT_MUTED_FOREGROUND}`}
@@ -112,6 +116,7 @@ export function ExpandableNavigationSection({
 
   // Track manual expansion state (user clicked to expand/collapse)
   const previousPathnameRef = useRef(location.pathname);
+  const sectionRef = useRef<HTMLDivElement>(null);
   const [manuallyExpanded, setManuallyExpanded] = useState<boolean | null>(
     null
   );
@@ -122,11 +127,10 @@ export function ExpandableNavigationSection({
   const hasAnyAccessibleChild = items.length > 0;
 
   // Reset manual expansion state when route changes
-  // This is necessary to sync UI state with route changes, which is a valid use case for setState in effects
   useEffect(() => {
     if (previousPathnameRef.current !== location.pathname) {
       previousPathnameRef.current = location.pathname;
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- We need to reset manual expansion state when route changes to sync UI with navigation
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Sync UI with navigation: reset manual expand when route changes
       setManuallyExpanded(null);
     }
   }, [location.pathname]);
@@ -170,6 +174,20 @@ export function ExpandableNavigationSection({
     }
   };
 
+  const handleFocusCapture = () => {
+    setManuallyExpanded(true);
+  };
+
+  const handleBlurCapture = () => {
+    // After focus leaves, check if it went outside this section; if so, collapse
+    setTimeout(() => {
+      const container = sectionRef.current;
+      if (container && !container.contains(document.activeElement)) {
+        setManuallyExpanded(false);
+      }
+    }, 0);
+  };
+
   const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer ${
     isAnyChildActive
       ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
@@ -177,7 +195,12 @@ export function ExpandableNavigationSection({
   }`;
 
   return (
-    <div className="space-y-1">
+    <div
+      ref={sectionRef}
+      className="space-y-1"
+      onFocusCapture={handleFocusCapture}
+      onBlurCapture={handleBlurCapture}
+    >
       {/* Parent Section Header */}
       <button
         type="button"
@@ -220,6 +243,7 @@ export function ExpandableNavigationSection({
                 child={child}
                 isActive={isActive}
                 onUpgradeClick={onUpgradeClick}
+                sectionExpanded={isExpanded}
               />
             );
           })}

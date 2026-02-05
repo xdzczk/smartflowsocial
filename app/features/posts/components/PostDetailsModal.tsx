@@ -407,7 +407,7 @@ export default function PostDetailsModal({
                 to={`https://primal.net/e/${post.signedEvent.id}`}
                 target="_blank"
                 rel="noreferrer"
-                className="dark:bg-muted dark:hover:bg-muted bg-muted hover:bg-muted inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none"
+                className="dark:bg-muted dark:hover:bg-muted bg-muted hover:bg-muted focus:ring-primary inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
               >
                 View Note
               </Link>
@@ -422,7 +422,7 @@ export default function PostDetailsModal({
               <button
                 type="submit"
                 disabled={deleteFetcher.state !== "idle"}
-                className="dark:bg-card border-destructive text-destructive hover:bg-destructive/10 focus:ring-destructive dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
+                className="dark:bg-card border-destructive text-destructive hover:bg-destructive/10 focus:ring-primary dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
               >
                 {deleteFetcher.state !== "idle" &&
                 deleteFetcher.formData?.get("postId") === post.id

@@ -183,7 +183,7 @@ export default function ScheduledPosts() {
                           onClick={() =>
                             setSelectedPost(post as unknown as PostData)
                           }
-                          className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-border/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none dark:focus:ring-gray-600/40"
+                          className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-primary/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
                         >
                           View
                         </button>

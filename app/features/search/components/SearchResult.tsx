@@ -169,7 +169,7 @@ export function SearchResult({
       <div className="flex flex-wrap gap-2">
         <button
           onClick={onScheduleQuote}
-          className="bg-card dark:border-border dark:active:border-border border-success text-success hover:border-success hover:text-success focus:ring-success/25 active:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-success/40 inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
+          className="bg-card dark:border-border dark:active:border-border border-success text-success hover:border-success hover:text-success focus:ring-primary/25 active:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-primary/40 inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
         >
           <svg
             className="h-4 w-4"
@@ -189,7 +189,7 @@ export function SearchResult({
 
         <button
           onClick={onScheduleRepost}
-          className="bg-card dark:border-border dark:active:border-border border-border text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
+          className="bg-card dark:border-border dark:active:border-border border-border text-foreground hover:border-border hover:bg-muted focus:ring-primary active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
         >
           <svg
             className="h-4 w-4"
@@ -211,7 +211,7 @@ export function SearchResult({
           href={`https://primal.net/e/${result.id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-card dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-border/40 dark:active:border-border border-border text-foreground hover:border-border hover:text-foreground focus:ring-border/25 active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
+          className="bg-card dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-primary/40 dark:active:border-border border-border text-foreground hover:border-border hover:text-foreground focus:ring-primary/25 active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
         >
           <svg
             className="h-4 w-4"

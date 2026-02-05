@@ -3,7 +3,7 @@ import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
 } from "@remix-run/node";
-import { useNavigation } from "@remix-run/react";
+import { useLocation, useNavigation } from "@remix-run/react";
 
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import { requireUserId } from "~/features/auth";
@@ -168,12 +168,14 @@ export const action = withCSRFProtection(
   }
 );
 function DashboardIndexRoute() {
+  const location = useLocation();
   const navigation = useNavigation();
-  const isNavigatingToDashboard =
+  const isNavigatingFromAnotherRoute =
     navigation.state === "loading" &&
-    navigation.location.pathname.split("?")[0] === "/dashboard";
+    navigation.location.pathname.split("?")[0] === "/dashboard" &&
+    location.pathname !== "/dashboard";
 
-  if (isNavigatingToDashboard) {
+  if (isNavigatingFromAnotherRoute) {
     return <DashboardSkeleton />;
   }
   return <DashboardIndexPage />;

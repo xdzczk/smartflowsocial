@@ -106,6 +106,8 @@ export interface FlowViewProps {
 export interface FlowViewHandle {
   /** On mobile scrolls to next scheduled (first future); on desktop to live edge (last past + first future) */
   scrollToNext: () => void;
+  /** Reset horizontal scroll to initial position (e.g. when queue filter changes). */
+  scrollToInitial: () => void;
 }
 
 const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
@@ -160,10 +162,45 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
       null
     );
+    /** Viewport for visibility: only items in this range get tabIndex (focusable). Avoids tabbing through entire virtual list. */
+    const [scrollViewport, setScrollViewport] = useState({
+      scrollLeft: 0,
+      clientWidth: 2000,
+    });
+    const scrollViewportRafRef = useRef<number | null>(null);
 
     useEffect(() => {
       overscrollPxRef.current = overscrollPx;
     }, [overscrollPx]);
+
+    useEffect(() => {
+      const el = scrollElement ?? scrollContainerRef.current;
+      if (!el) return;
+      const updateViewport = () => {
+        setScrollViewport({
+          scrollLeft: el.scrollLeft,
+          clientWidth: el.clientWidth,
+        });
+      };
+      const onScroll = () => {
+        if (scrollViewportRafRef.current != null)
+          cancelAnimationFrame(scrollViewportRafRef.current);
+        scrollViewportRafRef.current = requestAnimationFrame(() => {
+          scrollViewportRafRef.current = null;
+          updateViewport();
+        });
+      };
+      const resizeObserver = new ResizeObserver(updateViewport);
+      resizeObserver.observe(el);
+      el.addEventListener("scroll", onScroll, { passive: true });
+      updateViewport();
+      return () => {
+        resizeObserver.disconnect();
+        el.removeEventListener("scroll", onScroll);
+        if (scrollViewportRafRef.current != null)
+          cancelAnimationFrame(scrollViewportRafRef.current);
+      };
+    }, [scrollElement]);
 
     const scheduleOverscrollSpringBack = useCallback(() => {
       if (springBackTimeoutRef.current)
@@ -631,12 +668,21 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       }, delay);
     }, [isMobile, scrollToFirstFutureIndex, scrollToLiveIndex, rowVirtualizer]);
 
+    const handleScrollToInitial = useCallback(() => {
+      const el = scrollContainerRef.current;
+      if (el) {
+        el.scrollLeft = 0;
+      }
+      rowVirtualizer.scrollToIndex(0, { align: "start", behavior: "auto" });
+    }, [rowVirtualizer]);
+
     useImperativeHandle(
       ref,
       () => ({
         scrollToNext: handleScrollToNext,
+        scrollToInitial: handleScrollToInitial,
       }),
-      [handleScrollToNext]
+      [handleScrollToNext, handleScrollToInitial]
     );
 
     useEffect(() => {
@@ -644,7 +690,12 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     }, [hasLiveEdge, onHasLiveEdgeChange]);
 
     const renderSlotContent = useCallback(
-      (slot: FlowSlot, virtualColumnIndex: number): ReactNode => {
+      (
+        slot: FlowSlot,
+        virtualColumnIndex: number,
+        isInViewport: boolean
+      ): ReactNode => {
+        const focusableTabIndex = isInViewport ? undefined : -1;
         if (slot.type === SLOT_PAST_SENTINEL) {
           return (
             <div className="flex min-w-0 flex-1 items-center justify-center">
@@ -680,7 +731,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             <div className="flex flex-shrink-0 items-stretch px-0.5">
               <Link
                 to="/dashboard/newpost"
-                className="border-border bg-card hover:bg-muted/30 focus:ring-primary flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm transition-[box-shadow,border-color,background-color] hover:shadow-md focus:ring-2 focus:ring-offset-2 focus:outline-none md:min-h-[232px] md:w-[352px]"
+                tabIndex={focusableTabIndex}
+                className="border-border bg-card hover:bg-muted/30 focus:ring-primary flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm transition-[box-shadow,border-color,background-color] hover:shadow-md focus:ring-2 focus:outline-none md:min-h-[232px] md:w-[352px]"
                 aria-label="Create a new post"
               >
                 <Plus
@@ -721,6 +773,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                 }
                 minutesUntil={minutesUntil}
                 nowMs={nowMs}
+                tabIndex={focusableTabIndex}
               />
             </div>
           );
@@ -750,7 +803,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           </p>
           <Link
             to="/dashboard/newpost"
-            className="border-border text-foreground hover:bg-muted/50 focus:ring-primary rounded-md border px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
+            className="border-border text-foreground hover:bg-muted/50 focus:ring-primary rounded-md border px-4 py-2 text-sm font-medium focus:ring-2 focus:outline-none"
           >
             Create post
           </Link>
@@ -800,6 +853,14 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                 slot.type === SLOT_FUTURE_SENTINEL &&
                 virtualColumn.index === futureSentinelIndex;
 
+              const viewportRight =
+                scrollViewport.scrollLeft + scrollViewport.clientWidth;
+              const slotLeft = virtualColumn.start;
+              const slotRight = virtualColumn.start + virtualColumn.size;
+              const isInViewport =
+                slotRight > scrollViewport.scrollLeft &&
+                slotLeft < viewportRight;
+
               return (
                 <div
                   key={virtualColumn.key}
@@ -822,7 +883,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                     alignItems: "stretch",
                   }}
                 >
-                  {renderSlotContent(slot, virtualColumn.index)}
+                  {renderSlotContent(slot, virtualColumn.index, isInViewport)}
                 </div>
               );
             })}

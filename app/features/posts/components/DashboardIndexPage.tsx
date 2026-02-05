@@ -108,6 +108,7 @@ export default function DashboardIndexPage() {
   /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
   const [searchParams] = useSearchParams();
+  const queueType = searchParams.get("queueType") ?? "all";
   const planActivated = searchParams.get("planActivated");
   const successMessage = searchParams.get("message");
   const [showSuccessMessage, setShowSuccessMessage] = useState(
@@ -218,6 +219,11 @@ export default function DashboardIndexPage() {
   const flowViewRef = useRef<FlowViewHandle | null>(null);
   const [hasLiveEdge, setHasLiveEdge] = useState(false);
 
+  // Reset flow scroll to initial position when queue filter changes
+  useEffect(() => {
+    flowViewRef.current?.scrollToInitial();
+  }, [queueType]);
+
   return (
     <>
       {showSuccessMessage && successMessage ? (
@@ -253,7 +259,7 @@ export default function DashboardIndexPage() {
                 <button
                   type="button"
                   onClick={() => flowViewRef.current?.scrollToNext()}
-                  className="text-muted-foreground hover:text-foreground focus:ring-primary flex-shrink-0 rounded text-xs underline focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  className="text-muted-foreground hover:text-foreground focus:ring-primary flex-shrink-0 rounded text-xs underline focus:ring-2 focus:outline-none"
                   aria-label="Scroll timeline to next posts"
                 >
                   Scroll to next
@@ -283,7 +289,7 @@ export default function DashboardIndexPage() {
               <button
                 type="button"
                 onClick={() => revalidator.revalidate()}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:outline-none"
               >
                 Retry
               </button>

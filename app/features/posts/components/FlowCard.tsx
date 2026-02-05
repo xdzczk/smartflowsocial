@@ -77,6 +77,8 @@ export interface FlowCardProps {
   minutesUntil?: number;
   /** Current time in ms (from parent) for past-post relative labels; avoids Date.now() in render */
   nowMs?: number;
+  /** When -1, card is skipped in tab order (e.g. when off-screen in Flow section). */
+  tabIndex?: number;
 }
 
 function getStatusLabel(
@@ -162,6 +164,7 @@ function FlowCardInner({
   isNextScheduled = false,
   minutesUntil,
   nowMs: nowMsProp,
+  tabIndex,
 }: FlowCardProps): ReactNode {
   const { formatDate, userTimezone, userTimeFormat } = useFormattedDate();
   const displayTime = getFlowDisplayTime(item);
@@ -219,7 +222,8 @@ function FlowCardInner({
     <button
       type="button"
       onClick={onClick}
-      className={`border-border bg-card focus:ring-primary relative flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm transition-[box-shadow,border-color] hover:shadow-md focus:ring-2 focus:ring-offset-2 focus:outline-none md:min-h-[232px] md:w-[352px] ${queueColor ? "hover:border-[color:var(--queue-color)]" : "hover:border-primary/50"} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
+      tabIndex={tabIndex}
+      className={`border-border bg-card focus:ring-primary relative flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm transition-[box-shadow,border-color] hover:shadow-md focus:ring-2 focus:outline-none md:min-h-[232px] md:w-[352px] ${queueColor ? "hover:border-[color:var(--queue-color)]" : "hover:border-primary/50"} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
         queueColor || glowStyle
           ? {

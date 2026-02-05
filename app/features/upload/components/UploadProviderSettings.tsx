@@ -42,7 +42,7 @@ export function UploadProviderSettings({
                 type="radio"
                 value="S3"
                 defaultChecked={uploadProvider === "S3"}
-                className="border-border accent-checkbox focus:ring-checkbox mt-1 h-4 w-4"
+                className="border-border accent-checkbox focus:ring-primary mt-1 h-4 w-4"
                 style={{ accentColor: primaryAccentColor }}
               />
               <div className="flex-1">
@@ -74,7 +74,7 @@ export function UploadProviderSettings({
                   uploadProvider === "BLOSSOM_PRIMAL" ||
                   uploadProvider === "BLOSSOM"
                 }
-                className="border-border accent-checkbox focus:ring-checkbox mt-1 h-4 w-4"
+                className="border-border accent-checkbox focus:ring-primary mt-1 h-4 w-4"
                 style={{ accentColor: primaryAccentColor }}
               />
               <div className="flex-1">
@@ -106,7 +106,7 @@ export function UploadProviderSettings({
                 type="radio"
                 value="BLOSSOM_BLOSSTR"
                 defaultChecked={uploadProvider === "BLOSSOM_BLOSSTR"}
-                className="border-border accent-checkbox focus:ring-checkbox mt-1 h-4 w-4"
+                className="border-border accent-checkbox focus:ring-primary mt-1 h-4 w-4"
                 style={{ accentColor: primaryAccentColor }}
               />
               <div className="flex-1">
