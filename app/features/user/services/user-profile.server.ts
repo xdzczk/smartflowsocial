@@ -32,34 +32,69 @@ export function updateUserProfile({
 }
 
 /**
- * Gets a user by ID with hashtag presets included
- *
- * NOTE:
- * This returns persisted user data only. Managed relays (e.g. Blastr) are
- * resolved separately by the canonical relay resolver.
+ * Gets a user by ID with hashtag presets included.
+ * Selects columns explicitly so the query works when optional columns
+ * (e.g. runwaySettings) are not yet migrated in the database.
  */
 export async function getUserById(
   id: string
 ): Promise<UserWithHashTagPresets | null> {
   const user = await prisma.user.findUnique({
     where: { id },
-    include: {
-      hashTagPresets: true,
-    },
+    select: { ...USER_SCALAR_SELECT, hashTagPresets: true },
   });
 
   if (!user) {
     return null;
   }
 
-  return user;
+  const result: UserWithHashTagPresets = { ...user, runwaySettings: null };
+  return result;
 }
 
+/** Scalar User fields to select when runwaySettings column may not exist yet. */
+const USER_SCALAR_SELECT = {
+  id: true,
+  npub: true,
+  createdAt: true,
+  updatedAt: true,
+  isEnabled: true,
+  timezone: true,
+  userRelays: true,
+  giveawayBlackListed: true,
+  uploadProvider: true,
+  showHashTagsinPosts: true,
+  scheduleInterval: true,
+  nostrProfile: true,
+  enableMirrorBlossom: true,
+  mirrorUploadUrls: true,
+  encryptedNwc: true,
+  nwcEnabled: true,
+  nwcLastUsed: true,
+  mutedList: true,
+  filterMuted: true,
+  hidePostsFromLowTrustUsers: true,
+  pushNotificationsEnabled: true,
+  pushNotifyPublishSuccess: true,
+  pushNotifyPublishFailure: true,
+  timeFormat: true,
+  isChild: true,
+  parentNpub: true,
+  pendingParentRequests: true,
+} as const;
+
 /**
- * Gets a user by their Nostr public key (npub)
+ * Gets a user by their Nostr public key (npub).
+ * Uses explicit select so the query works when runwaySettings column is not yet migrated.
  */
-export function getUserByNpub(npub: string): Promise<User | null> {
-  return prisma.user.findUnique({ where: { npub } });
+export async function getUserByNpub(npub: string): Promise<User | null> {
+  const user = await prisma.user.findUnique({
+    where: { npub },
+    select: USER_SCALAR_SELECT,
+  });
+  if (!user) return null;
+  const result: User = { ...user, runwaySettings: null };
+  return result;
 }
 
 /**

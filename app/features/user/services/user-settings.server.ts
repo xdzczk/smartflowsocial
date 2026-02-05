@@ -443,41 +443,101 @@ const DEFAULT_RUNWAY_SETTINGS: RunwaySettings = {
 /**
  * Gets user's runway KPI settings.
  * Empty queueNames means "all queues". Default mode is "last-post".
+ * Returns defaults if the runwaySettings column is not yet present (migration not applied).
  */
 export async function getRunwaySettings(
   userId: string
 ): Promise<RunwaySettings> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { runwaySettings: true },
-  });
-  const raw = user?.runwaySettings;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return { ...DEFAULT_RUNWAY_SETTINGS };
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { runwaySettings: true },
+    });
+    const raw = user?.runwaySettings;
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      return { ...DEFAULT_RUNWAY_SETTINGS };
+    }
+    const obj = raw as Record<string, unknown>;
+    const queueNames = Array.isArray(obj["queueNames"])
+      ? (obj["queueNames"] as string[]).filter((n) => typeof n === "string")
+      : [];
+    const mode =
+      obj["mode"] === "first-queue-empty" ? "first-queue-empty" : "last-post";
+    return { queueNames, mode };
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err ? err.code : null;
+    if (
+      code === "P2022" ||
+      (err instanceof Error && err.message.includes("does not exist"))
+    ) {
+      return { ...DEFAULT_RUNWAY_SETTINGS };
+    }
+    throw err;
   }
-  const obj = raw as Record<string, unknown>;
-  const queueNames = Array.isArray(obj["queueNames"])
-    ? (obj["queueNames"] as string[]).filter((n) => typeof n === "string")
-    : [];
-  const mode =
-    obj["mode"] === "first-queue-empty" ? "first-queue-empty" : "last-post";
-  return { queueNames, mode };
 }
 
 /**
  * Updates user's runway KPI settings.
+ * No-ops and returns the user if the runwaySettings column is not yet present (migration not applied).
  */
-export function updateRunwaySettings(
+export async function updateRunwaySettings(
   userId: string,
   settings: RunwaySettings
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      runwaySettings: {
-        queueNames: settings.queueNames,
-        mode: settings.mode,
+  try {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: {
+        runwaySettings: {
+          queueNames: settings.queueNames,
+          mode: settings.mode,
+        },
       },
-    },
-  });
+    });
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err ? err.code : null;
+    if (
+      code === "P2022" ||
+      (err instanceof Error && err.message.includes("does not exist"))
+    ) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          npub: true,
+          createdAt: true,
+          updatedAt: true,
+          isEnabled: true,
+          timezone: true,
+          userRelays: true,
+          giveawayBlackListed: true,
+          uploadProvider: true,
+          showHashTagsinPosts: true,
+          scheduleInterval: true,
+          nostrProfile: true,
+          enableMirrorBlossom: true,
+          mirrorUploadUrls: true,
+          encryptedNwc: true,
+          nwcEnabled: true,
+          nwcLastUsed: true,
+          mutedList: true,
+          filterMuted: true,
+          hidePostsFromLowTrustUsers: true,
+          pushNotificationsEnabled: true,
+          pushNotifyPublishSuccess: true,
+          pushNotifyPublishFailure: true,
+          timeFormat: true,
+          isChild: true,
+          parentNpub: true,
+          pendingParentRequests: true,
+        },
+      });
+      if (!user) throw err;
+      const result: User = { ...user, runwaySettings: null };
+      return result;
+    }
+    throw err;
+  }
 }
