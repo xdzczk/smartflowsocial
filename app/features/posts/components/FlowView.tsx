@@ -41,8 +41,8 @@ const OVERSCROLL_RESISTANCE = 0.65;
 /** Spring-back: slightly longer + gentle overshoot for buttery iOS-like feel */
 const OVERSCROLL_SPRING_MS = 280;
 const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.33, 1.1, 0.64, 1)";
-/** Delay (ms) after last gesture before spring-back; 0 = next tick (iOS-like, spring back as soon as you stop) */
-const OVERSCROLL_SPRING_BACK_DELAY_MS = 0;
+/** Delay (ms) after last gesture before spring-back; short so slow overscroll doesn't spring between events */
+const OVERSCROLL_SPRING_BACK_DELAY_MS = 80;
 /** Edge threshold (px); wider so Chrome/macOS and sub-pixel scroll still trigger overscroll */
 const OVERSCROLL_EDGE_PX = 16;
 
@@ -166,6 +166,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       springBackTimeoutRef.current = setTimeout(() => {
         springBackTimeoutRef.current = null;
         if (overscrollPxRef.current !== 0) {
+          if (overscrollRafIdRef.current !== null) {
+            cancelAnimationFrame(overscrollRafIdRef.current);
+            overscrollRafIdRef.current = null;
+          }
           setIsOverscrollSpringing(true);
           requestAnimationFrame(() => {
             setOverscrollPx(0);
@@ -229,7 +233,15 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         if (e.button !== 0) return;
         pointerStartXRef.current = e.clientX;
         pointerStartScrollLeftRef.current = el.scrollLeft;
-        el.setPointerCapture(e.pointerId);
+        const { scrollLeft, scrollWidth, clientWidth } = el;
+        const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+        const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
+        const atRight =
+          maxScrollLeft <= OVERSCROLL_EDGE_PX ||
+          scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
+        if (atLeft || atRight) {
+          el.setPointerCapture(e.pointerId);
+        }
       };
 
       const handlePointerMove = (e: PointerEvent) => {
@@ -254,7 +266,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       };
 
       const handlePointerUp = (e: PointerEvent) => {
-        el.releasePointerCapture(e.pointerId);
+        if (el.hasPointerCapture(e.pointerId)) {
+          el.releasePointerCapture(e.pointerId);
+        }
         if (overscrollPxRef.current !== 0) {
           setIsOverscrollSpringing(true);
           requestAnimationFrame(() => setOverscrollPx(0));
