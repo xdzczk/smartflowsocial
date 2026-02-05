@@ -766,7 +766,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="scrollbar-hide h-full min-h-[200px] min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain pt-2 pb-2 md:min-h-[232px]"
+          className="scrollbar-hide h-full min-h-[216px] min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain pt-2 pb-2 md:min-h-[248px]"
         >
           <div
             ref={rubberBandWrapperRef}

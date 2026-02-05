@@ -139,10 +139,11 @@ export function useFlowData(): UseFlowDataResult {
     );
     if (!validated) return;
     const queueUnchanged = lastSyncedQueueTypeRef.current === queueType;
+    // Use runway value when dashboard set it (including null = 0 days); only fall back to flow's lastScheduledAtUtc when runway is undefined (e.g. other routes).
     const runwayMs =
-      validated.runwayLastScheduledAtUtc ??
-      validated.lastScheduledAtUtc ??
-      null;
+      validated.runwayLastScheduledAtUtc !== undefined
+        ? validated.runwayLastScheduledAtUtc
+        : (validated.lastScheduledAtUtc ?? null);
     if (queueUnchanged && hasMergedLoadMoreRef.current) {
       startTransition(() => {
         setUser(validated.user);
