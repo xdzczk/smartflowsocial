@@ -732,7 +732,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               <Link
                 to="/dashboard/newpost"
                 tabIndex={focusableTabIndex}
-                className="card-lift border-border-subtle bg-card hover:bg-muted/30 focus:ring-primary flex h-full min-h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm focus:ring-2 focus:outline-none md:min-h-[232px] md:w-[352px]"
+                className="card-lift border-border-subtle bg-card hover:bg-muted/30 focus:ring-primary flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px]"
                 aria-label="Create a new post"
               >
                 <Plus
@@ -819,7 +819,12 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="scrollbar-hide h-[200px] min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain pt-2 pb-2 md:h-[232px]"
+          className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain pt-2 pb-4"
+          style={{
+            height: isMobile
+              ? CARD_MIN_HEIGHT_MOBILE + 32
+              : CARD_MIN_HEIGHT + 36,
+          }}
         >
           <div
             ref={rubberBandWrapperRef}
@@ -880,7 +885,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                     width: `${virtualColumn.size}px`,
                     height: "100%",
                     display: "flex",
-                    alignItems: "stretch",
+                    alignItems: "flex-start",
                   }}
                 >
                   {renderSlotContent(slot, virtualColumn.index, isInViewport)}
