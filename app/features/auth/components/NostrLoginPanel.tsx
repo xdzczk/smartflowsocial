@@ -421,6 +421,9 @@ export default function NostrLoginPanel() {
   } | null>(null);
   const [signer, setSigner] = useState<NostrSigner | null>(null);
   const [pubkey, setPubkey] = useState<string | null>(null);
+  const [signingInDisplayName, setSigningInDisplayName] = useState<
+    string | null
+  >(null);
 
   const [nip46Tab, setNip46Tab] = useState<"bunker" | "nostrconnect">("bunker");
   const [nip46Input, setNip46Input] = useState("");
@@ -713,6 +716,38 @@ export default function NostrLoginPanel() {
       errorRegionRef.current.focus();
     }
   }, [state]);
+
+  // Fetch display name for "Signing in as username" when awaiting signature
+  useEffect(() => {
+    const isSigning =
+      state === "requesting_signature" || state === "verifying_signature";
+    if (!pubkey || !isSigning) {
+      setSigningInDisplayName(null);
+      return;
+    }
+    let cancelled = false;
+    const q = new URLSearchParams({ pubkey });
+    void (async () => {
+      try {
+        const res = await fetch(`/api/profile-display-name?${q}`);
+        const data = (await res.json()) as { displayName?: string | null };
+        const name =
+          typeof data.displayName === "string" && data.displayName.trim()
+            ? data.displayName.trim()
+            : null;
+        // Only update when we have a display name and effect wasn't cancelled
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- name is string | null; cancelled can be true after cleanup
+        if (!cancelled && name) {
+          setSigningInDisplayName(name);
+        }
+      } catch {
+        // Keep display name null on error; we fall back to npub
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pubkey, state]);
 
   // Timeout progress indicator
   useEffect(() => {
@@ -1608,7 +1643,7 @@ export default function NostrLoginPanel() {
                 disabled={nip07Available === false}
               >
                 <span className="flex items-center justify-center gap-2">
-                  Browser Extension (NIP-07)
+                  Browser Extension
                   {nip07Available === false ? (
                     <AlertTriangle className="h-4 w-4" />
                   ) : null}
@@ -1659,7 +1694,7 @@ export default function NostrLoginPanel() {
               className="border-border bg-card hover:bg-muted hover:text-foreground h-auto py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg dark:shadow-lg"
               onClick={() => setState("signer_initializing")}
             >
-              Remote Signer (NIP-46)
+              Remote Signer
             </Button>
           </div>
           {isMobile() ? (
@@ -2015,7 +2050,7 @@ export default function NostrLoginPanel() {
           <div className="text-base">
             Signing in as{" "}
             <span className="text-primary font-bold">
-              {formatNpubShort(pubkey)}
+              {signingInDisplayName ?? formatNpubShort(pubkey)}
             </span>
           </div>
           <div className="flex gap-3">

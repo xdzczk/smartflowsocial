@@ -20,8 +20,9 @@ const DEFAULT_RUNWAY_ORANGE_DAYS = 7;
 export default function Statistics({
   runwayDays,
   onRunwayClick,
-  runwayRedThresholdDays = DEFAULT_RUNWAY_RED_DAYS,
-  runwayOrangeThresholdDays = DEFAULT_RUNWAY_ORANGE_DAYS,
+  runwayRedThresholdDays: _runwayRedThresholdDays = DEFAULT_RUNWAY_RED_DAYS,
+  runwayOrangeThresholdDays:
+    _runwayOrangeThresholdDays = DEFAULT_RUNWAY_ORANGE_DAYS,
 }: StatisticsProps) {
   const { postStatistics } = useLoaderData<{
     postStatistics: PostStatistics | undefined;
@@ -33,17 +34,17 @@ export default function Statistics({
       ? `${runwayDays} day${runwayDays !== 1 ? "s" : ""}`
       : "0 days";
 
-  // Runway icon color: muted only when 0 days and no scheduled posts; red when 0 days but posts are scheduled; else red/orange/amber by thresholds
+  // Runway icon color: muted (0 days, no posts); muted red (< 2 days); amber (2–7 days); neutral blue (7+ days)
   const runwayDaysNum = runwayDays ?? 0;
   const hasScheduledPosts = stats.scheduledCount > 0;
   const runwayIconClass =
     runwayDaysNum <= 0 && !hasScheduledPosts
       ? "bg-muted text-muted-foreground dark:bg-muted/80"
-      : runwayDaysNum <= 0 || runwayDaysNum <= runwayRedThresholdDays
-        ? "bg-red-500/15 text-red-600 dark:bg-red-400/20 dark:text-red-400"
-        : runwayDaysNum <= runwayOrangeThresholdDays
-          ? "bg-orange-500/15 text-orange-600 dark:bg-orange-400/20 dark:text-orange-400"
-          : "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400";
+      : runwayDaysNum < 2
+        ? "bg-red-400/15 text-red-600 dark:bg-red-400/20 dark:text-red-400"
+        : runwayDaysNum <= 7
+          ? "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400"
+          : "bg-slate-500/15 text-slate-600 dark:bg-slate-400/20 dark:text-slate-400";
 
   const cardBase = "card-lift min-h-[72px] shadow-sm dark:shadow-none";
   const contentBase =
@@ -63,7 +64,7 @@ export default function Statistics({
             aria-label="Compose, Add to Flow"
           >
             <div
-              className={`${iconBase} bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-400`}
+              className={`${iconBase} bg-purple-500/12 text-purple-600 dark:bg-purple-400/15 dark:text-purple-400`}
             >
               <svg
                 className="hi-solid hi-plus-circle inline-block size-6"
@@ -94,7 +95,7 @@ export default function Statistics({
             aria-label={`Scheduled, ${stats.scheduledCount} posts`}
           >
             <div
-              className={`${iconBase} bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400`}
+              className={`${iconBase} bg-blue-400/12 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400`}
             >
               <svg
                 className="hi-solid hi-clock inline-block size-6"
@@ -125,7 +126,7 @@ export default function Statistics({
             aria-label={`Published, ${stats.successCount} posts`}
           >
             <div
-              className={`${iconBase} bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400`}
+              className={`${iconBase} bg-green-500/12 text-green-600 dark:bg-green-400/15 dark:text-green-400`}
             >
               <svg
                 className="hi-solid hi-check-circle inline-block size-6"

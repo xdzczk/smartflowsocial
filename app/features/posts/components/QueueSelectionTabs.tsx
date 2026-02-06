@@ -18,8 +18,7 @@ import {
 import { getQueueColor } from "../queue-colors";
 import type { QueueType } from "../types";
 
-/** Use dropdown on mobile (≤768px) or when queue count would overflow tabs */
-const QUEUE_DROPDOWN_THRESHOLD = 6;
+/** Use dropdown only on mobile (≤768px); on desktop always show tabs (horizontal scroll when many) */
 const MOBILE_BREAKPOINT_PX = 768;
 
 interface QueueSelectionTabsProps {
@@ -28,7 +27,7 @@ interface QueueSelectionTabsProps {
   basePath?: string;
 }
 
-function usePrefersDropdown(queueCount: number): boolean {
+function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches
@@ -40,7 +39,7 @@ function usePrefersDropdown(queueCount: number): boolean {
     mq.addEventListener("change", fn);
     return () => mq.removeEventListener("change", fn);
   }, []);
-  return isMobile || queueCount > QUEUE_DROPDOWN_THRESHOLD;
+  return isMobile;
 }
 
 export default function QueueSelectionTabs({
@@ -52,7 +51,7 @@ export default function QueueSelectionTabs({
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const revalidator = useRevalidator();
-  const useDropdown = usePrefersDropdown(queueTypes.length);
+  const useDropdown = useIsMobile();
 
   const useQueryParams = !params["queueType"];
   const currentValue =

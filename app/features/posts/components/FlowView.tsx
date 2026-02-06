@@ -651,22 +651,30 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     }, [flowItems.length, hasLiveEdge]);
 
     const handleScrollToNext = useCallback(() => {
+      const el = scrollContainerRef.current;
+      if (!el) return;
       const reduceMotion =
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const index = isMobile ? scrollToFirstFutureIndex : scrollToLiveIndex;
-      rowVirtualizer.scrollToIndex(index, {
-        align: "start",
+      // Compute exact target offset so we don't rely on scrollToIndex + delayed -24px
+      // (that caused underscroll when smooth scroll wasn't finished before the timeout).
+      let offsetPx = 0;
+      for (let i = 0; i < index; i++) {
+        offsetPx += slots[i]?.size ?? cardSlotSize;
+      }
+      const targetScrollLeft = Math.max(0, offsetPx - SCROLL_EDGE_OFFSET_PX);
+      el.scrollTo({
+        left: targetScrollLeft,
         behavior: reduceMotion ? "auto" : "smooth",
       });
-      const delay = reduceMotion ? 50 : 450;
-      setTimeout(() => {
-        const el = scrollContainerRef.current;
-        if (el) {
-          el.scrollLeft = Math.max(0, el.scrollLeft - SCROLL_EDGE_OFFSET_PX);
-        }
-      }, delay);
-    }, [isMobile, scrollToFirstFutureIndex, scrollToLiveIndex, rowVirtualizer]);
+    }, [
+      isMobile,
+      scrollToFirstFutureIndex,
+      scrollToLiveIndex,
+      slots,
+      cardSlotSize,
+    ]);
 
     const handleScrollToInitial = useCallback(() => {
       const el = scrollContainerRef.current;
@@ -885,7 +893,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                     width: `${virtualColumn.size}px`,
                     height: "100%",
                     display: "flex",
-                    alignItems: "flex-start",
+                    alignItems: "center",
                   }}
                 >
                   {renderSlotContent(slot, virtualColumn.index, isInViewport)}
