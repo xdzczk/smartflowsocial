@@ -33,13 +33,22 @@
   }
 
   /* Subtle glow for next scheduled Flow card (duration set inline; color from --flow-glow-color, queue or primary) */
+  /* Mix strength: lighter in light theme, softer in dark to avoid neon glare */
+  :root {
+    --flow-glow-mix-start: 8%;
+    --flow-glow-mix-end: 20%;
+  }
+  .dark {
+    --flow-glow-mix-start: 6%;
+    --flow-glow-mix-end: 15%;
+  }
   @keyframes flow-next-glow {
     0%,
     100% {
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--flow-glow-color, hsl(var(--primary))) 8%, transparent);
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--flow-glow-color, hsl(var(--primary))) var(--flow-glow-mix-start, 8%), transparent);
     }
     50% {
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--flow-glow-color, hsl(var(--primary))) 20%, transparent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--flow-glow-color, hsl(var(--primary))) var(--flow-glow-mix-end, 20%), transparent);
     }
   }
 

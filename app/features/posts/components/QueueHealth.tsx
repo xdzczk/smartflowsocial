@@ -91,7 +91,7 @@ export default function QueueHealth({
                     }
                   >
                     <div
-                      className={`h-full rounded-md transition-[width] ${customColor ? "bg-[color-mix(in_srgb,var(--queue-color)_55%,hsl(var(--muted)))]" : getBarFillClass(queueName)}`}
+                      className={`h-full rounded-md transition-[width] ${customColor ? "bg-[color-mix(in_srgb,var(--queue-color)_55%,hsl(var(--muted)))] dark:bg-[color-mix(in_srgb,var(--queue-color)_48%,hsl(var(--muted)))]" : getBarFillClass(queueName)}`}
                       style={{ width: `${widthPercent}%` }}
                     />
                   </div>

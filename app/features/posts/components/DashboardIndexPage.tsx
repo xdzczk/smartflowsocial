@@ -44,6 +44,17 @@ function getUserTimezone(user: unknown): string | undefined {
   return undefined;
 }
 
+/** Returns modal type for a flow item: "posted" if already published, else "scheduled". */
+function getFlowItemModalType(item: {
+  postedAt?: Date | string | null;
+  publishedAt?: Date | string | null;
+}): "posted" | "scheduled" {
+  const raw = item.postedAt ?? item.publishedAt;
+  const ts = raw ? new Date(raw).getTime() : 0;
+  const nowMs = Date.now();
+  return ts > 0 && ts <= nowMs ? "posted" : "scheduled";
+}
+
 function handleContentSelection(
   content: CombinedContent,
   setSelectedPost: (post: PostData | null) => void,
@@ -360,8 +371,16 @@ export default function DashboardIndexPage() {
         <PostDetailsModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
+          onEdit={(p) => {
+            setSelectedPost(null);
+            _handleEditPost(p as PostData);
+          }}
+          onReschedule={(p) => {
+            setSelectedPost(null);
+            _handleReschedulePost(p as PostData);
+          }}
           showSignedEvent={true}
-          type="scheduled"
+          type={getFlowItemModalType(selectedPost)}
           userTimezone={getUserTimezone(user)}
           userTimeFormat={userTimeFormat}
         />
@@ -371,7 +390,15 @@ export default function DashboardIndexPage() {
         <LongFormDetailsModal
           post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
-          type="scheduled"
+          onEdit={(p) => {
+            setSelectedLongFormPost(null);
+            _handleEditPost(p as LongFormPostData);
+          }}
+          onReschedule={(p) => {
+            setSelectedLongFormPost(null);
+            _handleReschedulePost(p as LongFormPostData);
+          }}
+          type={getFlowItemModalType(selectedLongFormPost)}
           showSignedEvent={true}
           userTimezone={getUserTimezone(user)}
           userTimeFormat={userTimeFormat}

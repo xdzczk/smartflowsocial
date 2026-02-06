@@ -16,9 +16,19 @@ export function ChildRepliesPanel({
 
   if (isLoading) {
     return (
-      <div className="dark:border-primary/30 border-border mt-3 border-l-2 pl-3">
+      <div
+        className="dark:border-primary/30 border-border mt-3 border-l-2 pl-3"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <div className="text-muted-foreground flex items-center gap-2 text-xs">
-          <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <svg
+            className="h-4 w-4 animate-spin"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden
+          >
             <circle
               className="opacity-25"
               cx="12"
@@ -41,7 +51,10 @@ export function ChildRepliesPanel({
 
   if (replies.length === 0) {
     return (
-      <div className="dark:border-primary/30 border-border mt-3 border-l-2 pl-3">
+      <div
+        className="dark:border-primary/30 border-border mt-3 border-l-2 pl-3"
+        role="status"
+      >
         <div className="text-muted-foreground text-xs">No replies yet</div>
       </div>
     );
