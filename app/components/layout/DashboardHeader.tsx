@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@remix-run/react";
 import { Lock } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   HiOutlineHome,
   HiOutlineCalendarDays,
@@ -79,9 +79,6 @@ const ENGAGEMENT_SECTION_ITEMS = [
     label: "Giveaway",
   },
 ];
-
-/** Body class added when mobile sidebar closes; removed after a short delay to avoid hover reopening */
-const MOBILE_SIDEBAR_JUST_CLOSED_CLASS = "mobile-sidebar-just-closed";
 
 // Navigation item component with lock functionality
 interface NavigationItemProps {
@@ -393,33 +390,10 @@ export default function Header({
     return () => mq.removeEventListener("change", fn);
   }, []);
 
-  const suppressHoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-  const closeMobileSidebar = useCallback(() => {
-    setMobileSidebarOpen(false);
-    if (suppressHoverTimeoutRef.current) {
-      clearTimeout(suppressHoverTimeoutRef.current);
-    }
-    document.body.classList.add(MOBILE_SIDEBAR_JUST_CLOSED_CLASS);
-    suppressHoverTimeoutRef.current = setTimeout(() => {
-      document.body.classList.remove(MOBILE_SIDEBAR_JUST_CLOSED_CLASS);
-      suppressHoverTimeoutRef.current = null;
-    }, 300);
-  }, []);
   useEffect(() => {
-    return () => {
-      if (suppressHoverTimeoutRef.current) {
-        clearTimeout(suppressHoverTimeoutRef.current);
-      }
-      document.body.classList.remove(MOBILE_SIDEBAR_JUST_CLOSED_CLASS);
-    };
-  }, []);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => closeMobileSidebar(), 0);
+    const timeoutId = setTimeout(() => setMobileSidebarOpen(false), 0);
     return () => clearTimeout(timeoutId);
-  }, [location.pathname, closeMobileSidebar]);
+  }, [location.pathname]);
 
   const handleUpgradeClick = (feature: FeatureName, featureName: string) => {
     setUpgradePrompt({ isOpen: true, feature, featureName });
@@ -427,7 +401,9 @@ export default function Header({
   const closeUpgradePrompt = () => {
     setUpgradePrompt({ isOpen: false, feature: null, featureName: "" });
   };
-  const onMobileNavActiveClick = isMobile ? closeMobileSidebar : undefined;
+  const onMobileNavActiveClick = isMobile
+    ? () => setMobileSidebarOpen(false)
+    : undefined;
 
   const sidebarPadding = isDesktopExpanded ? "p-4" : "p-2 lg:px-2 lg:py-3";
 
@@ -442,7 +418,7 @@ export default function Header({
       >
         <SidebarHeader
           isDesktopExpanded={isDesktopExpanded}
-          onCloseMobile={closeMobileSidebar}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
         />
         <div className="overflow-x-hidden overflow-y-auto">
           <div
@@ -477,9 +453,7 @@ export default function Header({
       <PageHeaderBar
         isDesktopExpanded={isDesktopExpanded}
         onDesktopToggle={handleDesktopSidebarToggle}
-        onMobileToggle={() =>
-          mobileSidebarOpen ? closeMobileSidebar() : setMobileSidebarOpen(true)
-        }
+        onMobileToggle={() => setMobileSidebarOpen(!mobileSidebarOpen)}
       />
       {upgradePrompt.feature ? (
         <UpgradePrompt

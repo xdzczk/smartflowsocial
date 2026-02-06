@@ -2,10 +2,13 @@ import { Link, useSearchParams } from "@remix-run/react";
 import { useState } from "react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { isVideoFile } from "~/lib/helpers";
 
 import type { PostDTO } from "../dtos";
 import { deserializePostDTO } from "../dtos.client";
 import type { PostStats } from "../stats.server";
+import { getImageUrls } from "../utils/content-helpers";
 
 import PostDetailsModal from "./PostDetailsModal";
 
@@ -20,12 +23,54 @@ export interface TopPostsListProps {
   userTimezone?: string;
 }
 
+const MINUTES_DAY = 24 * 60;
+const MINUTES_MONTH = 30 * MINUTES_DAY;
+const MINUTES_YEAR = 365 * MINUTES_DAY;
+
+function getFirstImageUrlFromPost(post: PostDTO): string | null {
+  const urls = getImageUrls(post.fileUrl);
+  return urls[0] ?? null;
+}
+
 function getPreview(post: PostDTO): string {
   const caption = post.caption;
-  if (caption && typeof caption === "string") {
+  if (caption && typeof caption === "string" && caption.trim()) {
     return caption.length > 50 ? caption.slice(0, 50) + "…" : caption;
   }
+  const content = post.content;
+  if (content && typeof content === "string" && content.trim()) {
+    return content.length > 50 ? content.slice(0, 50) + "…" : content;
+  }
+  const postType = post.postType;
+  const fileUrl = post.fileUrl;
+  const hasMedia = Array.isArray(fileUrl) && fileUrl.length > 0;
+  if (postType === "VIDEO") return "Video post";
+  if (postType === "CAROUSEL") return "Carousel";
+  if (hasMedia) return "Image post";
+  if (postType === "TEXT") return "Text post";
   return "Post";
+}
+
+function getRelativeTimeAgo(postedAt: string | null): string {
+  if (!postedAt) return "";
+  const then = new Date(postedAt).getTime();
+  const now = Date.now();
+  const minutesAgo = (now - then) / 60000;
+  if (minutesAgo < 1) return "just now";
+  if (minutesAgo < 60) return `${Math.round(minutesAgo)} min ago`;
+  if (minutesAgo < 120) return "1 hour ago";
+  if (minutesAgo < MINUTES_DAY)
+    return `${Math.round(minutesAgo / 60)} hours ago`;
+  if (minutesAgo < MINUTES_MONTH) {
+    const days = Math.round(minutesAgo / MINUTES_DAY);
+    return days === 1 ? "1 day ago" : `${days} days ago`;
+  }
+  if (minutesAgo < MINUTES_YEAR) {
+    const months = Math.round(minutesAgo / MINUTES_MONTH);
+    return months === 1 ? "1 month ago" : `${months} months ago`;
+  }
+  const years = Math.round(minutesAgo / MINUTES_YEAR);
+  return years === 1 ? "1 year ago" : `${years} years ago`;
 }
 
 export default function TopPostsList({
@@ -44,8 +89,8 @@ export default function TopPostsList({
 
   return (
     <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-0.5">
-        <h3 className="text-muted-foreground/90 text-[11px] font-semibold tracking-wide uppercase">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
+        <h3 className="text-muted-foreground/90 text-[11px] font-medium tracking-tight uppercase">
           Top Posts
         </h3>
         <nav className="flex gap-1 text-xs" aria-label="Top posts timeframe">
@@ -80,9 +125,15 @@ export default function TopPostsList({
       </CardHeader>
       <CardContent className="px-4 pt-0 pb-3">
         {topPosts.length === 0 ? (
-          <p className="text-muted-foreground/80 text-[11px]">
-            No posted content in this period.
-          </p>
+          <div className="space-y-1">
+            <p className="text-muted-foreground/80 text-[11px]">
+              No posted content in this period.
+            </p>
+            <p className="text-muted-foreground/60 text-[10px]">
+              Posted content in the last {timeframeDays}d will appear here by
+              engagement.
+            </p>
+          </div>
         ) : (
           <ul
             className="flex flex-col gap-0.5"
@@ -90,24 +141,53 @@ export default function TopPostsList({
           >
             {topPosts.map((item) => {
               const preview = getPreview(item.post);
+              const firstImage = getFirstImageUrlFromPost(item.post);
+              const relativeTime = getRelativeTimeAgo(item.post.postedAt);
               const { likes, replies, zaps } = item.stats;
               return (
                 <li key={item.post.id}>
                   <button
                     type="button"
                     onClick={() => setSelectedItem(item)}
-                    className="border-border/60 hover:bg-muted/40 focus:ring-primary w-full rounded border p-1 text-left text-[11px] transition-colors focus:ring-2 focus:outline-none"
+                    className="border-border/60 hover:bg-muted/50 focus:ring-primary flex w-full flex-row items-center gap-3 rounded border p-2 text-left text-[11px] transition-colors focus:ring-2 focus:outline-none"
                     aria-label={`${preview}, Likes ${likes}, Replies ${replies}, Zaps ${zaps}`}
                   >
-                    <p className="text-muted-foreground/90 min-w-0 truncate text-[11px] leading-snug font-medium">
-                      {preview}
-                    </p>
-                    <p
-                      className="text-muted-foreground/80 mt-0.5 text-[10px] leading-snug"
-                      aria-hidden
-                    >
-                      ♥ {likes} · 💬 {replies} · ⚡ {zaps}
-                    </p>
+                    <div className="bg-muted/50 flex h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg">
+                      {firstImage ? (
+                        <MediaThumbnail
+                          src={firstImage}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          forceType={
+                            isVideoFile(firstImage) ? "video" : "image"
+                          }
+                          hidePlayButton={true}
+                          fallback={
+                            <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+                              {item.post.postType === "VIDEO"
+                                ? "Video"
+                                : "Image"}
+                            </div>
+                          }
+                        />
+                      ) : (
+                        <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+                          {item.post.postType === "TEXT" ? "Text" : "Post"}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-muted-foreground/90 min-w-0 truncate text-[11px] leading-snug font-medium">
+                        {preview}
+                      </p>
+                      <p
+                        className="text-muted-foreground/80 mt-0.5 text-[11px] leading-snug"
+                        aria-hidden
+                      >
+                        ♥ {likes} · 💬 {replies} · ⚡ {zaps}
+                        {relativeTime ? ` · ${relativeTime}` : ""}
+                      </p>
+                    </div>
                   </button>
                 </li>
               );

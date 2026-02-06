@@ -84,11 +84,6 @@
   }
 }
 
-/* Prevent ghost hover on main content after closing mobile sidebar (touch → mouse event) */
-body.mobile-sidebar-just-closed #page-content {
-  pointer-events: none;
-}
-
 @theme {
   /* Font families */
   --font-sans:
@@ -396,22 +391,37 @@ body.mobile-sidebar-just-closed #page-content {
     background-clip: text;
   }
 
-  /* Card lift: micro-depth on hover (shadow shift, slight lift); respect reduced motion */
+  /* Card lift: micro-depth on hover (shadow shift, slight lift); only when input can hover (avoids ghost hover on touch) */
   .card-lift {
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   }
 
-  .card-lift:hover {
-    box-shadow: 0 4px 12px hsl(var(--foreground) / 0.08);
+  @media (hover: hover) {
+    .card-lift:hover {
+      box-shadow: 0 4px 12px hsl(var(--foreground) / 0.08);
+    }
+
+    .dark .card-lift:hover {
+      box-shadow: 0 4px 12px hsl(var(--foreground) / 0.12);
+    }
   }
 
-  .dark .card-lift:hover {
-    box-shadow: 0 4px 12px hsl(var(--foreground) / 0.12);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     .card-lift:hover {
       transform: translateY(-2px);
+    }
+  }
+
+  /* On touch devices, prevent ghost hover from leaving dashboard cards in hover state */
+  @media (hover: none) {
+    #page-content .card-lift:hover {
+      background-color: hsl(var(--card));
+      box-shadow: none;
+      transform: none;
+    }
+
+    .dark #page-content .card-lift:hover {
+      background-color: hsl(var(--card));
     }
   }
 
