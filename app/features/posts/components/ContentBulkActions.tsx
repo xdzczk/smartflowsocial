@@ -38,7 +38,7 @@ export function ContentBulkActions({
               disabled={
                 repostFetcher ? repostFetcher.state !== "idle" : undefined
               }
-              className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-primary/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+              className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
             >
               {repostFetcher && repostFetcher.state !== "idle"
                 ? PROCESSING_TEXT
@@ -49,7 +49,7 @@ export function ContentBulkActions({
               disabled={
                 repostFetcher ? repostFetcher.state !== "idle" : undefined
               }
-              className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-primary active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+              className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
             >
               {repostFetcher && repostFetcher.state !== "idle"
                 ? PROCESSING_TEXT
@@ -60,7 +60,7 @@ export function ContentBulkActions({
               disabled={
                 repostFetcher ? repostFetcher.state !== "idle" : undefined
               }
-              className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-primary/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+              className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
             >
               {repostFetcher && repostFetcher.state !== "idle"
                 ? PROCESSING_TEXT
@@ -71,7 +71,7 @@ export function ContentBulkActions({
         <button
           onClick={onBulkDelete}
           disabled={bulkDeleteState !== "idle"}
-          className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-primary/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+          className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
         >
           {bulkDeleteState !== "idle"
             ? "Deleting..."

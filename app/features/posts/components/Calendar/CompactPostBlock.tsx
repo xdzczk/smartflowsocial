@@ -47,7 +47,7 @@ function getClassName(
   isLongform: boolean | undefined
 ): string {
   const baseClasses =
-    "rounded-md border border-border p-2 text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary";
+    "rounded-md border border-border p-2 text-xs transition-all focus:outline-none focus:ring-2 focus:ring-ring";
   const cursorClass = isPast ? "cursor-default" : "cursor-pointer";
   const dragClass = isDragging
     ? "rotate-2 opacity-50"

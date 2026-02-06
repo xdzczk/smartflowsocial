@@ -52,7 +52,7 @@ export default function ScheduledPosts() {
                 type="text"
                 id="search"
                 name="search"
-                className="border-border placeholder-muted-foreground dark:border-border dark:bg-card dark:focus:border-primary focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring"
+                className="border-border placeholder-muted-foreground dark:border-border dark:bg-card dark:focus:border-primary focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring"
                 placeholder="Search posts.."
               />
             </div>
@@ -183,7 +183,7 @@ export default function ScheduledPosts() {
                           onClick={() =>
                             setSelectedPost(post as unknown as PostData)
                           }
-                          className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-primary/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
+                          className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
                         >
                           View
                         </button>

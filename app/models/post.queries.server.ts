@@ -56,11 +56,13 @@ export async function getScheduledPosts({
       };
     }
 
-    // Add queue type filter if specified
+    // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
     if (queueType && queueType !== "all") {
-      whereClause.queueType = {
-        name: queueType,
-      };
+      if (queueType === "unassigned") {
+        whereClause.queueTypeId = null;
+      } else {
+        whereClause.queueType = { name: queueType };
+      }
     }
 
     const [posts, total] = await Promise.all([
@@ -121,7 +123,11 @@ export async function getLatestScheduledAtUtc({
     scheduledAtUtc: { gt: now },
   };
   if (queueType && queueType !== "all") {
-    whereClause.queueType = { name: queueType };
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
   }
   const post = await prisma.post.findFirst({
     where: whereClause,
@@ -150,11 +156,13 @@ export async function getDraftPosts({
     userId: userId,
   };
 
-  // Add queue type filter if specified
+  // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
   if (queueType && queueType !== "all") {
-    whereClause.queueType = {
-      name: queueType,
-    };
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
   }
 
   const [posts, total] = await Promise.all([
@@ -219,11 +227,13 @@ export async function getPostedPosts({
     userId: userId,
   };
 
-  // Add queue type filter if specified
+  // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
   if (queueType && queueType !== "all") {
-    whereClause.queueType = {
-      name: queueType,
-    };
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
   }
 
   const [posts, total] = await Promise.all([
@@ -285,11 +295,13 @@ export async function getRecentPostedPosts({
     };
   }
 
-  // Add queue type filter if specified
+  // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
   if (queueType && queueType !== "all") {
-    whereClause.queueType = {
-      name: queueType,
-    };
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
   }
 
   return await prisma.post.findMany({
@@ -410,11 +422,13 @@ export function getPastPosts({
         },
   };
 
-  // Add queue type filter if specified
+  // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
   if (queueType && queueType !== "all") {
-    whereClause.queueType = {
-      name: queueType,
-    };
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
   }
 
   return prisma.post.findMany({
@@ -493,11 +507,13 @@ export async function getRecyclablePosts({
     userId: userId,
   };
 
-  // Add queue type filter if specified
+  // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
   if (queueType && queueType !== "all") {
-    whereClause.queueType = {
-      name: queueType,
-    };
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
   }
 
   const [posts, total] = await Promise.all([

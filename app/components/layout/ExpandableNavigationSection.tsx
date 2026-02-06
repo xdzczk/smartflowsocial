@@ -74,7 +74,7 @@ function NavigationChildItemComponent({
     ? `Requires ${getMinimumPlanForFeature(child.feature)} plan`
     : child.label;
 
-  const childLinkClass = `group flex items-center rounded-lg border border-transparent text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-primary ${
+  const childLinkClass = `group flex items-center rounded-lg border border-transparent text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-ring ${
     collapsed ? "justify-center px-0 py-2" : "gap-2 px-2.5"
   } ${
     isActive
@@ -186,10 +186,6 @@ export function ExpandableNavigationSection({
     }
   };
 
-  const handleFocusCapture = () => {
-    setManuallyExpanded(true);
-  };
-
   const handleBlurCapture = () => {
     // After focus leaves, check if it went outside this section; if so, collapse
     setTimeout(() => {
@@ -200,7 +196,7 @@ export function ExpandableNavigationSection({
     }, 0);
   };
 
-  const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${
+  const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring ${
     isAnyChildActive
       ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
       : "text-muted-foreground hover:bg-muted hover:text-foreground active:border-border"
@@ -210,7 +206,6 @@ export function ExpandableNavigationSection({
     <div
       ref={sectionRef}
       className="space-y-1"
-      onFocusCapture={handleFocusCapture}
       onBlurCapture={handleBlurCapture}
     >
       {/* Parent Section Header */}

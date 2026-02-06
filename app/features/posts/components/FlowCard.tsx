@@ -223,7 +223,7 @@ function FlowCardInner({
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`card-lift border-border-subtle bg-card focus:ring-primary group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
+      className={`card-lift border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
         queueColor || glowStyle
           ? {

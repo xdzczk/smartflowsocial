@@ -366,7 +366,7 @@ export function SimpleRescheduleModal({
                       }
                     }
                   }}
-                  className="bg-card border-border text-foreground focus:border-primary focus:ring-primary flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2"
+                  className="bg-card border-border text-foreground focus:border-primary focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2"
                 />
               </div>
               <div className="text-muted-foreground text-xs">
@@ -394,7 +394,7 @@ export function SimpleRescheduleModal({
                       e.target.value
                     );
                   }}
-                  className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 text-sm focus:ring-2"
+                  className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2"
                 >
                   <option value="">Manual (No Queue)</option>
                   {queueTypes.map((queueType) => (

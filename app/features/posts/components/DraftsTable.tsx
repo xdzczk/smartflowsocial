@@ -145,7 +145,7 @@ export function DraftsTable({
                   posts.length > 0 ? selectedPosts.size === posts.length : false
                 }
                 onChange={onToggleSelectAll}
-                className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+                className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
               />
             </th>
             <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
@@ -189,7 +189,7 @@ export function DraftsTable({
                   checked={selectedPosts.has(post.id)}
                   onChange={() => onToggleSelection(post.id)}
                   onClick={(e) => e.stopPropagation()}
-                  className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+                  className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                 />
               </td>
               <td className="p-3">
@@ -246,7 +246,7 @@ export function DraftsTable({
                   <Link
                     to={`/dashboard/drafts/edit/${post.id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-primary/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+                    className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
                   >
                     Edit
                   </Link>
@@ -262,7 +262,7 @@ export function DraftsTable({
                         deleteFetcher.state !== "idle" ||
                         bulkDeleteState !== "idle"
                       }
-                      className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-primary/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                      className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                     >
                       {deleteFetcher.state !== "idle" &&
                       deleteFetcher.formData?.get("postId") === post.id

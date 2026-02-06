@@ -1790,7 +1790,7 @@ export default function NostrLoginPanel() {
                     id="nip46Relays"
                     name="nip46Relays"
                     aria-describedby="nip46RelaysHelp"
-                    className="border-input bg-background focus-visible:ring-primary min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                    className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                     value={relayList}
                     onChange={(e) => setRelayList(e.target.value)}
                   />
@@ -1999,7 +1999,7 @@ export default function NostrLoginPanel() {
                   <textarea
                     id="nip46NostrConnectUriWaiting"
                     readOnly
-                    className="border-input bg-background focus-visible:ring-primary min-h-[88px] w-full rounded-md border p-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                    className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                     value={nostrConnectUri}
                   />
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

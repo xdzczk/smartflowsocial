@@ -40,7 +40,7 @@ export function GiveawayFilters({
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, from: e.target.value })
               }
-              className="border-border bg-background text-foreground focus:border-primary focus:ring-primary/50 rounded-lg border px-3 py-2 text-sm leading-6 focus:ring focus:outline-none"
+              className="border-border bg-background text-foreground focus:border-primary focus:ring-ring/50 rounded-lg border px-3 py-2 text-sm leading-6 focus:ring focus:outline-none"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -55,7 +55,7 @@ export function GiveawayFilters({
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, to: e.target.value })
               }
-              className="border-border bg-background text-foreground focus:border-primary focus:ring-primary/50 rounded-lg border px-3 py-2 text-sm leading-6 focus:ring focus:outline-none"
+              className="border-border bg-background text-foreground focus:border-primary focus:ring-ring/50 rounded-lg border px-3 py-2 text-sm leading-6 focus:ring focus:outline-none"
             />
           </div>
         </div>
@@ -83,7 +83,7 @@ export function GiveawayFilters({
             name="search"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring focus:outline-none"
+            className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring focus:outline-none"
             placeholder="Search posts.."
           />
         </div>

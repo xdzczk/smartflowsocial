@@ -201,7 +201,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           placeholder="Search posts, drafts, templates... (⌘K)"
-          className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-1.5 pr-8 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pr-10 sm:pl-10"
+          className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-1.5 pr-8 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pr-10 sm:pl-10"
         />
         {query ? (
           <button

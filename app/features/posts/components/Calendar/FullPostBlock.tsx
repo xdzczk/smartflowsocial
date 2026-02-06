@@ -62,7 +62,7 @@ export function FullPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "posted" : "scheduled"} for ${formattedDateTime}`}
-      className={`border-border focus:ring-primary rounded-lg border p-3 transition-all focus:ring-2 focus:outline-none ${
+      className={`border-border focus:ring-ring rounded-lg border p-3 transition-all focus:ring-2 focus:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer"
       } ${
         isDragging ? "rotate-2 opacity-50" : isPast ? "" : "hover:shadow-lg"

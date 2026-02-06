@@ -756,7 +756,7 @@ export function RemoteSignerReconnectDialog(props: {
             <div className="space-y-1">
               <div className="text-sm font-medium">Relays</div>
               <textarea
-                className="border-input bg-background focus-visible:ring-primary min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                 value={relayList}
                 onChange={(e) => setRelayList(e.target.value)}
                 disabled={state === "waiting" || isReconnectingExisting}

@@ -61,13 +61,13 @@ export default function UpgradePrompt({
         <div className="flex gap-3">
           <Link
             to="/plans"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary flex-1 rounded-lg px-4 py-2 text-center font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring flex-1 rounded-lg px-4 py-2 text-center font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
           >
             View Plans
           </Link>
           <button
             onClick={onClose}
-            className="border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted focus:ring-primary flex-1 rounded-lg border px-4 py-2 font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
+            className="border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted focus:ring-ring flex-1 rounded-lg border px-4 py-2 font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
           >
             Cancel
           </button>

@@ -250,7 +250,7 @@ export function BulkPostCard({
             type="checkbox"
             checked={post.isRecyclable}
             onChange={(e) => onIsRecyclableChange(index, e.target.checked)}
-            className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+            className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
           />
           <label
             htmlFor={`recyclable-${index}`}

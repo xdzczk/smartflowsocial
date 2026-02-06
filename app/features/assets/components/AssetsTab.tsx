@@ -75,7 +75,7 @@ export function AssetsTab({
               type="text"
               value={searchInput}
               onChange={(e) => onSearchInputChange(e.target.value)}
-              className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring"
+              className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring"
               placeholder="Search assets by title, content, or tags..."
             />
           </div>
@@ -159,7 +159,7 @@ export function AssetsTab({
                         : false
                     }
                     onChange={onSelectAllAssets}
-                    className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+                    className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                   />
                 </th>
                 <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
@@ -196,7 +196,7 @@ export function AssetsTab({
                       type="checkbox"
                       checked={selectedAssets.includes(asset.id)}
                       onChange={() => onAssetSelect(asset.id)}
-                      className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+                      className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                     />
                   </td>
                   <td className="p-3">
@@ -270,7 +270,7 @@ export function AssetsTab({
                         type="submit"
                         onClick={(e) => onDeleteAsset(e, asset.id)}
                         disabled={deleteFetcherState !== "idle"}
-                        className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-primary/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-primary/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
+                        className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-ring/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-ring/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
                       >
                         Delete
                       </button>

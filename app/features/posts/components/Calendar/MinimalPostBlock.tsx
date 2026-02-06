@@ -154,7 +154,7 @@ function UltraCompactLayout({
 }: UltraCompactLayoutProps) {
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
-  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus:ring-1 focus:ring-primary`;
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus:ring-1 focus:ring-ring`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,
@@ -232,7 +232,7 @@ function RegularLayout({
 }: RegularLayoutProps) {
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
-  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} px-2 py-1 focus:ring-2 focus:ring-primary`;
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} px-2 py-1 focus:ring-2 focus:ring-ring`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,

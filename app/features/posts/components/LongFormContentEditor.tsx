@@ -62,7 +62,7 @@ export function LongFormContentEditor({
           Insert Assets
         </Button>
       </div>
-      <div className="border-border dark:border-border focus-within:border-primary focus-within:ring-primary mt-1 rounded-lg border focus-within:ring-1">
+      <div className="border-border dark:border-border focus-within:border-primary focus-within:ring-ring mt-1 rounded-lg border focus-within:ring-1">
         <div className="min-h-[500px] p-4">
           <div
             id="editorjs"

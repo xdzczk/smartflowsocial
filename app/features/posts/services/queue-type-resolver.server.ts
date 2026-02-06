@@ -23,8 +23,9 @@ export async function resolveQueueTypeId(
     return Promise.resolve(queueTypeId);
   }
 
-  // If no queueType name provided or it's "unassigned", return null
-  if (!queueType || queueType === "unassigned") {
+  // If no queueType name provided or it's unassigned (sentinel), return null
+  const normalized = queueType?.toLowerCase();
+  if (!queueType || normalized === "unassigned") {
     return Promise.resolve(null);
   }
 

@@ -122,7 +122,7 @@ export function EditPostFormFields({
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           rows={4}
-          className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2"
+          className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
           placeholder="What's on your mind?"
         />
       </div>
@@ -151,7 +151,7 @@ export function EditPostFormFields({
             type="text"
             value={manualHashtags}
             onChange={(e) => setManualHashtags(e.target.value)}
-            className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2"
+            className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
             placeholder="#tag1 #tag2 #tag3"
           />
         </div>
@@ -169,7 +169,7 @@ export function EditPostFormFields({
           name="edit-post-queue-type"
           value={selectedQueueType}
           onChange={(e) => setSelectedQueueType(e.target.value)}
-          className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2"
+          className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
         >
           <option value="">Manual (No Queue)</option>
           {queueTypes.map((queueType) => (

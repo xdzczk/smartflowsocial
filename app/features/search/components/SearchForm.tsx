@@ -26,7 +26,7 @@ export function SearchForm({ form, onSubmit, isSearching }: SearchFormProps) {
             type="text"
             {...form.register("eventInput")}
             placeholder="Enter event ID (hex), note1, or nevent1..."
-            className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground focus:border-primary focus:ring-primary/50 block w-full rounded-lg border px-4 py-3 text-sm leading-6 focus:ring"
+            className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border px-4 py-3 text-sm leading-6 focus:ring"
             disabled={isSearching}
           />
           {form.formState.errors.eventInput ? (
@@ -38,7 +38,7 @@ export function SearchForm({ form, onSubmit, isSearching }: SearchFormProps) {
         <button
           type="submit"
           disabled={isSearching || !form.formState.isValid}
-          className="border-primary bg-primary text-primary-foreground hover:border-primary/90 hover:bg-primary/90 hover:text-primary-foreground focus:ring-primary/50 active:border-primary active:bg-primary inline-flex items-center justify-center gap-2 rounded-lg border px-6 py-3 text-sm leading-5 font-semibold focus:ring disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-primary bg-primary text-primary-foreground hover:border-primary/90 hover:bg-primary/90 hover:text-primary-foreground focus:ring-ring/50 active:border-primary active:bg-primary inline-flex items-center justify-center gap-2 rounded-lg border px-6 py-3 text-sm leading-5 font-semibold focus:ring disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSearching ? (
             <>

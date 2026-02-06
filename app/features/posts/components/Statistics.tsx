@@ -48,7 +48,7 @@ export default function Statistics({
 
   const cardBase = "card-lift min-h-[72px] shadow-sm dark:shadow-none";
   const contentBase =
-    "hover:bg-muted/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-primary";
+    "hover:bg-muted/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-ring";
   const iconBase = "flex size-12 items-center justify-center rounded-xl";
   const dtBase = "text-foreground text-2xl font-bold tabular-nums";
   const ddBase =

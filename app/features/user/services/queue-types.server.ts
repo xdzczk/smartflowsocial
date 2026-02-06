@@ -3,34 +3,12 @@ import type { QueueType, ScheduleType, Prisma } from "@prisma/client";
 import { prisma } from "~/lib/prisma.server";
 
 /**
- * Creates default queue types for a new user
+ * Creates default queue types for a new user.
+ * We no longer create an "Unassigned" queue—unassigned is represented by null queueTypeId.
  */
-export async function createDefaultQueueTypes(userId: string): Promise<void> {
-  const defaultQueueTypes = [
-    {
-      name: "Unassigned",
-      scheduleType: "INTERVAL" as ScheduleType,
-      scheduleConfig: { useGlobalInterval: true }, // Use global schedule intervals
-      color: "#6B7280", // Gray
-      description: "Default queue for unassigned posts",
-      isDefault: true,
-    },
-  ];
-
-  // Check if user already has queue types
-  const existingCount = await prisma.queueType.count({
-    where: { userId },
-  });
-
-  // Only create defaults if user has no queue types
-  if (existingCount === 0) {
-    await prisma.queueType.createMany({
-      data: defaultQueueTypes.map((qt) => ({
-        ...qt,
-        userId,
-      })),
-    });
-  }
+export async function createDefaultQueueTypes(_userId: string): Promise<void> {
+  // No default queue types. Users create their own queues.
+  // "Unassigned" is a filter/sentinel for posts with no queue (queueTypeId null), not a DB queue.
 }
 
 /**

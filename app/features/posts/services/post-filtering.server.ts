@@ -6,7 +6,7 @@
 /**
  * Filter posts by queue type
  * @param posts Array of posts to filter
- * @param queueType Queue type name to filter by, or "all" to return all posts
+ * @param queueType Queue type name to filter by, "unassigned" for posts with no queue, or "all" to return all posts
  * @returns Filtered array of posts
  */
 export function filterPostsByQueueType<
@@ -14,6 +14,9 @@ export function filterPostsByQueueType<
 >(posts: T[], queueType: string): T[] {
   if (queueType === "all") {
     return posts;
+  }
+  if (queueType === "unassigned") {
+    return posts.filter((post) => post.queueType == null);
   }
   return posts.filter((post) => post.queueType?.name === queueType);
 }

@@ -32,7 +32,7 @@ export function EditLongFormFormFields({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-ring w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
           placeholder="Article title..."
         />
       </div>
@@ -50,7 +50,7 @@ export function EditLongFormFormFields({
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           rows={3}
-          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-ring w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
           placeholder="Article summary..."
         />
       </div>
@@ -62,7 +62,7 @@ export function EditLongFormFormFields({
         >
           Content
         </label>
-        <div className="dark:bg-card border-border dark:border-border focus-within:border-primary focus-within:ring-primary rounded-md border bg-white focus-within:ring-1">
+        <div className="dark:bg-card border-border dark:border-border focus-within:border-primary focus-within:ring-ring rounded-md border bg-white focus-within:ring-1">
           <div className="min-h-[300px] p-4">
             <div
               id="longform-editorjs"
@@ -90,7 +90,7 @@ export function EditLongFormFormFields({
           type="url"
           value={image}
           onChange={(e) => setImage(e.target.value)}
-          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-primary w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-ring w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
           placeholder="https://example.com/image.jpg"
         />
       </div>

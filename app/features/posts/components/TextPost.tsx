@@ -568,7 +568,7 @@ export default function TextPost({
               id="isRecyclable"
               {...form.register("isRecyclable")}
               disabled={fetcher.state !== "idle" || isSigning}
-              className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+              className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
             />
             <Label
               htmlFor="isRecyclable"
@@ -638,7 +638,7 @@ export default function TextPost({
                   checked={alsoScheduleRepost}
                   onChange={(e) => setAlsoScheduleRepost(e.target.checked)}
                   disabled={fetcher.state !== "idle" || isSigning}
-                  className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+                  className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                 />
                 <Label
                   htmlFor="alsoScheduleRepost"
@@ -738,7 +738,7 @@ export default function TextPost({
                   checked={alsoScheduleQuote}
                   onChange={(e) => setAlsoScheduleQuote(e.target.checked)}
                   disabled={fetcher.state !== "idle" || isSigning}
-                  className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+                  className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                 />
                 <Label
                   htmlFor="alsoScheduleQuote"

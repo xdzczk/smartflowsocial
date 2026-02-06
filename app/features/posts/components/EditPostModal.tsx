@@ -450,7 +450,7 @@ export function EditPostModal({
                       setScheduledFor(null);
                     }
                   }}
-                  className="bg-card border-border text-foreground focus:border-primary focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2"
+                  className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
                 />
               </div>
 

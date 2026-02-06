@@ -453,7 +453,7 @@ function LongFormDetailsSidebar({
                 onClick={onToggleEventData}
                 aria-expanded={showEventData}
                 aria-controls="longform-signed-event-data"
-                className="text-primary dark:text-muted-foreground focus:ring-primary text-xs hover:underline focus:ring-2 focus:ring-offset-1 focus:outline-none"
+                className="text-primary dark:text-muted-foreground focus:ring-ring text-xs hover:underline focus:ring-2 focus:ring-offset-1 focus:outline-none"
               >
                 {showEventData ? "Hide" : "Show"}
               </button>
@@ -569,7 +569,7 @@ export default function LongFormDetailsModal({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="text-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground focus:ring-primary flex h-8 w-8 items-center justify-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+              className="text-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground focus:ring-ring flex h-8 w-8 items-center justify-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
             >
               ✕
             </button>
@@ -722,7 +722,7 @@ export default function LongFormDetailsModal({
                     <button
                       type="button"
                       onClick={() => onEdit(post)}
-                      className="dark:bg-card border-primary/30 text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-primary dark:border-border dark:text-foreground dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                      className="dark:bg-card border-primary/30 text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring dark:border-border dark:text-foreground dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     >
                       Edit
                     </button>
@@ -731,7 +731,7 @@ export default function LongFormDetailsModal({
                     <button
                       type="button"
                       onClick={() => onReschedule(post)}
-                      className="dark:bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-primary dark:border-border dark:text-success dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                      className="dark:bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring dark:border-border dark:text-success dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     >
                       Reschedule
                     </button>
@@ -750,7 +750,7 @@ export default function LongFormDetailsModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="View article (opens in new tab)"
-                  className="dark:bg-muted dark:hover:bg-muted/80 bg-muted hover:bg-muted focus:ring-primary inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  className="dark:bg-muted dark:hover:bg-muted/80 bg-muted hover:bg-muted focus:ring-ring inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                 >
                   View Article
                 </Link>
@@ -759,7 +759,7 @@ export default function LongFormDetailsModal({
               {type === "draft" ? (
                 <Link
                   to={`/dashboard/drafts/longform/edit/${post.id}`}
-                  className="dark:bg-card border-border text-foreground hover:bg-muted focus:ring-primary dark:border-border dark:text-foreground dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  className="dark:bg-card border-border text-foreground hover:bg-muted focus:ring-ring dark:border-border dark:text-foreground dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                 >
                   Edit Draft
                 </Link>
@@ -776,7 +776,7 @@ export default function LongFormDetailsModal({
                 <button
                   type="submit"
                   disabled={deleteFetcher.state !== "idle"}
-                  className="dark:bg-card border-destructive text-destructive hover:bg-destructive/10 focus:ring-primary dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
+                  className="dark:bg-card border-destructive text-destructive hover:bg-destructive/10 focus:ring-ring dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
                 >
                   {deleteFetcher.state !== "idle" &&
                   deleteFetcher.formData?.get("postId") === post.id

@@ -39,7 +39,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="border-input bg-background hover:bg-muted focus:ring-primary inline-flex h-9 w-9 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+        className="border-input bg-background hover:bg-muted focus:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
         aria-label="Toggle theme"
         type="button"
       >
@@ -51,7 +51,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="border-input bg-background hover:bg-muted focus:ring-primary inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors focus:ring-2 focus:outline-none"
+      className="border-input bg-background hover:bg-muted focus:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors focus:ring-2 focus:outline-none"
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
       type="button"
     >

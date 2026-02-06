@@ -60,30 +60,43 @@ export default function BulkPostsActionButtons({
 
       <div className="mb-6">
         <div className="flex flex-wrap justify-center gap-2">
-          {queueTypes.map((queue) => {
-            const queueName = typeof queue === "string" ? queue : queue.name;
-            const queueColor = typeof queue === "object" ? queue.color : null;
-            // Check if this queue is selected for all posts
-            const isAllSelected =
-              posts.length > 0 && posts.every((p) => p.queueType === queueName);
-            return (
-              <button
-                key={queueName}
-                type="button"
-                onClick={() => {
-                  handleBulkQueueUpdate(queueName);
-                }}
-                disabled={isProcessing}
-                className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
-                style={{
-                  backgroundColor: queueColor ?? undefined,
-                  borderColor: queueColor ?? undefined,
-                }}
-              >
-                {queueName}
-              </button>
-            );
-          })}
+          {/* Unassigned = no queue (sentinel); always show so users can leave posts unassigned */}
+          <button
+            type="button"
+            onClick={() => handleBulkQueueUpdate("unassigned")}
+            disabled={isProcessing}
+            className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(null, posts.length > 0 && posts.every((p) => p.queueType === "unassigned"))} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
+          >
+            Unassigned
+          </button>
+          {/* Only real queue types from DB (exclude legacy "Unassigned" queue if present) */}
+          {queueTypes
+            .filter((queue) => {
+              const name = typeof queue === "string" ? queue : queue.name;
+              return name !== "Unassigned";
+            })
+            .map((queue) => {
+              const queueName = typeof queue === "string" ? queue : queue.name;
+              const queueColor = typeof queue === "object" ? queue.color : null;
+              const isAllSelected =
+                posts.length > 0 &&
+                posts.every((p) => p.queueType === queueName);
+              return (
+                <button
+                  key={queueName}
+                  type="button"
+                  onClick={() => handleBulkQueueUpdate(queueName)}
+                  disabled={isProcessing}
+                  className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
+                  style={{
+                    backgroundColor: queueColor ?? undefined,
+                    borderColor: queueColor ?? undefined,
+                  }}
+                >
+                  {queueName}
+                </button>
+              );
+            })}
         </div>
         <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
           Click a queue to update all posts

@@ -58,7 +58,7 @@ export default function QueueSelectionTabs({
     params["queueType"] ?? searchParams.get("queueType") ?? "all";
 
   const baseClasses =
-    "whitespace-nowrap border-b-2 px-1 py-1.5 text-xs font-medium capitalize rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset";
+    "whitespace-nowrap border-b-2 px-1 py-1.5 text-xs font-medium capitalize rounded focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset";
   const unselectedClasses =
     "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
@@ -85,19 +85,25 @@ export default function QueueSelectionTabs({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Queues</SelectItem>
-            {queueTypes.map((queueType) => {
-              const queueName =
-                typeof queueType === "string" ? queueType : queueType.name;
-              const key =
-                typeof queueType === "object"
-                  ? queueType.id || queueName
-                  : queueName;
-              return (
-                <SelectItem key={key} value={queueName}>
-                  {queueName}
-                </SelectItem>
-              );
-            })}
+            <SelectItem value="unassigned">Unassigned</SelectItem>
+            {queueTypes
+              .filter((qt) => {
+                const name = typeof qt === "string" ? qt : qt.name;
+                return name !== "Unassigned"; // Sentinel only; no DB "Unassigned" queue
+              })
+              .map((queueType) => {
+                const queueName =
+                  typeof queueType === "string" ? queueType : queueType.name;
+                const key =
+                  typeof queueType === "object"
+                    ? queueType.id || queueName
+                    : queueName;
+                return (
+                  <SelectItem key={key} value={queueName}>
+                    {queueName}
+                  </SelectItem>
+                );
+              })}
           </SelectContent>
         </Select>
       </div>
@@ -123,21 +129,64 @@ export default function QueueSelectionTabs({
         >
           All Queues
         </Link>
-        {queueTypes.map((queueType) => {
-          const queueName =
-            typeof queueType === "string" ? queueType : queueType.name;
-          const queueColor =
-            typeof queueType === "object" ? queueType.color : null;
-          const colors = getQueueColor(queueName, queueColor);
-          const isSelected =
-            params["queueType"] === queueName ||
-            searchParams.get("queueType") === queueName;
+        <Link
+          to={
+            useQueryParams
+              ? `${basePath}?tab=${currentTab}&queueType=unassigned`
+              : `${basePath}/unassigned?tab=${currentTab}`
+          }
+          prefetch="intent"
+          onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+          className={`${baseClasses} ${
+            params["queueType"] === "unassigned" ||
+            searchParams.get("queueType") === "unassigned"
+              ? "border-border text-foreground dark:border-primary dark:text-primary"
+              : unselectedClasses
+          }`}
+        >
+          Unassigned
+        </Link>
+        {queueTypes
+          .filter((qt) => {
+            const name = typeof qt === "string" ? qt : qt.name;
+            return name !== "Unassigned"; // Sentinel only; no DB "Unassigned" queue
+          })
+          .map((queueType) => {
+            const queueName =
+              typeof queueType === "string" ? queueType : queueType.name;
+            const queueColor =
+              typeof queueType === "object" ? queueType.color : null;
+            const colors = getQueueColor(queueName, queueColor);
+            const isSelected =
+              params["queueType"] === queueName ||
+              searchParams.get("queueType") === queueName;
 
-          const queueTypePath = useQueryParams
-            ? `${basePath}?tab=${currentTab}&queueType=${queueName}`
-            : `${basePath}/${queueName}?tab=${currentTab}`;
+            const queueTypePath = useQueryParams
+              ? `${basePath}?tab=${currentTab}&queueType=${queueName}`
+              : `${basePath}/${queueName}?tab=${currentTab}`;
 
-          if (isSelected && queueColor) {
+            if (isSelected && queueColor) {
+              return (
+                <Link
+                  key={
+                    typeof queueType === "object"
+                      ? queueType.id || queueName
+                      : queueName
+                  }
+                  to={queueTypePath}
+                  prefetch="intent"
+                  onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+                  className={`${baseClasses} border-b-2`}
+                  style={{
+                    borderBottomColor: queueColor,
+                    color: queueColor,
+                  }}
+                >
+                  {queueName}
+                </Link>
+              );
+            }
+
             return (
               <Link
                 key={
@@ -148,37 +197,16 @@ export default function QueueSelectionTabs({
                 to={queueTypePath}
                 prefetch="intent"
                 onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
-                className={`${baseClasses} border-b-2`}
-                style={{
-                  borderBottomColor: queueColor,
-                  color: queueColor,
-                }}
+                className={`${baseClasses} ${
+                  isSelected && colors
+                    ? `${colors.border.replace("border-", "border-b-") || "border-b-primary"} ${colors.text}`
+                    : unselectedClasses
+                }`}
               >
                 {queueName}
               </Link>
             );
-          }
-
-          return (
-            <Link
-              key={
-                typeof queueType === "object"
-                  ? queueType.id || queueName
-                  : queueName
-              }
-              to={queueTypePath}
-              prefetch="intent"
-              onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
-              className={`${baseClasses} ${
-                isSelected && colors
-                  ? `${colors.border.replace("border-", "border-b-") || "border-b-primary"} ${colors.text}`
-                  : unselectedClasses
-              }`}
-            >
-              {queueName}
-            </Link>
-          );
-        })}
+          })}
       </nav>
     </div>
   );

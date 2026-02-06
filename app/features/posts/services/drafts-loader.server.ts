@@ -21,6 +21,8 @@ import {
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
+import { filterPostsByQueueType } from "./post-filtering.server";
+
 /**
  * Load drafts data
  */
@@ -45,11 +47,8 @@ export async function loadDraftsData(
   const allLongformPosts = allLongformPostsResult.posts;
   const longformPostsPagination = allLongformPostsResult.pagination;
 
-  // Filter longform posts by queue type if specific queue is selected
-  const longformPosts =
-    queueType === "all"
-      ? allLongformPosts
-      : allLongformPosts.filter((post) => post.queueType?.name === queueType);
+  // Filter longform posts by queue type (includes "unassigned" = no queue)
+  const longformPosts = filterPostsByQueueType(allLongformPosts, queueType);
 
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {

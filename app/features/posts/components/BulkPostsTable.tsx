@@ -356,7 +356,7 @@ export default function BulkPostsTable({
                     onChange={(e) =>
                       handleIsRecyclableChange(index, e.target.checked)
                     }
-                    className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+                    className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                   />
                   <label
                     htmlFor={`bulk-recyclable-${post.clientId}`}

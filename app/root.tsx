@@ -269,7 +269,7 @@ export function ErrorBoundary() {
               <div className="mt-10 flex justify-center">
                 <a
                   href="/"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary rounded-md px-6 py-3 text-base font-semibold shadow-sm focus-visible:ring-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring rounded-md px-6 py-3 text-base font-semibold shadow-sm focus-visible:ring-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   Go back home
                 </a>

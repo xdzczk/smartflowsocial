@@ -125,10 +125,48 @@ function hasViewNoteLink(
   );
 }
 
-function PostDetailsMetadataGrid({
+/** One-line context under the post card: "Posted 2 Jun 2026, 4:00 PM · Queue" etc. */
+function getPostContextLine(
+  type: "draft" | "posted" | "scheduled",
+  post: Post | PostData | CombinedContent,
+  queueType: { name: string } | null | undefined,
+  formatDateFn: (
+    date: Date | string,
+    short: boolean,
+    tz?: string,
+    fmt?: "12h" | "24h"
+  ) => string,
+  formatScheduledDateFn: (
+    d: Date | null | undefined,
+    tz: string | undefined,
+    fmt: "12h" | "24h"
+  ) => string,
+  userTimezone: string | undefined,
+  userTimeFormat: "12h" | "24h"
+): string {
+  const queueName = queueType?.name ?? "";
+  const sep = queueName ? " · " : "";
+  if (type === "draft") return `Draft${sep}${queueName}`.trim();
+  if (type === "scheduled" && "scheduledAtUtc" in post && post.scheduledAtUtc)
+    return `Scheduled for ${formatScheduledDateFn(post.scheduledAtUtc, userTimezone, userTimeFormat)}${sep}${queueName}`.trim();
+  if (type === "posted" && post.postedAt)
+    return `Posted ${formatDateFn(post.postedAt, false, userTimezone, userTimeFormat)}${sep}${queueName}`.trim();
+  return queueName || "—";
+}
+
+function PostDetailsSidebar({
   type,
   post,
   queueType,
+  showStats,
+  stats,
+  eventId,
+  directReplies,
+  isThreadLoading,
+  threadMetadata,
+  showSignedEvent,
+  showEventData,
+  onToggleEventData,
   formatDateFn,
   formatScheduledDateFn,
   userTimezone,
@@ -140,6 +178,22 @@ function PostDetailsMetadataGrid({
     | { name: string; color?: string | null; id?: string }
     | null
     | undefined;
+  showStats: boolean;
+  stats?: {
+    likes: number;
+    replies: number;
+    mentions: number;
+    reposts: number;
+    zaps: number;
+    satszapped: number;
+  };
+  eventId: string | null;
+  directReplies: ChildReply[];
+  isThreadLoading: boolean;
+  threadMetadata: Record<string, unknown>;
+  showSignedEvent: boolean;
+  showEventData: boolean;
+  onToggleEventData: () => void;
   formatDateFn: (
     date: Date | string,
     short: boolean,
@@ -154,68 +208,177 @@ function PostDetailsMetadataGrid({
   userTimezone: string | undefined;
   userTimeFormat: "12h" | "24h";
 }) {
-  const card = "border-border bg-muted/30 rounded-lg border p-4";
-  const label = "text-muted-foreground mb-1 text-sm font-medium";
-  const label2 = "text-muted-foreground mb-2 text-sm font-medium";
-
-  if (type === "draft") {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className={card}>
-          <h3 className={label}>Created</h3>
-          <p className="text-foreground">
-            {formatDateFn(post.createdAt, false, userTimezone, userTimeFormat)}
-          </p>
-        </div>
-        {queueType ? (
-          <div className={card}>
-            <h3 className={label2}>Queue Type</h3>
-            <QueueTypeChip queueType={queueType} />
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
-  if (type === "scheduled") {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        {"scheduledAtUtc" in post && post.scheduledAtUtc ? (
-          <div className={card}>
-            <h3 className={label}>Scheduled For</h3>
-            <p className="text-foreground">
-              {formatScheduledDateFn(
-                post.scheduledAtUtc,
-                userTimezone,
-                userTimeFormat
-              )}
-            </p>
-          </div>
-        ) : null}
-        {queueType ? (
-          <div className={card}>
-            <h3 className={label2}>Queue Type</h3>
-            <QueueTypeChip queueType={queueType} />
-          </div>
-        ) : null}
-      </div>
-    );
-  }
+  const sectionTitle = "text-muted-foreground mb-2 text-sm font-medium";
+  const block = "border-border bg-muted/30 rounded-lg border p-4";
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {post.postedAt ? (
-        <div className={card}>
-          <h3 className={label}>Posted At</h3>
-          <p className="text-foreground">
-            {formatDateFn(post.postedAt, false, userTimezone, userTimeFormat)}
-          </p>
+    <div className="flex flex-col gap-6 p-6">
+      {/* Details */}
+      <div>
+        <h3 className={sectionTitle}>Details</h3>
+        <div className="space-y-3">
+          {type === "draft" ? (
+            <div>
+              <span className="text-muted-foreground text-xs">Created</span>
+              <p className="text-foreground text-sm">
+                {formatDateFn(
+                  post.createdAt,
+                  false,
+                  userTimezone,
+                  userTimeFormat
+                )}
+              </p>
+            </div>
+          ) : null}
+          {type === "scheduled" &&
+          "scheduledAtUtc" in post &&
+          post.scheduledAtUtc ? (
+            <div>
+              <span className="text-muted-foreground text-xs">
+                Scheduled for
+              </span>
+              <p className="text-foreground text-sm">
+                {formatScheduledDateFn(
+                  post.scheduledAtUtc,
+                  userTimezone,
+                  userTimeFormat
+                )}
+              </p>
+            </div>
+          ) : null}
+          {type === "posted" && post.postedAt ? (
+            <div>
+              <span className="text-muted-foreground text-xs">Posted at</span>
+              <p className="text-foreground text-sm">
+                {formatDateFn(
+                  post.postedAt,
+                  false,
+                  userTimezone,
+                  userTimeFormat
+                )}
+              </p>
+            </div>
+          ) : null}
+          {queueType ? (
+            <div>
+              <span className="text-muted-foreground text-xs">Queue</span>
+              <div className="mt-0.5">
+                <QueueTypeChip queueType={queueType} />
+              </div>
+            </div>
+          ) : null}
+          {post.tags && post.tags.length > 0 && !post.repost ? (
+            <div>
+              <span className="text-muted-foreground text-xs">Tags</span>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {post.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="bg-muted text-foreground rounded-full px-2 py-0.5 text-xs font-medium"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Engagement */}
+      {showStats && stats ? (
+        <div className={block}>
+          <h3 className={sectionTitle}>Engagement</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center">
+              <p className="text-foreground text-xl font-bold">{stats.likes}</p>
+              <p className="text-muted-foreground text-xs">Likes</p>
+            </div>
+            <div className="text-center">
+              <p className="text-foreground text-xl font-bold">
+                {stats.replies}
+              </p>
+              <p className="text-muted-foreground text-xs">Replies</p>
+            </div>
+            <div className="text-center">
+              <p className="text-foreground text-xl font-bold">
+                {stats.mentions}
+              </p>
+              <p className="text-muted-foreground text-xs">Mentions</p>
+            </div>
+            <div className="text-center">
+              <p className="text-foreground text-xl font-bold">
+                {stats.reposts}
+              </p>
+              <p className="text-muted-foreground text-xs">Reposts</p>
+            </div>
+            <div className="text-center">
+              <p className="text-foreground text-xl font-bold">{stats.zaps}</p>
+              <p className="text-muted-foreground text-xs">Zaps</p>
+            </div>
+            <div className="text-center">
+              <p className="text-foreground text-xl font-bold">
+                {stats.satszapped}
+              </p>
+              <p className="text-muted-foreground text-xs">Sats</p>
+            </div>
+          </div>
         </div>
       ) : null}
-      {queueType ? (
-        <div className={card}>
-          <h3 className={label2}>Queue Type</h3>
-          <QueueTypeChip queueType={queueType} />
+
+      {/* Comments (posted only) */}
+      {type === "posted" && eventId ? (
+        <section
+          className={block}
+          aria-labelledby="post-details-comments-heading"
+          aria-live="polite"
+          aria-busy={isThreadLoading}
+        >
+          <h3 id="post-details-comments-heading" className={sectionTitle}>
+            Comments ({directReplies.length})
+          </h3>
+          <div className="max-h-64 overflow-x-hidden overflow-y-auto">
+            <ChildRepliesPanel
+              isLoading={isThreadLoading}
+              replies={directReplies}
+              metadata={threadMetadata}
+            />
+          </div>
+          <Link
+            to={`https://primal.net/e/${eventId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View thread (opens in new tab)"
+            className="text-primary mt-2 inline-block text-sm font-medium hover:underline"
+          >
+            View thread
+          </Link>
+        </section>
+      ) : null}
+
+      {/* Technical */}
+      {showSignedEvent && post.signedEvent ? (
+        <div className={block}>
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className={sectionTitle}>Technical details</h3>
+            <button
+              type="button"
+              onClick={onToggleEventData}
+              aria-expanded={showEventData}
+              aria-controls="signed-event-data"
+              className="text-primary focus:ring-ring text-xs hover:underline focus:ring-2 focus:ring-offset-1 focus:outline-none"
+            >
+              {showEventData ? "Hide" : "Show"}
+            </button>
+          </div>
+          {showEventData ? (
+            <pre
+              id="signed-event-data"
+              className="bg-muted/50 text-foreground max-h-64 overflow-auto rounded-md p-3 text-xs break-words whitespace-pre-wrap"
+            >
+              {JSON.stringify(post.signedEvent, null, 2)}
+            </pre>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -304,7 +467,7 @@ export default function PostDetailsModal({
       <Dialog open onOpenChange={(open) => !open && onClose()}>
         <DialogContent
           hideCloseButton
-          className="bg-card text-card-foreground border-border mx-4 flex max-h-[90vh] w-full max-w-3xl translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-2xl"
+          className="bg-card text-card-foreground border-border mx-4 flex max-h-[90vh] w-full max-w-5xl translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-2xl"
         >
           <div className="border-border bg-card/95 sticky top-0 z-10 border-b px-6 py-4 backdrop-blur-sm">
             <div className="flex items-center justify-between">
@@ -318,206 +481,118 @@ export default function PostDetailsModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="text-foreground hover:bg-muted focus:ring-primary flex h-8 w-8 items-center justify-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                className="text-foreground hover:bg-muted focus:ring-ring flex h-8 w-8 items-center justify-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
               >
                 ✕
               </button>
             </div>
           </div>
 
-          <div className="bg-card flex-1 overflow-y-auto px-6 py-6">
-            {post.fileUrl && post.fileUrl.length > 0 ? (
-              <div className="mb-6">
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {getImageUrls(post.fileUrl).map((url, index) => (
-                    <MediaThumbnail
-                      // eslint-disable-next-line react/no-array-index-key -- Stable list of image URLs, no unique ID available
-                      key={index}
-                      src={url}
-                      alt={`Post media ${index + 1}`}
-                      className="ring-border h-48 w-auto flex-shrink-0 rounded-lg object-cover ring-1 shadow-sm"
-                      onClick={() => {
-                        setActiveMediaSrc(url);
-                        setIsMediaOpen(true);
-                      }}
-                    />
-                  ))}
+          {/* Two panels: post card (left) + sidebar (right); stack on small screens */}
+          <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+            {/* Left: post card */}
+            <div className="border-border flex-1 overflow-y-auto md:border-r">
+              <div className="border-border bg-card mx-4 mt-4 mb-4 rounded-lg border p-6 md:mx-6 md:mt-6 md:mb-6">
+                {post.fileUrl && post.fileUrl.length > 0 ? (
+                  <div className="mb-4 overflow-hidden rounded-lg">
+                    <div className="flex max-h-[420px] gap-3 overflow-x-auto pb-2">
+                      {getImageUrls(post.fileUrl).map((url, index) => (
+                        <MediaThumbnail
+                          key={url}
+                          src={url}
+                          alt={`Post media ${index + 1}`}
+                          className="ring-border h-48 max-h-[400px] w-auto flex-shrink-0 rounded-lg object-cover ring-1 shadow-sm"
+                          onClick={() => {
+                            setActiveMediaSrc(url);
+                            setIsMediaOpen(true);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                <div className="mb-3">
+                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
+                    Caption
+                  </h3>
+                  <p
+                    className={
+                      post.caption?.trim()
+                        ? "text-foreground leading-relaxed"
+                        : "text-muted-foreground leading-relaxed italic"
+                    }
+                  >
+                    {post.caption?.trim() ? post.caption : "No caption"}
+                  </p>
                 </div>
-              </div>
-            ) : null}
-
-            <div className="space-y-6">
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h3 className="text-muted-foreground mb-2 text-sm font-medium">
-                  Caption
-                </h3>
-                <p className="text-foreground leading-relaxed">
-                  {post.caption?.trim() ? post.caption : "No caption"}
+                <p className="text-muted-foreground text-sm">
+                  {getPostContextLine(
+                    type,
+                    post,
+                    queueType,
+                    formatDate,
+                    formatScheduledDate,
+                    userTimezone,
+                    userTimeFormat
+                  )}
                 </p>
               </div>
+            </div>
 
-              <PostDetailsMetadataGrid
+            {/* Right: sidebar */}
+            <div className="border-border bg-muted/20 overflow-y-auto md:w-80 md:flex-shrink-0">
+              <PostDetailsSidebar
                 type={type}
                 post={post}
                 queueType={queueType}
+                showStats={showStats}
+                stats={stats}
+                eventId={eventId}
+                directReplies={directReplies}
+                isThreadLoading={isThreadLoading}
+                threadMetadata={threadMetadata}
+                showSignedEvent={showSignedEvent}
+                showEventData={showEventData}
+                onToggleEventData={() => setShowEventData((v) => !v)}
                 formatDateFn={formatDate}
                 formatScheduledDateFn={formatScheduledDate}
                 userTimezone={userTimezone}
                 userTimeFormat={userTimeFormat}
               />
-
-              {post.tags && post.tags.length > 0 && !post.repost ? (
-                <div className="border-border bg-muted/30 rounded-lg border p-4">
-                  <h3 className="text-muted-foreground mb-3 text-sm font-medium">
-                    Tags
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="bg-muted text-foreground rounded-full px-3 py-1 text-sm font-medium"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {showStats && stats ? (
-                <div className="border-border bg-muted/30 rounded-lg border p-4">
-                  <h3 className="text-muted-foreground mb-3 text-sm font-medium">
-                    Engagement Stats
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                    <div className="text-center">
-                      <p className="text-foreground text-2xl font-bold">
-                        {stats.likes}
-                      </p>
-                      <p className="text-muted-foreground text-sm">Likes</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-foreground text-2xl font-bold">
-                        {stats.replies}
-                      </p>
-                      <p className="text-muted-foreground text-sm">Replies</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-foreground text-2xl font-bold">
-                        {stats.mentions}
-                      </p>
-                      <p className="text-muted-foreground text-sm">Mentions</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-foreground text-2xl font-bold">
-                        {stats.reposts}
-                      </p>
-                      <p className="text-muted-foreground text-sm">Reposts</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-foreground text-2xl font-bold">
-                        {stats.zaps}
-                      </p>
-                      <p className="text-muted-foreground text-sm">Zaps</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-foreground text-2xl font-bold">
-                        {stats.satszapped}
-                      </p>
-                      <p className="text-muted-foreground text-sm">
-                        Sats Zapped
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              {type === "posted" && eventId ? (
-                <section
-                  className="border-border bg-muted/30 rounded-lg border p-4"
-                  aria-labelledby="post-details-comments-heading"
-                  aria-live="polite"
-                  aria-busy={isThreadLoading}
-                >
-                  <h3
-                    id="post-details-comments-heading"
-                    className="text-muted-foreground mb-3 text-sm font-medium"
-                  >
-                    Comments ({directReplies.length})
-                  </h3>
-                  <div className="max-h-64 overflow-x-hidden overflow-y-auto">
-                    <ChildRepliesPanel
-                      isLoading={isThreadLoading}
-                      replies={directReplies}
-                      metadata={threadMetadata}
-                    />
-                  </div>
-                </section>
-              ) : null}
-
-              {showSignedEvent && post.signedEvent ? (
-                <div className="border-border bg-muted/30 rounded-lg border p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-muted-foreground text-sm font-medium">
-                      Signed Event Data
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setShowEventData(!showEventData)}
-                      aria-expanded={showEventData}
-                      aria-controls="signed-event-data"
-                      className="text-primary focus:ring-primary text-xs hover:underline focus:ring-2 focus:ring-offset-1 focus:outline-none"
-                    >
-                      {showEventData ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                  {showEventData ? (
-                    <pre
-                      id="signed-event-data"
-                      className="bg-muted/50 text-foreground max-h-96 overflow-auto rounded-md p-3 text-xs break-words whitespace-pre-wrap"
-                    >
-                      {JSON.stringify(post.signedEvent, null, 2)}
-                    </pre>
-                  ) : null}
-                </div>
-              ) : null}
             </div>
           </div>
 
+          {/* Footer: primary action first, then secondary, Delete de-emphasized */}
           <div className="border-border bg-card/95 sticky bottom-0 border-t px-6 py-4 backdrop-blur-sm">
             <div className="flex flex-wrap items-center justify-end gap-3">
-              {type === "scheduled" && (onEdit || onReschedule) ? (
-                <>
-                  {onEdit ? (
-                    <button
-                      type="button"
-                      onClick={() => onEdit(post)}
-                      className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-primary/25 inline-flex items-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                    >
-                      Edit
-                    </button>
-                  ) : null}
-                  {onReschedule ? (
-                    <button
-                      type="button"
-                      onClick={() => onReschedule(post)}
-                      className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-primary/25 inline-flex items-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                    >
-                      Reschedule
-                    </button>
-                  ) : null}
-                </>
-              ) : null}
-              {showViewNote ? (
+              {type === "posted" && showViewNote ? (
                 <Link
                   to={`https://primal.net/e/${post.signedEvent.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="View note (opens in new tab)"
-                  className="bg-muted text-foreground hover:bg-muted/80 focus:ring-primary inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                 >
                   View Note
                 </Link>
+              ) : null}
+              {type === "scheduled" && onEdit ? (
+                <button
+                  type="button"
+                  onClick={() => onEdit(post)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                >
+                  Edit
+                </button>
+              ) : null}
+              {type === "scheduled" && onReschedule ? (
+                <button
+                  type="button"
+                  onClick={() => onReschedule(post)}
+                  className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex items-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                >
+                  Reschedule
+                </button>
               ) : null}
 
               <deleteFetcher.Form
@@ -529,7 +604,7 @@ export default function PostDetailsModal({
                 <button
                   type="submit"
                   disabled={deleteFetcher.state !== "idle"}
-                  className="border-destructive text-destructive hover:bg-destructive/10 focus:ring-primary focus:ring-offset-background inline-flex items-center rounded-lg border bg-transparent px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
+                  className="border-destructive text-destructive hover:bg-destructive/10 focus:ring-ring inline-flex items-center rounded-lg border bg-transparent px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
                 >
                   {deleteFetcher.state !== "idle" &&
                   deleteFetcher.formData?.get("postId") === post.id

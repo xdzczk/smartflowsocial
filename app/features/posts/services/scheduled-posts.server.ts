@@ -61,7 +61,7 @@ export async function getScheduledDashboardData({
     hashTagPresetsRaw,
   ] = await Promise.all([
     getScheduledPosts({ userId, queueType }),
-    getScheduledLongFormPosts({ userId }),
+    getScheduledLongFormPosts({ userId, queueType }),
     getUserById(userId),
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
@@ -72,7 +72,7 @@ export async function getScheduledDashboardData({
     "posts" in postsResult && Array.isArray(postsResult.posts)
       ? postsResult.posts
       : [];
-  const allLongformPosts =
+  const longformPosts =
     "posts" in allLongformPostsResult &&
     Array.isArray(allLongformPostsResult.posts)
       ? allLongformPostsResult.posts
@@ -82,12 +82,6 @@ export async function getScheduledDashboardData({
   const hashTagPresets = Array.isArray(hashTagPresetsRaw)
     ? hashTagPresetsRaw
     : [];
-
-  // Filter longform posts by queue type if specific queue is selected
-  const longformPosts =
-    queueType === "all"
-      ? allLongformPosts
-      : allLongformPosts.filter((post) => post.queueType?.name === queueType);
 
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {

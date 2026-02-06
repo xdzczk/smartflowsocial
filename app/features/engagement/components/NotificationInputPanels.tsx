@@ -19,7 +19,7 @@ export function ReplyInputPanel({
         value={replyContent}
         onChange={(e) => onContentChange(e.target.value)}
         placeholder="Write your reply..."
-        className="text-foreground placeholder:text-muted-foreground focus:ring-primary w-full resize-none rounded border-0 bg-transparent p-2 text-sm focus:ring-2"
+        className="text-foreground placeholder:text-muted-foreground focus:ring-ring w-full resize-none rounded border-0 bg-transparent p-2 text-sm focus:ring-2"
         rows={3}
       />
       <div className="flex justify-end gap-2">
@@ -72,7 +72,7 @@ export function QuoteInputPanel({
         value={quoteContent}
         onChange={(e) => onContentChange(e.target.value)}
         placeholder="Add your thoughts on this reply..."
-        className="text-foreground placeholder:text-muted-foreground focus:ring-primary w-full resize-none rounded border-0 bg-transparent p-2 text-sm focus:ring-2"
+        className="text-foreground placeholder:text-muted-foreground focus:ring-ring w-full resize-none rounded border-0 bg-transparent p-2 text-sm focus:ring-2"
         rows={3}
       />
       <div className="flex justify-end gap-2">

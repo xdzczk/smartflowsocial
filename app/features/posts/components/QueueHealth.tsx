@@ -72,7 +72,7 @@ export default function QueueHealth({
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <Link
                       to={`/dashboard/scheduled?queueType=${encodeURIComponent(queueName)}`}
-                      className="text-foreground focus:ring-primary min-w-0 truncate rounded font-medium hover:underline focus:ring-2 focus:outline-none"
+                      className="text-foreground focus:ring-ring min-w-0 truncate rounded font-medium hover:underline focus:ring-2 focus:outline-none"
                     >
                       {queueName}
                     </Link>

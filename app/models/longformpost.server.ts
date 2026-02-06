@@ -642,11 +642,13 @@ export async function getScheduledLongFormPosts({
       };
     }
 
-    // Add queue type filter if specified
+    // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
     if (queueType && queueType !== "all") {
-      where.queueType = {
-        name: queueType,
-      };
+      if (queueType === "unassigned") {
+        where.queueTypeId = null;
+      } else {
+        where.queueType = { name: queueType };
+      }
     }
 
     const [posts, total] = await Promise.all([
@@ -707,7 +709,11 @@ export async function getLatestScheduledLongFormAtUtc({
     scheduledAtUtc: { gt: now },
   };
   if (queueType && queueType !== "all") {
-    where.queueType = { name: queueType };
+    if (queueType === "unassigned") {
+      where.queueTypeId = null;
+    } else {
+      where.queueType = { name: queueType };
+    }
   }
   const post = await prisma.longFormPost.findFirst({
     where,
@@ -799,9 +805,11 @@ export function getPastLongFormPosts({
   };
 
   if (queueType && queueType !== "all") {
-    whereClause.queueType = {
-      name: queueType,
-    };
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
   }
 
   return prisma.longFormPost.findMany({

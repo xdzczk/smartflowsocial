@@ -49,7 +49,7 @@ export function ThumbnailPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} ${isLongform ? "longform post" : "post"}: ${postPreview}, ${isPast ? "posted" : isLongform ? "published" : "scheduled"} for ${formattedTime}`}
-      className={`focus:ring-primary rounded p-1 text-xs transition-opacity focus:ring-2 focus:outline-none ${
+      className={`focus:ring-ring rounded p-1 text-xs transition-opacity focus:ring-2 focus:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer hover:opacity-80"
       } ${
         isDragging ? "opacity-50" : ""

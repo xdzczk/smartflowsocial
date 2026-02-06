@@ -740,7 +740,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               <Link
                 to="/dashboard/newpost"
                 tabIndex={focusableTabIndex}
-                className="card-lift border-border-subtle bg-card hover:bg-muted/30 focus:ring-primary flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px]"
+                className="card-lift border-border-subtle bg-card hover:bg-muted/30 focus:ring-ring flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px]"
                 aria-label="Create a new post"
               >
                 <Plus
@@ -811,7 +811,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           </p>
           <Link
             to="/dashboard/newpost"
-            className="card-lift border-border-subtle text-foreground hover:bg-muted/50 focus:ring-primary rounded-xl border px-4 py-2 text-sm font-medium shadow-sm focus:ring-2 focus:outline-none"
+            className="card-lift border-border-subtle text-foreground hover:bg-muted/50 focus:ring-ring rounded-xl border px-4 py-2 text-sm font-medium shadow-sm focus:ring-2 focus:outline-none"
           >
             Create post
           </Link>

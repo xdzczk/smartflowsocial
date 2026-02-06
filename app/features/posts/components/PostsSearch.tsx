@@ -32,7 +32,7 @@ export function PostsSearch({ searchTerm, onSearchChange }: PostsSearchProps) {
           name="search"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring focus:outline-none"
+          className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring focus:outline-none"
           placeholder="Search posts.."
         />
       </div>

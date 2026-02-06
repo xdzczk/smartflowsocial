@@ -143,11 +143,13 @@ export default function SchedulingControls({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="unassigned">Unassigned</SelectItem>
-            {queueTypes.map((queue) => (
-              <SelectItem key={queue.name} value={queue.name}>
-                {queue.name}
-              </SelectItem>
-            ))}
+            {queueTypes
+              .filter((queue) => queue.name !== "Unassigned")
+              .map((queue) => (
+                <SelectItem key={queue.name} value={queue.name}>
+                  {queue.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>

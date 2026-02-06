@@ -271,7 +271,7 @@ export default function DashboardIndexPage() {
                 <button
                   type="button"
                   onClick={() => flowViewRef.current?.scrollToNext()}
-                  className="text-muted-foreground hover:text-foreground focus:ring-primary flex-shrink-0 rounded text-xs underline focus:ring-2 focus:outline-none"
+                  className="text-muted-foreground hover:text-foreground focus:ring-ring flex-shrink-0 rounded text-xs underline focus:ring-2 focus:outline-none"
                   aria-label="Scroll timeline to next posts"
                 >
                   Scroll to next
@@ -301,7 +301,7 @@ export default function DashboardIndexPage() {
               <button
                 type="button"
                 onClick={() => revalidator.revalidate()}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:outline-none"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:outline-none"
               >
                 Retry
               </button>

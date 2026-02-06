@@ -77,11 +77,11 @@ export function InvoiceModal({
               type="text"
               value={invoiceData.invoice}
               readOnly
-              className="dark:border-border dark:bg-card dark:text-foreground border-border bg-muted text-foreground dark:placeholder-muted-foreground focus:border-primary focus:ring-primary min-w-0 flex-1 rounded-l-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+              className="dark:border-border dark:bg-card dark:text-foreground border-border bg-muted text-foreground dark:placeholder-muted-foreground focus:border-primary focus:ring-ring min-w-0 flex-1 rounded-l-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
             />
             <button
               onClick={() => onCopy(invoiceData.invoice)}
-              className="border-border dark:border-border bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary rounded-r-lg border border-l-0 px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+              className="border-border dark:border-border bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring rounded-r-lg border border-l-0 px-3 py-2 text-sm focus:ring-1 focus:outline-none"
             >
               Copy
             </button>
@@ -129,7 +129,7 @@ export function InvoiceModal({
               <button
                 type="button"
                 onClick={() => onCheckPayment(invoiceData.paymentId!)}
-                className="border-border bg-secondary text-secondary-foreground hover:bg-secondary/90 focus:ring-primary rounded-lg border px-4 py-2 text-sm font-medium focus:ring-1 focus:outline-none"
+                className="border-border bg-secondary text-secondary-foreground hover:bg-secondary/90 focus:ring-ring rounded-lg border px-4 py-2 text-sm font-medium focus:ring-1 focus:outline-none"
               >
                 Check payment
               </button>
@@ -138,7 +138,7 @@ export function InvoiceModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="border-border bg-muted text-muted-foreground hover:bg-muted/80 focus:ring-primary rounded-lg border px-4 py-2 text-sm font-medium focus:ring-1 focus:outline-none"
+                className="border-border bg-muted text-muted-foreground hover:bg-muted/80 focus:ring-ring rounded-lg border px-4 py-2 text-sm font-medium focus:ring-1 focus:outline-none"
               >
                 Close
               </button>

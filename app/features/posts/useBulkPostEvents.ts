@@ -456,16 +456,6 @@ export function useBulkPostEvents({
           errors.push(`Post ${index + 1}: Schedule time must be in the future`);
         }
       }
-
-      // Check if queue type is assigned (for new uploads)
-      if (
-        !post.isRepost &&
-        !post.isKind6Repost &&
-        !post.isQuotePost &&
-        post.queueType === "unassigned"
-      ) {
-        errors.push(`Post ${index + 1}: Please assign a queue type`);
-      }
     });
 
     return { isValid: errors.length === 0, errors };

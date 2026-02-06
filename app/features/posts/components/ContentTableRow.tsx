@@ -81,7 +81,7 @@ export function ContentTableRow({
             checked={selectedItems.has(item.id)}
             onChange={() => onToggleSelection?.(item.id)}
             onClick={(e) => e.stopPropagation()}
-            className="border-border accent-checkbox focus:ring-primary h-4 w-4 rounded"
+            className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
           />
         </td>
       ) : null}
@@ -261,7 +261,7 @@ function ContentRowActions({
                               item.id
                             : false)
                         }
-                        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-primary active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         {fetcher.state !== "idle" &&
                         (formData
@@ -287,7 +287,7 @@ function ContentRowActions({
                               item.id
                             : false)
                         }
-                        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-primary/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         {fetcher.state !== "idle" &&
                         (formData
@@ -305,7 +305,7 @@ function ContentRowActions({
                           e.stopPropagation();
                           onScheduleRepost(item.originalData as PostData);
                         }}
-                        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-primary active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         Schedule repost
                       </button>
@@ -317,7 +317,7 @@ function ContentRowActions({
                           e.stopPropagation();
                           onScheduleQuote(item.originalData as PostData);
                         }}
-                        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-primary/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
                         Schedule quote
                       </button>
@@ -352,7 +352,7 @@ function ContentRowActions({
                             item.id
                           : false)
                       }
-                      className="dark:bg-card border-border text-foreground hover:border-border hover:bg-muted focus:ring-primary active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
+                      className="dark:bg-card border-border text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
                     >
                       {fetcher.state !== "idle" &&
                       (formData
@@ -385,7 +385,7 @@ function ContentRowActions({
                             item.id
                           : false)
                       }
-                      className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-primary/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-primary/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
+                      className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-ring/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-ring/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
                     >
                       {fetcher.state !== "idle" &&
                       (formData
@@ -408,7 +408,7 @@ function ContentRowActions({
               e.stopPropagation();
               onEditPost?.(item.originalData);
             }}
-            className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-primary/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+            className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
           >
             Edit
           </button>
@@ -417,7 +417,7 @@ function ContentRowActions({
               e.stopPropagation();
               onReschedulePost?.(item.originalData);
             }}
-            className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-primary/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+            className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
           >
             Reschedule
           </button>
@@ -428,7 +428,7 @@ function ContentRowActions({
                 e.stopPropagation();
                 onScheduleRepost(item.originalData as PostData);
               }}
-              className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-primary active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+              className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
             >
               Schedule repost
             </button>
@@ -440,7 +440,7 @@ function ContentRowActions({
                 e.stopPropagation();
                 onScheduleQuote(item.originalData as PostData);
               }}
-              className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-primary/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+              className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
             >
               Schedule quote
             </button>
@@ -459,7 +459,7 @@ function ContentRowActions({
         <button
           type="submit"
           disabled={deleteFetcher.state !== "idle"}
-          className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-primary/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+          className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
         >
           {deleteFetcher.state !== "idle" &&
           (deleteFetcher.formData
