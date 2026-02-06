@@ -1,3 +1,8 @@
+import {
+  BoltIcon,
+  ChatBubbleLeftIcon,
+  HeartIcon,
+} from "@heroicons/react/20/solid";
 import { Link, useSearchParams } from "@remix-run/react";
 import { useState } from "react";
 
@@ -90,7 +95,7 @@ export default function TopPostsList({
   return (
     <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
-        <h3 className="text-muted-foreground/90 text-[11px] font-medium tracking-tight uppercase">
+        <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
           Top Posts
         </h3>
         <nav className="flex gap-1 text-xs" aria-label="Top posts timeframe">
@@ -181,11 +186,38 @@ export default function TopPostsList({
                         {preview}
                       </p>
                       <p
-                        className="text-muted-foreground/80 mt-0.5 text-[11px] leading-snug"
+                        className="text-muted-foreground/80 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[11px] leading-snug"
                         aria-hidden
                       >
-                        ♥ {likes} · 💬 {replies} · ⚡ {zaps}
-                        {relativeTime ? ` · ${relativeTime}` : ""}
+                        <span className="inline-flex items-center gap-0.5">
+                          <HeartIcon className="text-muted-foreground/80 size-3.5 shrink-0" />
+                          {likes}
+                        </span>
+                        <span className="text-muted-foreground/60" aria-hidden>
+                          ·
+                        </span>
+                        <span className="inline-flex items-center gap-0.5">
+                          <ChatBubbleLeftIcon className="text-muted-foreground/80 size-3.5 shrink-0" />
+                          {replies}
+                        </span>
+                        <span className="text-muted-foreground/60" aria-hidden>
+                          ·
+                        </span>
+                        <span className="inline-flex items-center gap-0.5">
+                          <BoltIcon className="text-muted-foreground/80 size-3.5 shrink-0" />
+                          {zaps}
+                        </span>
+                        {relativeTime ? (
+                          <>
+                            <span
+                              className="text-muted-foreground/60"
+                              aria-hidden
+                            >
+                              ·
+                            </span>
+                            <span>{relativeTime}</span>
+                          </>
+                        ) : null}
                       </p>
                     </div>
                   </button>

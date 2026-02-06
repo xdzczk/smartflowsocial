@@ -46,18 +46,18 @@ export default function QueueHealth({
   return (
     <Card className="flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
       <CardHeader className="px-4 pt-2 pb-1.5">
-        <h3 className="text-muted-foreground/90 text-[11px] font-medium tracking-tight uppercase">
+        <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
           Queue Health
         </h3>
       </CardHeader>
-      <CardContent className="flex flex-col gap-1 px-4 pt-0 pb-3">
+      <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
         {queueCounts.length === 0 ? (
           <p className="text-muted-foreground text-xs">
             No queues with scheduled posts.
           </p>
         ) : (
           <ul
-            className="flex flex-col gap-1.5"
+            className="flex min-h-0 flex-1 flex-col"
             aria-label="Scheduled posts per queue"
           >
             {queueCounts.map(({ queueName, count }) => {
@@ -65,7 +65,10 @@ export default function QueueHealth({
               const widthPercent = (count / maxCount) * 100;
 
               return (
-                <li key={queueName} className="flex flex-col gap-0.5">
+                <li
+                  key={queueName}
+                  className="flex max-h-[5rem] min-h-[2.5rem] flex-1 flex-col justify-center gap-0.5"
+                >
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <Link
                       to={`/dashboard/scheduled?queueType=${encodeURIComponent(queueName)}`}
@@ -78,18 +81,18 @@ export default function QueueHealth({
                     </span>
                   </div>
                   <div
-                    className="bg-muted/30 h-2 w-full overflow-hidden rounded-md"
+                    className="bg-muted/30 h-2.5 w-full overflow-hidden rounded-md"
                     role="presentation"
                     aria-label={`${count} posts in ${queueName}`}
+                    style={
+                      customColor
+                        ? { ["--queue-color" as string]: customColor }
+                        : undefined
+                    }
                   >
                     <div
-                      className={`h-full rounded-md transition-[width] ${customColor ? "" : getBarFillClass(queueName)}`}
-                      style={{
-                        width: `${widthPercent}%`,
-                        ...(customColor
-                          ? { backgroundColor: customColor }
-                          : undefined),
-                      }}
+                      className={`h-full rounded-md transition-[width] ${customColor ? "bg-[color-mix(in_srgb,var(--queue-color)_55%,hsl(var(--muted)))]" : getBarFillClass(queueName)}`}
+                      style={{ width: `${widthPercent}%` }}
                     />
                   </div>
                 </li>

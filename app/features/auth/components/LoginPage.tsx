@@ -37,7 +37,7 @@ export default function LoginPage() {
             <div
               className="relative flex min-h-[200px] items-center justify-center bg-cover bg-center px-6 py-10 md:min-h-full md:w-1/2 md:px-10 lg:p-16"
               style={{
-                backgroundImage: 'url("/photo-m_7p45JfXQo-600x600.jpg")',
+                backgroundImage: 'url("/login-theme.svg")',
               }}
             >
               {/* Enhanced overlay with gradient */}

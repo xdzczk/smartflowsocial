@@ -278,7 +278,7 @@ export default function DashboardIndexPage() {
         </div>
 
         {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
-        <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-4 flex min-h-[216px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[248px]">
+        <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-4 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
           {flowError ? (
             <div
               className="border-destructive bg-destructive/10 mx-4 flex flex-col gap-2 rounded-lg border p-4 lg:mx-8"
