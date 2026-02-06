@@ -84,6 +84,11 @@
   }
 }
 
+/* Prevent ghost hover on main content after closing mobile sidebar (touch → mouse event) */
+body.mobile-sidebar-just-closed #page-content {
+  pointer-events: none;
+}
+
 @theme {
   /* Font families */
   --font-sans:
