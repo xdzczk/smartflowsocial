@@ -350,6 +350,16 @@
       inset 0 -1px 0 0 hsl(var(--foreground) / 0.04);
   }
 
+  /* Flow slot: smooth position transition when item moves (e.g. next scheduled → last posted) */
+  .flow-slot {
+    transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .flow-slot {
+      transition-duration: 0.08s;
+    }
+  }
+
   /* Hero gradient utilities - neutral gradients only */
   .hero-gradient-light {
     background: linear-gradient(

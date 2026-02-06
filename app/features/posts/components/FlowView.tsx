@@ -827,7 +827,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain pt-2 pb-4"
+          className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain py-4"
           style={{
             height: isMobile
               ? CARD_MIN_HEIGHT_MOBILE + 32
@@ -851,7 +851,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               width: rowVirtualizer.getTotalSize(),
               position: "relative",
               minWidth: "100%",
-              paddingTop: 6,
             }}
             onTransitionEnd={handleOverscrollTransitionEnd}
           >
@@ -877,6 +876,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               return (
                 <div
                   key={virtualColumn.key}
+                  className="flow-slot"
                   data-index={virtualColumn.index}
                   ref={
                     isPastSentinelSlot

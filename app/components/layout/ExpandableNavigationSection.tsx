@@ -30,6 +30,8 @@ interface ExpandableNavigationSectionProps {
   icon: React.ReactNode;
   items: NavigationChildItem[];
   onUpgradeClick: (feature: FeatureName, featureName: string) => void;
+  /** When provided and child link is active (current page), click closes sidebar instead of navigating (e.g. mobile) */
+  onActiveClick?: () => void;
   collapsed?: boolean;
 }
 
@@ -38,12 +40,15 @@ function NavigationChildItemComponent({
   child,
   isActive,
   onUpgradeClick,
+  onActiveClick,
   collapsed = false,
   sectionExpanded = true,
 }: {
   child: NavigationChildItem;
   isActive: boolean;
   onUpgradeClick: (feature: FeatureName, featureName: string) => void;
+  /** When provided and link is active, click closes sidebar instead of navigating (e.g. mobile) */
+  onActiveClick?: () => void;
   collapsed?: boolean;
   /** When false, link is not focusable (tabIndex=-1) so keyboard nav doesn't land on hidden items */
   sectionExpanded?: boolean;
@@ -57,6 +62,11 @@ function NavigationChildItemComponent({
     if (!hasAccess) {
       e.preventDefault();
       onUpgradeClick(child.feature, child.label);
+      return;
+    }
+    if (isActive && onActiveClick) {
+      e.preventDefault();
+      onActiveClick();
     }
   };
 
@@ -105,6 +115,7 @@ export function ExpandableNavigationSection({
   icon,
   items,
   onUpgradeClick,
+  onActiveClick,
   collapsed = false,
 }: ExpandableNavigationSectionProps) {
   const location = useLocation();
@@ -155,6 +166,7 @@ export function ExpandableNavigationSection({
               child={child}
               isActive={isActive}
               onUpgradeClick={onUpgradeClick}
+              onActiveClick={onActiveClick}
               collapsed
             />
           );
@@ -243,6 +255,7 @@ export function ExpandableNavigationSection({
                 child={child}
                 isActive={isActive}
                 onUpgradeClick={onUpgradeClick}
+                onActiveClick={onActiveClick}
                 sectionExpanded={isExpanded}
               />
             );

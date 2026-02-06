@@ -267,7 +267,7 @@ export default function DashboardIndexPage() {
                 </button>
               ) : null}
             </div>
-            <div className="min-w-0 justify-self-end">
+            <div className="max-w-[min(100%,28rem)] min-w-0 justify-self-end">
               <QueueSelectionTabs
                 currentTab="all"
                 queueTypes={queueTypesFiltered}
