@@ -3,10 +3,25 @@
  */
 
 import { Link, useFetcher } from "@remix-run/react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { formatForDisplay, fromISOString } from "~/lib/temporal";
 
+import { postToCombinedContent } from "../combined";
 import { getQueueColor } from "../queue-colors";
+import type { PostData } from "../types";
+
+import { CONTENT_MOBILE_BREAKPOINT_PX } from "./constants";
+import { ContentListCard } from "./ContentListCard";
+
 interface Post {
   id: string;
   caption?: string | null;
@@ -26,6 +41,7 @@ interface DraftsTableProps {
   bulkDeleteState: string;
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
+  onSortChange?: (key: string, direction: "asc" | "desc") => void;
 }
 
 interface SortableHeaderProps {
@@ -65,8 +81,23 @@ export function DraftsTable({
   bulkDeleteState,
   userTimezone = "UTC",
   userTimeFormat = "12h",
+  onSortChange,
 }: DraftsTableProps) {
+  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const deleteFetcher = useFetcher();
+  const combinedContent = posts.map((post) =>
+    postToCombinedContent(post as unknown as PostData)
+  );
+  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
+  const rowVirtualizer = useVirtualizer({
+    count: combinedContent.length,
+    getScrollElement: () =>
+      typeof document !== "undefined" ? document.documentElement : null,
+    estimateSize: () => 98,
+    overscan: 3,
+    getItemKey: (index) => combinedContent[index]?.id ?? String(index),
+  });
+  const virtualItems = rowVirtualizer.getVirtualItems();
 
   const formatDate = (isoString: string) => {
     try {
@@ -132,150 +163,241 @@ export function DraftsTable({
   };
 
   return (
-    <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
-      <table className="min-w-full align-middle text-sm whitespace-nowrap">
-        <thead>
-          <tr>
-            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-              <input
-                id="draft-select-all"
-                name="draft-select-all"
-                type="checkbox"
-                checked={
-                  posts.length > 0 ? selectedPosts.size === posts.length : false
-                }
-                onChange={onToggleSelectAll}
-                className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
-              />
-            </th>
-            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
-              Media
-            </th>
-            <SortableHeader
-              sortKey="caption"
-              label="Caption"
-              sortConfig={sortConfig}
-              onRequestSort={onRequestSort}
-            />
-            <SortableHeader
-              sortKey="createdAt"
-              label="Created"
-              sortConfig={sortConfig}
-              onRequestSort={onRequestSort}
-            />
-            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-              Queue
-            </th>
-            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-              Status
-            </th>
-            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {posts.map((post) => (
-            <tr
-              key={post.id}
-              className="border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
-              onClick={() => onPostClick(post)}
-            >
-              <td className="p-3 text-center">
-                <input
-                  id={`draft-select-${post.id}`}
-                  name={`draft-select-${post.id}`}
-                  type="checkbox"
-                  checked={selectedPosts.has(post.id)}
-                  onChange={() => onToggleSelection(post.id)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
-                />
-              </td>
-              <td className="p-3">
-                {post.fileUrl && post.fileUrl.length > 0 ? (
-                  <img
-                    src={getImageUrls(post.fileUrl)[0]}
-                    alt="Post preview"
-                    className="h-12 w-12 rounded object-cover"
+    <>
+      <div className="hidden md:block">
+        <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
+          <table className="min-w-full align-middle text-sm whitespace-nowrap">
+            <thead>
+              <tr>
+                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                  <input
+                    id="draft-select-all"
+                    name="draft-select-all"
+                    type="checkbox"
+                    checked={
+                      posts.length > 0
+                        ? selectedPosts.size === posts.length
+                        : false
+                    }
+                    onChange={onToggleSelectAll}
+                    className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                   />
-                ) : (
-                  <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                    TEXT
-                  </div>
-                )}
-              </td>
-              <td className="p-3">
-                <p className="font-medium">{post.caption ?? "—"}</p>
-              </td>
-              <td className="p-3">{formatDate(post.createdAt)}</td>
-              <td className="p-3 text-center">
-                {post.queueType?.color ? (
-                  <div
-                    className="inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
-                    style={{
-                      backgroundColor: `${post.queueType.color}20`,
-                      color: post.queueType.color,
-                      borderColor: post.queueType.color,
-                    }}
-                  >
-                    {post.queueType.name || "unassigned"}
-                  </div>
-                ) : (
-                  <div
-                    className={`inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold ${(() => {
-                      const colors = getQueueColor(
-                        post.queueType?.name ?? "unassigned"
-                      );
-                      return colors
-                        ? `${colors.bg} ${colors.text} ${colors.border}`
-                        : "";
-                    })()} shadow-sm`}
-                  >
-                    {post.queueType?.name ?? "unassigned"}
-                  </div>
-                )}
-              </td>
-              <td className="p-3 text-center">
-                <div className="bg-muted text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
-                  Draft
+                </th>
+                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+                  Media
+                </th>
+                <SortableHeader
+                  sortKey="caption"
+                  label="Caption"
+                  sortConfig={sortConfig}
+                  onRequestSort={onRequestSort}
+                />
+                <SortableHeader
+                  sortKey="createdAt"
+                  label="Created"
+                  sortConfig={sortConfig}
+                  onRequestSort={onRequestSort}
+                />
+                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                  Queue
+                </th>
+                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                  Status
+                </th>
+                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {posts.map((post) => (
+                <tr
+                  key={post.id}
+                  className="border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
+                  onClick={() => onPostClick(post)}
+                >
+                  <td className="p-3 text-center">
+                    <input
+                      id={`draft-select-${post.id}`}
+                      name={`draft-select-${post.id}`}
+                      type="checkbox"
+                      checked={selectedPosts.has(post.id)}
+                      onChange={() => onToggleSelection(post.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                    />
+                  </td>
+                  <td className="p-3">
+                    {post.fileUrl && post.fileUrl.length > 0 ? (
+                      <img
+                        src={getImageUrls(post.fileUrl)[0]}
+                        alt="Post preview"
+                        className="h-12 w-12 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                        TEXT
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <p className="font-medium">{post.caption ?? "—"}</p>
+                  </td>
+                  <td className="p-3">{formatDate(post.createdAt)}</td>
+                  <td className="p-3 text-center">
+                    {post.queueType?.color ? (
+                      <div
+                        className="inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
+                        style={{
+                          backgroundColor: `${post.queueType.color}20`,
+                          color: post.queueType.color,
+                          borderColor: post.queueType.color,
+                        }}
+                      >
+                        {post.queueType.name || "unassigned"}
+                      </div>
+                    ) : (
+                      <div
+                        className={`inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold ${(() => {
+                          const colors = getQueueColor(
+                            post.queueType?.name ?? "unassigned"
+                          );
+                          return colors
+                            ? `${colors.bg} ${colors.text} ${colors.border}`
+                            : "";
+                        })()} shadow-sm`}
+                      >
+                        {post.queueType?.name ?? "unassigned"}
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="bg-muted text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
+                      Draft
+                    </div>
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex justify-center gap-2">
+                      <Link
+                        to={`/dashboard/drafts/edit/${post.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
+                      >
+                        Edit
+                      </Link>
+                      <deleteFetcher.Form
+                        method="post"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input type="hidden" name="postId" value={post.id} />
+                        <input type="hidden" name="_action" value="delete" />
+                        <button
+                          type="submit"
+                          disabled={
+                            deleteFetcher.state !== "idle" ||
+                            bulkDeleteState !== "idle"
+                          }
+                          className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                        >
+                          {deleteFetcher.state !== "idle" &&
+                          deleteFetcher.formData?.get("postId") === post.id
+                            ? "Deleting..."
+                            : "Delete"}
+                        </button>
+                      </deleteFetcher.Form>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isMobile && combinedContent.length > 0 ? (
+        <div className="block md:hidden">
+          {onSortChange ? (
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-muted-foreground text-sm">Sort:</span>
+              <Select
+                value={
+                  sortConfig.key === "caption"
+                    ? `caption-${sortConfig.direction}`
+                    : `date-${sortConfig.direction}`
+                }
+                onValueChange={(value) => {
+                  if (
+                    value === "date-asc" ||
+                    value === "date-desc" ||
+                    value === "caption-asc" ||
+                    value === "caption-desc"
+                  ) {
+                    const [key, dir] = value.split("-") as [
+                      string,
+                      "asc" | "desc",
+                    ];
+                    onSortChange(key === "date" ? "createdAt" : "caption", dir);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-[11rem]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date-desc">Date (newest first)</SelectItem>
+                  <SelectItem value="date-asc">Date (oldest first)</SelectItem>
+                  <SelectItem value="caption-asc">Title (A–Z)</SelectItem>
+                  <SelectItem value="caption-desc">Title (Z–A)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+          <div
+            style={{
+              height: rowVirtualizer.getTotalSize(),
+              position: "relative",
+              width: "100%",
+            }}
+          >
+            {virtualItems.map((virtualRow) => {
+              const item = combinedContent[virtualRow.index];
+              if (!item) return null;
+              return (
+                <div
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  className="pb-0.5"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <ContentListCard
+                    item={item}
+                    type="draft"
+                    userTimezone={userTimezone}
+                    userTimeFormat={userTimeFormat}
+                    showBulkActions={true}
+                    selectedItems={selectedPosts}
+                    onToggleSelection={onToggleSelection}
+                    onPostSelect={(content) =>
+                      onPostClick(content.originalData as unknown as Post)
+                    }
+                    deleteFetcher={
+                      deleteFetcher as Parameters<
+                        typeof ContentListCard
+                      >[0]["deleteFetcher"]
+                    }
+                  />
                 </div>
-              </td>
-              <td className="p-3 text-center">
-                <div className="flex justify-center gap-2">
-                  <Link
-                    to={`/dashboard/drafts/edit/${post.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
-                  >
-                    Edit
-                  </Link>
-                  <deleteFetcher.Form
-                    method="post"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input type="hidden" name="postId" value={post.id} />
-                    <input type="hidden" name="_action" value="delete" />
-                    <button
-                      type="submit"
-                      disabled={
-                        deleteFetcher.state !== "idle" ||
-                        bulkDeleteState !== "idle"
-                      }
-                      className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-                    >
-                      {deleteFetcher.state !== "idle" &&
-                      deleteFetcher.formData?.get("postId") === post.id
-                        ? "Deleting..."
-                        : "Delete"}
-                    </button>
-                  </deleteFetcher.Form>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

@@ -270,6 +270,7 @@ export default function PostedPostsPage() {
   const {
     currentTab,
     sortConfig,
+    setSortConfig,
     searchTerm,
     setSearchTerm,
     selectedPosts,
@@ -427,6 +428,7 @@ export default function PostedPostsPage() {
           onScheduleQuote={(post) =>
             setScheduleRepostQuote({ post, mode: "quote" })
           }
+          onSortChange={(key, direction) => setSortConfig({ key, direction })}
         />
       ) : (
         <LongFormListing

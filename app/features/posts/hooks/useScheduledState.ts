@@ -325,6 +325,7 @@ export function useScheduledState({
 
   return {
     sortConfig,
+    setSortConfig,
     searchTerm,
     countdowns,
     selectedPost,

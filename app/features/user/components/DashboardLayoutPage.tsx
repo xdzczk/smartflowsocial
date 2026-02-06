@@ -132,7 +132,7 @@ export function DashboardLayoutPage(): ReactNode {
                         <input type="hidden" name="parentNpub" value={p.npub} />
                         <input type="hidden" name="decision" value="accept" />
                         <button
-                          className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-70"
+                          className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none disabled:opacity-70"
                           type="submit"
                           disabled={isThisSubmitting}
                         >
@@ -161,7 +161,7 @@ export function DashboardLayoutPage(): ReactNode {
                 <Link
                   prefetch="intent"
                   to="/plans"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
                 >
                   View plans
                 </Link>
@@ -180,7 +180,7 @@ export function DashboardLayoutPage(): ReactNode {
                 <Link
                   prefetch="intent"
                   to="/plans"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
                 >
                   View plans
                 </Link>

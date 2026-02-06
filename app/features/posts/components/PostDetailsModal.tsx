@@ -366,7 +366,7 @@ function PostDetailsSidebar({
               onClick={onToggleEventData}
               aria-expanded={showEventData}
               aria-controls="signed-event-data"
-              className="text-primary focus:ring-ring text-xs hover:underline focus:ring-2 focus:ring-offset-1 focus:outline-none"
+              className="text-primary focus:ring-ring text-xs hover:underline focus:ring-2 focus:ring-offset-0 focus:outline-none"
             >
               {showEventData ? "Hide" : "Show"}
             </button>
@@ -481,7 +481,7 @@ export default function PostDetailsModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="text-foreground hover:bg-muted focus:ring-ring flex h-8 w-8 items-center justify-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                className="text-foreground hover:bg-muted focus:ring-ring flex h-8 w-8 items-center justify-center rounded-full transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
               >
                 ✕
               </button>
@@ -571,7 +571,7 @@ export default function PostDetailsModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="View note (opens in new tab)"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
                 >
                   View Note
                 </Link>
@@ -580,7 +580,7 @@ export default function PostDetailsModal({
                 <button
                   type="button"
                   onClick={() => onEdit(post)}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
                 >
                   Edit
                 </button>
@@ -589,7 +589,7 @@ export default function PostDetailsModal({
                 <button
                   type="button"
                   onClick={() => onReschedule(post)}
-                  className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex items-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex items-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
                 >
                   Reschedule
                 </button>
@@ -604,7 +604,7 @@ export default function PostDetailsModal({
                 <button
                   type="submit"
                   disabled={deleteFetcher.state !== "idle"}
-                  className="border-destructive text-destructive hover:bg-destructive/10 focus:ring-ring inline-flex items-center rounded-lg border bg-transparent px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
+                  className="border-destructive text-destructive hover:bg-destructive/10 focus:ring-ring inline-flex items-center rounded-lg border bg-transparent px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none disabled:opacity-50"
                 >
                   {deleteFetcher.state !== "idle" &&
                   deleteFetcher.formData?.get("postId") === post.id

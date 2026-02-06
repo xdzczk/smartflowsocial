@@ -134,6 +134,7 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
 
   return {
     sortConfig,
+    setSortConfig,
     searchTerm,
     selectedPost,
     selectedPosts,

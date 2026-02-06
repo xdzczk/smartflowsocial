@@ -170,6 +170,7 @@ export default function ScheduledPostsPage() {
 
   const {
     sortConfig,
+    setSortConfig,
     searchTerm,
     countdowns,
     selectedPost,
@@ -318,6 +319,7 @@ export default function ScheduledPostsPage() {
             onScheduleQuote={(post) =>
               setScheduleRepostQuote({ post, mode: "quote" })
             }
+            onSortChange={(key, direction) => setSortConfig({ key, direction })}
           />
 
           {selectedPost ? (

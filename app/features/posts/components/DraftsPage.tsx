@@ -111,6 +111,7 @@ export default function DraftsPage() {
 
   const {
     sortConfig,
+    setSortConfig,
     searchTerm,
     selectedPost,
     selectedPosts,
@@ -219,6 +220,7 @@ export default function DraftsPage() {
                   : "12h"
                 : "12h"
             }
+            onSortChange={(key, direction) => setSortConfig({ key, direction })}
           />
 
           {selectedPost

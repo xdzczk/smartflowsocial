@@ -46,7 +46,7 @@ export function HomePage(): ReactNode {
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <a
                 href="/plans"
-                className="bg-primary-action text-primary-foreground hover:bg-primary-action/90 focus:ring-ring-action inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                className="bg-primary-action text-primary-foreground hover:bg-primary-action/90 focus:ring-ring inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
               >
                 <span>ENTER CONSOLE</span>
                 <svg
@@ -65,7 +65,7 @@ export function HomePage(): ReactNode {
               </a>
               <a
                 href="/"
-                className="border-border bg-card text-foreground hover:bg-muted hover:text-foreground focus:ring-ring inline-flex items-center justify-center gap-2 rounded-lg border px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                className="border-border bg-card text-foreground hover:bg-muted hover:text-foreground focus:ring-ring inline-flex items-center justify-center gap-2 rounded-lg border px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
               >
                 <span>Watch Demo</span>
               </a>

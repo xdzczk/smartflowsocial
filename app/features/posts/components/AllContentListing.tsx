@@ -1,9 +1,18 @@
 import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useState } from "react";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { scheduledPostsKeys } from "~/features/posts/hooks/useScheduledPostsQuery";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { fromISOString } from "~/lib/temporal";
 
 import type {
@@ -13,10 +22,14 @@ import type {
   PostFetcher,
 } from "../types";
 
+import { CONTENT_MOBILE_BREAKPOINT_PX } from "./constants";
 import { ContentBulkActions } from "./ContentBulkActions";
+import { ContentListCard } from "./ContentListCard";
 import { ContentSearchBar } from "./ContentSearchBar";
 import { ContentTableHeader } from "./ContentTableHeader";
 import { ContentTableRow } from "./ContentTableRow";
+
+const CONTENT_LIST_CARD_HEIGHT_PX = 98;
 
 interface AllContentListingProps {
   content: CombinedContent[];
@@ -76,6 +89,7 @@ export default function AllContentListing({
   onEditPost,
   onReschedulePost,
 }: AllContentListingProps) {
+  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const deleteFetcher = useFetcher<{
     success?: boolean;
     error?: string;
@@ -209,6 +223,44 @@ export default function AllContentListing({
       item.summary?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const dateSortKey =
+    type === "posted"
+      ? "postedAt"
+      : type === "scheduled"
+        ? "scheduledAtUtc"
+        : "createdAt";
+
+  // TanStack Virtual returns unstable refs by design; virtualization is intentional (plan: mobile card lists)
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredContent.length,
+    getScrollElement: () =>
+      typeof document !== "undefined" ? document.documentElement : null,
+    estimateSize: () => CONTENT_LIST_CARD_HEIGHT_PX,
+    overscan: 3,
+    getItemKey: (index) => {
+      const item = filteredContent[index];
+      return item ? `${item.type}-${item.id}` : String(index);
+    },
+  });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
+  const setMobileSort = (value: string) => {
+    if (
+      value === "date-asc" ||
+      value === "date-desc" ||
+      value === "caption-asc" ||
+      value === "caption-desc"
+    ) {
+      const [key, dir] = value.split("-") as [string, "asc" | "desc"];
+      setSortConfig({
+        key: key === "date" ? dateSortKey : "caption",
+        direction: dir,
+      });
+    }
+  };
+
   return (
     <div>
       <ContentSearchBar
@@ -229,43 +281,126 @@ export default function AllContentListing({
         />
       ) : null}
 
-      {/* Content Table */}
-      <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
-        <table className="min-w-full align-middle text-sm whitespace-nowrap">
-          <ContentTableHeader
-            type={type}
-            showBulkActions={showBulkActions}
-            sortConfig={sortConfig}
-            filteredContentLength={filteredContent.length}
-            selectedItemsSize={selectedItems.size}
-            onToggleSelectAll={onToggleSelectAll}
-            onRequestSort={requestSort}
-          />
-          <tbody>
-            {filteredContent.map((item) => (
-              <ContentTableRow
-                key={`${item.type}-${item.id}`}
-                item={item}
-                type={type}
-                userTimezone={userTimezone}
-                userTimeFormat={userTimeFormat}
-                showBulkActions={showBulkActions}
-                selectedItems={selectedItems}
-                onToggleSelection={onToggleSelection}
-                onPostSelect={onPostSelect}
-                onEditPost={onEditPost}
-                onReschedulePost={onReschedulePost}
-                deleteFetcher={deleteFetcher as unknown as PostFetcher}
-                individualRepostFetcher={individualRepostFetcher}
-                longformRepostFetcher={longformRepostFetcher}
-                longformQuoteFetcher={longformQuoteFetcher}
-                onScheduleRepost={onScheduleRepost}
-                onScheduleQuote={onScheduleQuote}
-              />
-            ))}
-          </tbody>
-        </table>
+      {/* Desktop: Content Table (hidden on mobile) */}
+      <div className="hidden md:block">
+        <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
+          <table className="min-w-full align-middle text-sm whitespace-nowrap">
+            <ContentTableHeader
+              type={type}
+              showBulkActions={showBulkActions}
+              sortConfig={sortConfig}
+              filteredContentLength={filteredContent.length}
+              selectedItemsSize={selectedItems.size}
+              onToggleSelectAll={onToggleSelectAll}
+              onRequestSort={requestSort}
+            />
+            <tbody>
+              {filteredContent.map((item) => (
+                <ContentTableRow
+                  key={`${item.type}-${item.id}`}
+                  item={item}
+                  type={type}
+                  userTimezone={userTimezone}
+                  userTimeFormat={userTimeFormat}
+                  showBulkActions={showBulkActions}
+                  selectedItems={selectedItems}
+                  onToggleSelection={onToggleSelection}
+                  onPostSelect={onPostSelect}
+                  onEditPost={onEditPost}
+                  onReschedulePost={onReschedulePost}
+                  deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                  individualRepostFetcher={individualRepostFetcher}
+                  longformRepostFetcher={longformRepostFetcher}
+                  longformQuoteFetcher={longformQuoteFetcher}
+                  onScheduleRepost={onScheduleRepost}
+                  onScheduleQuote={onScheduleQuote}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Mobile: Sort + virtualized card list (visible only on mobile) */}
+      {isMobile ? (
+        <div className="block md:hidden">
+          {filteredContent.length > 0 ? (
+            <>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">Sort:</span>
+                <Select
+                  value={
+                    sortConfig.key === "caption"
+                      ? `caption-${sortConfig.direction}`
+                      : `date-${sortConfig.direction}`
+                  }
+                  onValueChange={setMobileSort}
+                >
+                  <SelectTrigger className="w-[11rem]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date-desc">
+                      Date (newest first)
+                    </SelectItem>
+                    <SelectItem value="date-asc">
+                      Date (oldest first)
+                    </SelectItem>
+                    <SelectItem value="caption-asc">Title (A–Z)</SelectItem>
+                    <SelectItem value="caption-desc">Title (Z–A)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div
+                className="mt-2"
+                style={{
+                  height: rowVirtualizer.getTotalSize(),
+                  position: "relative",
+                  width: "100%",
+                }}
+              >
+                {virtualItems.map((virtualRow) => {
+                  const item = filteredContent[virtualRow.index];
+                  if (!item) return null;
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      data-index={virtualRow.index}
+                      className="pb-0.5"
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      <ContentListCard
+                        item={item}
+                        type={type}
+                        userTimezone={userTimezone}
+                        userTimeFormat={userTimeFormat}
+                        showBulkActions={showBulkActions}
+                        selectedItems={selectedItems}
+                        onToggleSelection={onToggleSelection}
+                        onPostSelect={onPostSelect}
+                        onEditPost={onEditPost}
+                        onReschedulePost={onReschedulePost}
+                        deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                        individualRepostFetcher={individualRepostFetcher}
+                        longformRepostFetcher={longformRepostFetcher}
+                        longformQuoteFetcher={longformQuoteFetcher}
+                        onScheduleRepost={onScheduleRepost}
+                        onScheduleQuote={onScheduleQuote}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
 
       {filteredContent.length === 0 ? (
         <div className="mt-8 text-center">

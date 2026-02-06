@@ -1,5 +1,13 @@
+import { useVirtualizer } from "@tanstack/react-virtual";
+
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
+
+import { AssetListCard } from "./AssetListCard";
+
+const ASSETS_MOBILE_BREAKPOINT_PX = 768;
+
 interface Asset {
   id: string;
   assetType: string;
@@ -47,6 +55,17 @@ export function AssetsTab({
   onDeleteAsset,
 }: AssetsTabProps) {
   const { formatDate } = useFormattedDate();
+  const isMobile = useIsMobile(ASSETS_MOBILE_BREAKPOINT_PX);
+  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
+  const rowVirtualizer = useVirtualizer({
+    count: assets.length,
+    getScrollElement: () =>
+      typeof document !== "undefined" ? document.documentElement : null,
+    estimateSize: () => 98,
+    overscan: 3,
+    getItemKey: (index) => assets[index]?.id ?? String(index),
+  });
+  const virtualItems = rowVirtualizer.getVirtualItems();
 
   return (
     <div>
@@ -146,141 +165,193 @@ export function AssetsTab({
           </div>
         </div>
       ) : (
-        <div className="dark:border-border bg-card border-border min-w-full overflow-x-auto rounded border bg-white">
-          <table className="min-w-full align-middle text-sm whitespace-nowrap">
-            <thead>
-              <tr>
-                <th className="dark:bg-card dark:border-border bg-muted text-foreground dark:text-foreground px-3 py-4 text-center font-semibold">
-                  <input
-                    type="checkbox"
-                    checked={
-                      assets.length > 0
-                        ? selectedAssets.length === assets.length
-                        : false
-                    }
-                    onChange={onSelectAllAssets}
-                    className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
-                  />
-                </th>
-                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                  Media
-                </th>
-                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                  Title
-                </th>
-                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                  Content
-                </th>
-                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                  Tags
-                </th>
-                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                  Type
-                </th>
-                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                  Created
-                </th>
-                <th className="dark:bg-card dark:border-border bg-muted text-foreground dark:text-foreground px-3 py-4 text-center font-semibold">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {assets.map((asset) => (
-                <tr
-                  key={asset.id}
-                  className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted"
-                >
-                  <td className="p-3 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedAssets.includes(asset.id)}
-                      onChange={() => onAssetSelect(asset.id)}
-                      className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
-                    />
-                  </td>
-                  <td className="p-3">
-                    {asset.assetType === "IMAGE" ||
-                    asset.assetType === "VIDEO" ? (
-                      <MediaThumbnail
-                        src={asset.fileUrl ?? ""}
-                        alt={asset.title ?? "Asset"}
-                        className="h-12 w-12 rounded object-cover"
-                      />
-                    ) : (
-                      <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                        TEXT
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <p className="font-medium">{asset.title ?? "Untitled"}</p>
-                  </td>
-                  <td className="p-3">
-                    {asset.assetType === "TEXT" && asset.content ? (
-                      <p className="max-w-xs truncate">{asset.content}</p>
-                    ) : (
-                      <p className="text-foreground">-</p>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    {asset.tags && asset.tags.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {asset.tags.slice(0, 3).map((tag: string) => (
-                          <span
-                            key={tag}
-                            className="dark:bg-muted dark:text-foreground bg-muted text-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {asset.tags.length > 3 ? (
-                          <span className="dark:bg-muted dark:text-foreground bg-muted text-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
-                            +{asset.tags.length - 3}
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <p className="text-foreground">-</p>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                        asset.assetType === "IMAGE"
-                          ? "bg-muted text-foreground"
-                          : asset.assetType === "VIDEO"
-                            ? "bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive"
-                            : "bg-muted text-foreground dark:bg-muted dark:text-foreground"
-                      }`}
-                    >
-                      {asset.assetType}
-                    </span>
-                  </td>
-                  <td className="p-3">{formatDate(asset.createdAt)}</td>
-                  <td className="p-3 text-center">
-                    <DeleteFetcherForm method="post" className="inline">
+        <>
+          {/* Desktop: table (hidden on mobile) */}
+          <div className="hidden md:block">
+            <div className="dark:border-border bg-card border-border min-w-full overflow-x-auto rounded border bg-white">
+              <table className="min-w-full align-middle text-sm whitespace-nowrap">
+                <thead>
+                  <tr>
+                    <th className="dark:bg-card dark:border-border bg-muted text-foreground dark:text-foreground px-3 py-4 text-center font-semibold">
                       <input
-                        type="hidden"
-                        name="_action"
-                        value="delete_asset"
+                        type="checkbox"
+                        checked={
+                          assets.length > 0
+                            ? selectedAssets.length === assets.length
+                            : false
+                        }
+                        onChange={onSelectAllAssets}
+                        className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                       />
-                      <input type="hidden" name="assetId" value={asset.id} />
-                      <button
-                        type="submit"
-                        onClick={(e) => onDeleteAsset(e, asset.id)}
-                        disabled={deleteFetcherState !== "idle"}
-                        className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-ring/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-ring/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
-                    </DeleteFetcherForm>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </th>
+                    <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+                      Media
+                    </th>
+                    <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+                      Title
+                    </th>
+                    <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+                      Content
+                    </th>
+                    <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+                      Tags
+                    </th>
+                    <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+                      Type
+                    </th>
+                    <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+                      Created
+                    </th>
+                    <th className="dark:bg-card dark:border-border bg-muted text-foreground dark:text-foreground px-3 py-4 text-center font-semibold">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assets.map((asset) => (
+                    <tr
+                      key={asset.id}
+                      className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted"
+                    >
+                      <td className="p-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedAssets.includes(asset.id)}
+                          onChange={() => onAssetSelect(asset.id)}
+                          className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                        />
+                      </td>
+                      <td className="p-3">
+                        {asset.assetType === "IMAGE" ||
+                        asset.assetType === "VIDEO" ? (
+                          <MediaThumbnail
+                            src={asset.fileUrl ?? ""}
+                            alt={asset.title ?? "Asset"}
+                            className="h-12 w-12 rounded object-cover"
+                          />
+                        ) : (
+                          <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                            TEXT
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <p className="font-medium">
+                          {asset.title ?? "Untitled"}
+                        </p>
+                      </td>
+                      <td className="p-3">
+                        {asset.assetType === "TEXT" && asset.content ? (
+                          <p className="max-w-xs truncate">{asset.content}</p>
+                        ) : (
+                          <p className="text-foreground">-</p>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {asset.tags && asset.tags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {asset.tags.slice(0, 3).map((tag: string) => (
+                              <span
+                                key={tag}
+                                className="dark:bg-muted dark:text-foreground bg-muted text-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {asset.tags.length > 3 ? (
+                              <span className="dark:bg-muted dark:text-foreground bg-muted text-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
+                                +{asset.tags.length - 3}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <p className="text-foreground">-</p>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            asset.assetType === "IMAGE"
+                              ? "bg-muted text-foreground"
+                              : asset.assetType === "VIDEO"
+                                ? "bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive"
+                                : "bg-muted text-foreground dark:bg-muted dark:text-foreground"
+                          }`}
+                        >
+                          {asset.assetType}
+                        </span>
+                      </td>
+                      <td className="p-3">{formatDate(asset.createdAt)}</td>
+                      <td className="p-3 text-center">
+                        <DeleteFetcherForm method="post" className="inline">
+                          <input
+                            type="hidden"
+                            name="_action"
+                            value="delete_asset"
+                          />
+                          <input
+                            type="hidden"
+                            name="assetId"
+                            value={asset.id}
+                          />
+                          <button
+                            type="submit"
+                            onClick={(e) => onDeleteAsset(e, asset.id)}
+                            disabled={deleteFetcherState !== "idle"}
+                            className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-ring/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-ring/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
+                          >
+                            Delete
+                          </button>
+                        </DeleteFetcherForm>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile: virtualized asset card list */}
+          {isMobile ? (
+            <div className="block md:hidden">
+              <div
+                style={{
+                  height: rowVirtualizer.getTotalSize(),
+                  position: "relative",
+                  width: "100%",
+                }}
+              >
+                {virtualItems.map((virtualRow) => {
+                  const asset = assets[virtualRow.index];
+                  if (!asset) return null;
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      data-index={virtualRow.index}
+                      className="pb-0.5"
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      <AssetListCard
+                        asset={asset}
+                        selected={selectedAssets.includes(asset.id)}
+                        onSelect={onAssetSelect}
+                        deleteFetcherForm={DeleteFetcherForm}
+                        onDeleteAsset={onDeleteAsset}
+                        deleteFetcherState={deleteFetcherState}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );

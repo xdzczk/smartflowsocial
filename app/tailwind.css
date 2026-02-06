@@ -284,6 +284,10 @@
     outline: none !important;
     box-shadow: none !important;
   }
+  /* Focus rings: purple only, no white/background offset band */
+  *:focus-visible {
+    --tw-ring-offset-width: 0px !important;
+  }
 }
 
 @layer components {

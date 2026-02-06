@@ -1,8 +1,17 @@
 import { useFetcher, Link } from "@remix-run/react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useState, useEffect, useMemo } from "react";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import type { LongFormPostType } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   difference,
   formatForDisplay,
@@ -12,8 +21,12 @@ import {
   nowInTimezone,
 } from "~/lib/temporal";
 
+import { longFormPostToCombinedContent } from "../combined";
 import type { PostFetcher, LongFormPostData } from "../types";
 import type { EditorJSBlock } from "../types/editorjs.types";
+
+import { CONTENT_MOBILE_BREAKPOINT_PX } from "./constants";
+import { ContentListCard } from "./ContentListCard";
 
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
@@ -109,6 +122,17 @@ function compareStringValues(
   return direction === "asc" ? a.localeCompare(b) : b.localeCompare(a);
 }
 
+function longFormMatchesSearch(
+  post: LongFormPostType | LongFormPostData,
+  searchTerm: string
+): boolean {
+  const term = searchTerm.toLowerCase();
+  return (
+    (post.title?.toLowerCase().includes(term) ?? false) ||
+    (post.summary?.toLowerCase().includes(term) ?? false)
+  );
+}
+
 function sortLongFormPosts(
   posts: Array<LongFormPostType | LongFormPostData>,
   sortConfig: { key: string; direction: "asc" | "desc" }
@@ -129,6 +153,8 @@ function sortLongFormPosts(
   });
 }
 
+// Desktop table + mobile virtualized cards; complexity from sort/filter/selection and dual layouts
+// eslint-disable-next-line sonarjs/cognitive-complexity -- slightly over 30 due to table + card branches
 export default function LongFormListing({
   posts,
   type,
@@ -148,6 +174,7 @@ export default function LongFormListing({
   });
   const [selectedPosts, setSelectedPosts] = useState(new Set<string>());
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
+  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const deleteFetcher = useFetcher();
   interface BulkDeleteFetcherData {
     success?: boolean;
@@ -155,11 +182,8 @@ export default function LongFormListing({
   const bulkDeleteFetcher = useFetcher<BulkDeleteFetcherData>();
 
   const sortedPosts = sortLongFormPosts(posts, sortConfig);
-
-  const filteredPosts = sortedPosts.filter(
-    (post) =>
-      post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-      post.summary?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPosts = sortedPosts.filter((post) =>
+    longFormMatchesSearch(post, searchTerm)
   );
 
   const requestSort = (key: string) => {
@@ -169,6 +193,24 @@ export default function LongFormListing({
         current.key === key && current.direction === "asc" ? "desc" : "asc",
     }));
   };
+
+  const combinedContent = useMemo(
+    () =>
+      filteredPosts.map((post) =>
+        longFormPostToCombinedContent(post as LongFormPostData)
+      ),
+    [filteredPosts]
+  );
+
+  const rowVirtualizer = useVirtualizer({
+    count: combinedContent.length,
+    getScrollElement: () =>
+      typeof document !== "undefined" ? document.documentElement : null,
+    estimateSize: () => 98,
+    overscan: 3,
+    getItemKey: (index) => combinedContent[index]?.id ?? String(index),
+  });
+  const virtualItems = rowVirtualizer.getVirtualItems();
 
   const formatDate = (
     dateInput?: string | Date | number,
@@ -492,366 +534,474 @@ export default function LongFormListing({
         </div>
       ) : null}
 
-      {/* Posts Table */}
-      <div className="dark:border-border bg-card border-border min-w-full overflow-x-auto rounded border bg-white">
-        <table className="min-w-full align-middle text-sm whitespace-nowrap">
-          <thead>
-            <tr>
-              <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                <input
-                  id="longform-select-all"
-                  name="longform-select-all"
-                  type="checkbox"
-                  checked={
-                    filteredPosts.length > 0
-                      ? selectedPosts.size === filteredPosts.length
-                      : false
-                  }
-                  onChange={toggleSelectAll}
-                  className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
-                />
-              </th>
-              <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                Cover
-              </th>
-              <th
-                className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
-                onClick={() => requestSort("title")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    requestSort("title");
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label="Sort by title"
-              >
-                Title{" "}
-                {sortConfig.key === "title"
-                  ? sortConfig.direction === "asc"
-                    ? "↑"
-                    : "↓"
-                  : null}
-              </th>
-              <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                Summary
-              </th>
-              <th
-                className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
-                onClick={() =>
-                  requestSort(
-                    type === "posted"
-                      ? "publishedAt"
-                      : type === "scheduled"
-                        ? "scheduledAtUtc"
-                        : "createdAt"
-                  )
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
+      {/* Desktop: Posts Table (hidden on mobile) */}
+      <div className="hidden md:block">
+        <div className="dark:border-border bg-card border-border min-w-full overflow-x-auto rounded border bg-white">
+          <table className="min-w-full align-middle text-sm whitespace-nowrap">
+            <thead>
+              <tr>
+                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+                  <input
+                    id="longform-select-all"
+                    name="longform-select-all"
+                    type="checkbox"
+                    checked={
+                      filteredPosts.length > 0
+                        ? selectedPosts.size === filteredPosts.length
+                        : false
+                    }
+                    onChange={toggleSelectAll}
+                    className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                  />
+                </th>
+                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+                  Cover
+                </th>
+                <th
+                  className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
+                  onClick={() => requestSort("title")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      requestSort("title");
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Sort by title"
+                >
+                  Title{" "}
+                  {sortConfig.key === "title"
+                    ? sortConfig.direction === "asc"
+                      ? "↑"
+                      : "↓"
+                    : null}
+                </th>
+                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+                  Summary
+                </th>
+                <th
+                  className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
+                  onClick={() =>
                     requestSort(
                       type === "posted"
                         ? "publishedAt"
                         : type === "scheduled"
                           ? "scheduledAtUtc"
                           : "createdAt"
-                    );
+                    )
                   }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label={`Sort by ${type === "posted" ? "published date" : type === "scheduled" ? "scheduled date" : "created date"}`}
-              >
-                {type === "posted"
-                  ? "Published"
-                  : type === "scheduled"
-                    ? "Scheduled For"
-                    : "Created"}{" "}
-                {sortConfig.key ===
-                (type === "posted"
-                  ? "publishedAt"
-                  : type === "scheduled"
-                    ? "scheduledAtUtc"
-                    : "createdAt")
-                  ? sortConfig.direction === "asc"
-                    ? "↑"
-                    : "↓"
-                  : null}
-              </th>
-              <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                Reading Time
-              </th>
-              {type === "scheduled" ? (
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                  Time Remaining
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      requestSort(
+                        type === "posted"
+                          ? "publishedAt"
+                          : type === "scheduled"
+                            ? "scheduledAtUtc"
+                            : "createdAt"
+                      );
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Sort by ${type === "posted" ? "published date" : type === "scheduled" ? "scheduled date" : "created date"}`}
+                >
+                  {type === "posted"
+                    ? "Published"
+                    : type === "scheduled"
+                      ? "Scheduled For"
+                      : "Created"}{" "}
+                  {sortConfig.key ===
+                  (type === "posted"
+                    ? "publishedAt"
+                    : type === "scheduled"
+                      ? "scheduledAtUtc"
+                      : "createdAt")
+                    ? sortConfig.direction === "asc"
+                      ? "↑"
+                      : "↓"
+                    : null}
                 </th>
-              ) : null}
-              <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                Status
-              </th>
-              <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                Actions
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredPosts.map((post) => (
-              <tr
-                key={post.id}
-                className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted cursor-pointer"
-                onClick={() => onPostSelect?.(post)}
-                onKeyDown={(e) => {
-                  if ((e.key === "Enter" || e.key === " ") && onPostSelect) {
-                    e.preventDefault();
-                    onPostSelect(post);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label={`Select ${post.title ?? "post"}`}
-              >
-                <td className="p-3 text-center">
-                  <input
-                    id={`longform-select-${post.id}`}
-                    name={`longform-select-${post.id}`}
-                    type="checkbox"
-                    checked={selectedPosts.has(post.id)}
-                    onChange={() => togglePostSelection(post.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
-                  />
-                </td>
-                <td className="p-3">
-                  {post.image ? (
-                    <img
-                      src={post.image}
-                      alt="Cover"
-                      className="h-12 w-16 rounded object-cover"
-                    />
-                  ) : (
-                    <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-muted-foreground flex h-12 w-16 items-center justify-center rounded text-xs font-medium">
-                      ARTICLE
-                    </div>
-                  )}
-                </td>
-                <td className="p-3">
-                  <p className="font-medium">
-                    {post.title && post.title.length > 40
-                      ? post.title.substring(0, 40) + "..."
-                      : (post.title ?? "Untitled")}
-                  </p>
-                </td>
-                <td className="max-w-xs p-3">
-                  <p className="dark:text-muted-foreground text-foreground line-clamp-2 text-sm">
-                    {post.summary && post.summary.length > 60
-                      ? post.summary.substring(0, 60) + "..."
-                      : (post.summary ?? "No summary")}
-                  </p>
-                </td>
-                <td className="p-3">
-                  {formatDate(
-                    type === "posted"
-                      ? (post.publishedAt ?? undefined)
-                      : type === "scheduled"
-                        ? ((post as { scheduledAtUtc?: unknown })
-                            .scheduledAtUtc as
-                            | string
-                            | Date
-                            | number
-                            | undefined)
-                        : post.createdAt,
-                    false
-                  )}
-                </td>
-                <td className="p-3 text-center">
-                  <span className="dark:text-muted-foreground text-muted-foreground text-sm">
-                    {getReadingTime(post.content ?? undefined)}
-                  </span>
-                </td>
+                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+                  Reading Time
+                </th>
                 {type === "scheduled" ? (
-                  <td className="p-3 text-center">
-                    <div className="text-muted-foreground text-sm font-medium">
-                      {countdowns[post.id] ?? "—"}
-                    </div>
-                  </td>
+                  <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+                    Time Remaining
+                  </th>
                 ) : null}
-                <td className="p-3 text-center">{getStatusBadge(post)}</td>
-                <td className="p-3 text-center">
-                  <div className="flex justify-center gap-2">
-                    {type === "draft" ? (
-                      <Link
-                        to={`/dashboard/drafts/longform/edit/${post.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
-                      >
-                        Edit
-                      </Link>
-                    ) : null}
-                    {type === "scheduled" && onEditPost ? (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditPost(post);
-                          }}
+                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+                  Status
+                </th>
+                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredPosts.map((post) => (
+                <tr
+                  key={post.id}
+                  className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted cursor-pointer"
+                  onClick={() => onPostSelect?.(post)}
+                  onKeyDown={(e) => {
+                    if ((e.key === "Enter" || e.key === " ") && onPostSelect) {
+                      e.preventDefault();
+                      onPostSelect(post);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Select ${post.title ?? "post"}`}
+                >
+                  <td className="p-3 text-center">
+                    <input
+                      id={`longform-select-${post.id}`}
+                      name={`longform-select-${post.id}`}
+                      type="checkbox"
+                      checked={selectedPosts.has(post.id)}
+                      onChange={() => togglePostSelection(post.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                    />
+                  </td>
+                  <td className="p-3">
+                    {post.image ? (
+                      <img
+                        src={post.image}
+                        alt="Cover"
+                        className="h-12 w-16 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-muted-foreground flex h-12 w-16 items-center justify-center rounded text-xs font-medium">
+                        ARTICLE
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <p className="font-medium">
+                      {post.title && post.title.length > 40
+                        ? post.title.substring(0, 40) + "..."
+                        : (post.title ?? "Untitled")}
+                    </p>
+                  </td>
+                  <td className="max-w-xs p-3">
+                    <p className="dark:text-muted-foreground text-foreground line-clamp-2 text-sm">
+                      {post.summary && post.summary.length > 60
+                        ? post.summary.substring(0, 60) + "..."
+                        : (post.summary ?? "No summary")}
+                    </p>
+                  </td>
+                  <td className="p-3">
+                    {formatDate(
+                      type === "posted"
+                        ? (post.publishedAt ?? undefined)
+                        : type === "scheduled"
+                          ? ((post as { scheduledAtUtc?: unknown })
+                              .scheduledAtUtc as
+                              | string
+                              | Date
+                              | number
+                              | undefined)
+                          : post.createdAt,
+                      false
+                    )}
+                  </td>
+                  <td className="p-3 text-center">
+                    <span className="dark:text-muted-foreground text-muted-foreground text-sm">
+                      {getReadingTime(post.content ?? undefined)}
+                    </span>
+                  </td>
+                  {type === "scheduled" ? (
+                    <td className="p-3 text-center">
+                      <div className="text-muted-foreground text-sm font-medium">
+                        {countdowns[post.id] ?? "—"}
+                      </div>
+                    </td>
+                  ) : null}
+                  <td className="p-3 text-center">{getStatusBadge(post)}</td>
+                  <td className="p-3 text-center">
+                    <div className="flex justify-center gap-2">
+                      {type === "draft" ? (
+                        <Link
+                          to={`/dashboard/drafts/longform/edit/${post.id}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
                         >
                           Edit
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onReschedulePost) {
-                              onReschedulePost(post);
-                            }
-                          }}
-                          className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-ring/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-ring/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
-                        >
-                          Reschedule
-                        </button>
-                      </>
-                    ) : null}
-                    {type === "posted" &&
-                    (post.nostrEventId ??
-                      (post.signedEvent &&
-                      typeof post.signedEvent === "object" &&
-                      "id" in post.signedEvent
-                        ? (post.signedEvent as { id?: string }).id
-                        : undefined)) ? (
-                      <>
-                        <Link
-                          to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="font-montserrat inline-block rounded-full bg-black/50 px-4 py-1 text-sm text-white transition-colors duration-200 hover:bg-black/70"
-                        >
-                          View Article
                         </Link>
-                        {longformRepostFetcher
-                          ? (() => {
-                              const fetcher = longformRepostFetcher;
-                              const formData = getFetcherFormData(fetcher);
-                              return (
-                                <fetcher.Form
-                                  method="post"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <input
-                                    type="hidden"
-                                    name="postId"
-                                    value={post.id}
-                                  />
-                                  <input
-                                    type="hidden"
-                                    name="_action"
-                                    value="longformRepost"
-                                  />
-                                  <button
-                                    type="submit"
-                                    disabled={
-                                      fetcher.state !== "idle" ||
+                      ) : null}
+                      {type === "scheduled" && onEditPost ? (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditPost(post);
+                            }}
+                            className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onReschedulePost) {
+                                onReschedulePost(post);
+                              }
+                            }}
+                            className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-ring/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-ring/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
+                          >
+                            Reschedule
+                          </button>
+                        </>
+                      ) : null}
+                      {type === "posted" &&
+                      (post.nostrEventId ??
+                        (post.signedEvent &&
+                        typeof post.signedEvent === "object" &&
+                        "id" in post.signedEvent
+                          ? (post.signedEvent as { id?: string }).id
+                          : undefined)) ? (
+                        <>
+                          <Link
+                            to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="font-montserrat inline-block rounded-full bg-black/50 px-4 py-1 text-sm text-white transition-colors duration-200 hover:bg-black/70"
+                          >
+                            View Article
+                          </Link>
+                          {longformRepostFetcher
+                            ? (() => {
+                                const fetcher = longformRepostFetcher;
+                                const formData = getFetcherFormData(fetcher);
+                                return (
+                                  <fetcher.Form
+                                    method="post"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <input
+                                      type="hidden"
+                                      name="postId"
+                                      value={post.id}
+                                    />
+                                    <input
+                                      type="hidden"
+                                      name="_action"
+                                      value="longformRepost"
+                                    />
+                                    <button
+                                      type="submit"
+                                      disabled={
+                                        fetcher.state !== "idle" ||
+                                        (formData
+                                          ? (formData.get("postId") as
+                                              | string
+                                              | null) === post.id
+                                          : false)
+                                      }
+                                      className="dark:bg-card border-border text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
+                                    >
+                                      {fetcher.state !== "idle" &&
                                       (formData
                                         ? (formData.get("postId") as
                                             | string
                                             | null) === post.id
                                         : false)
-                                    }
-                                    className="dark:bg-card border-border text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
+                                        ? "Reposting..."
+                                        : "Repost"}
+                                    </button>
+                                  </fetcher.Form>
+                                );
+                              })()
+                            : null}
+                          {longformQuoteFetcher
+                            ? (() => {
+                                const fetcher = longformQuoteFetcher;
+                                const formData = getFetcherFormData(fetcher);
+                                return (
+                                  <fetcher.Form
+                                    method="post"
+                                    onClick={(e) => e.stopPropagation()}
                                   >
-                                    {fetcher.state !== "idle" &&
-                                    (formData
-                                      ? (formData.get("postId") as
-                                          | string
-                                          | null) === post.id
-                                      : false)
-                                      ? "Reposting..."
-                                      : "Repost"}
-                                  </button>
-                                </fetcher.Form>
-                              );
-                            })()
-                          : null}
-                        {longformQuoteFetcher
-                          ? (() => {
-                              const fetcher = longformQuoteFetcher;
-                              const formData = getFetcherFormData(fetcher);
-                              return (
-                                <fetcher.Form
-                                  method="post"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <input
-                                    type="hidden"
-                                    name="postId"
-                                    value={post.id}
-                                  />
-                                  <input
-                                    type="hidden"
-                                    name="_action"
-                                    value="longformQuote"
-                                  />
-                                  <button
-                                    type="submit"
-                                    disabled={
-                                      fetcher.state !== "idle" ||
-                                      (formData
-                                        ? (formData.get("postId") as
+                                    <input
+                                      type="hidden"
+                                      name="postId"
+                                      value={post.id}
+                                    />
+                                    <input
+                                      type="hidden"
+                                      name="_action"
+                                      value="longformQuote"
+                                    />
+                                    <button
+                                      type="submit"
+                                      disabled={
+                                        fetcher.state !== "idle" ||
+                                        (formData
+                                          ? (formData.get("postId") as
+                                              | string
+                                              | null) === post.id
+                                          : false)
+                                      }
+                                      className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-ring/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-ring/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
+                                    >
+                                      {fetcher.state !== "idle" &&
+                                      (fetcher.formData
+                                        ? (fetcher.formData.get("postId") as
                                             | string
                                             | null) === post.id
                                         : false)
-                                    }
-                                    className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-ring/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-ring/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
-                                  >
-                                    {fetcher.state !== "idle" &&
-                                    (fetcher.formData
-                                      ? (fetcher.formData.get("postId") as
-                                          | string
-                                          | null) === post.id
-                                      : false)
-                                      ? "Quoting..."
-                                      : "Quote Post"}
-                                  </button>
-                                </fetcher.Form>
-                              );
-                            })()
-                          : null}
-                      </>
-                    ) : null}
-                    <deleteFetcher.Form
-                      method="post"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input type="hidden" name="postId" value={post.id} />
-                      <input
-                        type="hidden"
-                        name="_action"
-                        value="deleteLongForm"
-                      />
-                      <button
-                        type="submit"
-                        disabled={
-                          deleteFetcher.state !== "idle" ||
-                          bulkDeleteFetcher.state !== "idle"
-                        }
-                        className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-ring/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-ring/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
+                                        ? "Quoting..."
+                                        : "Quote Post"}
+                                    </button>
+                                  </fetcher.Form>
+                                );
+                              })()
+                            : null}
+                        </>
+                      ) : null}
+                      <deleteFetcher.Form
+                        method="post"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {deleteFetcher.state !== "idle" &&
-                        deleteFetcher.formData?.get("postId") === post.id
-                          ? "Deleting..."
-                          : "Delete"}
-                      </button>
-                    </deleteFetcher.Form>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                        <input type="hidden" name="postId" value={post.id} />
+                        <input
+                          type="hidden"
+                          name="_action"
+                          value="deleteLongForm"
+                        />
+                        <button
+                          type="submit"
+                          disabled={
+                            deleteFetcher.state !== "idle" ||
+                            bulkDeleteFetcher.state !== "idle"
+                          }
+                          className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-ring/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-ring/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
+                        >
+                          {deleteFetcher.state !== "idle" &&
+                          deleteFetcher.formData?.get("postId") === post.id
+                            ? "Deleting..."
+                            : "Delete"}
+                        </button>
+                      </deleteFetcher.Form>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Mobile: virtualized longform card list */}
+      {isMobile && combinedContent.length > 0 ? (
+        <div className="block md:hidden">
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-muted-foreground text-sm">Sort:</span>
+            <Select
+              value={
+                sortConfig.key === "title"
+                  ? `title-${sortConfig.direction}`
+                  : `date-${sortConfig.direction}`
+              }
+              onValueChange={(value) => {
+                if (
+                  value === "date-asc" ||
+                  value === "date-desc" ||
+                  value === "title-asc" ||
+                  value === "title-desc"
+                ) {
+                  const [key, dir] = value.split("-") as [
+                    string,
+                    "asc" | "desc",
+                  ];
+                  setSortConfig({
+                    key: key === "date" ? getDefaultSortKey(type) : "title",
+                    direction: dir,
+                  });
+                }
+              }}
+            >
+              <SelectTrigger className="w-[11rem]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date-desc">Date (newest first)</SelectItem>
+                <SelectItem value="date-asc">Date (oldest first)</SelectItem>
+                <SelectItem value="title-asc">Title (A–Z)</SelectItem>
+                <SelectItem value="title-desc">Title (Z–A)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div
+            className="mt-2"
+            style={{
+              height: rowVirtualizer.getTotalSize(),
+              position: "relative",
+              width: "100%",
+            }}
+          >
+            {virtualItems.map((virtualRow) => {
+              const item = combinedContent[virtualRow.index];
+              if (!item) return null;
+              return (
+                <div
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  className="pb-0.5"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <ContentListCard
+                    item={item}
+                    type={type}
+                    userTimezone={userTimezone}
+                    userTimeFormat={userTimeFormat}
+                    showBulkActions={true}
+                    selectedItems={selectedPosts}
+                    onToggleSelection={togglePostSelection}
+                    onPostSelect={(content) =>
+                      onPostSelect?.(content.originalData as LongFormPostData)
+                    }
+                    onEditPost={
+                      onEditPost
+                        ? (post) =>
+                            onEditPost(
+                              post as LongFormPostType | LongFormPostData
+                            )
+                        : undefined
+                    }
+                    onReschedulePost={
+                      onReschedulePost
+                        ? (post) =>
+                            onReschedulePost(
+                              post as LongFormPostType | LongFormPostData
+                            )
+                        : undefined
+                    }
+                    deleteFetcher={
+                      deleteFetcher as Parameters<
+                        typeof ContentListCard
+                      >[0]["deleteFetcher"]
+                    }
+                    longformRepostFetcher={longformRepostFetcher}
+                    longformQuoteFetcher={longformQuoteFetcher}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
