@@ -171,6 +171,14 @@ model Post {
   draftMeta               Json?
   // Thread: links segment posts when created as a thread (schedule-thread / post-thread)
   threadGroupId           String?
+  // What is this post? (POST = top-level, THREAD = thread segment, REPLY = reply to event, REPOST/QUOTE = scheduled repost/quote)
+  postKind                PostKind               @default(POST)
+  // Reply: Nostr event id being replied to (for postKind REPLY)
+  replyToEventId          String?
+  // Reply: our Post id when the replied-to event is one of our posts
+  replyToPostId           String?
+  replyTo                 Post?                  @relation("PostReplies", fields: [replyToPostId], references: [id])
+  replies                 Post[]                 @relation("PostReplies")
 
   // Indexes for common query patterns
   // State machine indexes (use currentState as single source of truth)
@@ -180,6 +188,15 @@ model Post {
   @@index([userId, scheduledAtUtc])
   @@index([repostOfPostId])
   @@index([quoteOfPostId])
+  @@index([replyToPostId])
+}
+
+enum PostKind {
+  POST
+  THREAD
+  REPLY
+  REPOST
+  QUOTE
 }
 
 model LongFormPost {

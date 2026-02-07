@@ -56,6 +56,9 @@ export function postDataToCalendarPost(post: PostData): CalendarPost {
     manual_override: post.manual_override || false,
     isScheduled,
     isPosted,
+    postKind: post.postKind,
+    replyToEventId: post.replyToEventId ?? null,
+    replyToPostId: post.replyToPostId ?? null,
   };
   return result;
 }

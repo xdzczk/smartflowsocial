@@ -4,6 +4,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { requireSession } from "~/features/auth";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
 import type { SignedEvent } from "~/features/nostr/types";
+import { recordReplyPost } from "~/features/posts/server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { withCSRFProtection } from "~/lib/csrf";
@@ -39,9 +40,16 @@ export const action = withCSRFProtection(
 
       const body =
         typeof bodyRaw === "object" && bodyRaw !== null
-          ? (bodyRaw as { relays?: unknown; event?: unknown })
+          ? (bodyRaw as {
+              relays?: unknown;
+              event?: unknown;
+              recordAsReply?: {
+                replyToEventId: string;
+                replyToPostId?: string | null;
+              };
+            })
           : {};
-      const { relays, event } = body;
+      const { relays, event, recordAsReply } = body;
 
       // Validate event presence (cryptographic validation happens in feature layer)
       assert(event !== null && event !== undefined, "Event is required", {
@@ -88,6 +96,46 @@ export const action = withCSRFProtection(
             message: "API publish: Failed to persist publish ACKs",
           }
         );
+      }
+
+      // Optionally record reply as a Post (postKind REPLY) so it appears in Posted
+      const isKind1Reply =
+        eventObj.kind === 1 &&
+        Array.isArray(eventObj.tags) &&
+        eventObj.tags.some(
+          (t) =>
+            Array.isArray(t) &&
+            t[0] === "e" &&
+            (t[3] === "reply" || t[2] === "reply")
+        );
+      if (
+        recordAsReply &&
+        typeof recordAsReply === "object" &&
+        typeof recordAsReply.replyToEventId === "string" &&
+        recordAsReply.replyToEventId.length > 0 &&
+        isKind1Reply
+      ) {
+        try {
+          await recordReplyPost({
+            userId: session.userId,
+            signedEvent: eventObj,
+            replyToEventId: recordAsReply.replyToEventId,
+            replyToPostId: recordAsReply.replyToPostId,
+          });
+        } catch (replyCreateError) {
+          const { logError } = await import("~/lib/error-logger.server");
+          logError(
+            replyCreateError instanceof Error
+              ? replyCreateError
+              : new Error(String(replyCreateError)),
+            {
+              userId: session.userId,
+              eventId: eventObj.id,
+              message: "API publish: Failed to create reply Post record",
+            }
+          );
+          // Do not fail the request; the event was already published to relays
+        }
       }
 
       return json({ success: true });

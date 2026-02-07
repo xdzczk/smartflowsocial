@@ -323,6 +323,10 @@ export interface CombinedContent {
   isQuotedPost?: boolean;
   isRecyclable?: boolean;
   templateId?: string;
+  /** What is this post? (POST, THREAD, REPLY, REPOST, QUOTE) */
+  postKind?: string;
+  replyToEventId?: string | null;
+  replyToPostId?: string | null;
   originalData: PostData | LongFormPostData;
 }
 

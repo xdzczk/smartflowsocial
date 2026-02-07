@@ -4,7 +4,7 @@
  * Type definitions for post use cases
  */
 
-import type { Post, PostType } from "@prisma/client";
+import type { Post, PostKind, PostType } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import type { Temporal } from "~/lib/temporal";
@@ -32,6 +32,10 @@ export interface CreatePostInput {
   repostOfPostId?: string | null;
   /** Source post id when this post is a scheduled quote */
   quoteOfPostId?: string | null;
+  /** What is this post? (POST, THREAD, REPLY, REPOST, QUOTE). Default POST. */
+  postKind?: PostKind;
+  /** Thread: group id when this post is a thread segment */
+  threadGroupId?: string | null;
   /** When creating/scheduling a new post: also create a scheduled repost */
   alsoScheduleRepost?: boolean;
   repostScheduledFor?: number; // Unix timestamp in seconds

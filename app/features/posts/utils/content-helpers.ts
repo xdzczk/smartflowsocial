@@ -266,11 +266,30 @@ export function getQueueTypeDisplay(queueType: CombinedContent["queueType"]): {
   };
 }
 
+const POST_KIND_BADGE_CLASS =
+  "inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground dark:text-foreground";
+
 export function getContentTypeBadge(item: CombinedContent): {
   className: string;
   text: string;
 } {
-  // Check for kind property in signedEvent or originalData.signedEvent
+  // Prefer postKind when present (single source for "what is this post?")
+  const postKind =
+    item.postKind ?? (item.originalData as { postKind?: string }).postKind;
+  if (postKind === "REPOST") {
+    return { className: POST_KIND_BADGE_CLASS, text: "REPOST" };
+  }
+  if (postKind === "QUOTE") {
+    return { className: POST_KIND_BADGE_CLASS, text: "QUOTE" };
+  }
+  if (postKind === "THREAD") {
+    return { className: POST_KIND_BADGE_CLASS, text: "THREAD" };
+  }
+  if (postKind === "REPLY") {
+    return { className: POST_KIND_BADGE_CLASS, text: "REPLY" };
+  }
+
+  // Fallback: check signedEvent.kind (e.g. kind 6 = repost)
   const kind =
     item.signedEvent?.kind ??
     (typeof item.originalData === "object" &&
@@ -282,26 +301,23 @@ export function getContentTypeBadge(item: CombinedContent): {
       : undefined);
 
   if (kind === 6) {
-    return {
-      className:
-        "inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground dark:text-foreground",
-      text: "REPOST",
-    };
-  } else if (kind === 30023) {
+    return { className: POST_KIND_BADGE_CLASS, text: "REPOST" };
+  }
+  if (kind === 30023) {
     return {
       className:
         "inline-flex rounded-full bg-accent/15 px-2 py-1 text-xs font-medium text-accent-foreground",
       text: "LONG-FORM",
     };
-  } else {
-    // Default behavior for other types
-    return {
-      className: `inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-        item.type === "post"
-          ? "bg-muted text-muted-foreground"
-          : "bg-muted text-muted-foreground"
-      }`,
-      text: item.type === "post" ? "Post" : "Article",
-    };
   }
+
+  // Default: postType for content shape, or "Post" / "Article"
+  return {
+    className: `inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+      item.type === "post"
+        ? "bg-muted text-muted-foreground"
+        : "bg-muted text-muted-foreground"
+    }`,
+    text: item.type === "post" ? "Post" : "Article",
+  };
 }

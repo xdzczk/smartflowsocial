@@ -15,6 +15,9 @@ export interface CalendarPost extends Omit<
   | "repost"
   | "isQuotedPost"
   | "manual_override"
+  | "postKind"
+  | "replyToEventId"
+  | "replyToPostId"
 > {
   title?: string;
   summary?: string;
@@ -30,6 +33,9 @@ export interface CalendarPost extends Omit<
   isPast?: boolean;
   isScheduled?: boolean; // Derived from currentState
   isPosted?: boolean; // Derived from currentState
+  postKind?: PostData["postKind"];
+  replyToEventId?: string | null;
+  replyToPostId?: string | null;
 }
 
 export interface QueueColorStyle {

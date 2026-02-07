@@ -155,6 +155,7 @@ export class RecyclePostUseCase {
         tags: originalPost.tags,
         repost: originalPost.repost,
         isQuotedPost: originalPost.isQuotedPost,
+        postKind: originalPost.postKind, // Preserve kind when recycling
         creationIdempotencyKey,
       },
       input.scheduledFor,

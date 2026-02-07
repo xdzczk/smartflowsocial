@@ -244,6 +244,8 @@ export async function handleSignAndSchedule(
             mode === "repost" && originalPostId ? originalPostId : undefined,
           quoteOfPostId:
             mode === "quote" && originalPostId ? originalPostId : undefined,
+          postKind:
+            mode === "repost" ? "REPOST" : mode === "quote" ? "QUOTE" : "POST",
         });
 
         logInfo("Created post", {

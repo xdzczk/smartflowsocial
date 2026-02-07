@@ -114,6 +114,9 @@ export function useNotificationActions({
         body: JSON.stringify({
           relays: userRelays,
           event: signedEvent,
+          recordAsReply: {
+            replyToEventId: notification.eventId,
+          },
         }),
       });
 

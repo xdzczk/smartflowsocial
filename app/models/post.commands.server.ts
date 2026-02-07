@@ -75,6 +75,10 @@ export function createPost(data: CreatePostData): Promise<Post> {
     creationIdempotencyKey,
     repostOfPostId,
     quoteOfPostId,
+    postKind,
+    threadGroupId,
+    replyToEventId,
+    replyToPostId,
   } = data;
 
   // Convert scheduledFor to DateTime for new field
@@ -101,6 +105,12 @@ export function createPost(data: CreatePostData): Promise<Post> {
       isQuotedPost: isQuotedPost ?? false,
       isRecyclable: isRecyclable ?? false,
       creationIdempotencyKey,
+      postKind: postKind ?? "POST",
+      ...(threadGroupId != null && { threadGroupId }),
+      ...(replyToEventId != null && { replyToEventId }),
+      ...(replyToPostId != null && {
+        replyTo: { connect: { id: replyToPostId } },
+      }),
       user: {
         connect: {
           id: userId,
@@ -169,6 +179,16 @@ export async function createPostWithOutbox(
         isQuotedPost: data.isQuotedPost ?? false,
         isRecyclable: data.isRecyclable ?? false,
         creationIdempotencyKey,
+        postKind: data.postKind ?? "POST",
+        ...(data.threadGroupId != null && {
+          threadGroupId: data.threadGroupId,
+        }),
+        ...(data.replyToEventId != null && {
+          replyToEventId: data.replyToEventId,
+        }),
+        ...(data.replyToPostId != null && {
+          replyTo: { connect: { id: data.replyToPostId } },
+        }),
         user: {
           connect: {
             id: userId,

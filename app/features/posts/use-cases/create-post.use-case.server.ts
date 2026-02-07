@@ -151,6 +151,10 @@ export class CreatePostUseCase {
         isQuotedPost: input.isQuotedPost ?? false,
         repostOfPostId: input.repostOfPostId ?? undefined,
         quoteOfPostId: input.quoteOfPostId ?? undefined,
+        postKind: input.postKind ?? "POST",
+        ...(input.threadGroupId != null && {
+          threadGroupId: input.threadGroupId,
+        }),
         // Only include creationIdempotencyKey if the column exists in the database
         ...(columnExists && creationIdempotencyKey
           ? { creationIdempotencyKey }
@@ -242,6 +246,7 @@ export class CreatePostUseCase {
           repost: true,
           isQuotedPost: false,
           repostOfPostId: post.id,
+          postKind: "REPOST",
         },
         item.scheduledFor,
         correlationId
@@ -280,6 +285,7 @@ export class CreatePostUseCase {
           repost: false,
           isQuotedPost: true,
           quoteOfPostId: post.id,
+          postKind: "QUOTE",
         },
         item.scheduledFor,
         correlationId

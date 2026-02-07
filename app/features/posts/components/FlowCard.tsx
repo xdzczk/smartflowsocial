@@ -203,7 +203,11 @@ function FlowCardInner({
   const queueColor = item.queueType?.color;
   const queueName = item.queueType?.name ?? "";
   const statusLabel = getStatusLabel(item);
-  const defaultAriaLabel = `${item.type === "longform" ? "Longform" : "Post"}: ${preview}, ${statusLabel} ${timeLabel}`;
+  const postKindLabel =
+    item.type === "post" && item.postKind && item.postKind !== "POST"
+      ? item.postKind.charAt(0) + item.postKind.slice(1).toLowerCase()
+      : null;
+  const defaultAriaLabel = `${item.type === "longform" ? "Longform" : (postKindLabel ?? "Post")}: ${preview}, ${statusLabel} ${timeLabel}`;
 
   // Only the next scheduled (first future) post glows; stop glowing as soon as it's posted
   const isNextScheduledAndFuture =
@@ -289,6 +293,7 @@ function FlowCardInner({
         </span>
         <span className="text-muted-foreground/90 text-xs leading-snug">
           {statusLabel}
+          {postKindLabel ? ` · ${postKindLabel}` : ""}
           {queueName ? ` · ${queueName}` : ""}
         </span>
       </div>

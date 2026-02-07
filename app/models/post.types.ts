@@ -4,7 +4,7 @@
  * Shared type definitions for Post model operations.
  */
 
-import type { Post, PostType, QueueType } from "@prisma/client";
+import type { Post, PostKind, PostType, QueueType } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 export interface CreatePostData {
@@ -32,6 +32,14 @@ export interface CreatePostData {
   repostOfPostId?: string | null;
   /** Source post id when this post is a scheduled quote */
   quoteOfPostId?: string | null;
+  /** What is this post? (POST, THREAD, REPLY, REPOST, QUOTE). Default POST. */
+  postKind?: PostKind;
+  /** Thread: group id when this post is a thread segment */
+  threadGroupId?: string | null;
+  /** Reply: Nostr event id being replied to (for postKind REPLY) */
+  replyToEventId?: string | null;
+  /** Reply: our Post id when the replied-to event is one of our posts */
+  replyToPostId?: string | null;
 }
 
 export type PostWithQueueType = Post & { queueType: QueueType | null };

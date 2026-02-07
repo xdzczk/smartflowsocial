@@ -186,6 +186,7 @@ async function createRepostAndQuotePostsFromResume(
         repost: true,
         isQuotedPost: false,
         repostOfPostId: postId,
+        postKind: "REPOST",
         signedEvent: item.signedEvent as SignedEvent,
       },
       item.scheduledFor
@@ -215,6 +216,7 @@ async function createRepostAndQuotePostsFromResume(
         repost: false,
         isQuotedPost: true,
         quoteOfPostId: postId,
+        postKind: "QUOTE",
         signedEvent: item.signedEvent as SignedEvent,
       },
       item.scheduledFor

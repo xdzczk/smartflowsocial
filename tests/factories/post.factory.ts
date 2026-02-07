@@ -3,7 +3,7 @@
  * Uses builder pattern for flexible test data creation
  */
 
-import type { Post, PostType, Prisma, Status } from "@prisma/client";
+import type { Post, PostKind, PostType, Prisma, Status } from "@prisma/client";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
@@ -43,6 +43,9 @@ export interface PostFactoryOptions {
   quoteOfPostId?: string | null;
   draftMeta?: Prisma.JsonValue | null;
   threadGroupId?: string | null;
+  postKind?: PostKind;
+  replyToEventId?: string | null;
+  replyToPostId?: string | null;
 }
 
 export class PostFactory {
@@ -169,11 +172,26 @@ export class PostFactory {
 
   asRepost(): this {
     this.options.repost = true;
+    this.options.postKind = "REPOST";
     return this;
   }
 
   asQuotedPost(): this {
     this.options.isQuotedPost = true;
+    this.options.postKind = "QUOTE";
+    return this;
+  }
+
+  asThread(threadGroupId: string): this {
+    this.options.threadGroupId = threadGroupId;
+    this.options.postKind = "THREAD";
+    return this;
+  }
+
+  asReply(replyToEventId: string, replyToPostId?: string | null): this {
+    this.options.postKind = "REPLY";
+    this.options.replyToEventId = replyToEventId;
+    this.options.replyToPostId = replyToPostId ?? null;
     return this;
   }
 
@@ -203,6 +221,17 @@ export class PostFactory {
       const parsed = new Date(raw);
       return !isNaN(parsed.getTime()) ? parsed : null;
     })();
+
+    // Derive postKind from relations when not explicitly set
+    const postKind =
+      this.options.postKind ??
+      (this.options.threadGroupId != null
+        ? "THREAD"
+        : this.options.repostOfPostId != null
+          ? "REPOST"
+          : this.options.quoteOfPostId != null
+            ? "QUOTE"
+            : "POST");
 
     const post: Post = {
       id: this.options.id!,
@@ -240,6 +269,9 @@ export class PostFactory {
       quoteOfPostId: this.options.quoteOfPostId ?? null,
       draftMeta: this.options.draftMeta ?? null,
       threadGroupId: this.options.threadGroupId ?? null,
+      postKind,
+      replyToEventId: this.options.replyToEventId ?? null,
+      replyToPostId: this.options.replyToPostId ?? null,
     };
     return post;
   }

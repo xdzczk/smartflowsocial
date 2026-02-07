@@ -87,6 +87,11 @@ export { calculateNextScheduleTime } from "./schedulers";
 
 export { postedPostsAction } from "./posted.action.server";
 
+export {
+  recordReplyPost,
+  type RecordReplyPostParams,
+} from "./services/record-reply-post.server";
+
 // ============================================================================
 // Bulk Posts Handlers
 // ============================================================================

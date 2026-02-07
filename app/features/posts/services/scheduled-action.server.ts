@@ -121,6 +121,7 @@ async function handleScheduleRepost(
       repost: true,
       isQuotedPost: false,
       repostOfPostId: sourcePost.id,
+      postKind: "REPOST",
       signedEvent,
     },
     scheduledForUnix
@@ -171,6 +172,7 @@ async function handleScheduleQuote(
       repost: false,
       isQuotedPost: true,
       quoteOfPostId: sourcePost.id,
+      postKind: "QUOTE",
       signedEvent,
     },
     scheduledForUnix
@@ -185,9 +187,7 @@ async function handleScheduleQuote(
   return { success: true, postId: post.id };
 }
 
-function parseSignedEvent(
-  raw: string
-): {
+function parseSignedEvent(raw: string): {
   id: string;
   pubkey: string;
   created_at: number;

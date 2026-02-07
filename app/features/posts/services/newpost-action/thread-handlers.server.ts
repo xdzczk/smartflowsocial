@@ -6,7 +6,6 @@ import { redirect } from "@remix-run/node";
 
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
-import { prisma } from "~/lib/prisma.server";
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
 import { CreatePostUseCase } from "../../use-cases/create-post.use-case.server";
@@ -189,11 +188,8 @@ export async function handleThreadAction(
       scheduledFor: scheduledForUnix,
       hashTagPresetTags,
       showHashTagsinPosts: true,
-    });
-
-    await prisma.post.update({
-      where: { id: result.post.id, userId },
-      data: { threadGroupId },
+      postKind: "THREAD",
+      threadGroupId,
     });
 
     postIds.push(result.post.id);
