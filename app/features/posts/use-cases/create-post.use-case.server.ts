@@ -108,11 +108,16 @@ export class CreatePostUseCase {
           )
         : input.content;
 
-    // Generate idempotency key
+    // Generate idempotency key. Include media (fileUrl) so different images with same caption are distinct posts.
+    const mediaKey =
+      input.fileUrl.length > 0
+        ? [...input.fileUrl].sort().join("\0")
+        : undefined;
     const creationIdempotencyKey = generateCreationIdempotencyKey(
       input.userId,
       content,
-      input.scheduledFor
+      input.scheduledFor,
+      mediaKey
     );
 
     const { existing, columnExists } = await findExistingByIdempotency(

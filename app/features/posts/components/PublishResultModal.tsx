@@ -7,7 +7,7 @@ import {
   Calendar,
   CheckSquare,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -208,6 +208,8 @@ export default function PublishResultModal({
   const [resolvedPublishAttemptId, setResolvedPublishAttemptId] = useState<
     string | null
   >(publishAttemptId);
+  // After trying to resolve publishAttemptId and failing (e.g. idempotent image post), show success anyway
+  const [resolvedAttemptsGaveUp, setResolvedAttemptsGaveUp] = useState(false);
 
   const maxPollingAttempts = 10; // 10 attempts * 5 seconds = 50 seconds max
   const pollingInterval = 5000; // 5 seconds - increased to avoid rate limiting
@@ -262,12 +264,17 @@ export default function PublishResultModal({
     const t = setTimeout(() => {
       setRelayAcks([]);
       setHasTimedOut(false);
+      setResolvedAttemptsGaveUp(false);
       setResolvedPublishAttemptId(publishAttemptId ?? null);
     }, 0);
     return () => clearTimeout(t);
   }, [isOpen, action, publishAttemptId]);
 
   // Resolve publishAttemptId by polling post when it was null (server may not have written it yet)
+  const resolveAttemptsRef = useRef(0);
+  const resolveIntervalIdRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
   useEffect(() => {
     if (
       !isOpen ||
@@ -277,9 +284,16 @@ export default function PublishResultModal({
     ) {
       return;
     }
-    let attempts = 0;
+    resolveAttemptsRef.current = 0;
     const resolve = async () => {
-      if (attempts >= maxResolveAttempts) return;
+      if (resolveAttemptsRef.current >= maxResolveAttempts) {
+        if (resolveIntervalIdRef.current) {
+          clearInterval(resolveIntervalIdRef.current);
+          resolveIntervalIdRef.current = null;
+        }
+        setResolvedAttemptsGaveUp(true);
+        return;
+      }
       try {
         const res = await fetch(`/api/posts/${postId}`);
         if (!res.ok) return;
@@ -296,13 +310,17 @@ export default function PublishResultModal({
       } catch {
         // ignore
       }
-      attempts += 1;
+      resolveAttemptsRef.current += 1;
     };
     const t = setInterval(() => {
       void resolve();
     }, resolveInterval);
+    resolveIntervalIdRef.current = t;
     void resolve();
-    return () => clearInterval(t);
+    return () => {
+      clearInterval(t);
+      resolveIntervalIdRef.current = null;
+    };
   }, [
     isOpen,
     action,
@@ -458,6 +476,11 @@ export default function PublishResultModal({
       return "scheduled";
     }
 
+    // Post was published but we never got publishAttemptId (e.g. idempotent image post); show success
+    if (resolvedAttemptsGaveUp && relayAcks.length === 0) {
+      return "success";
+    }
+
     if (relayAcks.length === 0) {
       return "publishing";
     }
@@ -475,7 +498,7 @@ export default function PublishResultModal({
     }
 
     return "publishing";
-  }, [action, relayAcks.length, relayStatusCounts]);
+  }, [action, relayAcks.length, relayStatusCounts, resolvedAttemptsGaveUp]);
 
   // Call hook before any conditional returns
   const user = useOptionalUser() ?? null;
@@ -533,13 +556,22 @@ export default function PublishResultModal({
             <StatusTitle status={status} />
           </DialogTitle>
           <DialogDescription className="text-base">
-            <StatusDescription
-              action={action}
-              status={status}
-              postType={postType}
-              formatScheduledTime={formatScheduledTime}
-              bulkCount={bulkCount}
-            />
+            {status === "success" &&
+            resolvedAttemptsGaveUp &&
+            relayAcks.length === 0 ? (
+              <span>
+                Your {postType === "longform" ? "article" : "post"} was
+                published. Relay status is unavailable for this post.
+              </span>
+            ) : (
+              <StatusDescription
+                action={action}
+                status={status}
+                postType={postType}
+                formatScheduledTime={formatScheduledTime}
+                bulkCount={bulkCount}
+              />
+            )}
             {hasTimedOut &&
             (status === "publishing" || status === "partial") ? (
               <span className="mt-2 block text-sm text-yellow-600 dark:text-yellow-400">

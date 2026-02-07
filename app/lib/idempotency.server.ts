@@ -8,18 +8,22 @@
 import { createHash } from "crypto";
 
 /**
- * Generate a deterministic idempotency key for post creation
+ * Generate a deterministic idempotency key for post creation.
+ * Include mediaKey when the post has media (e.g. image URLs) so that different
+ * media with the same caption produce different posts (e.g. multiple image-only posts with no caption).
  * @param userId - The user ID
- * @param content - The post content
+ * @param content - The post content (caption for media posts)
  * @param scheduledFor - Optional scheduled timestamp (Unix seconds)
- * @returns SHA-256 hash of the input
+ * @param mediaKey - Optional stable key for media (e.g. sorted fileUrl array joined); omit for text-only
  */
 export function generateCreationIdempotencyKey(
   userId: string,
   content: string,
-  scheduledFor?: number
+  scheduledFor?: number,
+  mediaKey?: string
 ): string {
-  const input = `${userId}:${content}:${scheduledFor ?? "now"}`;
+  const media = mediaKey != null && mediaKey !== "" ? mediaKey : "";
+  const input = `${userId}:${content}:${scheduledFor ?? "now"}:${media}`;
   return createHash("sha256").update(input).digest("hex");
 }
 
