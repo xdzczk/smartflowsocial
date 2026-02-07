@@ -35,6 +35,12 @@ interface ConfidencePanelProps {
   relayCount: number;
   /** Optional summary line e.g. "Will publish Sat 18:30 (Europe/Riga) to Great Queue" */
   summaryLine?: string;
+  /** When in thread mode e.g. "3 segments · every 2 min" */
+  threadSummary?: string;
+  /** Warnings to show e.g. "Unassigned queue + schedule may not run as expected" */
+  warnings?: string[];
+  /** When slot-based queue: show "Uses next queue slot" under When */
+  usesQueueSlot?: boolean;
   /** Content for desktop: always visible when not in sheet */
   children?: React.ReactNode;
 }
@@ -50,9 +56,19 @@ function PanelContent({
   signerType,
   relayCount,
   summaryLine,
+  threadSummary,
+  warnings,
+  usesQueueSlot,
 }: Omit<ConfidencePanelProps, "children">) {
   return (
     <div className="space-y-4 text-sm">
+      {warnings && warnings.length > 0 ? (
+        <div className="rounded-md border border-amber-200 bg-amber-500/10 p-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-400">
+          {warnings.map((w) => (
+            <p key={w}>{w}</p>
+          ))}
+        </div>
+      ) : null}
       {summaryLine ? (
         <p className="text-muted-foreground border-border border-b pb-2 text-xs">
           {summaryLine}
@@ -78,6 +94,11 @@ function PanelContent({
             {relativeTime ? (
               <p className="text-muted-foreground text-xs">{relativeTime}</p>
             ) : null}
+            {usesQueueSlot ? (
+              <p className="text-muted-foreground text-xs">
+                Uses next queue slot.
+              </p>
+            ) : null}
           </>
         ) : (
           <p className="text-muted-foreground mt-0.5">Publish now</p>
@@ -89,6 +110,11 @@ function PanelContent({
           {charCount} chars · {attachmentCount} attachment
           {attachmentCount !== 1 ? "s" : ""}
         </p>
+        {threadSummary ? (
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Thread: {threadSummary}
+          </p>
+        ) : null}
       </div>
       <div>
         <span className="text-muted-foreground font-medium">How</span>
@@ -112,6 +138,9 @@ export function ConfidencePanel({
   signerType,
   relayCount,
   summaryLine,
+  threadSummary,
+  warnings,
+  usesQueueSlot,
   children,
 }: ConfidencePanelProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -138,6 +167,9 @@ export function ConfidencePanel({
             signerType={signerType}
             relayCount={relayCount}
             summaryLine={summaryLine}
+            threadSummary={threadSummary}
+            warnings={warnings}
+            usesQueueSlot={usesQueueSlot}
           />
           {children}
         </div>
@@ -167,6 +199,9 @@ export function ConfidencePanel({
                 signerType={signerType}
                 relayCount={relayCount}
                 summaryLine={summaryLine}
+                threadSummary={threadSummary}
+                warnings={warnings}
+                usesQueueSlot={usesQueueSlot}
               />
             </div>
           </SheetContent>

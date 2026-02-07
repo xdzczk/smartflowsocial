@@ -266,6 +266,7 @@ export function UnifiedComposer({
     }>
   >([{ id: crypto.randomUUID(), value: 2, unit: "hours", caption: "" }]);
 
+  const [postOptionsOpen, setPostOptionsOpen] = React.useState(false);
   const [isThreadMode, setIsThreadMode] = React.useState(false);
   const [threadSegments, setThreadSegments] = React.useState<
     Array<{ id: string; content: string; attachments: ComposerAttachment[] }>
@@ -800,8 +801,11 @@ export function UnifiedComposer({
 
   const disabled = fetcher.state !== "idle" || isSigning;
   const primarySubmitRef = useRef<HTMLButtonElement>(null);
-  const scheduleSubmitRef = useRef<HTMLButtonElement>(null);
   const draftSubmitRef = useRef<HTMLButtonElement>(null);
+  const hasScheduleTimeForSubmit = !!(
+    typeof (formScheduledFor ?? schedulingScheduledFor) === "string" &&
+    (formScheduledFor ?? schedulingScheduledFor).trim()
+  );
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -817,21 +821,12 @@ export function UnifiedComposer({
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
         if (disabled || signerReady === false) return;
-        const s = formScheduledFor ?? schedulingScheduledFor;
-        const hasSchedule = !!(typeof s === "string" ? s.trim() : "");
-        if (hasSchedule) scheduleSubmitRef.current?.click();
-        else primarySubmitRef.current?.click();
+        primarySubmitRef.current?.click();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [
-    disabled,
-    signerReady,
-    formScheduledFor,
-    schedulingScheduledFor,
-    isThreadMode,
-  ]);
+  }, [disabled, signerReady]);
 
   const relayCount =
     relayCountProp > 0
@@ -882,28 +877,27 @@ export function UnifiedComposer({
             </Button>
           </div>
         ) : null}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="thread-mode"
-            checked={isThreadMode}
-            onChange={(e) => setIsThreadMode(e.target.checked)}
-            disabled={disabled}
-            className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
-          />
-          <Label htmlFor="thread-mode" className="text-sm">
-            Thread (multiple posts in sequence)
-          </Label>
-        </div>
         {isThreadMode ? (
           <div className="space-y-4">
             {threadSegments.map((seg, idx) => (
               <div
                 key={seg.id}
-                className="border-border bg-muted/30 rounded-md border p-3"
+                className={`group rounded-lg border p-3 ${
+                  idx === 0
+                    ? "border-border bg-muted/30 dark:bg-muted/20"
+                    : "border-border border-l-primary/30 bg-muted/20 dark:bg-muted/10 border-l-2"
+                }`}
               >
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm font-medium">
+                  <span className="text-muted-foreground flex items-center gap-1.5 text-sm font-medium">
+                    {idx > 0 ? (
+                      <span
+                        className="bg-muted flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs"
+                        aria-hidden
+                      >
+                        {idx + 1}
+                      </span>
+                    ) : null}
                     Segment {idx + 1}
                   </span>
                   {threadSegments.length > 1 ? (
@@ -911,13 +905,14 @@ export function UnifiedComposer({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="text-destructive hover:bg-destructive/10"
+                      className="text-destructive hover:bg-destructive/10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
                       onClick={() =>
                         setThreadSegments((prev) =>
                           prev.filter((p) => p.id !== seg.id)
                         )
                       }
                       disabled={disabled}
+                      aria-label={`Remove segment ${idx + 1}`}
                     >
                       Remove
                     </Button>
@@ -935,7 +930,7 @@ export function UnifiedComposer({
                   placeholder="Segment content…"
                   rows={3}
                   disabled={disabled}
-                  className="mb-2"
+                  className="text-foreground focus-visible:ring-primary/20 mb-2 min-h-[80px] focus-visible:ring-2"
                 />
                 <AttachmentsStrip
                   attachments={seg.attachments}
@@ -1009,12 +1004,15 @@ export function UnifiedComposer({
           </div>
         ) : (
           <>
-            <div className="relative">
+            <div className="border-border bg-muted/30 dark:bg-muted/20 relative rounded-lg border">
               <Textarea
                 id="content"
                 {...form.register("content")}
                 className={
-                  form.formState.errors.content ? "border-destructive" : ""
+                  "text-foreground focus-visible:ring-primary/20 min-h-[140px] border-0 bg-transparent shadow-none focus-visible:ring-2 " +
+                  (form.formState.errors.content
+                    ? "focus-visible:ring-destructive"
+                    : "")
                 }
                 placeholder="Write a note…"
                 rows={6}
@@ -1169,6 +1167,36 @@ export function UnifiedComposer({
               onQueueChange={setSelectedQueue}
               disabled={disabled}
               className="mb-2"
+              nextSlot={
+                selectedQueueType &&
+                typeof selectedQueueType === "object" &&
+                (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                  selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+                  ? (() => {
+                      const s = formScheduledFor ?? schedulingScheduledFor;
+                      if (typeof s !== "string" || !s.trim()) return;
+                      try {
+                        const [datePart, timePart] = s.split("T");
+                        if (!datePart || !timePart) return s;
+                        const d = new Date(s);
+                        const today = new Date();
+                        const isToday =
+                          d.getDate() === today.getDate() &&
+                          d.getMonth() === today.getMonth() &&
+                          d.getFullYear() === today.getFullYear();
+                        const shortDate = isToday
+                          ? "Today"
+                          : d.toLocaleDateString(undefined, {
+                              weekday: "short",
+                            });
+                        const [h, m] = timePart.split(":");
+                        return `${shortDate} ${h ?? ""}:${m ?? "00"}`;
+                      } catch {
+                        return s;
+                      }
+                    })()
+                  : undefined
+              }
             />
             <TagsChipRow
               tags={selectedHashtags}
@@ -1204,21 +1232,6 @@ export function UnifiedComposer({
                   : undefined
               }
             />
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isRecyclable"
-                {...form.register("isRecyclable")}
-                disabled={disabled}
-                className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
-              />
-              <Label
-                htmlFor="isRecyclable"
-                className="text-muted-foreground dark:text-foreground text-sm"
-              >
-                Make this post recyclable
-              </Label>
-            </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="scheduledFor">Schedule for later</Label>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -1228,36 +1241,6 @@ export function UnifiedComposer({
                   {...form.register("scheduledFor")}
                   disabled={disabled}
                 />
-                <Button
-                  ref={scheduleSubmitRef}
-                  type="submit"
-                  value={ACTION_SCHEDULE_TEXT}
-                  name="_action"
-                  disabled={disabled || signerReady === false}
-                  className="text-white"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="mr-1.5 h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {isSigning
-                    ? "Waiting for signer…"
-                    : fetcher.state !== "idle"
-                      ? isThreadMode
-                        ? "Scheduling thread…"
-                        : "Scheduling..."
-                      : isThreadMode
-                        ? "Schedule thread"
-                        : "Schedule"}
-                </Button>
               </div>
               <SchedulingSection
                 scheduledFor={formScheduledFor ?? schedulingScheduledFor}
@@ -1277,17 +1260,98 @@ export function UnifiedComposer({
                 disabled={disabled}
                 showTimeInput={false}
               />
-              <AlsoScheduleBlock
-                alsoScheduleRepost={alsoScheduleRepost}
-                onAlsoScheduleRepostChange={setAlsoScheduleRepost}
-                repostDelayList={repostDelayList}
-                onRepostDelayListChange={setRepostDelayList}
-                alsoScheduleQuote={alsoScheduleQuote}
-                onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-                quoteEntries={quoteEntries}
-                onQuoteEntriesChange={setQuoteEntries}
-                disabled={disabled}
-              />
+              <div className="border-border rounded-lg border">
+                <button
+                  type="button"
+                  onClick={() => setPostOptionsOpen((o) => !o)}
+                  aria-expanded={postOptionsOpen}
+                  className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors"
+                >
+                  <span>Post options</span>
+                  {!postOptionsOpen &&
+                  (isThreadMode ||
+                    form.watch("isRecyclable") ||
+                    alsoScheduleRepost ||
+                    alsoScheduleQuote) ? (
+                    <span className="truncate text-xs">
+                      {[
+                        isThreadMode &&
+                          `Thread · ${threadSegments.length} segment${threadSegments.length !== 1 ? "s" : ""}`,
+                        form.watch("isRecyclable") && "Recyclable",
+                        (alsoScheduleRepost || alsoScheduleQuote) &&
+                          [
+                            alsoScheduleRepost &&
+                              `${repostDelayList.length} repost${repostDelayList.length !== 1 ? "s" : ""}`,
+                            alsoScheduleQuote &&
+                              `${quoteEntries.length} quote${quoteEntries.length !== 1 ? "s" : ""}`,
+                          ]
+                            .filter(Boolean)
+                            .join(" · "),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  ) : null}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`h-4 w-4 shrink-0 transition-transform ${postOptionsOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                {postOptionsOpen ? (
+                  <div className="border-border space-y-4 border-t px-3 pt-2 pb-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="thread-mode"
+                        checked={isThreadMode}
+                        onChange={(e) => setIsThreadMode(e.target.checked)}
+                        disabled={disabled}
+                        className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                      />
+                      <Label htmlFor="thread-mode" className="text-sm">
+                        Thread (multiple posts in sequence)
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="isRecyclable"
+                        {...form.register("isRecyclable")}
+                        disabled={disabled}
+                        className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                      />
+                      <Label
+                        htmlFor="isRecyclable"
+                        className="text-muted-foreground dark:text-foreground text-sm"
+                      >
+                        Make this post recyclable
+                      </Label>
+                    </div>
+                    <AlsoScheduleBlock
+                      alsoScheduleRepost={alsoScheduleRepost}
+                      onAlsoScheduleRepostChange={setAlsoScheduleRepost}
+                      repostDelayList={repostDelayList}
+                      onRepostDelayListChange={setRepostDelayList}
+                      alsoScheduleQuote={alsoScheduleQuote}
+                      onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+                      quoteEntries={quoteEntries}
+                      onQuoteEntriesChange={setQuoteEntries}
+                      disabled={disabled}
+                    />
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
           <div className="max-sm:bg-background/95 flex flex-col gap-2 max-sm:sticky max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-10 max-sm:mt-4 max-sm:border-t max-sm:py-3 max-sm:backdrop-blur sm:flex-row sm:items-center">
@@ -1323,40 +1387,64 @@ export function UnifiedComposer({
                 <Button
                   ref={primarySubmitRef}
                   type="submit"
-                  value={ACTION_POST_TEXT}
+                  value={
+                    hasScheduleTimeForSubmit
+                      ? ACTION_SCHEDULE_TEXT
+                      : ACTION_POST_TEXT
+                  }
                   name="_action"
                   className="bg-success hover:bg-success/90 text-white"
                   disabled={disabled}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="mr-1.5 h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  {hasScheduleTimeForSubmit ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mr-1.5 h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mr-1.5 h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
                   {isSigning
                     ? "Waiting for signer…"
                     : fetcher.state !== "idle"
-                      ? isThreadMode
-                        ? "Posting thread…"
-                        : "Posting..."
-                      : isThreadMode
-                        ? "Post thread"
-                        : "Post Now"}
+                      ? hasScheduleTimeForSubmit
+                        ? isThreadMode
+                          ? "Scheduling thread…"
+                          : "Scheduling..."
+                        : isThreadMode
+                          ? "Posting thread…"
+                          : "Posting..."
+                      : hasScheduleTimeForSubmit
+                        ? isThreadMode
+                          ? "Schedule thread"
+                          : "Schedule"
+                        : isThreadMode
+                          ? "Post thread"
+                          : "Post Now"}
                 </Button>
               )}
             </div>
-            {signerReady === true && signerLabel ? (
-              <p className="text-muted-foreground text-xs">
-                Will sign with: {signerLabel}
-              </p>
-            ) : null}
           </div>
         </div>
 
@@ -1370,12 +1458,87 @@ export function UnifiedComposer({
       </fetcher.Form>
       <ConfidencePanel
         queueName={selectedQueue}
-        scheduledFor={(formScheduledFor ?? schedulingScheduledFor) || undefined}
+        nextSlot={
+          selectedQueueType &&
+          typeof selectedQueueType === "object" &&
+          (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+            selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+            ? (formScheduledFor ?? schedulingScheduledFor).trim() || undefined
+            : undefined
+        }
+        scheduledFor={
+          (formScheduledFor ?? schedulingScheduledFor).trim() || undefined
+        }
         timezone={user?.timezone ?? undefined}
-        charCount={content.length}
-        attachmentCount={attachments.length}
-        signerType="NIP-07 / NIP-46"
+        relativeTime={(() => {
+          const s = (formScheduledFor ?? schedulingScheduledFor).trim();
+          if (!s) return;
+          try {
+            const d = new Date(s);
+            if (Number.isNaN(d.getTime())) return;
+            const diffMs = d.getTime() - Date.now();
+            if (diffMs < 0) return;
+            const diffM = Math.round(diffMs / 60_000);
+            const diffH = Math.floor(diffM / 60);
+            const m = diffM % 60;
+            if (diffH >= 1) return `in ${diffH}h${m > 0 ? ` ${m}m` : ""}`;
+            return `in ${diffM} min`;
+          } catch {
+            return;
+          }
+        })()}
+        charCount={
+          isThreadMode
+            ? threadSegments.reduce((acc, s) => acc + s.content.length, 0)
+            : content.length
+        }
+        attachmentCount={
+          isThreadMode
+            ? threadSegments.reduce((acc, s) => acc + s.attachments.length, 0)
+            : attachments.length
+        }
+        signerType={signerLabel ?? undefined}
         relayCount={relayCount}
+        summaryLine={(() => {
+          const queueLabel =
+            selectedQueue === "unassigned" ? "Unassigned" : selectedQueue;
+          const s = (formScheduledFor ?? schedulingScheduledFor).trim();
+          const isScheduling = !!s;
+          if (isThreadMode) {
+            const segCount = threadSegments.length;
+            const delay = `${threadDelayMinutes} min`;
+            if (isScheduling) {
+              return `Will schedule ${segCount} segment${segCount !== 1 ? "s" : ""} to ${queueLabel}, first at ${s}, then every ${delay}.`;
+            }
+            return `Will post ${segCount} segment${segCount !== 1 ? "s" : ""} now to ${queueLabel}, every ${delay}.`;
+          }
+          if (isScheduling) {
+            return `Will schedule to ${queueLabel} at ${s}.`;
+          }
+          return `Will publish now to ${queueLabel}.`;
+        })()}
+        threadSummary={
+          isThreadMode
+            ? `${threadSegments.length} segments · every ${threadDelayMinutes} min`
+            : undefined
+        }
+        warnings={
+          selectedQueue === "unassigned" &&
+          (formScheduledFor ?? schedulingScheduledFor).trim()
+            ? [
+                "Unassigned queue with a schedule time may not run at the expected time.",
+              ]
+            : undefined
+        }
+        usesQueueSlot={
+          !!(
+            selectedQueueType &&
+            typeof selectedQueueType === "object" &&
+            (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+              selectedQueueType.scheduleType === "WEEKLY_SLOTS") &&
+            (formScheduledFor ?? schedulingScheduledFor).trim()
+          )
+        }
       />
     </div>
   );

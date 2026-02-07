@@ -21,9 +21,9 @@ export const getQueueColor = (
     const rgb = hexToRgb(customColor);
     if (rgb) {
       return {
-        bg: `bg-[${customColor}] bg-opacity-10 dark:bg-opacity-15`,
+        bg: `bg-[${customColor}] bg-opacity-[0.08] dark:bg-opacity-[0.12]`,
         text: `text-[${customColor}] dark:text-[${customColor}]`,
-        hover: `hover:bg-[${customColor}] hover:bg-opacity-15 dark:hover:bg-opacity-25`,
+        hover: `hover:bg-[${customColor}] hover:bg-opacity-[0.12] dark:hover:bg-opacity-[0.18]`,
         border: `border-[${customColor}] dark:border-[${customColor}]`,
       };
     }
@@ -40,13 +40,13 @@ export const getQueueColor = (
       border: "border-primary/20",
     },
     memes: {
-      bg: "bg-success/10",
+      bg: "bg-success/[0.08]",
       text: "text-success dark:text-success",
-      hover: "hover:bg-success/15",
+      hover: "hover:bg-success/[0.12]",
       border: "border-success/20",
     },
     quotes: {
-      bg: "bg-accent/15",
+      bg: "bg-accent/[0.08]",
       text: "text-accent-foreground",
       hover: "hover:bg-muted",
       border: "border-accent/20",
@@ -75,7 +75,7 @@ export const getSelectedQueueStyle = (
   }
 
   if (isSelected) {
-    return `${colors.bg} ${colors.text} ${colors.border} border-2 shadow-md transform scale-105`;
+    return `${colors.bg} ${colors.text} ${colors.border} border-2 ring-2 ring-primary font-medium`;
   }
 
   return `${colors.bg} ${colors.text} ${colors.hover} ${colors.border} border opacity-70 hover:opacity-100 hover:shadow-sm`;
@@ -99,8 +99,8 @@ export const getDynamicQueueStyle = (
   const baseStyle = `transition-all duration-200`;
 
   if (isSelected) {
-    return `${baseStyle} border-2 shadow-md transform scale-105 text-white font-medium`;
+    return `${baseStyle} border-2 ring-2 ring-primary font-medium`;
   }
 
-  return `${baseStyle} border opacity-70 hover:opacity-100 hover:shadow-sm text-white font-medium hover:scale-105`;
+  return `${baseStyle} border opacity-70 hover:opacity-100 hover:shadow-sm`;
 };

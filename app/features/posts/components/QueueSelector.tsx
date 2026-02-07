@@ -6,6 +6,8 @@ interface QueueSelectorProps {
   onQueueChange: (queue: string) => void;
   disabled?: boolean;
   className?: string;
+  /** When slot-based queue is selected, show e.g. "Next: Sat 18:00" */
+  nextSlot?: string;
 }
 
 export function QueueSelector({
@@ -14,6 +16,7 @@ export function QueueSelector({
   onQueueChange,
   disabled = false,
   className = "",
+  nextSlot,
 }: QueueSelectorProps) {
   const getQueueTypeId = (queueName: string): string => {
     const selectedQueueType = queueTypes.find((qt) =>
@@ -76,6 +79,9 @@ export function QueueSelector({
             );
           })}
       </div>
+      {nextSlot ? (
+        <p className="text-muted-foreground mt-1.5 text-xs">Next: {nextSlot}</p>
+      ) : null}
       <input
         type="hidden"
         id="queue-type-hidden"
