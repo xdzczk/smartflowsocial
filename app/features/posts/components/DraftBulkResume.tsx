@@ -700,30 +700,47 @@ export default function DraftBulkResume({
               Bulk Queue Selection
             </h3>
             <div className="flex flex-wrap justify-center gap-2">
-              {queueTypes.map((queue) => {
-                const queueName =
-                  typeof queue === "string" ? queue : queue.name;
-                const queueColor =
-                  typeof queue === "object" ? queue.color : null;
-                return (
-                  <button
-                    key={queueName}
-                    type="button"
-                    onClick={() => void handleBulkQueueUpdate(queueName)}
-                    disabled={isSubmitting}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 ${getSelectedQueueStyle(queueName, false)}`}
-                    style={{
-                      backgroundColor: queueColor ?? undefined,
-                      borderColor: queueColor ?? undefined,
-                    }}
-                  >
-                    {queueName}
-                  </button>
-                );
-              })}
+              {queueTypes
+                .filter((q) => {
+                  const name = typeof q === "string" ? q : q.name;
+                  return name !== "Unassigned";
+                })
+                .map((queue) => {
+                  const queueName =
+                    typeof queue === "string" ? queue : queue.name;
+                  const queueColor =
+                    typeof queue === "object" ? queue.color : null;
+                  const isAllSelected =
+                    posts.length > 0 &&
+                    posts.every((p) => p.queueType === queueName);
+                  return (
+                    <button
+                      key={queueName}
+                      type="button"
+                      onClick={() =>
+                        void handleBulkQueueUpdate(
+                          isAllSelected ? "unassigned" : queueName
+                        )
+                      }
+                      disabled={isSubmitting}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 ${getSelectedQueueStyle(queueName, isAllSelected)}`}
+                      style={{
+                        backgroundColor: queueColor ?? undefined,
+                        borderColor: queueColor ?? undefined,
+                      }}
+                      title={
+                        isAllSelected
+                          ? "Click again to leave all unassigned"
+                          : "Assign this queue to all posts"
+                      }
+                    >
+                      {queueName}
+                    </button>
+                  );
+                })}
             </div>
             <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
-              Click a queue to update all posts
+              Click a queue to assign; click again to leave all unassigned
             </p>
           </div>
         ) : null}
@@ -765,29 +782,43 @@ export default function DraftBulkResume({
                   </td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-1">
-                      {queueTypes.map((queue) => {
-                        const queueName =
-                          typeof queue === "string" ? queue : queue.name;
-                        const queueColor =
-                          typeof queue === "object" ? queue.color : null;
-                        return (
-                          <button
-                            key={queueName}
-                            type="button"
-                            onClick={() => {
-                              void handleQueueTypeChange(index, queueName);
-                            }}
-                            disabled={isSubmitting}
-                            className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${getSelectedQueueStyle(queueName, post.queueType === queueName)}`}
-                            style={{
-                              backgroundColor: queueColor ?? undefined,
-                              borderColor: queueColor ?? undefined,
-                            }}
-                          >
-                            {queueName}
-                          </button>
-                        );
-                      })}
+                      {queueTypes
+                        .filter((q) => {
+                          const name = typeof q === "string" ? q : q.name;
+                          return name !== "Unassigned";
+                        })
+                        .map((queue) => {
+                          const queueName =
+                            typeof queue === "string" ? queue : queue.name;
+                          const queueColor =
+                            typeof queue === "object" ? queue.color : null;
+                          const isSelected = post.queueType === queueName;
+                          return (
+                            <button
+                              key={queueName}
+                              type="button"
+                              onClick={() => {
+                                void handleQueueTypeChange(
+                                  index,
+                                  isSelected ? "unassigned" : queueName
+                                );
+                              }}
+                              disabled={isSubmitting}
+                              className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${getSelectedQueueStyle(queueName, isSelected)}`}
+                              style={{
+                                backgroundColor: queueColor ?? undefined,
+                                borderColor: queueColor ?? undefined,
+                              }}
+                              title={
+                                isSelected
+                                  ? "Click again to leave unassigned"
+                                  : undefined
+                              }
+                            >
+                              {queueName}
+                            </button>
+                          );
+                        })}
                     </div>
                   </td>
                   <td className="p-4">

@@ -114,7 +114,11 @@ export default function SchedulingControls({
   };
 
   const handleQueueChange = (value: string) => {
-    onQueueTypeChange(value);
+    if (value === selectedQueueType) {
+      onQueueTypeChange("unassigned");
+    } else {
+      onQueueTypeChange(value);
+    }
   };
 
   const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,7 +136,7 @@ export default function SchedulingControls({
       <div>
         <Label htmlFor="queueType">Queue Type</Label>
         <Select
-          value={selectedQueueType}
+          value={selectedQueueType === "unassigned" ? "" : selectedQueueType}
           onValueChange={handleQueueChange}
           name="queueType"
         >
@@ -140,14 +144,21 @@ export default function SchedulingControls({
             id="queueType"
             className={`w-full ${selectedQueueColor}`}
           >
-            <SelectValue placeholder="Select a queue type" />
+            <SelectValue placeholder="Select a queue (optional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="unassigned">Unassigned</SelectItem>
             {queueTypes
               .filter((queue) => queue.name !== "Unassigned")
               .map((queue) => (
-                <SelectItem key={queue.name} value={queue.name}>
+                <SelectItem
+                  key={queue.name}
+                  value={queue.name}
+                  title={
+                    selectedQueueType === queue.name
+                      ? "Click again to leave unassigned"
+                      : undefined
+                  }
+                >
                   {queue.name}
                 </SelectItem>
               ))}

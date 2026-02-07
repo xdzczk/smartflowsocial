@@ -38,35 +38,14 @@ describe("Queue Types Service", () => {
   });
 
   describe("createDefaultQueueTypes", () => {
-    it("should create default queue types for new user", async () => {
+    it("should not create any default queue types (unassigned = null queueTypeId)", async () => {
       (prisma.queueType.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      (
-        prisma.queueType.createMany as ReturnType<typeof vi.fn>
-      ).mockResolvedValue({ count: 1 });
 
       await createDefaultQueueTypes(TEST_USER_ID);
 
       expect(prisma.queueType.count).toHaveBeenCalledWith({
         where: { userId: TEST_USER_ID },
       });
-      expect(prisma.queueType.createMany).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-        data: expect.arrayContaining([
-          expect.objectContaining({
-            userId: TEST_USER_ID,
-            name: "Unassigned",
-            scheduleType: "INTERVAL",
-            isDefault: true,
-          }),
-        ]),
-      });
-    });
-
-    it("should not create defaults if user already has queue types", async () => {
-      (prisma.queueType.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
-
-      await createDefaultQueueTypes(TEST_USER_ID);
-
       expect(prisma.queueType.createMany).not.toHaveBeenCalled();
     });
   });

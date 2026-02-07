@@ -96,7 +96,7 @@ export default function LongFormPost({
       content: initialData?.content ?? "",
       customTags: initialData?.tags?.join(", ") ?? "",
       scheduledFor: "",
-      queueType: initialData?.queueType?.name ?? "Unassigned",
+      queueType: initialData?.queueType?.name ?? "unassigned",
       useHashtagPresets: useHashtagPresets,
       hashTagPresetId: selectedHashtagPresetId ?? undefined,
     },
@@ -151,7 +151,7 @@ export default function LongFormPost({
     scheduleIntervals,
     userTags,
     userTimezone,
-    initialQueueType: initialData?.queueType?.name ?? "Unassigned",
+    initialQueueType: initialData?.queueType?.name ?? "unassigned",
     onQueueTypeChange,
   });
 

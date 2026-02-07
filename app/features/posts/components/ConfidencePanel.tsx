@@ -61,7 +61,7 @@ function PanelContent({
   usesQueueSlot,
 }: Omit<ConfidencePanelProps, "children">) {
   return (
-    <div className="space-y-4 text-sm">
+    <div className="space-y-3 text-sm">
       {warnings && warnings.length > 0 ? (
         <div className="rounded-md border border-amber-200 bg-amber-500/10 p-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-400">
           {warnings.map((w) => (
@@ -74,16 +74,16 @@ function PanelContent({
           {summaryLine}
         </p>
       ) : null}
-      <div>
+      <div className="bg-muted/10 rounded-md p-2">
         <span className="text-muted-foreground font-medium">Where</span>
         <p className="mt-0.5">
-          {queueName === "unassigned" ? "Unassigned" : queueName}
+          {queueName === "unassigned" ? "No queue" : queueName}
         </p>
         {nextSlot ? (
           <p className="text-muted-foreground text-xs">Next: {nextSlot}</p>
         ) : null}
       </div>
-      <div>
+      <div className="bg-muted/10 rounded-md p-2">
         <span className="text-muted-foreground font-medium">When</span>
         {scheduledFor ? (
           <>
@@ -104,7 +104,7 @@ function PanelContent({
           <p className="text-muted-foreground mt-0.5">Publish now</p>
         )}
       </div>
-      <div>
+      <div className="bg-muted/10 rounded-md p-2">
         <span className="text-muted-foreground font-medium">What</span>
         <p className="mt-0.5">
           {charCount} chars · {attachmentCount} attachment
@@ -116,7 +116,7 @@ function PanelContent({
           </p>
         ) : null}
       </div>
-      <div>
+      <div className="bg-muted/10 rounded-md p-2">
         <span className="text-muted-foreground font-medium">How</span>
         <p className="mt-0.5">{signerType ?? "Signer"}</p>
         <p className="text-muted-foreground text-xs">
@@ -152,9 +152,9 @@ export function ConfidencePanel({
         className="hidden lg:block lg:w-64 lg:shrink-0"
         aria-label="Composer details"
       >
-        <div className="border-border bg-card sticky top-4 rounded-lg border p-4">
+        <div className="border-border bg-card sticky top-4 rounded-lg border-2 p-4 shadow-md">
           <h3 className="text-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-            Details
+            Execution summary
           </h3>
           <PanelContent
             queueName={queueName}
@@ -180,12 +180,12 @@ export function ConfidencePanel({
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="w-full">
-              Details
+              Execution summary
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto max-h-[70vh]">
             <SheetHeader>
-              <SheetTitle>Details</SheetTitle>
+              <SheetTitle>Execution summary</SheetTitle>
             </SheetHeader>
             <div className="mt-4">
               <PanelContent

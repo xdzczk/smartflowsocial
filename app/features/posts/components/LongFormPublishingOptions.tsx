@@ -86,33 +86,36 @@ export function LongFormPublishingOptions({
         >
           {queueTypes
             .filter((queue) => {
-              return typeof queue === "object"
-                ? queue.isEnabled !== false
-                : true;
+              if (typeof queue === "object" && queue.isEnabled === false)
+                return false;
+              const name = typeof queue === "string" ? queue : queue.name;
+              return name !== "Unassigned";
             })
             .map((queue) => {
               const queueName = typeof queue === "string" ? queue : queue.name;
               const queueColor = typeof queue === "object" ? queue.color : null;
+              const isSelected = selectedQueueType === queueName;
               return (
                 <button
                   key={queueName}
                   type="button"
-                  onClick={() => onQueueTypeChange(queueName)}
-                  className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueueType === queueName)} transition-all disabled:cursor-not-allowed disabled:opacity-50`}
+                  onClick={() =>
+                    onQueueTypeChange(isSelected ? "unassigned" : queueName)
+                  }
+                  className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isSelected)} transition-all disabled:cursor-not-allowed disabled:opacity-50`}
                   style={
                     queueColor
                       ? {
-                          backgroundColor:
-                            selectedQueueType === queueName
-                              ? queueColor
-                              : `${queueColor}33`,
+                          backgroundColor: isSelected
+                            ? queueColor
+                            : `${queueColor}33`,
                           borderColor: queueColor,
-                          color:
-                            selectedQueueType === queueName
-                              ? "white"
-                              : queueColor,
+                          color: isSelected ? "white" : queueColor,
                         }
                       : {}
+                  }
+                  title={
+                    isSelected ? "Click again to leave unassigned" : undefined
                   }
                 >
                   {queueName}

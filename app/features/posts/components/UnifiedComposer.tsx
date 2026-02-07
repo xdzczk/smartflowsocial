@@ -51,6 +51,11 @@ import { TagsChipRow } from "./TagsChipRow";
 const ACTION_POST_TEXT = "post-text";
 const ACTION_SCHEDULE_TEXT = "schedule-text";
 
+const ACCEPTED_MEDIA_TYPES = /^image\/|^video\//;
+function filterMediaFiles(files: File[]): File[] {
+  return files.filter((f) => ACCEPTED_MEDIA_TYPES.test(f.type));
+}
+
 async function getEffectiveHashtagsForSubmit(
   useHashtagPresets: boolean,
   selectedHashtags: string,
@@ -737,62 +742,174 @@ export function UnifiedComposer({
     form.setValue("content", updatedContent);
   };
 
+  const processNewFilesForSingleNote = React.useCallback(
+    (files: File[]) => {
+      const accepted = filterMediaFiles(files);
+      if (accepted.length === 0) return;
+      const newAttachments: ComposerAttachment[] = accepted.map((file) => ({
+        localId: crypto.randomUUID(),
+        status: "uploading",
+        file,
+        mime: file.type,
+      }));
+      let newContent = content;
+      for (const a of newAttachments) {
+        newContent = appendToken(newContent, a.localId);
+      }
+      form.setValue("content", newContent);
+      setAttachments((prev) => [...prev, ...newAttachments]);
+      void (async () => {
+        try {
+          const results = await uploadMultipleFiles(accepted);
+          setAttachments((prev) =>
+            prev.map((a) => {
+              const idx = newAttachments.findIndex(
+                (n) => n.localId === a.localId
+              );
+              if (idx < 0) return a;
+              const r = results[idx];
+              if (r?.success && r.file?.url) {
+                return { ...a, status: "done" as const, url: r.file.url };
+              }
+              if (r && !r.success) {
+                return { ...a, status: "failed" as const };
+              }
+              return a;
+            })
+          );
+        } catch {
+          setAttachments((prev) =>
+            prev.map((a) => {
+              const idx = newAttachments.findIndex(
+                (n) => n.localId === a.localId
+              );
+              if (idx >= 0) return { ...a, status: "failed" as const };
+              return a;
+            })
+          );
+        }
+      })();
+    },
+    [content, form]
+  );
+
+  const processNewFilesForSegment = React.useCallback(
+    (segmentId: string, files: File[]) => {
+      const accepted = filterMediaFiles(files);
+      if (accepted.length === 0) return;
+      const newAttachments: ComposerAttachment[] = accepted.map((file) => ({
+        localId: crypto.randomUUID(),
+        status: "uploading" as const,
+        file,
+        mime: file.type,
+      }));
+      setThreadSegments((prev) =>
+        prev.map((p) => {
+          if (p.id !== segmentId) return p;
+          let newContent = p.content;
+          for (const a of newAttachments) {
+            newContent = appendToken(newContent, a.localId);
+          }
+          return {
+            ...p,
+            content: newContent,
+            attachments: [...p.attachments, ...newAttachments],
+          };
+        })
+      );
+      void (async () => {
+        try {
+          const results = await uploadMultipleFiles(accepted);
+          setThreadSegments((prev) =>
+            prev.map((p) => {
+              if (p.id !== segmentId) return p;
+              return {
+                ...p,
+                attachments: p.attachments.map((a) => {
+                  const idx = newAttachments.findIndex(
+                    (n) => n.localId === a.localId
+                  );
+                  if (idx < 0) return a;
+                  const r = results[idx];
+                  if (r?.success && r.file?.url)
+                    return {
+                      ...a,
+                      status: "done" as const,
+                      url: r.file.url,
+                    };
+                  if (r && !r.success)
+                    return { ...a, status: "failed" as const };
+                  return a;
+                }),
+              };
+            })
+          );
+        } catch {
+          setThreadSegments((prev) =>
+            prev.map((p) => {
+              if (p.id !== segmentId) return p;
+              return {
+                ...p,
+                attachments: p.attachments.map((a) => {
+                  const idx = newAttachments.findIndex(
+                    (n) => n.localId === a.localId
+                  );
+                  return idx >= 0 ? { ...a, status: "failed" as const } : a;
+                }),
+              };
+            })
+          );
+        }
+      })();
+    },
+    []
+  );
+
   const handleAddAttachment = () => {
     fileInputRef.current?.click();
   };
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
-    if (files.length === 0) {
-      e.target.value = "";
-      return;
-    }
-    const newAttachments: ComposerAttachment[] = files.map((file) => ({
-      localId: crypto.randomUUID(),
-      status: "uploading",
-      file,
-      mime: file.type,
-    }));
-    let newContent = content;
-    for (const a of newAttachments) {
-      newContent = appendToken(newContent, a.localId);
-    }
-    form.setValue("content", newContent);
-    setAttachments((prev) => [...prev, ...newAttachments]);
     e.target.value = "";
-
-    void (async () => {
-      try {
-        const results = await uploadMultipleFiles(files);
-        setAttachments((prev) =>
-          prev.map((a) => {
-            const idx = newAttachments.findIndex(
-              (n) => n.localId === a.localId
-            );
-            if (idx < 0) return a;
-            const r = results[idx];
-            if (r?.success && r.file?.url) {
-              return { ...a, status: "done" as const, url: r.file.url };
-            }
-            if (r && !r.success) {
-              return { ...a, status: "failed" as const };
-            }
-            return a;
-          })
-        );
-      } catch {
-        setAttachments((prev) =>
-          prev.map((a) => {
-            const idx = newAttachments.findIndex(
-              (n) => n.localId === a.localId
-            );
-            if (idx >= 0) return { ...a, status: "failed" as const };
-            return a;
-          })
-        );
-      }
-    })();
+    if (files.length === 0) return;
+    processNewFilesForSingleNote(files);
   };
+
+  const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+  const [draggingOverSegmentId, setDraggingOverSegmentId] = React.useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const files: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item?.kind === "file") {
+          const file = item.getAsFile();
+          if (file && ACCEPTED_MEDIA_TYPES.test(file.type)) files.push(file);
+        }
+      }
+      if (files.length === 0) return;
+      e.preventDefault();
+      const firstSegment = threadSegments[0];
+      if (isThreadMode && firstSegment) {
+        processNewFilesForSegment(firstSegment.id, files);
+      } else {
+        processNewFilesForSingleNote(files);
+      }
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [
+    isThreadMode,
+    threadSegments,
+    processNewFilesForSingleNote,
+    processNewFilesForSegment,
+  ]);
 
   const handleRemoveAttachment = (localId: string) => {
     form.setValue("content", removeToken(content, localId));
@@ -806,6 +923,27 @@ export function UnifiedComposer({
     typeof (formScheduledFor ?? schedulingScheduledFor) === "string" &&
     (formScheduledFor ?? schedulingScheduledFor).trim()
   );
+
+  const scheduleTimeLabel = (() => {
+    const s = (formScheduledFor ?? schedulingScheduledFor).trim();
+    if (!s) return null;
+    try {
+      const d = new Date(s);
+      if (Number.isNaN(d.getTime())) return null;
+      const [, timePart] = s.split("T");
+      if (!timePart) return null;
+      const [h, m] = timePart.split(":");
+      const timeStr = `${h ?? "00"}:${m ?? "00"}`;
+      const today = new Date();
+      const isToday =
+        d.getDate() === today.getDate() &&
+        d.getMonth() === today.getMonth() &&
+        d.getFullYear() === today.getFullYear();
+      return isToday ? `Today ${timeStr}` : timeStr;
+    } catch {
+      return null;
+    }
+  })();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -877,206 +1015,300 @@ export function UnifiedComposer({
             </Button>
           </div>
         ) : null}
-        {isThreadMode ? (
-          <div className="space-y-4">
-            {threadSegments.map((seg, idx) => (
-              <div
-                key={seg.id}
-                className={`group rounded-lg border p-3 ${
-                  idx === 0
-                    ? "border-border bg-muted/30 dark:bg-muted/20"
-                    : "border-border border-l-primary/30 bg-muted/20 dark:bg-muted/10 border-l-2"
-                }`}
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-muted-foreground flex items-center gap-1.5 text-sm font-medium">
-                    {idx > 0 ? (
-                      <span
-                        className="bg-muted flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs"
-                        aria-hidden
-                      >
-                        {idx + 1}
+        <div className="my-8">
+          {isThreadMode ? (
+            <div className="space-y-4">
+              {threadSegments.map((seg, idx) => (
+                <div
+                  key={seg.id}
+                  role="button"
+                  tabIndex={-1}
+                  aria-label={`Segment ${idx + 1}. Drop media here or press Enter to add files.`}
+                  className={`group relative rounded-lg border p-3 ${
+                    idx === 0
+                      ? "border-border bg-card shadow-sm"
+                      : "animate-in fade-in slide-in-from-bottom-2 border-border border-l-primary/30 bg-muted/20 dark:bg-muted/10 border-l-2 duration-200"
+                  }`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDraggingOverSegmentId(seg.id);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    const related = e.relatedTarget;
+                    if (
+                      related == null ||
+                      !e.currentTarget.contains(related as Node)
+                    ) {
+                      setDraggingOverSegmentId(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDraggingOverSegmentId(null);
+                    const files = Array.from(e.dataTransfer.files);
+                    if (files.length > 0)
+                      processNewFilesForSegment(seg.id, files);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      (
+                        window as unknown as { __threadSegmentId?: string }
+                      ).__threadSegmentId = seg.id;
+                      const input = document.getElementById(
+                        "thread-segment-file-input"
+                      ) as HTMLInputElement | null;
+                      input?.click();
+                    }
+                  }}
+                >
+                  {draggingOverSegmentId === seg.id ? (
+                    <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed">
+                      <span className="text-muted-foreground text-xs">
+                        Drop to add media
                       </span>
+                    </div>
+                  ) : null}
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-muted-foreground flex items-center gap-1.5 text-sm font-medium">
+                      {idx > 0 ? (
+                        <span
+                          className="bg-muted flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs"
+                          aria-hidden
+                        >
+                          {idx + 1}
+                        </span>
+                      ) : null}
+                      Segment {idx + 1}
+                    </span>
+                    {threadSegments.length > 1 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                        onClick={() =>
+                          setThreadSegments((prev) =>
+                            prev.filter((p) => p.id !== seg.id)
+                          )
+                        }
+                        disabled={disabled}
+                        aria-label={`Remove segment ${idx + 1}`}
+                      >
+                        Remove
+                      </Button>
                     ) : null}
-                    Segment {idx + 1}
-                  </span>
-                  {threadSegments.length > 1 ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:bg-destructive/10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-                      onClick={() =>
-                        setThreadSegments((prev) =>
-                          prev.filter((p) => p.id !== seg.id)
+                  </div>
+                  <Textarea
+                    value={seg.content}
+                    onChange={(e) =>
+                      setThreadSegments((prev) =>
+                        prev.map((p) =>
+                          p.id === seg.id
+                            ? { ...p, content: e.target.value }
+                            : p
                         )
-                      }
-                      disabled={disabled}
-                      aria-label={`Remove segment ${idx + 1}`}
+                      )
+                    }
+                    placeholder="Segment content…"
+                    rows={3}
+                    disabled={disabled}
+                    className="text-foreground focus-visible:ring-primary/20 mb-2 min-h-[80px] focus-visible:ring-2"
+                  />
+                  <AttachmentsStrip
+                    attachments={seg.attachments}
+                    onRemove={(localId) =>
+                      setThreadSegments((prev) =>
+                        prev.map((p) =>
+                          p.id === seg.id
+                            ? {
+                                ...p,
+                                content: removeToken(p.content, localId),
+                                attachments: p.attachments.filter(
+                                  (a) => a.localId !== localId
+                                ),
+                              }
+                            : p
+                        )
+                      )
+                    }
+                    onAdd={() => {
+                      (
+                        window as unknown as { __threadSegmentId?: string }
+                      ).__threadSegmentId = seg.id;
+                      const input = document.getElementById(
+                        "thread-segment-file-input"
+                      ) as HTMLInputElement | null;
+                      input?.click();
+                    }}
+                    disabled={disabled}
+                  />
+                </div>
+              ))}
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setThreadSegments((prev) => [
+                      ...prev,
+                      {
+                        id: crypto.randomUUID(),
+                        content: "",
+                        attachments: [],
+                      },
+                    ])
+                  }
+                  disabled={disabled}
+                >
+                  Add segment
+                </Button>
+                <Label className="text-muted-foreground flex items-center gap-1 text-sm">
+                  Delay between posts:
+                  <Input
+                    type="number"
+                    min={1}
+                    max={120}
+                    value={threadDelayMinutes}
+                    onChange={(e) =>
+                      setThreadDelayMinutes(
+                        Math.max(
+                          1,
+                          Math.min(120, parseInt(e.target.value, 10) || 1)
+                        )
+                      )
+                    }
+                    className="h-8 w-16"
+                  />
+                  min
+                </Label>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div
+                role="button"
+                tabIndex={-1}
+                aria-label="Drop zone for images and videos. Press Enter to add files."
+                className="relative"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDraggingOver(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  const related = e.relatedTarget;
+                  if (
+                    related == null ||
+                    !e.currentTarget.contains(related as Node)
+                  ) {
+                    setIsDraggingOver(false);
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDraggingOver(false);
+                  const files = Array.from(e.dataTransfer.files);
+                  if (files.length > 0) processNewFilesForSingleNote(files);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleAddAttachment();
+                  }
+                }}
+              >
+                {isDraggingOver ? (
+                  <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed">
+                    <span className="text-muted-foreground text-sm">
+                      Drop to add images or videos
+                    </span>
+                  </div>
+                ) : null}
+                <div className="border-border bg-card focus-within:ring-primary/25 relative rounded-lg border p-4 shadow-sm transition-shadow duration-200 focus-within:ring-2">
+                  <Textarea
+                    id="content"
+                    {...form.register("content")}
+                    className={
+                      "text-foreground min-h-[160px] border-0 bg-transparent shadow-none focus-visible:ring-0 " +
+                      (form.formState.errors.content
+                        ? "focus-visible:ring-destructive"
+                        : "")
+                    }
+                    placeholder="Write a note…"
+                    rows={6}
+                    disabled={disabled}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAssetBrowser(true)}
+                    disabled={disabled}
+                    className="absolute top-4 right-4"
+                    aria-label="Insert from assets"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mr-1 h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
                     >
-                      Remove
-                    </Button>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012 2v2M7 7h10"
+                      />
+                    </svg>
+                    Assets
+                  </Button>
+                </div>
+                <AttachmentsStrip
+                  attachments={attachments}
+                  onRemove={handleRemoveAttachment}
+                  onAdd={handleAddAttachment}
+                  disabled={disabled}
+                />
+                {attachments.length === 0 && !isDraggingOver ? (
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Drag files here or paste images
+                  </p>
+                ) : null}
+                {form.formState.errors.content ? (
+                  <div className="text-destructive mt-1 text-sm">
+                    {form.formState.errors.content.message}
+                  </div>
+                ) : null}
+                <div className="text-muted-foreground mt-2 flex items-center justify-between text-sm">
+                  <span>{content.length}/5000</span>
+                  {autosaveSaving ? (
+                    <span>Saving…</span>
+                  ) : lastSavedAt ? (
+                    <span>
+                      Saved •{" "}
+                      {lastSavedAt.getTime() > Date.now() - 60_000
+                        ? `${Math.round((Date.now() - lastSavedAt.getTime()) / 1000)}s ago`
+                        : new Intl.RelativeTimeFormat(undefined, {
+                            style: "short",
+                          }).format(
+                            -Math.floor(
+                              (Date.now() - lastSavedAt.getTime()) / 60_000
+                            ),
+                            "minute"
+                          )}
+                    </span>
                   ) : null}
                 </div>
-                <Textarea
-                  value={seg.content}
-                  onChange={(e) =>
-                    setThreadSegments((prev) =>
-                      prev.map((p) =>
-                        p.id === seg.id ? { ...p, content: e.target.value } : p
-                      )
-                    )
-                  }
-                  placeholder="Segment content…"
-                  rows={3}
-                  disabled={disabled}
-                  className="text-foreground focus-visible:ring-primary/20 mb-2 min-h-[80px] focus-visible:ring-2"
-                />
-                <AttachmentsStrip
-                  attachments={seg.attachments}
-                  onRemove={(localId) =>
-                    setThreadSegments((prev) =>
-                      prev.map((p) =>
-                        p.id === seg.id
-                          ? {
-                              ...p,
-                              content: removeToken(p.content, localId),
-                              attachments: p.attachments.filter(
-                                (a) => a.localId !== localId
-                              ),
-                            }
-                          : p
-                      )
-                    )
-                  }
-                  onAdd={() => {
-                    (
-                      window as unknown as { __threadSegmentId?: string }
-                    ).__threadSegmentId = seg.id;
-                    const input = document.getElementById(
-                      "thread-segment-file-input"
-                    ) as HTMLInputElement | null;
-                    input?.click();
-                  }}
-                  disabled={disabled}
-                />
               </div>
-            ))}
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setThreadSegments((prev) => [
-                    ...prev,
-                    {
-                      id: crypto.randomUUID(),
-                      content: "",
-                      attachments: [],
-                    },
-                  ])
-                }
-                disabled={disabled}
-              >
-                Add segment
-              </Button>
-              <Label className="text-muted-foreground flex items-center gap-1 text-sm">
-                Delay between posts:
-                <Input
-                  type="number"
-                  min={1}
-                  max={120}
-                  value={threadDelayMinutes}
-                  onChange={(e) =>
-                    setThreadDelayMinutes(
-                      Math.max(
-                        1,
-                        Math.min(120, parseInt(e.target.value, 10) || 1)
-                      )
-                    )
-                  }
-                  className="h-8 w-16"
-                />
-                min
-              </Label>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="border-border bg-muted/30 dark:bg-muted/20 relative rounded-lg border">
-              <Textarea
-                id="content"
-                {...form.register("content")}
-                className={
-                  "text-foreground focus-visible:ring-primary/20 min-h-[140px] border-0 bg-transparent shadow-none focus-visible:ring-2 " +
-                  (form.formState.errors.content
-                    ? "focus-visible:ring-destructive"
-                    : "")
-                }
-                placeholder="Write a note…"
-                rows={6}
-                disabled={disabled}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAssetBrowser(true)}
-                disabled={disabled}
-                className="absolute top-2 right-2"
-                aria-label="Insert from assets"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="mr-1 h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-                Assets
-              </Button>
-            </div>
-            <AttachmentsStrip
-              attachments={attachments}
-              onRemove={handleRemoveAttachment}
-              onAdd={handleAddAttachment}
-              disabled={disabled}
-            />
-            {form.formState.errors.content ? (
-              <div className="text-destructive mt-1 text-sm">
-                {form.formState.errors.content.message}
-              </div>
-            ) : null}
-            <div className="text-muted-foreground mt-2 flex items-center justify-between text-sm">
-              <span>{content.length}/5000</span>
-              {autosaveSaving ? (
-                <span>Saving…</span>
-              ) : lastSavedAt ? (
-                <span>
-                  Saved •{" "}
-                  {lastSavedAt.getTime() > Date.now() - 60_000
-                    ? `${Math.round((Date.now() - lastSavedAt.getTime()) / 1000)}s ago`
-                    : new Intl.RelativeTimeFormat(undefined, {
-                        style: "short",
-                      }).format(
-                        -Math.floor(
-                          (Date.now() - lastSavedAt.getTime()) / 60_000
-                        ),
-                        "minute"
-                      )}
-                </span>
-              ) : null}
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
         <input
           id="thread-segment-file-input"
           type="file"
@@ -1091,76 +1323,11 @@ export function UnifiedComposer({
             const files = e.target.files ? Array.from(e.target.files) : [];
             e.target.value = "";
             if (!segmentId || files.length === 0) return;
-            const newAttachments: ComposerAttachment[] = files.map((file) => ({
-              localId: crypto.randomUUID(),
-              status: "uploading" as const,
-              file,
-              mime: file.type,
-            }));
-            setThreadSegments((prev) =>
-              prev.map((p) => {
-                if (p.id !== segmentId) return p;
-                let newContent = p.content;
-                for (const a of newAttachments) {
-                  newContent = appendToken(newContent, a.localId);
-                }
-                return {
-                  ...p,
-                  content: newContent,
-                  attachments: [...p.attachments, ...newAttachments],
-                };
-              })
-            );
-            void (async () => {
-              try {
-                const results = await uploadMultipleFiles(files);
-                setThreadSegments((prev) =>
-                  prev.map((p) => {
-                    if (p.id !== segmentId) return p;
-                    return {
-                      ...p,
-                      attachments: p.attachments.map((a) => {
-                        const idx = newAttachments.findIndex(
-                          (n) => n.localId === a.localId
-                        );
-                        if (idx < 0) return a;
-                        const r = results[idx];
-                        if (r?.success && r.file?.url)
-                          return {
-                            ...a,
-                            status: "done" as const,
-                            url: r.file.url,
-                          };
-                        if (r && !r.success)
-                          return { ...a, status: "failed" as const };
-                        return a;
-                      }),
-                    };
-                  })
-                );
-              } catch {
-                setThreadSegments((prev) =>
-                  prev.map((p) => {
-                    if (p.id !== segmentId) return p;
-                    return {
-                      ...p,
-                      attachments: p.attachments.map((a) => {
-                        const idx = newAttachments.findIndex(
-                          (n) => n.localId === a.localId
-                        );
-                        return idx >= 0
-                          ? { ...a, status: "failed" as const }
-                          : a;
-                      }),
-                    };
-                  })
-                );
-              }
-            })();
+            processNewFilesForSegment(segmentId, files);
           }}
         />
         <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-4">
+          <div className="space-y-3">
             <QueueSelector
               queueTypes={queueTypes}
               selectedQueue={selectedQueue}
@@ -1309,7 +1476,7 @@ export function UnifiedComposer({
                   </svg>
                 </button>
                 {postOptionsOpen ? (
-                  <div className="border-border space-y-4 border-t px-3 pt-2 pb-3">
+                  <div className="border-border space-y-3 border-t px-3 pt-2 pb-3">
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1436,9 +1603,13 @@ export function UnifiedComposer({
                           ? "Posting thread…"
                           : "Posting..."
                       : hasScheduleTimeForSubmit
-                        ? isThreadMode
-                          ? "Schedule thread"
-                          : "Schedule"
+                        ? scheduleTimeLabel
+                          ? isThreadMode
+                            ? `Schedule thread for ${scheduleTimeLabel}`
+                            : `Schedule for ${scheduleTimeLabel}`
+                          : isThreadMode
+                            ? "Schedule thread"
+                            : "Schedule"
                         : isThreadMode
                           ? "Post thread"
                           : "Post Now"}
@@ -1501,7 +1672,7 @@ export function UnifiedComposer({
         relayCount={relayCount}
         summaryLine={(() => {
           const queueLabel =
-            selectedQueue === "unassigned" ? "Unassigned" : selectedQueue;
+            selectedQueue === "unassigned" ? "No queue" : selectedQueue;
           const s = (formScheduledFor ?? schedulingScheduledFor).trim();
           const isScheduling = !!s;
           if (isThreadMode) {
@@ -1522,14 +1693,7 @@ export function UnifiedComposer({
             ? `${threadSegments.length} segments · every ${threadDelayMinutes} min`
             : undefined
         }
-        warnings={
-          selectedQueue === "unassigned" &&
-          (formScheduledFor ?? schedulingScheduledFor).trim()
-            ? [
-                "Unassigned queue with a schedule time may not run at the expected time.",
-              ]
-            : undefined
-        }
+        warnings={undefined}
         usesQueueSlot={
           !!(
             selectedQueueType &&

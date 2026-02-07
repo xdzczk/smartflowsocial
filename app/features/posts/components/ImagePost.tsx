@@ -493,39 +493,37 @@ export default function ImagePost({
               Queue Type
             </label>
             <div className="flex flex-wrap gap-2">
-              {/* Unassigned option */}
-              <button
-                type="button"
-                onClick={() => setSelectedQueue("unassigned")}
-                disabled={fetcher.state !== "idle" || isUploaded}
-                className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(null, selectedQueue === "unassigned")} disabled:cursor-not-allowed disabled:opacity-50`}
-              >
-                Unassigned
-              </button>
-
-              {/* Queue types */}
               {queueTypes
                 .filter((queue) => {
-                  return typeof queue === "object"
-                    ? queue.isEnabled !== false
-                    : true;
+                  if (typeof queue === "object" && queue.isEnabled === false)
+                    return false;
+                  const name = typeof queue === "string" ? queue : queue.name;
+                  return name !== "Unassigned";
                 })
                 .map((queue) => {
                   const queueName =
                     typeof queue === "string" ? queue : queue.name;
                   const queueColor =
                     typeof queue === "object" ? queue.color : null;
+                  const isSelected = selectedQueue === queueName;
                   return (
                     <button
                       key={queueName}
                       type="button"
-                      onClick={() => setSelectedQueue(queueName)}
+                      onClick={() =>
+                        setSelectedQueue(isSelected ? "unassigned" : queueName)
+                      }
                       disabled={fetcher.state !== "idle" || isUploaded}
-                      className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
+                      className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
                       style={{
                         backgroundColor: queueColor ?? undefined,
                         borderColor: queueColor ?? undefined,
                       }}
+                      title={
+                        isSelected
+                          ? "Click again to leave post unassigned"
+                          : undefined
+                      }
                     >
                       {queueName}
                     </button>
