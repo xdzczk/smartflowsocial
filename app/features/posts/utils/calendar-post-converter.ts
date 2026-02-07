@@ -91,6 +91,9 @@ export function longFormPostDataToCalendarPost(
 
   const result: CalendarPost = {
     ...post,
+    draftMeta: (post as { draftMeta?: unknown }).draftMeta ?? null,
+    threadGroupId:
+      (post as { threadGroupId?: string | null }).threadGroupId ?? null,
     // Override specific fields for CalendarPost
     caption: post.content ?? null,
     currentState,

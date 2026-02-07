@@ -4,6 +4,7 @@
  */
 
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import {
   getScheduleInterval,
   getQueueTypes,
@@ -15,15 +16,15 @@ import { getAssets } from "~/models/asset.server";
  * Load new post page data
  */
 export async function loadNewPostData(userId: string) {
-  // Require that the user has any subscription before accessing dashboard child routes
   await requireAnySubscription(userId);
 
-  const [scheduleIntervals, queueTypes, hashTagPresets, assetsData] =
+  const [scheduleIntervals, queueTypes, hashTagPresets, assetsData, relays] =
     await Promise.all([
       getScheduleInterval(userId),
       getQueueTypes(userId),
       getUserHashTagPresets(userId),
       getAssets({ userId, page: 1, limit: 50 }),
+      resolveExecutionRelays(userId),
     ]);
 
   return {
@@ -31,5 +32,6 @@ export async function loadNewPostData(userId: string) {
     queueTypes,
     hashTagPresets,
     assets: assetsData.assets,
+    relays,
   };
 }

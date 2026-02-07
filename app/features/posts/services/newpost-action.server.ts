@@ -2,6 +2,7 @@
  * New post action handlers
  * Centralized action processing for new post page
  */
+/* eslint-disable sonarjs/cognitive-complexity -- action router branches by _action */
 
 import {
   unstable_composeUploadHandlers as composeUploadHandlers,
@@ -46,7 +47,6 @@ export async function handleNewPostAction(
   }
   const { showHashTagsinPosts } = user;
   const sessionPubkey = user.npub;
-  const sanitizedRelays = await resolveExecutionRelays(userId);
 
   // Check content type before parsing
   const contentType = request.headers.get("Content-Type") ?? "";
@@ -60,6 +60,29 @@ export async function handleNewPostAction(
     formData = await parseMultipartFormData(request, uploadHandler);
   } else {
     formData = await request.formData();
+  }
+
+  // Optional per-post relay override (from composer relay selector)
+  let sanitizedRelays: string[];
+  const relayOverrideRaw = formData.get("relays");
+  if (relayOverrideRaw && typeof relayOverrideRaw === "string") {
+    try {
+      const parsed = JSON.parse(relayOverrideRaw) as unknown;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const urls = parsed.filter((r): r is string => typeof r === "string");
+        if (urls.length > 0) {
+          sanitizedRelays = urls;
+        } else {
+          sanitizedRelays = await resolveExecutionRelays(userId);
+        }
+      } else {
+        sanitizedRelays = await resolveExecutionRelays(userId);
+      }
+    } catch {
+      sanitizedRelays = await resolveExecutionRelays(userId);
+    }
+  } else {
+    sanitizedRelays = await resolveExecutionRelays(userId);
   }
 
   // Check for upload preview actions first (they don't need full validation)
@@ -78,6 +101,18 @@ export async function handleNewPostAction(
       );
     }
     return Response.json(result);
+  }
+
+  if (_action === "autosave-draft") {
+    const { handleAutosaveDraft } =
+      await import("./newpost-action/autosave-draft.server");
+    return handleAutosaveDraft(userId, formData);
+  }
+
+  if (_action === "post-thread" || _action === "schedule-thread") {
+    const { handleThreadAction } =
+      await import("./newpost-action/thread-handlers.server");
+    return handleThreadAction(userId, sessionPubkey, formData, sanitizedRelays);
   }
 
   // Validate non-file fields with Zod for other actions
@@ -174,3 +209,4 @@ export async function handleNewPostAction(
 
   return Response.json({ success: false });
 }
+/* eslint-enable sonarjs/cognitive-complexity */

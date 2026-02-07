@@ -131,7 +131,15 @@ export { default as LongFormPreviewModal } from "./components/LongFormPreviewMod
 export { default as MediaPost } from "./components/MediaPost";
 export { NewPostHeader } from "./components/NewPostHeader";
 export { default as NewPostImagesConfirmation } from "./components/NewPostImagesConfirmation";
+export type { ComposerStatus } from "./components/NewPostHeader";
+export { RelaySelectorModal } from "./components/RelaySelectorModal";
 export { default as TextPost } from "./components/TextPost";
+export { AlsoScheduleBlock } from "./components/AlsoScheduleBlock";
+export { AttachmentsStrip } from "./components/AttachmentsStrip";
+export { ConfidencePanel } from "./components/ConfidencePanel";
+export { TagsChipRow } from "./components/TagsChipRow";
+export { UnifiedComposer } from "./components/UnifiedComposer";
+export type { UnifiedComposerProps } from "./components/UnifiedComposer";
 export { default as NewPostPage } from "./components/NewPostPage";
 export { RecyclablesBulkActions } from "./components/RecyclablesBulkActions";
 export { RecyclablesPagination } from "./components/RecyclablesPagination";

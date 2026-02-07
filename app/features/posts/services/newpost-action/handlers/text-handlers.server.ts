@@ -142,6 +142,25 @@ interface TextHandlerParams {
   correlationId?: string;
 }
 
+export function parseAttachmentMeta(
+  formData: FormData
+): Array<{ localId: string; url?: string }> {
+  const raw = formData.get("attachmentMeta");
+  if (!raw || typeof raw !== "string") return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (p): p is { localId: string; url?: string } =>
+        typeof p === "object" &&
+        p !== null &&
+        typeof (p as { localId: unknown }).localId === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Handle draft text post action
  */
@@ -158,7 +177,17 @@ export async function handleDraftText({
   correlationId,
 }: TextHandlerParams): Promise<Response> {
   const contentValue = formData.get("content");
-  const content = contentValue ? String(contentValue) : "";
+  let content = contentValue ? String(contentValue) : "";
+  let fileUrl: string[] = [];
+
+  const attachmentMeta = parseAttachmentMeta(formData);
+  if (attachmentMeta.length > 0) {
+    const { resolveContentWithTokens } =
+      await import("../inline-tokens.server");
+    const resolved = resolveContentWithTokens(content, attachmentMeta);
+    content = resolved.content;
+    fileUrl = resolved.fileUrl;
+  }
 
   // Apply hashtags
   const contentWithHashtags = applyHashtags(
@@ -173,7 +202,7 @@ export async function handleDraftText({
     userId,
     content: contentWithHashtags,
     caption: contentWithHashtags,
-    fileUrl: [],
+    fileUrl,
     postType: "TEXT",
     queueTypeId, // Pass raw queueTypeId - use case will resolve if needed
     queueType, // Pass queue type name for resolution
@@ -208,7 +237,18 @@ export async function handlePostOrScheduleText({
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
 
-  const content = contentValue ? String(contentValue) : "";
+  let content = contentValue ? String(contentValue) : "";
+  let fileUrl: string[] = [];
+
+  const attachmentMeta = parseAttachmentMeta(formData);
+  if (attachmentMeta.length > 0) {
+    const { resolveContentWithTokens } =
+      await import("../inline-tokens.server");
+    const resolved = resolveContentWithTokens(content, attachmentMeta);
+    content = resolved.content;
+    fileUrl = resolved.fileUrl;
+  }
+
   const signedEventStr = signedEventValue ? String(signedEventValue) : "";
   const nostrEventStr = nostrEventValue ? String(nostrEventValue) : "";
 
@@ -247,7 +287,7 @@ export async function handlePostOrScheduleText({
     userId,
     content: contentWithHashtags,
     caption: contentWithHashtags,
-    fileUrl: [],
+    fileUrl,
     postType: "TEXT",
     queueTypeId, // Pass raw queueTypeId - use case will resolve if needed
     queueType, // Pass queue type name for resolution

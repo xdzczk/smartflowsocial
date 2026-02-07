@@ -23,6 +23,7 @@ import type {
 } from "../types";
 
 import {
+  CONTENT_LIST_CARD_GAP_PX,
   CONTENT_LIST_CARD_HEIGHT_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
 } from "./constants";
@@ -260,7 +261,7 @@ export default function AllContentListing({
     count: filteredContent.length,
     getScrollElement: () =>
       getContentScrollElement(useDedicatedScroll, mobileScrollContainerRef),
-    estimateSize: () => CONTENT_LIST_CARD_HEIGHT_PX,
+    estimateSize: () => CONTENT_LIST_CARD_HEIGHT_PX + CONTENT_LIST_CARD_GAP_PX,
     overscan: 3,
     getItemKey: (index) => {
       const item = filteredContent[index];
@@ -390,7 +391,7 @@ export default function AllContentListing({
                         <div
                           key={virtualRow.key}
                           data-index={virtualRow.index}
-                          className="pb-0.5"
+                          className="pb-2"
                           style={{
                             position: "absolute",
                             top: 0,
@@ -460,7 +461,7 @@ export default function AllContentListing({
                   <div
                     key={virtualRow.key}
                     data-index={virtualRow.index}
-                    className="pb-0.5"
+                    className="pb-2"
                     style={{
                       position: "absolute",
                       top: 0,

@@ -59,7 +59,7 @@ export function SchedulingSection({
         </div>
       ) : null}
 
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-2 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
         {isSlotBasedQueue ? (
           <Button
             type="button"

@@ -344,6 +344,74 @@ export interface LongFormPostJobData {
   signedEvent: SignedEvent;
 }
 
+/** Inline attachment token status (composer) */
+export type AttachmentStatus = "queued" | "uploading" | "done" | "failed";
+
+/** Single attachment in composer draft (client + persisted in draftMeta) */
+export interface ComposerAttachment {
+  localId: string;
+  status: AttachmentStatus;
+  url?: string;
+  mime?: string;
+  hash?: string;
+  alt?: string;
+  /** Client-only: File before upload */
+  file?: File;
+}
+
+/** Also-schedule repost entry (repost of this post at scheduledFor) */
+export interface AlsoScheduleRepostEntry {
+  scheduledFor: number;
+}
+
+/** Also-schedule quote entry (quote of this post at scheduledFor with optional caption) */
+export interface AlsoScheduleQuoteEntry {
+  scheduledFor: number;
+  caption?: string;
+}
+
+/** Persisted draft meta on Post (draftMeta JSON column) */
+export interface PostDraftMeta {
+  attachmentMeta?: Array<{
+    localId: string;
+    status: AttachmentStatus;
+    url?: string;
+    alt?: string;
+    position?: number;
+  }>;
+  contentWithTokens?: string;
+  threadSegments?: Array<{
+    content: string;
+    attachments: ComposerAttachment[];
+  }>;
+  alsoScheduleRepost?: AlsoScheduleRepostEntry[];
+  alsoScheduleQuote?: AlsoScheduleQuoteEntry[];
+}
+
+/** Composer draft mode */
+export type ComposerMode = "now" | "schedule" | "queue" | "thread";
+
+/** Composer draft shape (client state + persisted via Post + draftMeta) */
+export interface ComposerDraft {
+  content: string;
+  attachments: ComposerAttachment[];
+  mode: ComposerMode;
+  scheduleAt?: string;
+  queueId?: string;
+  tags: string[];
+  alsoScheduleRepost?: AlsoScheduleRepostEntry[];
+  alsoScheduleQuote?: AlsoScheduleQuoteEntry[];
+  threadSegments?: Array<{
+    content: string;
+    attachments: ComposerAttachment[];
+  }>;
+  signerContext?: { type: string; pubkey?: string; lastReadyAt?: number };
+}
+
+/** Inline token format: [attach:localId] */
+export const COMPOSER_ATTACH_TOKEN_PREFIX = "[attach:";
+export const COMPOSER_ATTACH_TOKEN_SUFFIX = "]";
+
 /**
  * Prepared event for bulk posting operations
  */

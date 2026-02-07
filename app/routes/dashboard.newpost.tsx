@@ -27,6 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       queueTypes: [],
       hashTagPresets: [],
       assets: [],
+      relays: [],
     });
   }
 }

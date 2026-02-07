@@ -41,6 +41,8 @@ export interface PostFactoryOptions {
   publishingStartedAt?: Date | null;
   repostOfPostId?: string | null;
   quoteOfPostId?: string | null;
+  draftMeta?: Prisma.JsonValue | null;
+  threadGroupId?: string | null;
 }
 
 export class PostFactory {
@@ -236,6 +238,8 @@ export class PostFactory {
       publishingStartedAt: this.options.publishingStartedAt ?? null,
       repostOfPostId: this.options.repostOfPostId ?? null,
       quoteOfPostId: this.options.quoteOfPostId ?? null,
+      draftMeta: this.options.draftMeta ?? null,
+      threadGroupId: this.options.threadGroupId ?? null,
     };
     return post;
   }

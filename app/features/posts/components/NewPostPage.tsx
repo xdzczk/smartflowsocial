@@ -2,20 +2,18 @@ import type { AssetType } from "@prisma/client";
 import { useLoaderData, useSearchParams, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { Asset } from "~/features/assets";
 import {
   convertJsonValueToScheduleConfig,
   type HashTagPreset,
-  type PreparedEvent,
   type QueueType,
 } from "~/features/posts/types";
 import {
-  MediaPost,
+  type ComposerStatus,
   NewPostHeader,
-  NewPostImagesConfirmation,
   PublishResultModal,
-  TextPost,
+  RelaySelectorModal,
+  UnifiedComposer,
 } from "~/features/posts/ui";
 
 import { useNewPostState } from "../hooks/useNewPostState";
@@ -191,71 +189,6 @@ function parseAsset(asset: unknown): Asset | null {
   return null;
 }
 
-function handlePreparedImageEventData(
-  data: unknown,
-  setPreparedImageEvent: (event: PreparedEvent | null) => void
-): void {
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    setPreparedImageEvent(null);
-    return;
-  }
-
-  const firstItem = data[0] as { content?: unknown } | undefined;
-  if (
-    !firstItem ||
-    typeof firstItem !== "object" ||
-    !("content" in firstItem)
-  ) {
-    setPreparedImageEvent(null);
-    return;
-  }
-
-  const firstItemContent = (firstItem as { content: unknown }).content;
-  if (
-    !firstItemContent ||
-    typeof firstItemContent !== "object" ||
-    !("fileUrl" in firstItemContent) ||
-    !("scheduledFor" in firstItemContent) ||
-    !("caption" in firstItemContent) ||
-    !("queueType" in firstItemContent)
-  ) {
-    setPreparedImageEvent(null);
-    return;
-  }
-
-  const content = firstItemContent as {
-    fileUrl: unknown;
-    scheduledFor: unknown;
-    caption: unknown;
-    queueType: unknown;
-  };
-
-  const fileUrl = typeof content.fileUrl === "string" ? content.fileUrl : "";
-  const scheduledFor =
-    typeof content.scheduledFor === "string"
-      ? parseInt(content.scheduledFor, 10)
-      : typeof content.scheduledFor === "number"
-        ? content.scheduledFor
-        : 0;
-  const caption = typeof content.caption === "string" ? content.caption : "";
-  const queueType =
-    typeof content.queueType === "string" ? content.queueType : "unassigned";
-
-  setPreparedImageEvent({
-    fileUrl,
-    scheduledFor,
-    caption,
-    queueType,
-    isRecyclable: false,
-    events: {
-      content: "",
-      created_at: 0,
-      kind: 1,
-      tags: [],
-    },
-  });
-}
-
 export default function NewPostPage() {
   const loaderDataRaw = useLoaderData<unknown>();
   const loaderData =
@@ -264,6 +197,7 @@ export default function NewPostPage() {
           queueTypes?: unknown;
           hashTagPresets?: unknown;
           assets?: unknown;
+          relays?: unknown;
         })
       : {};
 
@@ -293,15 +227,7 @@ export default function NewPostPage() {
     : [];
 
   const {
-    files,
-    setFiles,
-    selectedQueueType,
     selectedHashTagPresetId,
-    selectedHashtags,
-    showImagePreview,
-    setShowImagePreview,
-    preparedImageEvent,
-    setPreparedImageEvent,
     handleQueueTypeChange,
     handleHashtagPresetSelect,
   } = useNewPostState();
@@ -320,6 +246,20 @@ export default function NewPostPage() {
     publishAttemptId: string | null;
     currentState?: string | null;
   } | null>(null);
+  const [composerStatus, setComposerStatus] = useState<ComposerStatus>("Draft");
+  const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
+  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
+
+  const defaultRelays =
+    "relays" in loaderData && Array.isArray(loaderData.relays)
+      ? (loaderData.relays as string[]).filter(
+          (r): r is string => typeof r === "string"
+        )
+      : [];
+  const relayCount =
+    selectedRelayUrls.length > 0
+      ? selectedRelayUrls.length
+      : defaultRelays.length;
 
   // Check for published/scheduled URL param
   useEffect(() => {
@@ -379,70 +319,40 @@ export default function NewPostPage() {
 
   return (
     <div className="p-6">
-      <NewPostHeader selectedHashtags={selectedHashtags} />
+      <NewPostHeader
+        status={composerStatus}
+        relayCount={relayCount}
+        onRelayClick={() => setRelaySelectorOpen(true)}
+      />
+      {relaySelectorOpen ? (
+        <RelaySelectorModal
+          defaultRelays={defaultRelays}
+          selectedRelays={
+            selectedRelayUrls.length > 0 ? selectedRelayUrls : defaultRelays
+          }
+          onClose={() => setRelaySelectorOpen(false)}
+          onSave={(urls) => {
+            setSelectedRelayUrls(urls);
+            setRelaySelectorOpen(false);
+          }}
+        />
+      ) : null}
 
-      <Tabs defaultValue="text" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="text">Text Post</TabsTrigger>
-          <TabsTrigger value="media">Media</TabsTrigger>
-        </TabsList>
-        <TabsContent value="text">
-          <TextPost
-            queueTypes={typedQueueTypes}
-            assets={typedAssets}
-            hashTagPresets={typedHashTagPresets}
-            onQueueTypeChange={handleQueueTypeChange}
-            selectedHashTagPresetId={selectedHashTagPresetId}
-            onHashtagPresetChange={(
-              presetId: string | null,
-              _hashtags: string
-            ) =>
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: presetId can be null
-              handleHashtagPresetSelect(presetId ?? "", _hashtags ?? "")
-            }
-          />
-        </TabsContent>
-        <TabsContent value="media">
-          {showImagePreview ? (
-            <NewPostImagesConfirmation
-              preparedEvents={
-                preparedImageEvent
-                  ? [
-                      {
-                        content: {
-                          fileUrl: preparedImageEvent.fileUrl,
-                          scheduledFor: String(preparedImageEvent.scheduledFor),
-                          caption: preparedImageEvent.caption,
-                          queueType: preparedImageEvent.queueType,
-                        },
-                        type: "media" as const,
-                        queueType: preparedImageEvent.queueType,
-                      },
-                    ]
-                  : []
-              }
-              onCancel={() => setShowImagePreview(false)}
-              postsCount={1}
-              tags={selectedHashTagPresetId ?? ""}
-            />
-          ) : (
-            <MediaPost
-              files={files}
-              setFiles={setFiles}
-              setShowImagePreview={setShowImagePreview}
-              setPreparedImageEvent={(data) =>
-                handlePreparedImageEventData(data, setPreparedImageEvent)
-              }
-              queueTypes={typedQueueTypes}
-              hashTagPresets={typedHashTagPresets}
-              selectedQueueType={selectedQueueType}
-              onQueueTypeChange={handleQueueTypeChange}
-              selectedHashTagPresetId={selectedHashTagPresetId}
-              onHashtagPresetChange={handleHashtagPresetSelect}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+      <UnifiedComposer
+        queueTypes={typedQueueTypes}
+        assets={typedAssets}
+        hashTagPresets={typedHashTagPresets}
+        onQueueTypeChange={handleQueueTypeChange}
+        selectedHashTagPresetId={selectedHashTagPresetId}
+        onHashtagPresetChange={(presetId: string | null, _hashtags: string) =>
+          handleHashtagPresetSelect(presetId ?? "", _hashtags)
+        }
+        relayOverride={
+          selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
+        }
+        relayCount={relayCount}
+        onComposerStatusChange={setComposerStatus}
+      />
 
       {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
         <PublishResultModal

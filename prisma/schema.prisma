@@ -167,6 +167,10 @@ model Post {
   quoteOfPostId           String?
   quoteOf                 Post?                 @relation("QuoteOf", fields: [quoteOfPostId], references: [id])
   quotes                  Post[]                @relation("QuoteOf")
+  // Composer draft metadata (attachment meta, contentWithTokens, threadSegments, alsoScheduleRepost/Quote)
+  draftMeta               Json?
+  // Thread: links segment posts when created as a thread (schedule-thread / post-thread)
+  threadGroupId           String?
 
   // Indexes for common query patterns
   // State machine indexes (use currentState as single source of truth)
