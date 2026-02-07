@@ -37,6 +37,7 @@ import {
 import {
   buildKind6RepostEvent,
   buildQuoteEvent,
+  getThreadReplyTags,
 } from "../utils/repost-quote-events.client";
 
 import { AlsoScheduleBlock } from "./AlsoScheduleBlock";
@@ -269,7 +270,7 @@ export function UnifiedComposer({
   const [threadSegments, setThreadSegments] = React.useState<
     Array<{ id: string; content: string; attachments: ComposerAttachment[] }>
   >([{ id: crypto.randomUUID(), content: "", attachments: [] }]);
-  const [threadDelaySeconds, setThreadDelaySeconds] = React.useState(30);
+  const [threadDelayMinutes, setThreadDelayMinutes] = React.useState(1);
 
   const form = useZodForm(textPostClientSchema, {
     defaultValues: {
@@ -483,6 +484,8 @@ export function UnifiedComposer({
 
         setIsSigning(true);
         const signedEvents: SignedEvent[] = [];
+        let rootEventId: string | null = null;
+        let previousEventId: string | null = null;
         for (let i = 0; i < threadSegments.length; i++) {
           const seg = threadSegments[i];
           if (!seg) continue;
@@ -491,14 +494,23 @@ export function UnifiedComposer({
           const contentWithTags = user?.showHashTagsinPosts
             ? `${contentToSign}\n${effectiveHashtags}`
             : contentToSign;
-          const created_at = baseTime + i * threadDelaySeconds;
+          const created_at = baseTime + i * threadDelayMinutes * 60;
+          const tags =
+            i === 0
+              ? tagArray
+              : [
+                  ...getThreadReplyTags(previousEventId!, rootEventId!),
+                  ...tagArray,
+                ];
           const { signedEvent } = await nostrAdapter.signEvent({
             content: contentWithTags,
             created_at,
             kind: 1,
-            tags: tagArray,
+            tags,
           });
           signedEvents.push(signedEvent);
+          if (i === 0) rootEventId = signedEvent.id;
+          previousEventId = signedEvent.id;
         }
         setIsSigning(false);
 
@@ -519,7 +531,10 @@ export function UnifiedComposer({
           )
         );
         threadPayload.set("threadSignedEvents", JSON.stringify(signedEvents));
-        threadPayload.set("threadDelaySeconds", String(threadDelaySeconds));
+        threadPayload.set(
+          "threadDelaySeconds",
+          String(threadDelayMinutes * 60)
+        );
         threadPayload.set("queueType", data.queueType);
         if (queueTypeId) threadPayload.set("queueTypeId", queueTypeId);
         if (data.hashTagPresetId)
@@ -969,19 +984,19 @@ export function UnifiedComposer({
                 <Input
                   type="number"
                   min={1}
-                  max={3600}
-                  value={threadDelaySeconds}
+                  max={120}
+                  value={threadDelayMinutes}
                   onChange={(e) =>
-                    setThreadDelaySeconds(
+                    setThreadDelayMinutes(
                       Math.max(
                         1,
-                        Math.min(3600, parseInt(e.target.value, 10) || 30)
+                        Math.min(120, parseInt(e.target.value, 10) || 1)
                       )
                     )
                   }
                   className="h-8 w-16"
                 />
-                sec
+                min
               </Label>
             </div>
           </div>

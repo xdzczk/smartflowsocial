@@ -17,7 +17,7 @@ import { getHashtagPresetTags } from "./hashtag-preset-utils.server";
 import { applyHashtags } from "./hashtag-utils.server";
 import { resolveContentWithTokens } from "./inline-tokens.server";
 
-const DEFAULT_DELAY_SECONDS = 30;
+const DEFAULT_DELAY_SECONDS = 60; // 1 minute
 
 interface ThreadSegmentInput {
   content: string;
@@ -85,12 +85,13 @@ export async function handleThreadAction(
 
   const rawDelay = formData.get("threadDelaySeconds");
   const parsedDelay = parseInt(String(rawDelay ?? DEFAULT_DELAY_SECONDS), 10);
+  const rawSeconds = Number.isNaN(parsedDelay)
+    ? DEFAULT_DELAY_SECONDS
+    : parsedDelay;
+  // Only allow minute-based spacing (round to nearest minute, clamp 1–120 min)
   const delaySeconds = Math.max(
-    1,
-    Math.min(
-      3600,
-      Number.isNaN(parsedDelay) ? DEFAULT_DELAY_SECONDS : parsedDelay
-    )
+    60,
+    Math.min(7200, Math.round(rawSeconds / 60) * 60)
   );
 
   let baseTime: number;
@@ -197,7 +198,7 @@ export async function handleThreadAction(
 
     postIds.push(result.post.id);
 
-    if (!isSchedule) {
+    if (!isSchedule && i === 0) {
       const validated = validateSignedEvent(result.post.signedEvent);
       if (validated) {
         await publishUseCase.execute({

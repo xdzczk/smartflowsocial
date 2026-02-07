@@ -79,3 +79,17 @@ export function buildQuoteEvent(
     tags: quoteTags,
   };
 }
+
+/**
+ * Tags for a thread reply (NIP-10): reply to immediate parent and root.
+ * Use after signing the previous segment to get its id.
+ */
+export function getThreadReplyTags(
+  previousEventId: string,
+  rootEventId: string
+): string[][] {
+  return [
+    ["e", previousEventId, DEFAULT_RELAY_URL, "reply"],
+    ["e", rootEventId, DEFAULT_RELAY_URL, "root"],
+  ];
+}
