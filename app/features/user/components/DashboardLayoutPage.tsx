@@ -59,6 +59,7 @@ export function DashboardLayoutPage(): ReactNode {
     if (typeof window === "undefined") return true;
     return localStorage.getItem(DESKTOP_SIDEBAR_OPEN_KEY) !== "false";
   });
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const handleDesktopSidebarToggle = () => {
     setDesktopSidebarOpen((prev) => {
       const next = !prev;
@@ -72,10 +73,13 @@ export function DashboardLayoutPage(): ReactNode {
       <div
         id="page-container"
         className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
+        {...(mobileSidebarOpen ? { "data-mobile-sidebar-open": "" } : {})}
       >
         <Header
           desktopSidebarOpen={desktopSidebarOpen}
           onDesktopSidebarToggle={handleDesktopSidebarToggle}
+          mobileSidebarOpen={mobileSidebarOpen}
+          onMobileSidebarOpenChange={setMobileSidebarOpen}
         />
 
         <main

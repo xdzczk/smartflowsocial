@@ -438,6 +438,13 @@
     }
   }
 
+  /* When mobile sidebar is open, page content must not receive pointer events so taps on the sidebar don't trigger pressed/active state on content underneath */
+  @media (max-width: 1023px) {
+    [data-mobile-sidebar-open] #page-content {
+      pointer-events: none;
+    }
+  }
+
   /* Arrow pulse animation */
   @keyframes arrowPulse {
     0%, 100% {

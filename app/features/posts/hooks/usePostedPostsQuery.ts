@@ -177,6 +177,8 @@ export function usePostedPostsInfiniteQuery() {
       `/dashboard/posted${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}`,
     staleTime: 30 * 1000, // 30 seconds
     maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
+    refetchInterval: 15_000, // Live updates when new posts are published
+    refetchIntervalInBackground: true,
   });
 }
 

@@ -18,6 +18,8 @@ import {
   getStatusText,
 } from "../utils/content-helpers";
 
+import { CONTENT_LIST_CARD_HEIGHT_PX } from "./constants";
+
 function getFetcherFormData(
   fetcher: PostFetcher | undefined
 ): FormData | null | undefined {
@@ -135,7 +137,11 @@ export function ContentListCard({
           onPostSelect?.(item);
         }
       }}
-      className="border-border bg-card hover:bg-muted/50 flex cursor-pointer items-stretch gap-3 rounded-lg border p-3 text-left shadow-sm transition-colors"
+      className="border-border bg-card hover:bg-muted/50 flex cursor-pointer items-stretch gap-3 overflow-hidden rounded-lg border p-3 text-left shadow-sm transition-colors"
+      style={{
+        height: CONTENT_LIST_CARD_HEIGHT_PX,
+        minHeight: CONTENT_LIST_CARD_HEIGHT_PX,
+      }}
       aria-label={`${getContentTitle(item)}, ${dateLabel}`}
     >
       {showBulkActions ? (
@@ -177,13 +183,13 @@ export function ContentListCard({
           </div>
         )}
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
         <p className="truncate font-medium">{getContentTitle(item)}</p>
         <p className="text-muted-foreground truncate text-xs">
           {getContentPreview(item)?.slice(0, 40) ?? ""}
           {(getContentPreview(item)?.length ?? 0) > 40 ? "…" : ""}
         </p>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+        <div className="mt-1 flex flex-shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
           <span className="text-muted-foreground">{dateLabel}</span>
           <span className={queueDisplay.className} style={queueDisplay.style}>
             {queueDisplay.name}

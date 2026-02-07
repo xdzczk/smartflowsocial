@@ -158,6 +158,8 @@ export function useScheduledPostsInfiniteQuery() {
         : `/dashboard/scheduled?tab=${currentTab}&page=${pageParam}`,
     staleTime: 30 * 1000, // 30 seconds
     maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
+    refetchInterval: 15_000, // Live updates when scheduled posts are published
+    refetchIntervalInBackground: true,
   });
 }
 

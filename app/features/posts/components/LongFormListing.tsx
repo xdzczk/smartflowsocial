@@ -25,10 +25,7 @@ import { longFormPostToCombinedContent } from "../combined";
 import type { PostFetcher, LongFormPostData } from "../types";
 import type { EditorJSBlock } from "../types/editorjs.types";
 
-import {
-  CONTENT_LIST_CARD_GAP_PX,
-  CONTENT_MOBILE_BREAKPOINT_PX,
-} from "./constants";
+import { CONTENT_MOBILE_BREAKPOINT_PX } from "./constants";
 import { ContentListCard } from "./ContentListCard";
 
 // Helper to safely access formData from a fetcher
@@ -225,7 +222,7 @@ export default function LongFormListing({
         : typeof document !== "undefined"
           ? document.documentElement
           : null,
-    estimateSize: () => 98 + CONTENT_LIST_CARD_GAP_PX,
+    estimateSize: () => 98,
     overscan: 3,
     getItemKey: (index) => combinedContent[index]?.id ?? String(index),
   });
@@ -941,7 +938,7 @@ export default function LongFormListing({
                         <div
                           key={virtualRow.key}
                           data-index={virtualRow.index}
-                          className="pb-3"
+                          className="pb-0.5"
                           style={{
                             position: "absolute",
                             top: 0,
@@ -1032,7 +1029,7 @@ export default function LongFormListing({
                   <div
                     key={virtualRow.key}
                     data-index={virtualRow.index}
-                    className="pb-3"
+                    className="pb-0.5"
                     style={{
                       position: "absolute",
                       top: 0,

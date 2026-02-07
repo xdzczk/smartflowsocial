@@ -23,17 +23,13 @@ import type {
 } from "../types";
 
 import {
-  CONTENT_LIST_CARD_GAP_PX,
+  CONTENT_LIST_CARD_HEIGHT_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
 } from "./constants";
 import { ContentBulkActions } from "./ContentBulkActions";
 import { ContentListCard } from "./ContentListCard";
 import { ContentTableHeader } from "./ContentTableHeader";
 import { ContentTableRow } from "./ContentTableRow";
-
-const CONTENT_LIST_CARD_HEIGHT_PX = 98;
-const CONTENT_LIST_ROW_HEIGHT_PX =
-  CONTENT_LIST_CARD_HEIGHT_PX + CONTENT_LIST_CARD_GAP_PX;
 
 function getInitialContentSortConfig(type: "scheduled" | "draft" | "posted"): {
   key: string;
@@ -264,7 +260,7 @@ export default function AllContentListing({
     count: filteredContent.length,
     getScrollElement: () =>
       getContentScrollElement(useDedicatedScroll, mobileScrollContainerRef),
-    estimateSize: () => CONTENT_LIST_ROW_HEIGHT_PX,
+    estimateSize: () => CONTENT_LIST_CARD_HEIGHT_PX,
     overscan: 3,
     getItemKey: (index) => {
       const item = filteredContent[index];
@@ -394,7 +390,7 @@ export default function AllContentListing({
                         <div
                           key={virtualRow.key}
                           data-index={virtualRow.index}
-                          className="pb-3"
+                          className="pb-0.5"
                           style={{
                             position: "absolute",
                             top: 0,
@@ -464,7 +460,7 @@ export default function AllContentListing({
                   <div
                     key={virtualRow.key}
                     data-index={virtualRow.index}
-                    className="pb-3"
+                    className="pb-0.5"
                     style={{
                       position: "absolute",
                       top: 0,

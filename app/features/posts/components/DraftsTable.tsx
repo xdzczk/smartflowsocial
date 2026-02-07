@@ -20,10 +20,7 @@ import { postToCombinedContent } from "../combined";
 import { getQueueColor } from "../queue-colors";
 import type { PostData } from "../types";
 
-import {
-  CONTENT_LIST_CARD_GAP_PX,
-  CONTENT_MOBILE_BREAKPOINT_PX,
-} from "./constants";
+import { CONTENT_MOBILE_BREAKPOINT_PX } from "./constants";
 import { ContentListCard } from "./ContentListCard";
 
 interface Post {
@@ -113,7 +110,7 @@ export function DraftsTable({
         : typeof document !== "undefined"
           ? document.documentElement
           : null,
-    estimateSize: () => 98 + CONTENT_LIST_CARD_GAP_PX,
+    estimateSize: () => 98,
     overscan: 3,
     getItemKey: (index) => combinedContent[index]?.id ?? String(index),
   });
@@ -397,7 +394,7 @@ export function DraftsTable({
                         <div
                           key={virtualRow.key}
                           data-index={virtualRow.index}
-                          className="pb-3"
+                          className="pb-0.5"
                           style={{
                             position: "absolute",
                             top: 0,
@@ -465,7 +462,7 @@ export function DraftsTable({
                   <div
                     key={virtualRow.key}
                     data-index={virtualRow.index}
-                    className="pb-3"
+                    className="pb-0.5"
                     style={{
                       position: "absolute",
                       top: 0,

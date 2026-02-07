@@ -245,7 +245,7 @@ function FlowCardInner({
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_8%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_12%,transparent)]"
+            className="flow-card-tint-overlay pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_8%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_12%,transparent)]"
             aria-hidden
           />
         </>

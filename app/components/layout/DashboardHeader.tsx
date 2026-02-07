@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@remix-run/react";
 import { Lock } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   HiOutlineHome,
   HiOutlineCalendarDays,
@@ -356,13 +356,31 @@ function PageHeaderBar({
 interface HeaderProps {
   desktopSidebarOpen?: boolean;
   onDesktopSidebarToggle?: () => void;
+  /** When provided, mobile sidebar is controlled by parent (e.g. to disable pointer-events on page content) */
+  mobileSidebarOpen?: boolean;
+  onMobileSidebarOpenChange?: (open: boolean) => void;
 }
 
 export default function Header({
   desktopSidebarOpen = true,
   onDesktopSidebarToggle,
+  mobileSidebarOpen: controlledMobileOpen,
+  onMobileSidebarOpenChange,
 }: HeaderProps) {
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+  const mobileSidebarOpen =
+    onMobileSidebarOpenChange !== undefined &&
+    controlledMobileOpen !== undefined
+      ? controlledMobileOpen
+      : internalMobileOpen;
+  const setMobileSidebarOpen = useCallback(
+    (open: boolean) => {
+      if (onMobileSidebarOpenChange) onMobileSidebarOpenChange(open);
+      else setInternalMobileOpen(open);
+    },
+    [onMobileSidebarOpenChange]
+  );
+
   const [desktopOpen, setDesktopOpen] = useState(desktopSidebarOpen);
 
   const isDesktopExpanded =
@@ -393,7 +411,7 @@ export default function Header({
   useEffect(() => {
     const timeoutId = setTimeout(() => setMobileSidebarOpen(false), 0);
     return () => clearTimeout(timeoutId);
-  }, [location.pathname]);
+  }, [location.pathname, setMobileSidebarOpen]);
 
   const handleUpgradeClick = (feature: FeatureName, featureName: string) => {
     setUpgradePrompt({ isOpen: true, feature, featureName });
