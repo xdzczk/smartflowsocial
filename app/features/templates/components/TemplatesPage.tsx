@@ -1,8 +1,8 @@
 import { Outlet } from "@remix-run/react";
-import { useEffect } from "react";
 
 import { AssetsTab, UploadTab } from "~/features/assets";
-import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
+import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 
 import { useTemplatesInfiniteData } from "../hooks/useTemplatesQuery";
 import { useTemplatesState } from "../hooks/useTemplatesState";
@@ -13,46 +13,19 @@ import { TemplatesTabs } from "./TemplatesTabs";
 import { ToastNotification } from "./ToastNotification";
 
 export default function TemplatesPage() {
-  // Use infinite query for data fetching with infinite scroll
   const { assets, searchTerm, isFetchingNextPage, hasNextPage, fetchNextPage } =
     useTemplatesInfiniteData();
 
-  // Set up intersection observer for infinite scroll
-  const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
-    threshold: 0.8,
-  });
-
-  // Prefetch sentinel - triggers earlier (70% threshold) to prefetch next page
-  const { ref: prefetchSentinelRef, isIntersecting: isPrefetchIntersecting } =
-    useIntersectionObserver({
-      threshold: 0.7,
+  const isMobile = useIsMobile(768);
+  const { sentinelRef, prefetchSentinelRef, setScrollRoot } =
+    useInfiniteScrollSentinel({
+      isMobile,
+      hasNextPage,
+      isFetchingNextPage,
+      fetchNextPage: () => {
+        void fetchNextPage();
+      },
     });
-
-  // Prefetch next page when user is 70% down (earlier than actual fetch at 80%)
-  useEffect(() => {
-    if (
-      isPrefetchIntersecting &&
-      hasNextPage &&
-      !isFetchingNextPage &&
-      !isIntersecting
-    ) {
-      // Prefetch by calling fetchNextPage early
-      void fetchNextPage();
-    }
-  }, [
-    isPrefetchIntersecting,
-    hasNextPage,
-    isFetchingNextPage,
-    isIntersecting,
-    fetchNextPage,
-  ]);
-
-  // Fetch next page when sentinel becomes visible (backup in case prefetch didn't trigger)
-  useEffect(() => {
-    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
-      void fetchNextPage();
-    }
-  }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const {
     selectedTemplate,
@@ -178,18 +151,22 @@ export default function TemplatesPage() {
                   }>
                 }
                 onDeleteAsset={handleDeleteAsset}
+                prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+                sentinelRef={isMobile ? sentinelRef : undefined}
+                isFetchingNextPage={isFetchingNextPage}
+                onScrollContainerReady={isMobile ? setScrollRoot : undefined}
               />
-              {/* Scroll sentinel for infinite scroll */}
-              {/* Prefetch sentinel - triggers at 70% to prefetch next page */}
-              <div ref={prefetchSentinelRef} className="h-4 w-full" />
-              {/* Main sentinel - triggers at 80% to ensure next page is loaded */}
-              <div ref={sentinelRef} className="h-4 w-full" />
-
-              {/* Loading indicator for next page */}
-              {isFetchingNextPage ? (
-                <div className="text-muted-foreground mt-4 text-center text-sm">
-                  Loading more assets...
-                </div>
+              {/* Scroll sentinel for infinite scroll (desktop only; on mobile sentinels are inside AssetsTab scroll container) */}
+              {!isMobile ? (
+                <>
+                  <div ref={prefetchSentinelRef} className="h-4 w-full" />
+                  <div ref={sentinelRef} className="h-4 w-full" />
+                  {isFetchingNextPage ? (
+                    <div className="text-muted-foreground mt-4 text-center text-sm">
+                      Loading more assets...
+                    </div>
+                  ) : null}
+                </>
               ) : null}
             </>
           ) : (

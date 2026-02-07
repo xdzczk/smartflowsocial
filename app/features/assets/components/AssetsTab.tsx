@@ -1,4 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useRef } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -7,6 +8,94 @@ import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { AssetListCard } from "./AssetListCard";
 
 const ASSETS_MOBILE_BREAKPOINT_PX = 768;
+
+function getAssetsScrollElement(
+  useDedicatedScroll: boolean,
+  scrollRef: React.RefObject<HTMLDivElement | null>
+): Element | null {
+  if (useDedicatedScroll && scrollRef.current) return scrollRef.current;
+  return typeof document !== "undefined" ? document.documentElement : null;
+}
+
+function AssetsTabControls({
+  assetsLength,
+  selectedCount,
+  deleteFetcherState,
+  onBulkPostAssets,
+  onBulkDeleteAssets,
+  onSelectAllAssets,
+}: {
+  assetsLength: number;
+  selectedCount: number;
+  deleteFetcherState: "idle" | "submitting" | "loading";
+  onBulkPostAssets: () => void;
+  onBulkDeleteAssets: () => void;
+  onSelectAllAssets: () => void;
+}) {
+  const hasSelection = selectedCount > 0;
+  const hasAssets = assetsLength > 0;
+  return (
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
+      <div className="flex items-center gap-4">
+        {hasSelection ? (
+          <button
+            onClick={onBulkPostAssets}
+            className="bg-success hover:bg-success/90 rounded-lg px-4 py-2 text-white"
+          >
+            Post Selected ({selectedCount})
+          </button>
+        ) : null}
+        {hasSelection ? (
+          <button
+            onClick={onBulkDeleteAssets}
+            disabled={deleteFetcherState !== "idle"}
+            className="bg-destructive hover:bg-destructive/90 rounded-lg px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {deleteFetcherState !== "idle"
+              ? "Deleting..."
+              : `Delete Selected (${selectedCount})`}
+          </button>
+        ) : null}
+        {hasAssets ? (
+          <button
+            onClick={onSelectAllAssets}
+            className="dark:border-border dark:text-foreground dark:hover:bg-muted border-border text-muted-foreground hover:bg-muted rounded-lg border px-4 py-2"
+          >
+            {selectedCount === assetsLength ? "Deselect All" : "Select All"}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function AssetsEmptyState() {
+  return (
+    <div className="py-12 text-center">
+      <div className="mx-auto max-w-md">
+        <svg
+          className="text-foreground mx-auto h-12 w-12"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+          />
+        </svg>
+        <h3 className="dark:text-foreground text-foreground mt-4 text-lg font-medium">
+          No assets yet
+        </h3>
+        <p className="dark:text-muted-foreground text-muted-foreground mt-2 text-sm">
+          Create your first asset by adding text or uploading an image
+        </p>
+      </div>
+    </div>
+  );
+}
 
 interface Asset {
   id: string;
@@ -38,14 +127,19 @@ interface AssetsTabProps {
     e: React.MouseEvent<HTMLButtonElement>,
     assetId: string
   ) => void;
+  prefetchSentinelRef?: React.Ref<HTMLDivElement | null>;
+  sentinelRef?: React.Ref<HTMLDivElement | null>;
+  isFetchingNextPage?: boolean;
+  onScrollContainerReady?: (el: HTMLDivElement | null) => void;
 }
 
+/* eslint-disable sonarjs/cognitive-complexity -- Tab layout: controls, empty state, desktop table, and mobile virtual list */
 export function AssetsTab({
   assets,
   selectedAssets,
-  searchInput,
-  onSearchInputChange,
-  onSearch,
+  searchInput: _searchInput,
+  onSearchInputChange: _onSearchInputChange,
+  onSearch: _onSearch,
   onAssetSelect,
   onSelectAllAssets,
   onBulkPostAssets,
@@ -53,14 +147,22 @@ export function AssetsTab({
   deleteFetcherState,
   deleteFetcherForm: DeleteFetcherForm,
   onDeleteAsset,
+  prefetchSentinelRef,
+  sentinelRef,
+  isFetchingNextPage = false,
+  onScrollContainerReady,
 }: AssetsTabProps) {
   const { formatDate } = useFormattedDate();
   const isMobile = useIsMobile(ASSETS_MOBILE_BREAKPOINT_PX);
+  const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const useDedicatedScroll =
+    isMobile && (sentinelRef != null || onScrollContainerReady != null);
+
   // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
   const rowVirtualizer = useVirtualizer({
     count: assets.length,
     getScrollElement: () =>
-      typeof document !== "undefined" ? document.documentElement : null,
+      getAssetsScrollElement(useDedicatedScroll, mobileScrollContainerRef),
     estimateSize: () => 98,
     overscan: 3,
     getItemKey: (index) => assets[index]?.id ?? String(index),
@@ -69,101 +171,17 @@ export function AssetsTab({
 
   return (
     <div>
-      {/* Search and Controls */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <form onSubmit={onSearch} className="flex max-w-md flex-1">
-          <div className="relative flex-1">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <svg
-                className="text-foreground h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-            <input
-              id="assets-search"
-              name="assets-search"
-              type="text"
-              value={searchInput}
-              onChange={(e) => onSearchInputChange(e.target.value)}
-              className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring"
-              placeholder="Search assets by title, content, or tags..."
-            />
-          </div>
-          <button
-            type="submit"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 ml-2 rounded-lg px-4 py-2"
-          >
-            Search
-          </button>
-        </form>
+      <AssetsTabControls
+        assetsLength={assets.length}
+        selectedCount={selectedAssets.length}
+        deleteFetcherState={deleteFetcherState}
+        onBulkPostAssets={onBulkPostAssets}
+        onBulkDeleteAssets={onBulkDeleteAssets}
+        onSelectAllAssets={onSelectAllAssets}
+      />
 
-        <div className="flex items-center gap-4">
-          {selectedAssets.length > 0 ? (
-            <button
-              onClick={onBulkPostAssets}
-              className="bg-success hover:bg-success/90 rounded-lg px-4 py-2 text-white"
-            >
-              Post Selected ({selectedAssets.length})
-            </button>
-          ) : null}
-          {selectedAssets.length > 0 ? (
-            <button
-              onClick={onBulkDeleteAssets}
-              disabled={deleteFetcherState !== "idle"}
-              className="bg-destructive hover:bg-destructive/90 rounded-lg px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {deleteFetcherState !== "idle"
-                ? "Deleting..."
-                : `Delete Selected (${selectedAssets.length})`}
-            </button>
-          ) : null}
-          {assets.length > 0 ? (
-            <button
-              onClick={onSelectAllAssets}
-              className="dark:border-border dark:text-foreground dark:hover:bg-muted border-border text-muted-foreground hover:bg-muted rounded-lg border px-4 py-2"
-            >
-              {selectedAssets.length === assets.length
-                ? "Deselect All"
-                : "Select All"}
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Assets List */}
       {assets.length === 0 ? (
-        <div className="py-12 text-center">
-          <div className="mx-auto max-w-md">
-            <svg
-              className="text-foreground mx-auto h-12 w-12"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
-            <h3 className="dark:text-foreground text-foreground mt-4 text-lg font-medium">
-              No assets yet
-            </h3>
-            <p className="dark:text-muted-foreground text-muted-foreground mt-2 text-sm">
-              Create your first asset by adding text or uploading an image
-            </p>
-          </div>
-        </div>
+        <AssetsEmptyState />
       ) : (
         <>
           {/* Desktop: table (hidden on mobile) */}
@@ -314,45 +332,108 @@ export function AssetsTab({
           {/* Mobile: virtualized asset card list */}
           {isMobile ? (
             <div className="block md:hidden">
-              <div
-                style={{
-                  height: rowVirtualizer.getTotalSize(),
-                  position: "relative",
-                  width: "100%",
-                }}
-              >
-                {virtualItems.map((virtualRow) => {
-                  const asset = assets[virtualRow.index];
-                  if (!asset) return null;
-                  return (
-                    <div
-                      key={virtualRow.key}
-                      data-index={virtualRow.index}
-                      className="pb-0.5"
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        transform: `translateY(${virtualRow.start}px)`,
-                      }}
-                    >
-                      <AssetListCard
-                        asset={asset}
-                        selected={selectedAssets.includes(asset.id)}
-                        onSelect={onAssetSelect}
-                        deleteFetcherForm={DeleteFetcherForm}
-                        onDeleteAsset={onDeleteAsset}
-                        deleteFetcherState={deleteFetcherState}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+              {useDedicatedScroll ? (
+                <div
+                  ref={(el) => {
+                    mobileScrollContainerRef.current = el;
+                    onScrollContainerReady?.(el ?? null);
+                  }}
+                  className="overflow-auto"
+                  style={{ height: "calc(100vh - 14rem)" }}
+                >
+                  {assets.length > 0 ? (
+                    <>
+                      <div
+                        style={{
+                          height: rowVirtualizer.getTotalSize(),
+                          position: "relative",
+                          width: "100%",
+                        }}
+                      >
+                        {virtualItems.map((virtualRow) => {
+                          const asset = assets[virtualRow.index];
+                          if (!asset) return null;
+                          return (
+                            <div
+                              key={virtualRow.key}
+                              data-index={virtualRow.index}
+                              className="pb-0.5"
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                transform: `translateY(${virtualRow.start}px)`,
+                              }}
+                            >
+                              <AssetListCard
+                                asset={asset}
+                                selected={selectedAssets.includes(asset.id)}
+                                onSelect={onAssetSelect}
+                                deleteFetcherForm={DeleteFetcherForm}
+                                onDeleteAsset={onDeleteAsset}
+                                deleteFetcherState={deleteFetcherState}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {prefetchSentinelRef ? (
+                        <div ref={prefetchSentinelRef} className="h-4 w-full" />
+                      ) : null}
+                      {sentinelRef ? (
+                        <div ref={sentinelRef} className="h-4 w-full" />
+                      ) : null}
+                      {isFetchingNextPage ? (
+                        <div className="text-muted-foreground py-4 text-center text-sm">
+                          Loading more...
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+              ) : assets.length > 0 ? (
+                <div
+                  style={{
+                    height: rowVirtualizer.getTotalSize(),
+                    position: "relative",
+                    width: "100%",
+                  }}
+                >
+                  {virtualItems.map((virtualRow) => {
+                    const asset = assets[virtualRow.index];
+                    if (!asset) return null;
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        data-index={virtualRow.index}
+                        className="pb-0.5"
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                        <AssetListCard
+                          asset={asset}
+                          selected={selectedAssets.includes(asset.id)}
+                          onSelect={onAssetSelect}
+                          deleteFetcherForm={DeleteFetcherForm}
+                          onDeleteAsset={onDeleteAsset}
+                          deleteFetcherState={deleteFetcherState}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </>
       )}
     </div>
   );
+  /* eslint-enable sonarjs/cognitive-complexity */
 }

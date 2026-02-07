@@ -1,5 +1,5 @@
 import { Outlet, useParams, useSearchParams } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type {
   CombinedContent,
@@ -16,19 +16,19 @@ import {
   LongFormDetailsModal,
   LongFormListing,
   PostDetailsModal,
-  PostsSearch,
   QueueSelectionTabs,
   useDraftsInfiniteData,
   useDraftsState,
 } from "~/features/posts/ui";
-import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
+import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { convertDraftsPostsToPostDataArray } from "~/lib/validation/drafts-post-conversion";
 
+/* eslint-disable sonarjs/cognitive-complexity -- Page orchestrator: tab content (all/posts/longform), modals, sentinel */
 export default function DraftsPage() {
   const [selectedLongFormPost, setSelectedLongFormPost] =
     useState<LongFormPostData | null>(null);
 
-  // Use infinite query for data fetching with infinite scroll
   const {
     posts,
     longformPosts,
@@ -42,42 +42,16 @@ export default function DraftsPage() {
     fetchNextPage,
   } = useDraftsInfiniteData();
 
-  // Set up intersection observer for infinite scroll
-  const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
-    threshold: 0.8,
-  });
-
-  // Prefetch sentinel - triggers earlier (70% threshold) to prefetch next page
-  const { ref: prefetchSentinelRef, isIntersecting: isPrefetchIntersecting } =
-    useIntersectionObserver({
-      threshold: 0.7,
+  const isMobile = useIsMobile(768);
+  const { sentinelRef, prefetchSentinelRef, setScrollRoot } =
+    useInfiniteScrollSentinel({
+      isMobile,
+      hasNextPage,
+      isFetchingNextPage,
+      fetchNextPage: () => {
+        void fetchNextPage();
+      },
     });
-
-  // Prefetch next page when user is 70% down (earlier than actual fetch at 80%)
-  useEffect(() => {
-    if (
-      isPrefetchIntersecting &&
-      hasNextPage &&
-      !isFetchingNextPage &&
-      !isIntersecting
-    ) {
-      // Prefetch by calling fetchNextPage early
-      void fetchNextPage();
-    }
-  }, [
-    isPrefetchIntersecting,
-    hasNextPage,
-    isFetchingNextPage,
-    isIntersecting,
-    fetchNextPage,
-  ]);
-
-  // Fetch next page when sentinel becomes visible (backup in case prefetch didn't trigger)
-  useEffect(() => {
-    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
-      void fetchNextPage();
-    }
-  }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Conversion function: PostData -> Post (for useDraftsState hook)
   // useDraftsState expects Post with createdAt: string
@@ -184,11 +158,13 @@ export default function DraftsPage() {
           showBulkActions={true}
           onBulkDelete={handleBulkDelete}
           bulkDeleteState={bulkDeleteFetcher.state}
+          prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+          sentinelRef={isMobile ? sentinelRef : undefined}
+          isFetchingNextPage={isFetchingNextPage}
+          onScrollContainerReady={isMobile ? setScrollRoot : undefined}
         />
       ) : currentTab === "posts" ? (
         <div>
-          <PostsSearch searchTerm={searchTerm} onSearchChange={setSearchTerm} />
-
           <DraftsBulkActions
             selectedCount={selectedPosts.size}
             onBulkEdit={() => setShowAdvancedBulkResume(true)}
@@ -221,6 +197,10 @@ export default function DraftsPage() {
                 : "12h"
             }
             onSortChange={(key, direction) => setSortConfig({ key, direction })}
+            prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+            sentinelRef={isMobile ? sentinelRef : undefined}
+            isFetchingNextPage={isFetchingNextPage}
+            onScrollContainerReady={isMobile ? setScrollRoot : undefined}
           />
 
           {selectedPost
@@ -268,6 +248,10 @@ export default function DraftsPage() {
             onPostSelect={(post) => {
               setSelectedLongFormPost(post as LongFormPostData);
             }}
+            prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+            sentinelRef={isMobile ? sentinelRef : undefined}
+            isFetchingNextPage={isFetchingNextPage}
+            onScrollContainerReady={isMobile ? setScrollRoot : undefined}
           />
 
           {selectedLongFormPost ? (
@@ -281,18 +265,19 @@ export default function DraftsPage() {
         </>
       )}
 
-      {/* Scroll sentinel for infinite scroll */}
-      {/* Prefetch sentinel - triggers at 70% to prefetch next page */}
-      <div ref={prefetchSentinelRef} className="h-4 w-full" />
-      {/* Main sentinel - triggers at 80% to ensure next page is loaded */}
-      <div ref={sentinelRef} className="h-4 w-full" />
-
-      {/* Loading indicator for next page */}
-      {isFetchingNextPage ? (
-        <div className="text-muted-foreground mt-4 text-center text-sm">
-          Loading more drafts...
-        </div>
+      {/* Scroll sentinel for infinite scroll (desktop only; on mobile sentinels are inside listing scroll container) */}
+      {!isMobile ? (
+        <>
+          <div ref={prefetchSentinelRef} className="h-4 w-full" />
+          <div ref={sentinelRef} className="h-4 w-full" />
+          {isFetchingNextPage ? (
+            <div className="text-muted-foreground mt-4 text-center text-sm">
+              Loading more drafts...
+            </div>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
+  /* eslint-enable sonarjs/cognitive-complexity */
 }

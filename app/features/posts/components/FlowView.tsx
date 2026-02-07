@@ -79,6 +79,11 @@ interface FlowSlot {
   size: number;
 }
 
+/** Throttle (ms) for scrollViewport state updates to avoid re-renders every frame during scroll */
+const SCROLL_VIEWPORT_THROTTLE_MS = 120;
+/** Delay (ms) after past sentinel visible before fetching; avoids fetch burst during fast scroll */
+const PAST_FETCH_DEBOUNCE_MS = 150;
+
 /** rootMargin to trigger past/future fetch before sentinel is at the edge (prefetch) */
 const SENTINEL_PREFETCH_ROOT_MARGIN_PX = 400;
 /** When within this many px of the right edge, trigger future fetch (scroll-based; future sentinel may not be in DOM). */
@@ -173,6 +178,11 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       overscrollPxRef.current = overscrollPx;
     }, [overscrollPx]);
 
+    // Throttle scrollViewport updates so we don't re-render every frame during scroll (reduces lag/flicker on mobile).
+    const scrollViewportLastMsRef = useRef(0);
+    const scrollEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
     useEffect(() => {
       const el = scrollElement ?? scrollContainerRef.current;
       if (!el) return;
@@ -183,12 +193,24 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         });
       };
       const onScroll = () => {
+        const now = Date.now();
+        const elapsed = now - scrollViewportLastMsRef.current;
         if (scrollViewportRafRef.current != null)
           cancelAnimationFrame(scrollViewportRafRef.current);
         scrollViewportRafRef.current = requestAnimationFrame(() => {
           scrollViewportRafRef.current = null;
-          updateViewport();
+          if (elapsed >= SCROLL_VIEWPORT_THROTTLE_MS) {
+            scrollViewportLastMsRef.current = now;
+            updateViewport();
+          }
         });
+        if (scrollEndTimeoutRef.current)
+          clearTimeout(scrollEndTimeoutRef.current);
+        scrollEndTimeoutRef.current = setTimeout(() => {
+          scrollEndTimeoutRef.current = null;
+          scrollViewportLastMsRef.current = 0;
+          updateViewport();
+        }, 150);
       };
       const resizeObserver = new ResizeObserver(updateViewport);
       resizeObserver.observe(el);
@@ -199,6 +221,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         el.removeEventListener("scroll", onScroll);
         if (scrollViewportRafRef.current != null)
           cancelAnimationFrame(scrollViewportRafRef.current);
+        if (scrollEndTimeoutRef.current)
+          clearTimeout(scrollEndTimeoutRef.current);
       };
     }, [scrollElement]);
 
@@ -432,8 +456,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const firstFutureIndex = flowItems.findIndex(
       (item) => getGoLiveAt(item) > nowMs
     );
-    const pastCount =
-      firstFutureIndex < 0 ? flowItems.length : firstFutureIndex;
 
     const cardSlotSize = isMobile ? CARD_SLOT_SIZE_MOBILE : CARD_SLOT_SIZE;
     const slots = useMemo((): FlowSlot[] => {
@@ -463,7 +485,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       getScrollElement: () => scrollContainerRef.current,
       estimateSize: (index) => slots[index]?.size ?? cardSlotSize,
       horizontal: true,
-      overscan: 2,
+      overscan: isMobile ? 4 : 2,
       getItemKey: (index) => {
         const slot = slots[index];
         if (!slot) return String(index);
@@ -501,7 +523,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       onPrependedPastCompensated?.();
     }, [lastPrependedPastCount, cardSlotSize, onPrependedPastCompensated]);
 
-    // Past-fetch when past sentinel is visible. Duplicate requests are prevented by pastSentinelInFlightRef in useFlowQuery.
+    // Past-fetch when past sentinel is visible. Debounce so we don't fetch mid fast-scroll (reduces lag/flicker).
+    const pastFetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
     useEffect(() => {
       if (
         !allowFetch ||
@@ -509,9 +534,22 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         !hasMorePast ||
         isLoadingMorePast
       ) {
+        if (pastFetchDebounceRef.current) {
+          clearTimeout(pastFetchDebounceRef.current);
+          pastFetchDebounceRef.current = null;
+        }
         return;
       }
-      onFetchMorePast();
+      pastFetchDebounceRef.current = setTimeout(() => {
+        pastFetchDebounceRef.current = null;
+        onFetchMorePast();
+      }, PAST_FETCH_DEBOUNCE_MS);
+      return () => {
+        if (pastFetchDebounceRef.current) {
+          clearTimeout(pastFetchDebounceRef.current);
+          pastFetchDebounceRef.current = null;
+        }
+      };
     }, [
       allowFetch,
       isPastSentinelVisible,
@@ -656,9 +694,12 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const reduceMotion =
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const index = isMobile ? scrollToFirstFutureIndex : scrollToLiveIndex;
-      // Compute exact target offset so we don't rely on scrollToIndex + delayed -24px
-      // (that caused underscroll when smooth scroll wasn't finished before the timeout).
+      // When no scheduled posts, scroll to Flow Card CTA (last slot); otherwise to next/live edge
+      const index = hasLiveEdge
+        ? isMobile
+          ? scrollToFirstFutureIndex
+          : scrollToLiveIndex
+        : slots.length - 1; /* CTA slot */
       let offsetPx = 0;
       for (let i = 0; i < index; i++) {
         offsetPx += slots[i]?.size ?? cardSlotSize;
@@ -669,6 +710,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         behavior: reduceMotion ? "auto" : "smooth",
       });
     }, [
+      hasLiveEdge,
       isMobile,
       scrollToFirstFutureIndex,
       scrollToLiveIndex,
@@ -832,6 +874,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             height: isMobile
               ? CARD_MIN_HEIGHT_MOBILE + 32
               : CARD_MIN_HEIGHT + 36,
+            contain: "layout",
           }}
         >
           <div
@@ -902,31 +945,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             })}
           </div>
         </div>
-
-        {/* Footer strip: flex-shrink-0 so it never steals space from the scroll area */}
-        {(pastCount === 0 && flowItems.length > 0 && !hasMorePast) ||
-        (firstFutureIndex < 0 && flowItems.length > 0) ? (
-          <div
-            className="border-border/60 text-muted-foreground flex flex-shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-t px-4 py-2 text-xs"
-            role="status"
-            aria-live="polite"
-          >
-            {pastCount === 0 && flowItems.length > 0 && !hasMorePast ? (
-              <span>No recent posts.</span>
-            ) : null}
-            {firstFutureIndex < 0 && flowItems.length > 0 ? (
-              <span>
-                Nothing scheduled yet.{" "}
-                <Link
-                  to="/dashboard/newpost"
-                  className="text-foreground/80 hover:text-foreground underline"
-                >
-                  Schedule a post
-                </Link>
-              </span>
-            ) : null}
-          </div>
-        ) : null}
       </div>
     );
   }

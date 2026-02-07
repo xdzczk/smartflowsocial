@@ -1,6 +1,4 @@
-import { Link, useParams, useRevalidator } from "@remix-run/react";
-
-import { getQueueColor } from "../queue-colors";
+import { Link, useParams } from "@remix-run/react";
 
 const ACTIVE_TAB_CLASSES =
   "border-border text-foreground dark:border-primary dark:text-primary";
@@ -23,13 +21,12 @@ interface PostedPostsTabsProps {
 
 export default function PostedPostsTabs({
   currentTab,
-  queueTypes,
+  queueTypes: _queueTypes,
   allContentLength,
   postsLength,
   longformPostsLength,
 }: PostedPostsTabsProps) {
   const params = useParams();
-  const revalidator = useRevalidator();
 
   return (
     <>
@@ -64,75 +61,6 @@ export default function PostedPostsTabs({
           </Link>
         </nav>
       </div>
-
-      {/* Queue Selection Tabs - Show for all content types */}
-      {currentTab === "all" ||
-      currentTab === "posts" ||
-      currentTab === "longform" ? (
-        <div className="border-border mb-6 border-b">
-          <nav className="-mb-px flex space-x-8" aria-label="Queue Types">
-            <Link
-              to={`/dashboard/posted?tab=${currentTab}`}
-              prefetch="intent"
-              onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
-              className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
-                !params["queueType"] ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
-              }`}
-            >
-              All Queues
-            </Link>
-            {queueTypes.map((queueType) => {
-              const queueName =
-                typeof queueType === "string" ? queueType : queueType.name;
-              const queueColor =
-                typeof queueType === "object" ? queueType.color : null;
-              const colors = getQueueColor(queueName, queueColor);
-              const isSelected = params["queueType"] === queueName;
-
-              const baseClasses =
-                "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium capitalize";
-              const unselectedClasses = INACTIVE_TAB_CLASSES;
-
-              if (isSelected && queueColor) {
-                // Use inline styles for custom colors
-                return (
-                  <Link
-                    key={queueName}
-                    to={`/dashboard/posted/${queueName}?tab=${currentTab}`}
-                    prefetch="intent"
-                    onClick={() =>
-                      setTimeout(() => revalidator.revalidate(), 0)
-                    }
-                    className={`${baseClasses} border-b-2`}
-                    style={{
-                      borderBottomColor: queueColor,
-                      color: queueColor,
-                    }}
-                  >
-                    {queueName}
-                  </Link>
-                );
-              }
-
-              return (
-                <Link
-                  key={queueName}
-                  to={`/dashboard/posted/${queueName}?tab=${currentTab}`}
-                  prefetch="intent"
-                  onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
-                  className={`${baseClasses} ${
-                    isSelected && colors
-                      ? `${colors.border.replace("border-", "border-b-") || "border-b-border dark:border-b-primary"} ${colors.text || "text-foreground dark:text-primary"}`
-                      : unselectedClasses
-                  }`}
-                >
-                  {queueName}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      ) : null}
     </>
   );
 }

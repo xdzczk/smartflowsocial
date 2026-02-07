@@ -1,7 +1,8 @@
 import { useSearchParams, useNavigate } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
+import { usePostResultFromUrl } from "~/features/posts/hooks/usePostResultFromUrl";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
 import {
   AllContentListing,
@@ -11,7 +12,6 @@ import {
   LongFormDetailsModal,
   LongFormListing,
   PostDetailsModal,
-  PostsSearch,
   PostTypeTabs,
   QueueSelectionTabs,
   ScheduledPostsTable,
@@ -20,7 +20,8 @@ import {
   useScheduledPostsInfiniteData,
 } from "~/features/posts/ui";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
+import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   extractLongFormPostData,
   extractPostData,
@@ -35,6 +36,7 @@ import {
 import PublishResultModal from "./PublishResultModal";
 import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
+/* eslint-disable sonarjs/cognitive-complexity -- Page orchestrator: tabs, queue filters, table/list content, modals */
 export default function ScheduledPostsPage() {
   // Use infinite query for data fetching with infinite scroll
   const {
@@ -74,99 +76,31 @@ export default function ScheduledPostsPage() {
     mode: "repost" | "quote";
   } | null>(null);
 
-  // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") ?? "all";
 
-  // Check for scheduled URL param
-  useEffect(() => {
-    const scheduledPostId = searchParams.get("scheduled");
-    if (scheduledPostId && user && !modalPostId && !showPublishModal) {
-      // Use setTimeout to avoid setState in effect warning
-      setTimeout(() => {
-        setModalPostId(scheduledPostId);
-      }, 0);
-
-      // Fetch post data using fetch directly for API routes
-      void (async () => {
-        try {
-          const res = await fetch(`/api/posts/${scheduledPostId}`);
-          if (!res.ok) {
-            throw new Error(`Failed to fetch: ${res.status}`);
-          }
-          const data = (await res.json()) as {
-            post?: {
-              id: string;
-              publishAttemptId: string | null;
-              currentState?: string | null;
-              scheduledAtUtc?: Date | null;
-            };
-            longFormPost?: {
-              id: string;
-              publishAttemptId: string | null;
-              currentState?: string | null;
-              scheduledAtUtc?: Date | null;
-            };
-            error?: string;
-          };
-
-          if (data.post || data.longFormPost) {
-            setTimeout(() => {
-              setModalPost(data.post ?? null);
-              setModalLongFormPost(data.longFormPost ?? null);
-              setShowPublishModal(true);
-            }, 0);
-            // Clear URL param to prevent re-showing on refresh
-            const newSearchParams = new URLSearchParams(searchParams);
-            newSearchParams.delete("scheduled");
-            setSearchParams(newSearchParams, { replace: true });
-          }
-        } catch (error) {
-          console.error("Failed to fetch post data:", error);
-          // Reset state on error
-          setTimeout(() => {
-            setModalPostId(null);
-          }, 0);
-        }
-      })();
-    }
-  }, [searchParams, user, modalPostId, showPublishModal, setSearchParams]);
-
-  // Set up intersection observer for infinite scroll
-  const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
-    threshold: 0.8,
+  usePostResultFromUrl({
+    paramName: "scheduled",
+    searchParams,
+    setSearchParams,
+    user,
+    modalPostId,
+    showPublishModal,
+    setModalPostId,
+    setModalPost,
+    setModalLongFormPost,
+    setShowPublishModal,
   });
 
-  // Prefetch sentinel - triggers earlier (70% threshold) to prefetch next page
-  const { ref: prefetchSentinelRef, isIntersecting: isPrefetchIntersecting } =
-    useIntersectionObserver({
-      threshold: 0.7,
+  const isMobile = useIsMobile(768);
+  const { sentinelRef, prefetchSentinelRef, setScrollRoot } =
+    useInfiniteScrollSentinel({
+      isMobile,
+      hasNextPage,
+      isFetchingNextPage,
+      fetchNextPage: () => {
+        void fetchNextPage();
+      },
     });
-
-  // Prefetch next page when user is 70% down (earlier than actual fetch at 80%)
-  useEffect(() => {
-    if (
-      isPrefetchIntersecting &&
-      hasNextPage &&
-      !isFetchingNextPage &&
-      !isIntersecting
-    ) {
-      // Prefetch by calling fetchNextPage early
-      void fetchNextPage();
-    }
-  }, [
-    isPrefetchIntersecting,
-    hasNextPage,
-    isFetchingNextPage,
-    isIntersecting,
-    fetchNextPage,
-  ]);
-
-  // Fetch next page when sentinel becomes visible (backup in case prefetch didn't trigger)
-  useEffect(() => {
-    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
-      void fetchNextPage();
-    }
-  }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const {
     sortConfig,
@@ -283,11 +217,13 @@ export default function ScheduledPostsPage() {
               mode: "quote",
             })
           }
+          prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+          sentinelRef={isMobile ? sentinelRef : undefined}
+          isFetchingNextPage={isFetchingNextPage}
+          onScrollContainerReady={isMobile ? setScrollRoot : undefined}
         />
       ) : currentTab === "posts" ? (
         <div>
-          <PostsSearch searchTerm={searchTerm} onSearchChange={setSearchTerm} />
-
           <BulkDeleteBar
             selectedCount={selectedPosts.size}
             onBulkDelete={handleBulkDelete}
@@ -320,6 +256,10 @@ export default function ScheduledPostsPage() {
               setScheduleRepostQuote({ post, mode: "quote" })
             }
             onSortChange={(key, direction) => setSortConfig({ key, direction })}
+            prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+            sentinelRef={isMobile ? sentinelRef : undefined}
+            isFetchingNextPage={isFetchingNextPage}
+            onScrollContainerReady={isMobile ? setScrollRoot : undefined}
           />
 
           {selectedPost ? (
@@ -360,20 +300,24 @@ export default function ScheduledPostsPage() {
           onReschedulePost={(post) =>
             handleReschedulePost(post as PostData | LongFormPostData)
           }
+          prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+          sentinelRef={isMobile ? sentinelRef : undefined}
+          isFetchingNextPage={isFetchingNextPage}
+          onScrollContainerReady={isMobile ? setScrollRoot : undefined}
         />
       )}
 
-      {/* Scroll sentinel for infinite scroll */}
-      {/* Prefetch sentinel - triggers at 70% to prefetch next page */}
-      <div ref={prefetchSentinelRef} className="h-4 w-full" />
-      {/* Main sentinel - triggers at 80% to ensure next page is loaded */}
-      <div ref={sentinelRef} className="h-4 w-full" />
-
-      {/* Loading indicator for next page */}
-      {isFetchingNextPage ? (
-        <div className="text-muted-foreground mt-4 text-center text-sm">
-          Loading more posts...
-        </div>
+      {/* Scroll sentinel for infinite scroll (desktop only; on mobile sentinels are inside listing scroll container) */}
+      {!isMobile ? (
+        <>
+          <div ref={prefetchSentinelRef} className="h-4 w-full" />
+          <div ref={sentinelRef} className="h-4 w-full" />
+          {isFetchingNextPage ? (
+            <div className="text-muted-foreground mt-4 text-center text-sm">
+              Loading more posts...
+            </div>
+          ) : null}
+        </>
       ) : null}
 
       {/* Long Form Post Details Modal */}
@@ -462,4 +406,5 @@ export default function ScheduledPostsPage() {
       ) : null}
     </div>
   );
+  /* eslint-enable sonarjs/cognitive-complexity */
 }

@@ -1,6 +1,6 @@
 import { useFetcher, Link } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, type Key } from "react";
 
 import {
   Select,
@@ -49,6 +49,10 @@ interface LongFormListingProps {
   longformQuoteFetcher?: PostFetcher;
   onEditPost?: (post: LongFormPostType | LongFormPostData) => void;
   onReschedulePost?: (post: LongFormPostType | LongFormPostData) => void;
+  prefetchSentinelRef?: React.Ref<HTMLDivElement | null>;
+  sentinelRef?: React.Ref<HTMLDivElement | null>;
+  isFetchingNextPage?: boolean;
+  onScrollContainerReady?: (el: HTMLDivElement | null) => void;
 }
 
 // ============================================================================
@@ -160,21 +164,29 @@ export default function LongFormListing({
   type,
   onPostSelect,
   searchTerm = "",
-  onSearchChange,
+  onSearchChange: _onSearchChange,
   userTimezone = "UTC",
   userTimeFormat = "12h",
   longformRepostFetcher,
   longformQuoteFetcher,
   onEditPost,
   onReschedulePost,
+  prefetchSentinelRef,
+  sentinelRef,
+  isFetchingNextPage = false,
+  onScrollContainerReady,
 }: LongFormListingProps) {
+  const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
+  const useDedicatedScroll =
+    isMobile && (sentinelRef != null || onScrollContainerReady != null);
+
   const [sortConfig, setSortConfig] = useState({
     key: getDefaultSortKey(type),
     direction: getDefaultSortDirection(type),
   });
   const [selectedPosts, setSelectedPosts] = useState(new Set<string>());
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
-  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const deleteFetcher = useFetcher();
   interface BulkDeleteFetcherData {
     success?: boolean;
@@ -205,12 +217,17 @@ export default function LongFormListing({
   const rowVirtualizer = useVirtualizer({
     count: combinedContent.length,
     getScrollElement: () =>
-      typeof document !== "undefined" ? document.documentElement : null,
+      useDedicatedScroll && mobileScrollContainerRef.current
+        ? mobileScrollContainerRef.current
+        : typeof document !== "undefined"
+          ? document.documentElement
+          : null,
     estimateSize: () => 98,
     overscan: 3,
     getItemKey: (index) => combinedContent[index]?.id ?? String(index),
   });
   const virtualItems = rowVirtualizer.getVirtualItems();
+  const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
 
   const formatDate = (
     dateInput?: string | Date | number,
@@ -465,46 +482,6 @@ export default function LongFormListing({
 
   return (
     <div>
-      {/* Search Bar */}
-      {onSearchChange ? (
-        <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-          <div>
-            <h4 className="text-muted-foreground dark:text-foreground text-sm font-medium">
-              You have{" "}
-              <span className="text-muted-foreground">
-                {filteredPosts.length} longform {type} posts
-              </span>
-            </h4>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative w-full">
-              <div className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l">
-                <svg
-                  className="hi-mini hi-magnifying-glass inline-block size-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="dark:border-border dark:bg-card dark:focus:border-primary border-border placeholder-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring"
-                placeholder="Search longform posts..."
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       {/* Bulk Actions */}
       {selectedPosts.size > 0 ? (
         <div className="border-border bg-muted dark:border-border dark:bg-muted/50 mb-4 flex items-center justify-between rounded-lg border p-4">
@@ -898,7 +875,7 @@ export default function LongFormListing({
       </div>
 
       {/* Mobile: virtualized longform card list */}
-      {isMobile && combinedContent.length > 0 ? (
+      {isMobile ? (
         <div className="block md:hidden">
           <div className="mt-3 flex items-center gap-2">
             <span className="text-muted-foreground text-sm">Sort:</span>
@@ -937,69 +914,176 @@ export default function LongFormListing({
               </SelectContent>
             </Select>
           </div>
-          <div
-            className="mt-2"
-            style={{
-              height: rowVirtualizer.getTotalSize(),
-              position: "relative",
-              width: "100%",
-            }}
-          >
-            {virtualItems.map((virtualRow) => {
-              const item = combinedContent[virtualRow.index];
-              if (!item) return null;
-              return (
-                <div
-                  key={virtualRow.key}
-                  data-index={virtualRow.index}
-                  className="pb-0.5"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                >
-                  <ContentListCard
-                    item={item}
-                    type={type}
-                    userTimezone={userTimezone}
-                    userTimeFormat={userTimeFormat}
-                    showBulkActions={true}
-                    selectedItems={selectedPosts}
-                    onToggleSelection={togglePostSelection}
-                    onPostSelect={(content) =>
-                      onPostSelect?.(content.originalData as LongFormPostData)
-                    }
-                    onEditPost={
-                      onEditPost
-                        ? (post) =>
-                            onEditPost(
-                              post as LongFormPostType | LongFormPostData
-                            )
-                        : undefined
-                    }
-                    onReschedulePost={
-                      onReschedulePost
-                        ? (post) =>
-                            onReschedulePost(
-                              post as LongFormPostType | LongFormPostData
-                            )
-                        : undefined
-                    }
-                    deleteFetcher={
-                      deleteFetcher as Parameters<
-                        typeof ContentListCard
-                      >[0]["deleteFetcher"]
-                    }
-                    longformRepostFetcher={longformRepostFetcher}
-                    longformQuoteFetcher={longformQuoteFetcher}
-                  />
-                </div>
-              );
-            })}
-          </div>
+          {useDedicatedScroll ? (
+            <div
+              ref={(el) => {
+                mobileScrollContainerRef.current = el;
+                onScrollContainerReady?.(el ?? null);
+              }}
+              className="mt-2 overflow-auto"
+              style={{ height: "calc(100vh - 14rem)" }}
+            >
+              {combinedContent.length > 0 ? (
+                <>
+                  <div
+                    style={{
+                      height: rowVirtualizer.getTotalSize(),
+                      position: "relative",
+                      width: "100%",
+                    }}
+                  >
+                    {virtualItems.map((virtualRow) => {
+                      const item = combinedContent[virtualRow.index];
+                      if (!item) return null;
+                      return (
+                        <div
+                          key={virtualRow.key}
+                          data-index={virtualRow.index}
+                          className="pb-0.5"
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            transform: `translateY(${virtualRow.start}px)`,
+                            zIndex:
+                              openMenuRowKey === virtualRow.key
+                                ? 50
+                                : undefined,
+                          }}
+                        >
+                          <ContentListCard
+                            item={item}
+                            type={type}
+                            userTimezone={userTimezone}
+                            userTimeFormat={userTimeFormat}
+                            showBulkActions={true}
+                            selectedItems={selectedPosts}
+                            onToggleSelection={togglePostSelection}
+                            onPostSelect={(content) =>
+                              onPostSelect?.(
+                                content.originalData as LongFormPostData
+                              )
+                            }
+                            onEditPost={
+                              onEditPost
+                                ? (post) =>
+                                    onEditPost(
+                                      post as
+                                        | LongFormPostType
+                                        | LongFormPostData
+                                    )
+                                : undefined
+                            }
+                            onReschedulePost={
+                              onReschedulePost
+                                ? (post) =>
+                                    onReschedulePost(
+                                      post as
+                                        | LongFormPostType
+                                        | LongFormPostData
+                                    )
+                                : undefined
+                            }
+                            deleteFetcher={
+                              deleteFetcher as Parameters<
+                                typeof ContentListCard
+                              >[0]["deleteFetcher"]
+                            }
+                            longformRepostFetcher={longformRepostFetcher}
+                            longformQuoteFetcher={longformQuoteFetcher}
+                            onMenuOpenChange={(open) =>
+                              setOpenMenuRowKey(open ? virtualRow.key : null)
+                            }
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {prefetchSentinelRef ? (
+                    <div ref={prefetchSentinelRef} className="h-4 w-full" />
+                  ) : null}
+                  {sentinelRef ? (
+                    <div ref={sentinelRef} className="h-4 w-full" />
+                  ) : null}
+                  {isFetchingNextPage ? (
+                    <div className="text-muted-foreground py-4 text-center text-sm">
+                      Loading more...
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          ) : combinedContent.length > 0 ? (
+            <div
+              className="mt-2"
+              style={{
+                height: rowVirtualizer.getTotalSize(),
+                position: "relative",
+                width: "100%",
+              }}
+            >
+              {virtualItems.map((virtualRow) => {
+                const item = combinedContent[virtualRow.index];
+                if (!item) return null;
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    className="pb-0.5"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                      zIndex:
+                        openMenuRowKey === virtualRow.key ? 50 : undefined,
+                    }}
+                  >
+                    <ContentListCard
+                      item={item}
+                      type={type}
+                      userTimezone={userTimezone}
+                      userTimeFormat={userTimeFormat}
+                      showBulkActions={true}
+                      selectedItems={selectedPosts}
+                      onToggleSelection={togglePostSelection}
+                      onPostSelect={(content) =>
+                        onPostSelect?.(content.originalData as LongFormPostData)
+                      }
+                      onEditPost={
+                        onEditPost
+                          ? (post) =>
+                              onEditPost(
+                                post as LongFormPostType | LongFormPostData
+                              )
+                          : undefined
+                      }
+                      onReschedulePost={
+                        onReschedulePost
+                          ? (post) =>
+                              onReschedulePost(
+                                post as LongFormPostType | LongFormPostData
+                              )
+                          : undefined
+                      }
+                      deleteFetcher={
+                        deleteFetcher as Parameters<
+                          typeof ContentListCard
+                        >[0]["deleteFetcher"]
+                      }
+                      longformRepostFetcher={longformRepostFetcher}
+                      longformQuoteFetcher={longformQuoteFetcher}
+                      onMenuOpenChange={(open) =>
+                        setOpenMenuRowKey(open ? virtualRow.key : null)
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

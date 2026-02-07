@@ -1,5 +1,5 @@
 import { Link } from "@remix-run/react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 
@@ -59,6 +59,8 @@ export interface ContentListCardProps {
   longformQuoteFetcher?: PostFetcher;
   onScheduleRepost?: (post: PostData) => void;
   onScheduleQuote?: (post: PostData) => void;
+  /** Called when the actions menu opens or closes (e.g. so parent can elevate z-index for virtual lists) */
+  onMenuOpenChange?: (open: boolean) => void;
 }
 
 // Card and dropdown mirror ContentTableRow actions; refactor into subcomponents in a follow-up
@@ -80,20 +82,32 @@ export function ContentListCard({
   longformQuoteFetcher,
   onScheduleRepost,
   onScheduleQuote,
+  onMenuOpenChange,
 }: ContentListCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const setMenuOpenWithCallback = useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      setMenuOpen((prev) => {
+        const next = typeof value === "function" ? value(prev) : value;
+        onMenuOpenChange?.(next);
+        return next;
+      });
+    },
+    [onMenuOpenChange]
+  );
 
   useEffect(() => {
     if (!menuOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
+        setMenuOpenWithCallback(false);
       }
     };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, [menuOpen]);
+  }, [menuOpen, setMenuOpenWithCallback]);
 
   const queueDisplay = getQueueTypeDisplay(item.queueType);
   const firstImage = getFirstImageUrl(item);
@@ -186,7 +200,7 @@ export function ContentListCard({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            setMenuOpen((open) => !open);
+            setMenuOpenWithCallback((open) => !open);
           }}
           className="text-muted-foreground hover:text-foreground focus:ring-ring flex h-8 w-8 items-center justify-center rounded-md focus:ring-2 focus:ring-offset-0 focus:outline-none"
           aria-label="Actions"
@@ -346,7 +360,7 @@ export function ContentListCard({
                     type="button"
                     onClick={() => {
                       onScheduleRepost(item.originalData as PostData);
-                      setMenuOpen(false);
+                      setMenuOpenWithCallback(false);
                     }}
                     className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
                   >
@@ -358,7 +372,7 @@ export function ContentListCard({
                     type="button"
                     onClick={() => {
                       onScheduleQuote(item.originalData as PostData);
-                      setMenuOpen(false);
+                      setMenuOpenWithCallback(false);
                     }}
                     className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
                   >
@@ -373,7 +387,7 @@ export function ContentListCard({
                   type="button"
                   onClick={() => {
                     onEditPost?.(item.originalData);
-                    setMenuOpen(false);
+                    setMenuOpenWithCallback(false);
                   }}
                   className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
                 >
@@ -383,7 +397,7 @@ export function ContentListCard({
                   type="button"
                   onClick={() => {
                     onReschedulePost?.(item.originalData);
-                    setMenuOpen(false);
+                    setMenuOpenWithCallback(false);
                   }}
                   className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
                 >
@@ -394,7 +408,7 @@ export function ContentListCard({
                     type="button"
                     onClick={() => {
                       onScheduleRepost(item.originalData as PostData);
-                      setMenuOpen(false);
+                      setMenuOpenWithCallback(false);
                     }}
                     className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
                   >
@@ -406,7 +420,7 @@ export function ContentListCard({
                     type="button"
                     onClick={() => {
                       onScheduleQuote(item.originalData as PostData);
-                      setMenuOpen(false);
+                      setMenuOpenWithCallback(false);
                     }}
                     className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
                   >

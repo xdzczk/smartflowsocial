@@ -736,13 +736,22 @@ async function searchFeatures(
   }));
 }
 
+/** Context from current page to prioritize matching result types first */
+export type GlobalSearchPriorityContext =
+  | "draft"
+  | "scheduled"
+  | "posted"
+  | "template";
+
 /**
- * Perform global search across all content types
+ * Perform global search across all content types.
+ * When priorityContext is set (e.g. from current page), results of that type are ordered first after features.
  */
 export async function performGlobalSearch(
   userId: string,
   query: string,
-  limitPerType = 5
+  limitPerType = 5,
+  priorityContext?: string | null
 ): Promise<GlobalSearchResponse> {
   if (!query || query.trim() === "") {
     return { results: [], total: 0 };
@@ -796,18 +805,52 @@ export async function performGlobalSearch(
     searchFeatures(userId, trimmedQuery, 10), // Show up to 10 features
   ]);
 
-  // Combine all results, prioritizing features at the top
-  const allResults: GlobalSearchResult[] = [
-    ...features, // Features first for better UX
-    ...drafts,
-    ...scheduled,
-    ...publishing,
-    ...posted,
-    ...failed,
-    ...cancelled,
-    ...templates,
-    ...externalResults,
+  // Build segments in default order; then reorder so priority context type comes right after features
+  const segments: Array<{
+    type: GlobalSearchResult["type"];
+    results: GlobalSearchResult[];
+  }> = [
+    { type: "draft", results: drafts },
+    { type: "scheduled", results: scheduled },
+    { type: "publishing", results: publishing },
+    { type: "posted", results: posted },
+    { type: "failed", results: failed },
+    { type: "cancelled", results: cancelled },
+    { type: "template", results: templates },
   ];
+
+  const validContext =
+    priorityContext === "draft" ||
+    priorityContext === "scheduled" ||
+    priorityContext === "posted" ||
+    priorityContext === "template"
+      ? priorityContext
+      : null;
+
+  let allResults: GlobalSearchResult[];
+  if (validContext) {
+    const prioritySegment = segments.find((s) => s.type === validContext);
+    const rest = segments.filter((s) => s.type !== validContext);
+    const restFlat = rest.flatMap((s) => s.results);
+    allResults = [
+      ...features,
+      ...(prioritySegment?.results ?? []),
+      ...restFlat,
+      ...externalResults,
+    ];
+  } else {
+    allResults = [
+      ...features,
+      ...drafts,
+      ...scheduled,
+      ...publishing,
+      ...posted,
+      ...failed,
+      ...cancelled,
+      ...templates,
+      ...externalResults,
+    ];
+  }
 
   return {
     results: allResults,

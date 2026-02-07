@@ -467,7 +467,7 @@ export default function PostDetailsModal({
       <Dialog open onOpenChange={(open) => !open && onClose()}>
         <DialogContent
           hideCloseButton
-          className="bg-card text-card-foreground border-border mx-4 flex max-h-[90vh] w-full max-w-5xl translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-2xl"
+          className="bg-card text-card-foreground border-border flex max-h-[90dvh] w-full max-w-5xl flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-2xl"
         >
           <div className="border-border bg-card/95 sticky top-0 z-10 border-b px-6 py-4 backdrop-blur-sm">
             <div className="flex items-center justify-between">

@@ -1,7 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type Key } from "react";
 
 import {
   Select,
@@ -25,11 +25,32 @@ import type {
 import { CONTENT_MOBILE_BREAKPOINT_PX } from "./constants";
 import { ContentBulkActions } from "./ContentBulkActions";
 import { ContentListCard } from "./ContentListCard";
-import { ContentSearchBar } from "./ContentSearchBar";
 import { ContentTableHeader } from "./ContentTableHeader";
 import { ContentTableRow } from "./ContentTableRow";
 
 const CONTENT_LIST_CARD_HEIGHT_PX = 98;
+
+function getInitialContentSortConfig(type: "scheduled" | "draft" | "posted"): {
+  key: string;
+  direction: "asc" | "desc";
+} {
+  const key =
+    type === "posted"
+      ? "postedAt"
+      : type === "scheduled"
+        ? "scheduledAtUtc"
+        : "createdAt";
+  const direction = type === "scheduled" ? "asc" : "desc";
+  return { key, direction };
+}
+
+function getContentScrollElement(
+  useDedicatedScroll: boolean,
+  scrollRef: { current: HTMLDivElement | null }
+): Element | null {
+  if (useDedicatedScroll && scrollRef.current) return scrollRef.current;
+  return typeof document !== "undefined" ? document.documentElement : null;
+}
 
 interface AllContentListingProps {
   content: CombinedContent[];
@@ -59,13 +80,18 @@ interface AllContentListingProps {
   // Edit and reschedule actions for scheduled content
   onEditPost?: (post: PostData | LongFormPostData) => void;
   onReschedulePost?: (post: PostData | LongFormPostData) => void;
+  // Infinite scroll: when provided, mobile uses a dedicated scroll container so virtualizer offset is correct
+  prefetchSentinelRef?: React.Ref<HTMLDivElement | null>;
+  sentinelRef?: React.Ref<HTMLDivElement | null>;
+  isFetchingNextPage?: boolean;
+  onScrollContainerReady?: (el: HTMLDivElement | null) => void;
 }
 
 export default function AllContentListing({
   content,
   type,
   searchTerm,
-  onSearchChange,
+  onSearchChange: _onSearchChange,
   userTimezone,
   userTimeFormat = "12h",
   onPostSelect,
@@ -88,8 +114,16 @@ export default function AllContentListing({
   // Edit and reschedule actions
   onEditPost,
   onReschedulePost,
+  // Infinite scroll
+  prefetchSentinelRef,
+  sentinelRef,
+  isFetchingNextPage = false,
+  onScrollContainerReady,
 }: AllContentListingProps) {
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
+  const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const useDedicatedScroll =
+    isMobile && (sentinelRef != null || onScrollContainerReady != null);
   const deleteFetcher = useFetcher<{
     success?: boolean;
     error?: string;
@@ -115,17 +149,7 @@ export default function AllContentListing({
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
-  }>({
-    key:
-      type === "posted"
-        ? "postedAt"
-        : type === "scheduled"
-          ? "scheduledAtUtc"
-          : "createdAt",
-    // For scheduled posts, show earliest (upcoming) first (asc)
-    // For posted posts, show newest first (desc)
-    direction: type === "scheduled" ? "asc" : "desc",
-  });
+  }>(() => getInitialContentSortConfig(type));
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({
@@ -231,11 +255,10 @@ export default function AllContentListing({
         : "createdAt";
 
   // TanStack Virtual returns unstable refs by design; virtualization is intentional (plan: mobile card lists)
-
   const rowVirtualizer = useVirtualizer({
     count: filteredContent.length,
     getScrollElement: () =>
-      typeof document !== "undefined" ? document.documentElement : null,
+      getContentScrollElement(useDedicatedScroll, mobileScrollContainerRef),
     estimateSize: () => CONTENT_LIST_CARD_HEIGHT_PX,
     overscan: 3,
     getItemKey: (index) => {
@@ -245,6 +268,8 @@ export default function AllContentListing({
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
+
+  const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
 
   const setMobileSort = (value: string) => {
     if (
@@ -263,11 +288,6 @@ export default function AllContentListing({
 
   return (
     <div>
-      <ContentSearchBar
-        searchTerm={searchTerm}
-        onSearchChange={onSearchChange}
-      />
-
       {showBulkActions ? (
         <ContentBulkActions
           type={type}
@@ -324,80 +344,158 @@ export default function AllContentListing({
       {/* Mobile: Sort + virtualized card list (visible only on mobile) */}
       {isMobile ? (
         <div className="block md:hidden">
-          {filteredContent.length > 0 ? (
-            <>
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">Sort:</span>
-                <Select
-                  value={
-                    sortConfig.key === "caption"
-                      ? `caption-${sortConfig.direction}`
-                      : `date-${sortConfig.direction}`
-                  }
-                  onValueChange={setMobileSort}
-                >
-                  <SelectTrigger className="w-[11rem]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date-desc">
-                      Date (newest first)
-                    </SelectItem>
-                    <SelectItem value="date-asc">
-                      Date (oldest first)
-                    </SelectItem>
-                    <SelectItem value="caption-asc">Title (A–Z)</SelectItem>
-                    <SelectItem value="caption-desc">Title (Z–A)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div
-                className="mt-2"
-                style={{
-                  height: rowVirtualizer.getTotalSize(),
-                  position: "relative",
-                  width: "100%",
-                }}
-              >
-                {virtualItems.map((virtualRow) => {
-                  const item = filteredContent[virtualRow.index];
-                  if (!item) return null;
-                  return (
-                    <div
-                      key={virtualRow.key}
-                      data-index={virtualRow.index}
-                      className="pb-0.5"
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        transform: `translateY(${virtualRow.start}px)`,
-                      }}
-                    >
-                      <ContentListCard
-                        item={item}
-                        type={type}
-                        userTimezone={userTimezone}
-                        userTimeFormat={userTimeFormat}
-                        showBulkActions={showBulkActions}
-                        selectedItems={selectedItems}
-                        onToggleSelection={onToggleSelection}
-                        onPostSelect={onPostSelect}
-                        onEditPost={onEditPost}
-                        onReschedulePost={onReschedulePost}
-                        deleteFetcher={deleteFetcher as unknown as PostFetcher}
-                        individualRepostFetcher={individualRepostFetcher}
-                        longformRepostFetcher={longformRepostFetcher}
-                        longformQuoteFetcher={longformQuoteFetcher}
-                        onScheduleRepost={onScheduleRepost}
-                        onScheduleQuote={onScheduleQuote}
-                      />
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-muted-foreground text-sm">Sort:</span>
+            <Select
+              value={
+                sortConfig.key === "caption"
+                  ? `caption-${sortConfig.direction}`
+                  : `date-${sortConfig.direction}`
+              }
+              onValueChange={setMobileSort}
+            >
+              <SelectTrigger className="w-[11rem]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date-desc">Date (newest first)</SelectItem>
+                <SelectItem value="date-asc">Date (oldest first)</SelectItem>
+                <SelectItem value="caption-asc">Title (A–Z)</SelectItem>
+                <SelectItem value="caption-desc">Title (Z–A)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {useDedicatedScroll ? (
+            <div
+              ref={(el) => {
+                mobileScrollContainerRef.current = el;
+                onScrollContainerReady?.(el ?? null);
+              }}
+              className="mt-2 overflow-auto"
+              style={{ height: "calc(100vh - 14rem)" }}
+            >
+              {filteredContent.length > 0 ? (
+                <>
+                  <div
+                    style={{
+                      height: rowVirtualizer.getTotalSize(),
+                      position: "relative",
+                      width: "100%",
+                    }}
+                  >
+                    {virtualItems.map((virtualRow) => {
+                      const item = filteredContent[virtualRow.index];
+                      if (!item) return null;
+                      return (
+                        <div
+                          key={virtualRow.key}
+                          data-index={virtualRow.index}
+                          className="pb-0.5"
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            transform: `translateY(${virtualRow.start}px)`,
+                            zIndex:
+                              openMenuRowKey === virtualRow.key
+                                ? 50
+                                : undefined,
+                          }}
+                        >
+                          <ContentListCard
+                            item={item}
+                            type={type}
+                            userTimezone={userTimezone}
+                            userTimeFormat={userTimeFormat}
+                            showBulkActions={showBulkActions}
+                            selectedItems={selectedItems}
+                            onToggleSelection={onToggleSelection}
+                            onPostSelect={onPostSelect}
+                            onEditPost={onEditPost}
+                            onReschedulePost={onReschedulePost}
+                            deleteFetcher={
+                              deleteFetcher as unknown as PostFetcher
+                            }
+                            individualRepostFetcher={individualRepostFetcher}
+                            longformRepostFetcher={longformRepostFetcher}
+                            longformQuoteFetcher={longformQuoteFetcher}
+                            onScheduleRepost={onScheduleRepost}
+                            onScheduleQuote={onScheduleQuote}
+                            onMenuOpenChange={(open) =>
+                              setOpenMenuRowKey(open ? virtualRow.key : null)
+                            }
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {prefetchSentinelRef ? (
+                    <div ref={prefetchSentinelRef} className="h-4 w-full" />
+                  ) : null}
+                  {sentinelRef ? (
+                    <div ref={sentinelRef} className="h-4 w-full" />
+                  ) : null}
+                  {isFetchingNextPage ? (
+                    <div className="text-muted-foreground py-4 text-center text-sm">
+                      Loading more...
                     </div>
-                  );
-                })}
-              </div>
-            </>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          ) : filteredContent.length > 0 ? (
+            <div
+              className="mt-2"
+              style={{
+                height: rowVirtualizer.getTotalSize(),
+                position: "relative",
+                width: "100%",
+              }}
+            >
+              {virtualItems.map((virtualRow) => {
+                const item = filteredContent[virtualRow.index];
+                if (!item) return null;
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    className="pb-0.5"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                      zIndex:
+                        openMenuRowKey === virtualRow.key ? 50 : undefined,
+                    }}
+                  >
+                    <ContentListCard
+                      item={item}
+                      type={type}
+                      userTimezone={userTimezone}
+                      userTimeFormat={userTimeFormat}
+                      showBulkActions={showBulkActions}
+                      selectedItems={selectedItems}
+                      onToggleSelection={onToggleSelection}
+                      onPostSelect={onPostSelect}
+                      onEditPost={onEditPost}
+                      onReschedulePost={onReschedulePost}
+                      deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                      individualRepostFetcher={individualRepostFetcher}
+                      longformRepostFetcher={longformRepostFetcher}
+                      longformQuoteFetcher={longformQuoteFetcher}
+                      onScheduleRepost={onScheduleRepost}
+                      onScheduleQuote={onScheduleQuote}
+                      onMenuOpenChange={(open) =>
+                        setOpenMenuRowKey(open ? virtualRow.key : null)
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
           ) : null}
         </div>
       ) : null}

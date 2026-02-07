@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useLocation } from "@remix-run/react";
 import { Search, X } from "lucide-react";
 import {
   useEffect,
@@ -17,7 +17,23 @@ interface GlobalSearchBarProps {
   className?: string;
 }
 
+/** Derive search priority context from current path so results from current page appear first */
+function getSearchPriorityContext(pathname: string): string | null {
+  if (pathname.startsWith("/dashboard/scheduled")) return "scheduled";
+  if (pathname.startsWith("/dashboard/posted")) return "posted";
+  if (pathname.startsWith("/dashboard/drafts")) return "draft";
+  if (
+    pathname.startsWith("/dashboard/templates") ||
+    pathname.includes("/templates")
+  )
+    return "template";
+  return null;
+}
+
 export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
+  const location = useLocation();
+  const priorityContext = getSearchPriorityContext(location.pathname);
+
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GlobalSearchResult[]>([]);
@@ -66,9 +82,9 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
         currentRequestId === searchRequestIdRef.current &&
         currentQueryRef.current === trimmedQuery
       ) {
-        fetcher.load(
-          `/api/global-search?q=${encodeURIComponent(trimmedQuery)}`
-        );
+        const params = new URLSearchParams({ q: trimmedQuery });
+        if (priorityContext) params.set("context", priorityContext);
+        fetcher.load(`/api/global-search?${params.toString()}`);
       }
     }, 500); // Increased debounce from 300ms to 500ms to reduce server load
 

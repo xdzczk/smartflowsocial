@@ -6,7 +6,6 @@ import {
   PostDetailsModal,
   RecyclablesBulkActions,
   RecyclablesQueueTabs,
-  RecyclablesSearch,
   RecyclablesTable,
   RecyclablesToast,
   useRecyclablesInfiniteData,
@@ -78,13 +77,13 @@ export default function RecyclablesPage() {
 
   const {
     sortConfig,
-    searchTerm,
+    searchTerm: _searchTerm,
     selectedPost,
     selectedPosts,
     toast,
     filteredPosts,
     requestSort,
-    setSearchTerm,
+    setSearchTerm: _setSearchTerm,
     setSelectedPost,
     togglePostSelection,
     toggleSelectAll,
@@ -105,16 +104,8 @@ export default function RecyclablesPage() {
 
   return (
     <div>
-      <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-        <div>
-          <h3 className="mb-1 font-semibold">Recyclable Posts</h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <RecyclablesSearch
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-          />
-        </div>
+      <div className="mt-5 mb-5">
+        <h3 className="mb-1 font-semibold">Recyclable Posts</h3>
       </div>
 
       <RecyclablesQueueTabs

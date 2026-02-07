@@ -4,6 +4,7 @@
 
 import { Link, useFetcher } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useRef, useState, type Key } from "react";
 
 import {
   Select,
@@ -42,6 +43,10 @@ interface DraftsTableProps {
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
   onSortChange?: (key: string, direction: "asc" | "desc") => void;
+  prefetchSentinelRef?: React.Ref<HTMLDivElement | null>;
+  sentinelRef?: React.Ref<HTMLDivElement | null>;
+  isFetchingNextPage?: boolean;
+  onScrollContainerReady?: (el: HTMLDivElement | null) => void;
 }
 
 interface SortableHeaderProps {
@@ -82,8 +87,16 @@ export function DraftsTable({
   userTimezone = "UTC",
   userTimeFormat = "12h",
   onSortChange,
+  prefetchSentinelRef,
+  sentinelRef,
+  isFetchingNextPage = false,
+  onScrollContainerReady,
 }: DraftsTableProps) {
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
+  const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const useDedicatedScroll =
+    isMobile && (sentinelRef != null || onScrollContainerReady != null);
+
   const deleteFetcher = useFetcher();
   const combinedContent = posts.map((post) =>
     postToCombinedContent(post as unknown as PostData)
@@ -92,12 +105,17 @@ export function DraftsTable({
   const rowVirtualizer = useVirtualizer({
     count: combinedContent.length,
     getScrollElement: () =>
-      typeof document !== "undefined" ? document.documentElement : null,
+      useDedicatedScroll && mobileScrollContainerRef.current
+        ? mobileScrollContainerRef.current
+        : typeof document !== "undefined"
+          ? document.documentElement
+          : null,
     estimateSize: () => 98,
     overscan: 3,
     getItemKey: (index) => combinedContent[index]?.id ?? String(index),
   });
   const virtualItems = rowVirtualizer.getVirtualItems();
+  const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
 
   const formatDate = (isoString: string) => {
     try {
@@ -314,7 +332,7 @@ export function DraftsTable({
         </div>
       </div>
 
-      {isMobile && combinedContent.length > 0 ? (
+      {isMobile ? (
         <div className="block md:hidden">
           {onSortChange ? (
             <div className="mb-3 flex items-center gap-2">
@@ -352,50 +370,135 @@ export function DraftsTable({
               </Select>
             </div>
           ) : null}
-          <div
-            style={{
-              height: rowVirtualizer.getTotalSize(),
-              position: "relative",
-              width: "100%",
-            }}
-          >
-            {virtualItems.map((virtualRow) => {
-              const item = combinedContent[virtualRow.index];
-              if (!item) return null;
-              return (
-                <div
-                  key={virtualRow.key}
-                  data-index={virtualRow.index}
-                  className="pb-0.5"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                >
-                  <ContentListCard
-                    item={item}
-                    type="draft"
-                    userTimezone={userTimezone}
-                    userTimeFormat={userTimeFormat}
-                    showBulkActions={true}
-                    selectedItems={selectedPosts}
-                    onToggleSelection={onToggleSelection}
-                    onPostSelect={(content) =>
-                      onPostClick(content.originalData as unknown as Post)
-                    }
-                    deleteFetcher={
-                      deleteFetcher as Parameters<
-                        typeof ContentListCard
-                      >[0]["deleteFetcher"]
-                    }
-                  />
-                </div>
-              );
-            })}
-          </div>
+          {useDedicatedScroll ? (
+            <div
+              ref={(el) => {
+                mobileScrollContainerRef.current = el;
+                onScrollContainerReady?.(el ?? null);
+              }}
+              className="overflow-auto"
+              style={{ height: "calc(100vh - 14rem)" }}
+            >
+              {combinedContent.length > 0 ? (
+                <>
+                  <div
+                    style={{
+                      height: rowVirtualizer.getTotalSize(),
+                      position: "relative",
+                      width: "100%",
+                    }}
+                  >
+                    {virtualItems.map((virtualRow) => {
+                      const item = combinedContent[virtualRow.index];
+                      if (!item) return null;
+                      return (
+                        <div
+                          key={virtualRow.key}
+                          data-index={virtualRow.index}
+                          className="pb-0.5"
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            transform: `translateY(${virtualRow.start}px)`,
+                            zIndex:
+                              openMenuRowKey === virtualRow.key
+                                ? 50
+                                : undefined,
+                          }}
+                        >
+                          <ContentListCard
+                            item={item}
+                            type="draft"
+                            userTimezone={userTimezone}
+                            userTimeFormat={userTimeFormat}
+                            showBulkActions={true}
+                            selectedItems={selectedPosts}
+                            onToggleSelection={onToggleSelection}
+                            onPostSelect={(content) =>
+                              onPostClick(
+                                content.originalData as unknown as Post
+                              )
+                            }
+                            deleteFetcher={
+                              deleteFetcher as Parameters<
+                                typeof ContentListCard
+                              >[0]["deleteFetcher"]
+                            }
+                            onMenuOpenChange={(open) =>
+                              setOpenMenuRowKey(open ? virtualRow.key : null)
+                            }
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {prefetchSentinelRef ? (
+                    <div ref={prefetchSentinelRef} className="h-4 w-full" />
+                  ) : null}
+                  {sentinelRef ? (
+                    <div ref={sentinelRef} className="h-4 w-full" />
+                  ) : null}
+                  {isFetchingNextPage ? (
+                    <div className="text-muted-foreground py-4 text-center text-sm">
+                      Loading more...
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          ) : combinedContent.length > 0 ? (
+            <div
+              style={{
+                height: rowVirtualizer.getTotalSize(),
+                position: "relative",
+                width: "100%",
+              }}
+            >
+              {virtualItems.map((virtualRow) => {
+                const item = combinedContent[virtualRow.index];
+                if (!item) return null;
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    className="pb-0.5"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                      zIndex:
+                        openMenuRowKey === virtualRow.key ? 50 : undefined,
+                    }}
+                  >
+                    <ContentListCard
+                      item={item}
+                      type="draft"
+                      userTimezone={userTimezone}
+                      userTimeFormat={userTimeFormat}
+                      showBulkActions={true}
+                      selectedItems={selectedPosts}
+                      onToggleSelection={onToggleSelection}
+                      onPostSelect={(content) =>
+                        onPostClick(content.originalData as unknown as Post)
+                      }
+                      deleteFetcher={
+                        deleteFetcher as Parameters<
+                          typeof ContentListCard
+                        >[0]["deleteFetcher"]
+                      }
+                      onMenuOpenChange={(open) =>
+                        setOpenMenuRowKey(open ? virtualRow.key : null)
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </>

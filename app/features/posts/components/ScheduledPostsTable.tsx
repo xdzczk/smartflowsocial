@@ -5,7 +5,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect } from "react";
+import { useEffect, useRef, useState, type Key } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import {
@@ -46,6 +46,11 @@ interface ScheduledPostsTableProps {
   onScheduleQuote?: (post: PostData) => void;
   /** When provided, mobile sort dropdown uses this to set key and direction explicitly */
   onSortChange?: (key: string, direction: "asc" | "desc") => void;
+  /** Infinite scroll: when provided, mobile uses a dedicated scroll container */
+  prefetchSentinelRef?: React.Ref<HTMLDivElement | null>;
+  sentinelRef?: React.Ref<HTMLDivElement | null>;
+  isFetchingNextPage?: boolean;
+  onScrollContainerReady?: (el: HTMLDivElement | null) => void;
 }
 
 interface SortableHeaderProps {
@@ -92,8 +97,15 @@ export function ScheduledPostsTable({
   onScheduleRepost,
   onScheduleQuote,
   onSortChange,
+  prefetchSentinelRef,
+  sentinelRef,
+  isFetchingNextPage = false,
+  onScrollContainerReady,
 }: ScheduledPostsTableProps) {
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
+  const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const useDedicatedScroll =
+    isMobile && (sentinelRef != null || onScrollContainerReady != null);
   const deleteFetcher = useFetcher<{ success?: boolean }>();
   const queryClient = useQueryClient();
 
@@ -102,12 +114,17 @@ export function ScheduledPostsTable({
   const rowVirtualizer = useVirtualizer({
     count: combinedContent.length,
     getScrollElement: () =>
-      typeof document !== "undefined" ? document.documentElement : null,
+      useDedicatedScroll && mobileScrollContainerRef.current
+        ? mobileScrollContainerRef.current
+        : typeof document !== "undefined"
+          ? document.documentElement
+          : null,
     estimateSize: () => 98,
     overscan: 3,
     getItemKey: (index) => combinedContent[index]?.id ?? String(index),
   });
   const virtualItems = rowVirtualizer.getVirtualItems();
+  const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
 
   // Invalidate queries when individual delete succeeds
   useEffect(() => {
@@ -461,7 +478,7 @@ export function ScheduledPostsTable({
       </div>
 
       {/* Mobile: virtualized card list */}
-      {isMobile && combinedContent.length > 0 ? (
+      {isMobile ? (
         <div className="block md:hidden">
           {onSortChange ? (
             <div className="mb-3 flex items-center gap-2">
@@ -504,56 +521,145 @@ export function ScheduledPostsTable({
               </Select>
             </div>
           ) : null}
-          <div
-            style={{
-              height: rowVirtualizer.getTotalSize(),
-              position: "relative",
-              width: "100%",
-            }}
-          >
-            {virtualItems.map((virtualRow) => {
-              const item = combinedContent[virtualRow.index];
-              if (!item) return null;
-              return (
-                <div
-                  key={virtualRow.key}
-                  data-index={virtualRow.index}
-                  className="pb-0.5"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                >
-                  <ContentListCard
-                    item={item}
-                    type="scheduled"
-                    userTimezone={userTimezone ?? undefined}
-                    userTimeFormat={userTimeFormat ?? undefined}
-                    showBulkActions={true}
-                    selectedItems={selectedPosts}
-                    onToggleSelection={onToggleSelection}
-                    onPostSelect={(content) =>
-                      onPostClick(content.originalData as PostData)
-                    }
-                    onEditPost={(post) => onEditPost(post as PostData)}
-                    onReschedulePost={(post) =>
-                      onReschedulePost(post as PostData)
-                    }
-                    deleteFetcher={
-                      deleteFetcher as Parameters<
-                        typeof ContentListCard
-                      >[0]["deleteFetcher"]
-                    }
-                    onScheduleRepost={onScheduleRepost}
-                    onScheduleQuote={onScheduleQuote}
-                  />
-                </div>
-              );
-            })}
-          </div>
+          {useDedicatedScroll ? (
+            <div
+              ref={(el) => {
+                mobileScrollContainerRef.current = el;
+                onScrollContainerReady?.(el ?? null);
+              }}
+              className="overflow-auto"
+              style={{ height: "calc(100vh - 14rem)" }}
+            >
+              {combinedContent.length > 0 ? (
+                <>
+                  <div
+                    style={{
+                      height: rowVirtualizer.getTotalSize(),
+                      position: "relative",
+                      width: "100%",
+                    }}
+                  >
+                    {virtualItems.map((virtualRow) => {
+                      const item = combinedContent[virtualRow.index];
+                      if (!item) return null;
+                      return (
+                        <div
+                          key={virtualRow.key}
+                          data-index={virtualRow.index}
+                          className="pb-0.5"
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            transform: `translateY(${virtualRow.start}px)`,
+                            zIndex:
+                              openMenuRowKey === virtualRow.key
+                                ? 50
+                                : undefined,
+                          }}
+                        >
+                          <ContentListCard
+                            item={item}
+                            type="scheduled"
+                            userTimezone={userTimezone ?? undefined}
+                            userTimeFormat={userTimeFormat ?? undefined}
+                            showBulkActions={true}
+                            selectedItems={selectedPosts}
+                            onToggleSelection={onToggleSelection}
+                            onPostSelect={(content) =>
+                              onPostClick(content.originalData as PostData)
+                            }
+                            onEditPost={(post) => onEditPost(post as PostData)}
+                            onReschedulePost={(post) =>
+                              onReschedulePost(post as PostData)
+                            }
+                            deleteFetcher={
+                              deleteFetcher as Parameters<
+                                typeof ContentListCard
+                              >[0]["deleteFetcher"]
+                            }
+                            onScheduleRepost={onScheduleRepost}
+                            onScheduleQuote={onScheduleQuote}
+                            onMenuOpenChange={(open) =>
+                              setOpenMenuRowKey(open ? virtualRow.key : null)
+                            }
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {prefetchSentinelRef ? (
+                    <div ref={prefetchSentinelRef} className="h-4 w-full" />
+                  ) : null}
+                  {sentinelRef ? (
+                    <div ref={sentinelRef} className="h-4 w-full" />
+                  ) : null}
+                  {isFetchingNextPage ? (
+                    <div className="text-muted-foreground py-4 text-center text-sm">
+                      Loading more...
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          ) : combinedContent.length > 0 ? (
+            <div
+              style={{
+                height: rowVirtualizer.getTotalSize(),
+                position: "relative",
+                width: "100%",
+              }}
+            >
+              {virtualItems.map((virtualRow) => {
+                const item = combinedContent[virtualRow.index];
+                if (!item) return null;
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    className="pb-0.5"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                      zIndex:
+                        openMenuRowKey === virtualRow.key ? 50 : undefined,
+                    }}
+                  >
+                    <ContentListCard
+                      item={item}
+                      type="scheduled"
+                      userTimezone={userTimezone ?? undefined}
+                      userTimeFormat={userTimeFormat ?? undefined}
+                      showBulkActions={true}
+                      selectedItems={selectedPosts}
+                      onToggleSelection={onToggleSelection}
+                      onPostSelect={(content) =>
+                        onPostClick(content.originalData as PostData)
+                      }
+                      onEditPost={(post) => onEditPost(post as PostData)}
+                      onReschedulePost={(post) =>
+                        onReschedulePost(post as PostData)
+                      }
+                      deleteFetcher={
+                        deleteFetcher as Parameters<
+                          typeof ContentListCard
+                        >[0]["deleteFetcher"]
+                      }
+                      onScheduleRepost={onScheduleRepost}
+                      onScheduleQuote={onScheduleQuote}
+                      onMenuOpenChange={(open) =>
+                        setOpenMenuRowKey(open ? virtualRow.key : null)
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </>

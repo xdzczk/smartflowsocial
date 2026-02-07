@@ -228,7 +228,7 @@ export default function DashboardIndexPage() {
   }, [lastScheduledAtUtcMs, flowItems]);
 
   const flowViewRef = useRef<FlowViewHandle | null>(null);
-  const [hasLiveEdge, setHasLiveEdge] = useState(false);
+  const [_hasLiveEdge, setHasLiveEdge] = useState(false);
 
   // Reset flow scroll to initial position when queue filter changes
   useEffect(() => {
@@ -267,12 +267,12 @@ export default function DashboardIndexPage() {
                 flowRunsUntil={flowRunsUntil}
                 className="min-w-0"
               />
-              {hasLiveEdge ? (
+              {flowItems.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => flowViewRef.current?.scrollToNext()}
                   className="text-muted-foreground hover:text-foreground focus:ring-ring flex-shrink-0 rounded text-xs underline focus:ring-2 focus:outline-none"
-                  aria-label="Scroll timeline to next posts"
+                  aria-label="Scroll timeline to next posts or schedule"
                 >
                   Scroll to next
                 </button>
