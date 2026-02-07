@@ -5,6 +5,8 @@
 
 import { z } from "zod";
 
+import { isAllowedScheduleInterval } from "~/lib/schedule-intervals";
+
 const NPUB_PREFIX = "npub";
 const ERROR_NPUB_REQUIRED = "All blacklist items must start with npub";
 
@@ -14,7 +16,8 @@ const ERROR_TAGS_REQUIRED = "Tags are required";
 const ERROR_ID_REQUIRED = "ID is required";
 const ERROR_COLOR_REQUIRED = "Color is required";
 const ERROR_TIMEZONE_REQUIRED = "Timezone is required";
-const ERROR_POSITIVE_WHOLE_NUMBER = "Must be a positive whole number";
+const ERROR_SCHEDULE_INTERVAL_ALLOWED =
+  "Schedule interval must be 0.25 (15 min), 0.5 (30 min), or a whole number of hours";
 const ERROR_MIRROR_URLS_HTTPS = "All mirror URLs must start with https://";
 const ERROR_INVALID_URL_FORMAT = "Invalid URL format";
 
@@ -65,7 +68,7 @@ export const updateBlacklistSchema = z.object({
 
 /**
  * Schedule intervals update schema
- * Validates positive whole numbers for schedule intervals
+ * Validates 0.25, 0.5, and positive whole hours only (no arbitrary decimals).
  */
 export const updateScheduleIntervalsSchema = z.object({
   scheduleIntervals: z
@@ -76,9 +79,10 @@ export const updateScheduleIntervalsSchema = z.object({
         .array(
           z
             .string()
-            .regex(/^\d+$/, ERROR_POSITIVE_WHOLE_NUMBER)
-            .transform((val) => parseInt(val, 10))
-            .pipe(z.number().int().positive(ERROR_POSITIVE_WHOLE_NUMBER))
+            .regex(/^\d+(\.\d+)?$/, "Must be a number (e.g. 0.25, 0.5, 1, 24)")
+            .transform((val) => Number(val))
+            .pipe(z.number().positive("Must be positive"))
+            .refine(isAllowedScheduleInterval, ERROR_SCHEDULE_INTERVAL_ALLOWED)
         )
         .min(0)
     ),
@@ -181,8 +185,12 @@ export const createQueueTypeSchema = z
     intervalHours: z
       .string()
       .optional()
-      .transform((val) => (val ? parseInt(val, 10) : undefined))
-      .pipe(z.number().int().positive().optional()),
+      .transform((val) => (val ? Number(val) : undefined))
+      .pipe(z.number().positive().optional())
+      .refine(
+        (val) => val === undefined || isAllowedScheduleInterval(val),
+        ERROR_SCHEDULE_INTERVAL_ALLOWED
+      ),
     useGlobalInterval: z
       .union([z.string(), z.boolean()])
       .optional()
@@ -279,8 +287,12 @@ export const updateQueueTypeSchema = z
     intervalHours: z
       .string()
       .optional()
-      .transform((val) => (val ? parseInt(val, 10) : undefined))
-      .pipe(z.number().int().positive().optional()),
+      .transform((val) => (val ? Number(val) : undefined))
+      .pipe(z.number().positive().optional())
+      .refine(
+        (val) => val === undefined || isAllowedScheduleInterval(val),
+        ERROR_SCHEDULE_INTERVAL_ALLOWED
+      ),
     useGlobalInterval: z
       .union([z.string(), z.boolean()])
       .optional()

@@ -17,7 +17,7 @@ model User {
   giveawayBlackListed        String[]       @default([])
   uploadProvider             UploadProvider @default(S3)
   showHashTagsinPosts        Boolean        @default(false)
-  scheduleInterval           String[]       @default(["2", "4", "6", "12", "24"])
+  scheduleInterval           String[]       @default(["0.25", "0.5", "1", "2", "4", "12", "24"])
   nostrProfile               Json?
   enableMirrorBlossom        Boolean        @default(false)
   mirrorUploadUrls           String[]       @default([])

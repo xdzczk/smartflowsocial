@@ -1,6 +1,7 @@
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { formatIntervalLabel } from "~/lib/schedule-intervals";
 
 import type { QueueType } from "../types";
 interface SchedulingSectionProps {
@@ -82,7 +83,7 @@ export function SchedulingSection({
               disabled={disabled}
               className="border-primary text-foreground hover:bg-muted"
             >
-              +{interval}h
+              {formatIntervalLabel(interval, { compact: true })}
             </Button>
           ))
         )}

@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
   formatForDateTimeLocal,
@@ -302,9 +303,7 @@ export default function ImagePost({
     const userTimezone = user?.timezone ?? "UTC";
     const now = nowInTimezone(userTimezone);
     const intervalHoursNum =
-      typeof intervalHours === "string"
-        ? parseInt(intervalHours, 10)
-        : intervalHours;
+      typeof intervalHours === "string" ? Number(intervalHours) : intervalHours;
     const hoursLaterZoned = addHours(now, intervalHoursNum);
 
     // Format the date using Temporal (already in datetime-local format)
@@ -628,7 +627,9 @@ export default function ImagePost({
                         className="dark:bg-card bg-muted text-muted-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted rounded-md px-2.5 py-1.5 text-xs font-medium"
                         disabled={fetcher.state !== "idle" || isUploaded}
                       >
-                        +{intervalValue}h
+                        {formatIntervalLabel(Number(intervalValue), {
+                          compact: true,
+                        })}
                       </button>
                     );
                   })

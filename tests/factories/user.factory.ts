@@ -45,7 +45,7 @@ export class UserFactory {
       giveawayBlackListed: [],
       uploadProvider: "S3",
       showHashTagsinPosts: false,
-      scheduleInterval: ["2", "4", "6", "12", "24"],
+      scheduleInterval: ["0.25", "0.5", "1", "2", "4", "12", "24"],
       nostrProfile: null,
       enableMirrorBlossom: false,
       mirrorUploadUrls: [],

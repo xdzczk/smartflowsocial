@@ -2,6 +2,7 @@ import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle"
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { formatIntervalLabel } from "~/lib/schedule-intervals";
 
 import { getDynamicQueueStyle } from "../queue-colors";
 interface QueueType {
@@ -205,7 +206,7 @@ export function LongFormPublishingOptions({
                 onClick={() => onScheduleIntervalClick(interval)}
                 className="transition-transform hover:scale-105"
               >
-                +{interval}h
+                {formatIntervalLabel(interval, { compact: true })}
               </Button>
             ))
           )}

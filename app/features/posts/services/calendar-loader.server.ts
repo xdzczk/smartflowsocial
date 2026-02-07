@@ -463,8 +463,7 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
   // Convert scheduleInterval strings to numbers for schema compliance
   const scheduleIntervals = user?.scheduleInterval
     ? user.scheduleInterval.map((interval) => {
-        const num =
-          typeof interval === "string" ? parseInt(interval, 10) : interval;
+        const num = typeof interval === "string" ? Number(interval) : interval;
         return isNaN(num) ? 0 : num;
       })
     : [];

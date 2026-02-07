@@ -42,7 +42,7 @@ function getIntervalHours(
     return 4;
   }
   if (config.useGlobalInterval) {
-    return user?.scheduleInterval?.[0] ?? 4;
+    return Number(user?.scheduleInterval?.[0] ?? 4);
   }
   return config.intervalHours ?? 4;
 }

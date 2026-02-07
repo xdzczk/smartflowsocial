@@ -1,4 +1,5 @@
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
+import { formatIntervalLabel } from "~/lib/schedule-intervals";
 
 import { getDynamicQueueStyle } from "../queue-colors";
 
@@ -51,7 +52,7 @@ export default function BulkPostsActionButtons({
                   disabled={isProcessing}
                   className="dark:bg-card bg-muted text-muted-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted mx-2 rounded-md px-4 py-2 text-sm font-medium shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  +{interval}h
+                  {formatIntervalLabel(interval, { compact: true })}
                 </button>
               ))
             : null}

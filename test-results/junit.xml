@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="35" failures="0" errors="0" time="0.030071833">
+    <testsuite name="tests/integration/scheduling-algorithms.test.ts" timestamp="2026-02-07T16:49:09.560Z" hostname="Ivans-MacBook-Pro.local" tests="26" failures="0" errors="0" skipped="0" time="0.025432041">
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; INTERVAL-based Scheduling &gt; Queue-specific Interval &gt; should schedule next post using queue-specific interval when no last post exists" time="0.003587417">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; INTERVAL-based Scheduling &gt; Queue-specific Interval &gt; should schedule next post by adding interval to last post time" time="0.000521125">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; INTERVAL-based Scheduling &gt; Queue-specific Interval &gt; should return baseTime if calculated time is in the past" time="0.000434917">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; INTERVAL-based Scheduling &gt; Queue-specific Interval &gt; should use default interval of 4 hours when not specified" time="0.0002415">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; INTERVAL-based Scheduling &gt; Queue-specific Interval &gt; should schedule next post 15 minutes later when interval is 0.25 hours" time="0.000294792">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; INTERVAL-based Scheduling &gt; Global Interval &gt; should use global interval when useGlobalInterval is true" time="0.000286208">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; INTERVAL-based Scheduling &gt; Global Interval &gt; should default to 4 hours when global interval is not available" time="0.000189542">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; INTERVAL-based Scheduling &gt; Global Interval &gt; should use first interval from scheduleIntervals array" time="0.000185041">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; INTERVAL-based Scheduling &gt; Global Interval &gt; should use fractional global interval (0.25 = 15 min)" time="0.00022625">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; FIXED_SLOTS-based Scheduling &gt; No Previous Posts &gt; should return next available slot today when no last post exists" time="0.003540166">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; FIXED_SLOTS-based Scheduling &gt; No Previous Posts &gt; should return first slot tomorrow if all today slots are in the past" time="0.000776542">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; FIXED_SLOTS-based Scheduling &gt; No Previous Posts &gt; should handle empty slots array by returning baseTime" time="0.000180958">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; FIXED_SLOTS-based Scheduling &gt; With Previous Posts &gt; should find next slot after last post time" time="0.001059333">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; FIXED_SLOTS-based Scheduling &gt; With Previous Posts &gt; should find next slot on next day if all slots today are in the past" time="0.0007875">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; FIXED_SLOTS-based Scheduling &gt; With Previous Posts &gt; should handle slots sorted correctly" time="0.0006935">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; Timezone Handling &gt; should handle UTC timezone correctly" time="0.000227625">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; Timezone Handling &gt; should convert slots to user timezone (America/New_York)" time="0.002492333">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; Timezone Handling &gt; should handle Etc/GMT timezone same as UTC" time="0.000489416">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; WEEKLY_SLOTS-based Scheduling &gt; should schedule next post at next matching day and time (Monday 12:00 UTC)" time="0.001038708">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; WEEKLY_SLOTS-based Scheduling &gt; should schedule next post at Thursday 19:45 when base is Monday" time="0.000642166">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; WEEKLY_SLOTS-based Scheduling &gt; should return next slot after last post when last post exists" time="0.000701708">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; Edge Cases &gt; should handle invalid scheduleType by returning baseTime" time="0.000094667">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; Edge Cases &gt; should handle missing scheduleConfig" time="0.000209209">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; Edge Cases &gt; should handle database errors gracefully" time="0.004115791">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Database error&apos;,
+  code: &apos;UNKNOWN_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: &apos;user-123&apos;,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; Complex Scenarios &gt; should handle multiple slots with last post in the middle" time="0.00085525">
+        </testcase>
+        <testcase classname="tests/integration/scheduling-algorithms.test.ts" name="Scheduling Algorithms &gt; Complex Scenarios &gt; should handle interval scheduling with large intervals" time="0.000162333">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/schedule-intervals.test.ts" timestamp="2026-02-07T16:49:09.563Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.004639792">
+        <testcase classname="tests/unit/schedule-intervals.test.ts" name="schedule-intervals &gt; isAllowedScheduleInterval &gt; allows 0.25 and 0.5" time="0.002269875">
+        </testcase>
+        <testcase classname="tests/unit/schedule-intervals.test.ts" name="schedule-intervals &gt; isAllowedScheduleInterval &gt; allows positive whole hours" time="0.000165667">
+        </testcase>
+        <testcase classname="tests/unit/schedule-intervals.test.ts" name="schedule-intervals &gt; isAllowedScheduleInterval &gt; rejects arbitrary decimals" time="0.000108583">
+        </testcase>
+        <testcase classname="tests/unit/schedule-intervals.test.ts" name="schedule-intervals &gt; isAllowedScheduleInterval &gt; rejects zero and negative" time="0.000114917">
+        </testcase>
+        <testcase classname="tests/unit/schedule-intervals.test.ts" name="schedule-intervals &gt; ALLOWED_SCHEDULE_INTERVAL_HOURS &gt; includes 0.25, 0.5, and whole hours" time="0.000557125">
+        </testcase>
+        <testcase classname="tests/unit/schedule-intervals.test.ts" name="schedule-intervals &gt; formatIntervalLabel &gt; formats sub-hour intervals as minutes (compact)" time="0.000113208">
+        </testcase>
+        <testcase classname="tests/unit/schedule-intervals.test.ts" name="schedule-intervals &gt; formatIntervalLabel &gt; formats sub-hour intervals as minutes (non-compact)" time="0.000066458">
+        </testcase>
+        <testcase classname="tests/unit/schedule-intervals.test.ts" name="schedule-intervals &gt; formatIntervalLabel &gt; formats whole hours (compact)" time="0.000073">
+        </testcase>
+        <testcase classname="tests/unit/schedule-intervals.test.ts" name="schedule-intervals &gt; formatIntervalLabel &gt; formats whole hours (non-compact)" time="0.000076709">
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
   formatForDateTimeLocal,
@@ -104,7 +105,7 @@ export default function SchedulingControls({
   const _handleScheduleIntervalClick = (intervalHours: string) => {
     const tz = userTimezone || "UTC";
     const now = nowInTimezone(tz);
-    const hoursLaterZoned = addHours(now, parseInt(intervalHours, 10));
+    const hoursLaterZoned = addHours(now, Number(intervalHours));
     // formatForDateTimeLocal already returns datetime-local format
     const datetimeLocal = formatForDateTimeLocal(hoursLaterZoned, tz);
 
@@ -186,7 +187,7 @@ export default function SchedulingControls({
                   onScheduleChange(formattedDate);
                 }}
               >
-                {interval} hour{interval !== 1 ? "s" : ""}
+                {formatIntervalLabel(interval, { compact: false })}
               </Button>
             ))}
           </div>

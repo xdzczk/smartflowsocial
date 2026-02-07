@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { isAllowedScheduleInterval } from "~/lib/schedule-intervals";
 import { updateScheduleIntervalsClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
 import {
@@ -61,16 +62,17 @@ export function ScheduleIntervalsSettings({
       (interval: string) => interval.trim()
     );
 
-    // Validate all non-empty intervals are positive integers
+    // Validate all non-empty intervals are allowed (0.25, 0.5, or whole hours)
     const invalidIntervals = filteredIntervals.filter((interval: string) => {
-      const num = parseInt(interval, 10);
-      return isNaN(num) || num <= 0 || num.toString() !== interval.trim();
+      const num = Number(interval.trim());
+      return Number.isNaN(num) || num <= 0 || !isAllowedScheduleInterval(num);
     });
 
     if (invalidIntervals.length > 0) {
       form.setError("scheduleIntervals", {
         type: "manual",
-        message: "All schedule intervals must be positive whole numbers",
+        message:
+          "Allowed values: 0.25 (15 min), 0.5 (30 min), or whole hours (e.g. 1, 2, 24).",
       });
       return;
     }
@@ -102,14 +104,16 @@ export function ScheduleIntervalsSettings({
         >
           <div className="space-y-2">
             <p className="text-muted-foreground text-sm">
-              Add time intervals one by one (whole numbers only, e.g. 1 for 1
-              hour, 24 for 24 hours)
+              Add time intervals one by one (e.g. 0.25 for 15 min, 0.5 for 30
+              min, 1, 2, 24). Only these values are allowed.
             </p>
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-start space-x-2">
                 <div className="flex-1">
                   <Input
                     type="number"
+                    step="0.25"
+                    min="0.25"
                     {...form.register(`scheduleIntervals.${index}`)}
                     placeholder="24"
                     disabled={isSubmitting}

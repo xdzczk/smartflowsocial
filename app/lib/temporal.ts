@@ -124,13 +124,19 @@ export function toDate(zonedDateTime: Temporal.ZonedDateTime): Date {
 }
 
 /**
- * Add hours to a ZonedDateTime
+ * Add hours to a ZonedDateTime.
+ * Supports fractional hours (e.g. 0.25 = 15 min); Temporal only accepts integer duration fields,
+ * so we add minutes when hours is not an integer.
  */
 export function addHours(
   zonedDateTime: Temporal.ZonedDateTime,
   hours: number
 ): Temporal.ZonedDateTime {
-  return zonedDateTime.add({ hours });
+  if (Number.isInteger(hours)) {
+    return zonedDateTime.add({ hours });
+  }
+  const minutes = Math.round(hours * 60);
+  return zonedDateTime.add({ minutes });
 }
 
 /**

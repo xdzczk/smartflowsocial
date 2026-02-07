@@ -135,6 +135,29 @@ describe("Scheduling Algorithms", () => {
         expectedTime.setHours(expectedTime.getHours() + 4); // Default 4 hours
         expect(result).toEqual(expectedTime);
       });
+
+      it("should schedule next post 15 minutes later when interval is 0.25 hours", async () => {
+        const lastPostTime = createDateAtTime(2024, 1, 15, 9, 45); // 09:45 UTC
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime
+        );
+
+        const queueType = createIntervalQueueType(0.25, {
+          id: "queue-1",
+          name: "posts",
+        });
+
+        const result = await calculateNextScheduleTime({
+          queueType,
+          userId: TEST_USER_ID,
+          baseTime: BASE_TIME, // 10:00 UTC
+        });
+
+        // 09:45 + 15 min = 10:00 UTC
+        expect(result.getUTCHours()).toBe(10);
+        expect(result.getUTCMinutes()).toBe(0);
+        expect(result.getTime()).toBe(lastPostTime.getTime() + 15 * 60 * 1000);
+      });
     });
 
     describe("Global Interval", () => {
@@ -225,6 +248,33 @@ describe("Scheduling Algorithms", () => {
         // expectedTime would be 2024-01-15T11:00:00Z, which is > baseTime
         // So the function should return expectedTime
         expect(result.getTime()).toBe(expectedTime.getTime());
+      });
+
+      it("should use fractional global interval (0.25 = 15 min)", async () => {
+        const lastPostTime = createDateAtTime(2024, 1, 15, 9, 50); // 09:50 UTC
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime
+        );
+        (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([
+          "0.25",
+        ]);
+
+        const queueType = createIntervalQueueType(4, {
+          id: "queue-1",
+          name: "posts",
+          scheduleConfig: { useGlobalInterval: true },
+        });
+
+        const result = await calculateNextScheduleTime({
+          queueType,
+          userId: TEST_USER_ID,
+          baseTime: BASE_TIME, // 10:00 UTC
+        });
+
+        // 09:50 + 15 min = 10:05 UTC
+        expect(result.getUTCHours()).toBe(10);
+        expect(result.getUTCMinutes()).toBe(5);
+        expect(result.getTime()).toBe(lastPostTime.getTime() + 15 * 60 * 1000);
       });
     });
   });

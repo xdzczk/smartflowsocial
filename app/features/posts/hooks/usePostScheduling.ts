@@ -118,7 +118,7 @@ export function usePostScheduling({
     // Use Temporal for cleaner date arithmetic and formatting
     const effectiveTimezone = userTimezone || (user?.timezone ?? "UTC");
     const now = nowInTimezone(effectiveTimezone);
-    const hoursLater = addHours(now, parseInt(String(intervalHours)));
+    const hoursLater = addHours(now, Number(intervalHours));
 
     // Format for datetime-local input in user's timezone
     const formattedForInput = formatForDateTimeLocal(
@@ -171,9 +171,7 @@ export function usePostScheduling({
       ? scheduleIntervals
       : user?.scheduleInterval
         ? user.scheduleInterval.map((interval) =>
-            typeof interval === "string"
-              ? Number.parseInt(interval, 10)
-              : interval
+            typeof interval === "string" ? Number(interval) : interval
           )
         : [];
 

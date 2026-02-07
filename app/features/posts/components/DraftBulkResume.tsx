@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addDays,
   addHours,
@@ -673,14 +674,19 @@ export default function DraftBulkResume({
                     onClick={() =>
                       handleScheduleIntervalClick(
                         typeof interval === "string"
-                          ? parseInt(interval, 10)
+                          ? Number(interval)
                           : interval
                       )
                     }
                     disabled={isSubmitting}
                     className="dark:bg-card bg-muted text-muted-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted mx-2 rounded-md px-4 py-2 text-sm font-medium shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                   >
-                    +{interval}h
+                    {formatIntervalLabel(
+                      typeof interval === "string"
+                        ? Number(interval)
+                        : interval,
+                      { compact: true }
+                    )}
                   </button>
                 ))
               : null}
