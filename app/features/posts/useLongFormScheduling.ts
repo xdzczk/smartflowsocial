@@ -42,7 +42,7 @@ export function useLongFormScheduling({
 
   const calculateQueueScheduleTime = useCallback(
     async (queueTypeName: string) => {
-      if (queueTypeName === "Unassigned") {
+      if (queueTypeName === "Unassigned" || queueTypeName === "unassigned") {
         setScheduledFor(null);
         return;
       }
@@ -95,14 +95,15 @@ export function useLongFormScheduling({
     async (queueTypeName: string) => {
       setSelectedQueueType(queueTypeName);
 
-      // Calculate the next scheduled time when queue type changes
-      if (queueTypeName !== "Unassigned") {
+      const isUnassigned =
+        queueTypeName === "Unassigned" || queueTypeName === "unassigned";
+      if (!isUnassigned) {
         await calculateQueueScheduleTime(queueTypeName);
       } else {
         setScheduledFor(null);
       }
 
-      if (queueTypeName === "Unassigned") {
+      if (isUnassigned) {
         setDisplayedHashtags(userTags);
         if (onQueueTypeChange) onQueueTypeChange(queueTypeName);
         return;

@@ -44,6 +44,14 @@ export function getImageUrls(fileUrl: string[] | undefined): string[] {
   return fileUrl;
 }
 
+/** Returns up to `max` media URLs for preview (e.g. Flow Card / list card thumbnails). Longform: single image; posts: from fileUrl. */
+export function getMediaPreviewUrls(item: CombinedContent, max = 4): string[] {
+  if (item.type === "longform") {
+    return item.image ? [item.image].slice(0, max) : [];
+  }
+  return getImageUrls(item.fileUrl).slice(0, max);
+}
+
 export function getContentTitle(item: CombinedContent): string {
   if (item.type === "longform") {
     return item.title ?? "Untitled Article";

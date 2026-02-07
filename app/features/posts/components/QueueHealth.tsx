@@ -38,9 +38,10 @@ export default function QueueHealth({
   queueCounts,
   queueTypes,
 }: QueueHealthProps) {
+  const countsByQueue = queueCounts.filter((c) => c.queueName !== "Unassigned");
   const maxCount =
-    queueCounts.length > 0
-      ? Math.max(...queueCounts.map((c) => c.count), 1)
+    countsByQueue.length > 0
+      ? Math.max(...countsByQueue.map((c) => c.count), 1)
       : 1;
 
   return (
@@ -51,7 +52,7 @@ export default function QueueHealth({
         </h3>
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
-        {queueCounts.length === 0 ? (
+        {countsByQueue.length === 0 ? (
           <p className="text-muted-foreground text-xs">
             No queues with scheduled posts.
           </p>
@@ -60,7 +61,7 @@ export default function QueueHealth({
             className="flex min-h-0 flex-1 flex-col"
             aria-label="Scheduled posts per queue"
           >
-            {queueCounts.map(({ queueName, count }) => {
+            {countsByQueue.map(({ queueName, count }) => {
               const customColor = getQueueColorHex(queueName, queueTypes);
               const widthPercent = (count / maxCount) * 100;
 

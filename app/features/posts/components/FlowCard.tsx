@@ -1,10 +1,11 @@
 import { memo, type ReactNode } from "react";
 
-import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { isVideoFile } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import type { CombinedContent } from "../types";
+import { getMediaPreviewUrls } from "../utils/content-helpers";
+
+import { MediaPreviewCollage } from "./MediaPreviewCollage";
 
 function getFlowPreview(item: CombinedContent): string {
   if (item.type === "longform") {
@@ -45,24 +46,6 @@ function getContentSummaryText(item: CombinedContent): string {
 function getFlowDisplayTime(item: CombinedContent): Date {
   const raw = item.postedAt ?? item.scheduledAtUtc ?? item.createdAt;
   return raw instanceof Date ? raw : new Date(raw);
-}
-
-function getFirstImageUrl(item: CombinedContent): string | null {
-  if (item.type === "longform" && item.image) {
-    return item.image;
-  }
-  const fileUrl = item.fileUrl;
-  if (!fileUrl || fileUrl.length === 0) return null;
-  const first = fileUrl[0];
-  if (typeof first === "string") {
-    try {
-      const parsed = JSON.parse(first) as string[] | string;
-      return Array.isArray(parsed) ? (parsed[0] ?? null) : parsed;
-    } catch {
-      return first;
-    }
-  }
-  return null;
 }
 
 export interface FlowCardProps {
@@ -199,7 +182,8 @@ function FlowCardInner({
       );
   const preview = getFlowPreview(item);
   const contentSummaryText = getContentSummaryText(item);
-  const firstImage = getFirstImageUrl(item);
+  const mediaUrls = getMediaPreviewUrls(item, 4);
+  const hasMedia = mediaUrls.length > 0;
   const queueColor = item.queueType?.color;
   const queueName = item.queueType?.name ?? "";
   const statusLabel = getStatusLabel(item);
@@ -254,15 +238,15 @@ function FlowCardInner({
           />
         </>
       ) : null}
-      {/* Visual anchor: image with intentional crop (object-center), rounded mask; narrower on mobile */}
-      {firstImage ? (
-        <div className="relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 overflow-hidden rounded-l-xl md:w-32 md:min-w-[128px]">
-          <MediaThumbnail
-            src={firstImage}
-            alt=""
-            className="h-full min-h-full w-full object-cover object-center"
-            forceType={isVideoFile(firstImage) ? "video" : "image"}
-            hidePlayButton={true}
+      {/* Visual anchor: count-based collage (1 full, 2 side-by-side, 3 one-big-two-small, 4 grid) */}
+      {hasMedia ? (
+        <div className="relative z-10 h-full w-24 min-w-[96px] flex-shrink-0 rounded-l-xl md:w-32 md:min-w-[128px]">
+          <MediaPreviewCollage
+            urls={mediaUrls}
+            className="h-full w-full rounded-l-xl"
+            thumbnailClassName="h-full min-h-full w-full object-cover object-center"
+            hidePlayButton
+            twoItemLayout="vertical"
             fallback={<div className="bg-muted h-full w-full flex-shrink-0" />}
           />
         </div>
@@ -283,7 +267,7 @@ function FlowCardInner({
         <span className="text-foreground text-xl leading-tight font-bold tabular-nums">
           {timeLabel}
         </span>
-        {firstImage ? (
+        {hasMedia ? (
           <span className="text-muted-foreground/90 line-clamp-2 text-sm">
             {contentSummaryText}
           </span>

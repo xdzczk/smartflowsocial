@@ -262,7 +262,9 @@ export default function ImagePost({
   );
 
   useEffect(() => {
-    if (selectedQueue !== "unassigned") {
+    if (selectedQueue === "unassigned") {
+      setScheduledFor("");
+    } else {
       void calculateQueueScheduleTime(selectedQueue);
     }
     // Notify parent component of queue type change

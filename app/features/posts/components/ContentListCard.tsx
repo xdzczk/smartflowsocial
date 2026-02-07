@@ -1,8 +1,6 @@
 import { Link } from "@remix-run/react";
 import { useRef, useState, useEffect, useCallback } from "react";
 
-import MediaThumbnail from "~/components/ui/MediaThumbnail";
-
 import type {
   CombinedContent,
   LongFormPostData,
@@ -13,35 +11,19 @@ import {
   formatDate,
   getContentPreview,
   getContentTitle,
+  getMediaPreviewUrls,
   getQueueTypeDisplay,
   getStatusColor,
   getStatusText,
 } from "../utils/content-helpers";
 
 import { CONTENT_LIST_CARD_HEIGHT_PX } from "./constants";
+import { MediaPreviewCollage } from "./MediaPreviewCollage";
 
 function getFetcherFormData(
   fetcher: PostFetcher | undefined
 ): FormData | null | undefined {
   return (fetcher as { formData?: FormData | null }).formData;
-}
-
-function getFirstImageUrl(item: CombinedContent): string | null {
-  if (item.type === "longform" && item.image) {
-    return item.image;
-  }
-  const fileUrl = item.fileUrl;
-  if (!fileUrl || fileUrl.length === 0) return null;
-  const first = fileUrl[0];
-  if (typeof first === "string") {
-    try {
-      const parsed = JSON.parse(first) as string[] | string;
-      return Array.isArray(parsed) ? (parsed[0] ?? null) : parsed;
-    } catch {
-      return first;
-    }
-  }
-  return null;
 }
 
 export interface ContentListCardProps {
@@ -112,7 +94,8 @@ export function ContentListCard({
   }, [menuOpen, setMenuOpenWithCallback]);
 
   const queueDisplay = getQueueTypeDisplay(item.queueType);
-  const firstImage = getFirstImageUrl(item);
+  const mediaUrls = getMediaPreviewUrls(item, 4);
+  const hasMedia = mediaUrls.length > 0;
 
   const dateLabel =
     type === "scheduled"
@@ -165,20 +148,23 @@ export function ContentListCard({
           />
         </div>
       ) : null}
-      <div className="flex h-14 w-14 flex-shrink-0 overflow-hidden rounded-md">
-        {firstImage ? (
-          <MediaThumbnail
-            src={firstImage}
-            alt=""
-            className="h-full w-full object-cover"
+      <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-md">
+        {hasMedia ? (
+          <MediaPreviewCollage
+            urls={mediaUrls}
+            className="h-full w-full rounded-md"
+            thumbnailClassName="h-full w-full object-cover"
             fallback={
-              <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
+              <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
                 {item.type === "post" ? "TEXT" : "ART"}
               </div>
             }
           />
         ) : (
-          <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
+          <div
+            className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium"
+            aria-hidden
+          >
             {item.type === "post" ? "TEXT" : "ART"}
           </div>
         )}

@@ -133,9 +133,11 @@ export function usePostScheduling({
     }
   };
 
-  // Calculate schedule time when queue changes
+  // Calculate schedule time when queue changes; reset when deselecting (unassigned)
   useEffect(() => {
-    if (selectedQueue !== "unassigned") {
+    if (selectedQueue === "unassigned") {
+      setTimeout(() => setScheduledFor(""), 0);
+    } else {
       // Defer to avoid cascading renders
       setTimeout(() => {
         void calculateQueueScheduleTime(selectedQueue);

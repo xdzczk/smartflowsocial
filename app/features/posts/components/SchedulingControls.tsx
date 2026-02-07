@@ -97,10 +97,13 @@ export default function SchedulingControls({
   );
 
   useEffect(() => {
-    if (selectedQueueType !== "unassigned") {
+    if (selectedQueueType === "unassigned") {
+      setLocalScheduledFor("");
+      onScheduleChange("");
+    } else {
       void calculateQueueScheduleTime(selectedQueueType);
     }
-  }, [selectedQueueType, calculateQueueScheduleTime]);
+  }, [selectedQueueType, calculateQueueScheduleTime, onScheduleChange]);
 
   const _handleScheduleIntervalClick = (intervalHours: string) => {
     const tz = userTimezone || "UTC";
@@ -115,6 +118,8 @@ export default function SchedulingControls({
 
   const handleQueueChange = (value: string) => {
     if (value === selectedQueueType) {
+      setLocalScheduledFor("");
+      onScheduleChange("");
       onQueueTypeChange("unassigned");
     } else {
       onQueueTypeChange(value);

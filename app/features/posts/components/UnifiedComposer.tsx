@@ -1052,6 +1052,12 @@ export function UnifiedComposer({
                       processNewFilesForSegment(seg.id, files);
                   }}
                   onKeyDown={(e) => {
+                    // Only open file picker when the segment container itself is focused (e.g. Enter/Space on drop zone).
+                    // Ignore keydown from textarea/input so typing space in segment content doesn't open upload.
+                    const target = e.target as HTMLElement;
+                    if (target.closest("textarea") || target.closest("input")) {
+                      return;
+                    }
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       (

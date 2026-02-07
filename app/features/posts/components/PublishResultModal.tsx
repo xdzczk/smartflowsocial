@@ -204,9 +204,15 @@ export default function PublishResultModal({
 }: PublishResultModalProps) {
   const [relayAcks, setRelayAcks] = useState<RelayAck[]>([]);
   const [hasTimedOut, setHasTimedOut] = useState(false);
+  // When parent passes null (e.g. race after redirect), we may resolve via fetch
+  const [resolvedPublishAttemptId, setResolvedPublishAttemptId] = useState<
+    string | null
+  >(publishAttemptId);
 
   const maxPollingAttempts = 10; // 10 attempts * 5 seconds = 50 seconds max
   const pollingInterval = 5000; // 5 seconds - increased to avoid rate limiting
+  const maxResolveAttempts = 10;
+  const resolveInterval = 2000;
 
   // Helper function to calculate status from relay acks
   const calculateStatusFromAcks = useCallback(
@@ -242,17 +248,75 @@ export default function PublishResultModal({
     [action]
   );
 
-  // Poll for relay acknowledgements (only for published posts)
+  // Sync resolved id from prop (e.g. when parent refetches and gets publishAttemptId)
   useEffect(() => {
-    if (!isOpen || action !== "publish" || !publishAttemptId) {
-      return;
-    }
+    if (publishAttemptId == null) return;
+    const id = publishAttemptId;
+    const t = setTimeout(() => setResolvedPublishAttemptId(id), 0);
+    return () => clearTimeout(t);
+  }, [publishAttemptId]);
 
-    // Reset state when modal opens - use setTimeout to avoid setState in effect warning
-    setTimeout(() => {
+  // When modal opens for publish, reset and optionally resolve publishAttemptId if null (race after redirect)
+  useEffect(() => {
+    if (!isOpen || action !== "publish") return;
+    const t = setTimeout(() => {
       setRelayAcks([]);
       setHasTimedOut(false);
+      setResolvedPublishAttemptId(publishAttemptId ?? null);
     }, 0);
+    return () => clearTimeout(t);
+  }, [isOpen, action, publishAttemptId]);
+
+  // Resolve publishAttemptId by polling post when it was null (server may not have written it yet)
+  useEffect(() => {
+    if (
+      !isOpen ||
+      action !== "publish" ||
+      !postId ||
+      resolvedPublishAttemptId != null
+    ) {
+      return;
+    }
+    let attempts = 0;
+    const resolve = async () => {
+      if (attempts >= maxResolveAttempts) return;
+      try {
+        const res = await fetch(`/api/posts/${postId}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          post?: { publishAttemptId?: string | null };
+          longFormPost?: { publishAttemptId?: string | null };
+        };
+        const id =
+          data.post?.publishAttemptId ?? data.longFormPost?.publishAttemptId;
+        if (id) {
+          setResolvedPublishAttemptId(id);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+      attempts += 1;
+    };
+    const t = setInterval(() => {
+      void resolve();
+    }, resolveInterval);
+    void resolve();
+    return () => clearInterval(t);
+  }, [
+    isOpen,
+    action,
+    postId,
+    resolvedPublishAttemptId,
+    maxResolveAttempts,
+    resolveInterval,
+  ]);
+
+  // Poll for relay acknowledgements (only for published posts, once we have an attempt id)
+  useEffect(() => {
+    if (!isOpen || action !== "publish" || !resolvedPublishAttemptId) {
+      return;
+    }
 
     let currentPollCount = 0;
     let backoffDelay = pollingInterval; // Start with base interval
@@ -279,7 +343,7 @@ export default function PublishResultModal({
 
       try {
         const response = await fetch(
-          `/api/publish-result?postId=${postId}&publishAttemptId=${publishAttemptId}`
+          `/api/publish-result?postId=${postId}&publishAttemptId=${resolvedPublishAttemptId}`
         );
 
         if (response.status === 429) {
@@ -367,7 +431,7 @@ export default function PublishResultModal({
   }, [
     isOpen,
     action,
-    publishAttemptId,
+    resolvedPublishAttemptId,
     postId,
     maxPollingAttempts,
     pollingInterval,
@@ -510,11 +574,19 @@ export default function PublishResultModal({
         {action === "publish" &&
         relayAcks.length === 0 &&
         status === "publishing" ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex flex-col items-center justify-center gap-2 py-8">
             <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            <span className="text-muted-foreground ml-3 text-sm">
-              Waiting for relay responses...
+            <span className="text-muted-foreground text-center text-sm">
+              {resolvedPublishAttemptId
+                ? "Waiting for relay responses..."
+                : "Checking publish status..."}
             </span>
+            {hasTimedOut ? (
+              <span className="text-muted-foreground text-center text-sm">
+                Relay responses are taking longer than usual. Your post was
+                published—you can close this and check Posted.
+              </span>
+            ) : null}
           </div>
         ) : null}
 

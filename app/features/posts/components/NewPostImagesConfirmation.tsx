@@ -14,13 +14,16 @@ import {
   toUnixTimestamp,
 } from "~/lib/temporal";
 interface PreparedEventData {
-  content: {
-    fileUrl: string;
-    scheduledFor: string;
-    caption: string;
-    queueType: string;
-  };
-  type: "media";
+  /** MediaPost: object with fileUrl/caption/etc. ImagePost: plain string URL. */
+  content:
+    | {
+        fileUrl: string;
+        scheduledFor?: string;
+        caption?: string;
+        queueType?: string;
+      }
+    | string;
+  type: "media" | "image";
   queueType: string;
 }
 
@@ -145,8 +148,13 @@ function extractFileUrls(events: PreparedEventData[]): string[] {
   return events
     .map((event) => {
       const content = event.content;
+      if (typeof content === "string" && content.length > 0) {
+        return content;
+      }
       if (
         typeof content === "object" &&
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime: typeof null === "object"
+        content !== null &&
         "fileUrl" in content &&
         typeof (content as { fileUrl: unknown }).fileUrl === "string"
       ) {
@@ -238,19 +246,7 @@ export default function NewPostImagesConfirmation({
       formData.append("_action", isImmediate ? "post-media" : "schedule-media");
       formData.append("signedEvent", JSON.stringify(signedEvent));
       formData.append("nostrEvent", JSON.stringify(nostrEvent));
-      const fileUrlsForForm = events
-        .map((event) => {
-          const content = event.content;
-          if (
-            typeof content === "object" &&
-            "fileUrl" in content &&
-            typeof content.fileUrl === "string"
-          ) {
-            return (content as { fileUrl: string }).fileUrl;
-          }
-          return "";
-        })
-        .filter((url) => url !== "");
+      const fileUrlsForForm = extractFileUrls(events);
       const firstEventContent = events[0]?.content;
       const captionForForm =
         typeof firstEventContent === "object" &&
@@ -260,11 +256,15 @@ export default function NewPostImagesConfirmation({
           : "";
       const queueTypeForForm =
         typeof firstEventContent === "object" &&
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime: typeof null === "object"
+        firstEventContent !== null &&
         "queueType" in firstEventContent &&
         typeof (firstEventContent as { queueType: unknown }).queueType ===
           "string"
           ? (firstEventContent as { queueType: string }).queueType
-          : "unassigned";
+          : typeof events[0]?.queueType === "string"
+            ? events[0].queueType
+            : "unassigned";
 
       formData.append("fileUrl", JSON.stringify(fileUrlsForForm));
       formData.append("caption", captionForForm);
@@ -298,19 +298,7 @@ export default function NewPostImagesConfirmation({
   const handleSaveAsDraft = () => {
     const formData = new FormData();
     formData.append("_action", "draft-media");
-    const draftFileUrls = events
-      .map((event) => {
-        const content = event.content;
-        if (
-          typeof content === "object" &&
-          "fileUrl" in content &&
-          typeof content.fileUrl === "string"
-        ) {
-          return (content as { fileUrl: string }).fileUrl;
-        }
-        return "";
-      })
-      .filter((url) => url !== "");
+    const draftFileUrls = extractFileUrls(events);
     const draftFirstEvent = events[0];
     const draftCaption =
       draftFirstEvent &&
@@ -463,29 +451,39 @@ export default function NewPostImagesConfirmation({
                   Scheduled for
                 </h4>
                 <p className="text-foreground text-sm font-semibold dark:text-white">
-                  {events[0]?.content.scheduledFor
-                    ? (() => {
-                        try {
-                          const timestamp = parseInt(
-                            events[0].content.scheduledFor,
-                            10
-                          );
-                          if (isNaN(timestamp)) return "Invalid date";
-                          const zoned = fromUnixTimestamp(timestamp, "UTC");
-                          const userTimezone = user?.timezone ?? "UTC";
-                          const userZoned = zoned.withTimeZone(userTimezone);
-                          return formatForDisplay(userZoned, userTimezone, {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          });
-                        } catch {
-                          return "Invalid date";
-                        }
-                      })()
-                    : "Not scheduled"}
+                  {(() => {
+                    const firstContent = events[0]?.content;
+                    const scheduledForStr =
+                      typeof firstContent === "object" &&
+                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime: typeof null === "object"
+                      firstContent !== null &&
+                      "scheduledFor" in firstContent &&
+                      typeof (firstContent as { scheduledFor?: string })
+                        .scheduledFor === "string"
+                        ? (firstContent as { scheduledFor: string })
+                            .scheduledFor
+                        : null;
+                    return scheduledForStr
+                      ? (() => {
+                          try {
+                            const timestamp = parseInt(scheduledForStr, 10);
+                            if (isNaN(timestamp)) return "Invalid date";
+                            const zoned = fromUnixTimestamp(timestamp, "UTC");
+                            const userTimezone = user?.timezone ?? "UTC";
+                            const userZoned = zoned.withTimeZone(userTimezone);
+                            return formatForDisplay(userZoned, userTimezone, {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            });
+                          } catch {
+                            return "Invalid date";
+                          }
+                        })()
+                      : "Not scheduled";
+                  })()}
                 </p>
               </div>
             </div>
