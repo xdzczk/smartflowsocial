@@ -24,7 +24,10 @@ import { postToCombinedContent } from "../combined";
 import { getQueueColor } from "../queue-colors";
 import type { PostData } from "../types";
 
-import { CONTENT_MOBILE_BREAKPOINT_PX } from "./constants";
+import {
+  CONTENT_LIST_CARD_GAP_PX,
+  CONTENT_MOBILE_BREAKPOINT_PX,
+} from "./constants";
 import { ContentListCard } from "./ContentListCard";
 
 interface ScheduledPostsTableProps {
@@ -119,7 +122,7 @@ export function ScheduledPostsTable({
         : typeof document !== "undefined"
           ? document.documentElement
           : null,
-    estimateSize: () => 98,
+    estimateSize: () => 98 + CONTENT_LIST_CARD_GAP_PX,
     overscan: 3,
     getItemKey: (index) => combinedContent[index]?.id ?? String(index),
   });
@@ -479,7 +482,7 @@ export function ScheduledPostsTable({
 
       {/* Mobile: virtualized card list */}
       {isMobile ? (
-        <div className="block md:hidden">
+        <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           {onSortChange ? (
             <div className="mb-3 flex items-center gap-2">
               <span className="text-muted-foreground text-sm">Sort:</span>
@@ -527,8 +530,7 @@ export function ScheduledPostsTable({
                 mobileScrollContainerRef.current = el;
                 onScrollContainerReady?.(el ?? null);
               }}
-              className="overflow-auto"
-              style={{ height: "calc(100vh - 14rem)" }}
+              className="min-h-0 flex-1 overflow-auto"
             >
               {combinedContent.length > 0 ? (
                 <>
@@ -546,7 +548,7 @@ export function ScheduledPostsTable({
                         <div
                           key={virtualRow.key}
                           data-index={virtualRow.index}
-                          className="pb-0.5"
+                          className="pb-3"
                           style={{
                             position: "absolute",
                             top: 0,
@@ -618,7 +620,7 @@ export function ScheduledPostsTable({
                   <div
                     key={virtualRow.key}
                     data-index={virtualRow.index}
-                    className="pb-0.5"
+                    className="pb-3"
                     style={{
                       position: "absolute",
                       top: 0,

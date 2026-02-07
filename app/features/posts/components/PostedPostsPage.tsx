@@ -281,7 +281,7 @@ export default function PostedPostsPage() {
   };
 
   return (
-    <div>
+    <div className="flex min-h-screen flex-col">
       <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
         <div>
           <h3 className="mb-1 font-semibold">Posted History</h3>
@@ -310,105 +310,107 @@ export default function PostedPostsPage() {
         />
       ) : null}
 
-      {currentTab === "all" ? (
-        <AllContentListing
-          content={allContent}
-          type="posted"
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          userTimezone={user.timezone ?? undefined}
-          userTimeFormat={userTimeFormat}
-          onPostSelect={(content) => {
-            if (content.type === "post") {
-              const postData = extractPostData(content);
-              if (postData) {
-                setSelectedPost(postData);
+      <div className="flex min-h-0 flex-1 flex-col">
+        {currentTab === "all" ? (
+          <AllContentListing
+            content={allContent}
+            type="posted"
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            userTimezone={user.timezone ?? undefined}
+            userTimeFormat={userTimeFormat}
+            onPostSelect={(content) => {
+              if (content.type === "post") {
+                const postData = extractPostData(content);
+                if (postData) {
+                  setSelectedPost(postData);
+                }
+              } else {
+                const longFormData = extractLongFormPostData(content);
+                if (longFormData) {
+                  setSelectedLongFormPost(longFormData);
+                }
               }
-            } else {
-              const longFormData = extractLongFormPostData(content);
-              if (longFormData) {
-                setSelectedLongFormPost(longFormData);
-              }
+            }}
+            selectedItems={selectedPosts}
+            onToggleSelection={togglePostSelection}
+            onToggleSelectAll={() =>
+              toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
             }
-          }}
-          selectedItems={selectedPosts}
-          onToggleSelection={togglePostSelection}
-          onToggleSelectAll={() =>
-            toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
-          }
-          showBulkActions={true}
-          onBulkDelete={handleBulkDelete}
-          bulkDeleteState={
-            bulkDeleteMutation.isPending
-              ? "submitting"
-              : bulkDeleteFetcher.state
-          }
-          individualRepostFetcher={individualRepostFetcher}
-          longformRepostFetcher={longformRepostFetcher}
-          longformQuoteFetcher={longformQuoteFetcher}
-          onBulkRepost={handleBulkRepost}
-          onBulkScheduledRepost={handleBulkScheduledRepost}
-          onBulkQuote={handleBulkQuote}
-          repostFetcher={repostFetcher as PostFetcher}
-          onScheduleRepost={(post) =>
-            setScheduleRepostQuote({ post, mode: "repost" })
-          }
-          onScheduleQuote={(post) =>
-            setScheduleRepostQuote({ post, mode: "quote" })
-          }
-          prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-          sentinelRef={isMobile ? sentinelRef : undefined}
-          isFetchingNextPage={isFetchingNextPage}
-          onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-        />
-      ) : currentTab === "posts" ? (
-        <PostedPostsTable
-          filteredPosts={filteredPosts}
-          selectedPosts={selectedPosts}
-          stats={stats}
-          sortConfig={sortConfig}
-          toggleSelectAll={() =>
-            toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
-          }
-          togglePostSelection={togglePostSelection}
-          requestSort={requestSort}
-          setSelectedPost={setSelectedPost}
-          individualRepostFetcher={individualRepostFetcher}
-          deleteFetcher={deleteFetcher}
-          bulkDeleteFetcher={bulkDeleteFetcher}
-          userTimezone={user.timezone ?? undefined}
-          userTimeFormat={userTimeFormat}
-          onScheduleRepost={(post) =>
-            setScheduleRepostQuote({ post, mode: "repost" })
-          }
-          onScheduleQuote={(post) =>
-            setScheduleRepostQuote({ post, mode: "quote" })
-          }
-          onSortChange={(key, direction) => setSortConfig({ key, direction })}
-          prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-          sentinelRef={isMobile ? sentinelRef : undefined}
-          isFetchingNextPage={isFetchingNextPage}
-          onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-        />
-      ) : (
-        <LongFormListing
-          posts={longformPosts}
-          type="posted"
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          userTimezone={user.timezone ?? undefined}
-          userTimeFormat={userTimeFormat}
-          longformRepostFetcher={longformRepostFetcher}
-          longformQuoteFetcher={longformQuoteFetcher}
-          onPostSelect={(post) => {
-            setSelectedLongFormPost(post as LongFormPostData);
-          }}
-          prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-          sentinelRef={isMobile ? sentinelRef : undefined}
-          isFetchingNextPage={isFetchingNextPage}
-          onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-        />
-      )}
+            showBulkActions={true}
+            onBulkDelete={handleBulkDelete}
+            bulkDeleteState={
+              bulkDeleteMutation.isPending
+                ? "submitting"
+                : bulkDeleteFetcher.state
+            }
+            individualRepostFetcher={individualRepostFetcher}
+            longformRepostFetcher={longformRepostFetcher}
+            longformQuoteFetcher={longformQuoteFetcher}
+            onBulkRepost={handleBulkRepost}
+            onBulkScheduledRepost={handleBulkScheduledRepost}
+            onBulkQuote={handleBulkQuote}
+            repostFetcher={repostFetcher as PostFetcher}
+            onScheduleRepost={(post) =>
+              setScheduleRepostQuote({ post, mode: "repost" })
+            }
+            onScheduleQuote={(post) =>
+              setScheduleRepostQuote({ post, mode: "quote" })
+            }
+            prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+            sentinelRef={isMobile ? sentinelRef : undefined}
+            isFetchingNextPage={isFetchingNextPage}
+            onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+          />
+        ) : currentTab === "posts" ? (
+          <PostedPostsTable
+            filteredPosts={filteredPosts}
+            selectedPosts={selectedPosts}
+            stats={stats}
+            sortConfig={sortConfig}
+            toggleSelectAll={() =>
+              toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
+            }
+            togglePostSelection={togglePostSelection}
+            requestSort={requestSort}
+            setSelectedPost={setSelectedPost}
+            individualRepostFetcher={individualRepostFetcher}
+            deleteFetcher={deleteFetcher}
+            bulkDeleteFetcher={bulkDeleteFetcher}
+            userTimezone={user.timezone ?? undefined}
+            userTimeFormat={userTimeFormat}
+            onScheduleRepost={(post) =>
+              setScheduleRepostQuote({ post, mode: "repost" })
+            }
+            onScheduleQuote={(post) =>
+              setScheduleRepostQuote({ post, mode: "quote" })
+            }
+            onSortChange={(key, direction) => setSortConfig({ key, direction })}
+            prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+            sentinelRef={isMobile ? sentinelRef : undefined}
+            isFetchingNextPage={isFetchingNextPage}
+            onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+          />
+        ) : (
+          <LongFormListing
+            posts={longformPosts}
+            type="posted"
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            userTimezone={user.timezone ?? undefined}
+            userTimeFormat={userTimeFormat}
+            longformRepostFetcher={longformRepostFetcher}
+            longformQuoteFetcher={longformQuoteFetcher}
+            onPostSelect={(post) => {
+              setSelectedLongFormPost(post as LongFormPostData);
+            }}
+            prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+            sentinelRef={isMobile ? sentinelRef : undefined}
+            isFetchingNextPage={isFetchingNextPage}
+            onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+          />
+        )}
+      </div>
 
       {/* Scroll sentinel for infinite scroll (desktop only; on mobile sentinels are inside listing scroll container) */}
       {!isMobile ? (

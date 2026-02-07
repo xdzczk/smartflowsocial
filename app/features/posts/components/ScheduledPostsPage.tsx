@@ -143,7 +143,7 @@ export default function ScheduledPostsPage() {
   const { userTimezone, userTimeFormat } = useFormattedDate();
 
   return (
-    <div>
+    <div className="flex min-h-screen flex-col">
       <DashboardHeader
         currentTab={currentTab}
         allContentCount={totalContentCount}
@@ -174,138 +174,142 @@ export default function ScheduledPostsPage() {
         />
       ) : null}
 
-      {/* Content based on current tab */}
-      {currentTab === "all" ? (
-        <AllContentListing
-          content={allContent}
-          type="scheduled"
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          userTimezone={userTimezone}
-          userTimeFormat={userTimeFormat}
-          onPostSelect={(content) => {
-            // Use type guards for safe type narrowing
-            if (content.type === "post") {
-              const postData = extractPostData(content);
-              if (postData) {
-                setSelectedPost(postData);
-              }
-            } else {
-              const longFormData = extractLongFormPostData(content);
-              if (longFormData) {
-                setSelectedLongFormPost(longFormData);
-              }
-            }
-          }}
-          selectedItems={selectedPosts}
-          onToggleSelection={togglePostSelection}
-          onToggleSelectAll={toggleSelectAll}
-          showBulkActions={true}
-          onBulkDelete={handleBulkDelete}
-          bulkDeleteState={bulkDeleteFetcher.state}
-          onEditPost={handleEditPost}
-          onReschedulePost={handleReschedulePost}
-          onScheduleRepost={(p) =>
-            setScheduleRepostQuote({
-              post: p,
-              mode: "repost",
-            })
-          }
-          onScheduleQuote={(p) =>
-            setScheduleRepostQuote({
-              post: p,
-              mode: "quote",
-            })
-          }
-          prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-          sentinelRef={isMobile ? sentinelRef : undefined}
-          isFetchingNextPage={isFetchingNextPage}
-          onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-        />
-      ) : currentTab === "posts" ? (
-        <div>
-          <BulkDeleteBar
-            selectedCount={selectedPosts.size}
-            onBulkDelete={handleBulkDelete}
-            isDeleting={bulkDeleteFetcher.state !== "idle"}
-          />
-
-          <ScheduledPostsTable
-            posts={filteredPosts}
-            sortConfig={sortConfig}
-            onRequestSort={requestSort}
-            selectedPosts={selectedPosts}
-            onToggleSelection={togglePostSelection}
-            onToggleSelectAll={toggleSelectAll}
-            countdowns={countdowns}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {/* Content based on current tab */}
+        {currentTab === "all" ? (
+          <AllContentListing
+            content={allContent}
+            type="scheduled"
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
             userTimezone={userTimezone}
             userTimeFormat={userTimeFormat}
-            onPostClick={(post) => setSelectedPost(post)}
+            onPostSelect={(content) => {
+              // Use type guards for safe type narrowing
+              if (content.type === "post") {
+                const postData = extractPostData(content);
+                if (postData) {
+                  setSelectedPost(postData);
+                }
+              } else {
+                const longFormData = extractLongFormPostData(content);
+                if (longFormData) {
+                  setSelectedLongFormPost(longFormData);
+                }
+              }
+            }}
+            selectedItems={selectedPosts}
+            onToggleSelection={togglePostSelection}
+            onToggleSelectAll={toggleSelectAll}
+            showBulkActions={true}
+            onBulkDelete={handleBulkDelete}
+            bulkDeleteState={bulkDeleteFetcher.state}
+            onEditPost={handleEditPost}
+            onReschedulePost={handleReschedulePost}
+            onScheduleRepost={(p) =>
+              setScheduleRepostQuote({
+                post: p,
+                mode: "repost",
+              })
+            }
+            onScheduleQuote={(p) =>
+              setScheduleRepostQuote({
+                post: p,
+                mode: "quote",
+              })
+            }
+            prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+            sentinelRef={isMobile ? sentinelRef : undefined}
+            isFetchingNextPage={isFetchingNextPage}
+            onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+          />
+        ) : currentTab === "posts" ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <BulkDeleteBar
+              selectedCount={selectedPosts.size}
+              onBulkDelete={handleBulkDelete}
+              isDeleting={bulkDeleteFetcher.state !== "idle"}
+            />
+
+            <ScheduledPostsTable
+              posts={filteredPosts}
+              sortConfig={sortConfig}
+              onRequestSort={requestSort}
+              selectedPosts={selectedPosts}
+              onToggleSelection={togglePostSelection}
+              onToggleSelectAll={toggleSelectAll}
+              countdowns={countdowns}
+              userTimezone={userTimezone}
+              userTimeFormat={userTimeFormat}
+              onPostClick={(post) => setSelectedPost(post)}
+              onEditPost={(post) =>
+                handleEditPost(post as PostData | LongFormPostData)
+              }
+              onReschedulePost={(post) =>
+                handleReschedulePost(post as PostData | LongFormPostData)
+              }
+              onMediaClick={handleMediaClick}
+              bulkDeleteState={bulkDeleteFetcher.state}
+              onScheduleRepost={(post) =>
+                setScheduleRepostQuote({ post, mode: "repost" })
+              }
+              onScheduleQuote={(post) =>
+                setScheduleRepostQuote({ post, mode: "quote" })
+              }
+              onSortChange={(key, direction) =>
+                setSortConfig({ key, direction })
+              }
+              prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+              sentinelRef={isMobile ? sentinelRef : undefined}
+              isFetchingNextPage={isFetchingNextPage}
+              onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+            />
+
+            {selectedPost ? (
+              <PostDetailsModal
+                post={selectedPost}
+                onClose={() => setSelectedPost(null)}
+                showSignedEvent={true}
+                type="scheduled"
+                userTimezone={userTimezone}
+                userTimeFormat={userTimeFormat}
+              />
+            ) : null}
+
+            {/* Media Modal */}
+            {selectedMedia ? (
+              <MediaModal
+                src={selectedMedia}
+                alt="Post media"
+                isOpen={isMediaModalOpen}
+                onClose={handleCloseMediaModal}
+              />
+            ) : null}
+          </div>
+        ) : (
+          <LongFormListing
+            posts={longformPosts}
+            type="scheduled"
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            userTimezone={userTimezone}
+            userTimeFormat={userTimeFormat}
+            onPostSelect={(post) => {
+              setSelectedLongFormPost(post as LongFormPostData);
+            }}
             onEditPost={(post) =>
               handleEditPost(post as PostData | LongFormPostData)
             }
             onReschedulePost={(post) =>
               handleReschedulePost(post as PostData | LongFormPostData)
             }
-            onMediaClick={handleMediaClick}
-            bulkDeleteState={bulkDeleteFetcher.state}
-            onScheduleRepost={(post) =>
-              setScheduleRepostQuote({ post, mode: "repost" })
-            }
-            onScheduleQuote={(post) =>
-              setScheduleRepostQuote({ post, mode: "quote" })
-            }
-            onSortChange={(key, direction) => setSortConfig({ key, direction })}
             prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
             sentinelRef={isMobile ? sentinelRef : undefined}
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
           />
-
-          {selectedPost ? (
-            <PostDetailsModal
-              post={selectedPost}
-              onClose={() => setSelectedPost(null)}
-              showSignedEvent={true}
-              type="scheduled"
-              userTimezone={userTimezone}
-              userTimeFormat={userTimeFormat}
-            />
-          ) : null}
-
-          {/* Media Modal */}
-          {selectedMedia ? (
-            <MediaModal
-              src={selectedMedia}
-              alt="Post media"
-              isOpen={isMediaModalOpen}
-              onClose={handleCloseMediaModal}
-            />
-          ) : null}
-        </div>
-      ) : (
-        <LongFormListing
-          posts={longformPosts}
-          type="scheduled"
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          userTimezone={userTimezone}
-          userTimeFormat={userTimeFormat}
-          onPostSelect={(post) => {
-            setSelectedLongFormPost(post as LongFormPostData);
-          }}
-          onEditPost={(post) =>
-            handleEditPost(post as PostData | LongFormPostData)
-          }
-          onReschedulePost={(post) =>
-            handleReschedulePost(post as PostData | LongFormPostData)
-          }
-          prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-          sentinelRef={isMobile ? sentinelRef : undefined}
-          isFetchingNextPage={isFetchingNextPage}
-          onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-        />
-      )}
+        )}
+      </div>
 
       {/* Scroll sentinel for infinite scroll (desktop only; on mobile sentinels are inside listing scroll container) */}
       {!isMobile ? (

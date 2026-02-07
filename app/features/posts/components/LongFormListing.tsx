@@ -25,7 +25,10 @@ import { longFormPostToCombinedContent } from "../combined";
 import type { PostFetcher, LongFormPostData } from "../types";
 import type { EditorJSBlock } from "../types/editorjs.types";
 
-import { CONTENT_MOBILE_BREAKPOINT_PX } from "./constants";
+import {
+  CONTENT_LIST_CARD_GAP_PX,
+  CONTENT_MOBILE_BREAKPOINT_PX,
+} from "./constants";
 import { ContentListCard } from "./ContentListCard";
 
 // Helper to safely access formData from a fetcher
@@ -222,7 +225,7 @@ export default function LongFormListing({
         : typeof document !== "undefined"
           ? document.documentElement
           : null,
-    estimateSize: () => 98,
+    estimateSize: () => 98 + CONTENT_LIST_CARD_GAP_PX,
     overscan: 3,
     getItemKey: (index) => combinedContent[index]?.id ?? String(index),
   });
@@ -876,7 +879,7 @@ export default function LongFormListing({
 
       {/* Mobile: virtualized longform card list */}
       {isMobile ? (
-        <div className="block md:hidden">
+        <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           <div className="mt-3 flex items-center gap-2">
             <span className="text-muted-foreground text-sm">Sort:</span>
             <Select
@@ -920,8 +923,7 @@ export default function LongFormListing({
                 mobileScrollContainerRef.current = el;
                 onScrollContainerReady?.(el ?? null);
               }}
-              className="mt-2 overflow-auto"
-              style={{ height: "calc(100vh - 14rem)" }}
+              className="mt-2 min-h-0 flex-1 overflow-auto"
             >
               {combinedContent.length > 0 ? (
                 <>
@@ -939,7 +941,7 @@ export default function LongFormListing({
                         <div
                           key={virtualRow.key}
                           data-index={virtualRow.index}
-                          className="pb-0.5"
+                          className="pb-3"
                           style={{
                             position: "absolute",
                             top: 0,
@@ -1030,7 +1032,7 @@ export default function LongFormListing({
                   <div
                     key={virtualRow.key}
                     data-index={virtualRow.index}
-                    className="pb-0.5"
+                    className="pb-3"
                     style={{
                       position: "absolute",
                       top: 0,
