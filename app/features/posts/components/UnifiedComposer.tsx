@@ -575,6 +575,13 @@ export function UnifiedComposer({
 
     try {
       setSigningError(null);
+      if (!data.content.trim()) {
+        form.setError("content", {
+          type: "manual",
+          message: "Post content cannot be empty",
+        });
+        return;
+      }
       if (attachments.some((a) => a.status === "uploading")) {
         setSigningError("Please wait for uploads to finish.");
         return;

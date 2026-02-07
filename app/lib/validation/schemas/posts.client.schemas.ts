@@ -17,10 +17,8 @@ const VALIDATION_CONTENT_REQUIRED = "Content is required";
  * For use with React Hook Form - works with form values directly
  */
 export const textPostClientSchema = z.object({
-  content: z
-    .string()
-    .min(1, "Post content cannot be empty")
-    .max(5000, "Content too long"),
+  // Optional so thread mode can submit (content lives in segments); single-post path validates in submit
+  content: z.string().max(5000, "Content too long").default(""),
   scheduledFor: z.string().optional(),
   queueType: z.string().default("unassigned"),
   isRecyclable: z.boolean().default(false),

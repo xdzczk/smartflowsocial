@@ -331,6 +331,14 @@ export default function TextPost({
       return;
     }
 
+    if (!data.content.trim()) {
+      form.setError("content", {
+        type: "manual",
+        message: "Post content cannot be empty",
+      });
+      return;
+    }
+
     try {
       setSigningError(null);
       const userTimezone = user?.timezone ?? "UTC";
