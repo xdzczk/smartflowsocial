@@ -104,21 +104,21 @@ export function ScheduleIntervalsSettings({
         >
           <div className="space-y-2">
             <p className="text-muted-foreground text-sm">
-              Add time intervals one by one (e.g. 0.25 for 15 min, 0.5 for 30
-              min, 1, 2, 24). Only these values are allowed.
+              Add intervals in hours: 0.25 (15 min), 0.5 (30 min), or any whole
+              number (1, 2, 3, 4, 6, 8, 12, 24, …). Other decimals (e.g. 0.33)
+              are not allowed.
             </p>
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-start space-x-2">
                 <div className="flex-1">
                   <Input
-                    type="number"
-                    step="0.25"
-                    min="0.25"
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
                     {...form.register(`scheduleIntervals.${index}`)}
-                    placeholder="24"
+                    placeholder="e.g. 0.25, 1, 24"
                     disabled={isSubmitting}
                     onChange={(e) => {
-                      // Remove spaces and non-numeric characters
                       const value = e.target.value.replace(/\s/g, "");
                       form.setValue(`scheduleIntervals.${index}`, value, {
                         shouldValidate: true,
