@@ -2,7 +2,7 @@
  * Thread post action: create N posts (one per segment) with delay, optional threadGroupId.
  */
 
-import { redirect } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
@@ -73,7 +73,7 @@ export async function handleThreadAction(
   const signedEvents = parseSignedEvents(formData);
 
   if (segments.length === 0 || signedEvents.length !== segments.length) {
-    return Response.json(
+    return json(
       {
         error:
           "Thread must have at least one segment and signed events for each",
@@ -98,7 +98,7 @@ export async function handleThreadAction(
     const scheduledForStr = formData.get("scheduledFor");
     const n = scheduledForStr ? parseInt(String(scheduledForStr), 10) : NaN;
     if (Number.isNaN(n) || n < 0) {
-      return Response.json(
+      return json(
         { error: "Schedule time required for schedule-thread" },
         { status: 400 }
       );
@@ -209,7 +209,7 @@ export async function handleThreadAction(
 
   const firstId = postIds[0];
   if (firstId == null) {
-    return Response.json({ error: "No posts created" }, { status: 500 });
+    return json({ error: "No posts created" }, { status: 500 });
   }
   if (isSchedule) {
     return redirect(`/dashboard/newpost?scheduled=${firstId}`);

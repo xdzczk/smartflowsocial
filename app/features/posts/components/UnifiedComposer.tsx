@@ -1222,6 +1222,11 @@ export function UnifiedComposer({
                   if (files.length > 0) processNewFilesForSingleNote(files);
                 }}
                 onKeyDown={(e) => {
+                  // Only open file picker when the drop zone itself is focused, not when typing in the textarea
+                  const target = e.target as HTMLElement;
+                  if (target.closest("textarea") || target.closest("input")) {
+                    return;
+                  }
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     handleAddAttachment();

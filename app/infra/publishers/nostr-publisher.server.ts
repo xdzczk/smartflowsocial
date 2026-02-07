@@ -10,7 +10,7 @@
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { env } from "~/lib/env.server";
-import { logWarning, logError } from "~/lib/error-logger.server";
+import { logWarning, logError, logInfo } from "~/lib/error-logger.server";
 import { fetchWithRetry } from "~/lib/fetch.server";
 import { recordRelayRequest } from "~/lib/metrics/relay-metrics.server";
 import { relaysArray as systemDefaultRelays } from "~/lib/relays";
@@ -262,6 +262,14 @@ export class DefaultNostrPublisher implements NostrPublisher {
         headers["X-Request-ID"] = correlationId;
       }
 
+      logInfo("Nostr publisher: sending publish request", {
+        correlationId,
+        eventId: event.id,
+        kind: event.kind,
+        relayCount: prioritizedRelays.length,
+        publisherHost: url.host,
+      });
+
       const response = await fetchWithRetry(url.toString(), {
         method: "POST",
         headers,
@@ -283,17 +291,12 @@ export class DefaultNostrPublisher implements NostrPublisher {
       const totalLatency = Date.now() - startTime;
 
       // Prefer per-relay results returned by the publisher service.
+      // Use response.text() + JSON.parse to avoid relying on Response.json() which may not exist in some runtimes.
       let perRelayResults: RelayPublishResult[] | null = null;
       try {
-        const ct = response.headers.get("content-type") ?? "";
-        if (ct.includes("application/json")) {
-          const json = (await response.clone().json()) as unknown;
-          perRelayResults = parsePerRelayResults(json);
-        } else {
-          // Best-effort: some services omit content-type.
-          const json = (await response.clone().json()) as unknown;
-          perRelayResults = parsePerRelayResults(json);
-        }
+        const raw = await response.text();
+        const json = raw ? (JSON.parse(raw) as unknown) : null;
+        perRelayResults = json != null ? parsePerRelayResults(json) : null;
       } catch {
         perRelayResults = null;
       }

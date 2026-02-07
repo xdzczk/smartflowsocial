@@ -2,6 +2,8 @@
  * Autosave composer draft: create or update Post (DRAFT) with draftMeta.
  */
 
+import { json } from "@remix-run/node";
+
 import { prisma } from "~/lib/prisma.server";
 
 import { CreatePostUseCase } from "../../use-cases/create-post.use-case.server";
@@ -70,7 +72,7 @@ export async function handleAutosaveDraft(
           updatedAt: new Date(),
         },
       });
-      return Response.json({ draftId, saved: true });
+      return json({ draftId, saved: true });
     }
   }
 
@@ -117,7 +119,7 @@ export async function handleAutosaveDraft(
     data: { draftMeta: draftMeta as unknown as object },
   });
 
-  return Response.json({
+  return json({
     draftId: newDraftId,
     saved: true,
   });

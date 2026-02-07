@@ -5,6 +5,7 @@
 /* eslint-disable sonarjs/cognitive-complexity -- action router branches by _action */
 
 import {
+  json,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -95,12 +96,12 @@ export async function handleNewPostAction(
   ) {
     const result = handleUploadPreview(formData);
     if (!result.success) {
-      return Response.json(
+      return json(
         { error: result.error ?? "Upload preview failed" },
         { status: 400 }
       );
     }
-    return Response.json(result);
+    return json(result);
   }
 
   if (_action === "autosave-draft") {
@@ -207,6 +208,6 @@ export async function handleNewPostAction(
     return handleDraftImages(handlerParams);
   }
 
-  return Response.json({ success: false });
+  return json({ success: false });
 }
 /* eslint-enable sonarjs/cognitive-complexity */
