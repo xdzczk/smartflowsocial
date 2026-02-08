@@ -10,12 +10,15 @@ interface LongFormContentEditorProps {
   onOpenAssetBrowser: () => void;
   /** When false, hide the "Content *" label (for writing-surface hero). Default true. */
   showLabel?: boolean;
+  /** When false, block pointer events on editor area until EditorJS is ready (prevents "toolbar not finished" error). */
+  editorReady?: boolean;
 }
 
 export function LongFormContentEditor({
   uploadProvider,
   onOpenAssetBrowser,
   showLabel = true,
+  editorReady = true,
 }: LongFormContentEditorProps) {
   return (
     <div>
@@ -81,7 +84,11 @@ export function LongFormContentEditor({
             : "border-border/50 border-b pt-1"
         }
       >
-        <div className="min-h-[500px] p-4">
+        <div
+          className={`min-h-[500px] p-4 ${!editorReady ? "pointer-events-none select-none" : ""}`}
+          aria-busy={!editorReady}
+          aria-label={!editorReady ? "Editor loading" : undefined}
+        >
           <div
             id="editorjs"
             className="prose prose-lg dark:prose-invert min-h-[460px] max-w-none"

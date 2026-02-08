@@ -15,6 +15,8 @@ interface WritingSurfaceProps<T extends FieldValues = FieldValues> {
   content?: string;
   uploadProvider?: string | null;
   onOpenAssetBrowser: () => void;
+  /** When false, editor area blocks pointer events until EditorJS is ready (prevents toolbar error) */
+  editorReady?: boolean;
 }
 
 export function WritingSurface<T extends FieldValues = FieldValues>({
@@ -22,6 +24,7 @@ export function WritingSurface<T extends FieldValues = FieldValues>({
   content: _content = "",
   uploadProvider,
   onOpenAssetBrowser,
+  editorReady = false,
 }: WritingSurfaceProps<T>) {
   const titleRef = useRef<HTMLInputElement | null>(null);
   const titleReg = register("title" as Parameters<UseFormRegister<T>>[0]);
@@ -48,6 +51,7 @@ export function WritingSurface<T extends FieldValues = FieldValues>({
         uploadProvider={uploadProvider}
         onOpenAssetBrowser={onOpenAssetBrowser}
         showLabel={false}
+        editorReady={editorReady}
       />
     </div>
   );

@@ -307,7 +307,7 @@ export function useLongFormEditor({
         } finally {
           editorRef.current = null;
           editorInitialized.current = false;
-          setEditorReady(false);
+          // Do not setEditorReady(false) here: avoids state update on unmount and flicker on Strict Mode remount
 
           // Remove from global tracking
           if (window.EditorJSInstances) {
