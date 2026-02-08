@@ -26,10 +26,11 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
-// Mock dependencies
+// Mock dependencies (longform.server: createLongFormEvent, generateArticleIdentifier only)
 vi.mock("~/features/posts/longform.server", () => ({
-  convertEditorJSToMarkdown: vi.fn(
-    (data) => `Markdown: ${JSON.stringify(data)}`
+  createLongFormEvent: vi.fn(),
+  generateArticleIdentifier: vi.fn((t: string) =>
+    t.toLowerCase().replace(/\s+/g, "-").substring(0, 64)
   ),
 }));
 

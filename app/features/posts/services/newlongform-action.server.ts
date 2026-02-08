@@ -33,7 +33,6 @@ import {
 } from "~/lib/validation";
 import { createPostWithOutbox } from "~/models/post.commands.server";
 
-import { convertEditorJSToMarkdown } from "../longform.server";
 import { resolveQueueTypeId } from "../server";
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 import { CreateLongFormPostUseCase } from "../use-cases/create-longform-post.use-case.server";
@@ -296,22 +295,7 @@ async function persistDraft(
     return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
-  let markdownContent: string;
-  try {
-    const editorData = JSON.parse(editorContent) as {
-      blocks?: Array<{ type: string; data: Record<string, unknown> }>;
-      time?: number;
-      version?: string;
-    };
-    markdownContent = convertEditorJSToMarkdown({
-      blocks: editorData.blocks ?? [],
-      time: editorData.time,
-      version: editorData.version,
-    });
-  } catch {
-    markdownContent = editorContent;
-  }
-
+  const markdownContent = editorContent.trim();
   const sanitizedContent = sanitizeMarkdown(markdownContent);
   const finalSummary = summary ?? generateSummary(sanitizedContent);
 
@@ -428,22 +412,7 @@ async function handlePublish(
     );
   }
 
-  let markdownContent;
-  try {
-    const editorData = JSON.parse(editorContent) as {
-      blocks?: Array<{ type: string; data: Record<string, unknown> }>;
-      time?: number;
-      version?: string;
-    };
-    markdownContent = convertEditorJSToMarkdown({
-      blocks: editorData.blocks ?? [],
-      time: editorData.time,
-      version: editorData.version,
-    });
-  } catch {
-    markdownContent = editorContent;
-  }
-
+  const markdownContent = editorContent.trim();
   const sanitizedContent = sanitizeMarkdown(markdownContent);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
   const finalSummary = summary ?? generateSummary(sanitizedContent);
@@ -610,22 +579,7 @@ async function handleScheduleLongform(
     );
   }
 
-  let markdownContent;
-  try {
-    const editorData = JSON.parse(editorContent) as {
-      blocks?: Array<{ type: string; data: Record<string, unknown> }>;
-      time?: number;
-      version?: string;
-    };
-    markdownContent = convertEditorJSToMarkdown({
-      blocks: editorData.blocks ?? [],
-      time: editorData.time,
-      version: editorData.version,
-    });
-  } catch {
-    markdownContent = editorContent;
-  }
-
+  const markdownContent = editorContent.trim();
   const sanitizedContent = sanitizeMarkdown(markdownContent);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
   const finalSummary = summary ?? generateSummary(sanitizedContent);

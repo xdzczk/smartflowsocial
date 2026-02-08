@@ -1,4 +1,4 @@
-import { PlayIcon } from "@heroicons/react/20/solid";
+import { Play } from "lucide-react";
 import React, { useState } from "react";
 interface MediaPlayerProps {
   src: string;
@@ -79,7 +79,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       {!isPlaying ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="bg-opacity-50 rounded-full bg-black p-3">
-            <PlayIcon className="h-8 w-8 text-white" />
+            <Play className="h-8 w-8 text-white" />
           </div>
         </div>
       ) : null}

@@ -1,360 +1,145 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+/**
+ * Tiptap-based longform editor hook.
+ * Replaces EditorJS: syncs markdown to form via debounced onUpdate and flushSync.
+ */
 
-import { logClientError } from "~/lib/error-handler.client";
+import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
+import { Markdown } from "@tiptap/markdown";
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { EditorJSInstance, EditorJSAPI } from "./types/editorjs.types";
-import {
-  disableCaptions,
-  setupCaptionObserver,
-} from "./utils/editorjs-captions";
-import { createEditorJSToolsConfig } from "./utils/editorjs-config";
-import {
-  loadEditorJSContent,
-  insertAssetsIntoEditor,
-  generateSummaryFromContent as generateSummary,
-} from "./utils/editorjs-content";
-import { setupCustomDragDrop } from "./utils/editorjs-dragdrop";
+import { generateSummaryFromMarkdown } from "~/lib/markdown-utils";
+
+import { htmlToMarkdown } from "./utils/html-to-markdown.client";
+
+const DEBOUNCE_MS = 500;
 
 interface UseLongFormEditorOptions {
   uploadProvider: string | null;
-  initialContent?: string;
-  onContentChange: (content: string) => void;
+  initialMarkdown?: string;
+  onContentChange: (markdown: string) => void;
 }
 
 export function useLongFormEditor({
-  uploadProvider,
-  initialContent: _initialContent,
+  uploadProvider: _uploadProvider,
+  initialMarkdown = "",
   onContentChange,
 }: UseLongFormEditorOptions) {
-  const editorRef = useRef<EditorJSInstance | null>(null);
-  const editorInitialized = useRef(false);
+  const [mounted, setMounted] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
-  const isMountedRef = useRef(true);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editorInstanceRef = useRef<ReturnType<typeof useEditor> | null>(null);
+  const onContentChangeRef = useRef(onContentChange);
 
-  // Helper function to safely check if component is mounted
-  // This function makes the ref check explicit to TypeScript
-  const isMounted = useCallback((): boolean => {
-    return isMountedRef.current === true;
+  useEffect(() => {
+    onContentChangeRef.current = onContentChange;
+  }, [onContentChange]);
+
+  useEffect(() => {
+    const id = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(id);
   }, []);
 
-  // Helper to safely execute a callback only if mounted
-  const safeExecute = useCallback(
-    // eslint-disable-next-line promise/prefer-await-to-callbacks -- Synchronous helper function, not a promise callback
-    <T>(callback: () => T): T | undefined => {
-      if (isMountedRef.current) {
-        // eslint-disable-next-line promise/prefer-await-to-callbacks -- Synchronous helper function, not a promise callback
-        return callback();
-      }
-      return undefined;
-    },
+  const extensions = useMemo(
+    () => [
+      StarterKit,
+      Markdown.configure({
+        markedOptions: {
+          gfm: true,
+          breaks: false,
+          pedantic: false,
+          smartLists: true,
+          smartypants: false,
+        },
+      }),
+      Image,
+      Link.configure({ openOnClick: false }),
+    ],
     []
   );
 
-  // Disable captions function
-  const disableCaptionsFn = useCallback(() => {
-    disableCaptions();
-  }, []);
-
-  // Main editor initialization effect
-  useEffect(() => {
-    // Mark component as mounted
-    isMountedRef.current = true;
-
-    const loadEditor = async () => {
-      // Prevent multiple initializations more aggressively
-      if (
-        typeof window !== "undefined" &&
-        !editorRef.current &&
-        !editorInitialized.current &&
-        isMounted()
-      ) {
-        editorInitialized.current = true;
-
-        // Check if editor is already initialized in DOM
-        const existingEditor = document.getElementById("editorjs");
-        if (existingEditor) {
-          // If there's already EditorJS content, don't reinitialize
-          const hasEditorContent =
-            existingEditor.querySelector(".codex-editor") ??
-            existingEditor.querySelector(".ce-block") ??
-            existingEditor.innerHTML.trim().length > 0;
-
-          if (hasEditorContent) {
-            logClientError(
-              "EditorJS already initialized, skipping...",
-              {
-                component: "useLongFormEditor",
-                action: "loadEditor",
-              },
-              "info"
-            );
-            editorInitialized.current = false; // Reset flag so it can try again if needed
-            return;
-          }
-
-          existingEditor.innerHTML = "";
-
-          // Remove any existing EditorJS classes that might interfere
-          existingEditor.className = existingEditor.className
-            .split(" ")
-            .filter((cls) => !cls.startsWith("codex-editor"))
-            .join(" ");
-        }
-
-        // Also check for any existing editor instances globally
-        if (window.EditorJSInstances) {
-          window.EditorJSInstances.forEach((instance) => {
-            try {
-              instance.destroy();
-            } catch (_e) {
-              /* ignore cleanup errors */
-            }
-          });
-          window.EditorJSInstances = [];
-        } else {
-          window.EditorJSInstances = [];
-        }
-
-        const EditorJS = (await import("@editorjs/editorjs")).default;
-
-        // Add a small delay to ensure DOM is fully ready
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Check if component is still mounted and element exists before creating editor
-        if (!isMounted()) {
-          editorInitialized.current = false;
-          return;
-        }
-
-        const editorElement = document.getElementById("editorjs");
-        if (!editorElement) {
-          editorInitialized.current = false;
-          return;
-        }
-
-        // Create tools configuration
-        const tools = await createEditorJSToolsConfig(uploadProvider);
-
-        // Double-check component is still mounted before creating editor instance
-        if (!isMounted()) {
-          editorInitialized.current = false;
-          return;
-        }
-
-        let editorInstance: EditorJSInstance;
-        try {
-          editorInstance = new EditorJS({
-            holder: "editorjs",
-            minHeight: 300,
-            // @ts-expect-error - EditorJS types don't match exactly but work at runtime
-            tools: tools,
-            data: undefined, // Initial data will be loaded separately
-            // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises -- EditorJS onChange is async but types don't reflect this
-            onChange: async (api: EditorJSAPI) => {
-              // Check if component is still mounted and editor element exists
-              if (!isMounted()) {
-                return;
+  const editor = useEditor(
+    mounted
+      ? {
+          extensions,
+          content: initialMarkdown,
+          contentType: "markdown",
+          immediatelyRender: false,
+          onUpdate: ({ editor: ed }) => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(() => {
+              debounceRef.current = null;
+              const md =
+                "getMarkdown" in ed && typeof ed.getMarkdown === "function"
+                  ? ed.getMarkdown()
+                  : "";
+              onContentChangeRef.current(md);
+            }, DEBOUNCE_MS);
+          },
+          onPaste: (event) => {
+            void (async () => {
+              const ed = editorInstanceRef.current;
+              if (!ed) return;
+              const html = event.clipboardData?.getData("text/html");
+              if (html?.trim()) {
+                event.preventDefault();
+                const markdown = await htmlToMarkdown(html);
+                if (markdown) {
+                  ed.chain()
+                    .focus()
+                    .insertContent(markdown, { contentType: "markdown" })
+                    .run();
+                }
               }
-
-              const editorElement = document.getElementById("editorjs");
-              if (!editorElement) {
-                return;
-              }
-
-              try {
-                const outputData = await api.saver.save();
-                // Double-check component is still mounted before calling callback
-                safeExecute(() => {
-                  onContentChange(JSON.stringify(outputData));
-                });
-              } catch (error) {
-                // Only log errors if component is still mounted
-                safeExecute(() => {
-                  void (async () => {
-                    const { handleErrorSafely } =
-                      await import("~/lib/error-handler.client");
-                    handleErrorSafely(error, {
-                      component: "useLongFormEditor",
-                      action: "onChange",
-                    });
-                  })();
-                });
-              }
-            },
-          }) as EditorJSInstance;
-        } catch (error) {
-          // If editor creation fails, reset flag and return
-          editorInitialized.current = false;
-          safeExecute(() => {
-            logClientError(
-              error instanceof Error ? error : new Error(String(error)),
-              {
-                component: "useLongFormEditor",
-                action: "createEditor",
-                message: "Failed to create EditorJS instance",
-              },
-              "warning"
-            );
-          });
-          return;
+            })();
+          },
+          onCreate: ({ editor: ed }) => {
+            editorInstanceRef.current = ed;
+            setEditorReady(true);
+          },
         }
-
-        // Store the editor reference and add to global tracking
-        editorRef.current = editorInstance;
-        window.EditorJSInstances.push(editorInstance);
-
-        // Initialize custom drag and drop functionality after editor is ready
-        void (async () => {
-          try {
-            if (!editorRef.current || !isMounted()) return;
-
-            // Check if element still exists before waiting for isReady
-            const editorElement = document.getElementById("editorjs");
-            if (!editorElement || !isMounted()) return;
-
-            await editorRef.current.isReady;
-
-            // Check again after isReady resolves
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-            if (!editorRef.current || !isMounted()) return;
-
-            const editorElementAfterReady = document.getElementById("editorjs");
-            if (!editorElementAfterReady || !isMounted()) return;
-
-            const dragObserver = setupCustomDragDrop(
-              editorRef as unknown as React.RefObject<EditorJSInstance>,
-              editorElementAfterReady,
-              onContentChange,
-              disableCaptionsFn
-            );
-            editorRef.current._dragObserver = dragObserver;
-
-            safeExecute(() => {
-              setEditorReady(true);
-            });
-          } catch (error) {
-            // Only log if component is still mounted
-            safeExecute(() => {
-              logClientError(
-                error instanceof Error ? error : new Error(String(error)),
-                {
-                  component: "useLongFormEditor",
-                  action: "initializeDragDrop",
-                },
-                "warning"
-              );
-            });
-          }
-        })();
-
-        // Run caption disabling immediately and on editor changes
-        // Only if component is still mounted
-        safeExecute(() => {
-          setTimeout(() => {
-            if (isMounted()) {
-              disableCaptionsFn();
-            }
-          }, 100);
-        });
-
-        // Set up a mutation observer to remove captions whenever they appear
-        // Only if component is still mounted
-        safeExecute(() => {
-          const editorElement = document.getElementById("editorjs");
-          if (editorElement && editorRef.current) {
-            const captionObserver = setupCaptionObserver(
-              editorElement,
-              disableCaptionsFn
-            );
-            editorRef.current._captionObserver = captionObserver;
-          }
-        });
-      }
-    };
-
-    void loadEditor();
-
-    return () => {
-      // Mark component as unmounted to prevent onChange callbacks
-      isMountedRef.current = false;
-
-      if (editorRef.current) {
-        try {
-          // Clean up mutation observers
-          if (editorRef.current._captionObserver) {
-            editorRef.current._captionObserver.disconnect();
-          }
-          if (editorRef.current._dragObserver) {
-            editorRef.current._dragObserver.disconnect();
-          }
-
-          // Destroy the editor instance
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: destroy method exists but TypeScript types may not reflect it
-          if (editorRef.current.destroy) {
-            editorRef.current.destroy();
-          }
-        } catch (error) {
-          logClientError(
-            error instanceof Error ? error : new Error(String(error)),
-            {
-              component: "useLongFormEditor",
-              action: "cleanup",
-              message: "Error during editor cleanup",
-            },
-            "warning"
-          );
-        } finally {
-          editorRef.current = null;
-          editorInitialized.current = false;
-          // Do not setEditorReady(false) here: avoids state update on unmount and flicker on Strict Mode remount
-
-          // Remove from global tracking
-          if (window.EditorJSInstances) {
-            window.EditorJSInstances = window.EditorJSInstances.filter(
-              (instance) => instance !== editorRef.current
-            );
-          }
-
-          // Also clear the DOM container to prevent issues
-          const editorContainer = document.getElementById("editorjs");
-          if (editorContainer) {
-            editorContainer.innerHTML = "";
-
-            // Remove any EditorJS classes
-            editorContainer.className = editorContainer.className
-              .split(" ")
-              .filter((cls) => !cls.startsWith("codex-editor"))
-              .join(" ");
-          }
-        }
-      }
-    };
-  }, [
-    uploadProvider,
-    onContentChange,
-    disableCaptionsFn,
-    isMounted,
-    safeExecute,
-  ]);
-
-  // Load initial content when editor is ready
-  const loadInitialData = useCallback(
-    async (content: string) => {
-      if (editorReady && editorRef.current && content) {
-        await loadEditorJSContent(
-          editorRef as unknown as React.RefObject<EditorJSInstance>,
-          content,
-          onContentChange
-        );
-      }
-    },
-    [editorReady, onContentChange]
+      : { immediatelyRender: false },
+    [mounted, initialMarkdown]
   );
 
-  // Insert assets into the editor
+  const flushSync = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    if (
+      editor &&
+      "getMarkdown" in editor &&
+      typeof editor.getMarkdown === "function"
+    ) {
+      onContentChangeRef.current(editor.getMarkdown());
+    }
+  }, [editor]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      flushSync();
+    };
+  }, [flushSync]);
+
+  const loadInitialData = useCallback(
+    (markdown: string) => {
+      if (!editor || !markdown.trim()) return;
+      editor.commands.setContent(markdown, { contentType: "markdown" });
+      const md =
+        "getMarkdown" in editor && typeof editor.getMarkdown === "function"
+          ? editor.getMarkdown()
+          : "";
+      onContentChangeRef.current(md);
+    },
+    [editor]
+  );
+
   const insertAssetIntoEditor = useCallback(
-    async (
+    (
       selectedAssets: Array<{
         assetType: string;
         fileUrl?: string;
@@ -362,25 +147,36 @@ export function useLongFormEditor({
         title?: string;
       }>
     ) => {
-      await insertAssetsIntoEditor(
-        editorRef as unknown as React.RefObject<EditorJSInstance>,
-        selectedAssets,
-        onContentChange
-      );
+      if (!editor) return;
+      for (const asset of selectedAssets) {
+        if (asset.assetType === "IMAGE" && asset.fileUrl) {
+          editor.chain().focus().setImage({ src: asset.fileUrl }).run();
+        } else if (asset.assetType === "TEXT") {
+          const text = asset.content ?? asset.title ?? "";
+          if (text) {
+            editor.chain().focus().insertContent(text).run();
+          }
+        }
+      }
+      const md =
+        "getMarkdown" in editor && typeof editor.getMarkdown === "function"
+          ? editor.getMarkdown()
+          : "";
+      onContentChangeRef.current(md);
     },
-    [onContentChange]
+    [editor]
   );
 
-  // Generate summary from editor content
-  const generateSummaryFromContent = useCallback((content: string) => {
-    return generateSummary(content);
+  const generateSummaryFromContent = useCallback((markdown: string) => {
+    return generateSummaryFromMarkdown(markdown);
   }, []);
 
   return {
-    editorRef,
+    editor,
     editorReady,
     loadInitialData,
     insertAssetIntoEditor,
     generateSummaryFromContent,
+    flushSync,
   };
 }

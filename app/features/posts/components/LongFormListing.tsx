@@ -12,6 +12,7 @@ import {
 import type { LongFormPostType } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
+import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import {
   difference,
   formatForDisplay,
@@ -23,7 +24,6 @@ import {
 
 import { longFormPostToCombinedContent } from "../combined";
 import type { PostFetcher, LongFormPostData } from "../types";
-import type { EditorJSBlock } from "../types/editorjs.types";
 
 import {
   CONTENT_LIST_CARD_GAP_PX,
@@ -312,42 +312,10 @@ export default function LongFormListing({
 
   const getReadingTime = (content?: string) => {
     if (!content) return "0 min read";
-
     try {
-      let wordCount = 0;
-
-      // If it's JSON (EditorJS format), extract text from blocks
-      if (content.startsWith("{")) {
-        const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
-        editorData.blocks?.forEach((block: EditorJSBlock) => {
-          if (block.type === "paragraph" || block.type === "header") {
-            const text =
-              typeof block.data["text"] === "string"
-                ? block.data["text"].replace(/<[^>]*>/g, "")
-                : "";
-            wordCount += text
-              .split(/\s+/)
-              .filter((word: string) => word.length > 0).length;
-          } else if (block.type === "list") {
-            const items = Array.isArray(block.data["items"])
-              ? block.data["items"]
-              : [];
-            items.forEach((item: unknown) => {
-              const text =
-                typeof item === "string" ? item.replace(/<[^>]*>/g, "") : "";
-              wordCount += text
-                .split(/\s+/)
-                .filter((word: string) => word.length > 0).length;
-            });
-          }
-        });
-      } else {
-        // Plain text or markdown
-        const text = content.replace(/<[^>]*>/g, "");
-        wordCount = text.split(/\s+/).filter((word) => word.length > 0).length;
-      }
-
-      const readingTime = Math.ceil(wordCount / 200); // Average 200 words per minute
+      const plain = stripMarkdownToPlainText(content);
+      const wordCount = plain.trim().split(/\s+/).filter(Boolean).length;
+      const readingTime = Math.ceil(wordCount / 200);
       return `${readingTime} min read`;
     } catch {
       return "— min read";

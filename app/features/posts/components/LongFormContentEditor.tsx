@@ -1,25 +1,38 @@
 /**
  * Content editor component for LongFormPost
- * Handles the EditorJS instance and asset insertion
+ * Tiptap editor with markdown sync; client-only mount to avoid SSR.
  */
 
+import { EditorContent } from "@tiptap/react";
+import type React from "react";
+
 import { Button } from "~/components/ui/button";
+
+import { TiptapToolbar } from "./TiptapToolbar";
 
 interface LongFormContentEditorProps {
   uploadProvider?: string | null;
   onOpenAssetBrowser: () => void;
   /** When false, hide the "Content *" label (for writing-surface hero). Default true. */
   showLabel?: boolean;
-  /** When false, block pointer events on editor area until EditorJS is ready (prevents "toolbar not finished" error). */
+  /** When false, block pointer events on editor area until editor is ready. */
   editorReady?: boolean;
+  /** Tiptap editor instance (null before client mount). */
+  editor: React.ComponentProps<typeof EditorContent>["editor"];
 }
+
+const EDITOR_MIN_HEIGHT = "min-h-[500px]";
+const PLACEHOLDER_MIN_HEIGHT = "min-h-[500px]";
 
 export function LongFormContentEditor({
   uploadProvider,
   onOpenAssetBrowser,
   showLabel = true,
   editorReady = true,
+  editor,
 }: LongFormContentEditorProps) {
+  const showPlaceholder = !editor;
+
   return (
     <div>
       {showLabel ? (
@@ -85,20 +98,35 @@ export function LongFormContentEditor({
         }
       >
         <div
-          className={`min-h-[500px] p-4 ${!editorReady ? "pointer-events-none select-none" : ""}`}
+          className={`${showPlaceholder ? PLACEHOLDER_MIN_HEIGHT : EDITOR_MIN_HEIGHT} p-4 ${!editorReady ? "pointer-events-none select-none" : ""}`}
           aria-busy={!editorReady}
           aria-label={!editorReady ? "Editor loading" : undefined}
         >
-          <div
-            id="editorjs"
-            className="prose prose-lg dark:prose-invert min-h-[460px] max-w-none"
-            role="textbox"
-            aria-labelledby={showLabel ? "content-label" : undefined}
-            aria-label={showLabel ? undefined : "Article content"}
-          />
+          {showPlaceholder ? (
+            <div
+              className="prose prose-lg dark:prose-invert text-muted-foreground min-h-[460px] max-w-none"
+              role="textbox"
+              aria-labelledby={showLabel ? "content-label" : undefined}
+              aria-label={showLabel ? undefined : "Article content"}
+            >
+              <p>Loading editor…</p>
+            </div>
+          ) : (
+            <>
+              <TiptapToolbar
+                editor={editor}
+                onInsertImage={onOpenAssetBrowser}
+              />
+              <EditorContent
+                editor={editor}
+                className="prose prose-lg dark:prose-invert min-h-[460px] max-w-none [&_.ProseMirror]:min-h-[460px] [&_.ProseMirror]:outline-none"
+                aria-labelledby={showLabel ? "content-label" : undefined}
+                aria-label={showLabel ? undefined : "Article content"}
+              />
+            </>
+          )}
         </div>
       </div>
-      <input type="hidden" name="content" id="content" />
     </div>
   );
 }

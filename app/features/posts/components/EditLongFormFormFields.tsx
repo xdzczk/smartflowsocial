@@ -1,11 +1,26 @@
+/**
+ * Longform fields for Edit Post modal.
+ * Uses Tiptap editor (markdown); content synced via debounce + flushSync.
+ */
+
+import { useEffect, useRef } from "react";
+
+import { useLongFormEditor } from "../useLongFormEditor";
+
+import { LongFormContentEditor } from "./LongFormContentEditor";
+
 interface EditLongFormFormFieldsProps {
   title: string;
   setTitle: (value: string) => void;
   summary: string;
   setSummary: (value: string) => void;
+  content: string;
+  onContentChange: (value: string) => void;
   image: string;
   setImage: (value: string) => void;
   editorReady: boolean;
+  onEditorReady: (ready: boolean) => void;
+  editorApiRef: React.MutableRefObject<{ flushSync: () => void } | null>;
 }
 
 export function EditLongFormFormFields({
@@ -13,10 +28,39 @@ export function EditLongFormFormFields({
   setTitle,
   summary,
   setSummary,
+  content,
+  onContentChange,
   image,
   setImage,
   editorReady,
+  onEditorReady,
+  editorApiRef,
 }: EditLongFormFormFieldsProps) {
+  const {
+    editor,
+    editorReady: tiptapReady,
+    flushSync,
+  } = useLongFormEditor({
+    uploadProvider: null,
+    initialMarkdown: content,
+    onContentChange,
+  });
+
+  const prevReadyRef = useRef(false);
+  useEffect(() => {
+    editorApiRef.current = { flushSync };
+    return () => {
+      editorApiRef.current = null;
+    };
+  }, [editorApiRef, flushSync]);
+
+  useEffect(() => {
+    if (tiptapReady && !prevReadyRef.current) {
+      prevReadyRef.current = true;
+      onEditorReady(true);
+    }
+  }, [tiptapReady, onEditorReady]);
+
   return (
     <>
       <div>
@@ -57,19 +101,18 @@ export function EditLongFormFormFields({
 
       <div>
         <label
-          htmlFor="longform-editorjs"
+          htmlFor="longform-content"
           className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
         >
           Content
         </label>
-        <div className="dark:bg-card border-border dark:border-border focus-within:border-primary focus-within:ring-ring rounded-md border bg-white focus-within:ring-1">
-          <div className="min-h-[300px] p-4">
-            <div
-              id="longform-editorjs"
-              className="prose prose-lg dark:prose-invert min-h-[260px] max-w-none"
-            ></div>
-          </div>
-        </div>
+        <LongFormContentEditor
+          uploadProvider={null}
+          onOpenAssetBrowser={() => {}}
+          showLabel={false}
+          editorReady={tiptapReady}
+          editor={editor}
+        />
         {!editorReady ? (
           <div className="text-muted-foreground dark:text-foreground mt-2 text-sm">
             Loading editor...

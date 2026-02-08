@@ -81,10 +81,6 @@ export default defineConfig({
         "app/lib/validation/loader-responses.ts",
         // Exclude re-export/index files that only export types
         "app/lib/validation/index.ts",
-        // Exclude EditorJS utilities that require DOM
-        "app/features/**/utils/editorjs-captions.ts",
-        "app/features/**/utils/editorjs-config.ts",
-        "app/features/**/utils/editorjs-dragdrop.ts",
       ],
       // Coverage thresholds - adjusted to be more realistic
       // These will be enforced on files that are actually tested

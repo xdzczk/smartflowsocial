@@ -1,4 +1,4 @@
-import { PlayIcon } from "@heroicons/react/20/solid";
+import { Play } from "lucide-react";
 import React from "react";
 interface MediaThumbnailProps {
   src: string | undefined | null;
@@ -133,7 +133,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
       {!hidePlayButton ? (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="bg-opacity-60 rounded-full bg-black p-2 shadow-lg">
-            <PlayIcon className="h-6 w-6 text-white drop-shadow-sm" />
+            <Play className="h-6 w-6 text-white drop-shadow-sm" />
           </div>
         </div>
       ) : null}

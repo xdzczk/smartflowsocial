@@ -1,120 +1,7 @@
 import { Button } from "~/components/ui/button";
-import { handleErrorSafely } from "~/lib/error-handler.client";
 import { formatForDisplay, nowUTC } from "~/lib/temporal";
 
-import type { EditorJSBlock } from "../types/editorjs.types";
-
-// ============================================================================
-// EditorJS to HTML Conversion Helpers
-// ============================================================================
-
-function convertHeaderBlock(block: EditorJSBlock): string {
-  const levelValue = block.data["level"];
-  const level = typeof levelValue === "number" ? levelValue : 3;
-  const levelStr = String(level);
-  const textValue = block.data["text"];
-  const text = typeof textValue === "string" ? textValue : "";
-  const sizeClass = level === 2 ? "2xl" : level === 3 ? "xl" : "lg";
-  return `<h${levelStr} class="text-${sizeClass} font-bold mb-4 text-foreground dark:text-white">${text}</h${levelStr}>`;
-}
-
-function convertParagraphBlock(block: EditorJSBlock): string {
-  const textValue = block.data["text"];
-  const text = typeof textValue === "string" ? textValue : "";
-  return `<p class="mb-4 text-muted-foreground dark:text-foreground leading-relaxed">${text}</p>`;
-}
-
-function convertListBlock(block: EditorJSBlock): string {
-  const listType = block.data["style"] === "ordered" ? "ol" : "ul";
-  const listClass =
-    block.data["style"] === "ordered" ? "list-decimal" : "list-disc";
-  let html = `<${listType} class="${listClass} ml-6 mb-4 text-muted-foreground dark:text-foreground">`;
-  if (Array.isArray(block.data["items"])) {
-    const items = block.data["items"];
-    if (Array.isArray(items)) {
-      items.forEach((item: unknown) => {
-        const itemStr = typeof item === "string" ? item : "";
-        html += `<li class="mb-1">${itemStr}</li>`;
-      });
-    }
-  }
-  html += `</${listType}>`;
-  return html;
-}
-
-function convertQuoteBlock(block: EditorJSBlock): string {
-  const text = typeof block.data["text"] === "string" ? block.data["text"] : "";
-  const caption =
-    typeof block.data["caption"] === "string" ? block.data["caption"] : "";
-  return `<blockquote class="border-l-4 border-primary pl-4 py-2 mb-4 italic text-foreground dark:text-foreground bg-muted dark:bg-card rounded-r">
-    <p>${text}</p>
-    ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
-  </blockquote>`;
-}
-
-function convertCodeBlock(block: EditorJSBlock): string {
-  const code = typeof block.data["code"] === "string" ? block.data["code"] : "";
-  return `<pre class="bg-muted dark:bg-card text-success p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
-}
-
-function convertLinkToolBlock(block: EditorJSBlock): string {
-  const link = typeof block.data["link"] === "string" ? block.data["link"] : "";
-  const meta =
-    block.data["meta"] && typeof block.data["meta"] === "object"
-      ? (block.data["meta"] as {
-          title?: string;
-          description?: string;
-        })
-      : null;
-  return `<div class="border border-border dark:border-border rounded-lg p-4 mb-4">
-    <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:underline">
-      <div class="font-semibold">${meta?.title ?? link}</div>
-      ${meta?.description ? `<div class="text-foreground dark:text-foreground text-sm mt-1">${meta.description}</div>` : ""}
-    </a>
-  </div>`;
-}
-
-function convertEmbedBlock(block: EditorJSBlock): string {
-  const embed =
-    typeof block.data["embed"] === "string" ? block.data["embed"] : "";
-  return `<div class="mb-4">
-    <iframe src="${embed}" class="w-full aspect-video rounded-lg" frameborder="0" allowfullscreen></iframe>
-  </div>`;
-}
-
-function convertImageBlock(block: EditorJSBlock): string {
-  const file =
-    block.data["file"] && typeof block.data["file"] === "object"
-      ? (block.data["file"] as { url?: string })
-      : null;
-  const url = typeof block.data["url"] === "string" ? block.data["url"] : "";
-  const imageUrl = file?.url ?? url;
-  const caption =
-    typeof block.data["caption"] === "string" ? block.data["caption"] : "";
-  if (!imageUrl) {
-    return "";
-  }
-  return `<figure class="mb-6">
-    <img src="${imageUrl}" alt="${caption}" class="w-full rounded-lg shadow-sm" style="max-height: 500px; object-fit: contain;" />
-    ${caption ? `<figcaption class="text-center text-sm text-foreground dark:text-foreground mt-2 italic">${caption}</figcaption>` : ""}
-  </figure>`;
-}
-
-function convertDefaultBlock(block: EditorJSBlock): string {
-  if (typeof block.data["text"] === "string") {
-    return `<p class="mb-4 text-muted-foreground dark:text-foreground">${block.data["text"]}</p>`;
-  }
-  const file =
-    block.data["file"] && typeof block.data["file"] === "object"
-      ? (block.data["file"] as { url?: string })
-      : null;
-  if (file?.url) {
-    return `<div class="mb-4">
-      <img src="${file.url}" alt="" class="w-full rounded-lg" style="max-height: 400px; object-fit: contain;" />
-    </div>`;
-  }
-  return "";
-}
+import { MarkdownPreview } from "./MarkdownPreview";
 
 interface LongFormPreviewModalProps {
   isOpen: boolean;
@@ -138,66 +25,6 @@ export default function LongFormPreviewModal({
   author = "You",
 }: LongFormPreviewModalProps) {
   if (!isOpen) return null;
-
-  const convertEditorJSToHTML = (content: string) => {
-    if (!content || content.trim() === "") {
-      return '<p class="text-muted-foreground italic">No content available</p>';
-    }
-
-    try {
-      const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
-
-      if (!editorData.blocks || !Array.isArray(editorData.blocks)) {
-        return '<p class="text-muted-foreground italic">No content blocks found</p>';
-      }
-
-      let html = "";
-
-      editorData.blocks.forEach((block: EditorJSBlock) => {
-        switch (block.type) {
-          case "header":
-            html += convertHeaderBlock(block);
-            break;
-          case "paragraph":
-            html += convertParagraphBlock(block);
-            break;
-          case "list":
-            html += convertListBlock(block);
-            break;
-          case "quote":
-            html += convertQuoteBlock(block);
-            break;
-          case "code":
-            html += convertCodeBlock(block);
-            break;
-          case "linkTool":
-            html += convertLinkToolBlock(block);
-            break;
-          case "embed":
-            html += convertEmbedBlock(block);
-            break;
-          case "image":
-            html += convertImageBlock(block);
-            break;
-          default:
-            html += convertDefaultBlock(block);
-        }
-      });
-
-      return (
-        html ||
-        '<p class="text-muted-foreground italic">Content could not be rendered</p>'
-      );
-    } catch (error) {
-      handleErrorSafely(error, {
-        component: "LongFormPreviewModal",
-        action: "parseEditorJSContent",
-      });
-      // Try to display as plain text if JSON parsing fails
-      const plainTextContent = content.replace(/<[^>]*>/g, "");
-      return `<p class="text-muted-foreground dark:text-foreground">${plainTextContent || "Content parsing failed"}</p>`;
-    }
-  };
 
   const formatDate = () => {
     const now = nowUTC();
@@ -323,16 +150,15 @@ export default function LongFormPreviewModal({
 
             {/* Full Content */}
             <div
-              className="prose prose-lg dark:prose-invert text-foreground mb-6 max-w-none dark:text-white"
+              className="text-foreground mb-6 dark:text-white"
               style={{
                 fontSize: "1.1rem",
                 lineHeight: "1.7",
                 color: "inherit",
               }}
-              dangerouslySetInnerHTML={{
-                __html: convertEditorJSToHTML(content),
-              }}
-            />
+            >
+              <MarkdownPreview source={content} />
+            </div>
 
             {/* Zap Button */}
             <div className="flex items-center gap-3">

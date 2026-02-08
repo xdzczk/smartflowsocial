@@ -144,8 +144,7 @@ SmartFlowSocial is built with modern, production-ready technologies:
 - **Database**: PostgreSQL + [Prisma](https://prisma.io) — Type-safe database access
 - **Queue System**: [BullMQ](https://docs.bullmq.io/) + Redis — Reliable background job processing
 - **Styling**: [TailwindCSS](https://tailwindcss.com) — Rapid UI development
-- **UI Components**: [Headless UI](https://headlessui.com) + [Radix UI](https://radix-ui.com) —
-  Accessible components
+- **UI Components**: [Shadcn UI](https://ui.shadcn.com) (Radix UI) — Accessible components
 - **Payments**: Lightning Network (NWC) — Native Bitcoin payments
 - **Protocol**: [Nostr](https://nostr.com) — Decentralized social protocol
 

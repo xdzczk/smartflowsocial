@@ -10,11 +10,11 @@ import {
   isValidDelayAfterMain,
 } from "~/features/posts/utils/delay-after-main";
 import type { DelayAfterMain } from "~/features/posts/utils/delay-after-main";
-import {
-  convertEditorJSToMarkdown,
-  generateArticleIdentifier,
-} from "~/features/posts/utils/editorjs-conversion";
 import { buildLongformQuoteEvent } from "~/features/posts/utils/repost-quote-events.client";
+import {
+  generateArticleIdentifier,
+  generateSummaryFromMarkdown,
+} from "~/lib/markdown-utils";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   fromDate,
@@ -23,9 +23,6 @@ import {
   parseDateTimeLocal,
   toUnixTimestamp,
 } from "~/lib/temporal";
-
-import type { EditorJSBlock } from "../types";
-import { generateSummaryFromContent } from "../utils/editorjs-content";
 
 export interface LongformQuoteEntry {
   id: string;
@@ -73,17 +70,8 @@ export function useLongFormSubmission({
 
     try {
       setSigningError(null);
-      let markdownContent;
-      try {
-        const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
-        markdownContent = convertEditorJSToMarkdown(
-          editorData as { blocks: EditorJSBlock[] }
-        );
-      } catch {
-        markdownContent = content;
-      }
-
-      const finalSummary = summary || generateSummaryFromContent(content);
+      const markdownContent = content;
+      const finalSummary = summary || generateSummaryFromMarkdown(content);
       const identifier = generateArticleIdentifier(title);
 
       /**

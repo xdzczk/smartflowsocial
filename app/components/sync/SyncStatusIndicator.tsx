@@ -3,11 +3,8 @@
  * Shows current sync state with icon and brief text
  */
 
-import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-} from "@heroicons/react/20/solid";
 import { useQueryClient } from "@tanstack/react-query";
+import { CheckCircle, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -44,7 +41,7 @@ export function SyncStatusIndicator() {
   if (syncState === "synced") {
     return (
       <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <CheckCircleIcon className="h-3 w-3 text-green-500" />
+        <CheckCircle className="h-3 w-3 text-green-500" />
         <span className="hidden sm:inline">Synced</span>
       </div>
     );
@@ -62,7 +59,7 @@ export function SyncStatusIndicator() {
   // needs_attention
   return (
     <div className="text-muted-foreground flex items-center gap-1 text-xs">
-      <ExclamationTriangleIcon className="h-3 w-3 text-yellow-500" />
+      <TriangleAlert className="h-3 w-3 text-yellow-500" />
       <span className="hidden sm:inline">Needs attention</span>
     </div>
   );

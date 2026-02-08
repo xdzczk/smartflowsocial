@@ -1,4 +1,4 @@
-import { ClockIcon, ExclamationTriangleIcon } from "@heroicons/react/20/solid";
+import { Clock, TriangleAlert } from "lucide-react";
 import { useState, useEffect } from "react";
 
 import { SignerStatusIndicator } from "~/components/signer/SignerStatusIndicator";
@@ -102,13 +102,13 @@ export default function Footer() {
             <>
               <span className="hidden lg:inline">·</span>
               <div className="flex items-center gap-1 text-xs">
-                <ExclamationTriangleIcon className="h-3 w-3 text-yellow-500" />
+                <TriangleAlert className="h-3 w-3 text-yellow-500" />
                 <span className="hidden sm:inline">Needs attention</span>
               </div>
             </>
           ) : null}
           <span className="hidden lg:inline">·</span>
-          <ClockIcon className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
+          <Clock className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
           <span className="hidden sm:inline">{dateString}</span>
           <span className="sm:hidden">
             {dateString === CLOCK_PLACEHOLDER

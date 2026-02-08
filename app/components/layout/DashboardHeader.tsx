@@ -1,21 +1,21 @@
 import { Link, useLocation } from "@remix-run/react";
-import { Lock } from "lucide-react";
-import { useCallback, useState, useEffect } from "react";
 import {
-  HiOutlineHome,
-  HiOutlineCalendarDays,
-  HiOutlineDocumentText,
-  HiOutlineCloudArrowUp,
-  HiOutlineSquares2X2,
-  HiOutlineDocumentDuplicate,
-  HiOutlineCalendar,
-  HiOutlineClock,
-  HiOutlineGift,
-  HiOutlineFire,
-  HiOutlineCog6Tooth,
-  HiOutlineBars3,
-  HiOutlineXMark,
-} from "react-icons/hi2";
+  Calendar,
+  CalendarDays,
+  Clock,
+  Copy,
+  FileText,
+  Flame,
+  Gift,
+  Home,
+  LayoutGrid,
+  Lock,
+  Menu,
+  Settings,
+  Upload,
+  X,
+} from "lucide-react";
+import { useCallback, useState, useEffect } from "react";
 
 import { ExpandableNavigationSection } from "~/components/layout/ExpandableNavigationSection";
 import { GlobalSearchBar } from "~/components/layout/GlobalSearchBar";
@@ -36,31 +36,31 @@ const CREATE_SECTION_ITEMS = [
   {
     to: "/dashboard/newpost",
     feature: "newPost" as const,
-    icon: <HiOutlineCloudArrowUp className="inline-block size-5" />,
+    icon: <Upload className="inline-block size-5" />,
     label: "New Post",
   },
   {
     to: "/dashboard/newlongformpost",
     feature: "longformPosts" as const,
-    icon: <HiOutlineDocumentText className="inline-block size-5" />,
+    icon: <FileText className="inline-block size-5" />,
     label: "New Long-form",
   },
   {
     to: "/dashboard/bulkposts",
     feature: "bulkScheduling" as const,
-    icon: <HiOutlineSquares2X2 className="inline-block size-5" />,
+    icon: <LayoutGrid className="inline-block size-5" />,
     label: "Bulk Posts",
   },
   {
     to: "/dashboard/drafts",
     feature: "drafts" as const,
-    icon: <HiOutlineDocumentText className="inline-block size-5" />,
+    icon: <FileText className="inline-block size-5" />,
     label: "Drafts",
   },
   {
     to: "/dashboard/templates",
     feature: "templates" as const,
-    icon: <HiOutlineDocumentDuplicate className="inline-block size-5" />,
+    icon: <Copy className="inline-block size-5" />,
     label: "Templates",
   },
 ];
@@ -69,13 +69,13 @@ const ENGAGEMENT_SECTION_ITEMS = [
   {
     to: "/dashboard/engagement/feed",
     feature: "engagement_feed" as const,
-    icon: <HiOutlineFire className="inline-block size-5" />,
+    icon: <Flame className="inline-block size-5" />,
     label: "Engagement Feed",
   },
   {
     to: "/dashboard/giveaway?days=7",
     feature: "giveaways" as const,
-    icon: <HiOutlineGift className="inline-block size-5" />,
+    icon: <Gift className="inline-block size-5" />,
     label: "Giveaway",
   },
 ];
@@ -188,14 +188,14 @@ function SidebarNavContent({
         isActive={pathname === "/dashboard"}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
-        icon={<HiOutlineHome className="inline-block size-5 shrink-0" />}
+        icon={<Home className="inline-block size-5 shrink-0" />}
         collapsed={collapsed}
       >
         Dashboard
       </NavigationItem>
       <ExpandableNavigationSection
         title="Create"
-        icon={<HiOutlineCloudArrowUp className="inline-block size-5" />}
+        icon={<Upload className="inline-block size-5" />}
         collapsed={collapsed}
         items={CREATE_SECTION_ITEMS}
         onUpgradeClick={onUpgradeClick}
@@ -207,9 +207,7 @@ function SidebarNavContent({
         isActive={pathname.startsWith("/dashboard/calendar")}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
-        icon={
-          <HiOutlineCalendarDays className="inline-block size-5 shrink-0" />
-        }
+        icon={<CalendarDays className="inline-block size-5 shrink-0" />}
         collapsed={collapsed}
       >
         Calendar
@@ -220,7 +218,7 @@ function SidebarNavContent({
         isActive={pathname.startsWith("/dashboard/scheduled")}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
-        icon={<HiOutlineCalendar className="inline-block size-5 shrink-0" />}
+        icon={<Calendar className="inline-block size-5 shrink-0" />}
         collapsed={collapsed}
       >
         Scheduled
@@ -231,14 +229,14 @@ function SidebarNavContent({
         isActive={pathname.startsWith("/dashboard/posted")}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
-        icon={<HiOutlineClock className="inline-block size-5 shrink-0" />}
+        icon={<Clock className="inline-block size-5 shrink-0" />}
         collapsed={collapsed}
       >
         Posted
       </NavigationItem>
       <ExpandableNavigationSection
         title="Engagement"
-        icon={<HiOutlineFire className="inline-block size-5" />}
+        icon={<Flame className="inline-block size-5" />}
         collapsed={collapsed}
         items={ENGAGEMENT_SECTION_ITEMS}
         onUpgradeClick={onUpgradeClick}
@@ -295,7 +293,7 @@ function SidebarHeader({
           size="icon"
           className="h-9 w-9 rounded-lg shadow-none"
         >
-          <HiOutlineXMark className="inline-block size-5" />
+          <X className="inline-block size-5" />
         </Button>
       </div>
     </div>
@@ -327,7 +325,7 @@ function PageHeaderBar({
               size="icon"
               className="h-9 w-9 rounded-lg shadow-none"
             >
-              <HiOutlineBars3 className="inline-block size-5" />
+              <Menu className="inline-block size-5" />
             </Button>
           </div>
           <div className="lg:hidden">
@@ -337,7 +335,7 @@ function PageHeaderBar({
               size="icon"
               className="h-9 w-9 rounded-lg shadow-none"
             >
-              <HiOutlineBars3 className="inline-block size-5" />
+              <Menu className="inline-block size-5" />
             </Button>
           </div>
         </div>
@@ -459,9 +457,7 @@ export default function Header({
             isActive={location.pathname === "/dashboard/settings"}
             onUpgradeClick={handleUpgradeClick}
             onActiveClick={onMobileNavActiveClick}
-            icon={
-              <HiOutlineCog6Tooth className="inline-block size-5 shrink-0" />
-            }
+            icon={<Settings className="inline-block size-5 shrink-0" />}
             collapsed={!isDesktopExpanded}
           >
             Settings

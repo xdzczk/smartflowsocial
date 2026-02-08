@@ -9,6 +9,12 @@ import {
 } from "react";
 
 import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "~/components/ui/popover";
+
+import {
   GlobalSearchResults,
   type GlobalSearchResult,
 } from "./GlobalSearchResults";
@@ -152,25 +158,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  // Close on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-        setQuery("");
-        setResults([]);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isOpen]);
+  // Close handled by Popover (onOpenChange) when clicking outside
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
@@ -202,44 +190,56 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
   const showResults = isOpen && (query.trim() !== "" || isSearching);
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
-      {/* Search Input */}
-      <div className="relative">
-        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3">
-          <Search className="text-muted-foreground h-4 w-4" />
+    <Popover
+      open={showResults}
+      onOpenChange={(open) => {
+        if (!open) {
+          handleClose();
+        }
+      }}
+    >
+      <PopoverAnchor asChild>
+        <div ref={containerRef} className={`relative ${className}`}>
+          {/* Search Input */}
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3">
+              <Search className="text-muted-foreground h-4 w-4" />
+            </div>
+            <input
+              ref={inputRef}
+              id="global-search"
+              name="global-search"
+              type="text"
+              value={query}
+              onChange={handleInputChange}
+              onFocus={handleInputFocus}
+              placeholder="Search posts, drafts, templates... (⌘K)"
+              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-1.5 pr-8 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pr-10 sm:pl-10"
+            />
+            {query ? (
+              <button
+                type="button"
+                onClick={handleClose}
+                className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
         </div>
-        <input
-          ref={inputRef}
-          id="global-search"
-          name="global-search"
-          type="text"
-          value={query}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          placeholder="Search posts, drafts, templates... (⌘K)"
-          className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-1.5 pr-8 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pr-10 sm:pl-10"
-        />
-        {query ? (
-          <button
-            type="button"
-            onClick={handleClose}
-            className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        ) : null}
-      </div>
+      </PopoverAnchor>
 
-      {/* Results Dropdown */}
-      {showResults ? (
-        <div className="absolute top-full right-0 left-0 z-50 mt-2">
-          <GlobalSearchResults
-            results={results}
-            isLoading={isSearching}
-            onResultClick={handleResultClick}
-          />
-        </div>
-      ) : null}
-    </div>
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <GlobalSearchResults
+          results={results}
+          isLoading={isSearching}
+          onResultClick={handleResultClick}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

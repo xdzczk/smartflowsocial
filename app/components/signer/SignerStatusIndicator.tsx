@@ -3,11 +3,7 @@
  * Avoids hydration mismatch by applying client-only state after mount.
  */
 
-import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  NoSymbolIcon,
-} from "@heroicons/react/20/solid";
+import { CheckCircle, TriangleAlert, Ban } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { getActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
@@ -22,7 +18,7 @@ function Nip46Status({ status }: { status: ConnectionStatus }) {
   if (status === "active") {
     return (
       <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <CheckCircleIcon className="h-3 w-3 text-green-500" />
+        <CheckCircle className="h-3 w-3 text-green-500" />
         <span className="hidden sm:inline">Active</span>
       </div>
     );
@@ -30,7 +26,7 @@ function Nip46Status({ status }: { status: ConnectionStatus }) {
   if (status === "stale") {
     return (
       <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <ExclamationTriangleIcon className="h-3 w-3 text-yellow-500" />
+        <TriangleAlert className="h-3 w-3 text-yellow-500" />
         <span className="hidden sm:inline">Stale</span>
       </div>
     );
@@ -38,7 +34,7 @@ function Nip46Status({ status }: { status: ConnectionStatus }) {
   if (status === "disconnected") {
     return (
       <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <NoSymbolIcon className="h-3 w-3 opacity-60" />
+        <Ban className="h-3 w-3 opacity-60" />
         <span className="hidden sm:inline">Disconnected</span>
       </div>
     );
@@ -46,7 +42,7 @@ function Nip46Status({ status }: { status: ConnectionStatus }) {
   // status is "inactive" (only remaining ConnectionStatus after active, stale, disconnected)
   return (
     <div className="text-muted-foreground flex items-center gap-1 text-xs">
-      <NoSymbolIcon className="h-3 w-3 opacity-60" />
+      <Ban className="h-3 w-3 opacity-60" />
       <span className="hidden sm:inline">Inactive</span>
     </div>
   );
@@ -56,7 +52,7 @@ function Nip07Status({ readiness }: { readiness: Nip07Readiness }) {
   if (readiness === "ready") {
     return (
       <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <CheckCircleIcon className="h-3 w-3 text-green-500" />
+        <CheckCircle className="h-3 w-3 text-green-500" />
         <span className="hidden sm:inline">Extension ready</span>
       </div>
     );
@@ -64,7 +60,7 @@ function Nip07Status({ readiness }: { readiness: Nip07Readiness }) {
   if (readiness === "unresponsive") {
     return (
       <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <ExclamationTriangleIcon className="h-3 w-3 text-yellow-500" />
+        <TriangleAlert className="h-3 w-3 text-yellow-500" />
         <span className="hidden sm:inline">Extension unresponsive</span>
       </div>
     );
@@ -72,7 +68,7 @@ function Nip07Status({ readiness }: { readiness: Nip07Readiness }) {
   if (readiness === "account_mismatch") {
     return (
       <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <ExclamationTriangleIcon className="h-3 w-3 text-amber-500" />
+        <TriangleAlert className="h-3 w-3 text-amber-500" />
         <span className="hidden sm:inline">Wrong account</span>
       </div>
     );
@@ -107,7 +103,7 @@ export function SignerStatusIndicator() {
   if (!config) {
     return (
       <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <NoSymbolIcon className="h-3 w-3 opacity-50" />
+        <Ban className="h-3 w-3 opacity-50" />
         <span className="hidden sm:inline">No signer</span>
       </div>
     );

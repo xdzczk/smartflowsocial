@@ -1,9 +1,5 @@
-import {
-  BoltIcon,
-  ChatBubbleLeftIcon,
-  HeartIcon,
-} from "@heroicons/react/20/solid";
 import { Link, useSearchParams } from "@remix-run/react";
+import { Zap, MessageCircle, Heart } from "lucide-react";
 import { useState } from "react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -190,21 +186,21 @@ export default function TopPostsList({
                         aria-hidden
                       >
                         <span className="inline-flex items-center gap-0.5">
-                          <HeartIcon className="text-muted-foreground/80 size-3.5 shrink-0" />
+                          <Heart className="text-muted-foreground/80 size-3.5 shrink-0" />
                           {likes}
                         </span>
                         <span className="text-muted-foreground/60" aria-hidden>
                           ·
                         </span>
                         <span className="inline-flex items-center gap-0.5">
-                          <ChatBubbleLeftIcon className="text-muted-foreground/80 size-3.5 shrink-0" />
+                          <MessageCircle className="text-muted-foreground/80 size-3.5 shrink-0" />
                           {replies}
                         </span>
                         <span className="text-muted-foreground/60" aria-hidden>
                           ·
                         </span>
                         <span className="inline-flex items-center gap-0.5">
-                          <BoltIcon className="text-muted-foreground/80 size-3.5 shrink-0" />
+                          <Zap className="text-muted-foreground/80 size-3.5 shrink-0" />
                           {zaps}
                         </span>
                         {relativeTime ? (

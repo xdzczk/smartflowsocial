@@ -37,7 +37,6 @@ import {
 } from "~/lib/validation";
 import { updateLongFormPost } from "~/models/longformpost.server";
 
-import { convertEditorJSToMarkdown } from "../longform.server";
 import { LongFormPostStateMachine } from "../state-machine/longform-post-state-machine.server";
 import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
 import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
@@ -221,22 +220,7 @@ async function handleSaveDraft(
     return Response.json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
-  let markdownContent;
-  try {
-    const editorData = JSON.parse(editorContent) as {
-      blocks?: Array<{ type: string; data: Record<string, unknown> }>;
-      time?: number;
-      version?: string;
-    };
-    markdownContent = convertEditorJSToMarkdown({
-      blocks: editorData.blocks ?? [],
-      time: editorData.time,
-      version: editorData.version,
-    });
-  } catch {
-    markdownContent = editorContent;
-  }
-
+  const markdownContent = editorContent.trim();
   const sanitizedContent = sanitizeMarkdown(markdownContent);
   const finalSummary = summary ?? generateSummary(sanitizedContent);
 
@@ -325,22 +309,7 @@ async function handlePublish(
     );
   }
 
-  let markdownContent;
-  try {
-    const editorData = JSON.parse(editorContent) as {
-      blocks?: Array<{ type: string; data: Record<string, unknown> }>;
-      time?: number;
-      version?: string;
-    };
-    markdownContent = convertEditorJSToMarkdown({
-      blocks: editorData.blocks ?? [],
-      time: editorData.time,
-      version: editorData.version,
-    });
-  } catch {
-    markdownContent = editorContent;
-  }
-
+  const markdownContent = editorContent.trim();
   const sanitizedContent = sanitizeMarkdown(markdownContent);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
   const finalSummary = summary ?? generateSummary(sanitizedContent);
@@ -463,22 +432,7 @@ async function handleScheduleLongform(
     );
   }
 
-  let markdownContent;
-  try {
-    const editorData = JSON.parse(editorContent) as {
-      blocks?: Array<{ type: string; data: Record<string, unknown> }>;
-      time?: number;
-      version?: string;
-    };
-    markdownContent = convertEditorJSToMarkdown({
-      blocks: editorData.blocks ?? [],
-      time: editorData.time,
-      version: editorData.version,
-    });
-  } catch {
-    markdownContent = editorContent;
-  }
-
+  const markdownContent = editorContent.trim();
   const sanitizedContent = sanitizeMarkdown(markdownContent);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
   const finalSummary = summary ?? generateSummary(sanitizedContent);

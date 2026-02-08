@@ -26,8 +26,6 @@ export type {
   LongFormPostData,
   CombinedContent,
   PostJobData,
-  EditorJSOutput,
-  EditorJSAPI,
   QueueType,
   UserData,
   HashTagPreset,

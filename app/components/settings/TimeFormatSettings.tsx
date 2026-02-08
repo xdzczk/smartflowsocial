@@ -3,8 +3,8 @@
  * Allows users to choose between 12-hour (AM/PM) and 24-hour time format
  */
 
-import { ClockIcon } from "@heroicons/react/20/solid";
 import { useFetcher, useRevalidator } from "@remix-run/react";
+import { Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -58,7 +58,7 @@ export function TimeFormatSettings({
     <Card>
       <CardHeader>
         <div className="flex items-start gap-4">
-          <ClockIcon className="text-foreground h-5 w-5 flex-shrink-0" />
+          <Clock className="text-foreground h-5 w-5 flex-shrink-0" />
           <div className="flex-1">
             <CardTitle>Time Format</CardTitle>
             <CardDescription>

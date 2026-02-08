@@ -1,14 +1,16 @@
 import {
-  CheckCircleIcon,
-  LockClosedIcon,
-  ClockIcon,
-  ChartBarIcon,
-  DocumentTextIcon,
-  QueueListIcon,
-  PaperAirplaneIcon,
-  GlobeAltIcon,
-  PresentationChartLineIcon,
-} from "@heroicons/react/24/outline";
+  ArrowRight,
+  BarChart3,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  FileText,
+  Globe,
+  LineChart,
+  ListOrdered,
+  Lock,
+  Send,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 import Footer from "~/components/layout/FrontendFooter";
@@ -49,19 +51,7 @@ export function HomePage(): ReactNode {
                 className="bg-primary-action text-primary-foreground hover:bg-primary-action/90 focus:ring-ring inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
               >
                 <span>ENTER CONSOLE</span>
-                <svg
-                  className="h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <ArrowRight className="h-5 w-5" aria-hidden />
               </a>
               <a
                 href="/"
@@ -93,28 +83,28 @@ export function HomePage(): ReactNode {
                   title: "EXACTLY-ONCE PUBLISHING",
                   description:
                     "Guaranteed delivery with no duplicates. Your content publishes exactly once, every time.",
-                  icon: CheckCircleIcon,
+                  icon: CheckCircle,
                   isEmphasized: true,
                 },
                 {
                   title: "SOVEREIGN INFRASTRUCTURE",
                   description:
                     "No key custody. No growth hacks. Protocol-first. Designed for serious operators.",
-                  icon: LockClosedIcon,
+                  icon: Lock,
                   isEmphasized: false,
                 },
                 {
                   title: "CADENCE & FLOW",
                   description:
                     "Design your publishing cadence once. The system maintains it indefinitely.",
-                  icon: ClockIcon,
+                  icon: Clock,
                   isEmphasized: false,
                 },
                 {
                   title: "ANALYTICS & INSIGHTS",
                   description:
                     "Track performance, engagement, and optimize your content strategy.",
-                  icon: ChartBarIcon,
+                  icon: BarChart3,
                   isEmphasized: false,
                 },
               ].map((feature) => {
@@ -167,9 +157,9 @@ export function HomePage(): ReactNode {
             <div className="mx-auto max-w-4xl">
               <div className="flex flex-wrap items-center justify-center gap-6">
                 {[
-                  { name: "Draft", icon: DocumentTextIcon, isActive: true },
-                  { name: "Queue", icon: QueueListIcon, isActive: true },
-                  { name: "Publish", icon: PaperAirplaneIcon, isActive: true },
+                  { name: "Draft", icon: FileText, isActive: true },
+                  { name: "Queue", icon: ListOrdered, isActive: true },
+                  { name: "Publish", icon: Send, isActive: true },
                 ].map((step, idx) => {
                   const Icon = step.icon;
                   return (
@@ -189,43 +179,19 @@ export function HomePage(): ReactNode {
                         </span>
                       </div>
                       {idx < 2 ? (
-                        <svg
-                          className="text-muted-foreground arrow-pulse h-8 w-8"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2.5}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
+                        <ChevronRight className="text-muted-foreground arrow-pulse h-8 w-8" />
                       ) : null}
                     </div>
                   );
                 })}
                 <div className="flex items-center gap-6">
-                  <svg
-                    className="text-muted-foreground arrow-pulse h-8 w-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2.5}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                  <ChevronRight className="text-muted-foreground arrow-pulse h-8 w-8" />
                   <div className="flex gap-6">
                     {[
-                      { name: "Relay", icon: GlobeAltIcon, isActive: false },
+                      { name: "Relay", icon: Globe, isActive: false },
                       {
                         name: "Analyze",
-                        icon: PresentationChartLineIcon,
+                        icon: LineChart,
                         isActive: false,
                       },
                     ].map((step) => {

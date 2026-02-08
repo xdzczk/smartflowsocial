@@ -4,6 +4,7 @@
  * Title uses uncontrolled input (register) with a stable ref so focus is not lost on re-render.
  */
 
+import type { ComponentProps } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import type { FieldValues, UseFormRegister } from "react-hook-form";
 
@@ -15,8 +16,10 @@ interface WritingSurfaceProps<T extends FieldValues = FieldValues> {
   content?: string;
   uploadProvider?: string | null;
   onOpenAssetBrowser: () => void;
-  /** When false, editor area blocks pointer events until EditorJS is ready (prevents toolbar error) */
+  /** When false, editor area blocks pointer events until editor is ready */
   editorReady?: boolean;
+  /** Tiptap editor instance (null before client mount) */
+  editor?: ComponentProps<typeof LongFormContentEditor>["editor"];
 }
 
 export function WritingSurface<T extends FieldValues = FieldValues>({
@@ -25,6 +28,7 @@ export function WritingSurface<T extends FieldValues = FieldValues>({
   uploadProvider,
   onOpenAssetBrowser,
   editorReady = false,
+  editor = null,
 }: WritingSurfaceProps<T>) {
   const titleReg = register("title" as Parameters<UseFormRegister<T>>[0]);
   const registerRefRef = useRef(titleReg.ref);
@@ -59,6 +63,7 @@ export function WritingSurface<T extends FieldValues = FieldValues>({
         onOpenAssetBrowser={onOpenAssetBrowser}
         showLabel={false}
         editorReady={editorReady}
+        editor={editor}
       />
     </div>
   );

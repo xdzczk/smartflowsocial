@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { AssetBrowser, type Asset } from "~/features/assets";
+import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import { longformPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
@@ -15,7 +16,6 @@ import { useLongFormScheduling } from "../useLongFormScheduling";
 import { AlsoScheduleLongformQuote } from "./AlsoScheduleLongformQuote";
 import { ArticleDetailsCollapsible } from "./ArticleDetailsCollapsible";
 import { LongFormActionButtons } from "./LongFormActionButtons";
-import { LongFormEditorStyles } from "./LongFormEditorStyles";
 import { LongFormPublishingOptions } from "./LongFormPublishingOptions";
 import { WritingSurface } from "./WritingSurface";
 
@@ -36,6 +36,7 @@ interface HashTagPreset {
 }
 
 interface InitialData {
+  id?: string;
   title?: string;
   summary?: string;
   content?: string;
@@ -121,14 +122,17 @@ export default function LongFormPost({
   const content = form.watch("content");
   const customTags = form.watch("customTags");
 
-  // Use extracted hooks
+  // Use extracted hooks (Tiptap; markdown synced via debounce + flushSync)
   const {
+    editor,
     editorReady,
     loadInitialData,
     insertAssetIntoEditor,
     generateSummaryFromContent,
+    flushSync,
   } = useLongFormEditor({
     uploadProvider,
+    initialMarkdown: initialData?.content ?? "",
     onContentChange: (newContent) => form.setValue("content", newContent),
   });
 
@@ -222,15 +226,15 @@ export default function LongFormPost({
     handleFetcherStateChange();
   }, [handleFetcherStateChange]);
 
-  // Handle initial data loading - wait for both editor ready and initial data
+  // Initial content is set via initialMarkdown + key; loadInitialData for late-arriving data if needed
   useEffect(() => {
-    if (editorReady && initialData?.content) {
+    if (editorReady && initialData?.content && editor) {
       const timeoutId = setTimeout(() => {
-        void loadInitialData(initialData.content!);
+        loadInitialData(initialData.content!);
       }, 100);
       return () => clearTimeout(timeoutId);
     }
-  }, [editorReady, initialData?.content, loadInitialData]);
+  }, [editorReady, initialData?.content, loadInitialData, editor]);
 
   const handleAssetBrowserSelect = (selectedAssets: Asset[]) => {
     if (showAssetBrowser === "cover") {
@@ -241,7 +245,7 @@ export default function LongFormPost({
         }))
       );
     } else {
-      void insertAssetIntoEditor(
+      insertAssetIntoEditor(
         selectedAssets.map((asset) => ({
           assetType: asset.assetType,
           fileUrl: asset.fileUrl ?? undefined,
@@ -272,14 +276,18 @@ export default function LongFormPost({
     autosavePendingRef.current = setTimeout(() => {
       autosavePendingRef.current = null;
       if (autosaveFetcher.state !== "idle") return;
+      flushSync(); // ensure form has latest markdown before building FormData
       const fd = new FormData();
       fd.set("_action", "autosave-draft");
-      // FormData.set() requires string; ?? "" satisfies type and runtime
-      fd.set("title", title ?? "");
-      fd.set("content", content ?? "");
-      fd.set("summary", summary ?? "");
+      // Read form values after flush so content is current
+      const currentTitle = form.getValues("title");
+      const currentContent = form.getValues("content");
+      const currentSummary = form.getValues("summary");
+      fd.set("title", currentTitle ?? "");
+      fd.set("content", currentContent ?? "");
+      fd.set("summary", currentSummary ?? "");
       fd.set("image", image ?? "");
-      fd.set("customTags", customTags ?? "");
+      fd.set("customTags", form.getValues("customTags") ?? "");
       fd.set("queueType", selectedQueueType);
       fd.set("useHashtagPresets", useHashtagPresets ? "true" : "false");
       fd.set("hashTagPresetId", selectedHashtagPresetId ?? "");
@@ -301,6 +309,7 @@ export default function LongFormPost({
     selectedQueueType,
     useHashtagPresets,
     selectedHashtagPresetId,
+    flushSync,
   ]);
 
   // React to autosave result (defer setState to avoid synchronous setState in effect)
@@ -338,38 +347,26 @@ export default function LongFormPost({
   // Form validation using Zod
   const isFormValid = form.formState.isValid && !!image;
 
-  // Word count for sticky panel (writing column stays title + body only)
+  // Word count from markdown (plain text)
   const wordCount = (() => {
     const c = content;
     if (!c || typeof c !== "string") return 0;
-    try {
-      const data = JSON.parse(c) as {
-        blocks?: Array<{ data?: { text?: string } }>;
-      };
-      const blocks = data.blocks ?? [];
-      const text = blocks
-        .map((b) =>
-          b.data && typeof b.data.text === "string" ? b.data.text : ""
-        )
-        .join(" ");
-      return text.trim().split(/\s+/).filter(Boolean).length;
-    } catch {
-      return c.trim().split(/\s+/).filter(Boolean).length;
-    }
+    const plain = stripMarkdownToPlainText(c);
+    return plain.trim().split(/\s+/).filter(Boolean).length;
   })();
 
   return (
     <>
-      <LongFormEditorStyles />
-
       <div className="flex min-h-screen flex-col">
-        {/* Phase 1: Writing Surface (hero) */}
+        {/* Phase 1: Writing Surface (hero); key by draft id so editor remounts with new content */}
         <WritingSurface
+          key={initialData?.id ?? "new"}
           register={form.register}
           content={content}
           uploadProvider={uploadProvider}
           onOpenAssetBrowser={() => setShowAssetBrowser("content")}
           editorReady={editorReady}
+          editor={editor}
         />
 
         {/* Phase 2: Article Details (collapsible) */}
@@ -502,8 +499,14 @@ export default function LongFormPost({
                   });
                 }
               }}
-              onSchedule={() => void handleSchedule("schedule")}
-              onPublish={() => void handleSchedule("publish")}
+              onSchedule={() => {
+                flushSync();
+                void handleSchedule("schedule");
+              }}
+              onPublish={() => {
+                flushSync();
+                void handleSchedule("publish");
+              }}
             />
 
             {isSigning ? (

@@ -38,6 +38,68 @@ interface MainEv {
   sig: string;
 }
 
+async function runScheduleRepostQuoteIfNeeded(
+  isLongform: boolean,
+  mainSignedEvent: unknown,
+  formData: FormData,
+  postId: string,
+  repostDelayList: Array<{
+    id: string;
+    value: number;
+    unit: DelayAfterMain["unit"];
+  }>,
+  quoteEntries: Array<{
+    id: string;
+    value: number;
+    unit: DelayAfterMain["unit"];
+    caption: string;
+  }>,
+  alsoScheduleRepost: boolean,
+  alsoScheduleQuote: boolean
+): Promise<void> {
+  if (
+    isLongform ||
+    !mainSignedEvent ||
+    (!alsoScheduleRepost && !alsoScheduleQuote)
+  ) {
+    return;
+  }
+  const mainScheduledForStr = formData.get("scheduledFor");
+  const mainScheduledUnix =
+    typeof mainScheduledForStr === "string"
+      ? parseInt(mainScheduledForStr, 10)
+      : NaN;
+  const hasMainScheduled =
+    !Number.isNaN(mainScheduledUnix) && mainScheduledUnix > 0;
+  const mainEv = mainSignedEvent as MainEv;
+  if (!hasMainScheduled || !mainEv.id || !mainEv.pubkey) return;
+  try {
+    await scheduleRepostsAndQuotesAfterSubmit(
+      mainScheduledUnix,
+      mainEv,
+      postId,
+      repostDelayList,
+      quoteEntries,
+      alsoScheduleRepost,
+      alsoScheduleQuote
+    );
+    if (
+      (alsoScheduleRepost && repostDelayList.length > 0) ||
+      (alsoScheduleQuote && quoteEntries.length > 0)
+    ) {
+      toast.success("Repost/quote scheduled successfully!");
+    }
+  } catch (err) {
+    handleErrorSafely(err, {
+      component: "EditPostModal",
+      action: "alsoScheduleRepostQuote",
+    });
+    toast.error(
+      err instanceof Error ? err.message : "Failed to schedule repost/quote"
+    );
+  }
+}
+
 async function scheduleRepostsAndQuotesAfterSubmit(
   mainScheduledUnix: number,
   mainEv: MainEv,
@@ -115,7 +177,6 @@ async function scheduleRepostsAndQuotesAfterSubmit(
     }
   }
 }
-import { EditorJSStyles } from "./EditorJSStyles";
 import { EditPostFormFields } from "./EditPostFormFields";
 interface EditPostModalProps {
   post: PostData | LongFormPostData;
@@ -176,7 +237,7 @@ export function EditPostModal({
     summary,
     setSummary,
     content,
-    setContent: _setContent,
+    setContent,
     image,
     setImage,
     scheduledFor,
@@ -192,6 +253,9 @@ export function EditPostModal({
     manualHashtags,
     setManualHashtags,
     editorReady,
+    setEditorReady,
+    longformEditorApiRef,
+    form,
     handleFileChange,
     removeExistingImage,
     removeNewFile,
@@ -250,13 +314,21 @@ export function EditPostModal({
       setSigningError(null);
       setIsUploadingImages(true);
 
+      // Flush Tiptap editor to form so content is current when longform
+      if (isLongform) {
+        longformEditorApiRef.current?.flushSync();
+      }
+      const contentToSubmit = isLongform ? form.getValues("content") : content;
+      const contentValue: string | undefined =
+        typeof contentToSubmit === "string" ? contentToSubmit : undefined;
+
       const result = await prepareEditPostSubmission({
         post,
         isLongform,
         caption,
         title,
         summary,
-        content,
+        content: contentValue,
         image,
         existingImages,
         newFiles,
@@ -280,49 +352,16 @@ export function EditPostModal({
       setIsUploadingImages(false);
       fetcher.submit(formData, { method: "post" });
 
-      if (
-        !isLongform &&
-        mainSignedEvent &&
-        (alsoScheduleRepost || alsoScheduleQuote)
-      ) {
-        const mainScheduledForStr = formData.get("scheduledFor");
-        const mainScheduledUnix =
-          typeof mainScheduledForStr === "string"
-            ? parseInt(mainScheduledForStr, 10)
-            : NaN;
-        const hasMainScheduled =
-          !Number.isNaN(mainScheduledUnix) && mainScheduledUnix > 0;
-        const mainEv = mainSignedEvent as MainEv;
-        if (hasMainScheduled && mainEv.id && mainEv.pubkey) {
-          try {
-            await scheduleRepostsAndQuotesAfterSubmit(
-              mainScheduledUnix,
-              mainEv,
-              post.id,
-              repostDelayList,
-              quoteEntries,
-              alsoScheduleRepost,
-              alsoScheduleQuote
-            );
-            if (
-              (alsoScheduleRepost && repostDelayList.length > 0) ||
-              (alsoScheduleQuote && quoteEntries.length > 0)
-            ) {
-              toast.success("Repost/quote scheduled successfully!");
-            }
-          } catch (err) {
-            handleErrorSafely(err, {
-              component: "EditPostModal",
-              action: "alsoScheduleRepostQuote",
-            });
-            toast.error(
-              err instanceof Error
-                ? err.message
-                : "Failed to schedule repost/quote"
-            );
-          }
-        }
-      }
+      await runScheduleRepostQuoteIfNeeded(
+        isLongform,
+        mainSignedEvent,
+        formData,
+        post.id,
+        repostDelayList,
+        quoteEntries,
+        alsoScheduleRepost,
+        alsoScheduleQuote
+      );
     } catch (error: unknown) {
       logClientError(
         error instanceof Error ? error : new Error(String(error)),
@@ -344,9 +383,6 @@ export function EditPostModal({
 
   return (
     <>
-      {/* EditorJS Custom Styles */}
-      {isLongform ? <EditorJSStyles /> : null}
-
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div className="bg-card max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg shadow-xl">
           <div className="p-6">
@@ -382,9 +418,13 @@ export function EditPostModal({
                   setTitle={setTitle}
                   summary={summary}
                   setSummary={setSummary}
+                  content={content}
+                  onContentChange={setContent}
                   image={image}
                   setImage={setImage}
                   editorReady={editorReady}
+                  onEditorReady={setEditorReady}
+                  editorApiRef={longformEditorApiRef}
                 />
               ) : (
                 <EditPostFormFields

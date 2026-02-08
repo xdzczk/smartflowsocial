@@ -3,8 +3,8 @@
  * Manages push notification preferences
  */
 
-import { BellIcon, BellSlashIcon } from "@heroicons/react/20/solid";
 import { useFetcher } from "@remix-run/react";
+import { Bell, BellOff } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 import { Label } from "~/components/ui/label";
@@ -377,7 +377,7 @@ export function NotificationSettings({
     return (
       <div className="border-border bg-card rounded-lg border p-6">
         <div className="flex items-start gap-4">
-          <BellSlashIcon className="text-muted-foreground h-5 w-5 flex-shrink-0" />
+          <BellOff className="text-muted-foreground h-5 w-5 flex-shrink-0" />
           <div className="flex-1">
             <h3 className="text-foreground font-semibold">
               Push Notifications
@@ -394,7 +394,7 @@ export function NotificationSettings({
   return (
     <div className="border-border bg-card rounded-lg border p-6">
       <div className="flex items-start gap-4">
-        <BellIcon className="text-foreground h-5 w-5 flex-shrink-0" />
+        <Bell className="text-foreground h-5 w-5 flex-shrink-0" />
         <div className="flex-1 space-y-4">
           <div>
             <h3 className="text-foreground font-semibold">

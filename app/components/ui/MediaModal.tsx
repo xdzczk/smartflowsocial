@@ -1,4 +1,4 @@
-import { XMarkIcon } from "@heroicons/react/20/solid";
+import { X } from "lucide-react";
 import { useEffect } from "react";
 import type React from "react";
 
@@ -64,7 +64,7 @@ const MediaModal: React.FC<MediaModalProps> = ({
           className="absolute -top-12 right-0 z-20 text-white hover:text-white/80"
           aria-label="Close modal"
         >
-          <XMarkIcon className="h-8 w-8" />
+          <X className="h-8 w-8" />
         </button>
 
         {/* Media content */}

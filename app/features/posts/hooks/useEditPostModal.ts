@@ -1,10 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
-import {
-  convertEditorJSToMarkdown,
-  convertMarkdownToEditorJS,
-} from "~/features/posts/utils/editorjs-conversion";
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
 import {
@@ -25,10 +21,6 @@ import type {
   UserData,
   HashTagPreset,
 } from "../types";
-import type {
-  EditorJSInstance as EditorJSInstanceType,
-  EditorJSAPI,
-} from "../types/editorjs.types";
 
 interface UseEditPostModalProps {
   post: PostData | LongFormPostData;
@@ -222,12 +214,11 @@ export function useEditPostModal({
   const [selectedHashtagPresetTags, setSelectedHashtagPresetTags] =
     useState("");
 
-  // EditorJS state for longform content
-  const editorRef = useRef<EditorJSInstanceType | null>(null);
-  const editorInitialized = useRef(false);
+  // Longform: Tiptap editor lives in EditLongFormFormFields; ref to flush before submit
+  const longformEditorApiRef = useRef<{ flushSync: () => void } | null>(null);
   const [editorReady, setEditorReady] = useState(false);
 
-  // Load initial content for longform posts
+  // Load initial content for longform posts into form (editor gets it via initialMarkdown prop)
   useEffect(() => {
     if (isLongform && typeof post === "object" && "content" in post) {
       const postContent = typeof post.content === "string" ? post.content : "";
@@ -236,262 +227,6 @@ export function useEditPostModal({
       }
     }
   }, [isLongform, post, form]);
-
-  // Initialize EditorJS for longform posts
-  useEffect(() => {
-    if (!isLongform) return;
-
-    const loadEditor = async () => {
-      if (
-        typeof window !== "undefined" &&
-        !editorRef.current &&
-        !editorInitialized.current
-      ) {
-        editorInitialized.current = true;
-
-        try {
-          const EditorJS = (await import("@editorjs/editorjs")).default;
-
-          const toolsConfig = {
-            header: {
-              class: (await import("@editorjs/header")).default,
-              config: {
-                placeholder: "Enter a header",
-                levels: [2, 3, 4],
-                defaultLevel: 3,
-              },
-            },
-            list: {
-              class: (await import("@editorjs/list")).default,
-              inlineToolbar: true,
-            },
-            quote: {
-              class: (await import("@editorjs/quote")).default,
-              inlineToolbar: true,
-              config: {
-                quotePlaceholder: "Enter a quote",
-                captionPlaceholder: "Quote's author",
-              },
-            },
-            code: {
-              class: (await import("@editorjs/code")).default,
-              config: {
-                placeholder: "Enter code here...",
-              },
-            },
-            inlineCode: {
-              class: (await import("@editorjs/inline-code")).default,
-            },
-            linkTool: {
-              class: (await import("@editorjs/link")).default,
-              config: {
-                endpoint: "/api/link-preview",
-              },
-            },
-            embed: {
-              class: (await (async () => {
-                const embedModule = (await import("@editorjs/embed")) as {
-                  default: unknown;
-                };
-                return embedModule.default as new (config?: {
-                  services?: Record<string, boolean>;
-                }) => unknown;
-              })()) as new (config?: {
-                services?: Record<string, boolean>;
-              }) => unknown,
-              config: {
-                services: {
-                  youtube: true,
-                  twitter: true,
-                },
-              },
-            },
-            image: {
-              class: (await import("@editorjs/image")).default,
-              config: {
-                buttonContent: "Select Image",
-                captionPlaceholder: "",
-                withBorder: false,
-                withBackground: false,
-                stretched: false,
-                uploader: {
-                  uploadByFile: async (file: File) => {
-                    try {
-                      const formData = new FormData();
-                      formData.append("image", file);
-
-                      const response = await fetch(
-                        "/api/upload-editorjs-image",
-                        {
-                          method: "POST",
-                          body: formData,
-                        }
-                      );
-
-                      if (!response.ok) {
-                        throw new Error(`Server error: ${response.status}`);
-                      }
-
-                      const resultRaw: unknown = await response.json();
-                      const result =
-                        resultRaw &&
-                        typeof resultRaw === "object" &&
-                        !Array.isArray(resultRaw)
-                          ? (resultRaw as {
-                              success?: unknown;
-                              file?: unknown;
-                              error?: unknown;
-                            })
-                          : {};
-                      const success =
-                        typeof result.success === "number"
-                          ? result.success
-                          : undefined;
-                      const fileResult =
-                        result.file &&
-                        typeof result.file === "object" &&
-                        !Array.isArray(result.file)
-                          ? (result.file as { url?: unknown })
-                          : undefined;
-                      const fileUrl =
-                        fileResult && typeof fileResult.url === "string"
-                          ? fileResult.url
-                          : undefined;
-                      const error =
-                        typeof result.error === "string"
-                          ? result.error
-                          : undefined;
-
-                      if (success === 1 && fileUrl) {
-                        return {
-                          success: 1,
-                          file: {
-                            url: fileUrl,
-                          },
-                        };
-                      } else {
-                        throw new Error(error ?? "Upload failed");
-                      }
-                    } catch (error: unknown) {
-                      const { handleAsyncError } =
-                        await import("~/lib/error-handler.client");
-                      handleAsyncError(
-                        error,
-                        {
-                          component: "EditPostModal",
-                          action: "uploadImage",
-                        },
-                        false
-                      );
-                      throw error;
-                    }
-                  },
-                },
-              },
-            },
-          };
-
-          const editorInstance = new EditorJS({
-            holder: "longform-editorjs",
-            minHeight: 300,
-            // @ts-expect-error - EditorJS types don't match exactly but work at runtime
-            tools: toolsConfig,
-            // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises -- EditorJS onChange is async but types don't reflect this
-            onChange: async (api: EditorJSAPI) => {
-              try {
-                const outputData = await api.saver.save();
-                const markdownContent = convertEditorJSToMarkdown(outputData);
-                form.setValue("content", markdownContent);
-              } catch (error: unknown) {
-                logClientError(
-                  error instanceof Error ? error : new Error(String(error)),
-                  {
-                    component: "useEditPostModal",
-                    action: "editorOnChangeSave",
-                    message: "Editor save error",
-                  },
-                  "warning"
-                );
-              }
-            },
-          }) as EditorJSInstanceType;
-
-          editorRef.current = editorInstance;
-          await editorRef.current.isReady;
-          setEditorReady(true);
-        } catch (error: unknown) {
-          logClientError(
-            error instanceof Error ? error : new Error(String(error)),
-            {
-              component: "useEditPostModal",
-              action: "loadEditor",
-              message: "Error loading EditorJS",
-            }
-          );
-          editorInitialized.current = false;
-        }
-      }
-    };
-
-    void loadEditor();
-
-    return () => {
-      if (editorRef.current) {
-        try {
-          editorRef.current.destroy();
-        } catch (error) {
-          logClientError(
-            error instanceof Error ? error : new Error(String(error)),
-            {
-              component: "useEditPostModal",
-              action: "cleanup",
-              message: "Error during editor cleanup",
-            },
-            "warning"
-          );
-        } finally {
-          editorRef.current = null;
-          editorInitialized.current = false;
-          setEditorReady(false);
-        }
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid unnecessary re-renders
-  }, [isLongform]);
-
-  // Load initial content into EditorJS for longform posts
-  const formContent = form.watch("content");
-  useEffect(() => {
-    if (!isLongform || !editorReady || !editorRef.current || !formContent)
-      return;
-
-    const loadInitialContent = async () => {
-      if (!editorRef.current) return;
-      try {
-        await editorRef.current.isReady;
-        const contentString =
-          typeof formContent === "string" ? formContent : "";
-        const editorJSData = convertMarkdownToEditorJS(contentString);
-        await editorRef.current.render(editorJSData);
-      } catch (error: unknown) {
-        logClientError(
-          error instanceof Error ? error : new Error(String(error)),
-          {
-            component: "useEditPostModal",
-            action: "loadInitialContent",
-            message: "Error loading initial content into EditorJS",
-          },
-          "warning"
-        );
-      }
-    };
-
-    const timeoutId = setTimeout(() => {
-      void loadInitialContent();
-    }, 100);
-    return () => clearTimeout(timeoutId);
-  }, [isLongform, editorReady, formContent]);
 
   const formatDateTimeForInput = (date: Date) => {
     const userTimezone =
@@ -634,8 +369,10 @@ export function useEditPostModal({
   };
 
   return {
-    // Form instance
+    // Form instance (exposed for getValues after flushSync in longform)
     form,
+    // Longform: ref to flush editor before submit
+    longformEditorApiRef,
     // Form values (for backward compatibility)
     caption,
     title,
@@ -663,8 +400,8 @@ export function useEditPostModal({
     newFiles,
     isUploadingImages,
     setIsUploadingImages,
-    editorRef,
     editorReady,
+    setEditorReady,
     // Handlers
     handleFileChange,
     removeExistingImage,

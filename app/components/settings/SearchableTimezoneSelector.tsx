@@ -6,6 +6,11 @@ import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import {
   getAllTimezoneOptions,
   searchTimezones,
   getTimezoneOption,
@@ -57,30 +62,13 @@ export function SearchableTimezoneSelector({
       ? Math.min(focusedIndex, filteredOptions.length - 1)
       : 0;
 
-  // Handle click outside
+  // Focus search input when popover opens
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-        setSearchQuery("");
-        setFocusedIndex(0);
-      }
-    }
-
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      // Focus search input when opened
       requestAnimationFrame(() => {
         inputRef.current?.focus();
       });
     }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
   }, [isOpen]);
 
   const handleSelect = useCallback(
@@ -156,41 +144,48 @@ export function SearchableTimezoneSelector({
     : "Select a timezone";
 
   return (
-    <div ref={containerRef} className="relative w-full">
-      <Button
-        type="button"
-        variant="outline"
-        role="combobox"
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        aria-label={ariaLabel}
-        aria-controls={isOpen && id ? `${id}-listbox` : undefined}
-        id={id}
-        disabled={disabled}
-        onClick={() => {
-          if (!disabled) {
-            setIsOpen(!isOpen);
-          }
-        }}
-        className={cn(
-          "w-full justify-between",
-          !selectedOption && "text-muted-foreground"
-        )}
-      >
-        <span className="truncate">{displayValue}</span>
-        <ChevronDown
-          className={cn(
-            "ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform",
-            isOpen && "rotate-180"
-          )}
-          aria-hidden="true"
-        />
-      </Button>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) {
+          setSearchQuery("");
+          setFocusedIndex(0);
+        }
+      }}
+    >
+      <div ref={containerRef} className="relative w-full">
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-haspopup="listbox"
+            aria-label={ariaLabel}
+            aria-controls={isOpen && id ? `${id}-listbox` : undefined}
+            id={id}
+            disabled={disabled}
+            className={cn(
+              "w-full justify-between",
+              !selectedOption && "text-muted-foreground"
+            )}
+          >
+            <span className="truncate">{displayValue}</span>
+            <ChevronDown
+              className={cn(
+                "ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform",
+                isOpen && "rotate-180"
+              )}
+              aria-hidden="true"
+            />
+          </Button>
+        </PopoverTrigger>
 
-      {isOpen ? (
-        <div
-          className="bg-popover absolute z-50 mt-1 w-full rounded-md border shadow-md"
-          role="presentation"
+        <PopoverContent
+          className="w-[var(--radix-popover-trigger-width)] p-0"
+          align="start"
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           {/* Search Input */}
           <div className="border-b p-2">
@@ -280,8 +275,8 @@ export function SearchableTimezoneSelector({
               })
             )}
           </div>
-        </div>
-      ) : null}
-    </div>
+        </PopoverContent>
+      </div>
+    </Popover>
   );
 }
