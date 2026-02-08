@@ -363,36 +363,34 @@ export default function LongFormPost({
       <LongFormEditorStyles />
 
       <div className="flex min-h-screen flex-col">
-        <div className="min-h-[70vh] flex-1">
-          {/* Phase 1: Writing Surface (hero) */}
-          <WritingSurface
-            title={title}
-            onTitleChange={(value) => form.setValue("title", value)}
-            content={content}
-            uploadProvider={uploadProvider}
-            onOpenAssetBrowser={() => setShowAssetBrowser("content")}
-          />
+        {/* Phase 1: Writing Surface (hero) */}
+        <WritingSurface
+          title={title}
+          onTitleChange={(value) => form.setValue("title", value)}
+          content={content}
+          uploadProvider={uploadProvider}
+          onOpenAssetBrowser={() => setShowAssetBrowser("content")}
+        />
 
-          {/* Phase 2: Article Details (collapsible) */}
-          <ArticleDetailsCollapsible
-            summary={summary ?? ""}
-            customTags={customTags ?? ""}
-            content={content}
-            onSummaryChange={(value) => form.setValue("summary", value)}
-            onCustomTagsChange={(value) => form.setValue("customTags", value)}
-            onGenerateSummary={handleGenerateSummary}
-            image={image}
-            uploadError={uploadError}
-            uploadProvider={uploadProvider}
-            uploadFetcherState={uploadFetcherState}
-            onImageUpload={(file) => void handleImageUpload(file)}
-            onRemoveImage={() => setCoverImage("")}
-            onOpenAssetBrowser={() => setShowAssetBrowser("cover")}
-          />
-        </div>
+        {/* Phase 2: Article Details (collapsible) */}
+        <ArticleDetailsCollapsible
+          summary={summary ?? ""}
+          customTags={customTags ?? ""}
+          content={content}
+          onSummaryChange={(value) => form.setValue("summary", value)}
+          onCustomTagsChange={(value) => form.setValue("customTags", value)}
+          onGenerateSummary={handleGenerateSummary}
+          image={image}
+          uploadError={uploadError}
+          uploadProvider={uploadProvider}
+          uploadFetcherState={uploadFetcherState}
+          onImageUpload={(file) => void handleImageUpload(file)}
+          onRemoveImage={() => setCoverImage("")}
+          onOpenAssetBrowser={() => setShowAssetBrowser("cover")}
+        />
 
-        {/* Phase 3: Publish Panel (sticky bar) */}
-        <div className="border-border/60 bg-background/95 sticky bottom-0 z-20 border-t py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] backdrop-blur">
+        {/* Phase 3: Publish Panel */}
+        <div className="border-border/60 bg-background/95 border-t py-4 backdrop-blur">
           <div className="mx-auto w-full max-w-[760px] space-y-4 px-4">
             {displayedHashtags ? (
               <div className="flex items-center gap-2">
