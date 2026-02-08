@@ -435,7 +435,7 @@ export function groupNotificationsByParent(
       fileUrl: Array.isArray(post.fileUrl)
         ? (post.fileUrl[0] ?? null)
         : post.fileUrl,
-      postedAt: post.postedAt ?? new Date(),
+      publishedAt: post.publishedAt ?? new Date(),
       isLongform: false,
       stats: stats[eventId],
     });
@@ -466,7 +466,7 @@ export function groupNotificationsByParent(
       pubkey,
       title: post.title ?? null,
       content: post.content ?? null,
-      postedAt: post.postedAt ?? new Date(),
+      publishedAt: post.publishedAt ?? new Date(),
       isLongform: true,
       stats: stats[eventId],
     });

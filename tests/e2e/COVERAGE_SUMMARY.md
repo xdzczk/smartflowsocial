@@ -219,7 +219,7 @@ all major features and user flows.
 - `/dashboard/newlongformpost` - New long form post
 - `/dashboard/drafts` - Drafts queue
 - `/dashboard/scheduled` - Scheduled posts
-- `/dashboard/posted` - Posted posts
+- `/dashboard/published` - Published posts
 - `/dashboard/calendar` - Calendar view
 - `/dashboard/bulkposts` - Bulk posts upload
 - `/dashboard/recyclables` - Recyclables queue

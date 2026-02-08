@@ -603,15 +603,15 @@ export default function BulkPostsPage() {
                 No posts to schedule.
               </p>
               <p className="text-muted-foreground mb-4 text-sm">
-                Select regular posts (not articles) from Posted and try
+                Select regular posts (not articles) from Published and try
                 &quot;Schedule {mode === "quote" ? "quote" : "repost"}&quot;
                 again.
               </p>
               <a
-                href="/dashboard/posted"
+                href="/dashboard/published"
                 className="text-primary font-medium hover:underline"
               >
-                Go to Posted
+                Go to Published
               </a>
             </div>
           ) : null}

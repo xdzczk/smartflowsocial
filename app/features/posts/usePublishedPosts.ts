@@ -48,17 +48,17 @@ interface FetcherErrorResponse {
   message?: string;
 }
 
-interface UsePostedPostsProps {
+interface UsePublishedPostsProps {
   user: UserData | null;
   allContent: CombinedContent[];
   posts: PostData[];
 }
 
-export function usePostedPosts({
+export function usePublishedPosts({
   user,
   allContent,
   posts: _posts,
-}: UsePostedPostsProps) {
+}: UsePublishedPostsProps) {
   const _revalidator = useRevalidator();
   const [searchParams] = useSearchParams();
 
@@ -69,7 +69,7 @@ export function usePostedPosts({
     key: string;
     direction: "asc" | "desc";
   }>({
-    key: "postedAt",
+    key: "publishedAt",
     direction: "desc",
   });
   const [searchTerm, setSearchTerm] = useState("");
@@ -461,7 +461,7 @@ export function usePostedPosts({
           handleAsyncError(
             error,
             {
-              component: "usePostedPosts",
+              component: "usePublishedPosts",
               action: "handleLongformRepost",
             },
             false
@@ -572,7 +572,7 @@ export function usePostedPosts({
           handleAsyncError(
             error,
             {
-              component: "usePostedPosts",
+              component: "usePublishedPosts",
               action: "handleRepost",
             },
             false

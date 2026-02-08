@@ -61,7 +61,7 @@ export function FullPostBlock({
       onKeyDown={onKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "posted" : "scheduled"} for ${formattedDateTime}`}
+      aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "published" : "scheduled"} for ${formattedDateTime}`}
       className={`border-border focus:ring-ring rounded-lg border p-3 transition-all focus:ring-2 focus:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer"
       } ${

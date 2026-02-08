@@ -31,7 +31,7 @@ export function handleDeepLink(data: DeepLinkData): void {
     if (data.action === "publish_failure") {
       window.location.href = `/dashboard/scheduled?postId=${data.postId}`;
     } else {
-      window.location.href = `/dashboard/posted?postId=${data.postId}`;
+      window.location.href = `/dashboard/published?postId=${data.postId}`;
     }
   } else {
     // Default to dashboard
@@ -55,7 +55,7 @@ export function useDeepLinkHandler() {
       if (data.action === "publish_failure") {
         navigate(`/dashboard/scheduled?postId=${data.postId}`);
       } else {
-        navigate(`/dashboard/posted?postId=${data.postId}`);
+        navigate(`/dashboard/published?postId=${data.postId}`);
       }
     } else {
       navigate("/dashboard");

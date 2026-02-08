@@ -11,7 +11,7 @@ import { useOptionalUser } from "~/lib/remix-utils";
 const PREFETCH_ROUTES = [
   "/dashboard",
   "/dashboard/scheduled",
-  "/dashboard/posted",
+  "/dashboard/published",
   "/dashboard/newpost",
   "/dashboard/newlongformpost",
 ];

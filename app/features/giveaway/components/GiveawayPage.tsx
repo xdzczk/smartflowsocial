@@ -36,7 +36,7 @@ export default function GiveawayPage() {
   } = useGiveawayState({
     posts: typedPosts.map((post) => ({
       ...post,
-      postedAt: post.postedAt instanceof Date ? post.postedAt : null,
+      publishedAt: post.publishedAt instanceof Date ? post.publishedAt : null,
       totalEngagement: post.totalEngagement ?? 0,
     })),
   });
@@ -63,7 +63,7 @@ export default function GiveawayPage() {
           filteredPosts as Array<{
             id: string;
             caption?: string | null;
-            postedAt: Date | null;
+            publishedAt: Date | null;
             fileUrl: string[];
             signedEvent?: { id: string } | null;
             queueType?: { name: string; color?: string | null } | null;
@@ -90,9 +90,9 @@ export default function GiveawayPage() {
             // Convert to the Post format expected by useGiveawayState
             setSelectedPost({
               ...originalPostData,
-              postedAt:
-                originalPostData.postedAt instanceof Date
-                  ? originalPostData.postedAt
+              publishedAt:
+                originalPostData.publishedAt instanceof Date
+                  ? originalPostData.publishedAt
                   : null,
               totalEngagement: originalPostData.totalEngagement ?? 0,
             });
@@ -118,7 +118,7 @@ export default function GiveawayPage() {
           onClose={() => setSelectedPost(null)}
           showStats={true}
           showSignedEvent={true}
-          type="posted"
+          type="published"
           userTimezone={user?.timezone ?? undefined}
         />
       ) : null}

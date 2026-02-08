@@ -16,11 +16,11 @@ import {
   LongFormDetailsModal,
   LongFormListing,
   PostDetailsModal,
-  PostedPostsTable,
-  PostedPostsTabs,
+  PublishedPostsTable,
+  PublishedPostsTabs,
   QueueSelectionTabs,
-  usePostedPosts,
-  usePostedPostsInfiniteData,
+  usePublishedPosts,
+  usePublishedPostsInfiniteData,
   useBulkDeletePostsMutation,
 } from "~/features/posts/ui";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -42,12 +42,12 @@ import {
 import PublishResultModal from "./PublishResultModal";
 import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
-function getDateValue(postedAt: Date | string | null | undefined): number {
-  if (postedAt instanceof Date) {
-    return postedAt.getTime();
+function getDateValue(publishedAt: Date | string | null | undefined): number {
+  if (publishedAt instanceof Date) {
+    return publishedAt.getTime();
   }
-  if (postedAt) {
-    return new Date(postedAt).getTime();
+  if (publishedAt) {
+    return new Date(publishedAt).getTime();
   }
   return new Date(0).getTime();
 }
@@ -57,8 +57,8 @@ function compareByDate(
   b: PostData,
   direction: "asc" | "desc"
 ): number {
-  const dateA = getDateValue(a.postedAt);
-  const dateB = getDateValue(b.postedAt);
+  const dateA = getDateValue(a.publishedAt);
+  const dateB = getDateValue(b.publishedAt);
   return direction === "asc" ? dateA - dateB : dateB - dateA;
 }
 
@@ -105,7 +105,7 @@ function sortPosts(
   stats: Record<string, unknown> | undefined
 ): PostData[] {
   return [...posts].sort((a, b) => {
-    if (sortConfig.key === "postedAt") {
+    if (sortConfig.key === "publishedAt") {
       return compareByDate(a, b, sortConfig.direction);
     }
 
@@ -129,7 +129,7 @@ function sortPosts(
 }
 
 /* eslint-disable sonarjs/cognitive-complexity -- Page orchestrator: tabs, queue filters, table/list content, modals */
-export default function PostedPostsPage() {
+export default function PublishedPostsPage() {
   // Use infinite query for data fetching with infinite scroll
   const {
     posts,
@@ -145,7 +145,7 @@ export default function PostedPostsPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-  } = usePostedPostsInfiniteData();
+  } = usePublishedPostsInfiniteData();
 
   const _params = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -233,7 +233,7 @@ export default function PostedPostsPage() {
     handleBulkRepost,
     handleBulkScheduledRepost,
     handleBulkQuote,
-  } = usePostedPosts({
+  } = usePublishedPosts({
     user,
     allContent,
     posts,
@@ -284,11 +284,11 @@ export default function PostedPostsPage() {
     <div className="flex min-h-screen flex-col">
       <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
         <div>
-          <h3 className="mb-1 font-semibold">Posted History</h3>
+          <h3 className="mb-1 font-semibold">Published</h3>
         </div>
       </div>
 
-      <PostedPostsTabs
+      <PublishedPostsTabs
         currentTab={currentTab}
         queueTypes={queueTypes.map((qt) => ({
           name: qt.name,
@@ -306,7 +306,7 @@ export default function PostedPostsPage() {
         <QueueSelectionTabs
           currentTab={currentTab}
           queueTypes={queueTypes}
-          basePath="/dashboard/posted"
+          basePath="/dashboard/published"
         />
       ) : null}
 
@@ -314,7 +314,7 @@ export default function PostedPostsPage() {
         {currentTab === "all" ? (
           <AllContentListing
             content={allContent}
-            type="posted"
+            type="published"
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             userTimezone={user.timezone ?? undefined}
@@ -363,7 +363,7 @@ export default function PostedPostsPage() {
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
           />
         ) : currentTab === "posts" ? (
-          <PostedPostsTable
+          <PublishedPostsTable
             filteredPosts={filteredPosts}
             selectedPosts={selectedPosts}
             stats={stats}
@@ -394,7 +394,7 @@ export default function PostedPostsPage() {
         ) : (
           <LongFormListing
             posts={longformPosts}
-            type="posted"
+            type="published"
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             userTimezone={user.timezone ?? undefined}
@@ -429,7 +429,7 @@ export default function PostedPostsPage() {
         <PostDetailsModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
-          type="posted"
+          type="published"
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}
           userTimeFormat={userTimeFormat}
@@ -440,7 +440,7 @@ export default function PostedPostsPage() {
         <LongFormDetailsModal
           post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
-          type="posted"
+          type="published"
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}
           userTimeFormat={userTimeFormat}

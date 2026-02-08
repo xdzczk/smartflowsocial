@@ -1,7 +1,7 @@
 import { Checkbox } from "~/components/ui/checkbox";
 
 interface ContentTableHeaderProps {
-  type: "scheduled" | "draft" | "posted";
+  type: "scheduled" | "draft" | "published";
   showBulkActions: boolean;
   sortConfig: {
     key: string;
@@ -23,8 +23,8 @@ export function ContentTableHeader({
   onRequestSort,
 }: ContentTableHeaderProps) {
   const dateSortKey =
-    type === "posted"
-      ? "postedAt"
+    type === "published"
+      ? "publishedAt"
       : type === "scheduled"
         ? "scheduledAtUtc"
         : "createdAt";
@@ -69,8 +69,8 @@ export function ContentTableHeader({
           className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
           onClick={() => onRequestSort(dateSortKey)}
         >
-          {type === "posted"
-            ? "Posted At"
+          {type === "published"
+            ? "Published at"
             : type === "scheduled"
               ? "Scheduled For"
               : "Created At"}{" "}

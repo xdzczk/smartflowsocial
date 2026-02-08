@@ -18,7 +18,9 @@ export function deserializePostDTO(dto: PostDTO): PostData {
     ...dto,
     createdAt: toDate(fromISOString(dto.createdAt, "UTC")),
     updatedAt: toDate(fromISOString(dto.updatedAt, "UTC")),
-    postedAt: dto.postedAt ? toDate(fromISOString(dto.postedAt, "UTC")) : null,
+    publishedAt: dto.publishedAt
+      ? toDate(fromISOString(dto.publishedAt, "UTC"))
+      : null,
     scheduledAtUtc: dto.scheduledAtUtc
       ? toDate(fromISOString(dto.scheduledAtUtc, "UTC"))
       : null,

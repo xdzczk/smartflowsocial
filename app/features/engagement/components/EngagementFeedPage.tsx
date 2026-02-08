@@ -137,7 +137,7 @@ export default function EngagementFeedPage() {
           onClose={() => setSelectedPost(null)}
           showStats={true}
           showSignedEvent={true}
-          type="posted"
+          type="published"
           userTimezone={userTimezone}
         />
       ) : null}

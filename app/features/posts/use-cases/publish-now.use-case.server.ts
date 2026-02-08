@@ -24,7 +24,7 @@ import { nowMillis } from "~/lib/temporal";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 import { getPostById } from "~/models/post.queries.server";
 
-import { deriveIsPosted } from "../state-machine/post-state";
+import { deriveIsPublished } from "../state-machine/post-state";
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
 import type { PublishNowInput } from "./types";
@@ -53,7 +53,7 @@ export class PublishNowUseCase {
       );
     }
     // Use currentState as single source of truth
-    const isAlreadyPosted = deriveIsPosted(post.currentState);
+    const isAlreadyPosted = deriveIsPublished(post.currentState);
     if (isAlreadyPosted) {
       // Idempotent behavior: if already published, log and return gracefully
       // This handles duplicate requests (e.g., double-clicks, form resubmissions)
@@ -152,7 +152,7 @@ export class PublishNowUseCase {
           additionalPostData: {
             nostrEventId: validatedSignedEvent.id,
             publishAttemptId,
-            postedAt: new Date(),
+            publishedAt: new Date(),
             publishingLockId: null,
             publishingLockExpiresAt: null,
           },

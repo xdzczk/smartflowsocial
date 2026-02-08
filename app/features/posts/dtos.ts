@@ -26,7 +26,7 @@ export interface PostDTO extends Omit<
   Post,
   | "createdAt"
   | "updatedAt"
-  | "postedAt"
+  | "publishedAt"
   | "scheduledAtUtc"
   | "publishingLockExpiresAt"
   | "publishingStartedAt"
@@ -35,7 +35,7 @@ export interface PostDTO extends Omit<
 > {
   createdAt: string;
   updatedAt: string;
-  postedAt: string | null;
+  publishedAt: string | null;
   scheduledAtUtc: string | null;
   publishingLockExpiresAt: string | null;
   publishingStartedAt: string | null;
@@ -98,7 +98,7 @@ export function fromPostDTO(dto: PostDTO): PostData {
   const {
     createdAt: _createdAt,
     updatedAt: _updatedAt,
-    postedAt: _postedAt,
+    publishedAt: _publishedAt,
     scheduledAtUtc: _scheduledAtUtc,
     publishingLockExpiresAt: _publishingLockExpiresAt,
     publishingStartedAt: _publishingStartedAt,
@@ -109,7 +109,9 @@ export function fromPostDTO(dto: PostDTO): PostData {
     ...rest,
     createdAt: toDate(fromISOString(dto.createdAt, "UTC")),
     updatedAt: toDate(fromISOString(dto.updatedAt, "UTC")),
-    postedAt: dto.postedAt ? toDate(fromISOString(dto.postedAt, "UTC")) : null,
+    publishedAt: dto.publishedAt
+      ? toDate(fromISOString(dto.publishedAt, "UTC"))
+      : null,
     scheduledAtUtc: dto.scheduledAtUtc
       ? toDate(fromISOString(dto.scheduledAtUtc, "UTC"))
       : null,

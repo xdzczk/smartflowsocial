@@ -3,9 +3,14 @@
  * Default collapsed. Summary, tags, cover image. Soft metadata, non-blocking.
  */
 
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 import { Separator } from "~/components/ui/separator";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 
 import { LongFormCoverImage } from "./LongFormCoverImage";
 import { LongFormPostFields } from "./LongFormPostFields";
@@ -53,19 +58,11 @@ export function ArticleDetailsCollapsible({
           aria-expanded={open}
         >
           <span>Article details</span>
-          <svg
-            className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          <ChevronDown
+            className={`${INLINE_ICON_SIZE_CLASS} transition-transform ${open ? "rotate-180" : ""}`}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
         </button>
         {open ? (
           <>

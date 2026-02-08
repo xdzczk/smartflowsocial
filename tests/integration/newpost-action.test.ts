@@ -280,7 +280,7 @@ describe("New Post Action Handler", () => {
       // Note: fetch is called by PublishNowUseCase internally, but since we're mocking the use case,
       // we don't verify fetch here. The publisher is tested separately.
       expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(302); // Redirect to /dashboard/posted
+      expect(result.status).toBe(302); // Redirect to /dashboard/published
     });
   });
 

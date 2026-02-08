@@ -112,8 +112,8 @@ export function MonthlyView({
 
     // Process past posts
     pastPosts.forEach((post) => {
-      // Use postedAt for past posts
-      const timestamp = post.postedAt;
+      // Use publishedAt for past posts
+      const timestamp = post.publishedAt;
       if (timestamp) {
         // Parse timestamp and convert to user's timezone
         const postZoned = fromISOString(timestamp as string, "UTC");

@@ -1,6 +1,6 @@
 /**
  * Integration tests for posted posts service
- * Tests app/features/posts/services/posted-posts.server.ts
+ * Tests app/features/posts/services/published-posts.server.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -16,7 +16,7 @@ vi.mock("~/models/longformpost.server", () => ({
 }));
 
 vi.mock("~/models/post.queries.server", () => ({
-  getPostedPosts: vi.fn(),
+  getPublishedPosts: vi.fn(),
 }));
 
 vi.mock("~/features/posts/services/combined.server", () => ({
@@ -32,10 +32,10 @@ vi.mock("~/features/posts/services/stats.server", () => ({
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
-import { getPostedDashboardData } from "~/features/posts/services/posted-posts.server";
+import { getPublishedDashboardData } from "~/features/posts/services/published-posts.server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
-import { getPostedPosts } from "~/models/post.queries.server";
+import { getPublishedPosts } from "~/models/post.queries.server";
 
 describe("Posted Posts Service", () => {
   beforeEach(() => {
@@ -58,7 +58,9 @@ describe("Posted Posts Service", () => {
       { id: "queue-1", name: "Queue 1", isEnabled: true },
     ];
 
-    (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+    (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockPosts
+    );
     (getPublishedLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockLongformResult
     );
@@ -67,8 +69,8 @@ describe("Posted Posts Service", () => {
       mockQueueTypes
     );
 
-    const url = new URL("http://localhost:3000/dashboard/posted?page=1");
-    const result = await getPostedDashboardData({
+    const url = new URL("http://localhost:3000/dashboard/published?page=1");
+    const result = await getPublishedDashboardData({
       userId: TEST_USER_ID,
       params: { queueType: "all" },
       url,
@@ -92,7 +94,7 @@ describe("Posted Posts Service", () => {
   });
 
   it("should handle pagination from URL", async () => {
-    (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       pagination: { total: 0, pages: 0, currentPage: 2 },
     });
@@ -105,14 +107,14 @@ describe("Posted Posts Service", () => {
     });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-    const url = new URL("http://localhost:3000/dashboard/posted?page=2");
-    await getPostedDashboardData({
+    const url = new URL("http://localhost:3000/dashboard/published?page=2");
+    await getPublishedDashboardData({
       userId: TEST_USER_ID,
       params: {},
       url,
     });
 
-    expect(getPostedPosts).toHaveBeenCalledWith({
+    expect(getPublishedPosts).toHaveBeenCalledWith({
       userId: TEST_USER_ID,
       page: 2,
       limit: 50,
@@ -121,7 +123,7 @@ describe("Posted Posts Service", () => {
   });
 
   it("should handle invalid longform result", async () => {
-    (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       pagination: { total: 0, pages: 0, currentPage: 1 },
     });
@@ -133,8 +135,8 @@ describe("Posted Posts Service", () => {
     });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-    const url = new URL("http://localhost:3000/dashboard/posted");
-    const result = await getPostedDashboardData({
+    const url = new URL("http://localhost:3000/dashboard/published");
+    const result = await getPublishedDashboardData({
       userId: TEST_USER_ID,
       params: {},
       url,
@@ -144,7 +146,7 @@ describe("Posted Posts Service", () => {
   });
 
   it("should handle non-array queue types", async () => {
-    (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       pagination: { total: 0, pages: 0, currentPage: 1 },
     });
@@ -159,8 +161,8 @@ describe("Posted Posts Service", () => {
       "not-an-array"
     );
 
-    const url = new URL("http://localhost:3000/dashboard/posted");
-    const result = await getPostedDashboardData({
+    const url = new URL("http://localhost:3000/dashboard/published");
+    const result = await getPublishedDashboardData({
       userId: TEST_USER_ID,
       params: {},
       url,

@@ -1,6 +1,6 @@
 import { Link } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Quote, Share2 } from "lucide-react";
 import { useRef, useState, type Key } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
@@ -21,6 +21,7 @@ import {
 } from "~/components/ui/select";
 import { getImageUrls } from "~/lib/helpers";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
+import { SMALL_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import { postToCombinedContent } from "../combined";
 import { getQueueColor } from "../queue-colors";
@@ -87,7 +88,7 @@ const SortableHeader = ({
   </th>
 );
 
-interface PostedPostsTableProps {
+interface PublishedPostsTableProps {
   filteredPosts: PostData[];
   selectedPosts: Set<string>;
   stats: Record<string, PostStats>;
@@ -110,7 +111,7 @@ interface PostedPostsTableProps {
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
 }
 
-export default function PostedPostsTable({
+export default function PublishedPostsTable({
   filteredPosts,
   selectedPosts,
   stats,
@@ -131,7 +132,7 @@ export default function PostedPostsTable({
   sentinelRef,
   isFetchingNextPage = false,
   onScrollContainerReady,
-}: PostedPostsTableProps) {
+}: PublishedPostsTableProps) {
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const useDedicatedScroll =
@@ -165,7 +166,7 @@ export default function PostedPostsTable({
               <tr>
                 <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
                   <Checkbox
-                    id="posted-select-all"
+                    id="published-select-all"
                     checked={
                       filteredPosts.length > 0
                         ? selectedPosts.size === filteredPosts.length
@@ -184,8 +185,8 @@ export default function PostedPostsTable({
                   requestSort={requestSort}
                 />
                 <SortableHeader
-                  label="Posted At"
-                  sortKey="postedAt"
+                  label="Published At"
+                  sortKey="publishedAt"
                   sortConfig={sortConfig}
                   requestSort={requestSort}
                 />
@@ -254,7 +255,7 @@ export default function PostedPostsTable({
                   >
                     <td className="p-3 text-center">
                       <Checkbox
-                        id={`posted-select-${post.id}`}
+                        id={`published-select-${post.id}`}
                         checked={selectedPosts.has(post.id)}
                         onCheckedChange={() => togglePostSelection(post.id)}
                         onClick={(e) => e.stopPropagation()}
@@ -270,36 +271,20 @@ export default function PostedPostsTable({
                           />
                           {post.repost ? (
                             <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
-                              <svg
-                                className="h-3 w-3 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                />
-                              </svg>
+                              <Share2
+                                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
                             </div>
                           ) : null}
                           {post.isQuotedPost ? (
                             <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
-                              <svg
-                                className="h-3 w-3 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                                />
-                              </svg>
+                              <Quote
+                                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
                             </div>
                           ) : null}
                         </div>
@@ -310,36 +295,20 @@ export default function PostedPostsTable({
                           </div>
                           {post.repost ? (
                             <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
-                              <svg
-                                className="h-3 w-3 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                />
-                              </svg>
+                              <Share2
+                                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
                             </div>
                           ) : null}
                           {post.isQuotedPost ? (
                             <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
-                              <svg
-                                className="h-3 w-3 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                                />
-                              </svg>
+                              <Quote
+                                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
                             </div>
                           ) : null}
                         </div>
@@ -353,9 +322,9 @@ export default function PostedPostsTable({
                       </p>
                     </td>
                     <td className="p-3">
-                      {post.postedAt
+                      {post.publishedAt
                         ? formatDate(
-                            post.postedAt,
+                            post.publishedAt,
                             false,
                             userTimezone,
                             userTimeFormat
@@ -394,7 +363,7 @@ export default function PostedPostsTable({
                     </td>
                     <td className="p-3">
                       <span className="bg-success/20 text-success dark:bg-success/20 dark:text-success inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
-                        Posted
+                        Published
                       </span>
                     </td>
                     <td className="p-3 text-center">
@@ -578,7 +547,10 @@ export default function PostedPostsTable({
                       string,
                       "asc" | "desc",
                     ];
-                    onSortChange(key === "date" ? "postedAt" : "caption", dir);
+                    onSortChange(
+                      key === "date" ? "publishedAt" : "caption",
+                      dir
+                    );
                   }
                 }}
               >
@@ -633,7 +605,7 @@ export default function PostedPostsTable({
                         >
                           <ContentListCard
                             item={item}
-                            type="posted"
+                            type="published"
                             userTimezone={userTimezone}
                             userTimeFormat={userTimeFormat}
                             showBulkActions={true}
@@ -696,7 +668,7 @@ export default function PostedPostsTable({
                   >
                     <ContentListCard
                       item={item}
-                      type="posted"
+                      type="published"
                       userTimezone={userTimezone}
                       userTimeFormat={userTimeFormat}
                       showBulkActions={true}

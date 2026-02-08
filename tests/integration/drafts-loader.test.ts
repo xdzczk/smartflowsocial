@@ -174,7 +174,6 @@ describe("Drafts Loader Integration", () => {
             summary: null,
             content: null,
             image: null,
-            postedAt: null,
             publishedAt: null,
             scheduledAtUtc: null,
             updatedAt: new Date().toISOString(),

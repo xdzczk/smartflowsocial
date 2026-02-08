@@ -142,7 +142,7 @@ describe("PublishNowUseCase", () => {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
             publishAttemptId: expect.any(String),
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-            postedAt: expect.any(Date),
+            publishedAt: expect.any(Date),
             publishingLockId: null,
             publishingLockExpiresAt: null,
           }),

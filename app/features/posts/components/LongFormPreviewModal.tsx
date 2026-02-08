@@ -1,4 +1,7 @@
+import { Bookmark, MoreVertical } from "lucide-react";
+
 import { Button } from "~/components/ui/button";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { formatForDisplay, nowUTC } from "~/lib/temporal";
 
 import { MarkdownPreview } from "./MarkdownPreview";
@@ -85,19 +88,11 @@ export default function LongFormPreviewModal({
                 </div>
               </div>
               <div className="ml-auto">
-                <svg
+                <MoreVertical
                   className="text-foreground h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                  />
-                </svg>
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
               </div>
             </div>
 
@@ -107,19 +102,11 @@ export default function LongFormPreviewModal({
               <span>•</span>
               <span>via SmartFlow</span>
               <div className="ml-auto">
-                <svg
+                <Bookmark
                   className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                  />
-                </svg>
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
               </div>
             </div>
 

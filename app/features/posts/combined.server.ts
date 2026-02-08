@@ -30,23 +30,28 @@ function parseScheduledAtUtc(value: unknown): number {
 }
 
 /**
- * Parse postedAt or publishedAt date value
+ * Parse publishedAt date value
  */
-function parsePostedAtDate(postedAt: Date | string | undefined): number {
-  if (!postedAt) return 0;
+function parsePublishedAtDate(
+  publishedAt: Date | string | undefined | null
+): number {
+  if (!publishedAt) return 0;
 
   try {
-    const dateObj = postedAt instanceof Date ? postedAt : new Date(postedAt);
+    const dateObj =
+      publishedAt instanceof Date ? publishedAt : new Date(publishedAt);
     return Number(fromDate(dateObj, "UTC").epochMilliseconds);
   } catch {
     try {
       const isoString =
-        postedAt instanceof Date ? postedAt.toISOString() : String(postedAt);
+        publishedAt instanceof Date
+          ? publishedAt.toISOString()
+          : String(publishedAt);
       return Number(fromISOString(isoString, "UTC").epochMilliseconds);
     } catch {
-      return postedAt instanceof Date
-        ? postedAt.getTime()
-        : new Date(postedAt).getTime();
+      return publishedAt instanceof Date
+        ? publishedAt.getTime()
+        : new Date(publishedAt).getTime();
     }
   }
 }
@@ -72,8 +77,8 @@ function getSortValue(item: CombinedContent, sortBy: string): number {
   if (sortBy === "scheduledAtUtc" || sortBy === "scheduledFor") {
     return parseScheduledAtUtc(item.scheduledAtUtc);
   }
-  if (sortBy === "postedAt" || sortBy === "publishedAt") {
-    return parsePostedAtDate(item.postedAt);
+  if (sortBy === "publishedAt") {
+    return parsePublishedAtDate(item.publishedAt);
   }
   if (sortBy === "createdAt" || sortBy === "updatedAt") {
     return parseDateField(item[sortBy]);
@@ -107,7 +112,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     content: nullToUndefined(post.content),
     fileUrl: post.fileUrl,
     scheduledAtUtc: nullToUndefined(post.scheduledAtUtc),
-    postedAt: nullToUndefined(post.postedAt),
+    publishedAt: nullToUndefined(post.publishedAt),
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     status: post.status,
@@ -177,7 +182,6 @@ export function longFormPostToCombinedContent(
     image: nullToUndefined(longFormPost.image),
     scheduledAtUtc: nullToUndefined(longFormPost.scheduledAtUtc),
     publishedAt: nullToUndefined(longFormPost.publishedAt),
-    postedAt: nullToUndefined(longFormPost.publishedAt), // Map publishedAt to postedAt for consistency
     createdAt: longFormPost.createdAt,
     updatedAt: longFormPost.updatedAt,
     status: longFormPost.status,

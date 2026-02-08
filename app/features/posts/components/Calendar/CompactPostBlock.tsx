@@ -35,7 +35,7 @@ function getAriaLabel(
 ): string {
   const action = isPast ? "View" : "Edit";
   const postType = isLongform ? "longform post" : "post";
-  const status = isPast ? "posted" : isLongform ? "published" : "scheduled";
+  const status = isPast ? "published" : isLongform ? "published" : "scheduled";
   return `${action} ${postType}: ${postPreview}, ${status} for ${formattedTime}`;
 }
 

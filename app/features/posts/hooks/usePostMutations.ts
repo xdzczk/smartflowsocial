@@ -8,7 +8,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { calendarKeys } from "./useCalendarQuery";
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
-import { postedPostsKeys } from "./usePostedPostsQuery";
+import { publishedPostsKeys } from "./usePublishedPostsQuery";
 import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 
 /**
@@ -20,7 +20,7 @@ export function useInvalidatePostQueries() {
 
   return () => {
     // Invalidate all post-related queries
-    void queryClient.invalidateQueries({ queryKey: postedPostsKeys.all });
+    void queryClient.invalidateQueries({ queryKey: publishedPostsKeys.all });
     void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
     void queryClient.invalidateQueries({ queryKey: draftsKeys.all });

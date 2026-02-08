@@ -44,7 +44,7 @@ function getContentSummaryText(item: CombinedContent): string {
 }
 
 function getFlowDisplayTime(item: CombinedContent): Date {
-  const raw = item.postedAt ?? item.scheduledAtUtc ?? item.createdAt;
+  const raw = item.publishedAt ?? item.scheduledAtUtc ?? item.createdAt;
   return raw instanceof Date ? raw : new Date(raw);
 }
 
@@ -66,8 +66,8 @@ export interface FlowCardProps {
 
 function getStatusLabel(
   item: CombinedContent
-): "Scheduled" | "Posted" | "Failed" {
-  if (item.postedAt) return "Posted";
+): "Scheduled" | "Published" | "Failed" {
+  if (item.publishedAt) return "Published";
   const state = (item.currentState ?? item.status).toLowerCase();
   if (state.includes("fail")) return "Failed";
   return "Scheduled";
@@ -155,7 +155,7 @@ function FlowCardInner({
     timezone: userTimezone,
     timeFormat: userTimeFormat,
   });
-  const isScheduled = !item.postedAt;
+  const isScheduled = !item.publishedAt;
   const displayTimeMs = displayTime.getTime();
   // Use parent-provided nowMs to stay pure; fallback to displayTime so relative label is neutral ("just now" / "in < 1 min")
   const nowMs = nowMsProp != null && nowMsProp > 0 ? nowMsProp : displayTimeMs;
@@ -196,7 +196,7 @@ function FlowCardInner({
   // Only the next scheduled (first future) post glows; stop glowing as soon as it's posted
   const isNextScheduledAndFuture =
     isNextScheduled &&
-    !item.postedAt &&
+    !item.publishedAt &&
     minutesUntil != null &&
     minutesUntil >= 0;
   const glowStyle = isNextScheduledAndFuture

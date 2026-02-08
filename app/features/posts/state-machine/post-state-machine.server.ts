@@ -29,7 +29,7 @@ export class PostStateMachine {
       /**
        * Additional Post fields to update atomically with the state transition.
        *
-       * This is used by queue workers to make \"attempt succeeded\" updates (e.g. `postedAt`,
+       * This is used by queue workers to make \"attempt succeeded\" updates (e.g. `publishedAt`,
        * `publishAttemptId`) atomic with the transition to `PUBLISHED`, preventing stuck states
        * under crashes/retries.
        */

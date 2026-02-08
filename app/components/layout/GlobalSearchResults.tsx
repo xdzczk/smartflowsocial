@@ -16,7 +16,7 @@ export interface GlobalSearchResult {
     | "draft"
     | "scheduled"
     | "publishing"
-    | "posted"
+    | "published"
     | "failed"
     | "cancelled"
     | "template"
@@ -31,7 +31,7 @@ export interface GlobalSearchResult {
   createdAt: Date | string;
   updatedAt?: Date | string;
   scheduledAt?: Date | string;
-  postedAt?: Date | string;
+  publishedAt?: Date | string;
   url: string;
   isLongform?: boolean;
 }
@@ -52,7 +52,7 @@ function getTypeIcon(type: GlobalSearchResult["type"]) {
       return <Calendar className="h-4 w-4" />;
     case "publishing":
       return <Loader2 className="h-4 w-4 animate-spin" />;
-    case "posted":
+    case "published":
       return <Clock className="h-4 w-4" />;
     case "failed":
       return <XCircle className="h-4 w-4" />;
@@ -77,8 +77,8 @@ function getTypeLabel(type: GlobalSearchResult["type"]): string {
       return "Scheduled";
     case "publishing":
       return "Publishing";
-    case "posted":
-      return "Posted";
+    case "published":
+      return "Published";
     case "failed":
       return "Failed";
     case "cancelled":

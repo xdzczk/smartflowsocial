@@ -21,7 +21,7 @@ function getPostEventId(
   post: Post | PostData | CombinedContent,
   type: string
 ): string | null {
-  if (type !== "posted") return null;
+  if (type !== "published") return null;
   const se = post.signedEvent;
   if (!se || typeof se !== "object" || !("id" in se)) return null;
   const id = (se as { id?: string }).id;
@@ -63,7 +63,9 @@ function formatScheduledDate(
   }
 }
 
-function getDeleteButtonLabel(type: "draft" | "posted" | "scheduled"): string {
+function getDeleteButtonLabel(
+  type: "draft" | "published" | "scheduled"
+): string {
   switch (type) {
     case "draft":
       return "Delete Draft";
@@ -74,7 +76,11 @@ function getDeleteButtonLabel(type: "draft" | "posted" | "scheduled"): string {
   }
 }
 
-function PostStatusBadge({ type }: { type: "draft" | "posted" | "scheduled" }) {
+function PostStatusBadge({
+  type,
+}: {
+  type: "draft" | "published" | "scheduled";
+}) {
   const base =
     "inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium";
   if (type === "draft")
@@ -127,7 +133,7 @@ function hasViewNoteLink(
 
 /** One-line context under the post card: "Posted 2 Jun 2026, 4:00 PM · Queue" etc. */
 function getPostContextLine(
-  type: "draft" | "posted" | "scheduled",
+  type: "draft" | "published" | "scheduled",
   post: Post | PostData | CombinedContent,
   queueType: { name: string } | null | undefined,
   formatDateFn: (
@@ -149,8 +155,8 @@ function getPostContextLine(
   if (type === "draft") return `Draft${sep}${queueName}`.trim();
   if (type === "scheduled" && "scheduledAtUtc" in post && post.scheduledAtUtc)
     return `Scheduled for ${formatScheduledDateFn(post.scheduledAtUtc, userTimezone, userTimeFormat)}${sep}${queueName}`.trim();
-  if (type === "posted" && post.postedAt)
-    return `Posted ${formatDateFn(post.postedAt, false, userTimezone, userTimeFormat)}${sep}${queueName}`.trim();
+  if (type === "published" && post.publishedAt)
+    return `Posted ${formatDateFn(post.publishedAt, false, userTimezone, userTimeFormat)}${sep}${queueName}`.trim();
   return queueName || "—";
 }
 
@@ -172,7 +178,7 @@ function PostDetailsSidebar({
   userTimezone,
   userTimeFormat,
 }: {
-  type: "draft" | "posted" | "scheduled";
+  type: "draft" | "published" | "scheduled";
   post: Post | PostData | CombinedContent;
   queueType:
     | { name: string; color?: string | null; id?: string }
@@ -246,12 +252,12 @@ function PostDetailsSidebar({
               </p>
             </div>
           ) : null}
-          {type === "posted" && post.postedAt ? (
+          {type === "published" && post.publishedAt ? (
             <div>
               <span className="text-muted-foreground text-xs">Posted at</span>
               <p className="text-foreground text-sm">
                 {formatDateFn(
-                  post.postedAt,
+                  post.publishedAt,
                   false,
                   userTimezone,
                   userTimeFormat
@@ -327,7 +333,7 @@ function PostDetailsSidebar({
       ) : null}
 
       {/* Comments (posted only) */}
-      {type === "posted" && eventId ? (
+      {type === "published" && eventId ? (
         <section
           className={block}
           aria-labelledby="post-details-comments-heading"
@@ -400,7 +406,7 @@ interface PostDetailsModalProps {
   onReschedule?: (post: Post | PostData | CombinedContent) => void;
   showStats?: boolean;
   showSignedEvent?: boolean;
-  type?: "draft" | "posted" | "scheduled";
+  type?: "draft" | "published" | "scheduled";
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
 }
@@ -413,7 +419,7 @@ export default function PostDetailsModal({
   onReschedule,
   showStats = false,
   showSignedEvent = false,
-  type = "posted",
+  type = "published",
   userTimezone,
   userTimeFormat = "12h",
 }: PostDetailsModalProps) {
@@ -460,7 +466,7 @@ export default function PostDetailsModal({
   }, [eventId, threadData?.events]);
 
   const threadMetadata = threadData?.metadata ?? {};
-  const showViewNote = type === "posted" && hasViewNoteLink(post);
+  const showViewNote = type === "published" && hasViewNoteLink(post);
 
   return (
     <>
@@ -565,7 +571,7 @@ export default function PostDetailsModal({
           {/* Footer: primary action first, then secondary, Delete de-emphasized */}
           <div className="border-border bg-card/95 sticky bottom-0 border-t px-6 py-4 backdrop-blur-sm">
             <div className="flex flex-wrap items-center justify-end gap-3">
-              {type === "posted" && showViewNote ? (
+              {type === "published" && showViewNote ? (
                 <Link
                   to={`https://primal.net/e/${post.signedEvent.id}`}
                   target="_blank"

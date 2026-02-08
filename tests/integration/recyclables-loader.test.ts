@@ -104,7 +104,7 @@ describe("Recyclables Loader", () => {
     });
     // DTOs serialize dates to strings and may include undefined fields
     expect(result.posts).toHaveLength(mockPosts.length);
-    const { deriveIsPosted } =
+    const { deriveIsPublished } =
       await import("~/features/posts/state-machine/post-state");
     result.posts.forEach((post, index) => {
       const mockPost = mockPosts[index];
@@ -124,8 +124,8 @@ describe("Recyclables Loader", () => {
       expect(postWithRecyclable.isRecyclable).toBe(
         mockPostWithRecyclable.isRecyclable
       );
-      const mockIsPosted = deriveIsPosted(mockPost.currentState);
-      expect(deriveIsPosted(post.currentState)).toBe(mockIsPosted);
+      const mockIsPosted = deriveIsPublished(mockPost.currentState);
+      expect(deriveIsPublished(post.currentState)).toBe(mockIsPosted);
       // Dates are serialized to strings in DTOs
       expect(typeof post.createdAt).toBe("string");
       expect(typeof post.updatedAt).toBe("string");

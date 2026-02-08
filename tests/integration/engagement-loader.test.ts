@@ -18,7 +18,7 @@ vi.mock("~/features/engagement/engagement.server", () => ({
 }));
 
 vi.mock("~/models/post.queries.server", () => ({
-  getPostedPosts: vi.fn(),
+  getPublishedPosts: vi.fn(),
 }));
 
 vi.mock("~/features/user", () => ({
@@ -36,7 +36,7 @@ import {
 } from "~/features/engagement/engagement.server";
 import { loadEngagementFeedData } from "~/features/engagement/services/engagement-loader.server";
 import { getUserById } from "~/features/user";
-import { getPostedPosts } from "~/models/post.queries.server";
+import { getPublishedPosts } from "~/models/post.queries.server";
 
 describe("Engagement Loader", () => {
   beforeEach(() => {
@@ -101,7 +101,7 @@ describe("Engagement Loader", () => {
         },
       ];
 
-      (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
         posts: mockPosts,
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -141,7 +141,7 @@ describe("Engagement Loader", () => {
 
       const result = await loadEngagementFeedData(TEST_USER_ID, 1, 50);
 
-      expect(getPostedPosts).toHaveBeenCalledWith({
+      expect(getPublishedPosts).toHaveBeenCalledWith({
         userId: TEST_USER_ID,
         page: 1,
         limit: 50,
@@ -205,7 +205,7 @@ describe("Engagement Loader", () => {
         ],
       ];
 
-      (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
         posts: mockPosts,
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -290,7 +290,7 @@ describe("Engagement Loader", () => {
         },
       ];
 
-      (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
         posts: mockPosts,
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -348,7 +348,7 @@ describe("Engagement Loader", () => {
         },
       ];
 
-      (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
         posts: mockPosts,
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -391,7 +391,7 @@ describe("Engagement Loader", () => {
 
   describe("Error Handling", () => {
     it("should handle missing user gracefully", async () => {
-      (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
         posts: [],
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
@@ -417,7 +417,7 @@ describe("Engagement Loader", () => {
         mutedList: { npubs: [] },
       };
 
-      (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
         posts: mockPosts,
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -452,7 +452,7 @@ describe("Engagement Loader", () => {
         mutedList: { npubs: [] },
       };
 
-      (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
         posts: [],
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -489,7 +489,7 @@ describe("Engagement Loader", () => {
         },
       ];
 
-      (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
         posts: mockPosts,
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);

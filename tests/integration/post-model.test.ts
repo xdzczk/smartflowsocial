@@ -20,7 +20,7 @@ import {
 } from "~/models/post.commands.server";
 import {
   getScheduledPosts,
-  getPostedPosts,
+  getPublishedPosts,
   getPostById,
   getPostStatistics,
 } from "~/models/post.queries.server";
@@ -412,14 +412,14 @@ describe("Post Model Functions", () => {
     });
   });
 
-  describe("getPostedPosts", () => {
+  describe("getPublishedPosts", () => {
     it("should get posted posts with pagination", async () => {
       const mockPosts = [
         {
           id: "post-1",
           userId: TEST_USER_ID,
           currentState: "PUBLISHED",
-          postedAt: new Date(),
+          publishedAt: new Date(),
           queueType: { name: "posts" },
         },
       ];
@@ -429,7 +429,7 @@ describe("Post Model Functions", () => {
       );
       (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
-      const result = await getPostedPosts({
+      const result = await getPublishedPosts({
         userId: TEST_USER_ID,
         page: 1,
         limit: 50,
@@ -451,7 +451,7 @@ describe("Post Model Functions", () => {
           queueType: true,
         },
         orderBy: {
-          postedAt: "desc",
+          publishedAt: "desc",
         },
         skip: 0,
         take: 50,
@@ -475,7 +475,7 @@ describe("Post Model Functions", () => {
         100
       );
 
-      const result = await getPostedPosts({
+      const result = await getPublishedPosts({
         userId: TEST_USER_ID,
         page: 2,
         limit: 25,

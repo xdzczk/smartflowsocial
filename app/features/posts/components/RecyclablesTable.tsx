@@ -10,7 +10,7 @@ import { getQueueColor } from "../queue-colors";
 interface Post {
   id: string;
   caption?: string | null;
-  postedAt: Date | null;
+  publishedAt: Date | null;
   fileUrl: string[];
   signedEvent: { id: string };
   queueType?: { name: string; color?: string | null } | null;
@@ -111,7 +111,7 @@ export function RecyclablesTable({
               onRequestSort={onRequestSort}
             />
             <SortableHeader
-              sortKey="postedAt"
+              sortKey="publishedAt"
               label="Posted At"
               sortConfig={sortConfig}
               onRequestSort={onRequestSort}
@@ -214,7 +214,7 @@ export function RecyclablesTable({
                   </p>
                 </td>
                 <td className="p-3">
-                  {post.postedAt ? formatDate(post.postedAt) : "—"}
+                  {post.publishedAt ? formatDate(post.publishedAt) : "—"}
                 </td>
                 <td className="p-3">{postStats.likes}</td>
                 <td className="p-3">{postStats.replies}</td>

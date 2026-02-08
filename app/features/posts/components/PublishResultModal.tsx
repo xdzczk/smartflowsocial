@@ -616,7 +616,7 @@ export default function PublishResultModal({
             {hasTimedOut ? (
               <span className="text-muted-foreground text-center text-sm">
                 Relay responses are taking longer than usual. Your post was
-                published—you can close this and check Posted.
+                published—you can close this and check Published.
               </span>
             ) : null}
           </div>
@@ -633,7 +633,7 @@ export default function PublishResultModal({
           </Button>
           <Button onClick={onViewPage} className="w-full sm:w-auto">
             <CheckSquare className="mr-2 h-4 w-4" />
-            View {action === "schedule" ? "Scheduled" : "Posted"}
+            View {action === "schedule" ? "Scheduled" : "Published"}
           </Button>
         </DialogFooter>
       </DialogContent>

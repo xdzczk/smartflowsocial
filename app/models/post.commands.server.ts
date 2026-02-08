@@ -57,7 +57,7 @@ export function createPost(data: CreatePostData): Promise<Post> {
   const {
     userId,
     content,
-    postedAt,
+    publishedAt,
     fileUrl,
     scheduledFor,
     nostrEventId,
@@ -97,7 +97,7 @@ export function createPost(data: CreatePostData): Promise<Post> {
       signedEvent,
       nostrEvent,
       postType,
-      postedAt,
+      publishedAt,
       caption,
       tags,
       manual_override: manual_override ?? false,
@@ -176,7 +176,7 @@ export async function createPostWithOutbox(
         signedEvent: data.signedEvent,
         nostrEvent: data.nostrEvent,
         postType: data.postType,
-        postedAt: data.postedAt,
+        publishedAt: data.publishedAt,
         caption: data.caption,
         tags: data.tags,
         manual_override: data.manual_override ?? false,
@@ -441,7 +441,7 @@ export async function updatePost({
     updateData.user = { connect: { id: data.userId } };
   if (data.content !== undefined) updateData.content = data.content;
   if (data.caption !== undefined) updateData.caption = data.caption;
-  if (data.postedAt !== undefined) updateData.postedAt = data.postedAt;
+  if (data.publishedAt !== undefined) updateData.publishedAt = data.publishedAt;
   if (data.fileUrl !== undefined) updateData.fileUrl = data.fileUrl;
   if (data.nostrEventId !== undefined)
     updateData.nostrEventId = data.nostrEventId;

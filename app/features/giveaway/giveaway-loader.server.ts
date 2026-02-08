@@ -15,7 +15,7 @@ import { getQueueTypesCached } from "~/features/user/services/user-cache.server"
 import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
 import { logError } from "~/lib/error-logger.server";
 import { convertToHex } from "~/lib/helpers";
-import { getRecentPostedPosts } from "~/models/post.queries.server";
+import { getRecentPublishedPosts } from "~/models/post.queries.server";
 
 import { fetchGiveawayParticipants } from "./giveaway.server";
 import type {
@@ -366,7 +366,7 @@ export async function loadGiveawayData(
   days: number
 ) {
   const [posts, user, queueTypes] = await Promise.all([
-    getRecentPostedPosts({
+    getRecentPublishedPosts({
       userId,
       days,
       queueType,

@@ -16,7 +16,7 @@ export interface PostFactoryOptions {
   content?: string;
   fileUrl?: string[];
   scheduledFor?: string | null;
-  postedAt?: Date | null;
+  publishedAt?: Date | null;
   currentState?: string; // State machine state - single source of truth
   postType?: PostType;
   repost?: boolean;
@@ -41,6 +41,7 @@ export interface PostFactoryOptions {
   publishingStartedAt?: Date | null;
   repostOfPostId?: string | null;
   quoteOfPostId?: string | null;
+  quoteOfLongFormPostId?: string | null;
   draftMeta?: Prisma.JsonValue | null;
   threadGroupId?: string | null;
   postKind?: PostKind;
@@ -59,7 +60,7 @@ export class PostFactory {
       content: "Test post content",
       fileUrl: [],
       scheduledFor: null,
-      postedAt: null,
+      publishedAt: null,
       currentState: "DRAFT",
       postType: "IMAGE",
       repost: false,
@@ -143,9 +144,9 @@ export class PostFactory {
     return this;
   }
 
-  asPosted(postedAt?: Date): this {
+  asPosted(publishedAt?: Date): this {
     this.options.currentState = "PUBLISHED";
-    this.options.postedAt = postedAt ?? new Date();
+    this.options.publishedAt = publishedAt ?? new Date();
     this.options.nostrEventId = `event-${Date.now()}`;
     return this;
   }
@@ -240,7 +241,7 @@ export class PostFactory {
       content: this.options.content ?? null,
       fileUrl: this.options.fileUrl ?? [],
       scheduledAtUtc,
-      postedAt: this.options.postedAt ?? null,
+      publishedAt: this.options.publishedAt ?? null,
       currentState: this.options.currentState ?? "DRAFT",
       postType: this.options.postType ?? "IMAGE",
       repost: this.options.repost ?? false,
@@ -267,6 +268,7 @@ export class PostFactory {
       publishingStartedAt: this.options.publishingStartedAt ?? null,
       repostOfPostId: this.options.repostOfPostId ?? null,
       quoteOfPostId: this.options.quoteOfPostId ?? null,
+      quoteOfLongFormPostId: this.options.quoteOfLongFormPostId ?? null,
       draftMeta: this.options.draftMeta ?? null,
       threadGroupId: this.options.threadGroupId ?? null,
       postKind,

@@ -28,11 +28,11 @@ export function getPostDataProperty(
       if (typeof scheduledAtUtc === "string") return new Date(scheduledAtUtc);
       return undefined;
     }
-    case "postedAt":
-      return post.postedAt instanceof Date
-        ? post.postedAt
-        : typeof post.postedAt === "string"
-          ? new Date(post.postedAt)
+    case "publishedAt":
+      return post.publishedAt instanceof Date
+        ? post.publishedAt
+        : typeof post.publishedAt === "string"
+          ? new Date(post.publishedAt)
           : undefined;
     case "createdAt":
       return post.createdAt instanceof Date

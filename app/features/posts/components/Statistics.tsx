@@ -121,7 +121,7 @@ export default function Statistics({
       <Card className={cardBase}>
         <CardContent className="p-0">
           <Link
-            to="/dashboard/posted"
+            to="/dashboard/published"
             className={contentBase}
             aria-label={`Published, ${stats.successCount} posts`}
           >

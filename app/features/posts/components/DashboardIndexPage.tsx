@@ -45,15 +45,14 @@ function getUserTimezone(user: unknown): string | undefined {
   return undefined;
 }
 
-/** Returns modal type for a flow item: "posted" if already published, else "scheduled". */
+/** Returns modal type for a flow item: "published" if already published, else "scheduled". */
 function getFlowItemModalType(item: {
-  postedAt?: Date | string | null;
   publishedAt?: Date | string | null;
-}): "posted" | "scheduled" {
-  const raw = item.postedAt ?? item.publishedAt;
+}): "published" | "scheduled" {
+  const raw = item.publishedAt;
   const ts = raw ? new Date(raw).getTime() : 0;
   const nowMs = Date.now();
-  return ts > 0 && ts <= nowMs ? "posted" : "scheduled";
+  return ts > 0 && ts <= nowMs ? "published" : "scheduled";
 }
 
 function handleContentSelection(

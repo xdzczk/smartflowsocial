@@ -3,7 +3,7 @@ import type { PostFetcher } from "../types";
 const PROCESSING_TEXT = "Processing...";
 
 interface ContentBulkActionsProps {
-  type: "scheduled" | "draft" | "posted";
+  type: "scheduled" | "draft" | "published";
   selectedCount: number;
   onBulkDelete: () => void;
   onBulkRepost?: () => void;
@@ -31,7 +31,7 @@ export function ContentBulkActions({
         {selectedCount} item{selectedCount !== 1 ? "s" : ""} selected
       </span>
       <div className="flex gap-2">
-        {type === "posted" ? (
+        {type === "published" ? (
           <>
             <button
               onClick={onBulkRepost}

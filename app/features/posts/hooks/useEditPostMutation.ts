@@ -8,7 +8,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { calendarKeys } from "./useCalendarQuery";
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
-import { postedPostsKeys } from "./usePostedPostsQuery";
+import { publishedPostsKeys } from "./usePublishedPostsQuery";
 import { recyclablesKeys } from "./useRecyclablesQuery";
 import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 
@@ -58,7 +58,7 @@ export function useEditPostMutation() {
       await queryClient.cancelQueries({ queryKey: dashboardKeys.all });
       await queryClient.cancelQueries({ queryKey: scheduledPostsKeys.all });
       await queryClient.cancelQueries({ queryKey: draftsKeys.all });
-      await queryClient.cancelQueries({ queryKey: postedPostsKeys.all });
+      await queryClient.cancelQueries({ queryKey: publishedPostsKeys.all });
       await queryClient.cancelQueries({ queryKey: recyclablesKeys.all });
       await queryClient.cancelQueries({ queryKey: calendarKeys.all });
 
@@ -186,7 +186,7 @@ export function useEditPostMutation() {
         dashboardKeys.all,
         scheduledPostsKeys.all,
         draftsKeys.all,
-        postedPostsKeys.all,
+        publishedPostsKeys.all,
         recyclablesKeys.all,
         calendarKeys.all,
       ];
@@ -220,7 +220,7 @@ export function useEditPostMutation() {
       void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
       void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
       void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
-      void queryClient.invalidateQueries({ queryKey: postedPostsKeys.all });
+      void queryClient.invalidateQueries({ queryKey: publishedPostsKeys.all });
       void queryClient.invalidateQueries({ queryKey: recyclablesKeys.all });
       void queryClient.invalidateQueries({ queryKey: calendarKeys.all });
     },

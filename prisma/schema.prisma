@@ -129,7 +129,7 @@ model Post {
   caption                 String?
   fileUrl                 String[]
   scheduledAtUtc          DateTime? // New DateTime field (UTC)
-  postedAt                DateTime?
+  publishedAt             DateTime?
   content                 String?
   postType                PostType              @default(IMAGE)
   repost                  Boolean               @default(false)
@@ -534,17 +534,17 @@ model PublishedPostRead {
   userId          String
   postId          String   @unique
   caption         String?
-  postedAt        DateTime
+  publishedAt     DateTime
   queueTypeName   String
   queueTypeColor  String?
   engagementScore Int? // Pre-computed engagement (can be updated later)
   createdAt       DateTime
   updatedAt       DateTime
 
-  @@index([userId, postedAt])
+  @@index([userId, publishedAt])
   @@index([userId, queueTypeName])
-  @@index([userId, postedAt, engagementScore])
-  @@index([postedAt])
+  @@index([userId, publishedAt, engagementScore])
+  @@index([publishedAt])
 }
 
 // Analytics rollup table (daily aggregations)

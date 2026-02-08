@@ -1,6 +1,6 @@
 /**
- * Server-side action handlers for posted posts
- * Extracted from dashboard.posted.tsx
+ * Server-side action handlers for published posts
+ * Extracted from dashboard.published.tsx
  */
 import { json } from "@remix-run/node";
 import { nip19 } from "nostr-tools";
@@ -545,9 +545,9 @@ async function handleLongformQuote(formData: FormData, userId: string) {
 }
 
 /**
- * Main action handler for posted posts
+ * Main action handler for published posts
  */
-export async function postedPostsAction({ request }: { request: Request }) {
+export async function publishedPostsAction({ request }: { request: Request }) {
   const userId = await requireUserId(request);
   const formData = await request.formData();
   const _action = formData.get("_action");

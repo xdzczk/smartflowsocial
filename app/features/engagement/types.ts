@@ -173,7 +173,7 @@ export interface ParentPost {
   fileUrl?: string | string[] | null;
   title?: string | null;
   content?: string | null;
-  postedAt: Date | null;
+  publishedAt: Date | null;
   isLongform: boolean;
   stats?: EventStats;
 }

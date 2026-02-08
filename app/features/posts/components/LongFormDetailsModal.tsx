@@ -1,4 +1,5 @@
 import { useFetcher, Link } from "@remix-run/react";
+import { Bookmark, MoreVertical } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
@@ -12,6 +13,7 @@ import type {
   LongFormPostData,
 } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
 import {
@@ -103,7 +105,7 @@ function getLongFormReadingTime(content: string | undefined): string {
 function LongFormStatusBadge({
   type,
 }: {
-  type: "draft" | "scheduled" | "posted";
+  type: "draft" | "scheduled" | "published";
 }) {
   if (type === "draft") {
     return (
@@ -150,7 +152,7 @@ function LongFormDetailsSidebar({
   showEventData,
   onToggleEventData,
 }: {
-  type: "draft" | "scheduled" | "posted";
+  type: "draft" | "scheduled" | "published";
   post: LongFormPostType | LongFormPostData;
   eventId: string | null | undefined;
   tz: string;
@@ -163,13 +165,13 @@ function LongFormDetailsSidebar({
   onToggleEventData: () => void;
 }) {
   const dateLabel =
-    type === "posted"
+    type === "published"
       ? "Published"
       : type === "scheduled"
         ? "Scheduled For"
         : "Created";
   const dateValue =
-    type === "posted"
+    type === "published"
       ? (post.publishedAt ?? undefined)
       : type === "scheduled"
         ? (post.scheduledAtUtc ?? undefined)
@@ -227,7 +229,7 @@ function LongFormDetailsSidebar({
           </div>
         </div>
 
-        {type === "posted" && eventId ? (
+        {type === "published" && eventId ? (
           <section
             className="dark:bg-card bg-muted/30 border-border mt-6 rounded-lg border p-4"
             aria-labelledby="longform-comments-heading"
@@ -288,7 +290,7 @@ interface LongFormDetailsModalProps {
   onClose: () => void;
   onEdit?: (post: LongFormPostType | LongFormPostData) => void;
   onReschedule?: (post: LongFormPostType | LongFormPostData) => void;
-  type: "draft" | "scheduled" | "posted";
+  type: "draft" | "scheduled" | "published";
   showSignedEvent?: boolean;
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
@@ -312,7 +314,7 @@ export default function LongFormDetailsModal({
     signedEvent?: { id?: string };
   };
   const eventId =
-    type === "posted"
+    type === "published"
       ? (postWithEvent.nostrEventId ??
         (postWithEvent.signedEvent &&
         typeof postWithEvent.signedEvent === "object" &&
@@ -401,19 +403,11 @@ export default function LongFormDetailsModal({
                   </div>
                 </div>
                 <div className="ml-auto">
-                  <svg
+                  <MoreVertical
                     className="text-foreground h-6 w-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                    />
-                  </svg>
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
                 </div>
               </div>
 
@@ -421,7 +415,7 @@ export default function LongFormDetailsModal({
               <div className="text-muted-foreground dark:text-foreground mb-4 flex items-center gap-2 text-sm">
                 <span>
                   {formatLongFormDate(
-                    type === "posted"
+                    type === "published"
                       ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
                         ? (post.scheduledAtUtc ?? undefined)
@@ -435,19 +429,11 @@ export default function LongFormDetailsModal({
                 <span>•</span>
                 <span>via SmartFlow</span>
                 <div className="ml-auto">
-                  <svg
+                  <Bookmark
                     className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                    />
-                  </svg>
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
                 </div>
               </div>
 
@@ -548,7 +534,7 @@ export default function LongFormDetailsModal({
                   ) : null}
                 </>
               ) : null}
-              {type === "posted" &&
+              {type === "published" &&
               (post.nostrEventId ??
                 (typeof post.signedEvent === "object" &&
                 post.signedEvent !== null &&

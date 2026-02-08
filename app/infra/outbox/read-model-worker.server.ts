@@ -5,7 +5,7 @@
  * This provides fast dashboard queries without impacting write performance.
  */
 
-import { deriveIsPosted } from "~/features/posts/state-machine/post-state";
+import { deriveIsPublished } from "~/features/posts/state-machine/post-state";
 import { logError, logInfo } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -162,8 +162,8 @@ async function movePostToPublishedRead(postId: string): Promise<void> {
   }
 
   // Use currentState as single source of truth (flags removed from Post model)
-  const isPosted = deriveIsPosted(post.currentState);
-  if (!isPosted || !post.postedAt) {
+  const isPosted = deriveIsPublished(post.currentState);
+  if (!isPosted || !post.publishedAt) {
     logInfo("Post not published, skipping published read model update", {
       postId,
     });
@@ -183,14 +183,14 @@ async function movePostToPublishedRead(postId: string): Promise<void> {
       userId: post.userId,
       postId: post.id,
       caption: post.caption,
-      postedAt: post.postedAt,
+      publishedAt: post.publishedAt,
       queueTypeName: post.queueType?.name ?? "unassigned",
       queueTypeColor: post.queueType?.color ?? null,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     },
     update: {
-      postedAt: post.postedAt,
+      publishedAt: post.publishedAt,
       updatedAt: new Date(),
     },
   });

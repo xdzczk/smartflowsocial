@@ -13,7 +13,7 @@ vi.mock("~/lib/nostrwebsocket.server", () => ({
 }));
 
 vi.mock("~/models/post.queries.server", () => ({
-  getRecentPostedPosts: vi.fn(),
+  getRecentPublishedPosts: vi.fn(),
 }));
 
 vi.mock("~/features/user", () => ({
@@ -53,7 +53,7 @@ import {
   getQueueTypes,
 } from "~/features/user";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
-import { getRecentPostedPosts } from "~/models/post.queries.server";
+import { getRecentPublishedPosts } from "~/models/post.queries.server";
 
 describe("Giveaway Loader", () => {
   beforeEach(() => {
@@ -79,7 +79,7 @@ describe("Giveaway Loader", () => {
         },
       ];
 
-      (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getRecentPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -126,7 +126,7 @@ describe("Giveaway Loader", () => {
 
       const result = await loadGiveawayData(TEST_USER_ID, "posts", 7);
 
-      expect(getRecentPostedPosts).toHaveBeenCalledWith({
+      expect(getRecentPublishedPosts).toHaveBeenCalledWith({
         userId: TEST_USER_ID,
         days: 7,
         queueType: "posts",
@@ -147,7 +147,7 @@ describe("Giveaway Loader", () => {
 
       const mockUser = createMockUser();
 
-      (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getRecentPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -223,7 +223,7 @@ describe("Giveaway Loader", () => {
         },
       ];
 
-      (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getRecentPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -298,7 +298,7 @@ describe("Giveaway Loader", () => {
         },
       ];
 
-      (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getRecentPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -402,7 +402,7 @@ describe("Giveaway Loader", () => {
         },
       ];
 
-      (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getRecentPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -496,7 +496,9 @@ describe("Giveaway Loader", () => {
     it("should handle empty posts gracefully", async () => {
       const mockUser = createMockUser();
 
-      (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (getRecentPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -513,7 +515,7 @@ describe("Giveaway Loader", () => {
 
       const mockUser = createMockUser();
 
-      (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getRecentPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -546,7 +548,9 @@ describe("Giveaway Loader", () => {
         }),
       ];
 
-      (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (getRecentPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockUser()
       );

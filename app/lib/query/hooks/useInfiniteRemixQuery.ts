@@ -107,7 +107,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
       // The route ID format matches the file structure:
       // /dashboard -> routes/dashboard
       // /dashboard/scheduled -> routes/dashboard.scheduled
-      // /dashboard/posted -> routes/dashboard.posted
+      // /dashboard/published -> routes/dashboard.published
       if (typeof window !== "undefined") {
         try {
           // Handle both absolute and relative URLs

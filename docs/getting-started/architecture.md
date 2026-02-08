@@ -185,8 +185,10 @@ smartflow-social/
 
 ### UI and Icons
 
-- **Icons**: Use [Lucide React](https://lucide.dev) only. Use `size-4` for inline icons (e.g. in
-  buttons), or `className="h-X w-X"` where needed for layout.
+- **Icons**: Use [Lucide React](https://lucide.dev) only; no inline SVGs for UI icons. See
+  [Icon semantics](../reference/icon-semantics.md) for concept → icon map and styling. Use shared
+  constants from `~/lib/icon-constants` for non-nav sizes and stroke (`INLINE_ICON_SIZE_CLASS`,
+  `INLINE_ICON_STROKE`, `SMALL_ICON_SIZE_CLASS`).
 - **Navigation icons**: Icons in sidebar/primary nav must feel as strong as the text — never
   decorative. Use **18px** size and **strokeWidth 2.25** for all nav icons (see
   `NAV_ICON_SIZE_CLASS` / `NAV_ICON_STROKE` in `DashboardHeader` and `ExpandableNavigationSection`).

@@ -136,11 +136,10 @@ export function isCancelledState(
 }
 
 /**
- * Derive isPosted flag from currentState
- * Published posts are considered "posted"
+ * Derive isPublished flag from currentState
+ * Published posts are in PUBLISHED state
  */
-
-export function deriveIsPosted(
+export function deriveIsPublished(
   currentState: string | null | undefined
 ): boolean {
   if (!currentState) return false;
@@ -188,7 +187,7 @@ export function getStatusTextFromState(
     case "PUBLISHING":
       return "Publishing";
     case "PUBLISHED":
-      return "Posted";
+      return "Published";
     case "FAILED":
       return "Failed";
     case "CANCELLED":

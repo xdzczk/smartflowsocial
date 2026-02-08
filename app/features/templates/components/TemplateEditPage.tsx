@@ -314,8 +314,8 @@ export default function TemplateEditPage() {
                         ).queueType
                       : null;
                   const postPostedAt =
-                    "postedAt" in (post as Record<string, unknown>)
-                      ? (post as { postedAt?: unknown }).postedAt
+                    "publishedAt" in (post as Record<string, unknown>)
+                      ? (post as { publishedAt?: unknown }).publishedAt
                       : null;
                   const postSignedEvent =
                     "signedEvent" in (post as Record<string, unknown>) &&

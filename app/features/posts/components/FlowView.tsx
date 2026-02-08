@@ -60,7 +60,7 @@ const SLOT_CTA = "cta";
 const NOW_MS = () => Date.now();
 
 export function getGoLiveAt(item: CombinedContent): number {
-  const posted = item.postedAt ? new Date(item.postedAt).getTime() : 0;
+  const posted = item.publishedAt ? new Date(item.publishedAt).getTime() : 0;
   const scheduled = item.scheduledAtUtc
     ? new Date(item.scheduledAtUtc).getTime()
     : 0;

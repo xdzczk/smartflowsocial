@@ -10,7 +10,7 @@ import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 export interface CreatePostData {
   userId: string;
   content?: string;
-  postedAt?: Date;
+  publishedAt?: Date;
   fileUrl: string[];
   scheduledFor?: Date | string | number | null; // Supports string (legacy), Date, Unix timestamp, or null to clear
   nostrEventId?: string;

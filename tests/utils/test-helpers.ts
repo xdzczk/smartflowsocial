@@ -182,13 +182,13 @@ export function createValidPostDTOMock(
     status: "DRAFT" | "ACTIVE" | "SCHEDULED" | "PAUSED" | "POSTED" | "FAILED";
     currentState: string;
     scheduledAtUtc: string | null;
-    postedAt: string | null;
+    publishedAt: string | null;
   }> = {}
 ): {
   id: string;
   fileUrl: string[];
   scheduledAtUtc: string | null;
-  postedAt: string | null;
+  publishedAt: string | null;
   currentState: string;
   postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO";
   repost: boolean;
@@ -209,7 +209,7 @@ export function createValidPostDTOMock(
     id: overrides.id ?? "post-1",
     fileUrl: [],
     scheduledAtUtc: overrides.scheduledAtUtc ?? null,
-    postedAt: overrides.postedAt ?? null,
+    publishedAt: overrides.publishedAt ?? null,
     currentState,
     postType: overrides.postType ?? "TEXT",
     repost: false,

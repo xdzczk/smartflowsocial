@@ -300,8 +300,7 @@ export interface CombinedContent {
   image?: string;
   fileUrl?: string[];
   scheduledAtUtc?: Date | null;
-  publishedAt?: Date;
-  postedAt?: Date;
+  publishedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
   status: string;

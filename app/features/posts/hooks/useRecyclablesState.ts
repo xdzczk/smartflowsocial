@@ -18,7 +18,7 @@ import type { PostData } from "../types";
 interface Post {
   id: string;
   caption?: string | null;
-  postedAt: Date | null;
+  publishedAt: Date | null;
   fileUrl: string[];
   signedEvent: { id: string };
   queueType?: { name: string; color?: string | null } | null;
@@ -112,7 +112,7 @@ export function useRecyclablesState({
   individualRepostFetcher,
 }: UseRecyclablesStateProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "postedAt",
+    key: "publishedAt",
     direction: "desc",
   });
   const [searchTerm, setSearchTerm] = useState("");
@@ -252,7 +252,7 @@ export function useRecyclablesState({
     stats: Record<string, unknown>
   ): PostData[] {
     return [...posts].sort((a, b) => {
-      if (sortConfig.key === "postedAt") {
+      if (sortConfig.key === "publishedAt") {
         return compareByDate(a, b, sortConfig.key, sortConfig.direction);
       }
       if (isEngagementMetric(sortConfig.key)) {

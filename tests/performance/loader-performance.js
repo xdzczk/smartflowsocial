@@ -86,7 +86,7 @@ export default function () {
   // Test: Posted Loader
   const postedResponse = authenticatedRequest(
     "GET",
-    "/dashboard/posted",
+    "/dashboard/published",
     null,
     session
   );

@@ -276,9 +276,9 @@ function SidebarNavContent({
         Scheduled
       </NavigationItem>
       <NavigationItem
-        to="/dashboard/posted"
-        feature="posted"
-        isActive={pathname.startsWith("/dashboard/posted")}
+        to="/dashboard/published"
+        feature="published"
+        isActive={pathname.startsWith("/dashboard/published")}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
         icon={
@@ -289,7 +289,7 @@ function SidebarNavContent({
         }
         collapsed={collapsed}
       >
-        Posted
+        Published
       </NavigationItem>
       <ExpandableNavigationSection
         title="Engagement"

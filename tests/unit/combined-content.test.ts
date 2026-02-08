@@ -58,7 +58,7 @@ describe("Combined Content Utilities", () => {
         hashTagPresetId: null,
         nostrEventId: null,
         scheduledAtUtc: null,
-        postedAt: new Date(),
+        publishedAt: new Date(),
         signedEvent: null,
         nostrEvent: null,
       } as unknown as PostData;
@@ -94,7 +94,7 @@ describe("Combined Content Utilities", () => {
         hashTagPresetId: null,
         nostrEventId: null,
         scheduledAtUtc: null,
-        postedAt: null,
+        publishedAt: null,
         signedEvent: null,
         nostrEvent: null,
       } as unknown as PostData;
@@ -128,7 +128,7 @@ describe("Combined Content Utilities", () => {
         hashTagPresetId: null,
         nostrEventId: null,
         scheduledAtUtc: null,
-        postedAt: null,
+        publishedAt: null,
         signedEvent: null,
         nostrEvent: null,
       } as unknown as PostData;
@@ -158,7 +158,6 @@ describe("Combined Content Utilities", () => {
         hashTagPresetId: null,
         nostrEventId: null,
         scheduledAtUtc: null,
-        postedAt: null,
         publishedAt: new Date(),
         signedEvent: null,
         nostrEvent: null,
@@ -176,7 +175,7 @@ describe("Combined Content Utilities", () => {
       expect(result.originalData).toEqual(longFormPost);
     });
 
-    it("should map publishedAt to postedAt", () => {
+    it("should map publishedAt to publishedAt", () => {
       const publishedAt = new Date("2024-12-25T12:00:00Z");
       const longFormPost: LongFormPostData = {
         id: TEST_LONGFORM_ID,
@@ -194,14 +193,13 @@ describe("Combined Content Utilities", () => {
         hashTagPresetId: null,
         nostrEventId: null,
         scheduledAtUtc: null,
-        postedAt: null,
         signedEvent: null,
         nostrEvent: null,
       } as unknown as LongFormPostData;
 
       const result = longFormPostToCombinedContent(longFormPost);
 
-      expect(result.postedAt).toEqual(publishedAt);
+      expect(result.publishedAt).toEqual(publishedAt);
       expect(result.publishedAt).toEqual(publishedAt);
     });
   });

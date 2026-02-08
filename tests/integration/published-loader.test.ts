@@ -25,8 +25,8 @@ vi.mock("~/features/payments/subscriptions.server", () => ({
   requireAnySubscription: vi.fn(),
 }));
 
-vi.mock("~/features/posts/services/posted-posts.server", () => ({
-  getPostedDashboardData: vi.fn(),
+vi.mock("~/features/posts/services/published-posts.server", () => ({
+  getPublishedDashboardData: vi.fn(),
 }));
 
 import {
@@ -36,8 +36,8 @@ import {
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { getPostedDashboardData } from "~/features/posts/services/posted-posts.server";
-import { loader } from "~/routes/dashboard.posted";
+import { getPublishedDashboardData } from "~/features/posts/services/published-posts.server";
+import { loader } from "~/routes/dashboard.published";
 
 describe("Posted Posts Loader Integration", () => {
   beforeEach(() => {
@@ -48,7 +48,7 @@ describe("Posted Posts Loader Integration", () => {
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
-    (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (getPublishedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       longformPosts: [],
       user: createValidUserMock(),
@@ -66,7 +66,7 @@ describe("Posted Posts Loader Integration", () => {
 
   describe("Posted Posts Loader", () => {
     it("should load posted posts data for authenticated user", async () => {
-      const request = new Request("http://localhost:3000/dashboard/posted");
+      const request = new Request("http://localhost:3000/dashboard/published");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -94,7 +94,7 @@ describe("Posted Posts Loader Integration", () => {
       expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(requireAnySubscription).toHaveBeenCalledWith("user-123");
-      expect(getPostedDashboardData).toHaveBeenCalled();
+      expect(getPublishedDashboardData).toHaveBeenCalled();
       expect(data).toHaveProperty("posts");
       expect(data).toHaveProperty("longformPosts");
       expect(data).toHaveProperty("user");
@@ -107,7 +107,7 @@ describe("Posted Posts Loader Integration", () => {
           createValidPostDTOMock({
             id: "1",
             caption: "Posted post",
-            postedAt: new Date().toISOString(),
+            publishedAt: new Date().toISOString(),
           }),
         ],
         longformPosts: [],
@@ -123,11 +123,11 @@ describe("Posted Posts Loader Integration", () => {
         stats: {},
       };
 
-      (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getPublishedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockData
       );
 
-      const request = new Request("http://localhost:3000/dashboard/posted");
+      const request = new Request("http://localhost:3000/dashboard/published");
       const response = await loader({
         request,
         params: { queueType: "posts" },
@@ -151,7 +151,7 @@ describe("Posted Posts Loader Integration", () => {
             })
           : {};
 
-      expect(getPostedDashboardData).toHaveBeenCalledWith({
+      expect(getPublishedDashboardData).toHaveBeenCalledWith({
         userId: "user-123",
         params: { queueType: "posts" },
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
@@ -172,12 +172,12 @@ describe("Posted Posts Loader Integration", () => {
           createValidPostDTOMock({
             id: "1",
             caption: "Post 1",
-            postedAt: new Date("2024-01-01").toISOString(),
+            publishedAt: new Date("2024-01-01").toISOString(),
           }),
           createValidPostDTOMock({
             id: "2",
             caption: "Post 2",
-            postedAt: new Date("2024-01-02").toISOString(),
+            publishedAt: new Date("2024-01-02").toISOString(),
           }),
         ],
         longformPosts: [
@@ -188,7 +188,6 @@ describe("Posted Posts Loader Integration", () => {
             content: null,
             image: null,
             scheduledAtUtc: null,
-            postedAt: null,
             publishedAt: new Date("2024-01-03").toISOString(),
             updatedAt: new Date("2024-01-03").toISOString(),
             createdAt: new Date("2024-01-03").toISOString(),
@@ -213,11 +212,11 @@ describe("Posted Posts Loader Integration", () => {
         stats: {},
       };
 
-      (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getPublishedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockData
       );
 
-      const request = new Request("http://localhost:3000/dashboard/posted");
+      const request = new Request("http://localhost:3000/dashboard/published");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -255,9 +254,9 @@ describe("Posted Posts Loader Integration", () => {
       expect(user).toHaveProperty("timezone", "America/New_York");
     });
 
-    it("should pass URL object to getPostedDashboardData", async () => {
+    it("should pass URL object to getPublishedDashboardData", async () => {
       const request = new Request(
-        "http://localhost:3000/dashboard/posted?page=2&limit=10"
+        "http://localhost:3000/dashboard/published?page=2&limit=10"
       );
 
       const loaderArgs: LoaderFunctionArgs = {
@@ -267,7 +266,7 @@ describe("Posted Posts Loader Integration", () => {
       };
       await loader(loaderArgs);
 
-      expect(getPostedDashboardData).toHaveBeenCalledWith({
+      expect(getPublishedDashboardData).toHaveBeenCalledWith({
         userId: "user-123",
         params: {},
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
@@ -285,7 +284,7 @@ describe("Posted Posts Loader Integration", () => {
         new Error("Authentication required")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/posted");
+      const request = new Request("http://localhost:3000/dashboard/published");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -328,7 +327,7 @@ describe("Posted Posts Loader Integration", () => {
         new Error("Subscription required")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/posted");
+      const request = new Request("http://localhost:3000/dashboard/published");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -367,11 +366,11 @@ describe("Posted Posts Loader Integration", () => {
     });
 
     it("should handle data loading errors", async () => {
-      (getPostedDashboardData as ReturnType<typeof vi.fn>).mockRejectedValue(
+      (getPublishedDashboardData as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error("Database error")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/posted");
+      const request = new Request("http://localhost:3000/dashboard/published");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},

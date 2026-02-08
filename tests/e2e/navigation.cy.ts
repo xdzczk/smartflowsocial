@@ -52,7 +52,7 @@ describe("Navigation and Routing", () => {
       "/dashboard/newpost",
       "/dashboard/drafts",
       "/dashboard/scheduled",
-      "/dashboard/posted",
+      "/dashboard/published",
       "/dashboard/calendar",
       "/dashboard/settings",
     ];

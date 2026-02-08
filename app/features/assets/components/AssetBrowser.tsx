@@ -1,3 +1,4 @@
+import { FolderOpen, Search } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -73,19 +74,11 @@ export default function AssetBrowser({
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative max-w-md flex-1">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <svg
+                <Search
                   className="text-muted-foreground h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+                  strokeWidth={2}
+                  aria-hidden
+                />
               </div>
               <Input
                 type="text"
@@ -127,19 +120,11 @@ export default function AssetBrowser({
           {filteredAssets.length === 0 ? (
             <div className="py-12 text-center">
               <div className="mx-auto max-w-md">
-                <svg
+                <FolderOpen
                   className="text-muted-foreground mx-auto h-12 w-12"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
+                  strokeWidth={2}
+                  aria-hidden
+                />
                 <h3 className="text-foreground mt-4 text-lg font-medium">
                   {searchTerm
                     ? "No matching assets found"

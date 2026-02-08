@@ -1,4 +1,5 @@
 import { useFetcher } from "@remix-run/react";
+import { Clock, FolderOpen, Pencil, Send } from "lucide-react";
 import React from "react";
 import { Controller } from "react-hook-form";
 
@@ -12,6 +13,10 @@ import { Textarea } from "~/components/ui/textarea";
 import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
 import type { SignedEvent } from "~/features/nostr/types";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { nowMillis, parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
@@ -521,20 +526,11 @@ export default function TextPost({
           disabled={fetcher.state !== "idle" || isSigning}
           className="absolute top-2 right-2"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="mr-1 h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012 2v2M7 7h10"
-            />
-          </svg>
+          <FolderOpen
+            className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           Assets
         </Button>
       </div>
@@ -609,18 +605,11 @@ export default function TextPost({
                 disabled={fetcher.state !== "idle" || isSigning}
                 className="text-white"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
+                <Clock
                   className="mr-1.5 h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
                 {isSigning
                   ? "Waiting for signer…"
                   : fetcher.state !== "idle"
@@ -892,19 +881,11 @@ export default function TextPost({
             variant="outline"
             disabled={fetcher.state !== "idle" || isSigning}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
+            <Pencil
               className="mr-1.5 h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-              <path
-                fillRule="evenodd"
-                d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
-                clipRule="evenodd"
-              />
-            </svg>
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
             {fetcher.state !== "idle" ? "Saving..." : "Save as Draft"}
           </Button>
           <Button
@@ -914,18 +895,11 @@ export default function TextPost({
             className="bg-success hover:bg-success/90 text-white"
             disabled={fetcher.state !== "idle" || isSigning}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
+            <Send
               className="mr-1.5 h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
             {isSigning
               ? "Waiting for signer…"
               : fetcher.state !== "idle"

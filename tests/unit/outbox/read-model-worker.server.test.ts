@@ -134,7 +134,7 @@ describe("Read Model Worker", () => {
         id: "post-1",
         userId: "user-1",
         caption: "Test caption",
-        postedAt: new Date("2024-01-01T12:00:00Z"),
+        publishedAt: new Date("2024-01-01T12:00:00Z"),
         currentState: "PUBLISHED",
         queueType: {
           name: "posts",
@@ -173,13 +173,13 @@ describe("Read Model Worker", () => {
           userId: "user-1",
           postId: "post-1",
           caption: "Test caption",
-          postedAt: mockPost.postedAt,
+          publishedAt: mockPost.publishedAt,
           queueTypeName: "posts",
           queueTypeColor: "#000000",
         }),
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         update: expect.objectContaining({
-          postedAt: mockPost.postedAt,
+          publishedAt: mockPost.publishedAt,
         }),
       });
     });

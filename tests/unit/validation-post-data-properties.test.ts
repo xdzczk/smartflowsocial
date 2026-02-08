@@ -83,26 +83,26 @@ describe("Post Data Properties", () => {
       expect(result).toBeUndefined();
     });
 
-    it("should handle postedAt Date", () => {
+    it("should handle publishedAt Date", () => {
       const date = new Date("2024-01-01T12:00:00Z");
       const post: PostData = {
         id: "post-1",
-        postedAt: date,
+        publishedAt: date,
       } as unknown as PostData;
 
-      const result = getPostDataProperty(post, "postedAt");
+      const result = getPostDataProperty(post, "publishedAt");
 
       expect(result).toBeInstanceOf(Date);
       expect(result).toBe(date);
     });
 
-    it("should convert string postedAt to Date", () => {
+    it("should convert string publishedAt to Date", () => {
       const post: PostData = {
         id: "post-1",
-        postedAt: "2024-01-01T12:00:00Z",
+        publishedAt: "2024-01-01T12:00:00Z",
       } as unknown as PostData;
 
-      const result = getPostDataProperty(post, "postedAt");
+      const result = getPostDataProperty(post, "publishedAt");
 
       expect(result).toBeInstanceOf(Date);
     });

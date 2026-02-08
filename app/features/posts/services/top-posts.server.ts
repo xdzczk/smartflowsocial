@@ -6,7 +6,7 @@ import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
-import { getRecentPostedPosts } from "~/models/post.queries.server";
+import { getRecentPublishedPosts } from "~/models/post.queries.server";
 import type { PostWithQueueType } from "~/models/post.types";
 
 import { toPostDTO, type PostDTO } from "../dtos";
@@ -52,7 +52,7 @@ function toPostData(post: PostWithQueueType): PostData {
   return result;
 }
 
-export async function getTopPostedPostsByEngagement({
+export async function getTopPublishedPostsByEngagement({
   userId,
   days = DEFAULT_DAYS,
   limit = DEFAULT_LIMIT,
@@ -60,7 +60,7 @@ export async function getTopPostedPostsByEngagement({
   topPosts: TopPostItem[];
   timeframeDays: number;
 }> {
-  const posts = await getRecentPostedPosts({ userId, days });
+  const posts = await getRecentPublishedPosts({ userId, days });
   if (posts.length === 0) {
     return { topPosts: [], timeframeDays: days };
   }

@@ -19,7 +19,10 @@ import { fromUnixTimestamp, toPrismaDate } from "~/lib/temporal";
 import { createPostWithOutbox } from "~/models/post.commands.server";
 
 import { resolveQueueTypeId } from "../services/queue-type-resolver.server";
-import { deriveIsPosted, deriveIsScheduled } from "../state-machine/post-state";
+import {
+  deriveIsPublished,
+  deriveIsScheduled,
+} from "../state-machine/post-state";
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
 import type { CreatePostInput, CreatePostResult } from "./types";
@@ -128,7 +131,7 @@ export class CreatePostUseCase {
     if (existing) {
       // Use currentState as single source of truth
       const isScheduled = deriveIsScheduled(existing.currentState);
-      const isPosted = deriveIsPosted(existing.currentState);
+      const isPosted = deriveIsPublished(existing.currentState);
       return {
         post: existing,
         needsScheduling: isScheduled && !isPosted,

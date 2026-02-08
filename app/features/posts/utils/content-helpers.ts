@@ -22,7 +22,7 @@ import {
 import {
   deriveIsDraft,
   deriveIsScheduled,
-  deriveIsPosted,
+  deriveIsPublished,
   getStatusTextFromState,
 } from "../state-machine/post-state";
 
@@ -106,7 +106,7 @@ export function getStatusColor(item: CombinedContent): string {
       if (deriveIsDraft(state)) {
         return DRAFT_COLOR;
       }
-      if (deriveIsPosted(state)) {
+      if (deriveIsPublished(state)) {
         return PUBLISHED_COLOR;
       }
       if (deriveIsScheduled(state)) {

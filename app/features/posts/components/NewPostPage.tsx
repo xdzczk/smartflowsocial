@@ -388,9 +388,9 @@ export default function NewPostPage() {
             } else {
               // Navigate to posted page
               if (postType === "longform") {
-                navigate("/dashboard/posted?tab=longform");
+                navigate("/dashboard/published?tab=longform");
               } else {
-                navigate("/dashboard/posted");
+                navigate("/dashboard/published");
               }
             }
           }}

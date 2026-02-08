@@ -1,6 +1,11 @@
 import { Link } from "@remix-run/react";
+import { Bell, MessageCircle, Zap } from "lucide-react";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 
 import type { Notification } from "../engagement.server";
 import type {
@@ -22,19 +27,11 @@ export default function NotificationList({
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="text-foreground mb-4">
-          <svg
+          <Bell
             className="h-16 w-16"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            />
-          </svg>
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
         </div>
         <p className="dark:text-foreground text-muted-foreground text-lg font-medium">
           No notifications yet
@@ -98,19 +95,11 @@ function ReplyNotification({
         {/* Icon */}
         <div className="flex-shrink-0">
           <div className="bg-muted dark:bg-muted flex h-8 w-8 items-center justify-center rounded-full">
-            <svg
-              className="text-muted-foreground h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-              />
-            </svg>
+            <MessageCircle
+              className={`text-muted-foreground ${INLINE_ICON_SIZE_CLASS}`}
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
           </div>
         </div>
 
@@ -182,13 +171,11 @@ function ZapNotification({
         {/* Icon */}
         <div className="flex-shrink-0">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
-            <svg
-              className="dark:text-foreground h-4 w-4 text-yellow-600"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
-            </svg>
+            <Zap
+              className={`dark:text-foreground ${INLINE_ICON_SIZE_CLASS} text-yellow-600`}
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
           </div>
         </div>
 
@@ -263,19 +250,11 @@ function MentionNotification({
         {/* Icon */}
         <div className="flex-shrink-0">
           <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-full">
-            <svg
-              className="text-foreground h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-              />
-            </svg>
+            <MessageCircle
+              className={`text-foreground ${INLINE_ICON_SIZE_CLASS}`}
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
           </div>
         </div>
 

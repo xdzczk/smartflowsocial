@@ -130,7 +130,7 @@ export default function RecyclablesPage() {
           ): {
             id: string;
             caption?: string | null;
-            postedAt: Date | null;
+            publishedAt: Date | null;
             fileUrl: string[];
             signedEvent: { id: string };
             queueType?: { name: string; color?: string | null } | null;
@@ -138,11 +138,11 @@ export default function RecyclablesPage() {
           } => ({
             id: post.id,
             caption: post.caption ?? null,
-            postedAt:
-              post.postedAt instanceof Date
-                ? post.postedAt
-                : typeof post.postedAt === "string"
-                  ? new Date(post.postedAt)
+            publishedAt:
+              post.publishedAt instanceof Date
+                ? post.publishedAt
+                : typeof post.publishedAt === "string"
+                  ? new Date(post.publishedAt)
                   : null,
             fileUrl: Array.isArray(post.fileUrl)
               ? post.fileUrl
@@ -176,11 +176,11 @@ export default function RecyclablesPage() {
             // Convert to the Post format expected by useRecyclablesState
             setSelectedPost({
               ...originalPostData,
-              postedAt:
-                originalPostData.postedAt instanceof Date
-                  ? originalPostData.postedAt
-                  : typeof originalPostData.postedAt === "string"
-                    ? new Date(originalPostData.postedAt)
+              publishedAt:
+                originalPostData.publishedAt instanceof Date
+                  ? originalPostData.publishedAt
+                  : typeof originalPostData.publishedAt === "string"
+                    ? new Date(originalPostData.publishedAt)
                     : null,
               fileUrl: Array.isArray(originalPostData.fileUrl)
                 ? originalPostData.fileUrl
@@ -246,7 +246,7 @@ export default function RecyclablesPage() {
           onClose={() => setSelectedPost(null)}
           showStats={true}
           showSignedEvent={true}
-          type="posted"
+          type="published"
           userTimezone={user?.timezone ?? undefined}
         />
       ) : null}

@@ -2,7 +2,7 @@ import { useState } from "react";
 interface Post {
   id: string;
   caption?: string | null;
-  postedAt: Date | null;
+  publishedAt: Date | null;
   totalEngagement: number;
   [key: string]: unknown;
 }
@@ -33,7 +33,7 @@ export function useGiveawayState({ posts }: UseGiveawayStateProps) {
 
   // Sort posts
   const sortedPosts = [...posts].sort((a, b) => {
-    if (sortConfig.key === "postedAt") {
+    if (sortConfig.key === "publishedAt") {
       const dateA = new Date(a[sortConfig.key] ?? 0).getTime();
       const dateB = new Date(b[sortConfig.key] ?? 0).getTime();
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
@@ -68,7 +68,7 @@ export function useGiveawayState({ posts }: UseGiveawayStateProps) {
     if (dateRange.from) {
       const fromDate = new Date(dateRange.from);
       fromDate.setHours(0, 0, 0, 0);
-      const postDate = new Date(post.postedAt ?? 0);
+      const postDate = new Date(post.publishedAt ?? 0);
       if (postDate < fromDate) {
         matchesDateRange = false;
       }
@@ -76,7 +76,7 @@ export function useGiveawayState({ posts }: UseGiveawayStateProps) {
     if (dateRange.to) {
       const toDate = new Date(dateRange.to);
       toDate.setHours(23, 59, 59, 999);
-      const postDate = new Date(post.postedAt ?? 0);
+      const postDate = new Date(post.publishedAt ?? 0);
       if (postDate > toDate) {
         matchesDateRange = false;
       }

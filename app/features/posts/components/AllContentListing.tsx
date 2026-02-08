@@ -32,13 +32,15 @@ import { ContentListCard } from "./ContentListCard";
 import { ContentTableHeader } from "./ContentTableHeader";
 import { ContentTableRow } from "./ContentTableRow";
 
-function getInitialContentSortConfig(type: "scheduled" | "draft" | "posted"): {
+function getInitialContentSortConfig(
+  type: "scheduled" | "draft" | "published"
+): {
   key: string;
   direction: "asc" | "desc";
 } {
   const key =
-    type === "posted"
-      ? "postedAt"
+    type === "published"
+      ? "publishedAt"
       : type === "scheduled"
         ? "scheduledAtUtc"
         : "createdAt";
@@ -56,7 +58,7 @@ function getContentScrollElement(
 
 interface AllContentListingProps {
   content: CombinedContent[];
-  type: "scheduled" | "draft" | "posted";
+  type: "scheduled" | "draft" | "published";
   searchTerm: string;
   onSearchChange: (term: string) => void;
   userTimezone?: string;
@@ -177,13 +179,17 @@ export default function AllContentListing({
   }
 
   /**
-   * Get sort value for postedAt field
+   * Get sort value for publishedAt field
    */
-  function getPostedAtSortValue(postedAt: Date | string | undefined): number {
-    if (!postedAt) return 0;
+  function getPostedAtSortValue(
+    publishedAt: Date | string | undefined | null
+  ): number {
+    if (!publishedAt) return 0;
     try {
       const isoString =
-        postedAt instanceof Date ? postedAt.toISOString() : String(postedAt);
+        publishedAt instanceof Date
+          ? publishedAt.toISOString()
+          : String(publishedAt);
       return Number(fromISOString(isoString, "UTC").epochMilliseconds);
     } catch {
       return 0;
@@ -211,8 +217,8 @@ export default function AllContentListing({
     if (sortKey === "scheduledAtUtc" || sortKey === "scheduledFor") {
       return getScheduledAtUtcSortValue(item.scheduledAtUtc);
     }
-    if (sortKey === "postedAt") {
-      return getPostedAtSortValue(item.postedAt);
+    if (sortKey === "publishedAt") {
+      return getPostedAtSortValue(item.publishedAt);
     }
     if (sortKey === "createdAt" || sortKey === "updatedAt") {
       return getDateFieldSortValue(item[sortKey]);
@@ -250,8 +256,8 @@ export default function AllContentListing({
   );
 
   const dateSortKey =
-    type === "posted"
-      ? "postedAt"
+    type === "published"
+      ? "publishedAt"
       : type === "scheduled"
         ? "scheduledAtUtc"
         : "createdAt";

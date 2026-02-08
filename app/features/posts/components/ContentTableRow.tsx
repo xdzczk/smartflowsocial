@@ -37,7 +37,7 @@ function getFetcherFormData(
 
 interface ContentTableRowProps {
   item: CombinedContent;
-  type: "scheduled" | "draft" | "posted";
+  type: "scheduled" | "draft" | "published";
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
   showBulkActions: boolean;
@@ -158,8 +158,13 @@ export function ContentTableRow({
               userTimezone,
               userTimeFormat
             )
-          : type === "posted"
-            ? formatDate(item.postedAt, false, userTimezone, userTimeFormat)
+          : type === "published"
+            ? formatDate(
+                item.publishedAt ?? undefined,
+                false,
+                userTimezone,
+                userTimeFormat
+              )
             : formatDate(item.createdAt, false, userTimezone, userTimeFormat)}
       </td>
       <td className="p-3 text-center">
@@ -205,7 +210,7 @@ function ContentRowActions({
   onScheduleQuote,
 }: {
   item: CombinedContent;
-  type: "scheduled" | "draft" | "posted";
+  type: "scheduled" | "draft" | "published";
   onEditPost?: (post: PostData | LongFormPostData) => void;
   onReschedulePost?: (post: PostData | LongFormPostData) => void;
   deleteFetcher: PostFetcher;
@@ -228,7 +233,7 @@ function ContentRowActions({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        {type === "posted" ? (
+        {type === "published" ? (
           <>
             {item.type === "post" && item.originalData.signedEvent?.id ? (
               <DropdownMenuItem asChild>

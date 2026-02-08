@@ -26,7 +26,7 @@ interface GlobalSearchBarProps {
 /** Derive search priority context from current path so results from current page appear first */
 function getSearchPriorityContext(pathname: string): string | null {
   if (pathname.startsWith("/dashboard/scheduled")) return "scheduled";
-  if (pathname.startsWith("/dashboard/posted")) return "posted";
+  if (pathname.startsWith("/dashboard/published")) return "published";
   if (pathname.startsWith("/dashboard/drafts")) return "draft";
   if (
     pathname.startsWith("/dashboard/templates") ||

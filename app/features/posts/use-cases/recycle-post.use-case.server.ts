@@ -22,7 +22,10 @@ import {
 import { getPostById } from "~/models/post.queries.server";
 
 import { resolveQueueTypeId } from "../services/queue-type-resolver.server";
-import { deriveIsPosted, deriveIsScheduled } from "../state-machine/post-state";
+import {
+  deriveIsPublished,
+  deriveIsScheduled,
+} from "../state-machine/post-state";
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
 export interface RecyclePostInput {
@@ -75,7 +78,7 @@ export class RecyclePostUseCase {
     // Verify post is recyclable and published
     // We validate first to catch invalid recycle attempts early
     // Use currentState as single source of truth
-    const isOriginalPosted = deriveIsPosted(originalPost.currentState);
+    const isOriginalPosted = deriveIsPublished(originalPost.currentState);
     if (!isOriginalPosted) {
       throw new Error(
         `Post ${input.originalPostId} must be published before recycling`
@@ -114,7 +117,7 @@ export class RecyclePostUseCase {
         // Use currentState as single source of truth
         scheduled:
           deriveIsScheduled(existing.currentState) &&
-          !deriveIsPosted(existing.currentState),
+          !deriveIsPublished(existing.currentState),
       };
     }
 

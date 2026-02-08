@@ -762,7 +762,7 @@ async function runScheduledPostJob(input: {
         additionalPostData: {
           nostrEventId: validatedSignedEvent.id,
           publishAttemptId,
-          postedAt: new Date(),
+          publishedAt: new Date(),
           publishingLockId: null,
           publishingLockExpiresAt: null,
         },
@@ -980,7 +980,6 @@ async function runScheduledLongFormPostJob(input: {
           nostrEventId: validatedSignedEvent.id,
           publishAttemptId,
           publishedAt: new Date(),
-          postedAt: new Date(),
           publishingLockId: null,
           publishingLockExpiresAt: null,
         },

@@ -18,7 +18,7 @@ export interface GlobalSearchResult {
     | "draft"
     | "scheduled"
     | "publishing"
-    | "posted"
+    | "published"
     | "failed"
     | "cancelled"
     | "template"
@@ -33,7 +33,7 @@ export interface GlobalSearchResult {
   createdAt: string; // ISO string for JSON serialization
   updatedAt?: string; // ISO string for JSON serialization
   scheduledAt?: string; // ISO string for JSON serialization
-  postedAt?: string; // ISO string for JSON serialization
+  publishedAt?: string; // ISO string for JSON serialization
   url: string;
   isLongform?: boolean;
 }
@@ -228,13 +228,13 @@ async function searchPosted(
       ],
     },
     take: limit,
-    orderBy: { postedAt: "desc" },
+    orderBy: { publishedAt: "desc" },
     select: {
       id: true,
       caption: true,
       content: true,
       createdAt: true,
-      postedAt: true,
+      publishedAt: true,
       currentState: true,
     },
   });
@@ -251,40 +251,40 @@ async function searchPosted(
       ],
     },
     take: limit,
-    orderBy: { postedAt: "desc" },
+    orderBy: { publishedAt: "desc" },
     select: {
       id: true,
       title: true,
       content: true,
       summary: true,
       createdAt: true,
-      postedAt: true,
+      publishedAt: true,
       currentState: true,
     },
   });
 
   const results: GlobalSearchResult[] = [
     ...postedPosts.map((post: (typeof postedPosts)[number]) => ({
-      type: "posted" as const,
+      type: "published" as const,
       id: post.id,
       caption: post.caption ?? undefined,
       content: post.content ?? undefined,
       status: post.currentState,
       createdAt: post.createdAt.toISOString(),
-      postedAt: post.postedAt?.toISOString(),
-      url: `/dashboard/posted`,
+      publishedAt: post.publishedAt?.toISOString(),
+      url: `/dashboard/published`,
       isLongform: false,
     })),
     ...postedLongforms.map((post: (typeof postedLongforms)[number]) => ({
-      type: "posted" as const,
+      type: "published" as const,
       id: post.id,
       title: post.title ?? undefined,
       content: post.content ?? undefined,
       summary: post.summary ?? undefined,
       status: post.currentState,
       createdAt: post.createdAt.toISOString(),
-      postedAt: post.postedAt?.toISOString(),
-      url: `/dashboard/posted`,
+      publishedAt: post.publishedAt?.toISOString(),
+      url: `/dashboard/published`,
       isLongform: true,
     })),
   ];
@@ -649,9 +649,9 @@ const FEATURES: FeatureDefinition[] = [
     keywords: ["upcoming", "queued", "pending"],
   },
   {
-    label: "Posted",
-    url: "/dashboard/posted",
-    feature: "posted",
+    label: "Published",
+    url: "/dashboard/published",
+    feature: "published",
     keywords: ["published", "sent", "history"],
   },
   {
@@ -740,7 +740,7 @@ async function searchFeatures(
 export type GlobalSearchPriorityContext =
   | "draft"
   | "scheduled"
-  | "posted"
+  | "published"
   | "template";
 
 /**
@@ -813,7 +813,7 @@ export async function performGlobalSearch(
     { type: "draft", results: drafts },
     { type: "scheduled", results: scheduled },
     { type: "publishing", results: publishing },
-    { type: "posted", results: posted },
+    { type: "published", results: posted },
     { type: "failed", results: failed },
     { type: "cancelled", results: cancelled },
     { type: "template", results: templates },
@@ -822,7 +822,7 @@ export async function performGlobalSearch(
   const validContext =
     priorityContext === "draft" ||
     priorityContext === "scheduled" ||
-    priorityContext === "posted" ||
+    priorityContext === "published" ||
     priorityContext === "template"
       ? priorityContext
       : null;

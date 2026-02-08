@@ -114,7 +114,7 @@ npm run test:performance:all
 | `/dashboard/scheduled` | < 2s       | < 4s       |
 | `/dashboard/calendar`  | < 3s       | < 5s       |
 | `/dashboard/drafts`    | < 2s       | < 4s       |
-| `/dashboard/posted`    | < 2s       | < 4s       |
+| `/dashboard/published` | < 2s       | < 4s       |
 
 ### Unit Functions
 

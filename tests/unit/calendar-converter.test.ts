@@ -26,7 +26,7 @@ describe("Calendar Post Converter", () => {
         caption: "Test post",
         scheduledAtUtc: new Date("2024-01-15T10:00:00Z"),
         currentState: "SCHEDULED",
-        postedAt: null,
+        publishedAt: null,
         queueType: null,
       } as unknown as PostData;
 
@@ -35,7 +35,7 @@ describe("Calendar Post Converter", () => {
       expect(result.id).toBe("post-1");
       expect(result.caption).toBe("Test post");
       expect(result.scheduledFor).toBe(String(scheduledForUnix));
-      expect(result.postedAt).toBeNull();
+      expect(result.publishedAt).toBeNull();
       expect(result.queueType).toBeNull();
       expect(result.manual_override).toBe(false);
     });
@@ -129,7 +129,7 @@ describe("Calendar Post Converter", () => {
       expect(result.isRecyclable).toBe(true);
     });
 
-    it("should set postedAt from publishedAt", () => {
+    it("should set publishedAt from publishedAt", () => {
       const publishedAt = new Date("2024-01-15T10:00:00Z");
       const longFormData: LongFormPostData = {
         id: "longform-1",
@@ -137,7 +137,7 @@ describe("Calendar Post Converter", () => {
       } as unknown as LongFormPostData;
 
       const result = longFormPostDataToCalendarPost(longFormData);
-      expect(result.postedAt).toBe(publishedAt);
+      expect(result.publishedAt).toBe(publishedAt);
       expect(result.publishedAt).toBe(publishedAt);
     });
   });

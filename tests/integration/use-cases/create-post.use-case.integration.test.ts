@@ -81,10 +81,10 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       expect(result.post.userId).toBe(userId);
       expect(result.post.content).toBe("Test draft post");
       expect(result.post.postType).toBe("TEXT");
-      const { deriveIsScheduled, deriveIsPosted } =
+      const { deriveIsScheduled, deriveIsPublished } =
         await import("~/features/posts/state-machine/post-state");
       expect(deriveIsScheduled(result.post.currentState)).toBe(false);
-      expect(deriveIsPosted(result.post.currentState)).toBe(false);
+      expect(deriveIsPublished(result.post.currentState)).toBe(false);
       expect(result.needsScheduling).toBe(false);
 
       // Verify state transition

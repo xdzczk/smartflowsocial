@@ -189,7 +189,7 @@ export async function sendPublishSuccessNotification(
       postId,
       publishAttemptId,
       action: "publish_success",
-      url: `/dashboard/posted?postId=${postId}`,
+      url: `/dashboard/published?postId=${postId}`,
     },
   };
 

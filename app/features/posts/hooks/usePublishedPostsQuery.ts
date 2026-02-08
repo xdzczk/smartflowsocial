@@ -1,5 +1,5 @@
 /**
- * TanStack Query hooks for posted posts
+ * TanStack Query hooks for published posts
  * Provides caching, background refetching, and optimistic updates
  */
 
@@ -16,8 +16,8 @@ import type { User as _User } from "~/features/user";
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
-  postedPostsLoaderDataSchema,
-  type PostedPostsLoaderData,
+  publishedPostsLoaderDataSchema,
+  type PublishedPostsLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 import { validateUserData } from "~/lib/validation/user-data";
 import type { UserData } from "~/lib/validation/user-data";
@@ -34,24 +34,24 @@ import type {
 } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
 
-// PostedPostsLoaderData is now exported from schemas
+// PublishedPostsLoaderData is now exported from schemas
 
 /**
- * Query key factory for posted posts
+ * Query key factory for published posts
  */
-export const postedPostsKeys = {
-  all: ["posted-posts"] as const,
-  lists: () => [...postedPostsKeys.all, "list"] as const,
+export const publishedPostsKeys = {
+  all: ["published-posts"] as const,
+  lists: () => [...publishedPostsKeys.all, "list"] as const,
   list: (queueType?: string, tab?: string, page?: number) =>
-    [...postedPostsKeys.lists(), queueType, tab, page] as const,
-  detail: (id: string) => [...postedPostsKeys.all, "detail", id] as const,
+    [...publishedPostsKeys.lists(), queueType, tab, page] as const,
+  detail: (id: string) => [...publishedPostsKeys.all, "detail", id] as const,
 };
 
 /**
- * Hook to fetch posted posts with TanStack Query
+ * Hook to fetch published posts with TanStack Query
  * Uses Remix loader data as initial data and enables client-side refetching
  */
-export function usePostedPostsQuery() {
+export function usePublishedPostsQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
   const queueType = params["queueType"] ?? "all";
@@ -65,18 +65,18 @@ export function usePostedPostsQuery() {
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    postedPostsLoaderDataSchema
+    publishedPostsLoaderDataSchema
   );
 
   return useQuery({
-    queryKey: postedPostsKeys.list(queueType, currentTab, page),
+    queryKey: publishedPostsKeys.list(queueType, currentTab, page),
     queryFn: async () => {
       // Use fetcher to refetch data
-      const url = `/dashboard/posted${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${page}`;
+      const url = `/dashboard/published${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${page}`;
       fetcher.load(url);
 
       // Wait for fetcher to complete using a more efficient approach
-      return new Promise<PostedPostsLoaderData>((resolve, reject) => {
+      return new Promise<PublishedPostsLoaderData>((resolve, reject) => {
         // Set a maximum timeout to prevent hanging
         const timeoutId = setTimeout(() => {
           if (validatedLoaderData) {
@@ -92,7 +92,7 @@ export function usePostedPostsQuery() {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                postedPostsLoaderDataSchema
+                publishedPostsLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -134,10 +134,10 @@ export function usePostedPostsQuery() {
 }
 
 /**
- * Hook to fetch posted posts with infinite scroll support
+ * Hook to fetch published posts with infinite scroll support
  * Uses Remix loader data as initial data and enables infinite pagination
  */
-export function usePostedPostsInfiniteQuery() {
+export function usePublishedPostsInfiniteQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
   const queueType = params["queueType"] ?? "all";
@@ -148,15 +148,15 @@ export function usePostedPostsInfiniteQuery() {
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    postedPostsLoaderDataSchema
+    publishedPostsLoaderDataSchema
   );
 
   if (!validatedLoaderData) {
     throw new Error("Invalid loader data");
   }
 
-  return useInfiniteRemixQuery<PostedPostsLoaderData>({
-    queryKey: postedPostsKeys.list(queueType, currentTab),
+  return useInfiniteRemixQuery<PublishedPostsLoaderData>({
+    queryKey: publishedPostsKeys.list(queueType, currentTab),
     initialData: validatedLoaderData,
     getNextPageParam: (lastPage) => {
       const pagination =
@@ -174,7 +174,7 @@ export function usePostedPostsInfiniteQuery() {
       return;
     },
     buildUrl: (pageParam) =>
-      `/dashboard/posted${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}`,
+      `/dashboard/published${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}`,
     staleTime: 30 * 1000, // 30 seconds
     maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
     refetchInterval: 15_000, // Live updates when new posts are published
@@ -185,8 +185,8 @@ export function usePostedPostsInfiniteQuery() {
 /**
  * Hook to get processed post data from query
  */
-export function usePostedPostsData() {
-  const { data, isLoading, error } = usePostedPostsQuery();
+export function usePublishedPostsData() {
+  const { data, isLoading, error } = usePublishedPostsQuery();
 
   if (!data) {
     return {
@@ -232,7 +232,7 @@ export function usePostedPostsData() {
   const allContent: CombinedContent[] = combineContent(
     posts,
     longformPosts,
-    "postedAt",
+    "publishedAt",
     "desc"
   );
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
@@ -326,9 +326,9 @@ export function usePostedPostsData() {
 }
 
 /**
- * Helper to create empty state for posted posts infinite data
+ * Helper to create empty state for published posts infinite data
  */
-function createEmptyPostedPostsData<TFetchNextPage>(
+function createEmptyPublishedPostsData<TFetchNextPage>(
   isLoading: boolean,
   isFetchingNextPage: boolean,
   hasNextPage: boolean,
@@ -432,8 +432,8 @@ function processPagination(paginationRaw: unknown) {
  * Hook to get processed post data from infinite query
  * Flattens pages and aggregates data across all pages
  */
-export function usePostedPostsInfiniteData() {
-  const query = usePostedPostsInfiniteQuery();
+export function usePublishedPostsInfiniteData() {
+  const query = usePublishedPostsInfiniteQuery();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     query;
 
@@ -522,7 +522,7 @@ export function usePostedPostsInfiniteData() {
     const content: CombinedContent[] = combineContent(
       posts,
       longformPosts,
-      "postedAt",
+      "publishedAt",
       "desc"
     );
 
@@ -536,7 +536,7 @@ export function usePostedPostsInfiniteData() {
 
   // Handle empty pages case after memoization
   if (data.pages.length === 0) {
-    return createEmptyPostedPostsData(
+    return createEmptyPublishedPostsData(
       isLoading,
       isFetchingNextPage,
       false,
@@ -568,7 +568,7 @@ export function usePostedPostsInfiniteData() {
     typeof pagination.total === "number" ? pagination.total : allPosts.length;
   // For posted posts, longform posts are typically fewer, so we can estimate
   // or use the actual count if available in pagination
-  const totalLongformCount = allLongformPosts.length; // Posted longform might not have separate pagination
+  const totalLongformCount = allLongformPosts.length; // Published longform might not have separate pagination
   const totalContentCount = totalPostsCount + totalLongformCount;
 
   return {
@@ -611,7 +611,7 @@ export function useBulkDeletePostsMutation() {
         formData.append("postIds", id);
       });
 
-      const response = await fetch("/dashboard/posted", {
+      const response = await fetch("/dashboard/published", {
         method: "POST",
         body: formData,
       });
@@ -625,18 +625,18 @@ export function useBulkDeletePostsMutation() {
     onMutate: async (postIds) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: postedPostsKeys.list(queueType, currentTab, page),
+        queryKey: publishedPostsKeys.list(queueType, currentTab, page),
       });
 
       // Snapshot previous value
-      const previousData = queryClient.getQueryData<PostedPostsLoaderData>(
-        postedPostsKeys.list(queueType, currentTab, page)
+      const previousData = queryClient.getQueryData<PublishedPostsLoaderData>(
+        publishedPostsKeys.list(queueType, currentTab, page)
       );
 
       // Optimistically update
       if (previousData) {
-        queryClient.setQueryData<PostedPostsLoaderData>(
-          postedPostsKeys.list(queueType, currentTab, page),
+        queryClient.setQueryData<PublishedPostsLoaderData>(
+          publishedPostsKeys.list(queueType, currentTab, page),
           (old) => {
             if (!old) return old;
             return {
@@ -674,7 +674,7 @@ export function useBulkDeletePostsMutation() {
       // Rollback on error
       if (context?.previousData) {
         queryClient.setQueryData(
-          postedPostsKeys.list(queueType, currentTab, page),
+          publishedPostsKeys.list(queueType, currentTab, page),
           context.previousData
         );
       }
@@ -682,7 +682,7 @@ export function useBulkDeletePostsMutation() {
     onSettled: () => {
       // Refetch after mutation
       void queryClient.invalidateQueries({
-        queryKey: postedPostsKeys.lists(),
+        queryKey: publishedPostsKeys.lists(),
       });
     },
   });

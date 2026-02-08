@@ -208,7 +208,7 @@ export function getCronDueScheduledPosts(): Promise<Post[]> {
   });
 }
 
-export async function getPostedPosts({
+export async function getPublishedPosts({
   userId,
   page = 1,
   limit = 50,
@@ -243,7 +243,7 @@ export async function getPostedPosts({
         queueType: true,
       },
       orderBy: {
-        postedAt: "desc",
+        publishedAt: "desc",
       },
       skip,
       take: limit,
@@ -264,7 +264,7 @@ export async function getPostedPosts({
   };
 }
 
-export async function getRecentPostedPosts({
+export async function getRecentPublishedPosts({
   userId,
   days,
   queueType,
@@ -282,7 +282,7 @@ export async function getRecentPostedPosts({
     // Use currentState as single source of truth
     currentState: "PUBLISHED",
     userId: userId,
-    postedAt: {
+    publishedAt: {
       gte: startDate,
     },
   };
@@ -312,7 +312,7 @@ export async function getRecentPostedPosts({
       template: true,
     },
     orderBy: {
-      postedAt: "desc",
+      publishedAt: "desc",
     },
   });
 }
@@ -404,7 +404,7 @@ export function getPastPosts({
   startDate: Date;
   endDate: Date;
   queueType?: string;
-  /** When set, return only posts with postedAt < beforeDate (for Flow load more past). */
+  /** When set, return only posts with publishedAt < beforeDate (for Flow load more past). */
   beforeDate?: Date;
   /** Max number of posts to return (for Flow load more past). */
   limit?: number;
@@ -413,7 +413,7 @@ export function getPastPosts({
     userId,
     // Use currentState as single source of truth
     currentState: "PUBLISHED",
-    postedAt: beforeDate
+    publishedAt: beforeDate
       ? { gte: startDate, lt: beforeDate, not: null }
       : {
           gte: startDate,
@@ -439,7 +439,7 @@ export function getPastPosts({
       template: true,
     },
     orderBy: {
-      postedAt: "desc",
+      publishedAt: "desc",
     },
     ...(takeLimit !== undefined ? { take: takeLimit } : {}),
   });
@@ -523,7 +523,7 @@ export async function getRecyclablePosts({
         queueType: true,
       },
       orderBy: {
-        postedAt: "desc",
+        publishedAt: "desc",
       },
       skip,
       take: limit,

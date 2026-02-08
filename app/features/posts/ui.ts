@@ -5,7 +5,7 @@
  * Use this import path for React components and client-side hooks.
  *
  * Usage:
- *   import { AllContentListing, usePostedPostsQuery } from "~/features/posts/ui";
+ *   import { AllContentListing, usePublishedPostsQuery } from "~/features/posts/ui";
  *
  * Do NOT import from internal paths like:
  *   import { ... } from "./components/..."  // ❌ Bad
@@ -145,7 +145,7 @@ export { DraftEditForm } from "./components/DraftEditForm";
 export { DraftPreview } from "./components/DraftPreview";
 export { ResumeModal } from "./components/ResumeModal";
 export { default as DraftEditPage } from "./components/DraftEditPage";
-export { default as PostedPostsPage } from "./components/PostedPostsPage";
+export { default as PublishedPostsPage } from "./components/PublishedPostsPage";
 export { default as ScheduledPostsPage } from "./components/ScheduledPostsPage";
 export { default as DashboardIndexPage } from "./components/DashboardIndexPage";
 export { default as DraftsPage } from "./components/DraftsPage";
@@ -157,8 +157,8 @@ export { default as LongFormDraftEditPage } from "./components/LongFormDraftEdit
 export { DraftsHeader } from "./components/DraftsHeader";
 export { DraftsPostTypeTabs } from "./components/DraftsPostTypeTabs";
 export { DraftsTable } from "./components/DraftsTable";
-export { default as PostedPostsTable } from "./components/PostedPostsTable";
-export { default as PostedPostsTabs } from "./components/PostedPostsTabs";
+export { default as PublishedPostsTable } from "./components/PublishedPostsTable";
+export { default as PublishedPostsTabs } from "./components/PublishedPostsTabs";
 export { RecyclablesQueueTabs } from "./components/RecyclablesQueueTabs";
 export { RecyclablesSearch } from "./components/RecyclablesSearch";
 export { RecyclablesTable } from "./components/RecyclablesTable";
@@ -180,16 +180,16 @@ export { default as PostConfirmation } from "./components/PostConfirmation";
 export { useDashboardState } from "./hooks/useDashboardState";
 export { useScheduledState } from "./hooks/useScheduledState";
 export { useDraftsState } from "./hooks/useDraftsState";
-export { usePostedPosts } from "./usePostedPosts";
+export { usePublishedPosts } from "./usePublishedPosts";
 export {
-  usePostedPostsQuery,
-  usePostedPostsData,
-  usePostedPostsInfiniteQuery,
-  usePostedPostsInfiniteData,
+  usePublishedPostsQuery,
+  usePublishedPostsData,
+  usePublishedPostsInfiniteQuery,
+  usePublishedPostsInfiniteData,
   useBulkDeletePostsMutation,
-  postedPostsKeys,
-} from "./hooks/usePostedPostsQuery";
-export type { PostedPostsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
+  publishedPostsKeys,
+} from "./hooks/usePublishedPostsQuery";
+export type { PublishedPostsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useDashboardQuery,
   useDashboardData,

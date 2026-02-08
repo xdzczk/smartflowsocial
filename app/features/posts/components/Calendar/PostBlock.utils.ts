@@ -161,9 +161,9 @@ export function getDisplayTime(
 ): Date {
   try {
     if (isPast) {
-      const postedAt = post.postedAt;
-      if (typeof postedAt === "string") {
-        const zoned = fromDate(new Date(postedAt), "UTC");
+      const publishedAt = post.publishedAt;
+      if (typeof publishedAt === "string") {
+        const zoned = fromDate(new Date(publishedAt), "UTC");
         return toDate(zoned);
       }
       // Use Temporal for consistency even in fallback

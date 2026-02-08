@@ -27,7 +27,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     content: nullToUndefined(post.content),
     fileUrl: post.fileUrl,
     scheduledAtUtc: nullToUndefined(post.scheduledAtUtc),
-    postedAt: nullToUndefined(post.postedAt),
+    publishedAt: nullToUndefined(post.publishedAt),
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     status: post.status,
@@ -98,7 +98,6 @@ export function longFormPostToCombinedContent(
     image: nullToUndefined(longFormPost.image),
     scheduledAtUtc: nullToUndefined(longFormPost.scheduledAtUtc),
     publishedAt: nullToUndefined(longFormPost.publishedAt),
-    postedAt: nullToUndefined(longFormPost.publishedAt), // Map publishedAt to postedAt for consistency
     createdAt: longFormPost.createdAt,
     updatedAt: longFormPost.updatedAt,
     status: longFormPost.status,
@@ -144,26 +143,26 @@ function getSortValue(item: CombinedContent, sortBy: string): number {
   if (sortBy === "scheduledAtUtc" || sortBy === "scheduledFor") {
     return parseScheduledAtUtc(item.scheduledAtUtc);
   }
-  if (sortBy === "postedAt" || sortBy === "publishedAt") {
+  if (sortBy === "publishedAt") {
     try {
-      return item.postedAt
-        ? Number(fromDate(new Date(item.postedAt), "UTC").epochMilliseconds)
+      return item.publishedAt
+        ? Number(fromDate(new Date(item.publishedAt), "UTC").epochMilliseconds)
         : 0;
     } catch {
       // Fallback - still use Temporal for 100% consistency
       try {
-        return item.postedAt
+        return item.publishedAt
           ? Number(
               fromISOString(
-                item.postedAt instanceof Date
-                  ? item.postedAt.toISOString()
-                  : String(item.postedAt),
+                item.publishedAt instanceof Date
+                  ? item.publishedAt.toISOString()
+                  : String(item.publishedAt),
                 "UTC"
               ).epochMilliseconds
             )
           : 0;
       } catch {
-        return item.postedAt ? new Date(item.postedAt).getTime() : 0;
+        return item.publishedAt ? new Date(item.publishedAt).getTime() : 0;
       }
     }
   }

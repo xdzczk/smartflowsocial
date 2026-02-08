@@ -1,10 +1,15 @@
 import { Link } from "@remix-run/react";
+import { Bell, Copy, Heart, MessageCircle, Repeat, Zap } from "lucide-react";
 import { nip19 } from "nostr-tools";
 import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { Separator } from "~/components/ui/separator";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 
 import type { Notification } from "../engagement.server";
 import type { GroupedNotification } from "../types";
@@ -29,19 +34,11 @@ export default function GroupedNotificationList({
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="text-muted-foreground mb-4">
-          <svg
+          <Bell
             className="h-16 w-16"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            />
-          </svg>
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
         </div>
         <p className="text-foreground text-lg font-medium">
           No notifications yet
@@ -124,22 +121,14 @@ function GroupedNotificationCard({
         {/* Parent Post - Left Side */}
         <div className="border-border bg-secondary/30 flex-shrink-0 border-b p-4 lg:w-2/5 lg:border-r lg:border-b-0">
           <div className="text-muted-foreground mb-2 flex items-center gap-2 text-xs">
-            <svg
+            <MessageCircle
               className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
             <span className="font-medium">Your post</span>
-            {parentPost.postedAt ? (
-              <span>· {formatDate(parentPost.postedAt)}</span>
+            {parentPost.publishedAt ? (
+              <span>· {formatDate(parentPost.publishedAt)}</span>
             ) : null}
           </div>
 
@@ -203,19 +192,11 @@ function GroupedNotificationCard({
                   }}
                   className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
                 >
-                  <svg
-                    className="h-3.5 w-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
+                  <Copy
+                    className={INLINE_ICON_SIZE_CLASS}
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
                   Copy NEvent
                 </button>
               </div>
@@ -237,28 +218,19 @@ function GroupedNotificationCard({
               <Separator className="my-3" />
               <div className="flex flex-wrap gap-4">
                 <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                  <svg
-                    className="h-4 w-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                    <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                  </svg>
+                  <MessageCircle
+                    className={INLINE_ICON_SIZE_CLASS}
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
                   <span>{parentPost.stats.replies}</span>
                 </div>
                 <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
-                  <svg
-                    className="h-4 w-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <Zap
+                    className={INLINE_ICON_SIZE_CLASS}
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
                   <span>
                     {parentPost.stats.zaps > 0
                       ? `${parentPost.stats.satszapped.toLocaleString()}`
@@ -266,33 +238,19 @@ function GroupedNotificationCard({
                   </span>
                 </div>
                 <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
-                  <svg
-                    className="h-4 w-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <Heart
+                    className={INLINE_ICON_SIZE_CLASS}
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
                   <span>{parentPost.stats.likes}</span>
                 </div>
                 <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
+                  <Repeat
+                    className={INLINE_ICON_SIZE_CLASS}
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
                   <span>{parentPost.stats.reposts}</span>
                 </div>
               </div>

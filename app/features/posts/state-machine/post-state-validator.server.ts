@@ -144,7 +144,7 @@ export async function backfillCurrentState(
       id: true,
       userId: true,
       scheduledAtUtc: true,
-      postedAt: true,
+      publishedAt: true,
     },
     take: limit,
   });
@@ -154,10 +154,10 @@ export async function backfillCurrentState(
 
   for (const post of posts) {
     try {
-      // Derive state from postedAt and scheduledAtUtc (flags have been removed)
+      // Derive state from publishedAt and scheduledAtUtc (flags have been removed)
       let derivedState: PostState;
 
-      if (post.postedAt) {
+      if (post.publishedAt) {
         derivedState = "PUBLISHED";
       } else if (post.scheduledAtUtc) {
         derivedState = "SCHEDULED";

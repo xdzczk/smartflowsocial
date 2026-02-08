@@ -14,7 +14,7 @@ import { getUserById } from "~/features/user";
 import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
 import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
-import { getPostedPosts } from "~/models/post.queries.server";
+import { getPublishedPosts } from "~/models/post.queries.server";
 
 import { ENGAGEMENT_FEED_PAGE_SIZE } from "../constants";
 import {
@@ -259,7 +259,7 @@ export async function loadEngagementFeedData(
   limit = ENGAGEMENT_FEED_PAGE_SIZE
 ) {
   const [{ posts }, userResult] = await Promise.all([
-    getPostedPosts({
+    getPublishedPosts({
       userId,
       page,
       limit,
@@ -664,8 +664,8 @@ export async function loadEngagementFeedData(
     ...group,
     parentPost: {
       ...group.parentPost,
-      postedAt: group.parentPost.postedAt
-        ? group.parentPost.postedAt.toISOString()
+      publishedAt: group.parentPost.publishedAt
+        ? group.parentPost.publishedAt.toISOString()
         : null,
     },
   }));
@@ -674,8 +674,8 @@ export async function loadEngagementFeedData(
     ...group,
     parentPost: {
       ...group.parentPost,
-      postedAt: group.parentPost.postedAt
-        ? group.parentPost.postedAt.toISOString()
+      publishedAt: group.parentPost.publishedAt
+        ? group.parentPost.publishedAt.toISOString()
         : null,
     },
   }));

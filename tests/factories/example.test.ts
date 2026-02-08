@@ -17,7 +17,7 @@ import {
 import {
   deriveIsDraft,
   deriveIsScheduled,
-  deriveIsPosted,
+  deriveIsPublished,
 } from "~/features/posts/state-machine/post-state";
 
 describe("Factory Usage Examples", () => {
@@ -25,7 +25,7 @@ describe("Factory Usage Examples", () => {
     const post = postFactory.draft();
 
     expect(deriveIsDraft(post.currentState)).toBe(true);
-    expect(deriveIsPosted(post.currentState)).toBe(false);
+    expect(deriveIsPublished(post.currentState)).toBe(false);
     expect(deriveIsScheduled(post.currentState)).toBe(false);
   });
 

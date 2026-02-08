@@ -3,13 +3,13 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 /**
  * Posted Posts Queue Tests
  *
- * Tests the posted posts queue:
- * - View posted posts
+ * Tests the published posts queue:
+ * - View published posts
  * - Filter by queue type
  * - View post details
  * - Pagination
  */
-describe("Posted Posts Queue", () => {
+describe("Published Posts Queue", () => {
   beforeEach(() => {
     cy.loginNostr({ npub: TEST_NPUB });
   });
@@ -19,29 +19,32 @@ describe("Posted Posts Queue", () => {
   });
 
   describe("Page Access", () => {
-    it("should navigate to posted posts page from dashboard", () => {
+    it("should navigate to published posts page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
       // Fixed sidebar links may be overflowed, use force click
-      cy.get('a[href*="posted"]')
+      cy.get('a[href*="published"]')
         .first()
         .should("exist")
         .click({ force: true });
-      cy.location("pathname", { timeout: 10000 }).should("include", "posted");
+      cy.location("pathname", { timeout: 10000 }).should(
+        "include",
+        "published"
+      );
     });
 
-    it("should load posted posts page directly", () => {
-      cy.visitAndCheck("/dashboard/posted");
-      cy.location("pathname").should("include", "posted");
+    it("should load published posts page directly", () => {
+      cy.visitAndCheck("/dashboard/published");
+      cy.location("pathname").should("include", "published");
       cy.get("body").should("be.visible");
     });
   });
 
-  describe("Posted Posts Display", () => {
+  describe("Published Posts Display", () => {
     beforeEach(() => {
-      cy.visitAndCheck("/dashboard/posted");
+      cy.visitAndCheck("/dashboard/published");
     });
 
-    it("should display posted posts list or empty state", () => {
+    it("should display published posts list or empty state", () => {
       // Wait for page to load
       cy.get("body").should("be.visible");
 
@@ -49,12 +52,12 @@ describe("Posted Posts Queue", () => {
       cy.get("body", { timeout: 10000 }).then(($body) => {
         const hasPosts =
           $body.find(
-            'table tbody tr, [data-testid="posted-post"], .post-item, tbody tr'
+            'table tbody tr, [data-testid="published-post"], .post-item, tbody tr'
           ).length > 0;
         const hasEmptyState =
           $body.find('[data-testid="empty-state"]').length > 0 ||
           $body.text().toLowerCase().includes("no posts") ||
-          $body.text().toLowerCase().includes("no posted posts") ||
+          $body.text().toLowerCase().includes("no published posts") ||
           $body.text().toLowerCase().includes("empty") ||
           $body.text().toLowerCase().includes("no items");
 
@@ -68,9 +71,11 @@ describe("Posted Posts Queue", () => {
 
     it("should display post information when posts exist", () => {
       cy.get("body").then(($body) => {
-        const posts = $body.find('[data-testid="posted-post"], table tbody tr');
+        const posts = $body.find(
+          '[data-testid="published-post"], table tbody tr'
+        );
         if (posts.length > 0) {
-          cy.get('[data-testid="posted-post"], table tbody tr')
+          cy.get('[data-testid="published-post"], table tbody tr')
             .first()
             .should("be.visible");
         }
@@ -79,14 +84,14 @@ describe("Posted Posts Queue", () => {
   });
 
   describe("Queue Type Filtering", () => {
-    it("should filter posted posts by queue type", () => {
-      cy.visitAndCheck("/dashboard/posted");
+    it("should filter published posts by queue type", () => {
+      cy.visitAndCheck("/dashboard/published");
 
       cy.get("body").then(($body) => {
-        const queueTabs = $body.find('[role="tab"], a[href*="/posted/"]');
+        const queueTabs = $body.find('[role="tab"], a[href*="/published/"]');
         if (queueTabs.length > 0) {
-          cy.get('[role="tab"], a[href*="/posted/"]').first().click();
-          cy.location("pathname").should("include", "posted");
+          cy.get('[role="tab"], a[href*="/published/"]').first().click();
+          cy.location("pathname").should("include", "published");
         }
       });
     });

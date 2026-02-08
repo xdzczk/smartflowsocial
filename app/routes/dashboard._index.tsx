@@ -11,7 +11,7 @@ import { requireFeatureAccess } from "~/features/payments";
 import {
   getContentStatistics,
   getQueueCountsForDashboard,
-  getTopPostedPostsByEngagement,
+  getTopPublishedPostsByEngagement,
   getRunwayLastScheduledAtUtcMs,
   handleDashboardAction,
   loadFlowData,
@@ -76,7 +76,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         }),
         getContentStatistics(userId),
         getQueueCountsForDashboard(userId),
-        getTopPostedPostsByEngagement({
+        getTopPublishedPostsByEngagement({
           userId,
           days: topPostsDays,
           limit: 5,

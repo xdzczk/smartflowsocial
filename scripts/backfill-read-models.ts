@@ -121,8 +121,8 @@ async function backfillPublishedPosts() {
   // Get all published posts
   const publishedPosts = await prisma.post.findMany({
     where: {
-      isPosted: true,
-      postedAt: { not: null },
+      currentState: "PUBLISHED",
+      publishedAt: { not: null },
     },
     include: {
       queueType: true,
@@ -137,7 +137,7 @@ async function backfillPublishedPosts() {
 
   for (const post of publishedPosts) {
     try {
-      if (!post.postedAt) continue;
+      if (!post.publishedAt) continue;
 
       await prisma.publishedPostRead.upsert({
         where: { postId: post.id },
@@ -146,7 +146,7 @@ async function backfillPublishedPosts() {
           userId: post.userId,
           postId: post.id,
           caption: post.caption,
-          postedAt: post.postedAt,
+          publishedAt: post.publishedAt,
           queueTypeName: post.queueType?.name ?? "unassigned",
           queueTypeColor: post.queueType?.color ?? null,
           createdAt: post.createdAt,
@@ -154,7 +154,7 @@ async function backfillPublishedPosts() {
         },
         update: {
           caption: post.caption,
-          postedAt: post.postedAt,
+          publishedAt: post.publishedAt,
           queueTypeName: post.queueType?.name ?? "unassigned",
           queueTypeColor: post.queueType?.color ?? null,
           updatedAt: new Date(),

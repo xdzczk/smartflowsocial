@@ -26,7 +26,7 @@ import {
   getPostStatistics,
   getLastPostTimeForQueue,
   getPostsByIds,
-  getRecentPostedPosts,
+  getRecentPublishedPosts,
   getCronDueScheduledPosts,
 } from "~/models/post.queries.server";
 
@@ -308,7 +308,7 @@ describe("Post Queries", () => {
     });
   });
 
-  describe("getRecentPostedPosts", () => {
+  describe("getRecentPublishedPosts", () => {
     it("should get recent posted posts", async () => {
       const mockPosts = [
         { id: "post-1", currentState: "PUBLISHED" },
@@ -318,7 +318,7 @@ describe("Post Queries", () => {
         mockPosts
       );
 
-      const result = await getRecentPostedPosts({
+      const result = await getRecentPublishedPosts({
         userId: TEST_USER_ID,
         days: 7,
       });
@@ -329,20 +329,20 @@ describe("Post Queries", () => {
             where?: {
               userId?: string;
               currentState?: string;
-              postedAt?: unknown;
+              publishedAt?: unknown;
             };
           }
         | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(callArgs?.where?.currentState).toBe("PUBLISHED");
-      expect(callArgs?.where?.postedAt).toBeDefined();
+      expect(callArgs?.where?.publishedAt).toBeDefined();
       expect(result).toEqual(mockPosts);
     });
 
     it("should filter by queue type when provided", async () => {
       (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-      await getRecentPostedPosts({
+      await getRecentPublishedPosts({
         userId: TEST_USER_ID,
         days: 7,
         queueType: "queue1",

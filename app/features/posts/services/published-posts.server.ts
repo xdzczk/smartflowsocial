@@ -1,7 +1,7 @@
 /**
- * Posted Posts Service
+ * Published Posts Service
  *
- * Handles posted posts data loading
+ * Handles published posts data loading
  */
 
 import type { Prisma } from "@prisma/client";
@@ -13,7 +13,7 @@ import {
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
-import { getPostedPosts } from "~/models/post.queries.server";
+import { getPublishedPosts } from "~/models/post.queries.server";
 
 import {
   toPostDTOArray,
@@ -25,9 +25,9 @@ import { getPostStats } from "../stats.server";
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 /**
- * Get posted posts dashboard data
+ * Get published posts dashboard data
  */
-export async function getPostedDashboardData({
+export async function getPublishedDashboardData({
   userId,
   params,
   url,
@@ -43,7 +43,7 @@ export async function getPostedDashboardData({
 
   const [{ posts, pagination }, allLongformResultRaw, user, queueTypesRaw] =
     await Promise.all([
-      getPostedPosts({
+      getPublishedPosts({
         userId,
         page,
         limit,

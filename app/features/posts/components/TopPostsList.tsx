@@ -52,9 +52,9 @@ function getPreview(post: PostDTO): string {
   return "Post";
 }
 
-function getRelativeTimeAgo(postedAt: string | null): string {
-  if (!postedAt) return "";
-  const then = new Date(postedAt).getTime();
+function getRelativeTimeAgo(publishedAt: string | null): string {
+  if (!publishedAt) return "";
+  const then = new Date(publishedAt).getTime();
   const now = Date.now();
   const minutesAgo = (now - then) / 60000;
   if (minutesAgo < 1) return "just now";
@@ -143,7 +143,7 @@ export default function TopPostsList({
             {topPosts.map((item) => {
               const preview = getPreview(item.post);
               const firstImage = getFirstImageUrlFromPost(item.post);
-              const relativeTime = getRelativeTimeAgo(item.post.postedAt);
+              const relativeTime = getRelativeTimeAgo(item.post.publishedAt);
               const { likes, replies, zaps } = item.stats;
               return (
                 <li key={item.post.id}>
@@ -231,7 +231,7 @@ export default function TopPostsList({
           onClose={() => setSelectedItem(null)}
           showStats={true}
           showSignedEvent={true}
-          type="posted"
+          type="published"
           userTimezone={userTimezone}
         />
       ) : null}

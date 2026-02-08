@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.014207625">
+    <testsuite name="tests/integration/published-loader.test.ts" timestamp="2026-02-08T21:21:53.205Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.014207625">
+        <testcase classname="tests/integration/published-loader.test.ts" name="Posted Posts Loader Integration &gt; Posted Posts Loader &gt; should load posted posts data for authenticated user" time="0.004799291">
+        </testcase>
+        <testcase classname="tests/integration/published-loader.test.ts" name="Posted Posts Loader Integration &gt; Posted Posts Loader &gt; should handle queue type parameter" time="0.002139625">
+        </testcase>
+        <testcase classname="tests/integration/published-loader.test.ts" name="Posted Posts Loader Integration &gt; Posted Posts Loader &gt; should return proper data structure with posted posts" time="0.001009458">
+        </testcase>
+        <testcase classname="tests/integration/published-loader.test.ts" name="Posted Posts Loader Integration &gt; Posted Posts Loader &gt; should pass URL object to getPublishedDashboardData" time="0.000400208">
+        </testcase>
+        <testcase classname="tests/integration/published-loader.test.ts" name="Posted Posts Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.0038625">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Authentication required&apos;,
+  code: &apos;AUTHENTICATION_ERROR&apos;,
+  statusCode: 401,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/published-loader.test.ts" name="Posted Posts Loader Integration &gt; Error Handling &gt; should handle subscription requirement errors" time="0.000681375">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Subscription required&apos;,
+  code: &apos;AUTHORIZATION_ERROR&apos;,
+  statusCode: 403,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/published-loader.test.ts" name="Posted Posts Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.000526">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Database error&apos;,
+  code: &apos;DATABASE_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+    </testsuite>
+</testsuites>

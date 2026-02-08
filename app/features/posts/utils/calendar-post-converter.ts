@@ -11,7 +11,10 @@ import {
   deriveIsScheduledLongForm,
   deriveIsPublishedLongForm,
 } from "../state-machine/longform-post-state";
-import { deriveIsScheduled, deriveIsPosted } from "../state-machine/post-state";
+import {
+  deriveIsScheduled,
+  deriveIsPublished,
+} from "../state-machine/post-state";
 import type { PostData, LongFormPostData } from "../types";
 /**
  * Convert PostData to CalendarPost
@@ -44,13 +47,12 @@ export function postDataToCalendarPost(post: PostData): CalendarPost {
   const currentState =
     (post as { currentState?: string }).currentState ?? "DRAFT";
   const isScheduled = deriveIsScheduled(currentState);
-  const isPosted = deriveIsPosted(currentState);
+  const isPosted = deriveIsPublished(currentState);
 
   const result: CalendarPost = {
     ...post,
     currentState,
     scheduledFor: scheduledForValue,
-    postedAt: post.postedAt ?? null,
     publishedAt: publishedAtValue,
     queueType: post.queueType ?? null,
     manual_override: post.manual_override || false,
@@ -112,12 +114,14 @@ export function longFormPostDataToCalendarPost(
     // Longform has no repost/quote source link
     repostOfPostId: null,
     quoteOfPostId: null,
+    quoteOfLongFormPostId:
+      (post as { quoteOfLongFormPostId?: string | null })
+        .quoteOfLongFormPostId ?? null,
     // CalendarPost specific fields
     title: post.title ?? undefined,
     summary: post.summary ?? undefined,
     image: post.image ?? undefined,
     publishedAt: publishedAtValue,
-    postedAt: publishedAtValue,
     scheduledFor: (() => {
       if (!post.scheduledAtUtc) return null;
       try {

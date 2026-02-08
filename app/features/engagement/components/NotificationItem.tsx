@@ -1,4 +1,10 @@
+import { AtSign, MessageCircle, Quote } from "lucide-react";
+
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 
 import type { Notification } from "../engagement.server";
 import { useNotificationActions } from "../hooks/useNotificationActions";
@@ -28,10 +34,11 @@ const TYPE_BADGES = {
     bgClass: MUTED_BG_CLASS,
     textClass: MUTED_TEXT_CLASS,
     icon: (
-      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-        <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-      </svg>
+      <MessageCircle
+        className={INLINE_ICON_SIZE_CLASS}
+        strokeWidth={INLINE_ICON_STROKE}
+        aria-hidden
+      />
     ),
   },
   mention: {
@@ -39,13 +46,11 @@ const TYPE_BADGES = {
     bgClass: MUTED_BG_CLASS,
     textClass: MUTED_TEXT_CLASS,
     icon: (
-      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          fillRule="evenodd"
-          d="M14.243 5.757a6 6 0 10-.986 9.284 1 1 0 111.087 1.678A8 8 0 1118 10a3 3 0 01-4.8 2.401A4 4 0 1114 10a1 1 0 102 0c0-1.537-.586-3.07-1.757-4.243zM12 10a2 2 0 10-4 0 2 2 0 004 0z"
-          clipRule="evenodd"
-        />
-      </svg>
+      <AtSign
+        className={INLINE_ICON_SIZE_CLASS}
+        strokeWidth={INLINE_ICON_STROKE}
+        aria-hidden
+      />
     ),
   },
   quote: {
@@ -53,19 +58,11 @@ const TYPE_BADGES = {
     bgClass: MUTED_BG_CLASS,
     textClass: MUTED_TEXT_CLASS,
     icon: (
-      <svg
-        className="h-4 w-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-        />
-      </svg>
+      <Quote
+        className={INLINE_ICON_SIZE_CLASS}
+        strokeWidth={INLINE_ICON_STROKE}
+        aria-hidden
+      />
     ),
   },
 };

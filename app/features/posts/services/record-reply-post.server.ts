@@ -38,7 +38,7 @@ export async function recordReplyPost(
     ...(replyToPostId && replyToPostId !== "" && { replyToPostId }),
     signedEvent,
     nostrEventId: signedEvent.id,
-    postedAt: new Date(),
+    publishedAt: new Date(),
   });
 
   const stateMachine = new PostStateMachine();

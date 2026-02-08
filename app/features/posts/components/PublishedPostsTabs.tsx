@@ -11,7 +11,7 @@ interface QueueType {
   isEnabled?: boolean;
 }
 
-interface PostedPostsTabsProps {
+interface PublishedPostsTabsProps {
   currentTab: string;
   queueTypes: Array<string | QueueType>;
   allContentLength: number;
@@ -19,13 +19,13 @@ interface PostedPostsTabsProps {
   longformPostsLength: number;
 }
 
-export default function PostedPostsTabs({
+export default function PublishedPostsTabs({
   currentTab,
   queueTypes: _queueTypes,
   allContentLength,
   postsLength,
   longformPostsLength,
-}: PostedPostsTabsProps) {
+}: PublishedPostsTabsProps) {
   const params = useParams();
 
   return (
@@ -34,7 +34,7 @@ export default function PostedPostsTabs({
       <div className="border-border mb-6 border-b">
         <nav className="-mb-px flex space-x-8" aria-label="Post Types">
           <Link
-            to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=all`}
+            to={`/dashboard/published${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=all`}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               currentTab === "all" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
             }`}
@@ -42,7 +42,7 @@ export default function PostedPostsTabs({
             All ({allContentLength})
           </Link>
           <Link
-            to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=posts`}
+            to={`/dashboard/published${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=posts`}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               currentTab === "posts" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
             }`}
@@ -50,7 +50,7 @@ export default function PostedPostsTabs({
             Posts ({postsLength})
           </Link>
           <Link
-            to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=longform`}
+            to={`/dashboard/published${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=longform`}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               currentTab === "longform"
                 ? ACTIVE_TAB_CLASSES

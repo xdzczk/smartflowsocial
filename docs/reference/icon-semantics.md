@@ -14,25 +14,48 @@ sidebar, dashboard, and future features stay consistent.
 
 ## Concept → icon map
 
-| Concept             | Icon             | Allowed contexts                  |
-| ------------------- | ---------------- | --------------------------------- |
-| Create              | Plus             | Sidebar Create, dashboard Compose |
-| New post (note)     | MessageSquare    | Sidebar “New Post”                |
-| New long-form       | FileText         | Sidebar “New Long-form”           |
-| Drafts (state)      | FilePenLine      | Sidebar “Drafts”                  |
-| Templates           | Copy             | Sidebar “Templates”               |
-| Bulk / batch        | LayoutGrid       | Sidebar “Bulk Posts”              |
-| Engagement (domain) | Flame            | Sidebar “Engagement”              |
-| Feed                | Rss              | Sidebar “Engagement Feed”         |
-| Giveaway            | Gift             | Sidebar “Giveaway”                |
-| Dashboard home      | Home             | Sidebar “Dashboard”               |
-| Calendar            | CalendarDays     | Sidebar “Calendar”                |
-| Scheduled           | Calendar / Clock | Sidebar, dashboard                |
-| Posted / time       | Clock            | Sidebar “Posted”                  |
-| Published / done    | Check            | Dashboard status                  |
-| Runway / time span  | Calendar         | Dashboard                         |
-| Settings            | Settings         | Sidebar “Settings”                |
-| Lock (restricted)   | Lock             | Nav when feature gated            |
+| Concept                      | Icon             | Allowed contexts                   |
+| ---------------------------- | ---------------- | ---------------------------------- |
+| Create                       | Plus             | Sidebar Create, dashboard Compose  |
+| New post (note)              | MessageSquare    | Sidebar “New Post”                 |
+| New long-form                | FileText         | Sidebar “New Long-form”            |
+| Drafts (state)               | FilePenLine      | Sidebar “Drafts”                   |
+| Templates                    | Copy             | Sidebar “Templates”                |
+| Bulk / batch                 | LayoutGrid       | Sidebar “Bulk Posts”               |
+| Engagement (domain)          | Flame            | Sidebar “Engagement”               |
+| Feed                         | Rss              | Sidebar “Engagement Feed”          |
+| Giveaway                     | Gift             | Sidebar “Giveaway”                 |
+| Dashboard home               | Home             | Sidebar “Dashboard”                |
+| Calendar                     | CalendarDays     | Sidebar “Calendar”                 |
+| Scheduled                    | Calendar / Clock | Sidebar, dashboard                 |
+| Published / time             | Clock            | Sidebar “Published”                |
+| Published / done             | Check            | Dashboard status                   |
+| Runway / time span           | Calendar         | Dashboard                          |
+| Settings                     | Settings         | Sidebar “Settings”                 |
+| Lock (restricted)            | Lock             | Nav when feature gated             |
+| Assets / media library       | FolderOpen       | Browse assets, asset browser       |
+| Replies / comments           | MessageCircle    | Engagement, reply counts           |
+| Zaps (sats)                  | Zap              | Zaps, lightning                    |
+| Likes                        | Heart            | Likes, favorites                   |
+| Reposts                      | Repeat           | Reposts                            |
+| Share                        | Share2           | Share badge, share action          |
+| Quoted post                  | Quote            | Quoted badge                       |
+| Notifications (empty / bell) | Bell             | Empty state, notification list     |
+| Auto / unscheduled           | Settings         | Settings/cog where appropriate     |
+| Signed / done                | Check            | Signed, completed (already in map) |
+| Search                       | Search           | Search inputs, search results      |
+| Close / dismiss              | X                | Close, dismiss (already in nav)    |
+| Copy / share link            | Copy or Link     | Copy vs link as appropriate        |
+
+## Styling
+
+- **Nav**: 18px, stroke 2.25. Implemented in `DashboardHeader` and `ExpandableNavigationSection`; do
+  not change here — keep nav constants in those components.
+- **Inline/button/table icons**: Default `h-4 w-4` (16px), `strokeWidth={2}` for Lucide. Use
+  `h-3 w-3` only for small badges (e.g. table cell badges). Do not use stroke 1.5; use 2 for
+  consistency.
+- Use shared constants from `app/lib/icon-constants.ts` for non-nav icons (`INLINE_ICON_SIZE_CLASS`,
+  `INLINE_ICON_STROKE`, `SMALL_ICON_SIZE_CLASS`).
 
 ## When adding features
 

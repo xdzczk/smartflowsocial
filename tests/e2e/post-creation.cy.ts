@@ -73,7 +73,7 @@ describe("Post Creation Flow", () => {
       // Wait for redirect or success message
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {
         expect(pathname).to.satisfy(
-          (p: string) => p.includes("dashboard") || p.includes("posted")
+          (p: string) => p.includes("dashboard") || p.includes("published")
         );
       });
 
@@ -82,7 +82,7 @@ describe("Post Creation Flow", () => {
       // eslint-disable-next-line cypress/no-unnecessary-waiting -- Waiting for async post processing
       cy.wait(2000);
       // Use cy.visit with failOnStatusCode to handle potential redirects
-      cy.visit("/dashboard/posted", { failOnStatusCode: false });
+      cy.visit("/dashboard/published", { failOnStatusCode: false });
       cy.location("pathname").then((pathname) => {
         // If redirected to login, session was lost - this is a bug
         if (pathname.includes("login")) {
@@ -91,7 +91,7 @@ describe("Post Creation Flow", () => {
           );
           // Re-login and try again
           cy.loginNostr({ npub: TEST_NPUB });
-          cy.visit("/dashboard/posted");
+          cy.visit("/dashboard/published");
         }
         // Check if post appears
         cy.get("body", { timeout: 15000 }).then(($body) => {

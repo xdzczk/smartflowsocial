@@ -12,7 +12,8 @@ export const PLAN_FEATURES = {
     templates: false,
     recyclables: false,
     scheduled: true, // Free users can access scheduled posts
-    posted: true, // Free users can access posted content
+    posted: true, // Free users can access posted content (legacy key)
+    published: true, // Free users can access published content
     giveaways: true, // Free users can access giveaways
     settings: true, // Free users can access settings
     engagement_feed: false, // Free users cannot access engagement feed
@@ -29,6 +30,7 @@ export const PLAN_FEATURES = {
     recyclables: true,
     scheduled: true,
     posted: true,
+    published: true,
     giveaways: true,
     settings: true,
     engagement_feed: true,
@@ -45,6 +47,7 @@ export const PLAN_FEATURES = {
     recyclables: true,
     scheduled: true,
     posted: true,
+    published: true,
     giveaways: true,
     settings: true,
     engagement_feed: true,
@@ -61,6 +64,7 @@ export const PLAN_FEATURES = {
     recyclables: true,
     scheduled: true,
     posted: true,
+    published: true,
     giveaways: true,
     settings: true,
     engagement_feed: true,
@@ -77,6 +81,7 @@ export const PLAN_FEATURES = {
     recyclables: true,
     scheduled: true,
     posted: true,
+    published: true,
     giveaways: true,
     settings: true,
     engagement_feed: true,

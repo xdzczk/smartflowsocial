@@ -9,7 +9,6 @@ export type QueueType = QueueTypeFromTypes;
 export interface CalendarPost extends Omit<
   PostData,
   | "scheduledFor"
-  | "postedAt"
   | "publishedAt"
   | "postType"
   | "repost"
@@ -23,7 +22,6 @@ export interface CalendarPost extends Omit<
   summary?: string;
   image?: string;
   publishedAt?: Date | string | null;
-  postedAt?: Date | string | null;
   scheduledFor?: string | null;
   queueType?: QueueType | null;
   manual_override?: boolean;

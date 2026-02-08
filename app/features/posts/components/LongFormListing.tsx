@@ -51,7 +51,7 @@ function getFetcherFormData(
 
 interface LongFormListingProps {
   posts: Array<LongFormPostType | LongFormPostData>;
-  type: "draft" | "scheduled" | "posted";
+  type: "draft" | "scheduled" | "published";
   onPostSelect?: (post: LongFormPostType | LongFormPostData) => void;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
@@ -71,8 +71,8 @@ interface LongFormListingProps {
 // Helper Functions
 // ============================================================================
 
-function getDefaultSortKey(type: "draft" | "scheduled" | "posted"): string {
-  if (type === "posted") {
+function getDefaultSortKey(type: "draft" | "scheduled" | "published"): string {
+  if (type === "published") {
     return "publishedAt";
   }
   if (type === "scheduled") {
@@ -82,9 +82,9 @@ function getDefaultSortKey(type: "draft" | "scheduled" | "posted"): string {
 }
 
 function getDefaultSortDirection(
-  type: "draft" | "scheduled" | "posted"
+  type: "draft" | "scheduled" | "published"
 ): "asc" | "desc" {
-  if (type === "posted") {
+  if (type === "published") {
     return "desc";
   }
   if (type === "scheduled") {
@@ -538,7 +538,7 @@ export default function LongFormListing({
                   className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
                   onClick={() =>
                     requestSort(
-                      type === "posted"
+                      type === "published"
                         ? "publishedAt"
                         : type === "scheduled"
                           ? "scheduledAtUtc"
@@ -549,7 +549,7 @@ export default function LongFormListing({
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       requestSort(
-                        type === "posted"
+                        type === "published"
                           ? "publishedAt"
                           : type === "scheduled"
                             ? "scheduledAtUtc"
@@ -559,15 +559,15 @@ export default function LongFormListing({
                   }}
                   role="button"
                   tabIndex={0}
-                  aria-label={`Sort by ${type === "posted" ? "published date" : type === "scheduled" ? "scheduled date" : "created date"}`}
+                  aria-label={`Sort by ${type === "published" ? "published date" : type === "scheduled" ? "scheduled date" : "created date"}`}
                 >
-                  {type === "posted"
+                  {type === "published"
                     ? "Published"
                     : type === "scheduled"
                       ? "Scheduled For"
                       : "Created"}{" "}
                   {sortConfig.key ===
-                  (type === "posted"
+                  (type === "published"
                     ? "publishedAt"
                     : type === "scheduled"
                       ? "scheduledAtUtc"
@@ -647,7 +647,7 @@ export default function LongFormListing({
                   </td>
                   <td className="p-3">
                     {formatDate(
-                      type === "posted"
+                      type === "published"
                         ? (post.publishedAt ?? undefined)
                         : type === "scheduled"
                           ? ((post as { scheduledAtUtc?: unknown })
@@ -710,7 +710,7 @@ export default function LongFormListing({
                             </DropdownMenuItem>
                           </>
                         ) : null}
-                        {type === "posted" &&
+                        {type === "published" &&
                         (post.nostrEventId ??
                           (post.signedEvent &&
                           typeof post.signedEvent === "object" &&

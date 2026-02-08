@@ -105,7 +105,7 @@ export async function getPublishedPostsFromReadModel({
     userId: string;
     postId: string;
     caption: string | null;
-    postedAt: Date;
+    publishedAt: Date;
     queueTypeName: string;
     queueTypeColor: string | null;
     engagementScore: number | null;
@@ -127,7 +127,7 @@ export async function getPublishedPostsFromReadModel({
   const [readModelPosts, total] = await Promise.all([
     prisma.publishedPostRead.findMany({
       where,
-      orderBy: { postedAt: "desc" },
+      orderBy: { publishedAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
     }),
@@ -138,7 +138,7 @@ export async function getPublishedPostsFromReadModel({
   if (readModelPosts.length === 0 && total === 0 && useFallback) {
     // @ts-ignore - Dynamic imports work at runtime in CommonJS
     const queriesModule = await import("./post.queries.server");
-    const result = await queriesModule.getPostedPosts({
+    const result = await queriesModule.getPublishedPosts({
       userId,
       queueType,
       page,
@@ -151,7 +151,7 @@ export async function getPublishedPostsFromReadModel({
         userId: post.userId,
         postId: post.id,
         caption: post.caption,
-        postedAt: post.postedAt ?? new Date(),
+        publishedAt: post.publishedAt ?? new Date(),
         queueTypeName: post.queueType?.name ?? "unassigned",
         queueTypeColor: post.queueType?.color ?? null,
         engagementScore: null, // Can be computed later

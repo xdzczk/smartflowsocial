@@ -105,9 +105,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       const publishedPost = await prisma.post.findUnique({
         where: { id: postId },
       });
-      const { deriveIsPosted } =
+      const { deriveIsPublished } =
         await import("~/features/posts/state-machine/post-state");
-      expect(deriveIsPosted(publishedPost?.currentState)).toBe(true);
+      expect(deriveIsPublished(publishedPost?.currentState)).toBe(true);
       expect(publishedPost?.currentState).toBe("PUBLISHED");
 
       // Verify state transitions

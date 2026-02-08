@@ -118,7 +118,7 @@ const postDTOSchema = z
       .transform((val) => val ?? null),
     fileUrl: z.array(z.string()),
     scheduledAtUtc: z.string().nullable(),
-    postedAt: z.string().nullable(),
+    publishedAt: z.string().nullable(),
     content: z
       .string()
       .nullish()
@@ -216,7 +216,6 @@ const _combinedContentSchema = z
     fileUrl: z.array(z.string()).optional(),
     scheduledAtUtc: z.union([z.string(), z.date()]).nullable().optional(),
     publishedAt: z.union([z.string(), z.date()]).optional(),
-    postedAt: z.union([z.string(), z.date()]).optional(),
     createdAt: z.union([z.string(), z.date()]),
     updatedAt: z.union([z.string(), z.date()]),
     status: z.string(),
@@ -227,10 +226,10 @@ const _combinedContentSchema = z
   .passthrough(); // Allow additional fields
 
 /**
- * Schema for PostedPostsLoaderData
+ * Schema for PublishedPostsLoaderData
  * Note: allContent is removed - reconstruct on client from posts/longformPosts
  */
-export const postedPostsLoaderDataSchema = z.object({
+export const publishedPostsLoaderDataSchema = z.object({
   posts: z.array(postDTOSchema),
   longformPosts: z.array(longFormPostDTOSchema),
   user: userSchema.nullable(),
@@ -241,7 +240,9 @@ export const postedPostsLoaderDataSchema = z.object({
   longformPagination: paginationSchema.optional(),
 });
 
-export type PostedPostsLoaderData = z.infer<typeof postedPostsLoaderDataSchema>;
+export type PublishedPostsLoaderData = z.infer<
+  typeof publishedPostsLoaderDataSchema
+>;
 
 /**
  * Schema for UserWithHashTagPresets (extends userSchema)
@@ -367,7 +368,7 @@ const parentPostSchema = z.object({
     .optional(),
   title: z.string().nullable().optional(),
   content: z.string().nullable().optional(),
-  postedAt: z.string().nullable(), // ISO string
+  publishedAt: z.string().nullable(), // ISO string
   isLongform: z.boolean(),
   stats: eventStatsSchema.optional(),
 });

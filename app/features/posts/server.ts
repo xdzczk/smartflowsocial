@@ -61,8 +61,8 @@ export {
 } from "./services/scheduled-posts.server";
 export { handleScheduledAction } from "./services/scheduled-action.server";
 
-// Posted Posts
-export { getPostedDashboardData } from "./services/posted-posts.server";
+// Published Posts
+export { getPublishedDashboardData } from "./services/published-posts.server";
 
 // Recyclable Posts
 export {
@@ -83,7 +83,7 @@ export { calculateNextScheduleTime } from "./schedulers";
 // Post Actions
 // ============================================================================
 
-export { postedPostsAction } from "./posted.action.server";
+export { publishedPostsAction } from "./published.action.server";
 
 export {
   recordReplyPost,
@@ -153,7 +153,7 @@ export {
 } from "./services/flow-loader.server";
 export { getRunwayLastScheduledAtUtcMs } from "./services/runway.server";
 export {
-  getTopPostedPostsByEngagement,
+  getTopPublishedPostsByEngagement,
   type TopPostItem,
 } from "./services/top-posts.server";
 
