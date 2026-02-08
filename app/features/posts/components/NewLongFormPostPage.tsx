@@ -64,13 +64,13 @@ export default function NewLongFormPostPage() {
       ? (loaderData as { uploadProvider?: unknown }).uploadProvider
       : null;
 
-  // Type assertions for Remix JsonifyObject serialization
+  // Type assertions for Remix JsonifyObject serialization (0.25 = 15 min, 0.5 = 30 min; parse as float)
   const scheduleIntervals = Array.isArray(scheduleIntervalsRaw)
     ? scheduleIntervalsRaw
         .map((s: unknown) => {
           if (typeof s === "string") {
-            const parsed = parseInt(s, 10);
-            return isNaN(parsed) ? null : parsed;
+            const parsed = parseFloat(s);
+            return Number.isNaN(parsed) ? null : parsed;
           }
           if (typeof s === "number") return s;
           return null;

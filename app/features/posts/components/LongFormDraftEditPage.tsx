@@ -67,12 +67,12 @@ export default function LongFormDraftEditPage() {
     ? scheduleIntervalsRaw
         .map((s: unknown) =>
           typeof s === "string"
-            ? parseInt(s, 10)
+            ? parseFloat(s)
             : typeof s === "number"
               ? s
               : null
         )
-        .filter((n): n is number => n !== null && !isNaN(n))
+        .filter((n): n is number => n !== null && !Number.isNaN(n))
     : [];
 
   const assets = assetsRaw.filter(

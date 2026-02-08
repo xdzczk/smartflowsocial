@@ -370,6 +370,7 @@ export default function LongFormPost({
           content={content}
           uploadProvider={uploadProvider}
           onOpenAssetBrowser={() => setShowAssetBrowser("content")}
+          editorReady={editorReady}
         />
 
         {/* Phase 2: Article Details (collapsible) */}

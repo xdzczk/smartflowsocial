@@ -13,6 +13,8 @@ interface WritingSurfaceProps {
   content?: string;
   uploadProvider?: string | null;
   onOpenAssetBrowser: () => void;
+  /** When false, show a visible placeholder in the editor area until EditorJS is ready */
+  editorReady?: boolean;
 }
 
 export function WritingSurface({
@@ -21,6 +23,7 @@ export function WritingSurface({
   content: _content = "",
   uploadProvider,
   onOpenAssetBrowser,
+  editorReady = false,
 }: WritingSurfaceProps) {
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -45,6 +48,7 @@ export function WritingSurface({
         uploadProvider={uploadProvider}
         onOpenAssetBrowser={onOpenAssetBrowser}
         showLabel={false}
+        editorReady={editorReady}
       />
     </div>
   );
