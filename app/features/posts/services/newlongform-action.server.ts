@@ -266,22 +266,21 @@ async function handleImageUpload(
 }
 
 /**
- * Handle save draft action
+ * Persist draft (shared by save-draft and autosave-draft).
+ * Returns error response or null on success.
  */
-async function handleSaveDraft(
+async function persistDraft(
   userId: string,
   formData: FormData,
   queueType: string,
-  hashTagPresetId: string | null,
-  _correlationId?: string
-): Promise<Response> {
+  hashTagPresetId: string | null
+): Promise<Response | null> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
   const image = formData.get("image")?.toString() ?? undefined;
   const summary = formData.get("summary")?.toString();
   const tags = parseTags(formData);
 
-  // Resolve queue type ID in feature layer (business logic)
   const queueTypeId = await resolveQueueTypeId(
     userId,
     null,
@@ -296,7 +295,7 @@ async function handleSaveDraft(
     return Response.json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
-  let markdownContent;
+  let markdownContent: string;
   try {
     const editorData = JSON.parse(editorContent) as {
       blocks?: Array<{ type: string; data: Record<string, unknown> }>;
@@ -315,23 +314,60 @@ async function handleSaveDraft(
   const sanitizedContent = sanitizeMarkdown(markdownContent);
   const finalSummary = summary ?? generateSummary(sanitizedContent);
 
-  // Use CreateLongFormPostUseCase for draft creation
   const createLongFormPostUseCase = new CreateLongFormPostUseCase();
   await createLongFormPostUseCase.execute({
     userId,
     title,
     summary: finalSummary,
-    content: sanitizedContent, // Save as markdown for consistency
+    content: sanitizedContent,
     image,
     tags,
     queueTypeId,
     queueType: queueType === "Unassigned" ? undefined : queueType,
     hashTagPresetId,
     isPublished: false,
-    // No scheduledFor = draft
   });
 
+  return null;
+}
+
+/**
+ * Handle save draft action (redirects to drafts)
+ */
+async function handleSaveDraft(
+  userId: string,
+  formData: FormData,
+  queueType: string,
+  hashTagPresetId: string | null,
+  _correlationId?: string
+): Promise<Response> {
+  const errorResponse = await persistDraft(
+    userId,
+    formData,
+    queueType,
+    hashTagPresetId
+  );
+  if (errorResponse) return errorResponse;
   return redirect("/dashboard/drafts?tab=longform");
+}
+
+/**
+ * Handle autosave draft action (returns JSON, no redirect)
+ */
+async function handleAutosaveDraft(
+  userId: string,
+  formData: FormData,
+  queueType: string,
+  hashTagPresetId: string | null
+): Promise<Response> {
+  const errorResponse = await persistDraft(
+    userId,
+    formData,
+    queueType,
+    hashTagPresetId
+  );
+  if (errorResponse) return errorResponse;
+  return Response.json({ success: true });
 }
 
 /**
@@ -772,6 +808,15 @@ export async function handleNewLongFormAction(
   // Handle different actions
   if (_action === "save-draft") {
     return handleSaveDraft(userId, formData, queueType, finalHashTagPresetId);
+  }
+
+  if (_action === "autosave-draft") {
+    return handleAutosaveDraft(
+      userId,
+      formData,
+      queueType,
+      finalHashTagPresetId
+    );
   }
 
   if (_action === "publish") {

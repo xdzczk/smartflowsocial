@@ -33,8 +33,16 @@ export function LongFormEditorStyles() {
         }
         
         .ce-block--selected {
-          background: rgba(59, 130, 246, 0.1) !important;
+          background: rgba(59, 130, 246, 0.06) !important;
           border-radius: 0.375rem;
+          border: none !important;
+        }
+        
+        /* First block placeholder (hero mode) */
+        .ce-block:first-of-type .ce-paragraph__content[contenteditable="true"]:empty::before,
+        .ce-block:first-of-type .cdx-block[contenteditable="true"]:empty::before {
+          content: "Start writing…";
+          color: #9ca3af;
         }
         
         .image-tool {
@@ -117,9 +125,9 @@ export function LongFormEditorStyles() {
         }
         
         .ce-block--selected {
-          background: rgba(59, 130, 246, 0.1) !important;
+          background: rgba(59, 130, 246, 0.06) !important;
           border-radius: 0.375rem;
-          border: 1px solid #3B82F6;
+          border: 1px solid rgba(59, 130, 246, 0.2) !important;
         }
         
         /* Add a subtle drag indicator */

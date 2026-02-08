@@ -87,7 +87,10 @@ export default function LongFormPost({
   onHashtagPresetChange,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
+  const autosaveFetcher = useFetcher();
   const [showAssetBrowser, setShowAssetBrowser] = useState("");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [autosaveError, setAutosaveError] = useState<string | null>(null);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>(() => [
     {
@@ -257,14 +260,72 @@ export default function LongFormPost({
     }
   };
 
+  // Autosave: debounce 2.5s after title, summary, content, or image change (new page only)
+  const autosavePendingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (_isEditing) return;
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- form.watch() can be undefined before first sync; ?? "" for .trim() and FormData.set() */
+    const t = (title ?? "").trim();
+    const c = (content ?? "").trim();
+    if (!t || !c) return;
+    if (autosavePendingRef.current) clearTimeout(autosavePendingRef.current);
+    autosavePendingRef.current = setTimeout(() => {
+      autosavePendingRef.current = null;
+      if (autosaveFetcher.state !== "idle") return;
+      const fd = new FormData();
+      fd.set("_action", "autosave-draft");
+      // FormData.set() requires string; ?? "" satisfies type and runtime
+      fd.set("title", title ?? "");
+      fd.set("content", content ?? "");
+      fd.set("summary", summary ?? "");
+      fd.set("image", image ?? "");
+      fd.set("customTags", customTags ?? "");
+      fd.set("queueType", selectedQueueType);
+      fd.set("useHashtagPresets", useHashtagPresets ? "true" : "false");
+      fd.set("hashTagPresetId", selectedHashtagPresetId ?? "");
+      autosaveFetcher.submit(fd, { method: "post" });
+    }, 2500);
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+    return () => {
+      if (autosavePendingRef.current) clearTimeout(autosavePendingRef.current);
+    };
+    // Omit autosaveFetcher: Remix useFetcher() returns a stable reference; including it would not change behavior but could trigger unnecessary effect runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional omit of stable autosaveFetcher
+  }, [
+    _isEditing,
+    title,
+    summary,
+    content,
+    image,
+    customTags,
+    selectedQueueType,
+    useHashtagPresets,
+    selectedHashtagPresetId,
+  ]);
+
+  // React to autosave result (defer setState to avoid synchronous setState in effect)
+  useEffect(() => {
+    if (autosaveFetcher.state !== "idle" || !autosaveFetcher.data) return;
+    const data = autosaveFetcher.data as { success?: boolean; error?: string };
+    const run = () => {
+      if (data.success) {
+        setLastSavedAt(new Date());
+        setAutosaveError(null);
+      } else {
+        setAutosaveError(data.error ?? "Couldn't save draft");
+      }
+    };
+    queueMicrotask(run);
+  }, [autosaveFetcher.state, autosaveFetcher.data]);
+
   const { handleSchedule, isSigning, signingError } = useLongFormSubmission({
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- useLongFormSubmission expects string; form.watch() may be undefined */
     title: title ?? "",
     summary: summary ?? "",
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
     content: content ?? "",
     image,
     customTags: customTags ?? "",
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
     selectedQueueType,
     scheduledFor,
     displayedHashtags,
@@ -277,39 +338,61 @@ export default function LongFormPost({
   // Form validation using Zod
   const isFormValid = form.formState.isValid && !!image;
 
+  // Word count for sticky panel (writing column stays title + body only)
+  const wordCount = (() => {
+    const c = content;
+    if (!c || typeof c !== "string") return 0;
+    try {
+      const data = JSON.parse(c) as {
+        blocks?: Array<{ data?: { text?: string } }>;
+      };
+      const blocks = data.blocks ?? [];
+      const text = blocks
+        .map((b) =>
+          b.data && typeof b.data.text === "string" ? b.data.text : ""
+        )
+        .join(" ");
+      return text.trim().split(/\s+/).filter(Boolean).length;
+    } catch {
+      return c.trim().split(/\s+/).filter(Boolean).length;
+    }
+  })();
+
   return (
     <>
       <LongFormEditorStyles />
 
       <div className="flex min-h-screen flex-col">
-        {/* Phase 1: Writing Surface (hero) */}
-        <WritingSurface
-          title={title}
-          onTitleChange={(value) => form.setValue("title", value)}
-          content={content}
-          uploadProvider={uploadProvider}
-          onOpenAssetBrowser={() => setShowAssetBrowser("content")}
-        />
+        <div className="min-h-[70vh] flex-1">
+          {/* Phase 1: Writing Surface (hero) */}
+          <WritingSurface
+            title={title}
+            onTitleChange={(value) => form.setValue("title", value)}
+            content={content}
+            uploadProvider={uploadProvider}
+            onOpenAssetBrowser={() => setShowAssetBrowser("content")}
+          />
 
-        {/* Phase 2: Article Details (collapsible) */}
-        <ArticleDetailsCollapsible
-          summary={summary}
-          customTags={customTags}
-          content={content}
-          onSummaryChange={(value) => form.setValue("summary", value)}
-          onCustomTagsChange={(value) => form.setValue("customTags", value)}
-          onGenerateSummary={handleGenerateSummary}
-          image={image}
-          uploadError={uploadError}
-          uploadProvider={uploadProvider}
-          uploadFetcherState={uploadFetcherState}
-          onImageUpload={(file) => void handleImageUpload(file)}
-          onRemoveImage={() => setCoverImage("")}
-          onOpenAssetBrowser={() => setShowAssetBrowser("cover")}
-        />
+          {/* Phase 2: Article Details (collapsible) */}
+          <ArticleDetailsCollapsible
+            summary={summary ?? ""}
+            customTags={customTags ?? ""}
+            content={content}
+            onSummaryChange={(value) => form.setValue("summary", value)}
+            onCustomTagsChange={(value) => form.setValue("customTags", value)}
+            onGenerateSummary={handleGenerateSummary}
+            image={image}
+            uploadError={uploadError}
+            uploadProvider={uploadProvider}
+            uploadFetcherState={uploadFetcherState}
+            onImageUpload={(file) => void handleImageUpload(file)}
+            onRemoveImage={() => setCoverImage("")}
+            onOpenAssetBrowser={() => setShowAssetBrowser("cover")}
+          />
+        </div>
 
-        {/* Phase 3: Publish Panel (sticky) */}
-        <div className="border-border bg-background/95 sticky bottom-0 border-t py-4 backdrop-blur">
+        {/* Phase 3: Publish Panel (sticky bar) */}
+        <div className="border-border/60 bg-background/95 sticky bottom-0 z-20 border-t py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] backdrop-blur">
           <div className="mx-auto w-full max-w-[760px] space-y-4 px-4">
             {displayedHashtags ? (
               <div className="flex items-center gap-2">
@@ -373,15 +456,43 @@ export default function LongFormPost({
               disabled={fetcher.state !== "idle" || isSigning}
             />
 
-            <p className="text-muted-foreground text-xs">
-              {scheduledFor ? "Scheduled" : "Draft"}
-            </p>
+            {!image ? (
+              <p className="text-muted-foreground text-xs">
+                Add a cover before publishing
+              </p>
+            ) : null}
 
             <LongFormActionButtons
               fetcherState={fetcher.state}
               isFormValid={isFormValid}
               hasScheduledFor={!!scheduledFor}
               scheduledFor={scheduledFor}
+              statusLabel={scheduledFor ? undefined : "Draft"}
+              scheduledForLabel={
+                scheduledFor
+                  ? (() => {
+                      try {
+                        const d = new Date(scheduledFor);
+                        if (Number.isNaN(d.getTime())) return "Scheduled";
+                        const month = d.toLocaleString("default", {
+                          month: "short",
+                        });
+                        const day = d.getDate();
+                        const time = d.toLocaleTimeString("en-US", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        });
+                        return `Scheduled for ${month} ${day}, ${time}`;
+                      } catch {
+                        return "Scheduled";
+                      }
+                    })()
+                  : undefined
+              }
+              lastSavedAt={lastSavedAt}
+              autosaveError={autosaveError}
+              wordCount={wordCount}
               isSigning={isSigning}
               onPreview={() => {
                 if (onPreview) {

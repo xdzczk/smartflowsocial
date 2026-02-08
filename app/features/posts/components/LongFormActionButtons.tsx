@@ -5,6 +5,16 @@ interface LongFormActionButtonsProps {
   isFormValid: boolean;
   hasScheduledFor: boolean;
   scheduledFor?: string | null;
+  /** Shown above buttons when draft (no schedule) */
+  statusLabel?: string;
+  /** Shown above buttons when scheduled (e.g. "Scheduled for Jan 15, 2:00 PM") */
+  scheduledForLabel?: string;
+  /** When set, show "Last saved X ago" */
+  lastSavedAt?: Date | null;
+  /** When set, show "Couldn't save draft" */
+  autosaveError?: string | null;
+  /** Shown in panel next to status (e.g. "234 words") */
+  wordCount?: number;
   isSigning?: boolean;
   onPreview: () => void;
   onSchedule: () => void;
@@ -29,11 +39,24 @@ function formatScheduleLabel(scheduledFor: string): string {
   }
 }
 
+function formatLastSaved(at: Date): string {
+  const sec = Math.floor((Date.now() - at.getTime()) / 1000);
+  if (sec < 60) return "Last saved just now";
+  if (sec < 3600) return `Last saved ${Math.floor(sec / 60)} min ago`;
+  if (sec < 86400) return `Last saved ${Math.floor(sec / 3600)} hr ago`;
+  return `Last saved ${Math.floor(sec / 86400)} day ago`;
+}
+
 export function LongFormActionButtons({
   fetcherState,
   isFormValid,
   hasScheduledFor,
   scheduledFor = null,
+  statusLabel,
+  scheduledForLabel,
+  lastSavedAt,
+  autosaveError,
+  wordCount = 0,
   isSigning = false,
   onPreview,
   onSchedule,
@@ -44,9 +67,28 @@ export function LongFormActionButtons({
     hasScheduledFor && scheduledFor
       ? formatScheduleLabel(scheduledFor)
       : "Schedule";
+  const statusLine =
+    scheduledForLabel ??
+    autosaveError ??
+    (lastSavedAt ? formatLastSaved(lastSavedAt) : statusLabel);
+  const showWordCount = wordCount > 0;
 
   return (
     <div className="pt-4">
+      {statusLine || showWordCount ? (
+        <div className="text-muted-foreground mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          {statusLine ? (
+            <span className={autosaveError ? "text-destructive" : undefined}>
+              {statusLine}
+            </span>
+          ) : null}
+          {showWordCount ? (
+            <span>
+              {wordCount} {wordCount === 1 ? "word" : "words"}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       <div className="flex w-full flex-col gap-3 sm:flex-row">
         <Button
           type="submit"

@@ -43,7 +43,7 @@ export function ArticleDetailsCollapsible({
 
   return (
     <div className="mx-auto w-full max-w-[760px] px-4 pb-6">
-      <div className="border-border rounded-lg border">
+      <div className="border-border/60 border-b">
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
@@ -66,7 +66,7 @@ export function ArticleDetailsCollapsible({
           </svg>
         </button>
         {open ? (
-          <div className="border-border space-y-6 border-t px-4 py-4">
+          <div className="border-border/50 space-y-6 border-t px-4 py-4">
             <LongFormPostFields
               title=""
               summary={summary}
@@ -77,6 +77,7 @@ export function ArticleDetailsCollapsible({
               onCustomTagsChange={onCustomTagsChange}
               onGenerateSummary={onGenerateSummary}
               includeTitle={false}
+              softLabels={true}
             />
             <LongFormCoverImage
               image={image}
@@ -86,6 +87,7 @@ export function ArticleDetailsCollapsible({
               onImageUpload={onImageUpload}
               onRemove={onRemoveImage}
               onOpenAssetBrowser={onOpenAssetBrowser}
+              softLabel={true}
             />
           </div>
         ) : null}

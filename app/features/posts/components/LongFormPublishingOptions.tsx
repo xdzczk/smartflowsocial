@@ -81,10 +81,8 @@ export function LongFormPublishingOptions({
   }
 
   return (
-    <div className="border-border space-y-6 rounded-lg border p-4">
-      <h3 className="text-foreground text-sm font-semibold dark:text-white">
-        Publish
-      </h3>
+    <div className="border-border/50 space-y-6 border-t pt-4">
+      <h3 className="text-muted-foreground text-sm font-medium">Publish</h3>
 
       {/* Queue Type Selection - vertical */}
       <div className="space-y-2">
@@ -111,7 +109,7 @@ export function LongFormPublishingOptions({
                 onClick={() =>
                   onQueueTypeChange(isSelected ? "unassigned" : queueName)
                 }
-                className={`rounded-md border px-3 py-2 text-left text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${isSelected ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50"}`}
+                className={`rounded-md border px-3 py-2 text-left text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${isSelected ? "border-primary/60 bg-primary/10" : "border-border/50 hover:bg-muted/40"}`}
                 style={
                   queueColor && isSelected
                     ? {

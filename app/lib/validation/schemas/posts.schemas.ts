@@ -191,6 +191,12 @@ export const saveDraftLongformSchema = newLongformPostBaseSchema.extend({
   content: z.string().min(1, VALIDATION_MESSAGES.CONTENT_REQUIRED),
 });
 
+export const autosaveDraftLongformSchema = newLongformPostBaseSchema.extend({
+  _action: z.literal("autosave-draft"),
+  title: z.string().optional(),
+  content: z.string().min(1, VALIDATION_MESSAGES.CONTENT_REQUIRED),
+});
+
 export const publishLongformSchema = newLongformPostBaseSchema.extend({
   _action: z.literal("publish"),
   title: z.string().optional(),
@@ -213,6 +219,7 @@ export const uploadImageLongformSchema = z.object({
  */
 export const newLongformPostActionSchema = z.discriminatedUnion("_action", [
   saveDraftLongformSchema,
+  autosaveDraftLongformSchema,
   publishLongformSchema,
   scheduleLongformSchema,
   uploadImageLongformSchema,

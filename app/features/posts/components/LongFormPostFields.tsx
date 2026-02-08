@@ -19,6 +19,8 @@ interface LongFormPostFieldsProps {
   onGenerateSummary: () => void;
   /** When false, only render summary and custom tags (for Article Details). Default true. */
   includeTitle?: boolean;
+  /** When true, use soft labels (e.g. "Summary" without asterisk) for Article details. */
+  softLabels?: boolean;
 }
 
 export function LongFormPostFields({
@@ -31,12 +33,13 @@ export function LongFormPostFields({
   onCustomTagsChange,
   onGenerateSummary,
   includeTitle = true,
+  softLabels = false,
 }: LongFormPostFieldsProps) {
   return (
     <>
       {includeTitle ? (
         <div>
-          <Label htmlFor="title">Title *</Label>
+          <Label htmlFor="title">{softLabels ? "Title" : "Title *"}</Label>
           <Input
             id="title"
             name="title"
@@ -51,15 +54,19 @@ export function LongFormPostFields({
       ) : null}
 
       <div>
-        <Label htmlFor="summary">Summary *</Label>
+        <Label htmlFor="summary">{softLabels ? "Summary" : "Summary *"}</Label>
         <div className="mt-1 flex gap-2">
           <Textarea
             id="summary"
             name="summary"
-            required
+            required={!softLabels}
             value={summary}
             onChange={(e) => onSummaryChange(e.target.value)}
-            placeholder="Brief description of your post"
+            placeholder={
+              softLabels
+                ? "Brief description…"
+                : "Brief description of your post"
+            }
             rows={3}
             className="flex-1"
           />

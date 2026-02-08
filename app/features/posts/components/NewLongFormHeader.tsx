@@ -12,7 +12,7 @@ export function NewLongFormHeader({
 }: NewLongFormHeaderProps) {
   return (
     <header className="mx-auto w-full max-w-[760px] px-4 pt-6">
-      <h1 className="text-foreground text-xl font-semibold tracking-tight dark:text-white">
+      <h1 className="text-muted-foreground text-sm font-medium tracking-tight">
         New article
       </h1>
     </header>

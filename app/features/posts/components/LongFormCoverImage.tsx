@@ -8,6 +8,8 @@ interface LongFormCoverImageProps {
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: () => void;
   onOpenAssetBrowser: () => void;
+  /** When true, label is "Cover image" without asterisk (Article details). */
+  softLabel?: boolean;
 }
 
 export function LongFormCoverImage({
@@ -18,11 +20,14 @@ export function LongFormCoverImage({
   onImageUpload,
   onRemove,
   onOpenAssetBrowser,
+  softLabel = false,
 }: LongFormCoverImageProps) {
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <Label htmlFor="cover-image-input">Cover Image *</Label>
+        <Label htmlFor="cover-image-input">
+          {softLabel ? "Cover image" : "Cover Image *"}
+        </Label>
         {uploadProvider ? (
           <div className="text-muted-foreground flex items-center gap-1 text-xs">
             <span>Upload via:</span>
