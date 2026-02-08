@@ -1,6 +1,11 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import useLocalStorage from "~/lib/useLocalStorage";
 
 export function ThemeToggle() {
@@ -49,17 +54,24 @@ export function ThemeToggle() {
   }
 
   return (
-    <button
-      onClick={toggleTheme}
-      className="border-input bg-background hover:bg-muted focus:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors focus:ring-2 focus:outline-none"
-      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-      type="button"
-    >
-      {theme === "light" ? (
-        <Moon className="h-4 w-4" />
-      ) : (
-        <Sun className="h-4 w-4" />
-      )}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={toggleTheme}
+          className="border-input bg-background hover:bg-muted focus:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors focus:ring-2 focus:outline-none"
+          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          type="button"
+        >
+          {theme === "light" ? (
+            <Moon className="h-4 w-4" />
+          ) : (
+            <Sun className="h-4 w-4" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Switch to {theme === "light" ? "dark" : "light"} mode</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }

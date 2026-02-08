@@ -2,6 +2,16 @@ import { formatDistanceToNow } from "date-fns";
 import { Trash2, RefreshCw, Eye, Check } from "lucide-react";
 import { useState } from "react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -34,6 +44,7 @@ export function SessionCard({
   onRemove,
 }: SessionCardProps) {
   const [isRemoving, setIsRemoving] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   const formatPubkey = (pubkey: string | null): string => {
     if (!pubkey) return "Not connected";
@@ -48,16 +59,10 @@ export function SessionCard({
   };
 
   const handleRemove = () => {
-    if (
-      !confirm(
-        `Are you sure you want to remove "${session.label}"? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
     setIsRemoving(true);
     try {
       onRemove(session.id);
+      setShowRemoveConfirm(false);
     } finally {
       setIsRemoving(false);
     }
@@ -115,7 +120,7 @@ export function SessionCard({
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleRemove}
+              onClick={() => setShowRemoveConfirm(true)}
               className="text-destructive hover:text-destructive h-8"
             >
               <Trash2 className="h-3 w-3" />
@@ -123,6 +128,28 @@ export function SessionCard({
           </div>
         </div>
       </CardHeader>
+
+      <AlertDialog open={showRemoveConfirm} onOpenChange={setShowRemoveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove &quot;{session.label}&quot;? This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRemove}
+              disabled={isRemoving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground text-sm">Status</span>

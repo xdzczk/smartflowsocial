@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { Separator } from "~/components/ui/separator";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { testConnection } from "~/lib/remote-signer-health.client";
 import { REMOTE_SIGNER_TIMEOUT_EVENT } from "~/lib/remote-signer-reconnect.client";
@@ -281,53 +282,57 @@ export function RemoteSignerSettings() {
           )}
 
           {activeSession ? (
-            <div className="border-t pt-4">
-              <div className="mb-4">
-                <h3 className="mb-2 text-lg font-semibold">Active Session</h3>
-                <div className="bg-muted/30 rounded-md border p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{activeSession.label}</div>
-                      <div className="text-muted-foreground text-sm">
-                        {activeSession.metadata.signerAppName ??
-                          "Unknown Signer"}
+            <>
+              <Separator className="my-4" />
+              <div>
+                <div className="mb-4">
+                  <h3 className="mb-2 text-lg font-semibold">Active Session</h3>
+                  <div className="bg-muted/30 rounded-md border p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{activeSession.label}</div>
+                        <div className="text-muted-foreground text-sm">
+                          {activeSession.metadata.signerAppName ??
+                            "Unknown Signer"}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            void handleTestConnection();
+                          }}
+                          disabled={isTestingConnection}
+                        >
+                          <RefreshCw
+                            className={`mr-2 h-4 w-4 ${isTestingConnection ? "animate-spin" : ""}`}
+                          />
+                          Test Connection
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleDisconnect}
+                        >
+                          Disconnect
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          void handleTestConnection();
-                        }}
-                        disabled={isTestingConnection}
-                      >
-                        <RefreshCw
-                          className={`mr-2 h-4 w-4 ${isTestingConnection ? "animate-spin" : ""}`}
-                        />
-                        Test Connection
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleDisconnect}
-                      >
-                        Disconnect
-                      </Button>
-                    </div>
-                  </div>
 
-                  <div className="border-t pt-3">
-                    <h4 className="mb-2 text-sm font-medium">
-                      Recent Connection History
-                    </h4>
-                    <ConnectionHistory
-                      entries={activeSession.history.slice(0, 5)}
-                    />
+                    <Separator className="my-3" />
+                    <div>
+                      <h4 className="mb-2 text-sm font-medium">
+                        Recent Connection History
+                      </h4>
+                      <ConnectionHistory
+                        entries={activeSession.history.slice(0, 5)}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </>
           ) : null}
         </CardContent>
       </Card>

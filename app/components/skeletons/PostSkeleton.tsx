@@ -2,18 +2,20 @@
  * Skeleton loader for post items
  */
 
+import { Skeleton } from "~/components/ui/skeleton";
+
 export function PostSkeleton() {
   return (
-    <div className="border-border bg-card animate-pulse rounded-lg border p-4">
+    <div className="border-border bg-card rounded-lg border p-4">
       <div className="flex items-start gap-3">
-        <div className="bg-muted h-12 w-12 rounded-full" />
+        <Skeleton className="h-12 w-12 rounded-full" />
         <div className="flex-1 space-y-2">
-          <div className="bg-muted h-4 w-3/4 rounded" />
-          <div className="bg-muted h-4 w-1/2 rounded" />
-          <div className="bg-muted mt-2 h-20 w-full rounded" />
+          <Skeleton className="h-4 w-3/4 rounded" />
+          <Skeleton className="h-4 w-1/2 rounded" />
+          <Skeleton className="mt-2 h-20 w-full rounded" />
           <div className="flex gap-2">
-            <div className="bg-muted h-6 w-16 rounded" />
-            <div className="bg-muted h-6 w-16 rounded" />
+            <Skeleton className="h-6 w-16 rounded" />
+            <Skeleton className="h-6 w-16 rounded" />
           </div>
         </div>
       </div>

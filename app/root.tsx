@@ -16,6 +16,7 @@ import { Toaster } from "react-hot-toast";
 
 import { LifecycleHandler } from "~/components/lifecycle/LifecycleHandler";
 import { PrefetchManager } from "~/components/prefetch/PrefetchManager";
+import { TooltipProvider } from "~/components/ui/tooltip";
 import { getUser, refreshUserProfileIfEmpty } from "~/features/auth";
 import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
 // Import migration to run on app load
@@ -197,23 +198,25 @@ export default function App() {
       </head>
       <body className="h-full">
         <QueryProvider>
-          <Toaster position="top-right" />
-          <LifecycleHandler />
-          <PrefetchManager />
-          <RemoteSignerReconnectController />
-          <Outlet />
-          <ScrollRestoration />
-          <Scripts />
-          {nonce ? (
-            <script
-              nonce={nonce}
-              suppressHydrationWarning
-              dangerouslySetInnerHTML={{
-                __html: `window.ENV = ${JSON.stringify(ENV)}`,
-              }}
-            />
-          ) : null}
-          <LiveReload />
+          <TooltipProvider>
+            <Toaster position="top-right" />
+            <LifecycleHandler />
+            <PrefetchManager />
+            <RemoteSignerReconnectController />
+            <Outlet />
+            <ScrollRestoration />
+            <Scripts />
+            {nonce ? (
+              <script
+                nonce={nonce}
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{
+                  __html: `window.ENV = ${JSON.stringify(ENV)}`,
+                }}
+              />
+            ) : null}
+            <LiveReload />
+          </TooltipProvider>
         </QueryProvider>
       </body>
     </html>

@@ -1,7 +1,15 @@
 import { Link } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { MoreHorizontal } from "lucide-react";
 import { useRef, useState, type Key } from "react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import {
   Select,
@@ -395,145 +403,155 @@ export default function PostedPostsTable({
                       </span>
                     </td>
                     <td className="p-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Link
-                          to={`https://primal.net/e/${post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? post.signedEvent.id : ""}`}
-                          target="_blank"
-                          rel="noreferrer"
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                            aria-label="Actions"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
                           onClick={(e) => e.stopPropagation()}
-                          className="font-montserrat bg-primary text-primary-foreground hover:bg-primary/90 inline-block rounded-full px-4 py-1 text-sm transition-colors duration-200"
                         >
-                          View Note
-                        </Link>
-                        {(() => {
-                          const fetcher = individualRepostFetcher;
-                          const formData = getFetcherFormData(fetcher);
-                          return (
-                            <fetcher.Form
-                              method="post"
-                              onClick={(e) => e.stopPropagation()}
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to={`https://primal.net/e/${post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? post.signedEvent.id : ""}`}
+                              target="_blank"
+                              rel="noreferrer"
                             >
-                              <input
-                                type="hidden"
-                                name="postId"
-                                value={post.id}
-                              />
-                              <input
-                                type="hidden"
-                                name="_action"
-                                value="repost"
-                              />
+                              View Note
+                            </Link>
+                          </DropdownMenuItem>
+                          {(() => {
+                            const fetcher = individualRepostFetcher;
+                            const formData = getFetcherFormData(fetcher);
+                            return (
+                              <fetcher.Form method="post">
+                                <input
+                                  type="hidden"
+                                  name="postId"
+                                  value={post.id}
+                                />
+                                <input
+                                  type="hidden"
+                                  name="_action"
+                                  value="repost"
+                                />
+                                <DropdownMenuItem asChild>
+                                  <button
+                                    type="submit"
+                                    disabled={
+                                      fetcher.state !== "idle" ||
+                                      (formData
+                                        ? (formData.get("postId") as
+                                            | string
+                                            | null) === post.id
+                                        : false)
+                                    }
+                                  >
+                                    {fetcher.state !== "idle" &&
+                                    (formData
+                                      ? (formData.get("postId") as
+                                          | string
+                                          | null) === post.id
+                                      : false)
+                                      ? "Reposting..."
+                                      : "Repost"}
+                                  </button>
+                                </DropdownMenuItem>
+                              </fetcher.Form>
+                            );
+                          })()}
+                          {(() => {
+                            const fetcher = individualRepostFetcher;
+                            const formData = getFetcherFormData(fetcher);
+                            return (
+                              <fetcher.Form method="post">
+                                <input
+                                  type="hidden"
+                                  name="postId"
+                                  value={post.id}
+                                />
+                                <input
+                                  type="hidden"
+                                  name="_action"
+                                  value="quote"
+                                />
+                                <DropdownMenuItem asChild>
+                                  <button
+                                    type="submit"
+                                    disabled={
+                                      fetcher.state !== "idle" ||
+                                      (formData
+                                        ? (formData.get("postId") as
+                                            | string
+                                            | null) === post.id
+                                        : false)
+                                    }
+                                  >
+                                    {fetcher.state !== "idle" &&
+                                    (formData
+                                      ? (formData.get("postId") as
+                                          | string
+                                          | null) === post.id
+                                      : false)
+                                      ? "Quoting..."
+                                      : "Quote Post"}
+                                  </button>
+                                </DropdownMenuItem>
+                              </fetcher.Form>
+                            );
+                          })()}
+                          {onScheduleRepost ? (
+                            <DropdownMenuItem
+                              onSelect={() => onScheduleRepost(post)}
+                            >
+                              Schedule repost
+                            </DropdownMenuItem>
+                          ) : null}
+                          {onScheduleQuote ? (
+                            <DropdownMenuItem
+                              onSelect={() => onScheduleQuote(post)}
+                            >
+                              Schedule quote
+                            </DropdownMenuItem>
+                          ) : null}
+                          <DropdownMenuSeparator />
+                          <deleteFetcher.Form method="post">
+                            <input
+                              type="hidden"
+                              name="postId"
+                              value={post.id}
+                            />
+                            <input
+                              type="hidden"
+                              name="_action"
+                              value="delete"
+                            />
+                            <DropdownMenuItem asChild>
                               <button
                                 type="submit"
                                 disabled={
-                                  fetcher.state !== "idle" ||
-                                  (formData
-                                    ? (formData.get("postId") as
-                                        | string
-                                        | null) === post.id
-                                    : false)
+                                  deleteFetcher.state !== "idle" ||
+                                  bulkDeleteFetcher.state !== "idle"
                                 }
-                                className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                                className="text-destructive focus:text-destructive"
                               >
-                                {fetcher.state !== "idle" &&
-                                (formData
-                                  ? (formData.get("postId") as
-                                      | string
-                                      | null) === post.id
-                                  : false)
-                                  ? "Reposting..."
-                                  : "Repost"}
+                                {deleteFetcher.state !== "idle" &&
+                                deleteFetcher.formData?.get("postId") ===
+                                  post.id
+                                  ? "Deleting..."
+                                  : "Delete"}
                               </button>
-                            </fetcher.Form>
-                          );
-                        })()}
-                        {(() => {
-                          const fetcher = individualRepostFetcher;
-                          const formData = getFetcherFormData(fetcher);
-                          return (
-                            <fetcher.Form
-                              method="post"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <input
-                                type="hidden"
-                                name="postId"
-                                value={post.id}
-                              />
-                              <input
-                                type="hidden"
-                                name="_action"
-                                value="quote"
-                              />
-                              <button
-                                type="submit"
-                                disabled={
-                                  fetcher.state !== "idle" ||
-                                  (formData
-                                    ? (formData.get("postId") as
-                                        | string
-                                        | null) === post.id
-                                    : false)
-                                }
-                                className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-                              >
-                                {fetcher.state !== "idle" &&
-                                (formData
-                                  ? (formData.get("postId") as
-                                      | string
-                                      | null) === post.id
-                                  : false)
-                                  ? "Quoting..."
-                                  : "Quote Post"}
-                              </button>
-                            </fetcher.Form>
-                          );
-                        })()}
-                        {onScheduleRepost ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onScheduleRepost(post);
-                            }}
-                            className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-                          >
-                            Schedule repost
-                          </button>
-                        ) : null}
-                        {onScheduleQuote ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onScheduleQuote(post);
-                            }}
-                            className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-                          >
-                            Schedule quote
-                          </button>
-                        ) : null}
-                        <deleteFetcher.Form
-                          method="post"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <input type="hidden" name="postId" value={post.id} />
-                          <input type="hidden" name="_action" value="delete" />
-                          <button
-                            type="submit"
-                            disabled={
-                              deleteFetcher.state !== "idle" ||
-                              bulkDeleteFetcher.state !== "idle"
-                            }
-                            className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-                          >
-                            {deleteFetcher.state !== "idle" &&
-                            deleteFetcher.formData?.get("postId") === post.id
-                              ? "Deleting..."
-                              : "Delete"}
-                          </button>
-                        </deleteFetcher.Form>
-                      </div>
+                            </DropdownMenuItem>
+                          </deleteFetcher.Form>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 );

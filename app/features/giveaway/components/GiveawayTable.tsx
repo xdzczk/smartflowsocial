@@ -1,5 +1,12 @@
 import { Link } from "@remix-run/react";
+import { MoreHorizontal } from "lucide-react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queue-colors";
 import { getImageUrls } from "~/lib/helpers";
@@ -270,15 +277,32 @@ export function GiveawayTable({
                   )}
                 </td>
                 <td className="p-3">
-                  <Link
-                    to={`https://primal.net/e/${post.signedEvent?.id ?? ""}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="font-montserrat inline-block rounded-full bg-black/50 px-6 py-2 text-white transition-colors duration-200 hover:bg-black/70"
-                  >
-                    View Note
-                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={(e) => e.stopPropagation()}
+                        className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                        aria-label="Actions"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <DropdownMenuItem asChild>
+                        <Link
+                          to={`https://primal.net/e/${post.signedEvent?.id ?? ""}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          View Note
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             ))}

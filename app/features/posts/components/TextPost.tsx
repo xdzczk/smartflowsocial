@@ -2,6 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import React from "react";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -497,9 +498,9 @@ export default function TextPost({
         </div>
       ) : null}
       {signingError ? (
-        <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mb-3 rounded-md border p-3 text-sm">
-          {signingError}
-        </div>
+        <Alert variant="destructive" className="mb-3">
+          <AlertDescription>{signingError}</AlertDescription>
+        </Alert>
       ) : null}
       <div className="relative">
         <Textarea

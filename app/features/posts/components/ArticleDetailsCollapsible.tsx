@@ -5,6 +5,8 @@
 
 import { useState } from "react";
 
+import { Separator } from "~/components/ui/separator";
+
 import { LongFormCoverImage } from "./LongFormCoverImage";
 import { LongFormPostFields } from "./LongFormPostFields";
 
@@ -66,30 +68,33 @@ export function ArticleDetailsCollapsible({
           </svg>
         </button>
         {open ? (
-          <div className="border-border/50 space-y-6 border-t px-4 py-4">
-            <LongFormPostFields
-              title=""
-              summary={summary}
-              customTags={customTags}
-              content={content}
-              onTitleChange={() => {}}
-              onSummaryChange={onSummaryChange}
-              onCustomTagsChange={onCustomTagsChange}
-              onGenerateSummary={onGenerateSummary}
-              includeTitle={false}
-              softLabels={true}
-            />
-            <LongFormCoverImage
-              image={image}
-              uploadError={uploadError}
-              uploadProvider={uploadProvider}
-              uploadFetcherState={uploadFetcherState}
-              onImageUpload={onImageUpload}
-              onRemove={onRemoveImage}
-              onOpenAssetBrowser={onOpenAssetBrowser}
-              softLabel={true}
-            />
-          </div>
+          <>
+            <Separator className="my-4" />
+            <div className="border-border/50 space-y-6 px-4 py-4">
+              <LongFormPostFields
+                title=""
+                summary={summary}
+                customTags={customTags}
+                content={content}
+                onTitleChange={() => {}}
+                onSummaryChange={onSummaryChange}
+                onCustomTagsChange={onCustomTagsChange}
+                onGenerateSummary={onGenerateSummary}
+                includeTitle={false}
+                softLabels={true}
+              />
+              <LongFormCoverImage
+                image={image}
+                uploadError={uploadError}
+                uploadProvider={uploadProvider}
+                uploadFetcherState={uploadFetcherState}
+                onImageUpload={onImageUpload}
+                onRemove={onRemoveImage}
+                onOpenAssetBrowser={onOpenAssetBrowser}
+                softLabel={true}
+              />
+            </div>
+          </>
         ) : null}
       </div>
     </div>

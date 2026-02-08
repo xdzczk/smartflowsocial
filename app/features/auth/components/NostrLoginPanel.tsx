@@ -5,6 +5,7 @@ import { generateSecretKey, SimplePool } from "nostr-tools";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "react-qr-code";
 
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -2083,166 +2084,154 @@ export default function NostrLoginPanel() {
       ) : null}
 
       {state === "failed" && error ? (
-        <div
+        <Alert
           ref={errorRegionRef}
           tabIndex={-1}
-          role="alert"
           aria-live="assertive"
-          className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive space-y-3 rounded-lg border p-5 text-sm shadow-lg focus:outline-none"
+          variant="destructive"
+          className="space-y-3 p-5 text-sm shadow-lg"
         >
-          <div className="text-base font-bold">{getErrorTitle(error.code)}</div>
-          <div className="text-sm leading-relaxed">{error.message}</div>
-          <ul className="list-disc space-y-1.5 pl-5 text-xs">
-            {getErrorSuggestions(error.code, {
-              relayStatuses,
-              retryCount:
-                lastFailureOrigin === "nip46_init"
-                  ? nip46AttemptIdRef.current - 1
-                  : 0,
-              lastFailureOrigin,
-            }).map((s) => (
-              <li key={s} className="leading-relaxed">
-                {s}
-              </li>
-            ))}
-          </ul>
+          <AlertTitle>{getErrorTitle(error.code)}</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <div className="leading-relaxed">{error.message}</div>
+            <ul className="list-disc space-y-1.5 pl-5 text-xs">
+              {getErrorSuggestions(error.code, {
+                relayStatuses,
+                retryCount:
+                  lastFailureOrigin === "nip46_init"
+                    ? nip46AttemptIdRef.current - 1
+                    : 0,
+                lastFailureOrigin,
+              }).map((s) => (
+                <li key={s} className="leading-relaxed">
+                  {s}
+                </li>
+              ))}
+            </ul>
 
-          {/* Advanced Troubleshooting Section */}
-          <details className="text-xs">
-            <summary className="hover:text-foreground cursor-pointer font-medium select-none">
-              Advanced Troubleshooting
-            </summary>
-            <div className="mt-3 space-y-3">
-              {error.details ? (
+            {/* Advanced Troubleshooting Section */}
+            <details className="text-xs">
+              <summary className="hover:text-foreground cursor-pointer font-medium select-none">
+                Advanced Troubleshooting
+              </summary>
+              <div className="mt-3 space-y-3">
+                {error.details ? (
+                  <div>
+                    <div className="mb-1 font-medium">Technical Details:</div>
+                    <pre className="border-border bg-background dark:bg-card overflow-x-auto rounded-md border p-3 text-xs whitespace-pre-wrap">
+                      {error.details}
+                    </pre>
+                  </div>
+                ) : null}
+
                 <div>
-                  <div className="mb-1 font-medium">Technical Details:</div>
-                  <pre className="border-border bg-background dark:bg-card overflow-x-auto rounded-md border p-3 text-xs whitespace-pre-wrap">
-                    {error.details}
-                  </pre>
-                </div>
-              ) : null}
-
-              <div>
-                <div className="mb-1 font-medium">Error Classification:</div>
-                <div className="border-border bg-muted/50 dark:bg-muted/30 rounded-md border p-2 text-xs">
-                  {(() => {
-                    const classification = classifyErrorForRetry(error);
-                    return (
-                      <div className="space-y-1">
-                        <div>
-                          <span className="font-medium">Type: </span>
-                          {classification.isNetworkError
-                            ? "Network Error"
-                            : null}
-                          {classification.isTimeoutError
-                            ? "Timeout Error"
-                            : null}
-                          {classification.isPermissionError
-                            ? "Permission Error"
-                            : null}
-                          {!classification.isNetworkError &&
-                          !classification.isTimeoutError &&
-                          !classification.isPermissionError
-                            ? "Other Error"
-                            : null}
-                        </div>
-                        <div>
-                          <span className="font-medium">Retry Strategy: </span>
-                          {classification.retryStrategy ===
-                          "exponential_backoff"
-                            ? "Exponential Backoff"
-                            : null}
-                          {classification.retryStrategy ===
-                          "progressive_timeout"
-                            ? "Progressive Timeout"
-                            : null}
-                          {classification.retryStrategy === "none"
-                            ? "No Auto-Retry"
-                            : null}
-                        </div>
-                        <div>
-                          <span className="font-medium">Should Retry: </span>
-                          {classification.shouldRetry ? "Yes" : "No"}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {relayUrls.length > 0 ? (
-                <div>
-                  <div className="mb-1 font-medium">Relay Status:</div>
-                  <div className="border-border bg-muted/50 dark:bg-muted/30 space-y-1 rounded-md border p-2 text-xs">
-                    {relayUrls.map((url) => {
-                      const status = relayStatuses[url];
+                  <div className="mb-1 font-medium">Error Classification:</div>
+                  <div className="border-border bg-muted/50 dark:bg-muted/30 rounded-md border p-2 text-xs">
+                    {(() => {
+                      const classification = classifyErrorForRetry(error);
                       return (
-                        <div key={url} className="flex justify-between">
-                          <span className="truncate font-mono">{url}</span>
-                          <span className="ml-2 shrink-0">
-                            {status?.status === "connected"
-                              ? "✓ Connected"
-                              : status?.status === "failed"
-                                ? "✗ Failed"
-                                : "… Checking"}
-                          </span>
+                        <div className="space-y-1">
+                          <div>
+                            <span className="font-medium">Type: </span>
+                            {classification.isNetworkError
+                              ? "Network Error"
+                              : null}
+                            {classification.isTimeoutError
+                              ? "Timeout Error"
+                              : null}
+                            {classification.isPermissionError
+                              ? "Permission Error"
+                              : null}
+                            {!classification.isNetworkError &&
+                            !classification.isTimeoutError &&
+                            !classification.isPermissionError
+                              ? "Other Error"
+                              : null}
+                          </div>
+                          <div>
+                            <span className="font-medium">
+                              Retry Strategy:{" "}
+                            </span>
+                            {classification.retryStrategy ===
+                            "exponential_backoff"
+                              ? "Exponential Backoff"
+                              : null}
+                            {classification.retryStrategy ===
+                            "progressive_timeout"
+                              ? "Progressive Timeout"
+                              : null}
+                            {classification.retryStrategy === "none"
+                              ? "No Auto-Retry"
+                              : null}
+                          </div>
+                          <div>
+                            <span className="font-medium">Should Retry: </span>
+                            {classification.shouldRetry ? "Yes" : "No"}
+                          </div>
                         </div>
                       );
-                    })}
+                    })()}
                   </div>
                 </div>
-              ) : null}
 
-              <div>
-                <div className="mb-1 font-medium">Copy Error for Support:</div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={() => {
-                    void (async () => {
-                      const errorText = `Error Code: ${error.code}\nMessage: ${error.message}\nDetails: ${error.details ?? "N/A"}\nTimestamp: ${new Date().toISOString()}`;
-                      try {
-                        await navigator.clipboard.writeText(errorText);
-                        alert("Error details copied to clipboard");
-                      } catch {
-                        // Fallback for older browsers
-                        const textarea = document.createElement("textarea");
-                        textarea.value = errorText;
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        document.execCommand("copy");
-                        document.body.removeChild(textarea);
-                        alert("Error details copied to clipboard");
-                      }
-                    })();
-                  }}
-                >
-                  Copy Error Details
-                </Button>
+                {relayUrls.length > 0 ? (
+                  <div>
+                    <div className="mb-1 font-medium">Relay Status:</div>
+                    <div className="border-border bg-muted/50 dark:bg-muted/30 space-y-1 rounded-md border p-2 text-xs">
+                      {relayUrls.map((url) => {
+                        const status = relayStatuses[url];
+                        return (
+                          <div key={url} className="flex justify-between">
+                            <span className="truncate font-mono">{url}</span>
+                            <span className="ml-2 shrink-0">
+                              {status?.status === "connected"
+                                ? "✓ Connected"
+                                : status?.status === "failed"
+                                  ? "✗ Failed"
+                                  : "… Checking"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div>
+                  <div className="mb-1 font-medium">
+                    Copy Error for Support:
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      void (async () => {
+                        const errorText = `Error Code: ${error.code}\nMessage: ${error.message}\nDetails: ${error.details ?? "N/A"}\nTimestamp: ${new Date().toISOString()}`;
+                        try {
+                          await navigator.clipboard.writeText(errorText);
+                          alert("Error details copied to clipboard");
+                        } catch {
+                          // Fallback for older browsers
+                          const textarea = document.createElement("textarea");
+                          textarea.value = errorText;
+                          document.body.appendChild(textarea);
+                          textarea.select();
+                          document.execCommand("copy");
+                          document.body.removeChild(textarea);
+                          alert("Error details copied to clipboard");
+                        }
+                      })();
+                    }}
+                  >
+                    Copy Error Details
+                  </Button>
+                </div>
               </div>
-            </div>
-          </details>
-          <div className="flex gap-3 pt-2">
-            {error.code === "SIGNER_NOT_FOUND" ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="border-border bg-card hover:bg-muted hover:text-foreground"
-                onClick={() => void resetToSelection()}
-              >
-                Back
-              </Button>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
-                  onClick={handleTryAgain}
-                >
-                  Try again
-                </Button>
+            </details>
+            <div className="flex gap-3 pt-2">
+              {error.code === "SIGNER_NOT_FOUND" ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -2251,10 +2240,28 @@ export default function NostrLoginPanel() {
                 >
                   Back
                 </Button>
-              </>
-            )}
-          </div>
-        </div>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                    onClick={handleTryAgain}
+                  >
+                    Try again
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-border bg-card hover:bg-muted hover:text-foreground"
+                    onClick={() => void resetToSelection()}
+                  >
+                    Back
+                  </Button>
+                </>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
     </div>
   );

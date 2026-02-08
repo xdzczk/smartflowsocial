@@ -4,8 +4,16 @@
 
 import { Link, useFetcher } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { MoreHorizontal } from "lucide-react";
 import { useRef, useState, type Key } from "react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -298,35 +306,48 @@ export function DraftsTable({
                     </div>
                   </td>
                   <td className="p-3 text-center">
-                    <div className="flex justify-center gap-2">
-                      <Link
-                        to={`/dashboard/drafts/edit/${post.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none"
-                      >
-                        Edit
-                      </Link>
-                      <deleteFetcher.Form
-                        method="post"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <input type="hidden" name="postId" value={post.id} />
-                        <input type="hidden" name="_action" value="delete" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <button
-                          type="submit"
-                          disabled={
-                            deleteFetcher.state !== "idle" ||
-                            bulkDeleteState !== "idle"
-                          }
-                          className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                          type="button"
+                          onClick={(e) => e.stopPropagation()}
+                          className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                          aria-label="Actions"
                         >
-                          {deleteFetcher.state !== "idle" &&
-                          deleteFetcher.formData?.get("postId") === post.id
-                            ? "Deleting..."
-                            : "Delete"}
+                          <MoreHorizontal className="h-4 w-4" />
                         </button>
-                      </deleteFetcher.Form>
-                    </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DropdownMenuItem asChild>
+                          <Link to={`/dashboard/drafts/edit/${post.id}`}>
+                            Edit
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <deleteFetcher.Form method="post">
+                          <input type="hidden" name="postId" value={post.id} />
+                          <input type="hidden" name="_action" value="delete" />
+                          <DropdownMenuItem asChild>
+                            <button
+                              type="submit"
+                              disabled={
+                                deleteFetcher.state !== "idle" ||
+                                bulkDeleteState !== "idle"
+                              }
+                              className="text-destructive focus:text-destructive"
+                            >
+                              {deleteFetcher.state !== "idle" &&
+                              deleteFetcher.formData?.get("postId") === post.id
+                                ? "Deleting..."
+                                : "Delete"}
+                            </button>
+                          </DropdownMenuItem>
+                        </deleteFetcher.Form>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))}

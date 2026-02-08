@@ -37,6 +37,8 @@ SmartFlowSocial is built as a full-stack Remix application with a focus on:
 | Framework      | [Remix](https://remix.run) (Full-stack React)   |
 | Database       | PostgreSQL with [Prisma](https://prisma.io) ORM |
 | Styling        | [TailwindCSS](https://tailwindcss.com)          |
+| UI Components  | [Shadcn UI](https://ui.shadcn.com) (Radix UI)   |
+| Icons          | [Lucide React](https://lucide.dev)              |
 | Queue System   | [BullMQ](https://docs.bullmq.io/) with Redis    |
 | Authentication | Nostr-based (NIP-07 browser extensions)         |
 | Payments       | Lightning Network via NWC                       |
@@ -180,6 +182,20 @@ smartflow-social/
 ```
 
 ## Key Conventions
+
+### UI and Icons
+
+- **Icons**: Use [Lucide React](https://lucide.dev) only. Use `size-4` for inline icons (e.g. in
+  buttons), or `className="h-X w-X"` where needed for layout.
+- **Navigation icons**: Icons in sidebar/primary nav must feel as strong as the text — never
+  decorative. Use **18px** size and **strokeWidth 2.25** for all nav icons (see
+  `NAV_ICON_SIZE_CLASS` / `NAV_ICON_STROKE` in `DashboardHeader` and `ExpandableNavigationSection`).
+  Use slightly higher contrast for inactive nav icons (e.g. `text-foreground/70`) so they read
+  co-equal with labels.
+- **Stroke**: Use a single stroke width per context: default `strokeWidth={2}` elsewhere; nav uses
+  `2.25` to match Kanit. Do not mix stroke widths randomly.
+- **UI primitives**: Use Shadcn/Radix components from `~/components/ui` (Alert, AlertDialog, Dialog,
+  DropdownMenu, Popover, Separator, Skeleton, Tooltip, etc.) for consistency and accessibility.
 
 ### File Naming
 

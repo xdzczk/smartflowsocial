@@ -10,7 +10,9 @@ import {
 } from "~/features/payments/types";
 
 const TEXT_PRIMARY = "text-primary";
-const TEXT_MUTED_FOREGROUND = "text-muted-foreground";
+// Inactive nav icons: slightly higher contrast than inactive text (co-equal with labels)
+const TEXT_NAV_ICON_INACTIVE = "text-foreground/70";
+const NAV_ICON_STROKE = 2.25;
 
 /** Pathname only (no search or hash) so active state matches when link has query params e.g. /dashboard/giveaway?days=7 */
 function getPathname(href: string): string {
@@ -94,7 +96,7 @@ function NavigationChildItemComponent({
       tabIndex={sectionExpanded ? undefined : -1}
     >
       <span
-        className={`flex flex-none shrink-0 items-center ${isActive ? "text-foreground dark:text-primary" : TEXT_MUTED_FOREGROUND}`}
+        className={`flex flex-none shrink-0 items-center ${isActive ? "text-foreground dark:text-primary" : TEXT_NAV_ICON_INACTIVE}`}
       >
         {child.icon}
       </span>
@@ -102,7 +104,10 @@ function NavigationChildItemComponent({
         <>
           <span className="grow py-2">{child.label}</span>
           {!hasAccess ? (
-            <Lock className="h-4 w-4 flex-shrink-0 text-amber-500" />
+            <Lock
+              className="h-4 w-4 flex-shrink-0 text-amber-500"
+              strokeWidth={NAV_ICON_STROKE}
+            />
           ) : null}
         </>
       ) : null}
@@ -218,17 +223,17 @@ export function ExpandableNavigationSection({
         aria-controls={`${title.toLowerCase().replace(/\s+/g, "-")}-section-content`}
       >
         <span
-          className={`flex flex-none items-center ${isAnyChildActive ? "text-foreground dark:text-primary" : TEXT_MUTED_FOREGROUND}`}
+          className={`flex flex-none items-center ${isAnyChildActive ? "text-foreground dark:text-primary" : TEXT_NAV_ICON_INACTIVE}`}
         >
           {icon}
         </span>
         <span className="grow py-2 text-left">{title}</span>
         <span
-          className={`flex flex-none items-center ${isAnyChildActive ? TEXT_PRIMARY : TEXT_MUTED_FOREGROUND} transition-transform duration-200 ease-in-out ${
+          className={`flex flex-none items-center ${isAnyChildActive ? TEXT_PRIMARY : TEXT_NAV_ICON_INACTIVE} transition-transform duration-200 ease-in-out ${
             isExpanded ? "rotate-180" : "rotate-0"
           }`}
         >
-          <ChevronDown className="h-4 w-4" />
+          <ChevronDown className="h-4 w-4" strokeWidth={NAV_ICON_STROKE} />
         </span>
       </button>
 

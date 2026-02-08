@@ -2,6 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { parseDateTimeLocal, toDate, fromDate } from "~/lib/temporal";
@@ -751,11 +752,11 @@ export function EditPostModal({
 
               {/* Error display */}
               {(fetcher.data?.error ?? signingError) ? (
-                <div className="border-destructive bg-destructive/10 dark:border-destructive dark:bg-destructive/20/20 rounded-lg border p-4">
-                  <div className="text-destructive dark:text-destructive text-sm">
+                <Alert variant="destructive">
+                  <AlertDescription>
                     {fetcher.data?.error ?? signingError}
-                  </div>
-                </div>
+                  </AlertDescription>
+                </Alert>
               ) : null}
             </div>
 

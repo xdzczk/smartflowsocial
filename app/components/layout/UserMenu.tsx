@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { Separator } from "~/components/ui/separator";
 import type { ProfileData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
 import { formatNpubShort } from "~/lib/nostr-conversion";
@@ -414,7 +415,8 @@ export default function UserMenu() {
           ) : null}
 
           {/* Logout Button */}
-          <div className="border-t pt-4">
+          <Separator className="my-4" />
+          <div className="pt-4">
             <logoutFetcher.Form action="/logout" method="post">
               <Button
                 type="submit"

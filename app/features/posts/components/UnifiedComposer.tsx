@@ -6,9 +6,11 @@
 import { useFetcher, Link } from "@remix-run/react";
 import React, { useEffect, useRef, useState } from "react";
 
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
 import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
@@ -999,8 +1001,13 @@ export function UnifiedComposer({
           </div>
         ) : null}
         {signingError ? (
-          <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mb-3 flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
-            <span>{signingError}</span>
+          <Alert
+            variant="destructive"
+            className="mb-3 flex flex-row items-center justify-between gap-2"
+          >
+            <AlertDescription className="flex-1">
+              {signingError}
+            </AlertDescription>
             <Button
               type="button"
               variant="outline"
@@ -1013,7 +1020,7 @@ export function UnifiedComposer({
             >
               Try again
             </Button>
-          </div>
+          </Alert>
         ) : null}
         <div className="my-8">
           {isThreadMode ? (
@@ -1487,47 +1494,50 @@ export function UnifiedComposer({
                   </svg>
                 </button>
                 {postOptionsOpen ? (
-                  <div className="border-border space-y-3 border-t px-3 pt-2 pb-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="thread-mode"
-                        checked={isThreadMode}
-                        onChange={(e) => setIsThreadMode(e.target.checked)}
+                  <>
+                    <Separator className="my-2" />
+                    <div className="border-border space-y-3 px-3 pb-3">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="thread-mode"
+                          checked={isThreadMode}
+                          onChange={(e) => setIsThreadMode(e.target.checked)}
+                          disabled={disabled}
+                          className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                        />
+                        <Label htmlFor="thread-mode" className="text-sm">
+                          Thread (multiple posts in sequence)
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="isRecyclable"
+                          {...form.register("isRecyclable")}
+                          disabled={disabled}
+                          className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                        />
+                        <Label
+                          htmlFor="isRecyclable"
+                          className="text-muted-foreground dark:text-foreground text-sm"
+                        >
+                          Make this post recyclable
+                        </Label>
+                      </div>
+                      <AlsoScheduleBlock
+                        alsoScheduleRepost={alsoScheduleRepost}
+                        onAlsoScheduleRepostChange={setAlsoScheduleRepost}
+                        repostDelayList={repostDelayList}
+                        onRepostDelayListChange={setRepostDelayList}
+                        alsoScheduleQuote={alsoScheduleQuote}
+                        onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+                        quoteEntries={quoteEntries}
+                        onQuoteEntriesChange={setQuoteEntries}
                         disabled={disabled}
-                        className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                       />
-                      <Label htmlFor="thread-mode" className="text-sm">
-                        Thread (multiple posts in sequence)
-                      </Label>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="isRecyclable"
-                        {...form.register("isRecyclable")}
-                        disabled={disabled}
-                        className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
-                      />
-                      <Label
-                        htmlFor="isRecyclable"
-                        className="text-muted-foreground dark:text-foreground text-sm"
-                      >
-                        Make this post recyclable
-                      </Label>
-                    </div>
-                    <AlsoScheduleBlock
-                      alsoScheduleRepost={alsoScheduleRepost}
-                      onAlsoScheduleRepostChange={setAlsoScheduleRepost}
-                      repostDelayList={repostDelayList}
-                      onRepostDelayListChange={setRepostDelayList}
-                      alsoScheduleQuote={alsoScheduleQuote}
-                      onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-                      quoteEntries={quoteEntries}
-                      onQuoteEntriesChange={setQuoteEntries}
-                      disabled={disabled}
-                    />
-                  </div>
+                  </>
                 ) : null}
               </div>
             </div>

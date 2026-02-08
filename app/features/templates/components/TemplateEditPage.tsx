@@ -1,6 +1,16 @@
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import React, { useEffect, useState } from "react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { getQueueColor } from "~/features/posts/queue-colors";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -40,6 +50,7 @@ export default function TemplateEditPage() {
   const templateNameValue = template?.name ?? "";
   const [templateName, setTemplateName] = useState(templateNameValue);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Handle successful name update
   useEffect(() => {
@@ -102,18 +113,11 @@ export default function TemplateEditPage() {
   };
 
   const handleDeleteTemplate = () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this template? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-
     const formData = new FormData();
     formData.append("_action", "deleteTemplate");
 
     deleteTemplateFetcher.submit(formData, { method: "post" });
+    setShowDeleteConfirm(false);
   };
 
   const handleScheduleTemplate = () => {
@@ -148,7 +152,7 @@ export default function TemplateEditPage() {
             {scheduleFetcher.state !== "idle" ? "Loading..." : "Schedule Posts"}
           </button>
           <button
-            onClick={handleDeleteTemplate}
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={deleteTemplateFetcher.state !== "idle"}
             className="border-destructive text-destructive hover:bg-destructive/10 dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10 rounded-lg border px-4 py-2 disabled:opacity-50"
           >
@@ -158,6 +162,28 @@ export default function TemplateEditPage() {
           </button>
         </div>
       </div>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this template? This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteTemplate}
+              disabled={deleteTemplateFetcher.state !== "idle"}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Header and description below back button */}
       <div className="mb-6">

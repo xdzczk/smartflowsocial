@@ -1,5 +1,13 @@
 import { Link } from "@remix-run/react";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { MoreHorizontal } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 
 import type {
   CombinedContent,
@@ -68,31 +76,6 @@ export function ContentListCard({
   onScheduleQuote,
   onMenuOpenChange,
 }: ContentListCardProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const setMenuOpenWithCallback = useCallback(
-    (value: boolean | ((prev: boolean) => boolean)) => {
-      setMenuOpen((prev) => {
-        const next = typeof value === "function" ? value(prev) : value;
-        onMenuOpenChange?.(next);
-        return next;
-      });
-    },
-    [onMenuOpenChange]
-  );
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpenWithCallback(false);
-      }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [menuOpen, setMenuOpenWithCallback]);
-
   const queueDisplay = getQueueTypeDisplay(item.queueType);
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
@@ -187,59 +170,54 @@ export function ContentListCard({
           </span>
         </div>
       </div>
-      <div className="relative flex-shrink-0" ref={menuRef}>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenuOpenWithCallback((open) => !open);
-          }}
-          className="text-muted-foreground hover:text-foreground focus:ring-ring flex h-8 w-8 items-center justify-center rounded-md focus:ring-2 focus:ring-offset-0 focus:outline-none"
-          aria-label="Actions"
-          aria-expanded={menuOpen}
-        >
-          <span className="text-lg leading-none">⋯</span>
-        </button>
-        {menuOpen ? (
-          <div
-            className="border-border bg-card absolute top-full right-0 z-10 mt-1 min-w-[10rem] rounded-lg border py-1 shadow-lg"
+      <DropdownMenu
+        onOpenChange={(open) => {
+          onMenuOpenChange?.(open);
+        }}
+      >
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
             onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.stopPropagation();
-              }
-            }}
-            role="none"
+            className="text-muted-foreground hover:text-foreground focus:ring-ring flex h-8 w-8 items-center justify-center rounded-md focus:ring-2 focus:ring-offset-0 focus:outline-none"
+            aria-label="Actions"
           >
-            {type === "posted" ? (
-              <>
-                {item.type === "post" && item.originalData.signedEvent?.id ? (
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          {type === "posted" ? (
+            <>
+              {item.type === "post" && item.originalData.signedEvent?.id ? (
+                <DropdownMenuItem asChild>
                   <Link
                     to={`https://primal.net/e/${item.originalData.signedEvent.id}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-foreground hover:bg-muted block px-3 py-2 text-sm"
                   >
                     View Note
                   </Link>
-                ) : null}
-                {item.type === "longform" &&
-                (item.originalData.nostrEventId ||
-                  item.originalData.signedEvent?.id) ? (
+                </DropdownMenuItem>
+              ) : null}
+              {item.type === "longform" &&
+              (item.originalData.nostrEventId ||
+                item.originalData.signedEvent?.id) ? (
+                <DropdownMenuItem asChild>
                   <Link
                     to={`https://primal.net/a/${item.originalData.nostrEventId ?? item.originalData.signedEvent?.id ?? ""}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-foreground hover:bg-muted block px-3 py-2 text-sm"
                   >
                     View Article
                   </Link>
-                ) : null}
-                {item.type === "post" && individualRepostFetcher ? (
-                  <>
-                    <individualRepostFetcher.Form method="post">
-                      <input type="hidden" name="postId" value={item.id} />
-                      <input type="hidden" name="_action" value="repost" />
+                </DropdownMenuItem>
+              ) : null}
+              {item.type === "post" && individualRepostFetcher ? (
+                <>
+                  <individualRepostFetcher.Form method="post">
+                    <input type="hidden" name="postId" value={item.id} />
+                    <input type="hidden" name="_action" value="repost" />
+                    <DropdownMenuItem asChild>
                       <button
                         type="submit"
                         disabled={
@@ -250,7 +228,7 @@ export function ContentListCard({
                               ) as string | null) === item.id
                             : false)
                         }
-                        className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm disabled:opacity-50"
+                        className="w-full cursor-pointer"
                       >
                         {individualRepostFetcher.state !== "idle" &&
                         (getFetcherFormData(individualRepostFetcher)
@@ -261,10 +239,12 @@ export function ContentListCard({
                           ? "Reposting..."
                           : "Repost"}
                       </button>
-                    </individualRepostFetcher.Form>
-                    <individualRepostFetcher.Form method="post">
-                      <input type="hidden" name="postId" value={item.id} />
-                      <input type="hidden" name="_action" value="quote" />
+                    </DropdownMenuItem>
+                  </individualRepostFetcher.Form>
+                  <individualRepostFetcher.Form method="post">
+                    <input type="hidden" name="postId" value={item.id} />
+                    <input type="hidden" name="_action" value="quote" />
+                    <DropdownMenuItem asChild>
                       <button
                         type="submit"
                         disabled={
@@ -275,7 +255,7 @@ export function ContentListCard({
                               ) as string | null) === item.id
                             : false)
                         }
-                        className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm disabled:opacity-50"
+                        className="w-full cursor-pointer"
                       >
                         {individualRepostFetcher.state !== "idle" &&
                         (getFetcherFormData(individualRepostFetcher)
@@ -286,17 +266,15 @@ export function ContentListCard({
                           ? "Quoting..."
                           : "Quote Post"}
                       </button>
-                    </individualRepostFetcher.Form>
-                  </>
-                ) : null}
-                {item.type === "longform" && longformRepostFetcher ? (
-                  <longformRepostFetcher.Form method="post">
-                    <input type="hidden" name="postId" value={item.id} />
-                    <input
-                      type="hidden"
-                      name="_action"
-                      value="longformRepost"
-                    />
+                    </DropdownMenuItem>
+                  </individualRepostFetcher.Form>
+                </>
+              ) : null}
+              {item.type === "longform" && longformRepostFetcher ? (
+                <longformRepostFetcher.Form method="post">
+                  <input type="hidden" name="postId" value={item.id} />
+                  <input type="hidden" name="_action" value="longformRepost" />
+                  <DropdownMenuItem asChild>
                     <button
                       type="submit"
                       disabled={
@@ -307,7 +285,7 @@ export function ContentListCard({
                             ) as string | null) === item.id
                           : false)
                       }
-                      className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm disabled:opacity-50"
+                      className="w-full cursor-pointer"
                     >
                       {longformRepostFetcher.state !== "idle" &&
                       (getFetcherFormData(longformRepostFetcher)
@@ -318,12 +296,14 @@ export function ContentListCard({
                         ? "Reposting..."
                         : "Repost"}
                     </button>
-                  </longformRepostFetcher.Form>
-                ) : null}
-                {item.type === "longform" && longformQuoteFetcher ? (
-                  <longformQuoteFetcher.Form method="post">
-                    <input type="hidden" name="postId" value={item.id} />
-                    <input type="hidden" name="_action" value="longformQuote" />
+                  </DropdownMenuItem>
+                </longformRepostFetcher.Form>
+              ) : null}
+              {item.type === "longform" && longformQuoteFetcher ? (
+                <longformQuoteFetcher.Form method="post">
+                  <input type="hidden" name="postId" value={item.id} />
+                  <input type="hidden" name="_action" value="longformQuote" />
+                  <DropdownMenuItem asChild>
                     <button
                       type="submit"
                       disabled={
@@ -334,7 +314,7 @@ export function ContentListCard({
                             ) as string | null) === item.id
                           : false)
                       }
-                      className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm disabled:opacity-50"
+                      className="w-full cursor-pointer"
                     >
                       {longformQuoteFetcher.state !== "idle" &&
                       (getFetcherFormData(longformQuoteFetcher)
@@ -345,93 +325,74 @@ export function ContentListCard({
                         ? "Quoting..."
                         : "Quote Post"}
                     </button>
-                  </longformQuoteFetcher.Form>
-                ) : null}
-                {onScheduleRepost && item.type === "post" ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onScheduleRepost(item.originalData as PostData);
-                      setMenuOpenWithCallback(false);
-                    }}
-                    className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
-                  >
-                    Schedule repost
-                  </button>
-                ) : null}
-                {onScheduleQuote && item.type === "post" ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onScheduleQuote(item.originalData as PostData);
-                      setMenuOpenWithCallback(false);
-                    }}
-                    className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
-                  >
-                    Schedule quote
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-            {type === "scheduled" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onEditPost?.(item.originalData);
-                    setMenuOpenWithCallback(false);
-                  }}
-                  className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
+                  </DropdownMenuItem>
+                </longformQuoteFetcher.Form>
+              ) : null}
+              {onScheduleRepost && item.type === "post" ? (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    onScheduleRepost(item.originalData as PostData)
+                  }
                 >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onReschedulePost?.(item.originalData);
-                    setMenuOpenWithCallback(false);
-                  }}
-                  className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
+                  Schedule repost
+                </DropdownMenuItem>
+              ) : null}
+              {onScheduleQuote && item.type === "post" ? (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    onScheduleQuote(item.originalData as PostData)
+                  }
                 >
-                  Reschedule
-                </button>
-                {item.type === "post" && onScheduleRepost ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onScheduleRepost(item.originalData as PostData);
-                      setMenuOpenWithCallback(false);
-                    }}
-                    className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
-                  >
-                    Schedule repost
-                  </button>
-                ) : null}
-                {item.type === "post" && onScheduleQuote ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onScheduleQuote(item.originalData as PostData);
-                      setMenuOpenWithCallback(false);
-                    }}
-                    className="text-foreground hover:bg-muted block w-full px-3 py-2 text-left text-sm"
-                  >
-                    Schedule quote
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-            <deleteFetcher.Form method="post">
-              <input type="hidden" name="postId" value={item.id} />
-              <input
-                type="hidden"
-                name="_action"
-                value={item.type === "post" ? "delete" : "deleteLongForm"}
-              />
+                  Schedule quote
+                </DropdownMenuItem>
+              ) : null}
+            </>
+          ) : null}
+          {type === "scheduled" ? (
+            <>
+              <DropdownMenuItem
+                onSelect={() => onEditPost?.(item.originalData)}
+              >
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => onReschedulePost?.(item.originalData)}
+              >
+                Reschedule
+              </DropdownMenuItem>
+              {item.type === "post" && onScheduleRepost ? (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    onScheduleRepost(item.originalData as PostData)
+                  }
+                >
+                  Schedule repost
+                </DropdownMenuItem>
+              ) : null}
+              {item.type === "post" && onScheduleQuote ? (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    onScheduleQuote(item.originalData as PostData)
+                  }
+                >
+                  Schedule quote
+                </DropdownMenuItem>
+              ) : null}
+            </>
+          ) : null}
+          <DropdownMenuSeparator />
+          <deleteFetcher.Form method="post">
+            <input type="hidden" name="postId" value={item.id} />
+            <input
+              type="hidden"
+              name="_action"
+              value={item.type === "post" ? "delete" : "deleteLongForm"}
+            />
+            <DropdownMenuItem asChild>
               <button
                 type="submit"
                 disabled={deleteFetcher.state !== "idle"}
-                className="text-destructive hover:bg-muted block w-full px-3 py-2 text-left text-sm disabled:opacity-50"
+                className="text-destructive w-full cursor-pointer disabled:opacity-50"
               >
                 {deleteFetcher.state !== "idle" &&
                 (deleteFetcher.formData
@@ -441,10 +402,10 @@ export function ContentListCard({
                   ? "Deleting..."
                   : "Delete"}
               </button>
-            </deleteFetcher.Form>
-          </div>
-        ) : null}
-      </div>
+            </DropdownMenuItem>
+          </deleteFetcher.Form>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

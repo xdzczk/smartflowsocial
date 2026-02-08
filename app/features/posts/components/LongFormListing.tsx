@@ -1,7 +1,15 @@
 import { useFetcher, Link } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { MoreHorizontal } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, type Key } from "react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -671,172 +679,171 @@ export default function LongFormListing({
                   ) : null}
                   <td className="p-3 text-center">{getStatusBadge(post)}</td>
                   <td className="p-3 text-center">
-                    <div className="flex justify-center gap-2">
-                      {type === "draft" ? (
-                        <Link
-                          to={`/dashboard/drafts/longform/edit/${post.id}`}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
                           onClick={(e) => e.stopPropagation()}
-                          className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
+                          className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                          aria-label="Actions"
                         >
-                          Edit
-                        </Link>
-                      ) : null}
-                      {type === "scheduled" && onEditPost ? (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEditPost(post);
-                            }}
-                            className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (onReschedulePost) {
-                                onReschedulePost(post);
-                              }
-                            }}
-                            className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-ring/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-ring/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
-                          >
-                            Reschedule
-                          </button>
-                        </>
-                      ) : null}
-                      {type === "posted" &&
-                      (post.nostrEventId ??
-                        (post.signedEvent &&
-                        typeof post.signedEvent === "object" &&
-                        "id" in post.signedEvent
-                          ? (post.signedEvent as { id?: string }).id
-                          : undefined)) ? (
-                        <>
-                          <Link
-                            to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="font-montserrat inline-block rounded-full bg-black/50 px-4 py-1 text-sm text-white transition-colors duration-200 hover:bg-black/70"
-                          >
-                            View Article
-                          </Link>
-                          {longformRepostFetcher
-                            ? (() => {
-                                const fetcher = longformRepostFetcher;
-                                const formData = getFetcherFormData(fetcher);
-                                return (
-                                  <fetcher.Form
-                                    method="post"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <input
-                                      type="hidden"
-                                      name="postId"
-                                      value={post.id}
-                                    />
-                                    <input
-                                      type="hidden"
-                                      name="_action"
-                                      value="longformRepost"
-                                    />
-                                    <button
-                                      type="submit"
-                                      disabled={
-                                        fetcher.state !== "idle" ||
-                                        (formData
-                                          ? (formData.get("postId") as
-                                              | string
-                                              | null) === post.id
-                                          : false)
-                                      }
-                                      className="dark:bg-card border-border text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
-                                    >
-                                      {fetcher.state !== "idle" &&
-                                      (formData
-                                        ? (formData.get("postId") as
-                                            | string
-                                            | null) === post.id
-                                        : false)
-                                        ? "Reposting..."
-                                        : "Repost"}
-                                    </button>
-                                  </fetcher.Form>
-                                );
-                              })()
-                            : null}
-                          {longformQuoteFetcher
-                            ? (() => {
-                                const fetcher = longformQuoteFetcher;
-                                const formData = getFetcherFormData(fetcher);
-                                return (
-                                  <fetcher.Form
-                                    method="post"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <input
-                                      type="hidden"
-                                      name="postId"
-                                      value={post.id}
-                                    />
-                                    <input
-                                      type="hidden"
-                                      name="_action"
-                                      value="longformQuote"
-                                    />
-                                    <button
-                                      type="submit"
-                                      disabled={
-                                        fetcher.state !== "idle" ||
-                                        (formData
-                                          ? (formData.get("postId") as
-                                              | string
-                                              | null) === post.id
-                                          : false)
-                                      }
-                                      className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-ring/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-ring/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
-                                    >
-                                      {fetcher.state !== "idle" &&
-                                      (fetcher.formData
-                                        ? (fetcher.formData.get("postId") as
-                                            | string
-                                            | null) === post.id
-                                        : false)
-                                        ? "Quoting..."
-                                        : "Quote Post"}
-                                    </button>
-                                  </fetcher.Form>
-                                );
-                              })()
-                            : null}
-                        </>
-                      ) : null}
-                      <deleteFetcher.Form
-                        method="post"
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <input type="hidden" name="postId" value={post.id} />
-                        <input
-                          type="hidden"
-                          name="_action"
-                          value="deleteLongForm"
-                        />
-                        <button
-                          type="submit"
-                          disabled={
-                            deleteFetcher.state !== "idle" ||
-                            bulkDeleteFetcher.state !== "idle"
-                          }
-                          className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-ring/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-ring/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-2 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
-                        >
-                          {deleteFetcher.state !== "idle" &&
-                          deleteFetcher.formData?.get("postId") === post.id
-                            ? "Deleting..."
-                            : "Delete"}
-                        </button>
-                      </deleteFetcher.Form>
-                    </div>
+                        {type === "draft" ? (
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to={`/dashboard/drafts/longform/edit/${post.id}`}
+                            >
+                              Edit
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : null}
+                        {type === "scheduled" && onEditPost ? (
+                          <>
+                            <DropdownMenuItem onSelect={() => onEditPost(post)}>
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() => onReschedulePost?.(post)}
+                            >
+                              Reschedule
+                            </DropdownMenuItem>
+                          </>
+                        ) : null}
+                        {type === "posted" &&
+                        (post.nostrEventId ??
+                          (post.signedEvent &&
+                          typeof post.signedEvent === "object" &&
+                          "id" in post.signedEvent
+                            ? (post.signedEvent as { id?: string }).id
+                            : undefined)) ? (
+                          <>
+                            <DropdownMenuItem asChild>
+                              <Link
+                                to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                View Article
+                              </Link>
+                            </DropdownMenuItem>
+                            {longformRepostFetcher
+                              ? (() => {
+                                  const fetcher = longformRepostFetcher;
+                                  const formData = getFetcherFormData(fetcher);
+                                  return (
+                                    <fetcher.Form method="post">
+                                      <input
+                                        type="hidden"
+                                        name="postId"
+                                        value={post.id}
+                                      />
+                                      <input
+                                        type="hidden"
+                                        name="_action"
+                                        value="longformRepost"
+                                      />
+                                      <DropdownMenuItem asChild>
+                                        <button
+                                          type="submit"
+                                          disabled={
+                                            fetcher.state !== "idle" ||
+                                            (formData
+                                              ? (formData.get("postId") as
+                                                  | string
+                                                  | null) === post.id
+                                              : false)
+                                          }
+                                        >
+                                          {fetcher.state !== "idle" &&
+                                          (formData
+                                            ? (formData.get("postId") as
+                                                | string
+                                                | null) === post.id
+                                            : false)
+                                            ? "Reposting..."
+                                            : "Repost"}
+                                        </button>
+                                      </DropdownMenuItem>
+                                    </fetcher.Form>
+                                  );
+                                })()
+                              : null}
+                            {longformQuoteFetcher
+                              ? (() => {
+                                  const fetcher = longformQuoteFetcher;
+                                  const formData = getFetcherFormData(fetcher);
+                                  return (
+                                    <fetcher.Form method="post">
+                                      <input
+                                        type="hidden"
+                                        name="postId"
+                                        value={post.id}
+                                      />
+                                      <input
+                                        type="hidden"
+                                        name="_action"
+                                        value="longformQuote"
+                                      />
+                                      <DropdownMenuItem asChild>
+                                        <button
+                                          type="submit"
+                                          disabled={
+                                            fetcher.state !== "idle" ||
+                                            (formData
+                                              ? (formData.get("postId") as
+                                                  | string
+                                                  | null) === post.id
+                                              : false)
+                                          }
+                                        >
+                                          {fetcher.state !== "idle" &&
+                                          (fetcher.formData
+                                            ? (fetcher.formData.get(
+                                                "postId"
+                                              ) as string | null) === post.id
+                                            : false)
+                                            ? "Quoting..."
+                                            : "Quote Post"}
+                                        </button>
+                                      </DropdownMenuItem>
+                                    </fetcher.Form>
+                                  );
+                                })()
+                              : null}
+                          </>
+                        ) : null}
+                        <DropdownMenuSeparator />
+                        <deleteFetcher.Form method="post">
+                          <input type="hidden" name="postId" value={post.id} />
+                          <input
+                            type="hidden"
+                            name="_action"
+                            value="deleteLongForm"
+                          />
+                          <DropdownMenuItem asChild>
+                            <button
+                              type="submit"
+                              disabled={
+                                deleteFetcher.state !== "idle" ||
+                                bulkDeleteFetcher.state !== "idle"
+                              }
+                              className="text-destructive focus:text-destructive"
+                            >
+                              {deleteFetcher.state !== "idle" &&
+                              deleteFetcher.formData?.get("postId") === post.id
+                                ? "Deleting..."
+                                : "Delete"}
+                            </button>
+                          </DropdownMenuItem>
+                        </deleteFetcher.Form>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))}

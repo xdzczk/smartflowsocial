@@ -3,6 +3,7 @@ import { nip19 } from "nostr-tools";
 import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { Separator } from "~/components/ui/separator";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import type { Notification } from "../engagement.server";
@@ -232,67 +233,70 @@ function GroupedNotificationCard({
 
           {/* Parent Post Stats */}
           {parentPost.stats ? (
-            <div className="border-border mt-4 flex flex-wrap gap-4 border-t pt-3">
-              <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                  <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                </svg>
-                <span>{parentPost.stats.replies}</span>
+            <>
+              <Separator className="my-3" />
+              <div className="flex flex-wrap gap-4">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                    <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+                  </svg>
+                  <span>{parentPost.stats.replies}</span>
+                </div>
+                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>
+                    {parentPost.stats.zaps > 0
+                      ? `${parentPost.stats.satszapped.toLocaleString()}`
+                      : "0"}
+                  </span>
+                </div>
+                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{parentPost.stats.likes}</span>
+                </div>
+                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  <span>{parentPost.stats.reposts}</span>
+                </div>
               </div>
-              <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>
-                  {parentPost.stats.zaps > 0
-                    ? `${parentPost.stats.satszapped.toLocaleString()}`
-                    : "0"}
-                </span>
-              </div>
-              <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>{parentPost.stats.likes}</span>
-              </div>
-              <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-                <span>{parentPost.stats.reposts}</span>
-              </div>
-            </div>
+            </>
           ) : null}
         </div>
 

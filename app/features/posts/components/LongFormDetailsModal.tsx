@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+import { Separator } from "~/components/ui/separator";
 import { ChildRepliesPanel } from "~/features/engagement/components/ChildRepliesPanel";
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import type {
@@ -489,16 +490,19 @@ export default function LongFormDetailsModal({
 
               {/* Tags */}
               {post.tags.length > 0 ? (
-                <div className="border-border dark:border-border mt-8 flex items-center gap-2 border-t pt-6">
-                  {post.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-primary dark:text-muted-foreground cursor-pointer text-sm hover:underline"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+                <>
+                  <Separator className="mt-8 mb-2" />
+                  <div className="flex items-center gap-2">
+                    {post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-primary dark:text-muted-foreground cursor-pointer text-sm hover:underline"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </>
               ) : null}
             </div>
           </div>

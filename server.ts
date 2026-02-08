@@ -537,6 +537,11 @@ async function run() {
     res.sendStatus(204);
   });
 
+  // Browsers/extensions sometimes request /.env; respond with 204 to avoid 404 and log noise
+  app.get("/.env", (_req, res) => {
+    res.sendStatus(204);
+  });
+
   // Express 5: Use app.use() without path for catch-all route handler
   app.use(remixHandler);
 

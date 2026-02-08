@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   getSyncState,
   subscribeToSyncState,
@@ -50,7 +51,7 @@ export function SyncStatusIndicator() {
   if (syncState === "syncing") {
     return (
       <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <div className="animate-pulse-subtle h-3 w-3 rounded-full bg-blue-500" />
+        <Skeleton className="h-3 w-3 rounded-full" />
         <span className="hidden sm:inline">Syncing...</span>
       </div>
     );

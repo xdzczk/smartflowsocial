@@ -31,36 +31,53 @@ import {
   type FeatureName,
 } from "~/features/payments/types";
 
+// Sidebar/nav icon tuning for Kanit: 18px, stroke 2.25 so icons feel co-equal with text (not decorative)
+const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
+const NAV_ICON_STROKE = 2.25;
+
 // Nav config for expandable sections (reduces inline complexity in Header)
 const CREATE_SECTION_ITEMS = [
   {
     to: "/dashboard/newpost",
     feature: "newPost" as const,
-    icon: <Upload className="inline-block size-5" />,
+    icon: (
+      <Upload className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+    ),
     label: "New Post",
   },
   {
     to: "/dashboard/newlongformpost",
     feature: "longformPosts" as const,
-    icon: <FileText className="inline-block size-5" />,
+    icon: (
+      <FileText className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+    ),
     label: "New Long-form",
   },
   {
     to: "/dashboard/bulkposts",
     feature: "bulkScheduling" as const,
-    icon: <LayoutGrid className="inline-block size-5" />,
+    icon: (
+      <LayoutGrid
+        className={NAV_ICON_SIZE_CLASS}
+        strokeWidth={NAV_ICON_STROKE}
+      />
+    ),
     label: "Bulk Posts",
   },
   {
     to: "/dashboard/drafts",
     feature: "drafts" as const,
-    icon: <FileText className="inline-block size-5" />,
+    icon: (
+      <FileText className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+    ),
     label: "Drafts",
   },
   {
     to: "/dashboard/templates",
     feature: "templates" as const,
-    icon: <Copy className="inline-block size-5" />,
+    icon: (
+      <Copy className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+    ),
     label: "Templates",
   },
 ];
@@ -69,13 +86,17 @@ const ENGAGEMENT_SECTION_ITEMS = [
   {
     to: "/dashboard/engagement/feed",
     feature: "engagement_feed" as const,
-    icon: <Flame className="inline-block size-5" />,
+    icon: (
+      <Flame className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+    ),
     label: "Engagement Feed",
   },
   {
     to: "/dashboard/giveaway?days=7",
     feature: "giveaways" as const,
-    icon: <Gift className="inline-block size-5" />,
+    icon: (
+      <Gift className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+    ),
     label: "Giveaway",
   },
 ];
@@ -141,6 +162,13 @@ function NavigationItem({
     ? `Requires ${getMinimumPlanForFeature(feature)} plan`
     : (children as string);
 
+  // Inactive icons use slightly higher contrast than inactive text so they read co-equal with labels
+  const iconSpanClass = isActive
+    ? "text-foreground dark:text-primary"
+    : hasAccess
+      ? "text-foreground/70"
+      : "text-muted-foreground";
+
   return (
     <Link
       prefetch="intent"
@@ -149,16 +177,17 @@ function NavigationItem({
       onClick={handleClick}
       title={title}
     >
-      <span
-        className={`flex flex-none items-center ${isActive ? "text-foreground dark:text-primary" : "text-muted-foreground"}`}
-      >
+      <span className={`flex flex-none items-center ${iconSpanClass}`}>
         {icon}
       </span>
       {!collapsed ? (
         <>
           <span className="grow py-2">{children}</span>
           {!hasAccess ? (
-            <Lock className="h-4 w-4 flex-shrink-0 text-amber-500" />
+            <Lock
+              className="h-4 w-4 flex-shrink-0 text-amber-500"
+              strokeWidth={NAV_ICON_STROKE}
+            />
           ) : null}
         </>
       ) : null}
@@ -188,14 +217,21 @@ function SidebarNavContent({
         isActive={pathname === "/dashboard"}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
-        icon={<Home className="inline-block size-5 shrink-0" />}
+        icon={
+          <Home className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+        }
         collapsed={collapsed}
       >
         Dashboard
       </NavigationItem>
       <ExpandableNavigationSection
         title="Create"
-        icon={<Upload className="inline-block size-5" />}
+        icon={
+          <Upload
+            className={NAV_ICON_SIZE_CLASS}
+            strokeWidth={NAV_ICON_STROKE}
+          />
+        }
         collapsed={collapsed}
         items={CREATE_SECTION_ITEMS}
         onUpgradeClick={onUpgradeClick}
@@ -207,7 +243,12 @@ function SidebarNavContent({
         isActive={pathname.startsWith("/dashboard/calendar")}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
-        icon={<CalendarDays className="inline-block size-5 shrink-0" />}
+        icon={
+          <CalendarDays
+            className={NAV_ICON_SIZE_CLASS}
+            strokeWidth={NAV_ICON_STROKE}
+          />
+        }
         collapsed={collapsed}
       >
         Calendar
@@ -218,7 +259,12 @@ function SidebarNavContent({
         isActive={pathname.startsWith("/dashboard/scheduled")}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
-        icon={<Calendar className="inline-block size-5 shrink-0" />}
+        icon={
+          <Calendar
+            className={NAV_ICON_SIZE_CLASS}
+            strokeWidth={NAV_ICON_STROKE}
+          />
+        }
         collapsed={collapsed}
       >
         Scheduled
@@ -229,7 +275,12 @@ function SidebarNavContent({
         isActive={pathname.startsWith("/dashboard/posted")}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
-        icon={<Clock className="inline-block size-5 shrink-0" />}
+        icon={
+          <Clock
+            className={NAV_ICON_SIZE_CLASS}
+            strokeWidth={NAV_ICON_STROKE}
+          />
+        }
         collapsed={collapsed}
       >
         Posted
@@ -293,7 +344,7 @@ function SidebarHeader({
           size="icon"
           className="h-9 w-9 rounded-lg shadow-none"
         >
-          <X className="inline-block size-5" />
+          <X className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
         </Button>
       </div>
     </div>
@@ -325,7 +376,10 @@ function PageHeaderBar({
               size="icon"
               className="h-9 w-9 rounded-lg shadow-none"
             >
-              <Menu className="inline-block size-5" />
+              <Menu
+                className={NAV_ICON_SIZE_CLASS}
+                strokeWidth={NAV_ICON_STROKE}
+              />
             </Button>
           </div>
           <div className="lg:hidden">
@@ -335,7 +389,10 @@ function PageHeaderBar({
               size="icon"
               className="h-9 w-9 rounded-lg shadow-none"
             >
-              <Menu className="inline-block size-5" />
+              <Menu
+                className={NAV_ICON_SIZE_CLASS}
+                strokeWidth={NAV_ICON_STROKE}
+              />
             </Button>
           </div>
         </div>
@@ -457,7 +514,12 @@ export default function Header({
             isActive={location.pathname === "/dashboard/settings"}
             onUpgradeClick={handleUpgradeClick}
             onActiveClick={onMobileNavActiveClick}
-            icon={<Settings className="inline-block size-5 shrink-0" />}
+            icon={
+              <Settings
+                className={NAV_ICON_SIZE_CLASS}
+                strokeWidth={NAV_ICON_STROKE}
+              />
+            }
             collapsed={!isDesktopExpanded}
           >
             Settings

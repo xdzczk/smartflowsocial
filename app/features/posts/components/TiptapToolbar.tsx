@@ -5,6 +5,8 @@
 
 import type { Editor } from "@tiptap/core";
 
+import { Separator } from "~/components/ui/separator";
+
 interface TiptapToolbarProps {
   editor: Editor | null;
   onInsertImage?: () => void;
@@ -77,7 +79,7 @@ export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
       >
         <span className="text-sm italic">I</span>
       </ToolbarButton>
-      <span className="text-muted-foreground bg-border mx-0.5 w-px self-stretch" />
+      <Separator orientation="vertical" className="mx-0.5 h-full" />
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         active={editor.isActive("heading", { level: 2 })}
@@ -94,7 +96,7 @@ export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
       >
         <span className="text-xs font-semibold">H3</span>
       </ToolbarButton>
-      <span className="text-muted-foreground bg-border mx-0.5 w-px self-stretch" />
+      <Separator orientation="vertical" className="mx-0.5 h-full" />
       <ToolbarButton
         onClick={setLink}
         active={editor.isActive("link")}

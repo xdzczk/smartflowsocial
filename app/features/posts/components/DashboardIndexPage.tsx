@@ -6,6 +6,7 @@ import {
 } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { CombinedContent, QueueType } from "~/features/posts/types";
 import {
@@ -291,21 +292,21 @@ export default function DashboardIndexPage() {
         {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
         <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-4 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
           {flowError ? (
-            <div
-              className="border-destructive bg-destructive/10 mx-4 flex flex-col gap-2 rounded-lg border p-4 lg:mx-8"
-              role="alert"
+            <Alert
+              variant="destructive"
+              className="mx-4 flex flex-col gap-2 lg:mx-8"
             >
-              <p className="text-destructive text-sm font-medium">
-                {flowError.message}
-              </p>
-              <button
-                type="button"
-                onClick={() => revalidator.revalidate()}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:outline-none"
-              >
-                Retry
-              </button>
-            </div>
+              <AlertDescription className="flex flex-col gap-2">
+                <span className="font-medium">{flowError.message}</span>
+                <button
+                  type="button"
+                  onClick={() => revalidator.revalidate()}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:outline-none"
+                >
+                  Retry
+                </button>
+              </AlertDescription>
+            </Alert>
           ) : null}
 
           {flowError ? null : isNavigatingToDashboard &&

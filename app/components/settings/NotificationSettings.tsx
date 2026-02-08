@@ -8,6 +8,7 @@ import { Bell, BellOff } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 import { Label } from "~/components/ui/label";
+import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
 import {
   subscribeToPush,
@@ -442,7 +443,7 @@ export function NotificationSettings({
 
             {isSubscribed ? (
               <>
-                <div className="border-border border-t pt-4" />
+                <Separator className="my-4" />
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="notify-success">
