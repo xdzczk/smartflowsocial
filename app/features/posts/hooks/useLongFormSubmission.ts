@@ -6,9 +6,15 @@
 import { useState } from "react";
 
 import {
+  delayAfterMainToSeconds,
+  isValidDelayAfterMain,
+} from "~/features/posts/utils/delay-after-main";
+import type { DelayAfterMain } from "~/features/posts/utils/delay-after-main";
+import {
   convertEditorJSToMarkdown,
   generateArticleIdentifier,
 } from "~/features/posts/utils/editorjs-conversion";
+import { buildLongformQuoteEvent } from "~/features/posts/utils/repost-quote-events.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   fromDate,
@@ -21,6 +27,13 @@ import {
 import type { EditorJSBlock } from "../types";
 import { generateSummaryFromContent } from "../utils/editorjs-content";
 
+export interface LongformQuoteEntry {
+  id: string;
+  value: number;
+  unit: DelayAfterMain["unit"];
+  caption: string;
+}
+
 interface UseLongFormSubmissionProps {
   title: string;
   summary: string;
@@ -32,6 +45,8 @@ interface UseLongFormSubmissionProps {
   displayedHashtags: string | null;
   useHashtagPresets: boolean;
   selectedHashtags: string;
+  alsoScheduleQuote?: boolean;
+  quoteEntries?: LongformQuoteEntry[];
 }
 
 export function useLongFormSubmission({
@@ -45,6 +60,8 @@ export function useLongFormSubmission({
   displayedHashtags,
   useHashtagPresets,
   selectedHashtags,
+  alsoScheduleQuote = false,
+  quoteEntries = [],
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
@@ -157,6 +174,64 @@ export function useLongFormSubmission({
       const { nostrEvent, signedEvent } =
         await nostrAdapter.signLongFormEvent(eventData);
 
+      const mainScheduledUnix =
+        actionType === "publish"
+          ? nowSeconds()
+          : (scheduledTimestamp ?? nowSeconds());
+
+      const quoteSchedules: Array<{
+        scheduledFor: number;
+        signedEvent: {
+          id: string;
+          pubkey: string;
+          created_at: number;
+          kind: number;
+          content: string;
+          tags: string[][];
+          sig: string;
+        };
+        caption?: string;
+      }> = [];
+
+      if (alsoScheduleQuote && quoteEntries.length > 0) {
+        const tagArray = uniqueTags.length
+          ? [["t", ...uniqueTags.slice(0, 5)]]
+          : [];
+        for (const entry of quoteEntries) {
+          const delay = { value: entry.value, unit: entry.unit };
+          if (!isValidDelayAfterMain(delay)) {
+            setSigningError(
+              "Each quote must be at least 1 (hour or minute) after the main post."
+            );
+            return;
+          }
+          const offsetSeconds = delayAfterMainToSeconds(delay);
+          const quoteScheduledUnix = mainScheduledUnix + offsetSeconds;
+          if (quoteScheduledUnix <= mainScheduledUnix) {
+            setSigningError("Quote must be scheduled after the main post.");
+            return;
+          }
+          const quoteEvent = buildLongformQuoteEvent(
+            signedEvent,
+            entry.caption,
+            quoteScheduledUnix,
+            tagArray
+          );
+          const { signedEvent: quoteSignedEvent } =
+            await nostrAdapter.signEvent({
+              content: quoteEvent.content,
+              created_at: quoteEvent.created_at,
+              kind: quoteEvent.kind,
+              tags: quoteEvent.tags,
+            });
+          quoteSchedules.push({
+            scheduledFor: quoteScheduledUnix,
+            signedEvent: quoteSignedEvent,
+            caption: entry.caption || undefined,
+          });
+        }
+      }
+
       const form = document.createElement("form");
       form.method = "POST";
       form.style.display = "none";
@@ -179,6 +254,11 @@ export function useLongFormSubmission({
         ["signedEvent", JSON.stringify(signedEvent)],
         ["nostrEvent", JSON.stringify(nostrEvent)],
       ];
+
+      if (quoteSchedules.length > 0) {
+        fields.push(["quoteSchedules", JSON.stringify(quoteSchedules)]);
+        fields.push(["alsoScheduleQuote", "on"]);
+      }
 
       fields.forEach(([name, value]) => {
         const input = document.createElement("input");

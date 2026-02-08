@@ -8,19 +8,27 @@ import { Button } from "~/components/ui/button";
 interface LongFormContentEditorProps {
   uploadProvider?: string | null;
   onOpenAssetBrowser: () => void;
+  /** When false, hide the "Content *" label (for writing-surface hero). Default true. */
+  showLabel?: boolean;
 }
 
 export function LongFormContentEditor({
   uploadProvider,
   onOpenAssetBrowser,
+  showLabel = true,
 }: LongFormContentEditorProps) {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span id="content-label" className="text-sm leading-none font-medium">
-            Content *
-          </span>
+          {showLabel ? (
+            <span
+              id="content-label"
+              className="text-sm leading-none font-medium"
+            >
+              Content *
+            </span>
+          ) : null}
           {uploadProvider ? (
             <div className="text-muted-foreground flex items-center gap-1 text-xs">
               <span>Images upload via:</span>
@@ -68,7 +76,8 @@ export function LongFormContentEditor({
             id="editorjs"
             className="prose prose-lg dark:prose-invert min-h-[460px] max-w-none"
             role="textbox"
-            aria-labelledby="content-label"
+            aria-labelledby={showLabel ? "content-label" : undefined}
+            aria-label={showLabel ? undefined : "Article content"}
           ></div>
         </div>
       </div>

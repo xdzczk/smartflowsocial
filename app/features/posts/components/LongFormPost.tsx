@@ -7,16 +7,17 @@ import { longformPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
 import { useLongFormSubmission } from "../hooks/useLongFormSubmission";
+import type { LongformQuoteEntry } from "../hooks/useLongFormSubmission";
 import { useCoverImageUpload } from "../useCoverImageUpload";
 import { useLongFormEditor } from "../useLongFormEditor";
 import { useLongFormScheduling } from "../useLongFormScheduling";
 
+import { AlsoScheduleLongformQuote } from "./AlsoScheduleLongformQuote";
+import { ArticleDetailsCollapsible } from "./ArticleDetailsCollapsible";
 import { LongFormActionButtons } from "./LongFormActionButtons";
-import { LongFormContentEditor } from "./LongFormContentEditor";
-import { LongFormCoverImage } from "./LongFormCoverImage";
 import { LongFormEditorStyles } from "./LongFormEditorStyles";
-import { LongFormPostFields } from "./LongFormPostFields";
 import { LongFormPublishingOptions } from "./LongFormPublishingOptions";
+import { WritingSurface } from "./WritingSurface";
 
 interface QueueType {
   id?: string;
@@ -87,6 +88,15 @@ export default function LongFormPost({
 }: LongFormPostProps) {
   const fetcher = useFetcher();
   const [showAssetBrowser, setShowAssetBrowser] = useState("");
+  const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
+  const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>(() => [
+    {
+      id: crypto.randomUUID(),
+      value: 2,
+      unit: "hours",
+      caption: "",
+    },
+  ]);
 
   // Initialize form with React Hook Form
   const form = useZodForm(longformPostClientSchema, {
@@ -260,6 +270,8 @@ export default function LongFormPost({
     displayedHashtags,
     useHashtagPresets,
     selectedHashtags,
+    alsoScheduleQuote,
+    quoteEntries,
   });
 
   // Form validation using Zod
@@ -269,132 +281,145 @@ export default function LongFormPost({
     <>
       <LongFormEditorStyles />
 
-      <div className="space-y-6">
-        <LongFormPostFields
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
-          title={title ?? ""}
-          summary={summary ?? ""}
-          customTags={customTags ?? ""}
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
-          content={content ?? ""}
+      <div className="flex min-h-screen flex-col">
+        {/* Phase 1: Writing Surface (hero) */}
+        <WritingSurface
+          title={title}
           onTitleChange={(value) => form.setValue("title", value)}
+          content={content}
+          uploadProvider={uploadProvider}
+          onOpenAssetBrowser={() => setShowAssetBrowser("content")}
+        />
+
+        {/* Phase 2: Article Details (collapsible) */}
+        <ArticleDetailsCollapsible
+          summary={summary}
+          customTags={customTags}
+          content={content}
           onSummaryChange={(value) => form.setValue("summary", value)}
           onCustomTagsChange={(value) => form.setValue("customTags", value)}
           onGenerateSummary={handleGenerateSummary}
-        />
-
-        <LongFormCoverImage
           image={image}
           uploadError={uploadError}
           uploadProvider={uploadProvider}
           uploadFetcherState={uploadFetcherState}
           onImageUpload={(file) => void handleImageUpload(file)}
-          onRemove={() => {
-            setCoverImage("");
-          }}
+          onRemoveImage={() => setCoverImage("")}
           onOpenAssetBrowser={() => setShowAssetBrowser("cover")}
         />
 
-        <LongFormContentEditor
-          uploadProvider={uploadProvider}
-          onOpenAssetBrowser={() => setShowAssetBrowser("content")}
-        />
+        {/* Phase 3: Publish Panel (sticky) */}
+        <div className="border-border bg-background/95 sticky bottom-0 border-t py-4 backdrop-blur">
+          <div className="mx-auto w-full max-w-[760px] space-y-4 px-4">
+            {displayedHashtags ? (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  <svg
+                    className="hi-solid hi-hashtag mr-1 inline-block size-3 opacity-75"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M9.243 3.03a1 1 0 01.727 1.213L9.53 6h2.94l.56-2.243a1 1 0 111.94.486L14.53 6H17a1 1 0 110 2h-2.97l-1 4H15a1 1 0 110 2h-2.47l-.56 2.242a1 1 0 11-1.94-.485L10.47 14H7.53l-.56 2.242a1 1 0 11-1.94-.485L5.47 14H3a1 1 0 110-2h2.97l1-4H5a1 1 0 110-2h2.47l.56-2.243a1 1 0 011.213-.727zM9.03 8l-1 4h2.938l1-4H9.031z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {displayedHashtags}
+                </Badge>
+              </div>
+            ) : null}
 
-        {/* Hashtags Display */}
-        {displayedHashtags ? (
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              <svg
-                className="hi-solid hi-hashtag mr-1 inline-block size-3 opacity-75"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M9.243 3.03a1 1 0 01.727 1.213L9.53 6h2.94l.56-2.243a1 1 0 111.94.486L14.53 6H17a1 1 0 110 2h-2.97l-1 4H15a1 1 0 110 2h-2.47l-.56 2.242a1 1 0 11-1.94-.485L10.47 14H7.53l-.56 2.242a1 1 0 11-1.94-.485L5.47 14H3a1 1 0 110-2h2.97l1-4H5a1 1 0 110-2h2.47l.56-2.243a1 1 0 011.213-.727zM9.03 8l-1 4h2.938l1-4H9.031z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              {displayedHashtags}
-            </Badge>
+            <LongFormPublishingOptions
+              queueTypes={queueTypes}
+              selectedQueueType={selectedQueueType}
+              onQueueTypeChange={(name) => {
+                void updateDisplayedHashtags(name);
+              }}
+              scheduledFor={scheduledFor}
+              onScheduledForChange={setScheduledFor}
+              scheduleIntervals={scheduleIntervals}
+              onScheduleIntervalClick={(intervalHours) => {
+                handleScheduleIntervalClick(intervalHours);
+              }}
+              onNextSlotClick={() => {
+                void calculateQueueScheduleTime(selectedQueueType);
+              }}
+              hashTagPresets={hashTagPresets}
+              useHashtagPresets={useHashtagPresets}
+              selectedHashtagPresetId={selectedHashtagPresetId}
+              selectedHashtags={selectedHashtags}
+              onHashtagPresetChange={
+                onHashtagPresetChange ??
+                ((_id, _tags) => {
+                  void _id;
+                  void _tags;
+                })
+              }
+              onUseHashtagPresetsChange={
+                onUseHashtagPresetsChange ??
+                (() => {
+                  void 0;
+                })
+              }
+            />
+
+            <AlsoScheduleLongformQuote
+              alsoScheduleQuote={alsoScheduleQuote}
+              onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+              quoteEntries={quoteEntries}
+              onQuoteEntriesChange={setQuoteEntries}
+              disabled={fetcher.state !== "idle" || isSigning}
+            />
+
+            <p className="text-muted-foreground text-xs">
+              {scheduledFor ? "Scheduled" : "Draft"}
+            </p>
+
+            <LongFormActionButtons
+              fetcherState={fetcher.state}
+              isFormValid={isFormValid}
+              hasScheduledFor={!!scheduledFor}
+              scheduledFor={scheduledFor}
+              isSigning={isSigning}
+              onPreview={() => {
+                if (onPreview) {
+                  onPreview({
+                    title,
+                    summary: summary ?? generateSummaryFromContent(content),
+                    content,
+                    image,
+                  });
+                }
+              }}
+              onSchedule={() => void handleSchedule("schedule")}
+              onPublish={() => void handleSchedule("publish")}
+            />
+
+            {isSigning ? (
+              <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground rounded-md border bg-white/50 p-3 text-sm">
+                Waiting for signer approval… If you’re using a remote signer,
+                open it to approve the request.
+              </div>
+            ) : null}
+            {signingError ? (
+              <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
+                {signingError}
+              </div>
+            ) : null}
           </div>
-        ) : null}
-
-        <LongFormPublishingOptions
-          queueTypes={queueTypes}
-          selectedQueueType={selectedQueueType}
-          onQueueTypeChange={(name) => {
-            void updateDisplayedHashtags(name);
-          }}
-          scheduledFor={scheduledFor}
-          onScheduledForChange={setScheduledFor}
-          scheduleIntervals={scheduleIntervals}
-          onScheduleIntervalClick={(intervalHours) => {
-            handleScheduleIntervalClick(intervalHours);
-          }}
-          onNextSlotClick={() => {
-            void calculateQueueScheduleTime(selectedQueueType);
-          }}
-          hashTagPresets={hashTagPresets}
-          useHashtagPresets={useHashtagPresets}
-          selectedHashtagPresetId={selectedHashtagPresetId}
-          selectedHashtags={selectedHashtags}
-          onHashtagPresetChange={
-            onHashtagPresetChange ??
-            ((_id, _tags) => {
-              void _id;
-              void _tags;
-            })
-          }
-          onUseHashtagPresetsChange={
-            onUseHashtagPresetsChange ??
-            (() => {
-              void 0;
-            })
-          }
-        />
-
-        <LongFormActionButtons
-          fetcherState={fetcher.state}
-          isFormValid={isFormValid}
-          hasScheduledFor={!!scheduledFor}
-          isSigning={isSigning}
-          onPreview={() => {
-            if (onPreview) {
-              onPreview({
-                title,
-                summary: summary ?? generateSummaryFromContent(content),
-                content,
-                image,
-              });
-            }
-          }}
-          onSchedule={() => void handleSchedule("schedule")}
-          onPublish={() => void handleSchedule("publish")}
-        />
-
-        {isSigning ? (
-          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mt-3 rounded-md border bg-white/50 p-3 text-sm">
-            Waiting for signer approval… If you’re using a remote signer, open
-            it to approve the request.
-          </div>
-        ) : null}
-        {signingError ? (
-          <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mt-3 rounded-md border p-3 text-sm">
-            {signingError}
-          </div>
-        ) : null}
-
-        {/* Asset Browser Modal */}
-        {showAssetBrowser ? (
-          <AssetBrowser
-            assets={assets}
-            onAssetsSelected={handleAssetBrowserSelect}
-            onClose={() => setShowAssetBrowser("")}
-          />
-        ) : null}
+        </div>
       </div>
+
+      {/* Asset Browser Modal */}
+      {showAssetBrowser ? (
+        <AssetBrowser
+          assets={assets}
+          onAssetsSelected={handleAssetBrowserSelect}
+          onClose={() => setShowAssetBrowser("")}
+        />
+      ) : null}
     </>
   );
 }

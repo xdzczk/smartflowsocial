@@ -4,7 +4,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 
-import { getDynamicQueueStyle } from "../queue-colors";
 interface QueueType {
   id?: string;
   name: string;
@@ -65,63 +64,73 @@ export function LongFormPublishingOptions({
     (currentQueueType.scheduleType === "FIXED_SLOTS" ||
       currentQueueType.scheduleType === "WEEKLY_SLOTS");
 
+  const filteredQueues = queueTypes.filter((queue) => {
+    if (typeof queue === "object" && queue.isEnabled === false) return false;
+    const name = typeof queue === "string" ? queue : queue.name;
+    return name !== "Unassigned";
+  });
+
+  function getQueueDescription(name: string): string {
+    const lower = name.toLowerCase();
+    if (lower.includes("test")) return "Low visibility";
+    if (lower.includes("normal")) return "Default cadence";
+    if (lower.includes("great")) return "High-signal slots";
+    if (lower.includes("weekly") || lower.includes("slot"))
+      return "Scheduled slots";
+    return "Publishing queue";
+  }
+
   return (
-    <div className="dark:bg-card/50 bg-muted space-y-6 rounded-lg p-6">
-      <h3 className="text-foreground text-lg font-semibold dark:text-white">
-        Publishing Options
+    <div className="border-border space-y-6 rounded-lg border p-4">
+      <h3 className="text-foreground text-sm font-semibold dark:text-white">
+        Publish
       </h3>
 
-      {/* Queue Type Selection */}
-      <div className="space-y-3">
+      {/* Queue Type Selection - vertical */}
+      <div className="space-y-2">
         <span
           id="longform-queue-type-label"
-          className="text-muted-foreground dark:text-foreground block text-sm font-medium"
+          className="text-muted-foreground dark:text-foreground block text-xs font-medium"
         >
-          Queue Type
+          Queue
         </span>
         <div
-          className="flex flex-wrap gap-2"
+          className="flex flex-col gap-1"
           role="group"
           aria-labelledby="longform-queue-type-label"
         >
-          {queueTypes
-            .filter((queue) => {
-              if (typeof queue === "object" && queue.isEnabled === false)
-                return false;
-              const name = typeof queue === "string" ? queue : queue.name;
-              return name !== "Unassigned";
-            })
-            .map((queue) => {
-              const queueName = typeof queue === "string" ? queue : queue.name;
-              const queueColor = typeof queue === "object" ? queue.color : null;
-              const isSelected = selectedQueueType === queueName;
-              return (
-                <button
-                  key={queueName}
-                  type="button"
-                  onClick={() =>
-                    onQueueTypeChange(isSelected ? "unassigned" : queueName)
-                  }
-                  className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isSelected)} transition-all disabled:cursor-not-allowed disabled:opacity-50`}
-                  style={
-                    queueColor
-                      ? {
-                          backgroundColor: isSelected
-                            ? queueColor
-                            : `${queueColor}33`,
-                          borderColor: queueColor,
-                          color: isSelected ? "white" : queueColor,
-                        }
-                      : {}
-                  }
-                  title={
-                    isSelected ? "Click again to leave unassigned" : undefined
-                  }
-                >
-                  {queueName}
-                </button>
-              );
-            })}
+          {filteredQueues.map((queue) => {
+            const queueName = typeof queue === "string" ? queue : queue.name;
+            const queueColor = typeof queue === "object" ? queue.color : null;
+            const isSelected = selectedQueueType === queueName;
+            const description = getQueueDescription(queueName);
+            return (
+              <button
+                key={queueName}
+                type="button"
+                onClick={() =>
+                  onQueueTypeChange(isSelected ? "unassigned" : queueName)
+                }
+                className={`rounded-md border px-3 py-2 text-left text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${isSelected ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50"}`}
+                style={
+                  queueColor && isSelected
+                    ? {
+                        borderColor: queueColor,
+                        backgroundColor: `${queueColor}22`,
+                      }
+                    : {}
+                }
+                title={
+                  isSelected ? "Click again to leave unassigned" : undefined
+                }
+              >
+                <span className="font-medium">{queueName}</span>
+                <span className="text-muted-foreground ml-1 text-xs">
+                  — {description}
+                </span>
+              </button>
+            );
+          })}
         </div>
         <input
           type="hidden"
@@ -173,9 +182,9 @@ export function LongFormPublishingOptions({
       <div className="space-y-3">
         <Label
           htmlFor="scheduledFor"
-          className="text-muted-foreground dark:text-foreground text-sm font-medium"
+          className="text-muted-foreground dark:text-foreground text-xs font-medium"
         >
-          Schedule for later
+          When should this enter the network?
         </Label>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Input

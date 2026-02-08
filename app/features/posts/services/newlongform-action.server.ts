@@ -25,18 +25,87 @@ import {
   generateSummary,
 } from "~/lib/markdown-sanitizer.server";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
+import { fromUnixTimestamp, toPrismaDate } from "~/lib/temporal";
 import {
   newLongformPostActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
+import { createPostWithOutbox } from "~/models/post.commands.server";
 
 import { convertEditorJSToMarkdown } from "../longform.server";
 import { resolveQueueTypeId } from "../server";
+import { PostStateMachine } from "../state-machine/post-state-machine.server";
 import { CreateLongFormPostUseCase } from "../use-cases/create-longform-post.use-case.server";
 import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
 
 const ERROR_TITLE_REQUIRED = "Title is required";
 const ERROR_CONTENT_REQUIRED = "Content is required";
+
+interface QuoteScheduleItem {
+  scheduledFor: number;
+  signedEvent: {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+    sig: string;
+  };
+  caption?: string;
+}
+
+function parseQuoteSchedulesFromForm(formData: FormData): QuoteScheduleItem[] {
+  const quoteSchedulesStr = formData.get("quoteSchedules");
+  const alsoScheduleQuote = formData.get("alsoScheduleQuote") === "on";
+  const quoteScheduledForStr = formData.get("quoteScheduledFor");
+  const quoteSignedEventStr = formData.get("quoteSignedEvent");
+  const quoteCaption = formData.get("quoteCaption");
+  let list: QuoteScheduleItem[] = [];
+  if (quoteSchedulesStr && typeof quoteSchedulesStr === "string") {
+    try {
+      const parsed = JSON.parse(quoteSchedulesStr) as unknown;
+      if (Array.isArray(parsed)) {
+        list = parsed.filter(
+          (p): p is QuoteScheduleItem =>
+            typeof p === "object" &&
+            p !== null &&
+            "scheduledFor" in p &&
+            "signedEvent" in p &&
+            typeof (p as QuoteScheduleItem).scheduledFor === "number" &&
+            typeof (p as QuoteScheduleItem).signedEvent === "object"
+        );
+      }
+    } catch {
+      list = [];
+    }
+  }
+  if (
+    list.length === 0 &&
+    alsoScheduleQuote &&
+    quoteScheduledForStr &&
+    quoteSignedEventStr
+  ) {
+    const quoteScheduledFor = parseInt(String(quoteScheduledForStr), 10);
+    if (!Number.isNaN(quoteScheduledFor)) {
+      try {
+        const quoteSignedEvent = JSON.parse(
+          String(quoteSignedEventStr)
+        ) as QuoteScheduleItem["signedEvent"];
+        list = [
+          {
+            scheduledFor: quoteScheduledFor,
+            signedEvent: quoteSignedEvent,
+            caption: quoteCaption ? String(quoteCaption) : undefined,
+          },
+        ];
+      } catch {
+        // keep empty
+      }
+    }
+  }
+  return list;
+}
 
 /**
  * Parse and combine tags from form data
@@ -372,6 +441,8 @@ async function handlePublish(
     context: { feature: "newlongform", action: "publish" },
   });
 
+  const quoteSchedules = parseQuoteSchedulesFromForm(formData);
+
   // Use CreateLongFormPostUseCase for post creation
   const createLongFormPostUseCase = new CreateLongFormPostUseCase();
   const result = await createLongFormPostUseCase.execute({
@@ -388,6 +459,44 @@ async function handlePublish(
     nostrEvent: nostrEventJson,
     isPublished: true, // Publish immediately
   });
+
+  // Create scheduled kind 1 quote posts if requested
+  if (quoteSchedules.length > 0 && queueTypeId) {
+    const stateMachine = new PostStateMachine();
+    for (const item of quoteSchedules) {
+      const quoteScheduledForDate = toPrismaDate(
+        fromUnixTimestamp(item.scheduledFor, "UTC")
+      );
+      if (!quoteScheduledForDate) continue;
+      const quotePost = await createPostWithOutbox(
+        {
+          userId,
+          content: item.caption ?? "",
+          caption: item.caption ?? "",
+          fileUrl: [],
+          postType: "TEXT",
+          queueTypeId,
+          hashTagPresetId,
+          isRecyclable: false,
+          signedEvent: item.signedEvent,
+          nostrEvent: undefined,
+          scheduledFor: item.scheduledFor,
+          tags: [],
+          repost: false,
+          isQuotedPost: true,
+          quoteOfLongFormPostId: result.post.id,
+          postKind: "QUOTE",
+        },
+        item.scheduledFor
+      );
+      await stateMachine.transition(
+        quotePost.id,
+        userId,
+        "SCHEDULED",
+        "Quote of article created with schedule"
+      );
+    }
+  }
 
   // Use PublishLongFormNowUseCase for immediate publishing
   try {
@@ -527,6 +636,8 @@ async function handleScheduleLongform(
     }
   }
 
+  const quoteSchedules = parseQuoteSchedulesFromForm(formData);
+
   // Use CreateLongFormPostUseCase for post creation with scheduling
   const createLongFormPostUseCase = new CreateLongFormPostUseCase();
   const result = await createLongFormPostUseCase.execute({
@@ -544,6 +655,44 @@ async function handleScheduleLongform(
     scheduledFor: scheduledForTimestamp,
     isPublished: false,
   });
+
+  // Create scheduled kind 1 quote posts if requested
+  if (quoteSchedules.length > 0 && queueTypeId) {
+    const stateMachine = new PostStateMachine();
+    for (const item of quoteSchedules) {
+      const quoteScheduledForDate = toPrismaDate(
+        fromUnixTimestamp(item.scheduledFor, "UTC")
+      );
+      if (!quoteScheduledForDate) continue;
+      const quotePost = await createPostWithOutbox(
+        {
+          userId,
+          content: item.caption ?? "",
+          caption: item.caption ?? "",
+          fileUrl: [],
+          postType: "TEXT",
+          queueTypeId,
+          hashTagPresetId,
+          isRecyclable: false,
+          signedEvent: item.signedEvent,
+          nostrEvent: undefined,
+          scheduledFor: item.scheduledFor,
+          tags: [],
+          repost: false,
+          isQuotedPost: true,
+          quoteOfLongFormPostId: result.post.id,
+          postKind: "QUOTE",
+        },
+        item.scheduledFor
+      );
+      await stateMachine.transition(
+        quotePost.id,
+        userId,
+        "SCHEDULED",
+        "Quote of article created with schedule"
+      );
+    }
+  }
 
   // Stay on current page and show modal there
   return redirect(`/dashboard/newlongformpost?scheduled=${result.post.id}`);

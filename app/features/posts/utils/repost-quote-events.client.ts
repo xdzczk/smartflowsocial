@@ -80,6 +80,58 @@ export function buildQuoteEvent(
   };
 }
 
+const LONGFORM_KIND = 30023;
+
+/**
+ * Build unsigned kind 1 quote event that references a longform article (kind 30023).
+ * Uses NIP-23: "a" tag 30023:pubkey:identifier and nostr:naddr in content.
+ * Caller signs with nostrAdapter.signEvent and submits to server.
+ */
+export function buildLongformQuoteEvent(
+  signedLongformEvent: SignedEvent,
+  caption: string,
+  scheduledForUnix: number,
+  tagArray: string[][] = []
+): { content: string; created_at: number; kind: number; tags: string[][] } {
+  const pubkey =
+    typeof signedLongformEvent.pubkey === "string"
+      ? signedLongformEvent.pubkey
+      : String(signedLongformEvent.pubkey);
+  const tags = Array.isArray(signedLongformEvent.tags)
+    ? signedLongformEvent.tags
+    : [];
+  const dTagMatch = tags.find(
+    (tag: unknown) => Array.isArray(tag) && tag[0] === "d"
+  );
+  const identifier =
+    (Array.isArray(dTagMatch) && dTagMatch[1] ? String(dTagMatch[1]) : "") ||
+    "";
+
+  const naddr = nip19.naddrEncode({
+    identifier,
+    pubkey,
+    kind: LONGFORM_KIND,
+    relays: [DEFAULT_RELAY_URL],
+  });
+
+  const quoteContent = [caption, `nostr:${naddr}`].filter(Boolean).join("\n");
+
+  const aTag: string[] = [
+    "a",
+    `${LONGFORM_KIND}:${pubkey}:${identifier}`,
+    DEFAULT_RELAY_URL,
+    "mention",
+  ];
+  const quoteTags = [...tagArray, aTag, ["p", pubkey, "", "mention"]];
+
+  return {
+    content: quoteContent,
+    created_at: scheduledForUnix,
+    kind: 1,
+    tags: quoteTags,
+  };
+}
+
 /**
  * Tags for a thread reply (NIP-10): reply to immediate parent and root.
  * Use after signing the previous segment to get its id.

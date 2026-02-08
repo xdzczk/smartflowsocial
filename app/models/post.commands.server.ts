@@ -75,6 +75,7 @@ export function createPost(data: CreatePostData): Promise<Post> {
     creationIdempotencyKey,
     repostOfPostId,
     quoteOfPostId,
+    quoteOfLongFormPostId,
     postKind,
     threadGroupId,
     replyToEventId,
@@ -138,6 +139,11 @@ export function createPost(data: CreatePostData): Promise<Post> {
       ...(quoteOfPostId && {
         quoteOf: {
           connect: { id: quoteOfPostId },
+        },
+      }),
+      ...(quoteOfLongFormPostId && {
+        quoteOfLongForm: {
+          connect: { id: quoteOfLongFormPostId },
         },
       }),
     },
@@ -216,6 +222,11 @@ export async function createPostWithOutbox(
         ...(data.quoteOfPostId && {
           quoteOf: {
             connect: { id: data.quoteOfPostId },
+          },
+        }),
+        ...(data.quoteOfLongFormPostId && {
+          quoteOfLongForm: {
+            connect: { id: data.quoteOfLongFormPostId },
           },
         }),
       },

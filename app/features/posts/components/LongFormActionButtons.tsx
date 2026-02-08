@@ -1,27 +1,52 @@
 import { Button } from "~/components/ui/button";
+
 interface LongFormActionButtonsProps {
   fetcherState: "idle" | "submitting" | "loading";
   isFormValid: boolean;
   hasScheduledFor: boolean;
+  scheduledFor?: string | null;
   isSigning?: boolean;
   onPreview: () => void;
   onSchedule: () => void;
   onPublish: () => void;
 }
 
+function formatScheduleLabel(scheduledFor: string): string {
+  try {
+    const date = new Date(scheduledFor);
+    if (Number.isNaN(date.getTime())) return "Schedule";
+    const month = date.toLocaleString("default", { month: "short" });
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const time =
+      minutes > 0
+        ? `${hours}:${String(minutes).padStart(2, "0")}`
+        : `${hours}:00`;
+    return `Schedule for ${month} ${day}, ${time}`;
+  } catch {
+    return "Schedule";
+  }
+}
+
 export function LongFormActionButtons({
   fetcherState,
   isFormValid,
   hasScheduledFor,
+  scheduledFor = null,
   isSigning = false,
   onPreview,
   onSchedule,
   onPublish,
 }: LongFormActionButtonsProps) {
   const isDisabled = fetcherState !== "idle" || !isFormValid || isSigning;
+  const scheduleLabel =
+    hasScheduledFor && scheduledFor
+      ? formatScheduleLabel(scheduledFor)
+      : "Schedule";
 
   return (
-    <div className="border-border dark:border-border border-t pt-6">
+    <div className="pt-4">
       <div className="flex w-full flex-col gap-3 sm:flex-row">
         <Button
           type="submit"
@@ -74,7 +99,7 @@ export function LongFormActionButtons({
               ? "Waiting for signer…"
               : fetcherState !== "idle"
                 ? "Scheduling..."
-                : "Sign and Schedule"}
+                : scheduleLabel}
           </Button>
         ) : (
           <Button
@@ -87,7 +112,7 @@ export function LongFormActionButtons({
               ? "Waiting for signer…"
               : fetcherState !== "idle"
                 ? "Publishing..."
-                : "Publish Now"}
+                : "Publish to NOSTR"}
           </Button>
         )}
       </div>

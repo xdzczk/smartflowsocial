@@ -167,6 +167,9 @@ model Post {
   quoteOfPostId           String?
   quoteOf                 Post?                 @relation("QuoteOf", fields: [quoteOfPostId], references: [id])
   quotes                  Post[]                @relation("QuoteOf")
+  // Quote of a longform article (kind 1 note referencing kind 30023)
+  quoteOfLongFormPostId   String?
+  quoteOfLongForm         LongFormPost?          @relation(fields: [quoteOfLongFormPostId], references: [id], onDelete: SetNull)
   // Composer draft metadata (attachment meta, contentWithTokens, threadSegments, alsoScheduleRepost/Quote)
   draftMeta               Json?
   // Thread: links segment posts when created as a thread (schedule-thread / post-thread)
@@ -188,6 +191,7 @@ model Post {
   @@index([userId, scheduledAtUtc])
   @@index([repostOfPostId])
   @@index([quoteOfPostId])
+  @@index([quoteOfLongFormPostId])
   @@index([replyToPostId])
 }
 
@@ -231,6 +235,8 @@ model LongFormPost {
   queueType               QueueType?                    @relation(fields: [queueTypeId], references: [id])
   user                    User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
   stateTransitions        LongFormPostStateTransition[]
+  // Kind 1 quote posts that reference this longform
+  quotesFromLongform      Post[]
 
   // Indexes for common query patterns
   // State machine indexes (use currentState as single source of truth)

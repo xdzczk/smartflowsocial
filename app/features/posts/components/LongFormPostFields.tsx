@@ -17,6 +17,8 @@ interface LongFormPostFieldsProps {
   onSummaryChange: (summary: string) => void;
   onCustomTagsChange: (tags: string) => void;
   onGenerateSummary: () => void;
+  /** When false, only render summary and custom tags (for Article Details). Default true. */
+  includeTitle?: boolean;
 }
 
 export function LongFormPostFields({
@@ -28,22 +30,25 @@ export function LongFormPostFields({
   onSummaryChange,
   onCustomTagsChange,
   onGenerateSummary,
+  includeTitle = true,
 }: LongFormPostFieldsProps) {
   return (
     <>
-      <div>
-        <Label htmlFor="title">Title *</Label>
-        <Input
-          id="title"
-          name="title"
-          type="text"
-          required
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="Enter your post title"
-          className="mt-1"
-        />
-      </div>
+      {includeTitle ? (
+        <div>
+          <Label htmlFor="title">Title *</Label>
+          <Input
+            id="title"
+            name="title"
+            type="text"
+            required
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            placeholder="Enter your post title"
+            className="mt-1"
+          />
+        </div>
+      ) : null}
 
       <div>
         <Label htmlFor="summary">Summary *</Label>

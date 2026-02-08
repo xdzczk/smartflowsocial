@@ -32,6 +32,8 @@ export interface CreatePostData {
   repostOfPostId?: string | null;
   /** Source post id when this post is a scheduled quote */
   quoteOfPostId?: string | null;
+  /** Source longform post id when this post is a kind 1 quote of a longform article */
+  quoteOfLongFormPostId?: string | null;
   /** What is this post? (POST, THREAD, REPLY, REPOST, QUOTE). Default POST. */
   postKind?: PostKind;
   /** Thread: group id when this post is a thread segment */
