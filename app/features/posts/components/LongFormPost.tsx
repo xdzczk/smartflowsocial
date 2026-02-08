@@ -365,12 +365,10 @@ export default function LongFormPost({
       <div className="flex min-h-screen flex-col">
         {/* Phase 1: Writing Surface (hero) */}
         <WritingSurface
-          title={title}
-          onTitleChange={(value) => form.setValue("title", value)}
+          register={form.register}
           content={content}
           uploadProvider={uploadProvider}
           onOpenAssetBrowser={() => setShowAssetBrowser("content")}
-          editorReady={editorReady}
         />
 
         {/* Phase 2: Article Details (collapsible) */}

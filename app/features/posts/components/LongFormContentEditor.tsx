@@ -10,15 +10,12 @@ interface LongFormContentEditorProps {
   onOpenAssetBrowser: () => void;
   /** When false, hide the "Content *" label (for writing-surface hero). Default true. */
   showLabel?: boolean;
-  /** When false, show a placeholder in the editor area so the writing space is visible before EditorJS mounts. */
-  editorReady?: boolean;
 }
 
 export function LongFormContentEditor({
   uploadProvider,
   onOpenAssetBrowser,
   showLabel = true,
-  editorReady = true,
 }: LongFormContentEditorProps) {
   return (
     <div>
@@ -84,7 +81,7 @@ export function LongFormContentEditor({
             : "border-border/50 border-b pt-1"
         }
       >
-        <div className="relative min-h-[500px] p-4">
+        <div className="min-h-[500px] p-4">
           <div
             id="editorjs"
             className="prose prose-lg dark:prose-invert min-h-[460px] max-w-none"
@@ -92,14 +89,6 @@ export function LongFormContentEditor({
             aria-labelledby={showLabel ? "content-label" : undefined}
             aria-label={showLabel ? undefined : "Article content"}
           />
-          {!editorReady ? (
-            <div
-              className="text-muted-foreground pointer-events-none absolute inset-4 flex items-start pt-2 text-lg"
-              aria-hidden
-            >
-              Start writing…
-            </div>
-          ) : null}
         </div>
       </div>
       <input type="hidden" name="content" id="content" />
