@@ -4,6 +4,7 @@
  */
 
 import {
+  json,
   redirect,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
@@ -210,7 +211,7 @@ async function handleImageUpload(
     typeof imageFile === "string" &&
     imageFile.startsWith("https://")
   ) {
-    return Response.json({ success: true, imageUrl: imageFile });
+    return json({ success: true, imageUrl: imageFile });
   }
 
   // If it's a File object, process it using S3 upload
@@ -232,7 +233,7 @@ async function handleImageUpload(
         undefined,
         file.type
       );
-      return Response.json({ success: true, imageUrl });
+      return json({ success: true, imageUrl });
     } catch (error) {
       const { ExternalServiceError } = await import("~/lib/errors");
       const { handleActionError } = await import("~/lib/error-handler.server");
@@ -250,12 +251,12 @@ async function handleImageUpload(
   }
 
   if (!imageFile) {
-    return Response.json(
+    return json(
       { success: false, error: "No image file provided." },
       { status: 400 }
     );
   } else {
-    return Response.json(
+    return json(
       {
         success: false,
         error: "Image upload failed. Please try again.",
@@ -288,11 +289,11 @@ async function persistDraft(
   );
 
   if (!title.trim()) {
-    return Response.json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
+    return json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return Response.json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
+    return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   let markdownContent: string;
@@ -367,7 +368,7 @@ async function handleAutosaveDraft(
     hashTagPresetId
   );
   if (errorResponse) return errorResponse;
-  return Response.json({ success: true });
+  return json({ success: true });
 }
 
 /**
@@ -399,29 +400,29 @@ async function handlePublish(
   );
 
   if (!title.trim()) {
-    return Response.json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
+    return json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return Response.json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
+    return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   if (!summary?.trim()) {
-    return Response.json(
+    return json(
       { error: "Summary is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!image?.trim()) {
-    return Response.json(
+    return json(
       { error: "Cover image is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!signedEvent || !nostrEvent) {
-    return Response.json(
+    return json(
       { error: "Missing Nostr event data for publishing" },
       { status: 400 }
     );
@@ -581,29 +582,29 @@ async function handleScheduleLongform(
   );
 
   if (!title.trim()) {
-    return Response.json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
+    return json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return Response.json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
+    return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   if (!summary?.trim()) {
-    return Response.json(
+    return json(
       { error: "Summary is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!image?.trim()) {
-    return Response.json(
+    return json(
       { error: "Cover image is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!signedEvent || !nostrEvent) {
-    return Response.json(
+    return json(
       { error: "Missing Nostr event data for publishing" },
       { status: 400 }
     );
@@ -844,5 +845,5 @@ export async function handleNewLongFormAction(
     );
   }
 
-  return Response.json({ success: false });
+  return json({ success: false });
 }
