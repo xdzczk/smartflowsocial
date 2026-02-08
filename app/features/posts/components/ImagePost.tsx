@@ -2,6 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-hot-toast";
 
+import { Checkbox } from "~/components/ui/checkbox";
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -535,14 +536,16 @@ export default function ImagePost({
             <input type="hidden" name="queueType" value={selectedQueue} />
           </div>
           <div className="mb-2 flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               id="isRecyclable"
-              name="isRecyclable"
               checked={isRecyclable}
-              onChange={(e) => setIsRecyclable(e.target.checked)}
+              onCheckedChange={(c) => setIsRecyclable(c === true)}
               disabled={fetcher.state !== "idle" || isUploaded}
-              className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+            />
+            <input
+              type="hidden"
+              name="isRecyclable"
+              value={isRecyclable ? "on" : ""}
             />
             <label
               htmlFor="isRecyclable"

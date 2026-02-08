@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Clock,
   Copy,
+  FilePenLine,
   FileText,
   Flame,
   Gift,
@@ -11,8 +12,10 @@ import {
   LayoutGrid,
   Lock,
   Menu,
+  MessageSquare,
+  Plus,
+  Rss,
   Settings,
-  Upload,
   X,
 } from "lucide-react";
 import { useCallback, useState, useEffect } from "react";
@@ -36,12 +39,16 @@ const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
 const NAV_ICON_STROKE = 2.25;
 
 // Nav config for expandable sections (reduces inline complexity in Header)
+// Semantic rule: Create = Plus (matches dashboard Compose). New Post = MessageSquare (note). Drafts = FilePenLine (state).
 const CREATE_SECTION_ITEMS = [
   {
     to: "/dashboard/newpost",
     feature: "newPost" as const,
     icon: (
-      <Upload className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+      <MessageSquare
+        className={NAV_ICON_SIZE_CLASS}
+        strokeWidth={NAV_ICON_STROKE}
+      />
     ),
     label: "New Post",
   },
@@ -68,7 +75,10 @@ const CREATE_SECTION_ITEMS = [
     to: "/dashboard/drafts",
     feature: "drafts" as const,
     icon: (
-      <FileText className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+      <FilePenLine
+        className={NAV_ICON_SIZE_CLASS}
+        strokeWidth={NAV_ICON_STROKE}
+      />
     ),
     label: "Drafts",
   },
@@ -82,13 +92,12 @@ const CREATE_SECTION_ITEMS = [
   },
 ];
 
+// Engagement = Flame (domain). Engagement Feed = Rss (feed, not duplicate of parent).
 const ENGAGEMENT_SECTION_ITEMS = [
   {
     to: "/dashboard/engagement/feed",
     feature: "engagement_feed" as const,
-    icon: (
-      <Flame className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
-    ),
+    icon: <Rss className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />,
     label: "Engagement Feed",
   },
   {
@@ -162,11 +171,11 @@ function NavigationItem({
     ? `Requires ${getMinimumPlanForFeature(feature)} plan`
     : (children as string);
 
-  // Inactive icons use slightly higher contrast than inactive text so they read co-equal with labels
+  // Inactive icons use slightly higher contrast than inactive text; match link hover so icon and text react together
   const iconSpanClass = isActive
     ? "text-foreground dark:text-primary"
     : hasAccess
-      ? "text-foreground/70"
+      ? "text-foreground/70 group-hover:text-foreground"
       : "text-muted-foreground";
 
   return (
@@ -227,10 +236,7 @@ function SidebarNavContent({
       <ExpandableNavigationSection
         title="Create"
         icon={
-          <Upload
-            className={NAV_ICON_SIZE_CLASS}
-            strokeWidth={NAV_ICON_STROKE}
-          />
+          <Plus className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
         }
         collapsed={collapsed}
         items={CREATE_SECTION_ITEMS}
@@ -287,7 +293,12 @@ function SidebarNavContent({
       </NavigationItem>
       <ExpandableNavigationSection
         title="Engagement"
-        icon={<Flame className="inline-block size-5" />}
+        icon={
+          <Flame
+            className={NAV_ICON_SIZE_CLASS}
+            strokeWidth={NAV_ICON_STROKE}
+          />
+        }
         collapsed={collapsed}
         items={ENGAGEMENT_SECTION_ITEMS}
         onUpgradeClick={onUpgradeClick}

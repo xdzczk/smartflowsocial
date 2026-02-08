@@ -1,6 +1,7 @@
 import { Link } from "@remix-run/react";
 import type { useFetcher } from "@remix-run/react";
 
+import { Checkbox } from "~/components/ui/checkbox";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
@@ -92,15 +93,12 @@ export function RecyclablesTable({
         <thead>
           <tr>
             <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-              <input
+              <Checkbox
                 id="recyclable-select-all"
-                name="recyclable-select-all"
-                type="checkbox"
                 checked={
                   posts.length > 0 ? selectedPosts.size === posts.length : false
                 }
-                onChange={onToggleSelectAll}
-                className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                onCheckedChange={() => onToggleSelectAll()}
               />
             </th>
             <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
@@ -188,14 +186,11 @@ export function RecyclablesTable({
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3 text-center">
-                  <input
+                  <Checkbox
                     id={`recyclable-select-${post.id}`}
-                    name={`recyclable-select-${post.id}`}
-                    type="checkbox"
                     checked={selectedPosts.has(post.id)}
-                    onChange={() => onToggleSelect(post.id)}
+                    onCheckedChange={() => onToggleSelect(post.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                   />
                 </td>
                 <td className="p-3">

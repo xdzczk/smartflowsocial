@@ -5,9 +5,11 @@
 
 import { useFetcher, Link } from "@remix-run/react";
 import React, { useEffect, useRef, useState } from "react";
+import { Controller } from "react-hook-form";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
@@ -1498,25 +1500,28 @@ export function UnifiedComposer({
                     <Separator className="my-2" />
                     <div className="border-border space-y-3 px-3 pb-3">
                       <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           id="thread-mode"
                           checked={isThreadMode}
-                          onChange={(e) => setIsThreadMode(e.target.checked)}
+                          onCheckedChange={(c) => setIsThreadMode(c === true)}
                           disabled={disabled}
-                          className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                         />
                         <Label htmlFor="thread-mode" className="text-sm">
                           Thread (multiple posts in sequence)
                         </Label>
                       </div>
                       <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="isRecyclable"
-                          {...form.register("isRecyclable")}
-                          disabled={disabled}
-                          className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                        <Controller
+                          name="isRecyclable"
+                          control={form.control}
+                          render={({ field }) => (
+                            <Checkbox
+                              id="isRecyclable"
+                              checked={!!field.value}
+                              onCheckedChange={field.onChange}
+                              disabled={disabled}
+                            />
+                          )}
                         />
                         <Label
                           htmlFor="isRecyclable"

@@ -4,6 +4,7 @@
  */
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
@@ -34,13 +35,11 @@ export function AlsoScheduleLongformQuote({
       <Separator className="my-4" />
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="alsoScheduleLongformQuote"
             checked={alsoScheduleQuote}
-            onChange={(e) => onAlsoScheduleQuoteChange(e.target.checked)}
+            onCheckedChange={(c) => onAlsoScheduleQuoteChange(c === true)}
             disabled={disabled}
-            className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
           />
           <Label
             htmlFor="alsoScheduleLongformQuote"

@@ -100,7 +100,10 @@ export function useLongFormEditor({
             setEditorReady(true);
           },
         }
-      : { immediatelyRender: false },
+      : {
+          immediatelyRender: false,
+          extensions: [StarterKit],
+        },
     [mounted, initialMarkdown]
   );
 

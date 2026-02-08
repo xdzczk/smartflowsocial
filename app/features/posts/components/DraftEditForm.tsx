@@ -6,6 +6,7 @@ import { useFetcher } from "@remix-run/react";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 
@@ -224,12 +225,16 @@ export function DraftEditForm({
           </div>
           {onAlsoScheduleRepostChange ? (
             <>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
+              <label
+                htmlFor="draft-also-schedule-repost"
+                className="flex items-center gap-2"
+              >
+                <Checkbox
+                  id="draft-also-schedule-repost"
                   checked={alsoScheduleRepost}
-                  onChange={(e) => onAlsoScheduleRepostChange(e.target.checked)}
-                  className="border-border rounded"
+                  onCheckedChange={(c) =>
+                    onAlsoScheduleRepostChange(c === true)
+                  }
                 />
                 <span className="text-sm">Schedule a repost</span>
               </label>
@@ -311,14 +316,16 @@ export function DraftEditForm({
                   </button>
                 </div>
               ) : null}
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
+              <label
+                htmlFor="draft-also-schedule-quote"
+                className="flex items-center gap-2"
+              >
+                <Checkbox
+                  id="draft-also-schedule-quote"
                   checked={alsoScheduleQuote}
-                  onChange={(e) =>
-                    onAlsoScheduleQuoteChange?.(e.target.checked)
+                  onCheckedChange={(c) =>
+                    onAlsoScheduleQuoteChange?.(c === true)
                   }
-                  className="border-border rounded"
                 />
                 <span className="text-sm">Schedule a quote</span>
               </label>

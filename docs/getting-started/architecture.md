@@ -194,6 +194,16 @@ smartflow-social/
   co-equal with labels.
 - **Stroke**: Use a single stroke width per context: default `strokeWidth={2}` elsewhere; nav uses
   `2.25` to match Kanit. Do not mix stroke widths randomly.
+- **Icon semantics (one concept = one icon)**:
+  - **Create** → `Plus` (sidebar Create section and dashboard Compose). Do not use Upload for
+    “create”.
+  - **New post (kind 1 note)** → `MessageSquare`. **New long-form** → `FileText`. **Drafts** (state)
+    → `FilePenLine`. **Templates** → `Copy`. **Bulk / batch** → `LayoutGrid`.
+  - **Engagement** (domain) → `Flame`. **Engagement Feed** (child) → `Rss`. **Giveaway** → `Gift`.
+  - **Time / scheduled** → `Clock` or `CalendarDays`. **Published / done** → `Check`. **Settings** →
+    `Settings`. **Dashboard home** → `Home`.
+  - Sidebar = domains + content types; use state-style icons (e.g. FilePenLine for drafts) so state
+    is not mixed with types. Dashboard = status + action only.
 - **UI primitives**: Use Shadcn/Radix components from `~/components/ui` (Alert, AlertDialog, Dialog,
   DropdownMenu, Popover, Separator, Skeleton, Tooltip, etc.) for consistency and accessibility.
 

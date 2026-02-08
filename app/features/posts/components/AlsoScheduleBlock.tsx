@@ -4,6 +4,7 @@
  */
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -53,13 +54,11 @@ export function AlsoScheduleBlock({
       </h4>
 
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="alsoScheduleRepost"
           checked={alsoScheduleRepost}
-          onChange={(e) => onAlsoScheduleRepostChange(e.target.checked)}
+          onCheckedChange={(c) => onAlsoScheduleRepostChange(c === true)}
           disabled={disabled}
-          className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
         />
         <Label
           htmlFor="alsoScheduleRepost"
@@ -142,13 +141,11 @@ export function AlsoScheduleBlock({
       ) : null}
 
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           id="alsoScheduleQuote"
           checked={alsoScheduleQuote}
-          onChange={(e) => onAlsoScheduleQuoteChange(e.target.checked)}
+          onCheckedChange={(c) => onAlsoScheduleQuoteChange(c === true)}
           disabled={disabled}
-          className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
         />
         <Label
           htmlFor="alsoScheduleQuote"

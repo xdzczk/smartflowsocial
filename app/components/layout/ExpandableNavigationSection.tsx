@@ -10,8 +10,8 @@ import {
 } from "~/features/payments/types";
 
 const TEXT_PRIMARY = "text-primary";
-// Inactive nav icons: slightly higher contrast than inactive text (co-equal with labels)
-const TEXT_NAV_ICON_INACTIVE = "text-foreground/70";
+// Inactive nav icons: slightly higher contrast than inactive text; match link hover so icon and text react together
+const TEXT_NAV_ICON_INACTIVE = "text-foreground/70 group-hover:text-foreground";
 const NAV_ICON_STROKE = 2.25;
 
 /** Pathname only (no search or hash) so active state matches when link has query params e.g. /dashboard/giveaway?days=7 */

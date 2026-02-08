@@ -1,3 +1,5 @@
+import { Checkbox } from "~/components/ui/checkbox";
+
 interface ContentTableHeaderProps {
   type: "scheduled" | "draft" | "posted";
   showBulkActions: boolean;
@@ -32,17 +34,14 @@ export function ContentTableHeader({
       <tr>
         {showBulkActions ? (
           <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-            <input
+            <Checkbox
               id="content-select-all"
-              name="content-select-all"
-              type="checkbox"
               checked={
                 filteredContentLength > 0
                   ? selectedItemsSize === filteredContentLength
                   : false
               }
-              onChange={onToggleSelectAll}
-              className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+              onCheckedChange={() => onToggleSelectAll?.()}
             />
           </th>
         ) : null}

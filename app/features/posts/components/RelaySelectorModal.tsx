@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -97,12 +98,10 @@ export function RelaySelectorModal({
                 key={url}
                 className="flex items-center gap-2 rounded border p-2"
               >
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`relay-${url}`}
                   checked={urls.includes(url)}
-                  onChange={() => toggle(url)}
-                  className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                  onCheckedChange={() => toggle(url)}
                 />
                 <Label
                   htmlFor={`relay-${url}`}

@@ -1,6 +1,7 @@
 import { Link } from "@remix-run/react";
 import { MoreHorizontal } from "lucide-react";
 
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,14 +83,11 @@ export function ContentTableRow({
     >
       {showBulkActions ? (
         <td className="p-3 text-center">
-          <input
+          <Checkbox
             id={`content-select-${item.id}`}
-            name={`content-select-${item.id}`}
-            type="checkbox"
             checked={selectedItems.has(item.id)}
-            onChange={() => onToggleSelection?.(item.id)}
+            onCheckedChange={() => onToggleSelection?.(item.id)}
             onClick={(e) => e.stopPropagation()}
-            className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
           />
         </td>
       ) : null}

@@ -3,6 +3,7 @@
  * Individual post card for bulk scheduling view
  * Extracted from dashboard.bulkposts.tsx
  */
+import { Checkbox } from "~/components/ui/checkbox";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 
 import { getDynamicQueueStyle } from "../queue-colors";
@@ -245,12 +246,10 @@ export function BulkPostCard({
       </td>
       <td className="p-4">
         <div className="flex items-center">
-          <input
+          <Checkbox
             id={`recyclable-${index}`}
-            type="checkbox"
             checked={post.isRecyclable}
-            onChange={(e) => onIsRecyclableChange(index, e.target.checked)}
-            className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+            onCheckedChange={(c) => onIsRecyclableChange(index, c === true)}
           />
           <label
             htmlFor={`recyclable-${index}`}

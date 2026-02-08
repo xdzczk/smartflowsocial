@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
+import { Checkbox } from "~/components/ui/checkbox";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -398,14 +399,16 @@ export default function MediaPost({
             }
           />
           <div className="mb-2 flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               id="isRecyclable"
-              name="isRecyclable"
               checked={isRecyclable}
-              onChange={(e) => setIsRecyclable(e.target.checked)}
+              onCheckedChange={(c) => setIsRecyclable(c === true)}
               disabled={isUploading || isUploaded}
-              className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+            />
+            <input
+              type="hidden"
+              name="isRecyclable"
+              value={isRecyclable ? "on" : ""}
             />
             <label
               htmlFor="isRecyclable"

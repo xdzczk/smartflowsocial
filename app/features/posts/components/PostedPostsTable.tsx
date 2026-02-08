@@ -3,6 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal } from "lucide-react";
 import { useRef, useState, type Key } from "react";
 
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -163,17 +164,14 @@ export default function PostedPostsTable({
             <thead>
               <tr>
                 <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-                  <input
+                  <Checkbox
                     id="posted-select-all"
-                    name="posted-select-all"
-                    type="checkbox"
                     checked={
                       filteredPosts.length > 0
                         ? selectedPosts.size === filteredPosts.length
                         : false
                     }
-                    onChange={toggleSelectAll}
-                    className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                    onCheckedChange={() => toggleSelectAll()}
                   />
                 </th>
                 <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
@@ -255,14 +253,11 @@ export default function PostedPostsTable({
                     onClick={() => setSelectedPost(post)}
                   >
                     <td className="p-3 text-center">
-                      <input
+                      <Checkbox
                         id={`posted-select-${post.id}`}
-                        name={`posted-select-${post.id}`}
-                        type="checkbox"
                         checked={selectedPosts.has(post.id)}
-                        onChange={() => togglePostSelection(post.id)}
+                        onCheckedChange={() => togglePostSelection(post.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                       />
                     </td>
                     <td className="p-3">

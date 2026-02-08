@@ -1,9 +1,11 @@
 import { useFetcher } from "@remix-run/react";
 import React from "react";
+import { Controller } from "react-hook-form";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -572,12 +574,17 @@ export default function TextPost({
             }
           />
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="isRecyclable"
-              {...form.register("isRecyclable")}
-              disabled={fetcher.state !== "idle" || isSigning}
-              className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+            <Controller
+              name="isRecyclable"
+              control={form.control}
+              render={({ field }) => (
+                <Checkbox
+                  id="isRecyclable"
+                  checked={!!field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={fetcher.state !== "idle" || isSigning}
+                />
+              )}
             />
             <Label
               htmlFor="isRecyclable"
@@ -641,13 +648,11 @@ export default function TextPost({
             />
             <div className="border-border mt-4 space-y-3 border-t pt-4">
               <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id="alsoScheduleRepost"
                   checked={alsoScheduleRepost}
-                  onChange={(e) => setAlsoScheduleRepost(e.target.checked)}
+                  onCheckedChange={(c) => setAlsoScheduleRepost(c === true)}
                   disabled={fetcher.state !== "idle" || isSigning}
-                  className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                 />
                 <Label
                   htmlFor="alsoScheduleRepost"
@@ -741,13 +746,11 @@ export default function TextPost({
                 </div>
               ) : null}
               <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id="alsoScheduleQuote"
                   checked={alsoScheduleQuote}
-                  onChange={(e) => setAlsoScheduleQuote(e.target.checked)}
+                  onCheckedChange={(c) => setAlsoScheduleQuote(c === true)}
                   disabled={fetcher.state !== "idle" || isSigning}
-                  className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                 />
                 <Label
                   htmlFor="alsoScheduleQuote"

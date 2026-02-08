@@ -1,6 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef } from "react";
 
+import { Checkbox } from "~/components/ui/checkbox";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -191,15 +192,13 @@ export function AssetsTab({
                 <thead>
                   <tr>
                     <th className="dark:bg-card dark:border-border bg-muted text-foreground dark:text-foreground px-3 py-4 text-center font-semibold">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={
                           assets.length > 0
                             ? selectedAssets.length === assets.length
                             : false
                         }
-                        onChange={onSelectAllAssets}
-                        className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                        onCheckedChange={() => onSelectAllAssets()}
                       />
                     </th>
                     <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
@@ -232,11 +231,9 @@ export function AssetsTab({
                       className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted"
                     >
                       <td className="p-3 text-center">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={selectedAssets.includes(asset.id)}
-                          onChange={() => onAssetSelect(asset.id)}
-                          className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                          onCheckedChange={() => onAssetSelect(asset.id)}
                         />
                       </td>
                       <td className="p-3">

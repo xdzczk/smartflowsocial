@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 
 import type { Asset } from "../types";
@@ -175,11 +176,10 @@ export default function AssetBrowser({
                     tabIndex={0}
                   >
                     <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={selectedAssets.includes(asset.id)}
-                        onChange={() => handleAssetSelect(asset.id)}
-                        className="border-border accent-checkbox focus:ring-ring mt-1 h-4 w-4 rounded"
+                        onCheckedChange={() => handleAssetSelect(asset.id)}
+                        className="mt-1"
                       />
 
                       <div className="min-w-0 flex-1">

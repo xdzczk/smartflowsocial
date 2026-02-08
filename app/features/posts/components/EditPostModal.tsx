@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Checkbox } from "~/components/ui/checkbox";
 import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { parseDateTimeLocal, toDate, fromDate } from "~/lib/temporal";
@@ -501,12 +502,14 @@ export function EditPostModal({
                   <div className="text-foreground text-sm font-medium">
                     Also schedule
                   </div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
+                  <label
+                    htmlFor="edit-modal-also-schedule-repost"
+                    className="flex items-center gap-2"
+                  >
+                    <Checkbox
+                      id="edit-modal-also-schedule-repost"
                       checked={alsoScheduleRepost}
-                      onChange={(e) => setAlsoScheduleRepost(e.target.checked)}
-                      className="border-border rounded"
+                      onCheckedChange={(c) => setAlsoScheduleRepost(c === true)}
                     />
                     <span className="text-sm">Schedule a repost</span>
                   </label>
@@ -590,12 +593,14 @@ export function EditPostModal({
                       </button>
                     </div>
                   ) : null}
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
+                  <label
+                    htmlFor="edit-modal-also-schedule-quote"
+                    className="flex items-center gap-2"
+                  >
+                    <Checkbox
+                      id="edit-modal-also-schedule-quote"
                       checked={alsoScheduleQuote}
-                      onChange={(e) => setAlsoScheduleQuote(e.target.checked)}
-                      className="border-border rounded"
+                      onCheckedChange={(c) => setAlsoScheduleQuote(c === true)}
                     />
                     <span className="text-sm">Schedule a quote</span>
                   </label>

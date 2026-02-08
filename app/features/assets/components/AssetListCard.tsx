@@ -1,3 +1,4 @@
+import { Checkbox } from "~/components/ui/checkbox";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
@@ -56,11 +57,9 @@ export function AssetListCard({
         }}
         role="none"
       >
-        <input
-          type="checkbox"
+        <Checkbox
           checked={selected}
-          onChange={() => onSelect(asset.id)}
-          className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+          onCheckedChange={() => onSelect(asset.id)}
         />
       </div>
       <div className="flex h-14 w-14 flex-shrink-0 overflow-hidden rounded-md">

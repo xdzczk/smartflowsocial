@@ -3,6 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, type Key } from "react";
 
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -497,17 +498,14 @@ export default function LongFormListing({
             <thead>
               <tr>
                 <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                  <input
+                  <Checkbox
                     id="longform-select-all"
-                    name="longform-select-all"
-                    type="checkbox"
                     checked={
                       filteredPosts.length > 0
                         ? selectedPosts.size === filteredPosts.length
                         : false
                     }
-                    onChange={toggleSelectAll}
-                    className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                    onCheckedChange={() => toggleSelectAll()}
                   />
                 </th>
                 <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
@@ -613,14 +611,11 @@ export default function LongFormListing({
                   aria-label={`Select ${post.title ?? "post"}`}
                 >
                   <td className="p-3 text-center">
-                    <input
+                    <Checkbox
                       id={`longform-select-${post.id}`}
-                      name={`longform-select-${post.id}`}
-                      type="checkbox"
                       checked={selectedPosts.has(post.id)}
-                      onChange={() => togglePostSelection(post.id)}
+                      onCheckedChange={() => togglePostSelection(post.id)}
                       onClick={(e) => e.stopPropagation()}
-                      className="dark:border-border dark:bg-card border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                     />
                   </td>
                   <td className="p-3">

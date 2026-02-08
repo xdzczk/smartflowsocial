@@ -7,6 +7,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal } from "lucide-react";
 import { useRef, useState, type Key } from "react";
 
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -199,17 +200,14 @@ export function DraftsTable({
             <thead>
               <tr>
                 <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-                  <input
+                  <Checkbox
                     id="draft-select-all"
-                    name="draft-select-all"
-                    type="checkbox"
                     checked={
                       posts.length > 0
                         ? selectedPosts.size === posts.length
                         : false
                     }
-                    onChange={onToggleSelectAll}
-                    className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+                    onCheckedChange={() => onToggleSelectAll()}
                   />
                 </th>
                 <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
@@ -246,14 +244,11 @@ export function DraftsTable({
                   onClick={() => onPostClick(post)}
                 >
                   <td className="p-3 text-center">
-                    <input
+                    <Checkbox
                       id={`draft-select-${post.id}`}
-                      name={`draft-select-${post.id}`}
-                      type="checkbox"
                       checked={selectedPosts.has(post.id)}
-                      onChange={() => onToggleSelection(post.id)}
+                      onCheckedChange={() => onToggleSelection(post.id)}
                       onClick={(e) => e.stopPropagation()}
-                      className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                     />
                   </td>
                   <td className="p-3">

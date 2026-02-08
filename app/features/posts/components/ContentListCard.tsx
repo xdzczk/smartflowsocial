@@ -1,6 +1,7 @@
 import { Link } from "@remix-run/react";
 import { MoreHorizontal } from "lucide-react";
 
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -121,13 +122,10 @@ export function ContentListCard({
           }}
           role="none"
         >
-          <input
+          <Checkbox
             id={`content-list-select-${item.id}`}
-            name={`content-list-select-${item.id}`}
-            type="checkbox"
             checked={selectedItems.has(item.id)}
-            onChange={() => onToggleSelection?.(item.id)}
-            className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
+            onCheckedChange={() => onToggleSelection?.(item.id)}
           />
         </div>
       ) : null}

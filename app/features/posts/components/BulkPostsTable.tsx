@@ -1,3 +1,4 @@
+import { Checkbox } from "~/components/ui/checkbox";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 
 import { getDynamicQueueStyle } from "../queue-colors";
@@ -349,14 +350,12 @@ export default function BulkPostsTable({
               </td>
               <td className="p-4">
                 <div className="flex items-center">
-                  <input
+                  <Checkbox
                     id={`bulk-recyclable-${post.clientId}`}
-                    type="checkbox"
                     checked={post.isRecyclable}
-                    onChange={(e) =>
-                      handleIsRecyclableChange(index, e.target.checked)
+                    onCheckedChange={(c) =>
+                      handleIsRecyclableChange(index, c === true)
                     }
-                    className="border-border accent-checkbox focus:ring-ring h-4 w-4 rounded"
                   />
                   <label
                     htmlFor={`bulk-recyclable-${post.clientId}`}
