@@ -215,7 +215,7 @@ function FlowCardInner({
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`card-lift border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
+      className={`card-lift border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${queueColor ? "flow-card-queue-shadow" : ""} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
       style={
         queueColor || glowStyle
           ? {
@@ -229,18 +229,12 @@ function FlowCardInner({
       aria-label={ariaLabel ?? defaultAriaLabel}
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
-      {/* Queue tint overlay: base 2% light / 3% dark; stronger on hover */}
+      {/* Queue tint overlay on hover/active only */}
       {queueColor ? (
-        <>
-          <div
-            className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_2%,transparent)] dark:bg-[color-mix(in_srgb,var(--queue-color)_3%,transparent)]"
-            aria-hidden
-          />
-          <div
-            className="flow-card-tint-overlay pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_8%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_12%,transparent)]"
-            aria-hidden
-          />
-        </>
+        <div
+          className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_8%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_12%,transparent)]"
+          aria-hidden
+        />
       ) : null}
       {/* Visual anchor: count-based collage (1 full, 2 side-by-side, 3 one-big-two-small, 4 grid) */}
       {hasMedia ? (

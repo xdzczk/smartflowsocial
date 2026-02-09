@@ -438,6 +438,52 @@
     }
   }
 
+  /* Flow cards: queue-coloured shadow on hover/active (requires --queue-color to be set) */
+  @media (hover: hover) {
+    .flow-card-queue-shadow.card-lift:hover,
+    .flow-card-queue-shadow.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
+    }
+
+    .dark .flow-card-queue-shadow.card-lift:hover,
+    .dark .flow-card-queue-shadow.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
+    }
+  }
+
+  @media (hover: none) {
+    #page-content .flow-card-queue-shadow.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
+    }
+
+    .dark #page-content .flow-card-queue-shadow.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
+    }
+  }
+
+  /* KPI cards: coloured shadow on hover/active (requires --kpi-color to be set) */
+  @media (hover: hover) {
+    .kpi-card.card-lift:hover,
+    .kpi-card.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--kpi-color) 36%, transparent);
+    }
+
+    .dark .kpi-card.card-lift:hover,
+    .dark .kpi-card.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--kpi-color) 42%, transparent);
+    }
+  }
+
+  @media (hover: none) {
+    #page-content .kpi-card.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--kpi-color) 36%, transparent);
+    }
+
+    .dark #page-content .kpi-card.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--kpi-color) 42%, transparent);
+    }
+  }
+
   /* When mobile sidebar is open, page content must not receive pointer events so taps on the sidebar don't trigger pressed/active state on content underneath */
   @media (max-width: 1023px) {
     [data-mobile-sidebar-open] #page-content {

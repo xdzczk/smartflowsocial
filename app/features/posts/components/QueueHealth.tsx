@@ -92,15 +92,15 @@ export default function QueueHealth({
                     className="bg-muted/30 h-2.5 w-full overflow-hidden rounded-md"
                     role="presentation"
                     aria-label={`${count} posts in ${queueName}`}
-                    style={
-                      customColor
-                        ? { ["--queue-color" as string]: customColor }
-                        : undefined
-                    }
                   >
                     <div
-                      className={`h-full rounded-md transition-[width] ${customColor ? "bg-[color-mix(in_srgb,var(--queue-color)_55%,hsl(var(--muted)))] dark:bg-[color-mix(in_srgb,var(--queue-color)_48%,hsl(var(--muted)))]" : getBarFillClass(queueName)}`}
-                      style={{ width: `${widthPercent}%` }}
+                      className={`h-full rounded-md transition-[width] ${customColor ? "" : getBarFillClass(queueName)}`}
+                      style={{
+                        width: `${widthPercent}%`,
+                        ...(customColor
+                          ? { backgroundColor: customColor }
+                          : undefined),
+                      }}
                     />
                   </div>
                 </li>

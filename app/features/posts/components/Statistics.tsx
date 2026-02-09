@@ -5,6 +5,8 @@ import { Card, CardContent } from "~/components/ui/card";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import type { PostStatistics } from "~/models/post.types";
 
+const KPI_COLOR_CSS_VAR = "--kpi-color";
+
 export interface StatisticsProps {
   /** Runway in days until last scheduled post; null when none or in the past */
   runwayDays?: number | null;
@@ -48,7 +50,7 @@ export default function Statistics({
           ? "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400"
           : "bg-slate-500/15 text-slate-600 dark:bg-slate-400/20 dark:text-slate-400";
 
-  const cardBase = "card-lift min-h-[72px] shadow-sm dark:shadow-none";
+  const cardBase = "card-lift kpi-card min-h-[72px] shadow-sm dark:shadow-none";
   const contentBase =
     "hover:bg-muted/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-ring";
   const iconBase = "flex size-12 items-center justify-center rounded-xl";
@@ -56,9 +58,18 @@ export default function Statistics({
   const ddBase =
     "text-muted-foreground/90 text-[11px] font-medium uppercase tracking-tight leading-snug";
 
+  const runwayKpiColor =
+    runwayDaysNum <= 0 && !hasScheduledPosts
+      ? "#64748b" /* slate */
+      : runwayDaysNum < 2
+        ? "#ef4444" /* red */
+        : runwayDaysNum <= 7
+          ? "#f59e0b" /* amber */
+          : "#64748b"; /* slate */
+
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
-      <Card className={cardBase}>
+      <Card className={cardBase} style={{ [KPI_COLOR_CSS_VAR]: "#a855f7" }}>
         <CardContent className="p-0">
           <Link
             to="/dashboard/newpost"
@@ -82,7 +93,7 @@ export default function Statistics({
         </CardContent>
       </Card>
 
-      <Card className={cardBase}>
+      <Card className={cardBase} style={{ [KPI_COLOR_CSS_VAR]: "#3b82f6" }}>
         <CardContent className="p-0">
           <Link
             to="/dashboard/scheduled"
@@ -106,7 +117,7 @@ export default function Statistics({
         </CardContent>
       </Card>
 
-      <Card className={cardBase}>
+      <Card className={cardBase} style={{ [KPI_COLOR_CSS_VAR]: "#22c55e" }}>
         <CardContent className="p-0">
           <Link
             to="/dashboard/published"
@@ -130,7 +141,10 @@ export default function Statistics({
         </CardContent>
       </Card>
 
-      <Card className={cardBase}>
+      <Card
+        className={cardBase}
+        style={{ [KPI_COLOR_CSS_VAR]: runwayKpiColor }}
+      >
         <CardContent className="p-0">
           <button
             type="button"

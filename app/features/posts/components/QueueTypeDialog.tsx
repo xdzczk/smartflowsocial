@@ -1,7 +1,7 @@
 import type { FetcherWithComponents } from "@remix-run/react";
 import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Loader2, Plus, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import type { z } from "zod";
@@ -97,7 +97,7 @@ export function QueueTypeDialog({
   ] as const;
 
   // Initialize form with default values
-  const getDefaultValues = () => {
+  const getDefaultValues = useCallback(() => {
     if (queueType) {
       const scheduleConfig = queueType.scheduleConfig;
       const qt = queueType as QueueType & { colorToken?: string | null };
@@ -140,11 +140,24 @@ export function QueueTypeDialog({
         | Array<{ dayOfWeek: number; time: string }>
         | undefined,
     };
-  };
+  }, [queueType]);
+
+  const defaultFormValues = useMemo(
+    () => getDefaultValues() as z.infer<typeof queueTypeClientSchema>,
+    [getDefaultValues]
+  );
 
   const form = useZodForm(queueTypeClientSchema, {
-    defaultValues: getDefaultValues() as z.infer<typeof queueTypeClientSchema>,
+    defaultValues: defaultFormValues,
   });
+
+  // Reset form whenever the dialog opens or the edited queue changes, so the
+  // modal always shows the correct queue data (or empty for create).
+  useEffect(() => {
+    if (open) {
+      form.reset(defaultFormValues);
+    }
+  }, [open, defaultFormValues, form]);
 
   const { fields, append, remove } = useZodFieldArray<
     z.infer<typeof queueTypeClientSchema>,
