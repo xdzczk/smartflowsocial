@@ -123,7 +123,7 @@ describe("Combined Content Utilities", () => {
         queueType: {
           id: "queue-1",
           name: "Queue 1",
-          color: "#FF0000",
+          colorToken: "red",
         },
         hashTagPresetId: null,
         nostrEventId: null,
@@ -137,7 +137,7 @@ describe("Combined Content Utilities", () => {
 
       expect(result.queueType).toBeDefined();
       expect(result.queueType?.name).toBe("Queue 1");
-      expect(result.queueType?.color).toBe("#FF0000");
+      expect(result.queueType?.color).toBe("#EF4444"); // red token accent
     });
   });
 

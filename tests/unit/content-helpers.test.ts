@@ -260,16 +260,16 @@ describe("Content Helpers", () => {
   });
 
   describe("getQueueTypeDisplay", () => {
-    it("should return display info for queue type with color", () => {
+    it("should return display info for queue type with color token", () => {
       const queueType = {
         name: "Morning",
-        color: "#FF5733",
+        colorToken: "red",
         id: "1",
       };
       const result = getQueueTypeDisplay(queueType);
       expect(result.name).toBe("Morning");
-      expect(result.style?.backgroundColor).toContain("#FF5733");
-      expect(result.style?.color).toBe("#FF5733");
+      expect(result.style?.backgroundColor).toContain("#EF4444"); // red accent
+      expect(result.style?.color).toBe("#EF4444");
     });
 
     it("should return display info for queue type without color", () => {

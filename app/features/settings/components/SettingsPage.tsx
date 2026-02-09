@@ -9,6 +9,7 @@ import { RemoteSignerSettings } from "~/features/auth/components/RemoteSignerSet
 import { MutedListSettings } from "~/features/engagement";
 import { GiveawayBlacklistSettings } from "~/features/giveaway";
 import { NWCSettings, SubscriptionSettings } from "~/features/payments";
+import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import {
   type HashTagPreset,
   type QueueType,
@@ -55,6 +56,7 @@ function parseQueueType(qt: unknown): QueueTypeSettings | null {
     isEnabled?: boolean;
     hashTagPresetId?: string;
     isDefault?: boolean;
+    colorToken?: string | null;
     hashTagPreset?: {
       id: string;
       name: string;
@@ -65,7 +67,10 @@ function parseQueueType(qt: unknown): QueueTypeSettings | null {
   return {
     id: q.id,
     name: q.name,
-    color: q.color,
+    color: getQueueAccentHex(
+      (q as { colorToken?: string | null }).colorToken ?? null
+    ),
+    colorToken: (q as { colorToken?: string | null }).colorToken ?? undefined,
     description: undefined,
     scheduleType: q.scheduleType as
       | "INTERVAL"

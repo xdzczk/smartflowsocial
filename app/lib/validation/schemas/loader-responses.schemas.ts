@@ -34,6 +34,7 @@ const queueTypeSchema = z.object({
   id: z.string(),
   name: z.string(),
   color: z.string().nullable().optional(),
+  colorToken: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   scheduleType: z.enum(["INTERVAL", "FIXED_SLOTS", "WEEKLY_SLOTS"]).optional(),
   scheduleConfig: z

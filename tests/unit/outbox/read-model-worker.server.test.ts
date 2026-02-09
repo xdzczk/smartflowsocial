@@ -50,7 +50,7 @@ describe("Read Model Worker", () => {
         currentState: "SCHEDULED",
         queueType: {
           name: "posts",
-          color: "#000000",
+          colorToken: null,
         },
         hashTagPresetId: "preset-1",
         templateId: "template-1",
@@ -87,7 +87,6 @@ describe("Read Model Worker", () => {
           caption: "Test caption",
           scheduledAtUtc: mockPost.scheduledAtUtc,
           queueTypeName: "posts",
-          queueTypeColor: "#000000",
           queueTypeColorToken: null,
         }),
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
@@ -95,7 +94,6 @@ describe("Read Model Worker", () => {
           caption: "Test caption",
           scheduledAtUtc: mockPost.scheduledAtUtc,
           queueTypeName: "posts",
-          queueTypeColor: "#000000",
           queueTypeColorToken: null,
         }),
       });
@@ -140,7 +138,7 @@ describe("Read Model Worker", () => {
         currentState: "PUBLISHED",
         queueType: {
           name: "posts",
-          color: "#000000",
+          colorToken: null,
         },
         createdAt: new Date("2024-01-01T10:00:00Z"),
         updatedAt: new Date("2024-01-01T12:00:00Z"),
@@ -177,7 +175,6 @@ describe("Read Model Worker", () => {
           caption: "Test caption",
           publishedAt: mockPost.publishedAt,
           queueTypeName: "posts",
-          queueTypeColor: "#000000",
           queueTypeColorToken: null,
         }),
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types

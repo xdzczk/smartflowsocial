@@ -1,6 +1,7 @@
 import { useFetcher, useParams } from "@remix-run/react";
 import { useEffect } from "react";
 
+import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { CombinedContent, PostData } from "~/features/posts/server";
 import {
   PostDetailsModal,
@@ -159,7 +160,10 @@ export default function RecyclablesPage() {
             queueType: post.queueType
               ? {
                   name: post.queueType.name,
-                  color: post.queueType.color ?? null,
+                  color: getQueueAccentHex(
+                    (post.queueType as { colorToken?: string | null })
+                      .colorToken ?? null
+                  ),
                 }
               : null,
             status: typeof post.status === "string" ? post.status : undefined,

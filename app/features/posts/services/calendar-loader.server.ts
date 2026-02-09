@@ -24,6 +24,7 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "../dtos";
+import { getQueueAccentHex } from "../queue-colors";
 import type { PostData, LongFormPostData, QueueType } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
 
@@ -138,7 +139,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
           return {
             id: queueType.id,
             name: queueType.name,
-            color: queueType.color,
+            color: getQueueAccentHex(queueType.colorToken ?? null),
             colorToken: queueType.colorToken ?? undefined,
             description: queueType.description,
             scheduleType: scheduleTypeValue,
@@ -177,7 +178,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
           return {
             id: queueType.id,
             name: queueType.name,
-            color: queueType.color,
+            color: getQueueAccentHex(queueType.colorToken ?? null),
             colorToken: queueType.colorToken ?? undefined,
             description: queueType.description,
             scheduleType: scheduleTypeValue,
@@ -236,7 +237,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
           return {
             id: queueType.id,
             name: queueType.name,
-            color: queueType.color ?? null,
+            color: getQueueAccentHex(queueType.colorToken ?? null),
             colorToken: queueType.colorToken ?? undefined,
             description: queueType.description ?? null,
             scheduleType: scheduleTypeValue,
@@ -290,8 +291,6 @@ export async function loadCalendarData(userId: string, queueType: string) {
         ? ((): QueueType => {
             const idValue: string = queueType.id;
             const nameValue: string = queueType.name;
-            const colorValue: string | null | undefined =
-              "color" in queueType ? queueType.color : undefined;
             const colorTokenValue: string | null | undefined =
               "colorToken" in queueType ? queueType.colorToken : undefined;
             const descriptionValue: string | null | undefined =
@@ -312,7 +311,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
             return {
               id: idValue,
               name: nameValue,
-              color: colorValue ?? null,
+              color: getQueueAccentHex(colorTokenValue ?? null),
               colorToken: colorTokenValue ?? undefined,
               description: descriptionValue ?? null,
               scheduleType: scheduleTypeValue,
@@ -443,7 +442,7 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
           return {
             id: queueType.id,
             name: queueType.name,
-            color: queueType.color,
+            color: getQueueAccentHex(queueType.colorToken ?? null),
             colorToken: queueType.colorToken ?? undefined,
             description: queueType.description,
             scheduleType: scheduleTypeValue,

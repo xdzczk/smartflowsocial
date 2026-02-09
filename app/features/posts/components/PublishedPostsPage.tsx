@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Toast from "~/components/ui/Toast";
 import { usePostResultFromUrl } from "~/features/posts/hooks/usePostResultFromUrl";
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
+import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type {
   PostData,
   CombinedContent,
@@ -292,7 +293,7 @@ export default function PublishedPostsPage() {
         currentTab={currentTab}
         queueTypes={queueTypes.map((qt) => ({
           name: qt.name,
-          color: qt.color ?? undefined,
+          color: getQueueAccentHex(qt.colorToken ?? null),
         }))}
         allContentLength={totalContentCount}
         postsLength={totalPostsCount}

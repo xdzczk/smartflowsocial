@@ -13,6 +13,7 @@ import { validateUserData } from "~/lib/validation/user-data";
 import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import { fromPostDTOArray, fromLongFormPostDTOArray } from "../dtos";
+import { getQueueAccentHex } from "../queue-colors";
 import type {
   PostData,
   LongFormPostData,
@@ -187,7 +188,11 @@ export function useCalendarData() {
             const queueType: QueueType = {
               id: q.id,
               name: q.name,
-              color: q.color,
+              color: getQueueAccentHex(
+                (q as { colorToken?: string | null }).colorToken ?? null
+              ),
+              colorToken:
+                (q as { colorToken?: string | null }).colorToken ?? undefined,
               description: undefined,
               scheduleType: q.scheduleType as
                 | "INTERVAL"

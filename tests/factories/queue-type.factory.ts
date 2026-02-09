@@ -14,7 +14,7 @@ export interface QueueTypeFactoryOptions {
   scheduleType?: ScheduleType;
   scheduleConfig?: Record<string, unknown> | null;
   isEnabled?: boolean;
-  color?: string | null;
+  colorToken?: string | null;
   description?: string | null;
   lastPostTime?: Date | null;
   isDefault?: boolean;
@@ -34,7 +34,7 @@ export class QueueTypeFactory {
       scheduleType: "INTERVAL",
       scheduleConfig: { intervalHours: 4 },
       isEnabled: true,
-      color: "#3B82F6",
+      colorToken: "blue",
       description: null,
       lastPostTime: null,
       isDefault: false,
@@ -96,8 +96,8 @@ export class QueueTypeFactory {
     return this;
   }
 
-  withColor(color: string): this {
-    this.options.color = color;
+  withColorToken(colorToken: string): this {
+    this.options.colorToken = colorToken;
     return this;
   }
 
@@ -122,7 +122,7 @@ export class QueueTypeFactory {
         intervalHours: 4,
       }) as unknown as Prisma.JsonValue,
       isEnabled: this.options.isEnabled ?? true,
-      color: this.options.color ?? null,
+      colorToken: this.options.colorToken ?? null,
       description: this.options.description ?? null,
       lastPostTime: this.options.lastPostTime ?? null,
       isDefault: this.options.isDefault ?? false,

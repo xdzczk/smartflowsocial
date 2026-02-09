@@ -2,7 +2,7 @@
  * Draft preview component
  */
 
-import { getSelectedQueueStyle } from "../queue-colors";
+import { getQueueAccentHex, getSelectedQueueStyle } from "../queue-colors";
 import type { PostData, QueueType } from "../types";
 interface DraftPreviewProps {
   post: PostData;
@@ -34,7 +34,12 @@ export function DraftPreview({
     return queueName === selectedQueue;
   });
   const queueColor =
-    typeof currentQueueType === "object" ? currentQueueType.color : null;
+    typeof currentQueueType === "object"
+      ? getQueueAccentHex(
+          (currentQueueType as { colorToken?: string | null }).colorToken ??
+            null
+        )
+      : null;
 
   return (
     <div className="space-y-4">

@@ -62,6 +62,7 @@ function normalizeQueueTypeFromAction(
     id: raw["id"] as string,
     name: raw["name"] as string,
     color: (raw["color"] as string | null) ?? null,
+    colorToken: (raw["colorToken"] as string | null | undefined) ?? undefined,
     description: (raw["description"] as string | null) ?? null,
     scheduleType: validScheduleType,
     scheduleConfig:

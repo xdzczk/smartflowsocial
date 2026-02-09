@@ -91,7 +91,6 @@ model QueueType {
   scheduleType    ScheduleType   @default(INTERVAL)
   scheduleConfig  Json
   isEnabled       Boolean        @default(true)
-  color           String?
   colorToken      String?
   description     String?
   lastPostTime    DateTime?
@@ -518,7 +517,6 @@ model ScheduledPostRead {
   caption         String?
   scheduledAtUtc  DateTime
   queueTypeName      String
-  queueTypeColor     String?
   queueTypeColorToken String?
   hashTagPresetId    String?
   templateId         String?
@@ -538,7 +536,6 @@ model PublishedPostRead {
   caption         String?
   publishedAt     DateTime
   queueTypeName       String
-  queueTypeColor      String?
   queueTypeColorToken String?
   engagementScore     Int? // Pre-computed engagement (can be updated later)
   createdAt           DateTime

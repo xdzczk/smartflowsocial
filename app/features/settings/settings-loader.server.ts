@@ -4,6 +4,7 @@
  */
 
 import type { ProfileData } from "~/features/nostr/types";
+import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type {
   HashTagPreset,
   QueueType,
@@ -283,7 +284,8 @@ export async function loadSettingsData(
     queueTypes: queueTypes.map((qt) => ({
       id: qt.id,
       name: qt.name,
-      color: qt.color,
+      color: getQueueAccentHex(qt.colorToken ?? null),
+      colorToken: qt.colorToken ?? undefined,
       description: qt.description,
       scheduleType: qt.scheduleType,
       scheduleConfig:

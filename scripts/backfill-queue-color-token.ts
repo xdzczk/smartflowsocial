@@ -1,10 +1,9 @@
 /**
  * Backfill Queue Color Token
  *
- * 1. Sets QueueType.colorToken from existing QueueType.color (nearest token by hue; grayscale → slate).
- * 2. Sets ScheduledPostRead.queueTypeColorToken and PublishedPostRead.queueTypeColorToken from QueueType.
- *
+ * Sets QueueType.colorToken to "slate" where it is null (e.g. after migration).
  * Run after applying migration 20260209120000_add_queue_color_token.
+ * Safe to run after 20260209130000_drop_queue_color_columns (only updates null colorToken).
  *
  * Usage:
  *   npx tsx scripts/backfill-queue-color-token.ts
@@ -15,8 +14,6 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { config } from "dotenv";
 import { Pool } from "pg";
-
-import { hexToNearestQueueColorToken } from "../app/features/posts/queue-colors";
 
 const { log, error: logError } = require("./logger") as {
   log: (..._args: unknown[]) => void;
@@ -41,20 +38,18 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function backfillQueueTypeColorTokens() {
-  log("Backfilling QueueType.colorToken from QueueType.color...");
+  log("Backfilling QueueType.colorToken where null...");
 
   const queueTypes = await prisma.queueType.findMany({
-    select: { id: true, userId: true, name: true, color: true },
+    where: { colorToken: null },
+    select: { id: true },
   });
 
   let updated = 0;
   for (const qt of queueTypes) {
-    const token = qt.color
-      ? hexToNearestQueueColorToken(qt.color)
-      : ("slate" as const);
     await prisma.queueType.update({
       where: { id: qt.id },
-      data: { colorToken: token },
+      data: { colorToken: "slate" },
     });
     updated++;
   }

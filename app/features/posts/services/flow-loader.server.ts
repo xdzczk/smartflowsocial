@@ -35,10 +35,28 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "../dtos";
-import type { CombinedContent, PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
+import type {
+  CombinedContent,
+  PostData,
+  LongFormPostData,
+  QueueType,
+} from "../types";
 
 import { filterPostsByQueueType } from "./post-filtering.server";
+
+/** Convert Prisma queue types to app QueueType (with derived color from colorToken) for client. */
+function toAppQueueTypes(
+  prismaQueueTypes: Awaited<ReturnType<typeof getQueueTypesCached>>
+): QueueType[] {
+  return prismaQueueTypes
+    .map((qt) =>
+      convertPrismaQueueTypeToQueueType(
+        qt as Parameters<typeof convertPrismaQueueTypeToQueueType>[0]
+      )
+    )
+    .filter((qt): qt is QueueType => qt != null);
+}
 
 const PAST_DAYS_WINDOW = 30;
 const DEFAULT_PAST_LIMIT = 20;
@@ -142,7 +160,8 @@ export interface LoadFlowDataResult {
   /** Latest scheduled date (ms) for runway KPI; null when no future scheduled. */
   lastScheduledAtUtc: number | null;
   user: Awaited<ReturnType<typeof getUserById>>;
-  queueTypes: Awaited<ReturnType<typeof getQueueTypesCached>>;
+  /** App QueueType[] with color derived from colorToken for client display */
+  queueTypes: QueueType[];
   hashTagPresets: Awaited<ReturnType<typeof getHashTagPresetsCached>>;
 }
 
@@ -174,6 +193,7 @@ export async function loadFlowData({
   ]);
 
   const enabledQueueTypes = queueTypes.filter((qt) => qt.isEnabled !== false);
+  const queueTypesForClient = toAppQueueTypes(enabledQueueTypes);
 
   // Load more past only
   if (before !== undefined && before !== "") {
@@ -240,7 +260,7 @@ export async function loadFlowData({
       futureCursor: null,
       lastScheduledAtUtc,
       user,
-      queueTypes: enabledQueueTypes,
+      queueTypes: queueTypesForClient,
       hashTagPresets,
     };
   }
@@ -319,7 +339,7 @@ export async function loadFlowData({
       futureCursor,
       lastScheduledAtUtc,
       user,
-      queueTypes: enabledQueueTypes,
+      queueTypes: queueTypesForClient,
       hashTagPresets,
     };
   }
@@ -429,7 +449,7 @@ export async function loadFlowData({
     futureCursor,
     lastScheduledAtUtc,
     user,
-    queueTypes: enabledQueueTypes,
+    queueTypes: queueTypesForClient,
     hashTagPresets,
   };
 }

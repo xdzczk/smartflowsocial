@@ -4,6 +4,7 @@ import { validateUserData } from "~/lib/validation/user-data";
 
 import { fromPostDTO, type PostDTO } from "../dtos";
 import { useDraftEditState } from "../hooks/useDraftEditState";
+import { getQueueAccentHex } from "../queue-colors";
 import { convertJsonValueToScheduleConfig } from "../types";
 import type { HashTagPreset, QueueType } from "../types";
 
@@ -78,7 +79,16 @@ export default function DraftEditPage() {
       return {
         id: raw.id,
         name: raw.name,
-        color: typeof raw.color === "string" ? raw.color : undefined,
+        color: getQueueAccentHex(
+          (typeof (raw as { colorToken?: string | null }).colorToken ===
+          "string"
+            ? (raw as { colorToken?: string | null }).colorToken
+            : null) ?? null
+        ),
+        colorToken:
+          typeof (raw as { colorToken?: string | null }).colorToken === "string"
+            ? (raw as { colorToken?: string | null }).colorToken
+            : undefined,
         description:
           typeof raw.description === "string" ? raw.description : undefined,
         scheduleType:

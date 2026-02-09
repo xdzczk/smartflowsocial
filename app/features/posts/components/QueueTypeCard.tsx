@@ -83,9 +83,10 @@ export function QueueTypeCard({
             <div
               className="h-4 w-4 rounded-full"
               style={{
-                backgroundColor: queueType.colorToken
-                  ? getQueueAccentHex(queueType.colorToken)
-                  : "#6B7280",
+                backgroundColor:
+                  queueType.colorToken != null && queueType.colorToken !== ""
+                    ? getQueueAccentHex(queueType.colorToken)
+                    : (queueType.color ?? "#6B7280"),
               }}
             />
             <div className="space-y-1">

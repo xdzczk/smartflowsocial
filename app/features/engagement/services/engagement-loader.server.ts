@@ -7,6 +7,7 @@ import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { getThreadViewWithCache } from "~/features/cache/thread-view-cache.server";
 import type { SignedEvent } from "~/features/nostr/types";
 import { toPostDTOArray } from "~/features/posts/dtos";
+import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { PostData, QueueType } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
@@ -480,7 +481,7 @@ export async function loadEngagementFeedData(
       ? {
           id: queueType.id,
           name: queueType.name,
-          color: queueType.color,
+          color: getQueueAccentHex(queueType.colorToken ?? null),
           colorToken: queueType.colorToken ?? undefined,
           description: queueType.description,
           scheduleType: queueType.scheduleType as

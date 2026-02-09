@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import type { Asset } from "~/features/assets";
 
 import { useNewLongFormState } from "../hooks/useNewLongFormState";
+import { getQueueAccentHex } from "../queue-colors";
 import { convertJsonValueToScheduleConfig } from "../types";
 import type { HashTagPreset, QueueType } from "../types";
 import {
@@ -141,7 +142,7 @@ export default function NewLongFormPostPage() {
             const q = qt as {
               id?: unknown;
               name?: unknown;
-              color?: unknown;
+              colorToken?: unknown;
               scheduleType?: unknown;
               scheduleConfig?: unknown;
               isEnabled?: unknown;
@@ -150,11 +151,18 @@ export default function NewLongFormPostPage() {
             const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
             const name =
               typeof q.name === "string" ? q.name : String(q.name ?? "");
-            const color =
-              q.color !== null && q.color !== undefined
-                ? typeof q.color === "string"
-                  ? q.color
-                  : String(q.color)
+            const color = getQueueAccentHex(
+              q.colorToken !== null &&
+                q.colorToken !== undefined &&
+                typeof q.colorToken === "string"
+                ? q.colorToken
+                : null
+            );
+            const colorToken =
+              q.colorToken !== null &&
+              q.colorToken !== undefined &&
+              typeof q.colorToken === "string"
+                ? q.colorToken
                 : null;
             const scheduleType =
               typeof q.scheduleType === "string" &&
@@ -174,7 +182,8 @@ export default function NewLongFormPostPage() {
             const result: QueueType = {
               id,
               name,
-              color: color,
+              color,
+              colorToken: colorToken ?? undefined,
               description: undefined,
               scheduleType: scheduleType,
               scheduleConfig:

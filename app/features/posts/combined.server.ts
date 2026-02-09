@@ -5,6 +5,7 @@
 
 import { fromDate, fromISOString } from "~/lib/temporal";
 
+import { getQueueAccentHex } from "./queue-colors";
 import type { CombinedContent, PostData, LongFormPostData } from "./types";
 // Re-export the type
 export type { CombinedContent } from "~/features/posts/types";
@@ -132,22 +133,13 @@ export function postToCombinedContent(post: PostData): CombinedContent {
               typeof post.queueType.name === "string"
                 ? post.queueType.name
                 : String(post.queueType.name),
-            ...("color" in post.queueType && post.queueType.color
-              ? {
-                  color:
-                    typeof post.queueType.color === "string"
-                      ? post.queueType.color
-                      : String(post.queueType.color),
-                }
-              : {}),
-            ...("colorToken" in post.queueType && post.queueType.colorToken
-              ? {
-                  colorToken:
-                    typeof post.queueType.colorToken === "string"
-                      ? post.queueType.colorToken
-                      : String(post.queueType.colorToken),
-                }
-              : {}),
+            color: getQueueAccentHex(
+              (post.queueType as { colorToken?: string | null }).colorToken ??
+                null
+            ),
+            colorToken: nullToUndefined(
+              (post.queueType as { colorToken?: string | null }).colorToken
+            ),
           }
         : undefined,
     queueTypeId: nullToUndefined(post.queueTypeId),
@@ -198,7 +190,7 @@ export function longFormPostToCombinedContent(
       ? {
           id: longFormPost.queueType.id,
           name: longFormPost.queueType.name,
-          color: nullToUndefined(longFormPost.queueType.color),
+          color: getQueueAccentHex(longFormPost.queueType.colorToken ?? null),
           colorToken: nullToUndefined(longFormPost.queueType.colorToken),
         }
       : undefined,

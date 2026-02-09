@@ -22,6 +22,7 @@ import {
 import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import { fromPostDTOArray, fromLongFormPostDTOArray } from "../dtos";
+import { getQueueAccentHex } from "../queue-colors";
 import type {
   PostData,
   LongFormPostData,
@@ -236,12 +237,11 @@ export function useScheduledPostsData() {
             const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
             const name =
               typeof q.name === "string" ? q.name : String(q.name ?? "");
-            const color =
-              q.color !== null && q.color !== undefined
-                ? typeof q.color === "string"
-                  ? q.color
-                  : String(q.color)
-                : null;
+            const color = getQueueAccentHex(
+              (q as { colorToken?: string | null }).colorToken ?? null
+            );
+            const colorToken =
+              (q as { colorToken?: string | null }).colorToken ?? null;
             const scheduleType =
               typeof q.scheduleType === "string" &&
               (q.scheduleType === "INTERVAL" ||
@@ -261,6 +261,7 @@ export function useScheduledPostsData() {
               id,
               name,
               color,
+              colorToken: colorToken ?? undefined,
               description: undefined,
               scheduleType,
               scheduleConfig,
@@ -413,12 +414,11 @@ export function useScheduledPostsInfiniteData() {
             const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
             const name =
               typeof q.name === "string" ? q.name : String(q.name ?? "");
-            const color =
-              q.color !== null && q.color !== undefined
-                ? typeof q.color === "string"
-                  ? q.color
-                  : String(q.color)
-                : null;
+            const color = getQueueAccentHex(
+              (q as { colorToken?: string | null }).colorToken ?? null
+            );
+            const colorToken =
+              (q as { colorToken?: string | null }).colorToken ?? null;
             const scheduleType =
               typeof q.scheduleType === "string" &&
               (q.scheduleType === "INTERVAL" ||
@@ -438,6 +438,7 @@ export function useScheduledPostsInfiniteData() {
               id,
               name,
               color,
+              colorToken: colorToken ?? undefined,
               description: undefined,
               scheduleType,
               scheduleConfig,

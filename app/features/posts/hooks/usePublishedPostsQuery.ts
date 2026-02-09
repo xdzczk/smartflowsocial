@@ -25,6 +25,7 @@ import type { UserData } from "~/lib/validation/user-data";
 import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import { fromPostDTOArray, fromLongFormPostDTOArray } from "../dtos";
+import { getQueueAccentHex } from "../queue-colors";
 import type { PostStats } from "../stats.server";
 import type {
   PostData,
@@ -251,12 +252,11 @@ export function usePublishedPostsData() {
         };
         const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
         const name = typeof q.name === "string" ? q.name : String(q.name ?? "");
-        const color =
-          q.color !== null && q.color !== undefined
-            ? typeof q.color === "string"
-              ? q.color
-              : String(q.color)
-            : null;
+        const color = getQueueAccentHex(
+          (q as { colorToken?: string | null }).colorToken ?? null
+        );
+        const colorToken =
+          (q as { colorToken?: string | null }).colorToken ?? null;
         const scheduleType =
           typeof q.scheduleType === "string" &&
           (q.scheduleType === "INTERVAL" ||
@@ -276,6 +276,7 @@ export function usePublishedPostsData() {
           id,
           name,
           color,
+          colorToken: colorToken ?? undefined,
           description: undefined,
           scheduleType,
           scheduleConfig,
@@ -372,12 +373,10 @@ function processQueueTypes(queueTypesRaw: unknown[]): QueueType[] {
     };
     const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
     const name = typeof q.name === "string" ? q.name : String(q.name ?? "");
-    const color =
-      q.color !== null && q.color !== undefined
-        ? typeof q.color === "string"
-          ? q.color
-          : String(q.color)
-        : null;
+    const color = getQueueAccentHex(
+      (q as { colorToken?: string | null }).colorToken ?? null
+    );
+    const colorToken = (q as { colorToken?: string | null }).colorToken ?? null;
     const scheduleType =
       typeof q.scheduleType === "string" &&
       (q.scheduleType === "INTERVAL" ||
@@ -393,6 +392,7 @@ function processQueueTypes(queueTypesRaw: unknown[]): QueueType[] {
       id,
       name,
       color,
+      colorToken: colorToken ?? undefined,
       description: undefined,
       scheduleType,
       scheduleConfig,

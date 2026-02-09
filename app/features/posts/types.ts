@@ -12,6 +12,8 @@ import type {
 import type { FetcherWithComponents } from "@remix-run/react";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+
+import { getQueueAccentHex } from "./queue-colors";
 /**
  * Schedule configuration for INTERVAL schedule type
  */
@@ -185,10 +187,10 @@ export function convertPrismaQueueTypeToQueueType(
   return {
     id: prisma.id,
     name: prisma.name,
-    color: prisma.color,
+    color: getQueueAccentHex(prisma.colorToken ?? null),
     colorToken: prisma.colorToken ?? undefined,
     description: prisma.description,
-    scheduleType: prismaQueueType.scheduleType as
+    scheduleType: prisma.scheduleType as
       | "INTERVAL"
       | "FIXED_SLOTS"
       | "WEEKLY_SLOTS"

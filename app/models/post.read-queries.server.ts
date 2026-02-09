@@ -29,7 +29,6 @@ export async function getScheduledPostsFromReadModel({
     caption: string | null;
     scheduledAtUtc: Date;
     queueTypeName: string;
-    queueTypeColor: string | null;
     queueTypeColorToken: string | null;
     hashTagPresetId: string | null;
     templateId: string | null;
@@ -73,7 +72,6 @@ export async function getScheduledPostsFromReadModel({
       caption: post.caption,
       scheduledAtUtc: post.scheduledAtUtc ?? new Date(),
       queueTypeName: post.queueType?.name ?? "unassigned",
-      queueTypeColor: post.queueType?.color ?? null,
       queueTypeColorToken: post.queueType?.colorToken ?? null,
       hashTagPresetId: post.hashTagPresetId,
       templateId: post.templateId,
@@ -109,7 +107,6 @@ export async function getPublishedPostsFromReadModel({
     caption: string | null;
     publishedAt: Date;
     queueTypeName: string;
-    queueTypeColor: string | null;
     queueTypeColorToken: string | null;
     engagementScore: number | null;
     createdAt: Date;
@@ -156,7 +153,6 @@ export async function getPublishedPostsFromReadModel({
         caption: post.caption,
         publishedAt: post.publishedAt ?? new Date(),
         queueTypeName: post.queueType?.name ?? "unassigned",
-        queueTypeColor: post.queueType?.color ?? null,
         queueTypeColorToken: post.queueType?.colorToken ?? null,
         engagementScore: null, // Can be computed later
         createdAt: post.createdAt,

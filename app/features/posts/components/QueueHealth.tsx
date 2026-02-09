@@ -38,7 +38,7 @@ function getQueueColorHex(
   if (withToken.colorToken) {
     return getQueueAccentHex(withToken.colorToken);
   }
-  return withToken.color ?? null;
+  return null;
 }
 
 export default function QueueHealth({

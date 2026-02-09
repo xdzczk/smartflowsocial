@@ -4,6 +4,7 @@
  * Client-safe version
  */
 
+import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { PostData } from "~/features/posts/types";
 
 /**
@@ -39,7 +40,10 @@ export function convertPostDataToScheduledTablePost(
     queueType: post.queueType
       ? {
           name: post.queueType.name,
-          color: post.queueType.color ?? null,
+          color: getQueueAccentHex(
+            (post.queueType as { colorToken?: string | null }).colorToken ??
+              null
+          ),
           colorToken:
             (post.queueType as { colorToken?: string | null }).colorToken ??
             null,

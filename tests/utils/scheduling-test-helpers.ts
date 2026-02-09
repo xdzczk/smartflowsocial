@@ -27,7 +27,6 @@ export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
     isEnabled: true,
     createdAt: new Date(),
     updatedAt: new Date(),
-    color: null,
     colorToken: null,
     description: null,
     hashTagPresetId: null,
