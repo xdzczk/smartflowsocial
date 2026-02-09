@@ -214,7 +214,7 @@ export default function LongFormListing({
   const bulkDeleteFetcher = useFetcher<BulkDeleteFetcherData>();
   const queryClient = useQueryClient();
 
-  // Invalidate when delete or move-to-draft succeeds (scheduled tab)
+  // Invalidate when delete or move-to-draft succeeds (scheduled tab) or when deleting a draft (drafts tab)
   useEffect(() => {
     if (deleteFetcher.state === "idle" && deleteFetcher.data) {
       const data = deleteFetcher.data;
@@ -225,12 +225,12 @@ export default function LongFormListing({
         });
         void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
 
-        if ("moved" in data && data.moved) {
+        if (type === "draft" || ("moved" in data && data.moved)) {
           void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
         }
       }
     }
-  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
+  }, [deleteFetcher.state, deleteFetcher.data, queryClient, type]);
 
   const sortedPosts = sortLongFormPosts(posts, sortConfig);
   const filteredPosts = sortedPosts.filter((post) =>

@@ -104,6 +104,7 @@ export default function DraftsPage() {
     setShowAdvancedBulkResume,
   } = useDraftsState({
     posts: posts.map((post) => convertPostDataToDraftsPost(post)),
+    allContent: allContent.map((c) => ({ id: c.id, type: c.type })),
   });
 
   // If we're on a child route, render the child component
@@ -156,6 +157,10 @@ export default function DraftsPage() {
               if (content.type === "post") {
                 const postData = content.originalData as PostData;
                 setSelectedPost(convertPostDataToDraftsPost(postData));
+              } else {
+                setSelectedLongFormPost(
+                  content.originalData as LongFormPostData
+                );
               }
             }}
             selectedItems={selectedPosts}
@@ -241,18 +246,20 @@ export default function DraftsPage() {
               isFetchingNextPage={isFetchingNextPage}
               onScrollContainerReady={isMobile ? setScrollRoot : undefined}
             />
-
-            {selectedLongFormPost ? (
-              <LongFormDetailsModal
-                post={selectedLongFormPost}
-                onClose={() => setSelectedLongFormPost(null)}
-                type="draft"
-                userTimezone={user?.timezone ?? undefined}
-              />
-            ) : null}
           </>
         )}
       </div>
+
+      {/* Longform detail modal: show when a longform draft is selected (all or longform tab) */}
+      {(currentTab === "all" || currentTab === "longform") &&
+      selectedLongFormPost ? (
+        <LongFormDetailsModal
+          post={selectedLongFormPost}
+          onClose={() => setSelectedLongFormPost(null)}
+          type="draft"
+          userTimezone={user?.timezone ?? undefined}
+        />
+      ) : null}
 
       {/* Short post detail modal: show when a draft post is selected (all or posts tab) */}
       {(currentTab === "all" || currentTab === "posts") && selectedPost

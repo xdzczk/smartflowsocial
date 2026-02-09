@@ -279,6 +279,7 @@ export const draftsActionSchema = z.discriminatedUnion("_action", [
   deleteLongFormPostSchema,
   bulkDeletePostsSchema,
   bulkDeleteLongFormPostsSchema,
+  bulkDeleteMixedSchema,
   bulkSignAndResumeSchema,
 ]);
 

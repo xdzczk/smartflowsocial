@@ -10,14 +10,21 @@ interface Post {
   [key: string]: unknown;
 }
 
+interface CombinedContentItem {
+  id: string;
+  type: "post" | "longform";
+}
+
 interface UseDraftsStateProps {
   posts: Post[];
+  /** When provided (e.g. on "all" tab), select-all and bulk delete include both posts and longform */
+  allContent?: CombinedContentItem[];
 }
 
 /**
  * Custom hook for managing drafts state and operations
  */
-export function useDraftsState({ posts }: UseDraftsStateProps) {
+export function useDraftsState({ posts, allContent }: UseDraftsStateProps) {
   const queryClient = useQueryClient();
   const [sortConfig, setSortConfig] = useState({
     key: "createdAt",
@@ -86,10 +93,18 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
   };
 
   const toggleSelectAll = () => {
-    if (selectedPosts.size === filteredPosts.length) {
-      setSelectedPosts(new Set());
+    if (allContent && allContent.length > 0) {
+      if (selectedPosts.size === allContent.length) {
+        setSelectedPosts(new Set());
+      } else {
+        setSelectedPosts(new Set(allContent.map((c) => c.id)));
+      }
     } else {
-      setSelectedPosts(new Set(filteredPosts.map((post) => post.id)));
+      if (selectedPosts.size === filteredPosts.length) {
+        setSelectedPosts(new Set());
+      } else {
+        setSelectedPosts(new Set(filteredPosts.map((post) => post.id)));
+      }
     }
   };
 
@@ -97,8 +112,17 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
     if (selectedPosts.size === 0) return;
 
     const formData = new FormData();
-    formData.append("_action", "bulkDelete");
-    formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+    if (allContent && allContent.length > 0) {
+      const itemData = Array.from(selectedPosts).map((id) => {
+        const c = allContent.find((x) => x.id === id);
+        return { id, type: c?.type ?? ("post" as const) };
+      });
+      formData.append("_action", "bulkDeleteMixed");
+      formData.append("itemData", JSON.stringify(itemData));
+    } else {
+      formData.append("_action", "bulkDelete");
+      formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+    }
 
     bulkDeleteFetcher.submit(formData, { method: "post" });
   };

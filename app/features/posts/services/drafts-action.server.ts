@@ -48,6 +48,19 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
     return { success: true };
   }
 
+  if (_action === "bulkDeleteMixed") {
+    const promises = result.data.itemData.map(
+      (item: { id: string; type: "post" | "longform" }) => {
+        if (item.type === "post") {
+          return deletePost({ id: item.id, userId });
+        }
+        return deleteLongFormPost({ id: item.id, userId });
+      }
+    );
+    await Promise.all(promises);
+    return { success: true };
+  }
+
   // TypeScript guarantees this is "bulkSignAndResume" after previous checks
   const bulkData = result.data;
   const stateMachine = new PostStateMachine();
