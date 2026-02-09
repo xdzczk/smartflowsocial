@@ -314,6 +314,24 @@ export function getUserFriendlyMessage(error: AppError): string {
 }
 
 /**
+ * Extract a display-safe error message from Remix actionData (e.g. from handleActionError).
+ * Action error shape is { success: false, error: { message, code, statusCode, ... } }.
+ * Returns a string for UI display, or undefined if no error.
+ */
+export function getActionErrorMessage(data: unknown): string | undefined {
+  if (data == null || typeof data !== "object") return undefined;
+  const obj = data as Record<string, unknown>;
+  if (!("error" in obj)) return undefined;
+  const err = obj["error"];
+  if (typeof err === "string") return err;
+  if (err != null && typeof err === "object" && "message" in err) {
+    const msg = (err as { message: unknown }).message;
+    return typeof msg === "string" ? msg : undefined;
+  }
+  return undefined;
+}
+
+/**
  * Error codes enum for type safety
  */
 export const ErrorCodes = {

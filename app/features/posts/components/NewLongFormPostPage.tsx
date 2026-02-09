@@ -9,6 +9,7 @@ import {
 import { useEffect, useState } from "react";
 
 import type { Asset } from "~/features/assets";
+import { getActionErrorMessage } from "~/lib/errors";
 
 import { useNewLongFormState } from "../hooks/useNewLongFormState";
 import { getQueueAccentHex } from "../queue-colors";
@@ -346,11 +347,7 @@ export default function NewLongFormPostPage() {
       <NewLongFormHeader displayedHashtags={displayedHashtags} />
 
       <ErrorMessage
-        error={
-          actionData && typeof actionData === "object" && "error" in actionData
-            ? ((actionData as { error?: unknown }).error as string | undefined)
-            : undefined
-        }
+        error={getActionErrorMessage(actionData)}
         success={
           actionData &&
           typeof actionData === "object" &&

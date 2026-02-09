@@ -17,6 +17,7 @@ import {
   LongFormPreviewModal,
   useLongFormEditState,
 } from "~/features/posts/ui";
+import { getActionErrorMessage } from "~/lib/errors";
 
 export default function LongFormDraftEditPage() {
   const loaderData = useLoaderData<unknown>();
@@ -221,11 +222,7 @@ export default function LongFormDraftEditPage() {
       />
 
       <ErrorMessage
-        error={
-          actionData && typeof actionData === "object" && "error" in actionData
-            ? ((actionData as { error?: unknown }).error as string | undefined)
-            : undefined
-        }
+        error={getActionErrorMessage(actionData)}
         success={
           actionData &&
           typeof actionData === "object" &&

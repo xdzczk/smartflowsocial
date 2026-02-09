@@ -245,6 +245,19 @@ export function ErrorBoundary() {
     statusCode = normalizedError.statusCode;
     errorMessage = normalizedError.message;
     errorTitle = "Application Error";
+  } else if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
+    errorMessage = (error as { message: string }).message;
+    const errObj = error as unknown as { statusCode?: number };
+    statusCode =
+      typeof errObj.statusCode === "number" ? errObj.statusCode : 500;
+    errorTitle = "Application Error";
+  } else if (error != null && typeof error === "object") {
+    errorMessage = "An unexpected error occurred";
   }
 
   return (
@@ -277,13 +290,15 @@ export function ErrorBoundary() {
                   Go back home
                 </a>
               </div>
-              {isDevelopment && error instanceof Error ? (
+              {isDevelopment && error != null ? (
                 <details className="mt-10 text-left">
                   <summary className="text-foreground cursor-pointer text-sm font-semibold">
                     Error Details (Development Only)
                   </summary>
                   <pre className="bg-card text-foreground mt-4 overflow-auto rounded-lg p-4 text-xs">
-                    {error.stack ?? error.toString()}
+                    {error instanceof Error
+                      ? (error.stack ?? error.toString())
+                      : JSON.stringify(error, null, 2)}
                   </pre>
                 </details>
               ) : null}
