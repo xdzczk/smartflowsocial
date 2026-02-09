@@ -22,6 +22,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import {
   createHashtagPresetClientSchema,
   updateHashtagPresetClientSchema,
@@ -306,7 +307,7 @@ export function HashtagPresetsSettings({
                     onClick={() => openEditDialog(preset)}
                     disabled={isSubmitting}
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className={INLINE_ICON_SIZE_CLASS} />
                   </Button>
                   <Button
                     size="sm"
@@ -315,7 +316,7 @@ export function HashtagPresetsSettings({
                     disabled={isSubmitting}
                     className="text-destructive hover:text-destructive"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className={INLINE_ICON_SIZE_CLASS} />
                   </Button>
                 </div>
               </div>

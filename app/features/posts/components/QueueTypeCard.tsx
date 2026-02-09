@@ -4,6 +4,7 @@ import { Edit, Trash2 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import {
   isIntervalScheduleConfig,
@@ -119,7 +120,7 @@ export function QueueTypeCard({
               size="sm"
               onClick={() => onEdit(queueType)}
             >
-              <Edit className="h-4 w-4" />
+              <Edit className={INLINE_ICON_SIZE_CLASS} />
             </Button>
             {!queueType.isDefault ? (
               <Button
@@ -128,7 +129,7 @@ export function QueueTypeCard({
                 onClick={handleDelete}
                 disabled={isDeletingQueueType}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className={INLINE_ICON_SIZE_CLASS} />
               </Button>
             ) : null}
           </div>

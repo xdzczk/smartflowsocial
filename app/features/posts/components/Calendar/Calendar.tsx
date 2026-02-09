@@ -1,5 +1,7 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useCallback } from "react";
 
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import {
   addDays,
   addMonths,
@@ -137,20 +139,13 @@ export function Calendar({
                 setCurrentDate(toDate(newZoned));
               }}
               className="text-muted-foreground hover:text-foreground p-2"
+              aria-label="Previous"
             >
-              <svg
+              <ChevronLeft
                 className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
             </button>
 
             <h2 className="text-foreground text-lg font-semibold">
@@ -179,20 +174,13 @@ export function Calendar({
                 setCurrentDate(toDate(newZoned));
               }}
               className="text-muted-foreground hover:text-foreground p-2"
+              aria-label="Next"
             >
-              <svg
+              <ChevronRight
                 className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
             </button>
 
             <button

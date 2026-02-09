@@ -2,7 +2,10 @@ import { Quote, Share2 } from "lucide-react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { SMALL_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import {
+  INLINE_ICON_STROKE,
+  SMALL_ICON_SIZE_CLASS,
+} from "~/lib/icon-constants";
 
 import { getDynamicQueueStyle } from "../queue-colors";
 
@@ -134,7 +137,7 @@ function renderMediaCell(
           badgeIcon={
             <Share2
               className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-              strokeWidth={2}
+              strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
           }
@@ -163,7 +166,7 @@ function renderMediaCell(
           badgeIcon={
             <Quote
               className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-              strokeWidth={2}
+              strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
           }

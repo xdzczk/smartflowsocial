@@ -12,40 +12,45 @@ sidebar, dashboard, and future features stay consistent.
 4. **Parent vs child** in nav: parent = domain (e.g. Flame for Engagement), child = representation
    (e.g. Rss for Engagement Feed), not the same icon twice.
 
+## Locked semantics (time vs state vs view)
+
+- **Clock** = Scheduled only. Never use for Published or for the Calendar view.
+- **Check** = Published / done only. Never use a time metaphor (e.g. Clock) for Published.
+- **CalendarDays** = Calendar view (and Runway) only. Never use for the “Scheduled” state.
+
 ## Concept → icon map
 
-| Concept                      | Icon             | Allowed contexts                   |
-| ---------------------------- | ---------------- | ---------------------------------- |
-| Create                       | Plus             | Sidebar Create, dashboard Compose  |
-| New post (note)              | MessageSquare    | Sidebar “New Post”                 |
-| New long-form                | FileText         | Sidebar “New Long-form”            |
-| Drafts (state)               | FilePenLine      | Sidebar “Drafts”                   |
-| Templates                    | Copy             | Sidebar “Templates”                |
-| Bulk / batch                 | LayoutGrid       | Sidebar “Bulk Posts”               |
-| Engagement (domain)          | Flame            | Sidebar “Engagement”               |
-| Feed                         | Rss              | Sidebar “Engagement Feed”          |
-| Giveaway                     | Gift             | Sidebar “Giveaway”                 |
-| Dashboard home               | Home             | Sidebar “Dashboard”                |
-| Calendar                     | CalendarDays     | Sidebar “Calendar”                 |
-| Scheduled                    | Calendar / Clock | Sidebar, dashboard                 |
-| Published / time             | Clock            | Sidebar “Published”                |
-| Published / done             | Check            | Dashboard status                   |
-| Runway / time span           | Calendar         | Dashboard                          |
-| Settings                     | Settings         | Sidebar “Settings”                 |
-| Lock (restricted)            | Lock             | Nav when feature gated             |
-| Assets / media library       | FolderOpen       | Browse assets, asset browser       |
-| Replies / comments           | MessageCircle    | Engagement, reply counts           |
-| Zaps (sats)                  | Zap              | Zaps, lightning                    |
-| Likes                        | Heart            | Likes, favorites                   |
-| Reposts                      | Repeat           | Reposts                            |
-| Share                        | Share2           | Share badge, share action          |
-| Quoted post                  | Quote            | Quoted badge                       |
-| Notifications (empty / bell) | Bell             | Empty state, notification list     |
-| Auto / unscheduled           | Settings         | Settings/cog where appropriate     |
-| Signed / done                | Check            | Signed, completed (already in map) |
-| Search                       | Search           | Search inputs, search results      |
-| Close / dismiss              | X                | Close, dismiss (already in nav)    |
-| Copy / share link            | Copy or Link     | Copy vs link as appropriate        |
+| Concept                      | Icon          | Allowed contexts                   |
+| ---------------------------- | ------------- | ---------------------------------- |
+| Create                       | Plus          | Sidebar Create, dashboard Compose  |
+| New post (note)              | MessageSquare | Sidebar “New Post”                 |
+| New long-form                | FileText      | Sidebar “New Long-form”            |
+| Drafts (state)               | FilePenLine   | Sidebar “Drafts”                   |
+| Templates                    | Copy          | Sidebar “Templates”                |
+| Bulk / batch                 | LayoutGrid    | Sidebar “Bulk Posts”               |
+| Engagement (domain)          | Flame         | Sidebar “Engagement”               |
+| Feed                         | Rss           | Sidebar “Engagement Feed”          |
+| Giveaway                     | Gift          | Sidebar “Giveaway”                 |
+| Dashboard home               | Home          | Sidebar “Dashboard”                |
+| Calendar (view only)         | CalendarDays  | Sidebar “Calendar”, calendar page  |
+| Scheduled (time-future only) | Clock         | Sidebar “Scheduled”, dashboard     |
+| Published (done only)        | Check         | Sidebar “Published”, dashboard     |
+| Runway / time span           | CalendarDays  | Dashboard runway card              |
+| Settings                     | Settings      | Sidebar “Settings”                 |
+| Lock (restricted)            | Lock          | Nav when feature gated             |
+| Assets / media library       | FolderOpen    | Browse assets, asset browser       |
+| Replies / comments           | MessageCircle | Engagement, reply counts           |
+| Zaps (sats)                  | Zap           | Zaps, lightning                    |
+| Likes                        | Heart         | Likes, favorites                   |
+| Reposts                      | Repeat        | Reposts                            |
+| Share                        | Share2        | Share badge, share action          |
+| Quoted post                  | Quote         | Quoted badge                       |
+| Notifications (empty / bell) | Bell          | Empty state, notification list     |
+| Auto / unscheduled           | Settings      | Settings/cog where appropriate     |
+| Signed / done                | Check         | Signed, completed (already in map) |
+| Search                       | Search        | Search inputs, search results      |
+| Close / dismiss              | X             | Close, dismiss (already in nav)    |
+| Copy / share link            | Copy or Link  | Copy vs link as appropriate        |
 
 ## Styling
 

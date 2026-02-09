@@ -13,6 +13,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { convertHexToNpub } from "~/lib/nostr-conversion";
 import {
   getConnectionHistory,
@@ -177,14 +178,14 @@ export function SessionDetailsDialog({
                         className="w-48"
                       />
                       <Button size="sm" onClick={handleSaveLabel}>
-                        <Check className="h-4 w-4" />
+                        <Check className={INLINE_ICON_SIZE_CLASS} />
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={handleCancelLabel}
                       >
-                        <X className="h-4 w-4" />
+                        <X className={INLINE_ICON_SIZE_CLASS} />
                       </Button>
                     </>
                   ) : (
@@ -195,7 +196,7 @@ export function SessionDetailsDialog({
                         variant="ghost"
                         onClick={handleEditLabel}
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className={INLINE_ICON_SIZE_CLASS} />
                       </Button>
                     </>
                   )}
@@ -214,14 +215,14 @@ export function SessionDetailsDialog({
                         placeholder="Enter app name"
                       />
                       <Button size="sm" onClick={handleSaveAppName}>
-                        <Check className="h-4 w-4" />
+                        <Check className={INLINE_ICON_SIZE_CLASS} />
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={handleCancelAppName}
                       >
-                        <X className="h-4 w-4" />
+                        <X className={INLINE_ICON_SIZE_CLASS} />
                       </Button>
                     </>
                   ) : (
@@ -234,7 +235,7 @@ export function SessionDetailsDialog({
                         variant="ghost"
                         onClick={handleEditAppName}
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className={INLINE_ICON_SIZE_CLASS} />
                       </Button>
                     </>
                   )}

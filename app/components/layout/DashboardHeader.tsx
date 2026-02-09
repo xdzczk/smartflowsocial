@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@remix-run/react";
 import {
-  Calendar,
   CalendarDays,
+  Check,
   Clock,
   Copy,
   FilePenLine,
@@ -266,7 +266,7 @@ function SidebarNavContent({
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
         icon={
-          <Calendar
+          <Clock
             className={NAV_ICON_SIZE_CLASS}
             strokeWidth={NAV_ICON_STROKE}
           />
@@ -282,7 +282,7 @@ function SidebarNavContent({
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
         icon={
-          <Clock
+          <Check
             className={NAV_ICON_SIZE_CLASS}
             strokeWidth={NAV_ICON_STROKE}
           />

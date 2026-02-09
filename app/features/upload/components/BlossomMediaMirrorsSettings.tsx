@@ -14,6 +14,7 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { updateBlossomMirrorsClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
 import {
@@ -185,7 +186,7 @@ export function BlossomMediaMirrorsSettings({
                       }}
                       disabled={isSubmitting}
                     >
-                      <X className="h-4 w-4" />
+                      <X className={INLINE_ICON_SIZE_CLASS} />
                     </Button>
                   </div>
                 ))}
@@ -197,7 +198,7 @@ export function BlossomMediaMirrorsSettings({
                   disabled={isSubmitting}
                   className="w-full"
                 >
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className={`mr-2 ${INLINE_ICON_SIZE_CLASS}`} />
                   Add Mirror URL
                 </Button>
               </div>

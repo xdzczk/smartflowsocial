@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { isAllowedScheduleInterval } from "~/lib/schedule-intervals";
 import { updateScheduleIntervalsClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
@@ -145,7 +146,7 @@ export function ScheduleIntervalsSettings({
                   onClick={() => remove(index)}
                   disabled={isSubmitting}
                 >
-                  <X className="h-4 w-4" />
+                  <X className={INLINE_ICON_SIZE_CLASS} />
                 </Button>
               </div>
             ))}
@@ -156,7 +157,7 @@ export function ScheduleIntervalsSettings({
               disabled={isSubmitting}
               className="w-full"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className={`mr-2 ${INLINE_ICON_SIZE_CLASS}`} />
               Add Interval
             </Button>
           </div>

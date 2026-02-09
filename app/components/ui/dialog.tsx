@@ -2,6 +2,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import * as React from "react";
 
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 const Dialog = DialogPrimitive.Root;
 
@@ -47,7 +48,7 @@ const DialogContent = React.forwardRef<
         {children}
         {hideCloseButton ? null : (
           <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-muted data-[state=open]:text-foreground absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-0 focus:outline-none disabled:pointer-events-none">
-            <X className="h-4 w-4" />
+            <X className={INLINE_ICON_SIZE_CLASS} />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

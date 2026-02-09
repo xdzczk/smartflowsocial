@@ -4,6 +4,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "@remix-run/react";
+import { Hash, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { type ToastMessage } from "~/components/types";
@@ -33,6 +34,7 @@ import {
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
 import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { isVideoFile } from "~/utils/media-helpers";
 
@@ -123,22 +125,7 @@ function SubmitButton({
       return (
         <div className="flex w-full flex-col items-center gap-2">
           <span className="flex items-center justify-center gap-2">
-            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
             {preparationProgress?.stage ?? "Validating & Preparing..."}
           </span>
           {showProgress ? (
@@ -167,22 +154,7 @@ function SubmitButton({
     if (isSubmitting) {
       return (
         <span className="flex items-center justify-center gap-2">
-          <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-              fill="none"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
           Uploading Media Files...
         </span>
       );
@@ -547,18 +519,11 @@ export default function BulkPostsPage() {
       <h1 className="mb-6 text-2xl font-bold">{getPageTitle(mode)}</h1>
       {displayedHashtags && displayedHashtags.length <= 10 ? (
         <div className="bg-muted text-foreground mb-6 inline-flex items-center gap-1 rounded px-2 py-1 text-xs leading-4 font-semibold">
-          <svg
-            className="hi-solid hi-hashtag inline-block size-4 opacity-75"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fillRule="evenodd"
-              d="M9.243 3.03a1 1 0 01.727 1.213L9.53 6h2.94l.56-2.243a1 1 0 111.94.486L14.53 6H17a1 1 0 110 2h-2.97l-1 4H15a1 1 0 110 2h-2.47l-.56 2.242a1 1 0 11-1.94-.485L10.47 14H7.53l-.56 2.242a1 1 0 11-1.94-.485L5.47 14H3a1 1 0 110-2h2.97l1-4H5a1 1 0 110-2h2.47l.56-2.243a1 1 0 011.213-.727zM9.03 8l-1 4h2.938l1-4H9.031z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <Hash
+            className="inline-block size-4 opacity-75"
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           <span>{displayedHashtags}</span>
         </div>
       ) : null}

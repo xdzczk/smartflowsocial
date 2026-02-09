@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Checkbox } from "~/components/ui/checkbox";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 import { usePostScheduling } from "../hooks/usePostScheduling";
@@ -338,7 +339,11 @@ export default function MediaPost({
           ) : (
             <div className="flex flex-col items-center gap-4">
               <div className="text-success">
-                <Upload className="h-12 w-12" strokeWidth={2} aria-hidden />
+                <Upload
+                  className="h-12 w-12"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
               </div>
               <div>
                 <p className="text-foreground dark:text-foreground text-xl font-medium">

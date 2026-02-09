@@ -10,6 +10,7 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import { getSelectedQueueStyle } from "../queue-colors";
 import type { PostData, QueueType, HashTagPreset } from "../types";
@@ -477,7 +478,7 @@ export function DraftEditForm({
           <div className="flex-shrink-0">
             <AlertTriangle
               className="h-5 w-5 text-yellow-400"
-              strokeWidth={2}
+              strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
           </div>

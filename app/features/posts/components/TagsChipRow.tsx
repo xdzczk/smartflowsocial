@@ -3,6 +3,7 @@
  * Replaces "Use Hashtag Presets" checkbox with inline control.
  */
 /* eslint-disable react/no-array-index-key -- tag list has no stable id; index needed for duplicate tags */
+import { X } from "lucide-react";
 import { useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
@@ -13,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 function parseTags(tagsStr: string): string[] {
   if (!tagsStr || typeof tagsStr !== "string") return [];
@@ -95,19 +97,11 @@ export function TagsChipRow({
                 className="hover:bg-muted-foreground/20 rounded-full p-0.5"
                 aria-label={`Remove ${tag}`}
               >
-                <svg
+                <X
                   className="h-3 w-3"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
               </button>
             ) : null}
           </Badge>

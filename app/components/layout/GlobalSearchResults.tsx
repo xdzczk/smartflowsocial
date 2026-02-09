@@ -1,7 +1,7 @@
 import { Link } from "@remix-run/react";
 import {
   FileText,
-  Calendar,
+  Check,
   Clock,
   FolderOpen,
   ExternalLink,
@@ -10,6 +10,8 @@ import {
   Ban,
   Sparkles,
 } from "lucide-react";
+
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 export interface GlobalSearchResult {
   type:
@@ -45,25 +47,25 @@ interface GlobalSearchResultsProps {
 function getTypeIcon(type: GlobalSearchResult["type"]) {
   switch (type) {
     case "feature":
-      return <Sparkles className="h-4 w-4" />;
+      return <Sparkles className={INLINE_ICON_SIZE_CLASS} />;
     case "draft":
-      return <FileText className="h-4 w-4" />;
+      return <FileText className={INLINE_ICON_SIZE_CLASS} />;
     case "scheduled":
-      return <Calendar className="h-4 w-4" />;
+      return <Clock className={INLINE_ICON_SIZE_CLASS} />;
     case "publishing":
-      return <Loader2 className="h-4 w-4 animate-spin" />;
+      return <Loader2 className={`${INLINE_ICON_SIZE_CLASS} animate-spin`} />;
     case "published":
-      return <Clock className="h-4 w-4" />;
+      return <Check className={INLINE_ICON_SIZE_CLASS} />;
     case "failed":
-      return <XCircle className="h-4 w-4" />;
+      return <XCircle className={INLINE_ICON_SIZE_CLASS} />;
     case "cancelled":
-      return <Ban className="h-4 w-4" />;
+      return <Ban className={INLINE_ICON_SIZE_CLASS} />;
     case "template":
-      return <FolderOpen className="h-4 w-4" />;
+      return <FolderOpen className={INLINE_ICON_SIZE_CLASS} />;
     case "external":
-      return <ExternalLink className="h-4 w-4" />;
+      return <ExternalLink className={INLINE_ICON_SIZE_CLASS} />;
     default:
-      return <FileText className="h-4 w-4" />;
+      return <FileText className={INLINE_ICON_SIZE_CLASS} />;
   }
 }
 

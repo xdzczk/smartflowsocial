@@ -7,7 +7,10 @@ import { Quote, Share2 } from "lucide-react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { SMALL_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import {
+  INLINE_ICON_STROKE,
+  SMALL_ICON_SIZE_CLASS,
+} from "~/lib/icon-constants";
 
 import { getDynamicQueueStyle } from "../queue-colors";
 import type { BulkPostCardProps, BulkPost, QueueType } from "../types";
@@ -87,7 +90,7 @@ export function BulkPostCard({
             <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
               <Share2
                 className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                strokeWidth={2}
+                strokeWidth={INLINE_ICON_STROKE}
                 aria-hidden
               />
             </div>
@@ -116,7 +119,7 @@ export function BulkPostCard({
             <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
               <Quote
                 className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                strokeWidth={2}
+                strokeWidth={INLINE_ICON_STROKE}
                 aria-hidden
               />
             </div>

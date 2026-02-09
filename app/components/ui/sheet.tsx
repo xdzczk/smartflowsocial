@@ -5,6 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 import * as React from "react";
 
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 const Sheet = SheetPrimitive.Root;
 
@@ -65,7 +66,7 @@ const SheetContent = React.forwardRef<
       {...props}
     >
       <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-0 focus:outline-none disabled:pointer-events-none">
-        <X className="h-4 w-4" />
+        <X className={INLINE_ICON_SIZE_CLASS} />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>
       {children}

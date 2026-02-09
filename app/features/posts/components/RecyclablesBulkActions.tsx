@@ -1,4 +1,10 @@
 import type { useFetcher } from "@remix-run/react";
+import { Quote, Repeat, Share2 } from "lucide-react";
+
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 
 const PROCESSING_TEXT = "Processing...";
 
@@ -37,19 +43,11 @@ export function RecyclablesBulkActions({
           disabled={repostFetcher.state !== "idle"}
           className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
+          <Repeat
+            className={INLINE_ICON_SIZE_CLASS}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           {repostFetcher.state !== "idle"
             ? PROCESSING_TEXT
             : `Recycle ${selectedCount} Post${selectedCount !== 1 ? "s" : ""}`}
@@ -59,19 +57,11 @@ export function RecyclablesBulkActions({
           disabled={repostFetcher.state !== "idle"}
           className="dark:bg-card border-border text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-            />
-          </svg>
+          <Share2
+            className={INLINE_ICON_SIZE_CLASS}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           {repostFetcher.state !== "idle"
             ? PROCESSING_TEXT
             : `Repost ${selectedCount} Post${selectedCount !== 1 ? "s" : ""}`}
@@ -81,19 +71,11 @@ export function RecyclablesBulkActions({
           disabled={repostFetcher.state !== "idle"}
           className="dark:bg-card border-success text-success hover:border-success hover:text-success focus:ring-ring/25 active:border-success dark:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-ring/40 dark:active:border-success inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-            />
-          </svg>
+          <Quote
+            className={INLINE_ICON_SIZE_CLASS}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           {repostFetcher.state !== "idle"
             ? PROCESSING_TEXT
             : `Quote ${selectedCount} Post${selectedCount !== 1 ? "s" : ""}`}

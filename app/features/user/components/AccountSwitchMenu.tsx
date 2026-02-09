@@ -14,6 +14,7 @@ import {
 } from "~/components/ui/dialog";
 import type { ProfileData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -170,7 +171,7 @@ export default function AccountSwitchMenu() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className={INLINE_ICON_SIZE_CLASS} />
           <span className="hidden sm:inline">Accounts</span>
         </Button>
       </DialogTrigger>

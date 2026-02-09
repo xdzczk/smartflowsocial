@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import type {
   CombinedContent,
@@ -185,7 +186,7 @@ export function ContentListCard({
             className="text-muted-foreground hover:text-foreground focus:ring-ring flex h-8 w-8 items-center justify-center rounded-md focus:ring-2 focus:ring-offset-0 focus:outline-none"
             aria-label="Actions"
           >
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>

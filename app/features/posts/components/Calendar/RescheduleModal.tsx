@@ -3,6 +3,7 @@ import {
   useLoaderData,
   type FetcherWithComponents,
 } from "@remix-run/react";
+import { CalendarDays, Info, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type React from "react";
 import { toast } from "react-hot-toast";
@@ -10,6 +11,7 @@ import { toast } from "react-hot-toast";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { isVideoFile } from "~/lib/helpers";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   formatForDateTimeLocal,
@@ -330,19 +332,11 @@ function renderModalContent(
           {isEdit ? "Edit scheduled time:" : "New time:"}
         </label>
         <div className="flex items-center space-x-2">
-          <svg
+          <CalendarDays
             className="text-muted-foreground h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           <input
             id="reschedule-datetime"
             type="datetime-local"
@@ -393,17 +387,11 @@ function renderModalContent(
       {/* Re-signing warning */}
       <div className="border-border bg-muted rounded-lg border p-3">
         <div className="flex items-start space-x-2">
-          <svg
+          <Info
             className="text-primary mt-0.5 h-5 w-5 flex-shrink-0"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-              clipRule="evenodd"
-            />
-          </svg>
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           <div>
             <div className="text-primary text-sm font-medium">
               {isEdit ? "Editing this post" : "Rescheduling this post"} requires
@@ -716,20 +704,13 @@ export function RescheduleModal({
             <button
               onClick={onClose}
               className="text-muted-foreground hover:text-foreground"
+              aria-label="Close"
             >
-              <svg
+              <X
                 className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
             </button>
           </div>
 

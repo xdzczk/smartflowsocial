@@ -1,6 +1,6 @@
 import { useLocation } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ExternalLink } from "lucide-react";
+import { AlertTriangle, ExternalLink, Loader2 } from "lucide-react";
 import { generateSecretKey, SimplePool } from "nostr-tools";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "react-qr-code";
@@ -11,6 +11,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { NostrEvent } from "~/features/nostr/types";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  SMALL_ICON_SIZE_CLASS,
+} from "~/lib/icon-constants";
 import { isMobile } from "~/lib/is-mobile";
 import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 import { clearPersistedState } from "~/lib/lifecycle-manager.client";
@@ -1646,14 +1650,14 @@ export default function NostrLoginPanel() {
                 <span className="flex items-center justify-center gap-2">
                   Browser Extension
                   {nip07Available === false ? (
-                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTriangle className={INLINE_ICON_SIZE_CLASS} />
                   ) : null}
                 </span>
               </Button>
               {nip07Available === false ? (
                 <div className="text-muted-foreground space-y-1 text-xs">
                   <p className="flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" />
+                    <AlertTriangle className={SMALL_ICON_SIZE_CLASS} />
                     Extension not detected
                   </p>
                   <div className="flex flex-wrap gap-2 text-xs">
@@ -1665,7 +1669,7 @@ export default function NostrLoginPanel() {
                       className="text-primary inline-flex items-center gap-1 hover:underline"
                     >
                       Alby
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
                     </a>
                     <a
                       href="https://github.com/fiatjaf/nos2x"
@@ -1674,7 +1678,7 @@ export default function NostrLoginPanel() {
                       className="text-primary inline-flex items-center gap-1 hover:underline"
                     >
                       nos2x
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
                     </a>
                     <a
                       href="https://amber.app"
@@ -1683,7 +1687,7 @@ export default function NostrLoginPanel() {
                       className="text-primary inline-flex items-center gap-1 hover:underline"
                     >
                       Amber
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
                     </a>
                   </div>
                 </div>
@@ -1885,26 +1889,10 @@ export default function NostrLoginPanel() {
           aria-busy="true"
         >
           <div className="flex items-center gap-3">
-            <svg
+            <Loader2
               className="text-primary h-5 w-5 animate-spin"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              />
-            </svg>
+              aria-hidden
+            />
             <div className="flex-1">
               <div className="text-foreground text-base font-bold">
                 {wasHiddenDuringConnection

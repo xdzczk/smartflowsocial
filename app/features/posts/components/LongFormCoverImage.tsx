@@ -2,6 +2,7 @@ import { ImagePlus } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 interface LongFormCoverImageProps {
   image: string;
   uploadError: string;
@@ -84,7 +85,7 @@ export function LongFormCoverImage({
                 <div className="flex flex-col items-center justify-center gap-4">
                   <ImagePlus
                     className="text-foreground dark:text-muted-foreground h-12 w-12"
-                    strokeWidth={2}
+                    strokeWidth={INLINE_ICON_STROKE}
                     aria-hidden
                   />
                   <div className="text-center">

@@ -10,6 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  SMALL_ICON_SIZE_CLASS,
+} from "~/lib/icon-constants";
 
 interface HashTagPreset {
   id: string;
@@ -59,7 +63,7 @@ export function HashtagPresetSelector({
       <Card className="w-full">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm">
-            <Hash className="h-4 w-4" />
+            <Hash className={INLINE_ICON_SIZE_CLASS} />
             Hashtag Presets
           </CardTitle>
           <CardDescription className="text-xs">
@@ -77,7 +81,7 @@ export function HashtagPresetSelector({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-sm">
-              <Hash className="h-4 w-4" />
+              <Hash className={INLINE_ICON_SIZE_CLASS} />
               Hashtag Presets
             </CardTitle>
             <CardDescription className="text-xs">
@@ -96,7 +100,7 @@ export function HashtagPresetSelector({
               disabled={disabled}
               className="h-6 px-2 text-xs"
             >
-              <X className="mr-1 h-3 w-3" />
+              <X className={`mr-1 ${SMALL_ICON_SIZE_CLASS}`} />
               Clear
             </Button>
           ) : null}

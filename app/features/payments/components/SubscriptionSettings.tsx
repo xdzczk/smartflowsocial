@@ -14,6 +14,10 @@ import {
 import React from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  SMALL_ICON_SIZE_CLASS,
+} from "~/lib/icon-constants";
 
 interface Plan {
   id: string;
@@ -113,7 +117,7 @@ function NoSubscriptionMessage() {
         className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
       >
         View Plans
-        <ArrowUpRight className="h-4 w-4" />
+        <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
       </Link>
     </div>
   );
@@ -167,14 +171,14 @@ export function SubscriptionSettings({
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="overview" className="flex items-center gap-2">
-              <Crown className="h-4 w-4" />
+              <Crown className={INLINE_ICON_SIZE_CLASS} />
               Overview
             </TabsTrigger>
             <TabsTrigger
               value="payment-history"
               className="flex items-center gap-2"
             >
-              <History className="h-4 w-4" />
+              <History className={INLINE_ICON_SIZE_CLASS} />
               Payment History
             </TabsTrigger>
           </TabsList>
@@ -357,7 +361,7 @@ export function SubscriptionSettings({
                 className="text-primary hover:text-primary/90 inline-flex items-center gap-2 text-sm"
               >
                 View All Plans & Features
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
               </Link>
             </div>
           </TabsContent>
@@ -403,9 +407,13 @@ export function SubscriptionSettings({
                               title="Copy payment hash"
                             >
                               {copiedHash === payment.id ? (
-                                <Check className="text-success h-3 w-3" />
+                                <Check
+                                  className={`text-success ${SMALL_ICON_SIZE_CLASS}`}
+                                />
                               ) : (
-                                <Copy className="text-muted-foreground h-3 w-3" />
+                                <Copy
+                                  className={`text-muted-foreground ${SMALL_ICON_SIZE_CLASS}`}
+                                />
                               )}
                             </button>
                           </div>

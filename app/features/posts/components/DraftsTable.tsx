@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { formatForDisplay, fromISOString } from "~/lib/temporal";
 
 import { postToCombinedContent } from "../combined";
@@ -309,7 +310,7 @@ export function DraftsTable({
                           className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
                           aria-label="Actions"
                         >
-                          <MoreHorizontal className="h-4 w-4" />
+                          <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent

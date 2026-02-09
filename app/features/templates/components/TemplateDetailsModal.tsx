@@ -1,4 +1,8 @@
+import { X } from "lucide-react";
+
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+
 interface Template {
   id: string;
   name: string;
@@ -24,20 +28,9 @@ export function TemplateDetailsModal({
         <button
           onClick={onClose}
           className="dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:text-muted-foreground absolute top-4 right-4"
+          aria-label="Close"
         >
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X className="h-6 w-6" strokeWidth={INLINE_ICON_STROKE} aria-hidden />
         </button>
 
         <h2 className="mb-4 text-xl font-bold">{template.name}</h2>

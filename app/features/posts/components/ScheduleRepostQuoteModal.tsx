@@ -4,10 +4,12 @@
  */
 
 import { useFetcher } from "@remix-run/react";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
 import type { UserData } from "~/lib/validation/user-data";
@@ -178,19 +180,11 @@ export function ScheduleRepostQuoteModal({
               className="text-muted-foreground hover:text-foreground"
               aria-label="Close"
             >
-              <svg
+              <X
                 className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
             </button>
           </div>
 

@@ -21,6 +21,7 @@ import {
 import type { LongFormPostType } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import {
   difference,
@@ -682,7 +683,7 @@ export default function LongFormListing({
                           className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
                           aria-label="Actions"
                         >
-                          <MoreHorizontal className="h-4 w-4" />
+                          <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent

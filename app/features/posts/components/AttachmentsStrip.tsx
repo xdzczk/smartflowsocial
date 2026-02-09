@@ -4,7 +4,10 @@
  * Upload state: queued → uploading → done → failed (retry).
  */
 
+import { Plus, X } from "lucide-react";
+
 import { Button } from "~/components/ui/button";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import type { ComposerAttachment } from "../types";
 
@@ -70,19 +73,11 @@ export function AttachmentsStrip({
             disabled={disabled}
           >
             <span className="sr-only">Remove</span>
-            <svg
+            <X
               className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
           </Button>
         </div>
       ))}
@@ -95,20 +90,11 @@ export function AttachmentsStrip({
         className="h-16 w-16 shrink-0"
         aria-label="Add attachment"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
+        <Plus
           className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
+          strokeWidth={INLINE_ICON_STROKE}
+          aria-hidden
+        />
       </Button>
     </div>
   );

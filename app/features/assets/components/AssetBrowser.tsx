@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import type { Asset } from "../types";
 interface AssetBrowserProps {
@@ -76,7 +77,7 @@ export default function AssetBrowser({
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search
                   className="text-muted-foreground h-5 w-5"
-                  strokeWidth={2}
+                  strokeWidth={INLINE_ICON_STROKE}
                   aria-hidden
                 />
               </div>
@@ -122,7 +123,7 @@ export default function AssetBrowser({
               <div className="mx-auto max-w-md">
                 <FolderOpen
                   className="text-muted-foreground mx-auto h-12 w-12"
-                  strokeWidth={2}
+                  strokeWidth={INLINE_ICON_STROKE}
                   aria-hidden
                 />
                 <h3 className="text-foreground mt-4 text-lg font-medium">

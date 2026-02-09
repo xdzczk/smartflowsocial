@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { Checkbox } from "~/components/ui/checkbox";
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
@@ -451,7 +452,11 @@ export default function ImagePost({
           ) : (
             <div className="flex flex-col items-center gap-4">
               <div className="text-success">
-                <Upload className="h-12 w-12" strokeWidth={2} aria-hidden />
+                <Upload
+                  className="h-12 w-12"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
               </div>
               <div>
                 <p className="text-foreground dark:text-foreground text-xl font-medium">

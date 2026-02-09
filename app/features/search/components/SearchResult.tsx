@@ -2,7 +2,13 @@
  * Search result component
  */
 
+import { ExternalLink, Quote, Repeat, User } from "lucide-react";
+
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 interface SearchResultData {
   id: string;
   pubkey: string;
@@ -64,13 +70,11 @@ export function SearchResult({
           />
         ) : (
           <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-12 w-12 items-center justify-center rounded-full">
-            <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <User
+              className="h-6 w-6"
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
           </div>
         )}
         <div>
@@ -171,19 +175,11 @@ export function SearchResult({
           onClick={onScheduleQuote}
           className="bg-card dark:border-border dark:active:border-border border-success text-success hover:border-success hover:text-success focus:ring-ring/25 active:border-success dark:text-success dark:hover:border-success dark:hover:text-success dark:focus:ring-ring/40 inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-            />
-          </svg>
+          <Quote
+            className={INLINE_ICON_SIZE_CLASS}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           Schedule Quote Post
         </button>
 
@@ -191,19 +187,11 @@ export function SearchResult({
           onClick={onScheduleRepost}
           className="bg-card dark:border-border dark:active:border-border border-border text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-            />
-          </svg>
+          <Repeat
+            className={INLINE_ICON_SIZE_CLASS}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           Schedule Repost (Kind 6)
         </button>
 
@@ -213,19 +201,11 @@ export function SearchResult({
           rel="noopener noreferrer"
           className="bg-card dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-            />
-          </svg>
+          <ExternalLink
+            className={INLINE_ICON_SIZE_CLASS}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
           View on Primal
         </a>
       </div>

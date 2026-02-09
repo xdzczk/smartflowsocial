@@ -1,4 +1,5 @@
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { Pencil, Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import {
@@ -14,6 +15,10 @@ import {
 import { getQueueColor } from "~/features/posts/queue-colors";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 
 type LoaderData = unknown;
 type Template = Record<string, unknown> & {
@@ -221,20 +226,13 @@ export default function TemplateEditPage() {
               <button
                 onClick={() => setIsEditingName(true)}
                 className="dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:text-muted-foreground"
+                aria-label="Edit name"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
+                <Pencil
+                  className={INLINE_ICON_SIZE_CLASS}
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
               </button>
             </div>
           )}
@@ -259,19 +257,11 @@ export default function TemplateEditPage() {
       ((template as { posts?: unknown }).posts as unknown[]).length === 0 ? (
         <div className="py-12 text-center">
           <div className="mx-auto max-w-md">
-            <svg
+            <Trash2
               className="text-foreground mx-auto h-12 w-12"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
             <h3 className="dark:text-foreground text-foreground mt-4 text-lg font-medium">
               No posts in this template
             </h3>

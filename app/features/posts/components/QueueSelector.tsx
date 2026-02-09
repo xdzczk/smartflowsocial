@@ -1,3 +1,7 @@
+import { Clock } from "lucide-react";
+
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+
 import { getDynamicQueueStyle } from "../queue-colors";
 import type { QueueType } from "../types";
 interface QueueSelectorProps {
@@ -79,21 +83,11 @@ export function QueueSelector({
       </div>
       {nextSlot ? (
         <p className="text-foreground mt-1.5 flex items-center gap-1.5 text-xs font-medium">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
+          <Clock
             className="text-muted-foreground h-3.5 w-3.5 shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+            strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          />
           Next: {nextSlot}
         </p>
       ) : null}

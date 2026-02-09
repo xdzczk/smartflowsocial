@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import useLocalStorage from "~/lib/useLocalStorage";
 
 export function ThemeToggle() {
@@ -48,7 +49,7 @@ export function ThemeToggle() {
         aria-label="Toggle theme"
         type="button"
       >
-        <Sun className="h-4 w-4" />
+        <Sun className={INLINE_ICON_SIZE_CLASS} />
       </button>
     );
   }
@@ -63,9 +64,9 @@ export function ThemeToggle() {
           type="button"
         >
           {theme === "light" ? (
-            <Moon className="h-4 w-4" />
+            <Moon className={INLINE_ICON_SIZE_CLASS} />
           ) : (
-            <Sun className="h-4 w-4" />
+            <Sun className={INLINE_ICON_SIZE_CLASS} />
           )}
         </button>
       </TooltipTrigger>

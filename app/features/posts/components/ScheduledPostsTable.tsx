@@ -27,7 +27,11 @@ import {
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { scheduledPostsKeys } from "~/features/posts/hooks/useScheduledPostsQuery";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
-import { SMALL_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+  SMALL_ICON_SIZE_CLASS,
+} from "~/lib/icon-constants";
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 
 import { postToCombinedContent } from "../combined";
@@ -326,7 +330,7 @@ export function ScheduledPostsTable({
                         <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
                           <Share2
                             className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                            strokeWidth={2}
+                            strokeWidth={INLINE_ICON_STROKE}
                             aria-hidden
                           />
                         </div>
@@ -335,7 +339,7 @@ export function ScheduledPostsTable({
                         <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
                           <Quote
                             className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                            strokeWidth={2}
+                            strokeWidth={INLINE_ICON_STROKE}
                             aria-hidden
                           />
                         </div>
@@ -404,7 +408,7 @@ export function ScheduledPostsTable({
                           className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
                           aria-label="Actions"
                         >
-                          <MoreHorizontal className="h-4 w-4" />
+                          <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent

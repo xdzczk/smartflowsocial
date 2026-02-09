@@ -13,6 +13,7 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "~/components/ui/popover";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import {
   GlobalSearchResults,
@@ -222,7 +223,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
                 onClick={handleClose}
                 className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3"
               >
-                <X className="h-4 w-4" />
+                <X className={INLINE_ICON_SIZE_CLASS} />
               </button>
             ) : null}
           </div>

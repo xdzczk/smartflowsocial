@@ -6,6 +6,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import { AssetListCard } from "./AssetListCard";
 
@@ -77,7 +78,7 @@ function AssetsEmptyState() {
       <div className="mx-auto max-w-md">
         <FolderOpen
           className="text-foreground mx-auto h-12 w-12"
-          strokeWidth={2}
+          strokeWidth={INLINE_ICON_STROKE}
           aria-hidden
         />
         <h3 className="dark:text-foreground text-foreground mt-4 text-lg font-medium">
