@@ -1,11 +1,19 @@
 import { useLoaderData, Link } from "@remix-run/react";
 import { CalendarDays, Check, Clock, Plus } from "lucide-react";
+import type { CSSProperties } from "react";
 
 import { Card, CardContent } from "~/components/ui/card";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import type { PostStatistics } from "~/models/post.types";
 
 const KPI_COLOR_CSS_VAR = "--kpi-color";
+
+function kpiColorStyle(color: string): CSSProperties {
+  const style: CSSProperties & Record<string, string> = {
+    [KPI_COLOR_CSS_VAR]: color,
+  };
+  return style;
+}
 
 export interface StatisticsProps {
   /** Runway in days until last scheduled post; null when none or in the past */
@@ -69,7 +77,7 @@ export default function Statistics({
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
-      <Card className={cardBase} style={{ [KPI_COLOR_CSS_VAR]: "#a855f7" }}>
+      <Card className={cardBase} style={kpiColorStyle("#a855f7")}>
         <CardContent className="p-0">
           <Link
             to="/dashboard/newpost"
@@ -93,7 +101,7 @@ export default function Statistics({
         </CardContent>
       </Card>
 
-      <Card className={cardBase} style={{ [KPI_COLOR_CSS_VAR]: "#3b82f6" }}>
+      <Card className={cardBase} style={kpiColorStyle("#3b82f6")}>
         <CardContent className="p-0">
           <Link
             to="/dashboard/scheduled"
@@ -117,7 +125,7 @@ export default function Statistics({
         </CardContent>
       </Card>
 
-      <Card className={cardBase} style={{ [KPI_COLOR_CSS_VAR]: "#22c55e" }}>
+      <Card className={cardBase} style={kpiColorStyle("#22c55e")}>
         <CardContent className="p-0">
           <Link
             to="/dashboard/published"
@@ -141,10 +149,7 @@ export default function Statistics({
         </CardContent>
       </Card>
 
-      <Card
-        className={cardBase}
-        style={{ [KPI_COLOR_CSS_VAR]: runwayKpiColor }}
-      >
+      <Card className={cardBase} style={kpiColorStyle(runwayKpiColor)}>
         <CardContent className="p-0">
           <button
             type="button"

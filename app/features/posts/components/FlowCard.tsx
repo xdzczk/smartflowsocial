@@ -206,21 +206,26 @@ function FlowCardInner({
   const glowStyle = isNextScheduledAndFuture
     ? {
         ["--flow-glow-duration" as string]: `${getNextGlowDurationMs(minutesUntil)}ms`,
-        ["--flow-glow-color" as string]: queueColor ?? "hsl(var(--primary))",
       }
     : undefined;
+
+  // Coloured shadow on hover/touch and for next-scheduled glow: queue color or primary
+  const shadowColor =
+    queueColor ??
+    (isNextScheduledAndFuture ? "hsl(var(--primary))" : undefined);
+  const hasQueueShadow = shadowColor != null;
 
   return (
     <button
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`card-lift border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${queueColor ? "flow-card-queue-shadow" : ""} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-glow" : ""}`}
+      className={`card-lift border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${hasQueueShadow ? "flow-card-queue-shadow" : ""} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-shadow-glow" : ""}`}
       style={
-        queueColor || glowStyle
+        shadowColor || glowStyle
           ? {
-              ...(queueColor
-                ? { ["--queue-color" as string]: queueColor }
+              ...(shadowColor
+                ? { ["--queue-color" as string]: shadowColor }
                 : {}),
               ...(glowStyle ?? {}),
             }
@@ -229,8 +234,8 @@ function FlowCardInner({
       aria-label={ariaLabel ?? defaultAriaLabel}
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
-      {/* Queue tint overlay on hover/active only */}
-      {queueColor ? (
+      {/* Queue tint overlay on hover/active only (when card has a queue color) */}
+      {queueColor != null ? (
         <div
           className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_8%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_12%,transparent)]"
           aria-hidden

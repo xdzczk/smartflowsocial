@@ -32,32 +32,31 @@
     animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  /* Subtle glow for next scheduled Flow card (duration set inline; color from --flow-glow-color, queue or primary) */
-  /* Mix strength: lighter in light theme, softer in dark to avoid neon glare */
+  /* Next scheduled Flow card: coloured shadow glow (pulses same shadow as hover; duration inline, color from --queue-color) */
   :root {
-    --flow-glow-mix-start: 8%;
-    --flow-glow-mix-end: 20%;
+    --flow-shadow-glow-start: 12%;
+    --flow-shadow-glow-end: 34%;
   }
   .dark {
-    --flow-glow-mix-start: 6%;
-    --flow-glow-mix-end: 15%;
+    --flow-shadow-glow-start: 10%;
+    --flow-shadow-glow-end: 28%;
   }
-  @keyframes flow-next-glow {
+  @keyframes flow-next-shadow-glow {
     0%,
     100% {
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--flow-glow-color, hsl(var(--primary))) var(--flow-glow-mix-start, 8%), transparent);
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) var(--flow-shadow-glow-start), transparent);
     }
     50% {
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--flow-glow-color, hsl(var(--primary))) var(--flow-glow-mix-end, 20%), transparent);
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) var(--flow-shadow-glow-end), transparent);
     }
   }
 
-  .animate-flow-next-glow {
-    animation: flow-next-glow var(--flow-glow-duration, 3s) ease-in-out infinite;
+  .animate-flow-next-shadow-glow {
+    animation: flow-next-shadow-glow var(--flow-glow-duration, 3s) ease-in-out infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .animate-flow-next-glow {
+    .animate-flow-next-shadow-glow {
       animation-duration: 4s;
     }
   }
@@ -449,6 +448,12 @@
     .dark .flow-card-queue-shadow.card-lift:active {
       box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
     }
+
+    /* Next scheduled card: pause shadow glow on hover/active so static coloured shadow shows */
+    .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:hover,
+    .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
+      animation-play-state: paused;
+    }
   }
 
   @media (hover: none) {
@@ -458,6 +463,11 @@
 
     .dark #page-content .flow-card-queue-shadow.card-lift:active {
       box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
+    }
+
+    /* Next scheduled card: pause shadow glow on touch active so coloured shadow shows */
+    #page-content .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
+      animation-play-state: paused;
     }
   }
 
