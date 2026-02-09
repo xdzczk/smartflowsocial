@@ -85,7 +85,7 @@
     "/postgres-data"
   ],
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.965.0",
+    "@aws-sdk/client-s3": "^3.985.0",
     "@gandlaf21/bolt11-decode": "^3.1.1",
     "@getalby/sdk": "^7.0.0",
     "@hookform/resolvers": "^5.2.2",
