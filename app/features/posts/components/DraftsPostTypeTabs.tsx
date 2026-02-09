@@ -10,6 +10,7 @@ interface DraftsPostTypeTabsProps {
   allContentCount: number;
   postsCount: number;
   longformCount: number;
+  bulkCount?: number;
   queueType?: string;
 }
 
@@ -21,6 +22,7 @@ export function DraftsPostTypeTabs({
   allContentCount,
   postsCount,
   longformCount,
+  bulkCount = 0,
   queueType,
 }: DraftsPostTypeTabsProps) {
   const basePath = queueType
@@ -55,6 +57,14 @@ export function DraftsPostTypeTabs({
           }`}
         >
           Longform ({longformCount})
+        </Link>
+        <Link
+          to={`${basePath}?tab=bulk`}
+          className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+            currentTab === "bulk" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
+          }`}
+        >
+          Bulk ({bulkCount})
         </Link>
       </nav>
     </div>

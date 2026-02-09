@@ -328,7 +328,7 @@ export function DraftsTable({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <DropdownMenuItem asChild>
-                          <Link to={`/dashboard/drafts/edit/${post.id}`}>
+                          <Link to={`/dashboard/newpost?draftId=${post.id}`}>
                             Edit
                           </Link>
                         </DropdownMenuItem>

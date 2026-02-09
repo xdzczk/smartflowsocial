@@ -1,12 +1,17 @@
 /**
- * Autosave composer draft: create or update Post (DRAFT) with draftMeta.
+ * Save-draft and (legacy) autosave-draft: create or update Post (DRAFT) with draftMeta.
+ * Save-draft redirects to /dashboard/drafts; autosave-draft returns JSON (no longer used from UI).
  */
 
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 
 import { prisma } from "~/lib/prisma.server";
 
 import { CreatePostUseCase } from "../../use-cases/create-post.use-case.server";
+import {
+  createShortDraftVersion,
+  SHORT_SNAPSHOT_SCHEMA_VERSION,
+} from "../draft-version.server";
 import { resolveQueueTypeId } from "../queue-type-resolver.server";
 
 import { parseAttachmentMeta } from "./handlers/text-handlers.server";
@@ -18,10 +23,14 @@ function getFormString(formData: FormData, key: string): string {
   return v != null ? String(v) : "";
 }
 
-export async function handleAutosaveDraft(
+/**
+ * Create or update a short-post draft. Returns draftId on success.
+ * Used by both save-draft (redirect) and legacy autosave-draft (json).
+ */
+export async function persistShortDraft(
   userId: string,
   formData: FormData
-): Promise<Response> {
+): Promise<{ draftId: string }> {
   const draftId = formData.get("draftId");
   const contentRaw = getFormString(formData, "content");
   const queueType = getFormString(formData, "queueType") || "unassigned";
@@ -72,7 +81,7 @@ export async function handleAutosaveDraft(
           updatedAt: new Date(),
         },
       });
-      return json({ draftId, saved: true });
+      return { draftId };
     }
   }
 
@@ -119,8 +128,49 @@ export async function handleAutosaveDraft(
     data: { draftMeta: draftMeta as unknown as object },
   });
 
-  return json({
-    draftId: newDraftId,
-    saved: true,
+  return { draftId: newDraftId };
+}
+
+/** Save draft (explicit click): persist, create version snapshot, redirect to drafts. */
+export async function handleSaveDraft(
+  userId: string,
+  formData: FormData
+): Promise<Response> {
+  const { draftId } = await persistShortDraft(userId, formData);
+  const post = await prisma.post.findUnique({
+    where: { id: draftId, userId },
+    select: {
+      content: true,
+      caption: true,
+      fileUrl: true,
+      queueTypeId: true,
+      draftMeta: true,
+    },
   });
+  if (post) {
+    await createShortDraftVersion(
+      draftId,
+      {
+        schemaVersion: SHORT_SNAPSHOT_SCHEMA_VERSION,
+        /* eslint-disable @typescript-eslint/no-unnecessary-condition -- DB/API can omit */
+        content: post.content ?? null,
+        caption: post.caption ?? null,
+        fileUrl: post.fileUrl ?? [],
+        queueTypeId: post.queueTypeId ?? null,
+        draftMeta: post.draftMeta ?? null,
+        /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      },
+      userId
+    );
+  }
+  return redirect("/dashboard/drafts");
+}
+
+/** Legacy autosave-draft (no longer used from UI; kept for any remaining callers). */
+export async function handleAutosaveDraft(
+  userId: string,
+  formData: FormData
+): Promise<Response> {
+  const { draftId } = await persistShortDraft(userId, formData);
+  return json({ draftId, saved: true });
 }

@@ -1,7 +1,16 @@
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigate,
+} from "@remix-run/react";
+import { useState } from "react";
 
+import { Button } from "~/components/ui/button";
 import type { Asset } from "~/features/assets";
 import {
+  DraftPickerModal,
+  DraftVersionHistory,
   ErrorMessage,
   LongFormEditHeader,
   LongFormPost,
@@ -119,6 +128,32 @@ export default function LongFormDraftEditPage() {
       typeof (qt as { id: unknown; name: unknown }).name === "string"
   );
 
+  const versionsRaw =
+    typeof loaderData === "object" &&
+    loaderData !== null &&
+    "versions" in loaderData &&
+    Array.isArray((loaderData as { versions?: unknown }).versions)
+      ? (loaderData as { versions: unknown[] }).versions
+      : [];
+  const versions = versionsRaw.filter(
+    (
+      v: unknown
+    ): v is {
+      id: string;
+      version: number;
+      createdAt: string;
+      createdBy: string | null;
+    } =>
+      typeof v === "object" &&
+      v !== null &&
+      "id" in v &&
+      "version" in v &&
+      "createdAt" in v &&
+      typeof (v as { id: unknown }).id === "string" &&
+      typeof (v as { version: unknown }).version === "number" &&
+      typeof (v as { createdAt: unknown }).createdAt === "string"
+  );
+
   const hashtagPresets = hashtagPresetsRaw.filter(
     (
       preset: unknown
@@ -141,6 +176,8 @@ export default function LongFormDraftEditPage() {
         "string"
   );
 
+  const navigate = useNavigate();
+  const [draftPickerOpen, setDraftPickerOpen] = useState(false);
   const {
     displayedHashtags,
     showPreviewModal,
@@ -157,7 +194,31 @@ export default function LongFormDraftEditPage() {
 
   return (
     <div className="p-6">
-      <LongFormEditHeader displayedHashtags={displayedHashtags} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <LongFormEditHeader displayedHashtags={displayedHashtags} />
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setDraftPickerOpen(true)}
+          >
+            Open draft
+          </Button>
+          {typedPost ? (
+            <DraftVersionHistory
+              versions={versions}
+              actionUrl={`/dashboard/drafts/longform/edit/${typedPost.id}`}
+            />
+          ) : null}
+        </div>
+      </div>
+      <DraftPickerModal
+        open={draftPickerOpen}
+        onClose={() => setDraftPickerOpen(false)}
+        type="longform"
+        onSelect={(id) => navigate(`/dashboard/drafts/longform/edit/${id}`)}
+      />
 
       <ErrorMessage
         error={

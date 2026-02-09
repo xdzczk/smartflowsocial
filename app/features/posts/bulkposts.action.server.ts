@@ -9,6 +9,7 @@ import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { logInfo } from "~/lib/error-logger.server";
 import { RateLimitError } from "~/lib/errors";
+import { prisma } from "~/lib/prisma.server";
 import { checkUserPostCreationLimit } from "~/lib/rate-limit.server";
 import { nowMillis } from "~/lib/temporal";
 import {
@@ -19,6 +20,13 @@ import {
 import { updatePost } from "~/models/post.commands.server";
 import { isVideoUrl } from "~/utils/media-helpers";
 
+import {
+  createDraftGroupVersion,
+  deleteDraftGroupPosts,
+  getOrCreateDraftGroup,
+  type BulkDraftSnapshotRow,
+} from "./services/draft-group.server";
+import { resolveQueueTypeId } from "./services/queue-type-resolver.server";
 import { CreatePostUseCase } from "./use-cases/create-post.use-case.server";
 
 /**
@@ -289,7 +297,7 @@ export async function handleSignAndSchedule(
 }
 
 /**
- * Handle save as draft action
+ * Handle save as draft action. Creates or updates a DraftGroup, sets draftGroupId on each post, and creates a DraftGroupVersion snapshot.
  */
 export async function handleSaveAsDraft(
   formData: FormData,
@@ -312,11 +320,22 @@ export async function handleSaveAsDraft(
     const fileUrls = validatedData.fileUrl;
     const captions = validatedData.caption;
     const queueTypes = validatedData.queueType;
-    const _scheduledFors = validatedData.scheduledFor;
+    const scheduledFors = validatedData.scheduledFor;
     const originalPostIds = validatedData.originalPostId.filter(
       (id: string) => id && id !== ""
     );
     const isRecyclableFlags = formData.getAll("isRecyclable");
+
+    const groupIdParam = formData.get("groupId");
+    const groupIdFromForm =
+      typeof groupIdParam === "string" && groupIdParam.length > 0
+        ? groupIdParam
+        : null;
+
+    const { groupId } = await getOrCreateDraftGroup(userId, groupIdFromForm);
+    if (groupIdFromForm) {
+      await deleteDraftGroupPosts(groupId, userId);
+    }
 
     // Check per-user post creation rate limit before processing
     const postCount = fileUrls.length;
@@ -346,10 +365,13 @@ export async function handleSaveAsDraft(
       resetTime: rateLimitCheck.resetTime,
     });
 
-    await Promise.all(
+    const snapshotRows: BulkDraftSnapshotRow[] = [];
+
+    const _createdPosts = await Promise.all(
       fileUrls.map(async (fileUrl: string, index: number) => {
         const caption = captions[index] ?? "";
         const queueType = queueTypes[index] ?? "unassigned";
+        const scheduledForStr = scheduledFors[index] ?? "";
         const isRecyclableFlag = isRecyclableFlags[index];
         const isRecyclable =
           typeof isRecyclableFlag === "string"
@@ -357,34 +379,55 @@ export async function handleSaveAsDraft(
               String(isRecyclableFlag).toLowerCase() === "true"
             : Boolean(isRecyclableFlag);
 
-        // Determine post type based on file URL
+        const queueTypeId = await resolveQueueTypeId(
+          userId,
+          null,
+          queueType === "Unassigned" ? null : queueType
+        );
+
+        snapshotRows.push({
+          caption,
+          fileUrl: [fileUrl],
+          queueTypeId,
+          scheduledFor: scheduledForStr || null,
+          sortOrder: index,
+          isRecyclable,
+        });
+
         const isVideo = isVideoUrl(fileUrl);
         const postType = isVideo ? "VIDEO" : "IMAGE";
 
-        // Use CreatePostUseCase for bulk draft creation
         const createPostUseCase = new CreatePostUseCase();
-        const result = await createPostUseCase.execute({
+        const createResult = await createPostUseCase.execute({
           userId,
           content: caption,
           caption: caption,
           fileUrl: [fileUrl],
           postType,
-          queueType, // Pass queue type name - use case will resolve
+          queueType,
           isRecyclable,
-          // No scheduledFor = draft
         });
 
-        return result.post;
+        await prisma.post.update({
+          where: { id: createResult.post.id, userId },
+          data: { draftGroupId: groupId },
+        });
+
+        return createResult.post;
       })
     );
 
-    // If this is a recycle mode (posts have original post IDs) and user saved as draft,
-    // we might still want to mark them as non-recyclable to prevent confusion
+    await prisma.draftGroup.update({
+      where: { id: groupId, userId },
+      data: { updatedAt: new Date() },
+    });
+    await createDraftGroupVersion(groupId, snapshotRows, userId);
+
     if (mode === "recycle" && originalPostIds.length > 0) {
       await markOriginalPostsAsNonRecyclable(originalPostIds, userId, true);
     }
 
-    return redirect(`/dashboard/drafts`);
+    return redirect(`/dashboard/drafts?tab=bulk`);
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);

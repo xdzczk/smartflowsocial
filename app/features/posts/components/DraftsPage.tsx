@@ -8,6 +8,7 @@ import type {
 } from "~/features/posts/server";
 import {
   AllContentListing,
+  BulkDraftsListing,
   DraftBulkResume,
   DraftsBulkActions,
   DraftsHeader,
@@ -36,6 +37,7 @@ export default function DraftsPage() {
     user,
     queueTypes,
     selectedQueueType: _selectedQueueType,
+    bulkDraftGroups,
     isLoading: _isDataLoading,
     isFetchingNextPage,
     hasNextPage,
@@ -124,6 +126,7 @@ export default function DraftsPage() {
         allContentCount={allContent.length}
         postsCount={filteredPosts.length}
         longformCount={longformPosts.length}
+        bulkCount={bulkDraftGroups.length}
         queueType={params["queueType"]}
       />
 
@@ -140,7 +143,9 @@ export default function DraftsPage() {
 
       <div className="flex min-h-0 flex-1 flex-col">
         {/* Content based on current tab */}
-        {currentTab === "all" ? (
+        {currentTab === "bulk" ? (
+          <BulkDraftsListing groups={bulkDraftGroups} />
+        ) : currentTab === "all" ? (
           <AllContentListing
             content={allContent}
             type="draft"

@@ -10,6 +10,7 @@ import type { HashTagPreset, QueueType } from "../types";
 
 import { DraftEditForm } from "./DraftEditForm";
 import { DraftPreview } from "./DraftPreview";
+import { DraftVersionHistory } from "./DraftVersionHistory";
 import { ResumeModal } from "./ResumeModal";
 
 export default function DraftEditPage() {
@@ -41,6 +42,32 @@ export default function DraftEditPage() {
     Array.isArray((loaderData as { hashTagPresets?: unknown }).hashTagPresets)
       ? (loaderData as { hashTagPresets: unknown[] }).hashTagPresets
       : [];
+
+  const versionsRaw =
+    typeof loaderData === "object" &&
+    loaderData !== null &&
+    "versions" in loaderData &&
+    Array.isArray((loaderData as { versions?: unknown }).versions)
+      ? (loaderData as { versions: unknown[] }).versions
+      : [];
+  const versions = versionsRaw.filter(
+    (
+      v: unknown
+    ): v is {
+      id: string;
+      version: number;
+      createdAt: string;
+      createdBy: string | null;
+    } =>
+      typeof v === "object" &&
+      v !== null &&
+      "id" in v &&
+      "version" in v &&
+      "createdAt" in v &&
+      typeof (v as { id: unknown }).id === "string" &&
+      typeof (v as { version: unknown }).version === "number" &&
+      typeof (v as { createdAt: unknown }).createdAt === "string"
+  );
 
   const typedPost =
     postRaw && typeof postRaw === "object"
@@ -203,16 +230,23 @@ export default function DraftEditPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-foreground text-2xl font-bold dark:text-white">
           Edit Draft
         </h1>
-        <Link
-          to="/dashboard/drafts"
-          className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground"
-        >
-          ← Back to Drafts
-        </Link>
+        <div className="flex items-center gap-2">
+          <DraftVersionHistory
+            versions={versions}
+            actionUrl={`/dashboard/drafts/edit/${typedPost.id}`}
+            disabled={isSubmitting}
+          />
+          <Link
+            to="/dashboard/drafts"
+            className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground"
+          >
+            ← Back to Drafts
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

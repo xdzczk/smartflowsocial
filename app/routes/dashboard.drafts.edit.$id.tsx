@@ -6,18 +6,14 @@ import {
 } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import {
-  handleDraftEditAction,
-  loadDraftEditData,
-} from "~/features/posts/server";
-import { DraftEditPage } from "~/features/posts/ui";
+import { handleDraftEditAction } from "~/features/posts/server";
 import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
+  await requireUserId(request);
   const postId = params["id"]!;
 
-  const data = await loadDraftEditData(userId, postId);
-  return json(data);
+  // Redirect to newpost composer with draft so short drafts open in UnifiedComposer
+  return redirect(`/dashboard/newpost?draftId=${postId}`);
 }
 
 export const action = withCSRFProtection(
@@ -65,4 +61,7 @@ export const action = withCSRFProtection(
   }
 );
 
-export default DraftEditPage;
+/** Redirects in loader; this is only shown if client navigates without loader. */
+export default function DraftEditRedirect() {
+  return null;
+}

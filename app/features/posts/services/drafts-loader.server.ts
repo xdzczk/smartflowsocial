@@ -21,6 +21,7 @@ import {
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
+import { listBulkDraftGroups } from "./draft-group.server";
 import { filterPostsByQueueType } from "./post-filtering.server";
 
 /**
@@ -86,6 +87,8 @@ export async function loadDraftsData(
   const longformPostsDTO: LongFormPostDTO[] =
     toLongFormPostDTOArray(longformPostsData);
 
+  const bulkDraftGroups = await listBulkDraftGroups(userId);
+
   return {
     posts: postsDTO,
     longformPosts: longformPostsDTO,
@@ -94,5 +97,10 @@ export async function loadDraftsData(
     selectedQueueType: queueType,
     pagination: postsPagination, // Use posts pagination as primary
     longformPagination: longformPostsPagination,
+    bulkDraftGroups: bulkDraftGroups.map((g) => ({
+      id: g.id,
+      postCount: g.postCount,
+      updatedAt: g.updatedAt.toISOString(),
+    })),
   };
 }

@@ -5,11 +5,13 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 import { Hash, Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { type ToastMessage } from "~/components/types";
+import { Button } from "~/components/ui/button";
 import MediaModal from "~/components/ui/MediaModal";
 import Toast from "~/components/ui/Toast";
+import { useLocalDraft } from "~/features/posts/hooks/useComposerLocalDraft";
 import {
   type BulkPost,
   type PreparedEvent,
@@ -28,11 +30,13 @@ import {
   BulkPostsActionButtons,
   BulkPostsTable,
   BulkPostsUploadArea,
+  DraftPickerModal,
   PostConfirmation,
   PublishResultModal,
 } from "~/features/posts/ui";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
+import { createBulkPostClientId } from "~/features/posts/utils/client-id";
 import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -43,6 +47,16 @@ function extractLoaderData(data: unknown): {
   queueTypes: QueueType[];
   hashTagPresets: Array<{ id: string; name: string; tags: string }>;
   mode: string | null;
+  groupId: string | null;
+  bulkDraftGroupPosts: Array<{
+    id: string;
+    caption: string;
+    fileUrl: string[];
+    queueTypeId: string | null;
+    queueType: { name: string } | null;
+    scheduledAtUtc: Date | string | null;
+    isRecyclable: boolean;
+  }>;
 } {
   const tags =
     data &&
@@ -69,6 +83,19 @@ function extractLoaderData(data: unknown): {
     data && typeof data === "object" && "mode" in data
       ? (data as { mode?: unknown }).mode
       : null;
+  const groupId =
+    data && typeof data === "object" && "groupId" in data
+      ? (data as { groupId?: unknown }).groupId
+      : null;
+  const bulkDraftGroupPosts =
+    data &&
+    typeof data === "object" &&
+    "bulkDraftGroupPosts" in data &&
+    Array.isArray(
+      (data as { bulkDraftGroupPosts?: unknown }).bulkDraftGroupPosts
+    )
+      ? (data as { bulkDraftGroupPosts: unknown[] }).bulkDraftGroupPosts
+      : [];
 
   return {
     tags: tags as string[],
@@ -79,6 +106,16 @@ function extractLoaderData(data: unknown): {
       tags: string;
     }>,
     mode: typeof mode === "string" ? mode : null,
+    groupId: typeof groupId === "string" ? groupId : null,
+    bulkDraftGroupPosts: bulkDraftGroupPosts as Array<{
+      id: string;
+      caption: string;
+      fileUrl: string[];
+      queueTypeId: string | null;
+      queueType: { name: string } | null;
+      scheduledAtUtc: Date | string | null;
+      isRecyclable: boolean;
+    }>,
   };
 }
 
@@ -183,7 +220,14 @@ export default function BulkPostsPage() {
     hashTagPresets: Array<{ id: string; name: string; tags: string }>;
     mode: string | null;
   }>();
-  const { tags, queueTypes, hashTagPresets, mode } = extractLoaderData(data);
+  const {
+    tags,
+    queueTypes,
+    hashTagPresets,
+    mode,
+    groupId,
+    bulkDraftGroupPosts,
+  } = extractLoaderData(data);
   const [posts, setPosts] = useState<BulkPost[]>([]);
   const [displayedHashtags, setDisplayedHashtags] = useState<string | string[]>(
     tags
@@ -251,6 +295,92 @@ export default function BulkPostsPage() {
     scheduledAtUtc?: string | null;
   } | null>(null);
   const [bulkPostCount, setBulkPostCount] = useState<number | null>(null);
+
+  const bulkDraftKey = "bulk-posts-draft";
+  const {
+    restored: bulkLocalRestored,
+    saveSnapshot: saveBulkLocalSnapshot,
+    clearSnapshot: clearBulkLocalSnapshot,
+  } = useLocalDraft<{
+    rows: Array<{
+      caption: string;
+      queueType: string;
+      scheduledFor: string;
+      fileUrl?: string;
+      isRecyclable: boolean;
+    }>;
+    savedAt: number;
+  }>(bulkDraftKey, !!groupId, 2000);
+
+  const bulkLocalRestoredAppliedRef = useRef(false);
+  useEffect(() => {
+    if (
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive: restored can be partial
+      !bulkLocalRestored?.rows?.length ||
+      groupId ||
+      bulkLocalRestoredAppliedRef.current
+    )
+      return;
+    bulkLocalRestoredAppliedRef.current = true;
+    const initialPosts: BulkPost[] = bulkLocalRestored.rows.map((r) => ({
+      clientId: createBulkPostClientId(),
+      file: null,
+      caption: r.caption,
+      queueType: r.queueType,
+      scheduledFor: r.scheduledFor,
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for parsed JSON
+      isRecyclable: r.isRecyclable ?? false,
+      fileUrl: r.fileUrl,
+    }));
+    setPosts(initialPosts);
+  }, [bulkLocalRestored, groupId, setPosts]);
+
+  useEffect(() => {
+    if (groupId) return;
+    saveBulkLocalSnapshot({
+      rows: posts.map((p) => ({
+        caption: p.caption,
+        queueType: p.queueType,
+        scheduledFor: p.scheduledFor,
+        fileUrl: p.fileUrl,
+        isRecyclable: p.isRecyclable,
+      })),
+    });
+  }, [groupId, posts, saveBulkLocalSnapshot]);
+
+  useEffect(() => {
+    if (fetcher.state === "submitting") {
+      clearBulkLocalSnapshot();
+    }
+  }, [fetcher.state, clearBulkLocalSnapshot]);
+
+  // Prefill table when opening a bulk draft group
+  useEffect(() => {
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- API/DB types may be optional */
+    if (bulkDraftGroupPosts.length > 0) {
+      const initialPosts: BulkPost[] = bulkDraftGroupPosts.map((p) => {
+        const scheduledAt =
+          p.scheduledAtUtc instanceof Date
+            ? p.scheduledAtUtc
+            : typeof p.scheduledAtUtc === "string"
+              ? new Date(p.scheduledAtUtc)
+              : null;
+        return {
+          clientId: createBulkPostClientId(),
+          file: null,
+          caption: p.caption ?? "",
+          queueType: p.queueType?.name ?? "unassigned",
+          scheduledFor: scheduledAt
+            ? String(Math.floor(scheduledAt.getTime() / 1000))
+            : "",
+          isRecyclable: p.isRecyclable ?? false,
+          fileUrl: Array.isArray(p.fileUrl) ? p.fileUrl[0] : p.fileUrl?.[0],
+        };
+      });
+      setPosts(initialPosts);
+    }
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+  }, [bulkDraftGroupPosts.length]); // eslint-disable-line react-hooks/exhaustive-deps -- only run when opening a group
 
   // Use extracted hooks
   useBulkPostsState({ mode, posts, setPosts });
@@ -514,9 +644,27 @@ export default function BulkPostsPage() {
     }
   }, [searchParams, modalPostId, showPublishModal, setSearchParams]);
 
+  const [bulkDraftPickerOpen, setBulkDraftPickerOpen] = useState(false);
+
   return (
     <div className="p-6">
-      <h1 className="mb-6 text-2xl font-bold">{getPageTitle(mode)}</h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold">{getPageTitle(mode)}</h1>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setBulkDraftPickerOpen(true)}
+        >
+          Open draft
+        </Button>
+      </div>
+      <DraftPickerModal
+        open={bulkDraftPickerOpen}
+        onClose={() => setBulkDraftPickerOpen(false)}
+        type="bulk"
+        onSelect={(id) => navigate(`/dashboard/bulkposts?groupId=${id}`)}
+      />
       {displayedHashtags && displayedHashtags.length <= 10 ? (
         <div className="bg-muted text-foreground mb-6 inline-flex items-center gap-1 rounded px-2 py-1 text-xs leading-4 font-semibold">
           <Hash
@@ -611,6 +759,7 @@ export default function BulkPostsPage() {
         <PostConfirmation
           preparedEvents={preparedEvents}
           postsCount={posts.length}
+          groupId={groupId}
         />
       )}
 

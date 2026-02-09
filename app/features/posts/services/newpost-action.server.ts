@@ -104,10 +104,10 @@ export async function handleNewPostAction(
     return json(result);
   }
 
-  if (_action === "autosave-draft") {
-    const { handleAutosaveDraft } =
+  if (_action === "save-draft") {
+    const { handleSaveDraft } =
       await import("./newpost-action/autosave-draft.server");
-    return handleAutosaveDraft(userId, formData);
+    return handleSaveDraft(userId, formData);
   }
 
   if (_action === "post-thread" || _action === "schedule-thread") {

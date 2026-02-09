@@ -285,6 +285,16 @@ export const draftsLoaderDataSchema = z.object({
   selectedQueueType: z.string(),
   pagination: paginationSchema,
   longformPagination: paginationSchema.optional(),
+  bulkDraftGroups: z
+    .array(
+      z.object({
+        id: z.string(),
+        postCount: z.number(),
+        updatedAt: z.string(),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
 export type DraftsLoaderData = z.infer<typeof draftsLoaderDataSchema>;

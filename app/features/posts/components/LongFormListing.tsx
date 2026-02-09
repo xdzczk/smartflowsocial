@@ -1,4 +1,5 @@
 import { useFetcher, Link } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, type Key } from "react";
@@ -18,6 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
+import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
+import { scheduledPostsKeys } from "~/features/posts/hooks/useScheduledPostsQuery";
 import type { LongFormPostType } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -200,11 +204,38 @@ export default function LongFormListing({
   });
   const [selectedPosts, setSelectedPosts] = useState(new Set<string>());
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
-  const deleteFetcher = useFetcher();
+  const deleteFetcher = useFetcher<{
+    success?: boolean;
+    moved?: boolean;
+  }>();
   interface BulkDeleteFetcherData {
     success?: boolean;
   }
   const bulkDeleteFetcher = useFetcher<BulkDeleteFetcherData>();
+  const queryClient = useQueryClient();
+
+  // Invalidate when delete or move-to-draft succeeds (scheduled tab)
+  useEffect(() => {
+    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
+      const data = deleteFetcher.data;
+      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- fetcher data type narrows at runtime */
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        "success" in data &&
+        data.success
+      ) {
+        void queryClient.invalidateQueries({
+          queryKey: scheduledPostsKeys.all,
+        });
+        void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+
+        if ("moved" in data && data.moved) {
+          void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
+        }
+      }
+    }
+  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
 
   const sortedPosts = sortLongFormPosts(posts, sortConfig);
   const filteredPosts = sortedPosts.filter((post) =>
@@ -709,6 +740,41 @@ export default function LongFormListing({
                             >
                               Reschedule
                             </DropdownMenuItem>
+                            <deleteFetcher.Form method="post">
+                              <input
+                                type="hidden"
+                                name="postId"
+                                value={post.id}
+                              />
+                              <input
+                                type="hidden"
+                                name="_action"
+                                value="moveToDraft"
+                              />
+                              <input
+                                type="hidden"
+                                name="type"
+                                value="longform"
+                              />
+                              <DropdownMenuItem asChild>
+                                <button
+                                  type="submit"
+                                  disabled={
+                                    deleteFetcher.state !== "idle" ||
+                                    bulkDeleteFetcher.state !== "idle"
+                                  }
+                                >
+                                  {deleteFetcher.state !== "idle" &&
+                                  deleteFetcher.formData?.get("_action") ===
+                                    "moveToDraft" &&
+                                  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
+                                  deleteFetcher.formData?.get("postId") ===
+                                    post.id
+                                    ? "Moving..."
+                                    : "Move to drafts"}
+                                </button>
+                              </DropdownMenuItem>
+                            </deleteFetcher.Form>
                           </>
                         ) : null}
                         {type === "published" &&

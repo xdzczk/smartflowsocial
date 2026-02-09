@@ -41,6 +41,11 @@ import { LongFormPostStateMachine } from "../state-machine/longform-post-state-m
 import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
 import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
 
+import {
+  createLongformDraftVersion,
+  LONGFORM_SNAPSHOT_SCHEMA_VERSION,
+} from "./draft-version.server";
+
 const ERROR_TITLE_REQUIRED = "Title is required";
 const ERROR_CONTENT_REQUIRED = "Content is required";
 
@@ -245,6 +250,22 @@ async function handleSaveDraft(
     userId,
     "DRAFT",
     "Longform post saved as draft"
+  );
+
+  await createLongformDraftVersion(
+    postId,
+    {
+      schemaVersion: LONGFORM_SNAPSHOT_SCHEMA_VERSION,
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- form/editor state can be null */
+      title: title ?? null,
+      summary: finalSummary ?? null,
+      content: sanitizedContent ?? null,
+      image: image ?? null,
+      tags: tags ?? [],
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      queueTypeId,
+    },
+    userId
   );
 
   return redirect("/dashboard/drafts?tab=longform");
@@ -541,12 +562,24 @@ export async function handleLongFormEditAction(
     formData = await request.formData();
   }
 
-  // Check for upload-image action first (handled separately)
+  // Check for upload-image and restore-version first (handled separately)
   const _actionValue = formData.get("_action");
   const _action = _actionValue ? String(_actionValue) : "";
 
   if (_action === "upload-image") {
     return handleImageUpload(userId, formData);
+  }
+
+  if (_action === "restore-version") {
+    const versionId = formData.get("versionId");
+    if (typeof versionId === "string" && versionId) {
+      const { restoreLongformDraftVersion } =
+        await import("./draft-version.server");
+      const restoredId = await restoreLongformDraftVersion(versionId, userId);
+      if (restoredId) {
+        return redirect(`/dashboard/drafts/longform/edit/${restoredId}`);
+      }
+    }
   }
 
   // Validate non-file fields with Zod

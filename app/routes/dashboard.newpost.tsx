@@ -12,7 +12,12 @@ import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
-    const data = await loadNewPostData(userId);
+    const url = new URL(request.url);
+    const draftId = url.searchParams.get("draftId");
+    const data = await loadNewPostData(
+      userId,
+      draftId && draftId.length > 0 ? draftId : null
+    );
     return json(data);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId or requireAnySubscription), return it

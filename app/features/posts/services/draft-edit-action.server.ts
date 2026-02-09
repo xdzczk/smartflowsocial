@@ -16,6 +16,7 @@ import { getPostById } from "~/models/post.queries.server";
 
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
+import { restoreShortDraftVersion } from "./draft-version.server";
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 function parseSignedEvent(raw: string): {
@@ -61,6 +62,17 @@ export async function handleDraftEditAction(
   userId: string,
   postId: string
 ) {
+  const _actionRaw = formData.get("_action");
+  if (_actionRaw === "restore-version") {
+    const versionId = formData.get("versionId");
+    if (typeof versionId === "string" && versionId) {
+      const restoredId = await restoreShortDraftVersion(versionId, userId);
+      if (restoredId) {
+        return { redirect: `/dashboard/drafts/edit/${restoredId}` };
+      }
+    }
+  }
+
   const result = validateFormDataOrRespond(formData, draftEditActionSchema);
   if (!result.success) {
     return result.response;

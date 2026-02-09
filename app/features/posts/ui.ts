@@ -141,7 +141,15 @@ export type { UnifiedComposerProps } from "./components/UnifiedComposer";
 export { default as NewPostPage } from "./components/NewPostPage";
 export { RecyclablesBulkActions } from "./components/RecyclablesBulkActions";
 export { RecyclablesPagination } from "./components/RecyclablesPagination";
+export {
+  DraftPickerModal,
+  type DraftPickerType,
+} from "./components/DraftPickerModal";
 export { DraftEditForm } from "./components/DraftEditForm";
+export {
+  DraftVersionHistory,
+  type DraftVersionItem,
+} from "./components/DraftVersionHistory";
 export { DraftPreview } from "./components/DraftPreview";
 export { ResumeModal } from "./components/ResumeModal";
 export { default as DraftEditPage } from "./components/DraftEditPage";
@@ -154,6 +162,7 @@ export { default as RecyclablesPage } from "./components/RecyclablesPage";
 export { default as BulkPostsPage } from "./components/BulkPostsPage";
 export { default as CalendarQueuePage } from "./components/CalendarQueuePage";
 export { default as LongFormDraftEditPage } from "./components/LongFormDraftEditPage";
+export { BulkDraftsListing } from "./components/BulkDraftsListing";
 export { DraftsHeader } from "./components/DraftsHeader";
 export { DraftsPostTypeTabs } from "./components/DraftsPostTypeTabs";
 export { DraftsTable } from "./components/DraftsTable";

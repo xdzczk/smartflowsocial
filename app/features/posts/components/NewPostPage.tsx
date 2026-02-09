@@ -256,6 +256,33 @@ export default function NewPostPage() {
           (r): r is string => typeof r === "string"
         )
       : [];
+  const initialDraft =
+    "initialDraft" in loaderData &&
+    loaderData.initialDraft !== null &&
+    typeof loaderData.initialDraft === "object"
+      ? (loaderData.initialDraft as {
+          content: string;
+          caption: string;
+          fileUrl: string[];
+          queueType: string;
+          queueTypeId: string | null;
+          tags: string;
+          draftMeta: {
+            attachmentMeta?: Array<{
+              localId: string;
+              url: string;
+              alt?: string;
+            }>;
+          } | null;
+          hashTagPresetId: string | null;
+        })
+      : null;
+  const initialDraftId =
+    "initialDraftId" in loaderData &&
+    typeof loaderData.initialDraftId === "string"
+      ? loaderData.initialDraftId
+      : null;
+
   const relayCount =
     selectedRelayUrls.length > 0
       ? selectedRelayUrls.length
@@ -352,6 +379,8 @@ export default function NewPostPage() {
         }
         relayCount={relayCount}
         onComposerStatusChange={setComposerStatus}
+        initialDraft={initialDraft}
+        initialDraftId={initialDraftId}
       />
 
       {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (

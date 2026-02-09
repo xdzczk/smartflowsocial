@@ -12,6 +12,8 @@ import {
 import { getAssets } from "~/models/asset.server";
 import { getLongFormPost } from "~/models/longformpost.server";
 
+import { getDraftVersions } from "./draft-version.server";
+
 /**
  * Load longform edit page data
  */
@@ -40,6 +42,8 @@ export async function loadLongFormEditData(userId: string, postId: string) {
   const defaultPreset = hashtagPresets.find((p) => p.name === "Default");
   const tags = defaultPreset?.tags ?? "";
 
+  const versions = await getDraftVersions(null, postId);
+
   return {
     post,
     userId,
@@ -49,5 +53,6 @@ export async function loadLongFormEditData(userId: string, postId: string) {
     assets: assetsData.assets,
     userTimezone: user?.timezone ?? "Etc/GMT",
     hashtagPresets,
+    versions,
   };
 }

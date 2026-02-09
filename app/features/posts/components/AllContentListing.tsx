@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
+import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { scheduledPostsKeys } from "~/features/posts/hooks/useScheduledPostsQuery";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { fromISOString } from "~/lib/temporal";
@@ -130,22 +131,25 @@ export default function AllContentListing({
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
   const deleteFetcher = useFetcher<{
     success?: boolean;
+    moved?: boolean;
     error?: string;
     needsSigning?: boolean;
     post?: PostData | LongFormPostData;
   }>();
   const queryClient = useQueryClient();
 
-  // Invalidate queries when individual delete succeeds
+  // Invalidate queries when individual delete or move-to-draft succeeds
   useEffect(() => {
     if (deleteFetcher.state === "idle" && deleteFetcher.data) {
       const data = deleteFetcher.data;
       if (typeof data === "object" && "success" in data && data.success) {
-        // Invalidate both dashboard and scheduled posts queries
         void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
         void queryClient.invalidateQueries({
           queryKey: scheduledPostsKeys.all,
         });
+        if ("moved" in data && data.moved) {
+          void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
+        }
       }
     }
   }, [deleteFetcher.state, deleteFetcher.data, queryClient]);

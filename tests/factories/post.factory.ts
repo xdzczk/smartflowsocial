@@ -43,6 +43,7 @@ export interface PostFactoryOptions {
   quoteOfPostId?: string | null;
   quoteOfLongFormPostId?: string | null;
   draftMeta?: Prisma.JsonValue | null;
+  draftGroupId?: string | null;
   threadGroupId?: string | null;
   postKind?: PostKind;
   replyToEventId?: string | null;
@@ -270,6 +271,7 @@ export class PostFactory {
       quoteOfPostId: this.options.quoteOfPostId ?? null,
       quoteOfLongFormPostId: this.options.quoteOfLongFormPostId ?? null,
       draftMeta: this.options.draftMeta ?? null,
+      draftGroupId: this.options.draftGroupId ?? null,
       threadGroupId: this.options.threadGroupId ?? null,
       postKind,
       replyToEventId: this.options.replyToEventId ?? null,

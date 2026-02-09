@@ -5,14 +5,22 @@
  */
 
 import { getQueueTypes, getUserHashTagPresets } from "~/features/user";
+
+import { getBulkDraftGroupPosts } from "./draft-group.server";
+
 /**
- * Get bulk posts dashboard data
+ * Get bulk posts dashboard data. When groupId is provided, also loads that group's posts for prefill.
  */
-export async function getBulkPostsDashboardData(userId: string) {
-  const [hashTagPresetsRaw, queueTypesRaw] = await Promise.all([
-    getUserHashTagPresets(userId),
-    getQueueTypes(userId),
-  ]);
+export async function getBulkPostsDashboardData(
+  userId: string,
+  groupId: string | null = null
+) {
+  const [hashTagPresetsRaw, queueTypesRaw, bulkDraftGroupPosts] =
+    await Promise.all([
+      getUserHashTagPresets(userId),
+      getQueueTypes(userId),
+      groupId ? getBulkDraftGroupPosts(groupId, userId) : Promise.resolve([]),
+    ]);
 
   // Ensure hashTagPresetsRaw is an array before using array methods
   const hashTagPresets = Array.isArray(hashTagPresetsRaw)
@@ -35,7 +43,7 @@ export async function getBulkPostsDashboardData(userId: string) {
   // Calculate initial mode based on hash tag presets
   const mode = hashTagPresets.length > 0 ? "preset" : "manual";
 
-  return {
+  const base = {
     tags: tagsArray,
     queueTypes: queueTypes.filter(
       (qt: unknown) =>
@@ -47,4 +55,22 @@ export async function getBulkPostsDashboardData(userId: string) {
     hashTagPresets,
     mode,
   };
+
+  if (groupId && bulkDraftGroupPosts.length > 0) {
+    return {
+      ...base,
+      groupId,
+      bulkDraftGroupPosts: bulkDraftGroupPosts.map((p) => ({
+        id: p.id,
+        caption: p.caption ?? "",
+        fileUrl: p.fileUrl ?? [], // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- API can omit
+        queueTypeId: p.queueTypeId,
+        queueType: p.queueType,
+        scheduledAtUtc: p.scheduledAtUtc,
+        isRecyclable: p.isRecyclable ?? false, // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- API can omit
+      })),
+    };
+  }
+
+  return base;
 }

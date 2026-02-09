@@ -249,6 +249,15 @@ export const scheduleQuoteSchema = z.object({
 });
 
 /**
+ * Move scheduled post back to drafts (short or longform)
+ */
+export const moveToDraftSchema = z.object({
+  _action: z.literal("moveToDraft"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
+  type: z.enum(["post", "longform"]),
+});
+
+/**
  * Union schema for all scheduled actions
  */
 export const scheduledActionSchema = z.discriminatedUnion("_action", [
@@ -259,6 +268,7 @@ export const scheduledActionSchema = z.discriminatedUnion("_action", [
   bulkDeleteMixedSchema,
   scheduleRepostSchema,
   scheduleQuoteSchema,
+  moveToDraftSchema,
 ]);
 
 /**

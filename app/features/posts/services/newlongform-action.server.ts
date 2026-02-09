@@ -38,6 +38,11 @@ import { PostStateMachine } from "../state-machine/post-state-machine.server";
 import { CreateLongFormPostUseCase } from "../use-cases/create-longform-post.use-case.server";
 import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
 
+import {
+  createLongformDraftVersion,
+  LONGFORM_SNAPSHOT_SCHEMA_VERSION,
+} from "./draft-version.server";
+
 const ERROR_TITLE_REQUIRED = "Title is required";
 const ERROR_CONTENT_REQUIRED = "Content is required";
 
@@ -266,15 +271,15 @@ async function handleImageUpload(
 }
 
 /**
- * Persist draft (shared by save-draft and autosave-draft).
- * Returns error response or null on success.
+ * Persist draft for new longform page (save-draft action).
+ * Returns error response or { longFormPostId } on success.
  */
 async function persistDraft(
   userId: string,
   formData: FormData,
   queueType: string,
   hashTagPresetId: string | null
-): Promise<Response | null> {
+): Promise<Response | { longFormPostId: string }> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
   const image = formData.get("image")?.toString() ?? undefined;
@@ -300,7 +305,7 @@ async function persistDraft(
   const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   const createLongFormPostUseCase = new CreateLongFormPostUseCase();
-  await createLongFormPostUseCase.execute({
+  const result = await createLongFormPostUseCase.execute({
     userId,
     title,
     summary: finalSummary,
@@ -313,11 +318,11 @@ async function persistDraft(
     isPublished: false,
   });
 
-  return null;
+  return { longFormPostId: result.post.id };
 }
 
 /**
- * Handle save draft action (redirects to drafts)
+ * Handle save draft action (redirects to drafts). Creates a version snapshot.
  */
 async function handleSaveDraft(
   userId: string,
@@ -326,33 +331,40 @@ async function handleSaveDraft(
   hashTagPresetId: string | null,
   _correlationId?: string
 ): Promise<Response> {
-  const errorResponse = await persistDraft(
+  const persistResult = await persistDraft(
     userId,
     formData,
     queueType,
     hashTagPresetId
   );
-  if (errorResponse) return errorResponse;
+  if (persistResult instanceof Response) return persistResult;
+  const { longFormPostId } = persistResult;
+  const queueTypeId = await resolveQueueTypeId(
+    userId,
+    null,
+    queueType === "Unassigned" ? null : queueType
+  );
+  const title = formData.get("title")?.toString() ?? "";
+  const content = formData.get("content")?.toString() ?? "";
+  const summary = formData.get("summary")?.toString();
+  const image = formData.get("image")?.toString() ?? undefined;
+  const tags = parseTags(formData);
+  await createLongformDraftVersion(
+    longFormPostId,
+    {
+      schemaVersion: LONGFORM_SNAPSHOT_SCHEMA_VERSION,
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- form fields can be omitted */
+      title: title ?? null,
+      summary: summary ?? null,
+      content: content ?? null,
+      image: image ?? null,
+      tags: tags ?? [],
+      queueTypeId: queueTypeId ?? null,
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+    },
+    userId
+  );
   return redirect("/dashboard/drafts?tab=longform");
-}
-
-/**
- * Handle autosave draft action (returns JSON, no redirect)
- */
-async function handleAutosaveDraft(
-  userId: string,
-  formData: FormData,
-  queueType: string,
-  hashTagPresetId: string | null
-): Promise<Response> {
-  const errorResponse = await persistDraft(
-    userId,
-    formData,
-    queueType,
-    hashTagPresetId
-  );
-  if (errorResponse) return errorResponse;
-  return json({ success: true });
 }
 
 /**
@@ -763,15 +775,6 @@ export async function handleNewLongFormAction(
   // Handle different actions
   if (_action === "save-draft") {
     return handleSaveDraft(userId, formData, queueType, finalHashTagPresetId);
-  }
-
-  if (_action === "autosave-draft") {
-    return handleAutosaveDraft(
-      userId,
-      formData,
-      queueType,
-      finalHashTagPresetId
-    );
   }
 
   if (_action === "publish") {

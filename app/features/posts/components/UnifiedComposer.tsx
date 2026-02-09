@@ -3,7 +3,7 @@
  * Replaces Text/Media tabs with a single note editor and attachments strip.
  */
 
-import { useFetcher, Link } from "@remix-run/react";
+import { useFetcher, Link, useNavigate } from "@remix-run/react";
 import { ChevronDown, Clock, FolderOpen, Pencil, Send } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { Controller } from "react-hook-form";
@@ -29,7 +29,10 @@ import { nowMillis, parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
-import { useComposerAutosave } from "../hooks/useComposerAutosave";
+import {
+  useComposerLocalDraft,
+  type ComposerLocalSnapshot,
+} from "../hooks/useComposerLocalDraft";
 import { useComposerState } from "../hooks/useComposerState";
 import { usePostScheduling } from "../hooks/usePostScheduling";
 import type { QueueType, ComposerAttachment } from "../types";
@@ -52,6 +55,7 @@ import {
 import { AlsoScheduleBlock } from "./AlsoScheduleBlock";
 import { AttachmentsStrip } from "./AttachmentsStrip";
 import { ConfidencePanel } from "./ConfidencePanel";
+import { DraftPickerModal } from "./DraftPickerModal";
 import type { ComposerStatus } from "./NewPostHeader";
 import { QueueSelector } from "./QueueSelector";
 import { SchedulingSection } from "./SchedulingSection";
@@ -220,6 +224,21 @@ export interface UnifiedComposerProps {
   relayCount?: number;
   /** Called when composer status changes (for header status pill). */
   onComposerStatusChange?: (status: ComposerStatus) => void;
+  /** When opening an existing draft from URL, pass its id so "Save as Draft" updates this draft. */
+  initialDraftId?: string | null;
+  /** Draft data to prefill the composer (when opening from drafts). Requires initialDraftId. */
+  initialDraft?: {
+    content: string;
+    caption: string;
+    fileUrl: string[];
+    queueType: string;
+    queueTypeId: string | null;
+    tags: string;
+    draftMeta: {
+      attachmentMeta?: Array<{ localId: string; url: string; alt?: string }>;
+    } | null;
+    hashTagPresetId: string | null;
+  } | null;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -233,8 +252,12 @@ export function UnifiedComposer({
   relayOverride,
   relayCount: relayCountProp = 0,
   onComposerStatusChange,
+  initialDraftId = null,
+  initialDraft = null,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
+  const navigate = useNavigate();
+  const [draftPickerOpen, setDraftPickerOpen] = React.useState(false);
   const user = useOptionalUser();
   const [isSigning, setIsSigning] = React.useState(false);
   const [signingError, setSigningError] = React.useState<string | null>(null);
@@ -261,9 +284,21 @@ export function UnifiedComposer({
   }, []);
   const tags: string[] = [];
   const [showAssetBrowser, setShowAssetBrowser] = React.useState(false);
-  const [selectedHashtags, setSelectedHashtags] = React.useState("");
+  const [selectedHashtags, setSelectedHashtags] = React.useState(
+    () => initialDraft?.tags ?? ""
+  );
+  const initialAttachmentsFromDraft = React.useMemo(() => {
+    if (!initialDraft?.draftMeta?.attachmentMeta?.length) return [];
+    return initialDraft.draftMeta.attachmentMeta.map((a) => ({
+      localId: a.localId,
+      url: a.url,
+      status: "done" as const,
+      alt: a.alt,
+    }));
+  }, [initialDraft?.draftMeta?.attachmentMeta]);
+
   const [attachments, setAttachments] = React.useState<ComposerAttachment[]>(
-    []
+    () => initialAttachmentsFromDraft
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [alsoScheduleRepost, setAlsoScheduleRepost] = React.useState(false);
@@ -289,12 +324,13 @@ export function UnifiedComposer({
 
   const form = useZodForm(textPostClientSchema, {
     defaultValues: {
-      content: "",
+      content: initialDraft?.content ?? "",
       scheduledFor: "",
-      queueType: "unassigned",
+      queueType: initialDraft?.queueType ?? "unassigned",
       isRecyclable: false,
-      useHashtagPresets: false,
-      hashTagPresetId: selectedHashTagPresetId ?? undefined,
+      useHashtagPresets: !!initialDraft?.hashTagPresetId,
+      hashTagPresetId:
+        initialDraft?.hashTagPresetId ?? selectedHashTagPresetId ?? undefined,
     },
   });
 
@@ -313,9 +349,40 @@ export function UnifiedComposer({
     queueTypes,
     scheduleIntervals: user?.scheduleInterval as number[] | undefined,
     userTimezone: user?.timezone ?? undefined,
-    initialQueue: "unassigned",
+    initialQueue: initialDraft?.queueType ?? "unassigned",
     onQueueTypeChange,
   });
+
+  const {
+    restored: localRestored,
+    saveSnapshot: saveLocalSnapshot,
+    clearSnapshot: clearLocalSnapshot,
+  } = useComposerLocalDraft("composer-newpost-draft", !!initialDraftId);
+
+  const appliedLocalRestoredRef = useRef(false);
+  React.useEffect(() => {
+    if (!localRestored || initialDraftId || appliedLocalRestoredRef.current)
+      return;
+    appliedLocalRestoredRef.current = true;
+    form.reset({
+      content: localRestored.content,
+      scheduledFor: localRestored.scheduledFor,
+      queueType: localRestored.queueType,
+      isRecyclable: false,
+      useHashtagPresets: !!localRestored.hashTagPresetId,
+      hashTagPresetId: localRestored.hashTagPresetId ?? undefined,
+    });
+    setSelectedHashtags(localRestored.tags);
+    setAttachments(
+      localRestored.attachmentMeta.map((a) => ({
+        localId: a.localId,
+        url: a.url,
+        status: "done" as const,
+        alt: a.alt,
+      }))
+    );
+    setSelectedQueue(localRestored.queueType);
+  }, [localRestored, initialDraftId, form, setSelectedQueue]);
 
   React.useEffect(() => {
     form.setValue("queueType", selectedQueue);
@@ -334,20 +401,33 @@ export function UnifiedComposer({
   const queueTypeId =
     typeof selectedQueueType === "object" ? selectedQueueType.id : null;
 
-  const autosavePayload = {
-    content: content ?? "", // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- form.watch can be undefined
-    attachments,
-    queueType: selectedQueue,
+  // Persist to localStorage when not editing a server draft
+  React.useEffect(() => {
+    if (initialDraftId) return;
+    const snapshot: Omit<ComposerLocalSnapshot, "savedAt"> = {
+      content: content ?? "", // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- form state can be undefined
+      queueType: selectedQueue,
+      queueTypeId,
+
+      scheduledFor: formScheduledFor ?? "",
+      tags: selectedHashtags,
+      hashTagPresetId: formSelectedHashtagPresetId ?? null,
+      attachmentMeta: attachments
+        .filter((a): a is typeof a & { url: string } => Boolean(a.url))
+        .map((a) => ({ localId: a.localId, url: a.url, alt: a.alt })),
+    };
+    saveLocalSnapshot(snapshot);
+  }, [
+    initialDraftId,
+    content,
+    selectedQueue,
     queueTypeId,
-    scheduledFor: formScheduledFor ?? "",
-    tags: selectedHashtags,
-    hashTagPresetId: formSelectedHashtagPresetId ?? null,
-  };
-  const {
-    lastSavedAt,
-    saving: autosaveSaving,
-    draftId,
-  } = useComposerAutosave(autosavePayload);
+    formScheduledFor,
+    selectedHashtags,
+    formSelectedHashtagPresetId,
+    attachments,
+    saveLocalSnapshot,
+  ]);
 
   const hasContent = isThreadMode
     ? threadSegments.some(
@@ -434,8 +514,9 @@ export function UnifiedComposer({
     const submitType = submitter?.value ?? "";
 
     if (submitType === "draft-text") {
+      clearLocalSnapshot();
       const formData = new FormData();
-      formData.set("_action", "autosave-draft");
+      formData.set("_action", "save-draft");
       formData.set("content", data.content);
       formData.set("queueType", data.queueType);
       if (queueTypeId) formData.set("queueTypeId", queueTypeId);
@@ -443,7 +524,7 @@ export function UnifiedComposer({
       formData.set("tags", selectedHashtags);
       if (data.hashTagPresetId)
         formData.set("hashTagPresetId", data.hashTagPresetId);
-      if (draftId) formData.set("draftId", draftId);
+      if (initialDraftId) formData.set("draftId", initialDraftId);
       if (relayOverride && relayOverride.length > 0) {
         formData.set("relays", JSON.stringify(relayOverride));
       }
@@ -1268,22 +1349,38 @@ export function UnifiedComposer({
                     rows={6}
                     disabled={disabled}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAssetBrowser(true)}
-                    disabled={disabled}
-                    className="absolute top-4 right-4"
-                    aria-label="Insert from assets"
-                  >
-                    <FolderOpen
-                      className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-                      strokeWidth={INLINE_ICON_STROKE}
-                      aria-hidden
-                    />
-                    Assets
-                  </Button>
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDraftPickerOpen(true)}
+                      disabled={disabled}
+                      aria-label="Open draft"
+                    >
+                      <FolderOpen
+                        className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                      Open draft
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAssetBrowser(true)}
+                      disabled={disabled}
+                      aria-label="Insert from assets"
+                    >
+                      <FolderOpen
+                        className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                      Assets
+                    </Button>
+                  </div>
                 </div>
                 <AttachmentsStrip
                   attachments={attachments}
@@ -1303,23 +1400,6 @@ export function UnifiedComposer({
                 ) : null}
                 <div className="text-muted-foreground mt-2 flex items-center justify-between text-sm">
                   <span>{content.length}/5000</span>
-                  {autosaveSaving ? (
-                    <span>Saving…</span>
-                  ) : lastSavedAt ? (
-                    <span>
-                      Saved •{" "}
-                      {lastSavedAt.getTime() > Date.now() - 60_000
-                        ? `${Math.round((Date.now() - lastSavedAt.getTime()) / 1000)}s ago`
-                        : new Intl.RelativeTimeFormat(undefined, {
-                            style: "short",
-                          }).format(
-                            -Math.floor(
-                              (Date.now() - lastSavedAt.getTime()) / 60_000
-                            ),
-                            "minute"
-                          )}
-                    </span>
-                  ) : null}
                 </div>
               </div>
             </>
@@ -1691,6 +1771,12 @@ export function UnifiedComposer({
             (formScheduledFor ?? schedulingScheduledFor).trim()
           )
         }
+      />
+      <DraftPickerModal
+        open={draftPickerOpen}
+        onClose={() => setDraftPickerOpen(false)}
+        type="short"
+        onSelect={(id) => navigate(`/dashboard/newpost?draftId=${id}`)}
       />
     </div>
   );

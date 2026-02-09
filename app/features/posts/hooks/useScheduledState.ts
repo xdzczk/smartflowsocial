@@ -7,6 +7,7 @@ import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 import type { CombinedContent, LongFormPostData, PostData } from "../types";
 
 import { dashboardKeys } from "./useDashboardQuery";
+import { draftsKeys } from "./useDraftsQuery";
 import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 // Union type for posts that can be edited/rescheduled
 type EditablePost = PostData | LongFormPostData;
@@ -280,13 +281,23 @@ export function useScheduledState({
     }
   }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, queryClient]);
 
-  // Handle individual delete fetcher
+  // Handle individual delete / move-to-draft fetcher
   useEffect(() => {
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- fetcher data type narrows at runtime */
     if (deleteFetcher.state === "idle" && deleteFetcher.data) {
-      // Invalidate both scheduled and dashboard queries to ensure consistency
       void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
       void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+      // When moving to drafts, refresh drafts list
+      if (
+        typeof deleteFetcher.data === "object" &&
+        deleteFetcher.data !== null &&
+        "moved" in deleteFetcher.data &&
+        (deleteFetcher.data as { moved?: boolean }).moved
+      ) {
+        void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
+      }
     }
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
   }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
 
   const handleMediaClick = (mediaSrc: string) => {

@@ -280,6 +280,11 @@ export function useDraftsInfiniteData() {
       user: null as UserData | null,
       queueTypes: [] as QueueType[],
       selectedQueueType: "all",
+      bulkDraftGroups: [] as Array<{
+        id: string;
+        postCount: number;
+        updatedAt: string;
+      }>,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -337,6 +342,11 @@ export function useDraftsInfiniteData() {
       user: null as UserData | null,
       queueTypes: [] as QueueType[],
       selectedQueueType: "all",
+      bulkDraftGroups: [] as Array<{
+        id: string;
+        postCount: number;
+        updatedAt: string;
+      }>,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -414,6 +424,18 @@ export function useDraftsInfiniteData() {
   const selectedQueueType =
     typeof selectedQueueTypeRaw === "string" ? selectedQueueTypeRaw : "all";
 
+  const bulkDraftGroupsRaw =
+    "bulkDraftGroups" in lastPage && Array.isArray(lastPage.bulkDraftGroups)
+      ? lastPage.bulkDraftGroups
+      : [];
+  const bulkDraftGroups = bulkDraftGroupsRaw.map(
+    (g: { id: string; postCount: number; updatedAt: string }) => ({
+      id: g.id,
+      postCount: g.postCount,
+      updatedAt: g.updatedAt,
+    })
+  );
+
   return {
     posts: allPosts,
     longformPosts: allLongformPosts,
@@ -421,6 +443,7 @@ export function useDraftsInfiniteData() {
     user: userRaw,
     queueTypes,
     selectedQueueType,
+    bulkDraftGroups,
     isLoading,
     isFetchingNextPage,
     hasNextPage,

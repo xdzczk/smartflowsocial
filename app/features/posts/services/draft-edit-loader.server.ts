@@ -15,6 +15,8 @@ import { deriveIsDraft } from "../state-machine/post-state";
 import type { PostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
+import { getDraftVersions } from "./draft-version.server";
+
 /**
  * Load draft edit data
  */
@@ -57,10 +59,13 @@ export async function loadDraftEditData(userId: string, postId: string) {
 
   const postDTO: PostDTO = toPostDTO(postData);
 
+  const versions = await getDraftVersions(postId, null);
+
   return {
     post: postDTO,
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     hashTagPresets,
+    versions,
   };
 }

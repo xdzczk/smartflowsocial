@@ -154,6 +154,8 @@ export async function getDraftPosts({
     // Use currentState as single source of truth
     currentState: "DRAFT",
     userId: userId,
+    // Exclude posts that belong to a bulk draft group (they appear under Bulk tab)
+    draftGroupId: null,
   };
 
   // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)

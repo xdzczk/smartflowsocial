@@ -98,11 +98,14 @@ function getCreatedAtTimestamp(eventsData: unknown): number {
 interface PostConfirmationProps {
   preparedEvents: PreparedEvent[];
   postsCount: number;
+  /** When editing a bulk draft group, pass so save-as-draft updates that group */
+  groupId?: string | null;
 }
 
 export default function PostConfirmation({
   preparedEvents,
   postsCount,
+  groupId = null,
 }: PostConfirmationProps) {
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state !== "idle";
@@ -220,12 +223,21 @@ export default function PostConfirmation({
       finalFormData.append("caption", JSON.stringify(eventData.caption));
       finalFormData.append("queueType", eventData.queueType);
       finalFormData.append(
+        "scheduledFor",
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for event payload
+        eventData.scheduledFor != null ? String(eventData.scheduledFor) : ""
+      );
+      finalFormData.append(
         "isRecyclable",
         eventData.isRecyclable ? "true" : "false"
       );
+
       finalFormData.append("originalPostId", eventData.originalPostId ?? "");
     });
     finalFormData.append("_action", "save_as_draft");
+    if (groupId) {
+      finalFormData.append("groupId", groupId);
+    }
 
     // Preserve the current URL's search params (including mode=recycle)
     const currentUrl = new URL(window.location.href);

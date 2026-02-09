@@ -12,6 +12,7 @@ import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import { longformPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
+import { useLocalDraft } from "../hooks/useComposerLocalDraft";
 import { useLongFormSubmission } from "../hooks/useLongFormSubmission";
 import type { LongformQuoteEntry } from "../hooks/useLongFormSubmission";
 import { useCoverImageUpload } from "../useCoverImageUpload";
@@ -93,10 +94,7 @@ export default function LongFormPost({
   onHashtagPresetChange,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
-  const autosaveFetcher = useFetcher();
   const [showAssetBrowser, setShowAssetBrowser] = useState("");
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [autosaveError, setAutosaveError] = useState<string | null>(null);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>(() => [
     {
@@ -176,6 +174,86 @@ export default function LongFormPost({
     initialQueueType: initialData?.queueType?.name ?? "unassigned",
     onQueueTypeChange,
   });
+
+  const longformDraftKey =
+    initialData?.id != null
+      ? `longform-draft-${initialData.id}`
+      : "longform-draft-new";
+  const {
+    restored: longformRestored,
+    saveSnapshot: saveLongformSnapshot,
+    clearSnapshot: clearLongformSnapshot,
+  } = useLocalDraft<{
+    title: string;
+    summary: string;
+    content: string;
+    image: string;
+    customTags: string;
+    queueType: string;
+    savedAt: number;
+  }>(longformDraftKey, !!initialData, 2000);
+
+  const appliedLongformRestoredRef = useRef(false);
+  useEffect(() => {
+    if (!longformRestored || initialData || appliedLongformRestoredRef.current)
+      return;
+    appliedLongformRestoredRef.current = true;
+    form.reset({
+      title: longformRestored.title,
+      summary: longformRestored.summary,
+      content: longformRestored.content,
+      customTags: longformRestored.customTags,
+      scheduledFor: "",
+      queueType: longformRestored.queueType,
+      useHashtagPresets: false,
+      hashTagPresetId: undefined,
+    });
+    setCoverImage(longformRestored.image || "");
+    if (editorReady && editor && longformRestored.content) {
+      loadInitialData(longformRestored.content);
+    }
+    setSchedulingScheduledFor("");
+    void updateDisplayedHashtags(longformRestored.queueType);
+  }, [
+    longformRestored,
+    initialData,
+    form,
+    editorReady,
+    editor,
+    loadInitialData,
+    setCoverImage,
+    setSchedulingScheduledFor,
+    updateDisplayedHashtags,
+  ]);
+
+  useEffect(() => {
+    if (initialData) return;
+    saveLongformSnapshot({
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- form state can be undefined */
+      title: title ?? "",
+      summary: summary ?? "",
+      content: content ?? "",
+      image: image ?? "",
+      customTags: customTags ?? "",
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      queueType: schedulingQueueType,
+    });
+  }, [
+    initialData,
+    title,
+    summary,
+    content,
+    image,
+    customTags,
+    schedulingQueueType,
+    saveLongformSnapshot,
+  ]);
+
+  useEffect(() => {
+    if (fetcher.state === "submitting" && !initialData) {
+      clearLongformSnapshot();
+    }
+  }, [fetcher.state, initialData, clearLongformSnapshot]);
 
   // Sync scheduling hook with form
   useEffect(() => {
@@ -268,69 +346,6 @@ export default function LongFormPost({
       form.setValue("summary", generatedSummary);
     }
   };
-
-  // Autosave: debounce 2.5s after title, summary, content, or image change (new page only)
-  const autosavePendingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (_isEditing) return;
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- form.watch() can be undefined before first sync; ?? "" for .trim() and FormData.set() */
-    const t = (title ?? "").trim();
-    const c = (content ?? "").trim();
-    if (!t || !c) return;
-    if (autosavePendingRef.current) clearTimeout(autosavePendingRef.current);
-    autosavePendingRef.current = setTimeout(() => {
-      autosavePendingRef.current = null;
-      if (autosaveFetcher.state !== "idle") return;
-      flushSync(); // ensure form has latest markdown before building FormData
-      const fd = new FormData();
-      fd.set("_action", "autosave-draft");
-      // Read form values after flush so content is current
-      const currentTitle = form.getValues("title");
-      const currentContent = form.getValues("content");
-      const currentSummary = form.getValues("summary");
-      fd.set("title", currentTitle ?? "");
-      fd.set("content", currentContent ?? "");
-      fd.set("summary", currentSummary ?? "");
-      fd.set("image", image ?? "");
-      fd.set("customTags", form.getValues("customTags") ?? "");
-      fd.set("queueType", selectedQueueType);
-      fd.set("useHashtagPresets", useHashtagPresets ? "true" : "false");
-      fd.set("hashTagPresetId", selectedHashtagPresetId ?? "");
-      autosaveFetcher.submit(fd, { method: "post" });
-    }, 2500);
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-    return () => {
-      if (autosavePendingRef.current) clearTimeout(autosavePendingRef.current);
-    };
-    // Omit autosaveFetcher: Remix useFetcher() returns a stable reference; including it would not change behavior but could trigger unnecessary effect runs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional omit of stable autosaveFetcher
-  }, [
-    _isEditing,
-    title,
-    summary,
-    content,
-    image,
-    customTags,
-    selectedQueueType,
-    useHashtagPresets,
-    selectedHashtagPresetId,
-    flushSync,
-  ]);
-
-  // React to autosave result (defer setState to avoid synchronous setState in effect)
-  useEffect(() => {
-    if (autosaveFetcher.state !== "idle" || !autosaveFetcher.data) return;
-    const data = autosaveFetcher.data as { success?: boolean; error?: string };
-    const run = () => {
-      if (data.success) {
-        setLastSavedAt(new Date());
-        setAutosaveError(null);
-      } else {
-        setAutosaveError(data.error ?? "Couldn't save draft");
-      }
-    };
-    queueMicrotask(run);
-  }, [autosaveFetcher.state, autosaveFetcher.data]);
 
   const { handleSchedule, isSigning, signingError } = useLongFormSubmission({
     /* eslint-disable @typescript-eslint/no-unnecessary-condition -- useLongFormSubmission expects string; form.watch() may be undefined */
@@ -483,8 +498,6 @@ export default function LongFormPost({
                     })()
                   : undefined
               }
-              lastSavedAt={lastSavedAt}
-              autosaveError={autosaveError}
               wordCount={wordCount}
               isSigning={isSigning}
               onPreview={() => {

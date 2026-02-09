@@ -13,7 +13,12 @@ export async function loader({ request }: { request: Request }) {
 
     // Check if user has access to bulk scheduling feature
     await requireFeatureAccess(userId, "bulkScheduling");
-    const data = await getBulkPostsDashboardData(userId);
+    const url = new URL(request.url);
+    const groupId = url.searchParams.get("groupId");
+    const data = await getBulkPostsDashboardData(
+      userId,
+      groupId && groupId.length > 0 ? groupId : null
+    );
 
     return json(data);
   } catch (error) {

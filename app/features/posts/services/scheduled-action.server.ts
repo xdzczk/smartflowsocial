@@ -17,6 +17,8 @@ import {
 import { getPostById } from "~/models/post.queries.server";
 
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
+import { MoveScheduledLongFormToDraftUseCase } from "../use-cases/move-scheduled-longform-to-draft.use-case.server";
+import { MoveScheduledToDraftUseCase } from "../use-cases/move-scheduled-to-draft.use-case.server";
 
 export async function handleScheduledAction(
   formData: FormData,
@@ -28,6 +30,7 @@ export async function handleScheduledAction(
       deleted?: boolean;
       deletedCount?: number;
       postId?: string;
+      moved?: boolean;
     }
 > {
   const result = validateFormDataOrRespond(formData, scheduledActionSchema);
@@ -43,6 +46,18 @@ export async function handleScheduledAction(
 
   if (_action === "scheduleQuote") {
     return handleScheduleQuote(result.data, userId);
+  }
+
+  if (_action === "moveToDraft") {
+    const moveUseCase =
+      result.data.type === "longform"
+        ? new MoveScheduledLongFormToDraftUseCase()
+        : new MoveScheduledToDraftUseCase();
+    const { moved } = await moveUseCase.execute({
+      postId: result.data.postId,
+      userId,
+    });
+    return { success: true, moved };
   }
 
   if (_action === "delete") {

@@ -198,6 +198,7 @@ export function ContentTableRow({
   );
 }
 
+/* eslint-disable sonarjs/cognitive-complexity -- Row actions menu: many action branches by design */
 function ContentRowActions({
   item,
   type,
@@ -436,6 +437,26 @@ function ContentRowActions({
                 Schedule quote
               </DropdownMenuItem>
             ) : null}
+            <DropdownMenuSeparator />
+            <deleteFetcher.Form method="post">
+              <input type="hidden" name="postId" value={item.id} />
+              <input type="hidden" name="_action" value="moveToDraft" />
+              <input
+                type="hidden"
+                name="type"
+                value={item.type === "post" ? "post" : "longform"}
+              />
+              <DropdownMenuItem asChild>
+                <button type="submit" disabled={deleteFetcher.state !== "idle"}>
+                  {deleteFetcher.state !== "idle" &&
+                  deleteFetcher.formData?.get("_action") === "moveToDraft" &&
+                  (deleteFetcher.formData.get("postId") as string | null) ===
+                    item.id
+                    ? "Moving..."
+                    : "Move to drafts"}
+                </button>
+              </DropdownMenuItem>
+            </deleteFetcher.Form>
           </>
         ) : null}
         <DropdownMenuSeparator />
@@ -464,5 +485,5 @@ function ContentRowActions({
         </deleteFetcher.Form>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  ); /* eslint-enable sonarjs/cognitive-complexity */
 }

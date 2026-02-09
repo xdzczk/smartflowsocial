@@ -446,6 +446,32 @@ export function ScheduledPostsTable({
                         <DropdownMenuSeparator />
                         <deleteFetcher.Form method="post">
                           <input type="hidden" name="postId" value={post.id} />
+                          <input
+                            type="hidden"
+                            name="_action"
+                            value="moveToDraft"
+                          />
+                          <input type="hidden" name="type" value="post" />
+                          <DropdownMenuItem asChild>
+                            <button
+                              type="submit"
+                              disabled={
+                                deleteFetcher.state !== "idle" ||
+                                bulkDeleteState !== "idle"
+                              }
+                            >
+                              {deleteFetcher.state !== "idle" &&
+                              deleteFetcher.formData?.get("_action") ===
+                                "moveToDraft" &&
+                              /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
+                              deleteFetcher.formData?.get("postId") === post.id
+                                ? "Moving..."
+                                : "Move to drafts"}
+                            </button>
+                          </DropdownMenuItem>
+                        </deleteFetcher.Form>
+                        <deleteFetcher.Form method="post">
+                          <input type="hidden" name="postId" value={post.id} />
                           <input type="hidden" name="_action" value="delete" />
                           <DropdownMenuItem asChild>
                             <button
