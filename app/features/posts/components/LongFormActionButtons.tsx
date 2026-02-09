@@ -21,6 +21,8 @@ interface LongFormActionButtonsProps {
   onPreview: () => void;
   onSchedule: () => void;
   onPublish: () => void;
+  /** When provided, Save Draft uses this instead of form submit (so Tiptap content is included) */
+  onSaveDraft?: () => void;
 }
 
 function formatScheduleLabel(scheduledFor: string): string {
@@ -53,6 +55,7 @@ export function LongFormActionButtons({
   onPreview,
   onSchedule,
   onPublish,
+  onSaveDraft,
 }: LongFormActionButtonsProps) {
   const isDisabled = fetcherState !== "idle" || !isFormValid || isSigning;
   const scheduleLabel =
@@ -76,12 +79,13 @@ export function LongFormActionButtons({
       ) : null}
       <div className="flex w-full flex-col gap-3 sm:flex-row">
         <Button
-          type="submit"
-          name="_action"
-          value="save-draft"
+          type={onSaveDraft ? "button" : "submit"}
+          name={onSaveDraft ? undefined : "_action"}
+          value={onSaveDraft ? undefined : "save-draft"}
           variant="outline"
           disabled={isDisabled}
           className="border-border dark:border-border flex-1 sm:min-w-[140px] sm:flex-none"
+          onClick={onSaveDraft}
         >
           {fetcherState !== "idle" ? "Saving..." : "Save Draft"}
         </Button>
