@@ -23,6 +23,8 @@ interface LongFormActionButtonsProps {
   onPublish: () => void;
   /** When provided, Save Draft uses this instead of form submit (so Tiptap content is included) */
   onSaveDraft?: () => void;
+  /** When provided, used only for Save Draft button (e.g. allow save without cover image). Otherwise same as general disabled. */
+  saveDraftDisabled?: boolean;
 }
 
 function formatScheduleLabel(scheduledFor: string): string {
@@ -56,8 +58,10 @@ export function LongFormActionButtons({
   onSchedule,
   onPublish,
   onSaveDraft,
+  saveDraftDisabled,
 }: LongFormActionButtonsProps) {
   const isDisabled = fetcherState !== "idle" || !isFormValid || isSigning;
+  const isSaveDraftDisabled = saveDraftDisabled ?? isDisabled;
   const scheduleLabel =
     hasScheduledFor && scheduledFor
       ? formatScheduleLabel(scheduledFor)
@@ -83,7 +87,7 @@ export function LongFormActionButtons({
           name={onSaveDraft ? undefined : "_action"}
           value={onSaveDraft ? undefined : "save-draft"}
           variant="outline"
-          disabled={isDisabled}
+          disabled={isSaveDraftDisabled}
           className="border-border dark:border-border flex-1 sm:min-w-[140px] sm:flex-none"
           onClick={onSaveDraft}
         >

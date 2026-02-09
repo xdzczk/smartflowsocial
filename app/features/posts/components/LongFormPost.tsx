@@ -235,6 +235,24 @@ export default function LongFormPost({
     updateDisplayedHashtags,
   ]);
 
+  // When editor mounts after we already applied restored snapshot, load form content into editor (once)
+  const editorRestoreLoadedRef = useRef(false);
+  useEffect(() => {
+    if (
+      initialData ||
+      !editorReady ||
+      !editor ||
+      !appliedLongformRestoredRef.current ||
+      editorRestoreLoadedRef.current
+    )
+      return;
+    const formContent = form.getValues("content");
+    if (formContent && typeof formContent === "string") {
+      editorRestoreLoadedRef.current = true;
+      loadInitialData(formContent);
+    }
+  }, [initialData, editorReady, editor, form, loadInitialData]);
+
   useEffect(() => {
     if (initialData) return;
     const snapshot = {
@@ -260,12 +278,21 @@ export default function LongFormPost({
     saveLongformSnapshot,
   ]);
 
-  // Flush localStorage on unmount and when page is hidden so content is not lost when navigating away
+  // Flush localStorage on unmount and when page is hidden; use current state at flush time so last keystroke is not lost
   useEffect(() => {
     if (initialData) return;
     const flush = () => {
-      const snap = lastLongformSnapshotRef.current;
-      if (snap) flushLongformSnapshot(snap);
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- snapshot fields must be string for JSON; form.watch() can be undefined */
+      const snap = {
+        title: title ?? "",
+        summary: summary ?? "",
+        content: content ?? "",
+        image: image ?? "",
+        customTags: customTags ?? "",
+        queueType: schedulingQueueType,
+      };
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      flushLongformSnapshot(snap);
     };
     const onHide = () => flush();
     document.addEventListener("visibilitychange", onHide);
@@ -273,7 +300,16 @@ export default function LongFormPost({
       document.removeEventListener("visibilitychange", onHide);
       flush();
     };
-  }, [initialData, flushLongformSnapshot]);
+  }, [
+    initialData,
+    flushLongformSnapshot,
+    title,
+    summary,
+    content,
+    image,
+    customTags,
+    schedulingQueueType,
+  ]);
 
   useEffect(() => {
     if (fetcher.state === "submitting" && !initialData) {
@@ -288,16 +324,22 @@ export default function LongFormPost({
     form.setValue("queueType", schedulingQueueType);
   }, [schedulingQueueType, form]);
 
+  const scheduledForJustSetFromHookRef = useRef(false);
   useEffect(() => {
     if (schedulingScheduledFor) {
+      scheduledForJustSetFromHookRef.current = true;
       form.setValue("scheduledFor", schedulingScheduledFor);
     }
   }, [schedulingScheduledFor, form]);
 
-  // Sync form with scheduling hook
+  // Sync form with scheduling hook (only when user changed the input, not when we just set form from hook)
   const formScheduledFor = form.watch("scheduledFor");
   const formQueueType = form.watch("queueType");
   useEffect(() => {
+    if (scheduledForJustSetFromHookRef.current) {
+      scheduledForJustSetFromHookRef.current = false;
+      return;
+    }
     if (formScheduledFor !== schedulingScheduledFor) {
       setSchedulingScheduledFor(formScheduledFor ?? null);
     }
@@ -526,6 +568,11 @@ export default function LongFormPost({
               scheduledFor={scheduledFor}
               statusLabel={scheduledFor ? undefined : "Draft"}
               onSaveDraft={!initialData ? handleSaveDraft : undefined}
+              saveDraftDisabled={
+                !initialData
+                  ? fetcher.state !== "idle" || !content.trim() || isSigning
+                  : undefined
+              }
               scheduledForLabel={
                 scheduledFor
                   ? (() => {
