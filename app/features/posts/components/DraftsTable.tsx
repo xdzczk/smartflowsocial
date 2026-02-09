@@ -27,7 +27,7 @@ import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { formatForDisplay, fromISOString } from "~/lib/temporal";
 
 import { postToCombinedContent } from "../combined";
-import { getQueueColor } from "../queue-colors";
+import { getQueueColor, getQueueColorBundle } from "../queue-colors";
 import type { PostData } from "../types";
 
 import {
@@ -41,7 +41,11 @@ interface Post {
   caption?: string | null;
   createdAt: string;
   fileUrl?: string[] | null;
-  queueType?: { name: string; color?: string | null } | null;
+  queueType?: {
+    name: string;
+    color?: string | null;
+    colorToken?: string | null;
+  } | null;
 }
 
 interface DraftsTableProps {
@@ -270,26 +274,32 @@ export function DraftsTable({
                   </td>
                   <td className="p-3">{formatDate(post.createdAt)}</td>
                   <td className="p-3 text-center">
-                    {post.queueType?.color ? (
-                      <div
-                        className="inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
-                        style={{
-                          backgroundColor: `${post.queueType.color}20`,
-                          color: post.queueType.color,
-                          borderColor: post.queueType.color,
-                        }}
-                      >
-                        {post.queueType.name || "unassigned"}
-                      </div>
+                    {post.queueType?.colorToken ? (
+                      (() => {
+                        const bundle = getQueueColorBundle(
+                          post.queueType.colorToken
+                        );
+                        return (
+                          <div
+                            className="inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
+                            style={{
+                              backgroundColor: bundle.surface,
+                              color: bundle.accent,
+                              borderColor: bundle.accent,
+                            }}
+                          >
+                            {post.queueType.name || "unassigned"}
+                          </div>
+                        );
+                      })()
                     ) : (
                       <div
                         className={`inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold ${(() => {
                           const colors = getQueueColor(
-                            post.queueType?.name ?? "unassigned"
+                            post.queueType?.name ?? "unassigned",
+                            post.queueType?.colorToken
                           );
-                          return colors
-                            ? `${colors.bg} ${colors.text} ${colors.border}`
-                            : "";
+                          return `${colors.bg} ${colors.text} ${colors.border}`;
                         })()} shadow-sm`}
                       >
                         {post.queueType?.name ?? "unassigned"}

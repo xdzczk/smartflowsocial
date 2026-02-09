@@ -30,6 +30,7 @@ import { queueTypeClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
 import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
+import { QUEUE_COLOR_ACCENTS, QUEUE_COLOR_TOKENS } from "../queue-colors";
 import type { QueueType } from "../types";
 import {
   isIntervalScheduleConfig,
@@ -99,10 +100,11 @@ export function QueueTypeDialog({
   const getDefaultValues = () => {
     if (queueType) {
       const scheduleConfig = queueType.scheduleConfig;
+      const qt = queueType as QueueType & { colorToken?: string | null };
       return {
         name: queueType.name,
         description: queueType.description ?? "",
-        color: queueType.color ?? "#3B82F6",
+        colorToken: qt.colorToken ?? "slate",
         hashTagPresetId: queueType.hashTagPresetId ?? "none",
         scheduleType: queueType.scheduleType ?? "INTERVAL",
         isEnabled: queueType.isEnabled ?? false,
@@ -127,7 +129,7 @@ export function QueueTypeDialog({
     return {
       name: "",
       description: "",
-      color: "#3B82F6",
+      colorToken: "slate" as const,
       hashTagPresetId: "none",
       scheduleType: "INTERVAL" as const,
       isEnabled: false,
@@ -141,7 +143,7 @@ export function QueueTypeDialog({
   };
 
   const form = useZodForm(queueTypeClientSchema, {
-    defaultValues: getDefaultValues(),
+    defaultValues: getDefaultValues() as z.infer<typeof queueTypeClientSchema>,
   });
 
   const { fields, append, remove } = useZodFieldArray<
@@ -209,7 +211,7 @@ export function QueueTypeDialog({
     const submitData: Record<string, unknown> = {
       name: data.name,
       description: data.description ?? "",
-      color: data.color,
+      colorToken: data.colorToken,
       hashTagPresetId:
         data.hashTagPresetId === "none" || !data.hashTagPresetId
           ? "none"
@@ -283,13 +285,36 @@ export function QueueTypeDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="color">Color</Label>
-            <Input
-              id="color"
-              type="color"
-              {...form.register("color")}
-              className="h-10 w-full"
-            />
+            <Label>Queue color</Label>
+            <p className="text-muted-foreground text-xs">
+              Used to visually identify this queue across the app.
+            </p>
+            <div
+              className="grid grid-cols-6 gap-2"
+              role="group"
+              aria-label="Queue color"
+            >
+              {QUEUE_COLOR_TOKENS.map((token) => {
+                const isSelected = form.watch("colorToken") === token;
+                return (
+                  <button
+                    key={token}
+                    type="button"
+                    onClick={() => form.setValue("colorToken", token)}
+                    className="focus:ring-ring h-8 w-8 shrink-0 rounded-full border-2 transition-transform focus:ring-2 focus:ring-offset-2 focus:outline-none active:scale-95"
+                    style={{
+                      backgroundColor: QUEUE_COLOR_ACCENTS[token],
+                      borderColor: isSelected ? "var(--ring)" : "transparent",
+                      boxShadow: isSelected
+                        ? "0 0 0 2px hsl(var(--background))"
+                        : undefined,
+                    }}
+                    title={token}
+                    aria-pressed={isSelected}
+                  />
+                );
+              })}
+            </div>
           </div>
 
           <div className="space-y-2">

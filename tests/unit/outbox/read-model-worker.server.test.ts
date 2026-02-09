@@ -88,6 +88,7 @@ describe("Read Model Worker", () => {
           scheduledAtUtc: mockPost.scheduledAtUtc,
           queueTypeName: "posts",
           queueTypeColor: "#000000",
+          queueTypeColorToken: null,
         }),
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         update: expect.objectContaining({
@@ -95,6 +96,7 @@ describe("Read Model Worker", () => {
           scheduledAtUtc: mockPost.scheduledAtUtc,
           queueTypeName: "posts",
           queueTypeColor: "#000000",
+          queueTypeColorToken: null,
         }),
       });
     });
@@ -176,10 +178,12 @@ describe("Read Model Worker", () => {
           publishedAt: mockPost.publishedAt,
           queueTypeName: "posts",
           queueTypeColor: "#000000",
+          queueTypeColorToken: null,
         }),
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         update: expect.objectContaining({
           publishedAt: mockPost.publishedAt,
+          queueTypeColorToken: null,
         }),
       });
     });

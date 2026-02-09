@@ -63,6 +63,7 @@ describe("Post Data Conversion", () => {
       expect(result.queueType).toEqual({
         name: "Morning",
         color: "blue",
+        colorToken: null,
       });
     });
 
@@ -81,6 +82,7 @@ describe("Post Data Conversion", () => {
       expect(result.queueType).toEqual({
         name: "Morning",
         color: null,
+        colorToken: null,
       });
     });
 

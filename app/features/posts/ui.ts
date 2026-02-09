@@ -71,7 +71,7 @@ export {
 // Queue Type Utilities
 // ============================================================================
 
-export { getQueueColor } from "./queue-colors";
+export { getQueueColor, getQueueAccentHex } from "./queue-colors";
 
 // ============================================================================
 // Calendar Components

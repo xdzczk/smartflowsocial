@@ -1,6 +1,6 @@
 import { Link, useRevalidator } from "@remix-run/react";
 
-import { getQueueColor } from "../queue-colors";
+import { getQueueAccentHex, getQueueColor } from "../queue-colors";
 interface QueueType {
   name: string;
   color?: string | null;
@@ -38,10 +38,11 @@ export function RecyclablesQueueTabs({
         {queueTypes.map((queueType) => {
           const queueName =
             typeof queueType === "string" ? queueType : queueType.name;
-          const queueColor =
-            typeof queueType === "object" ? queueType.color : null;
-          const colors = getQueueColor(queueName, queueColor);
-          const safeColors = colors ?? getQueueColor("unassigned");
+          const colorToken =
+            typeof queueType === "object"
+              ? (queueType as { colorToken?: string | null }).colorToken
+              : null;
+          const colors = getQueueColor(queueName, colorToken);
           const isSelected = currentQueueType === queueName;
 
           const baseClasses =
@@ -49,8 +50,8 @@ export function RecyclablesQueueTabs({
           const unselectedClasses =
             "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
-          if (isSelected && queueColor) {
-            // Use inline styles for custom colors
+          if (isSelected && colorToken) {
+            const accentHex = getQueueAccentHex(colorToken);
             return (
               <Link
                 key={queueName}
@@ -59,17 +60,13 @@ export function RecyclablesQueueTabs({
                 onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                 className={`${baseClasses} border-b-2`}
                 style={{
-                  borderBottomColor: queueColor,
-                  color: queueColor,
+                  borderBottomColor: accentHex,
+                  color: accentHex,
                 }}
               >
                 {queueName}
               </Link>
             );
-          }
-
-          if (!safeColors) {
-            return null;
           }
 
           return (
@@ -80,7 +77,7 @@ export function RecyclablesQueueTabs({
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`${baseClasses} ${
                 isSelected
-                  ? `${safeColors.border.replace("border-", "border-b-")} ${safeColors.text}`
+                  ? `${colors.border.replace("border-", "border-b-")} ${colors.text}`
                   : unselectedClasses
               }`}
             >

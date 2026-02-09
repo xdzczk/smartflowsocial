@@ -7,7 +7,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 
-import { getDynamicQueueStyle } from "../queue-colors";
+import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 
 import type { BulkPost, QueueType } from "./BulkPostCard";
 
@@ -308,8 +308,14 @@ export default function BulkPostsTable({
                   {queueTypes.map((queue) => {
                     const queueName =
                       typeof queue === "string" ? queue : queue.name;
-                    const queueColor =
-                      typeof queue === "object" ? queue.color : null;
+                    const colorToken =
+                      typeof queue === "object"
+                        ? (queue as { colorToken?: string | null }).colorToken
+                        : null;
+                    const accent =
+                      colorToken != null
+                        ? getQueueAccentHex(colorToken)
+                        : undefined;
                     return (
                       <button
                         key={queueName}
@@ -317,10 +323,10 @@ export default function BulkPostsTable({
                         onClick={() => {
                           handleQueueTypeChange(index, queueName);
                         }}
-                        className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(queueColor ?? null, post.queueType === queueName)}`}
+                        className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, post.queueType === queueName)}`}
                         style={{
-                          backgroundColor: queueColor ?? undefined,
-                          borderColor: queueColor ?? undefined,
+                          backgroundColor: accent,
+                          borderColor: accent,
                         }}
                       >
                         {queueName}

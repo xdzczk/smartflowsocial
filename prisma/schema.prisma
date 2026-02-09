@@ -92,6 +92,7 @@ model QueueType {
   scheduleConfig  Json
   isEnabled       Boolean        @default(true)
   color           String?
+  colorToken      String?
   description     String?
   lastPostTime    DateTime?
   isDefault       Boolean        @default(false)
@@ -516,12 +517,13 @@ model ScheduledPostRead {
   postId          String   @unique
   caption         String?
   scheduledAtUtc  DateTime
-  queueTypeName   String
-  queueTypeColor  String?
-  hashTagPresetId String?
-  templateId      String?
-  createdAt       DateTime
-  updatedAt       DateTime
+  queueTypeName      String
+  queueTypeColor     String?
+  queueTypeColorToken String?
+  hashTagPresetId    String?
+  templateId         String?
+  createdAt          DateTime
+  updatedAt          DateTime
 
   @@index([userId, scheduledAtUtc])
   @@index([userId, queueTypeName])
@@ -535,11 +537,12 @@ model PublishedPostRead {
   postId          String   @unique
   caption         String?
   publishedAt     DateTime
-  queueTypeName   String
-  queueTypeColor  String?
-  engagementScore Int? // Pre-computed engagement (can be updated later)
-  createdAt       DateTime
-  updatedAt       DateTime
+  queueTypeName       String
+  queueTypeColor      String?
+  queueTypeColorToken String?
+  engagementScore     Int? // Pre-computed engagement (can be updated later)
+  createdAt           DateTime
+  updatedAt           DateTime
 
   @@index([userId, publishedAt])
   @@index([userId, queueTypeName])

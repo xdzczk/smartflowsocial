@@ -1,6 +1,9 @@
 import { Link, useRevalidator } from "@remix-run/react";
 
-import { getQueueColor } from "~/features/posts/queue-colors";
+import {
+  getQueueAccentHex,
+  getQueueColor,
+} from "~/features/posts/queue-colors";
 interface QueueType {
   id: string;
   name: string;
@@ -39,10 +42,11 @@ export function GiveawayQueueTabs({
         {queueTypes.map((queueType) => {
           const queueName =
             typeof queueType === "string" ? queueType : queueType.name;
-          const queueColor =
-            typeof queueType === "object" ? queueType.color : null;
-          const colors = getQueueColor(queueName, queueColor);
-          const safeColors = colors ?? getQueueColor("unassigned");
+          const colorToken =
+            typeof queueType === "object"
+              ? (queueType as { colorToken?: string | null }).colorToken
+              : null;
+          const colors = getQueueColor(queueName, colorToken);
           const isSelected = currentQueueType === queueName;
 
           const baseClasses =
@@ -50,8 +54,8 @@ export function GiveawayQueueTabs({
           const unselectedClasses =
             "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
-          if (isSelected && queueColor) {
-            // Use inline styles for custom colors
+          if (isSelected && colorToken) {
+            const accentHex = getQueueAccentHex(colorToken);
             return (
               <Link
                 key={typeof queueType === "object" ? queueType.id : queueName}
@@ -60,8 +64,8 @@ export function GiveawayQueueTabs({
                 onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                 className={`${baseClasses} border-b-2`}
                 style={{
-                  borderBottomColor: queueColor,
-                  color: queueColor,
+                  borderBottomColor: accentHex,
+                  color: accentHex,
                 }}
               >
                 {queueName}
@@ -77,7 +81,7 @@ export function GiveawayQueueTabs({
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`${baseClasses} ${
                 isSelected
-                  ? `dark:border-primary dark:text-primary border-border text-foreground ${safeColors?.text ?? ""}`
+                  ? `dark:border-primary dark:text-primary border-border text-foreground ${colors.text}`
                   : unselectedClasses
               }`}
             >

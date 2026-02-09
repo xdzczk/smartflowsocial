@@ -14,7 +14,7 @@ const ERROR_NPUB_REQUIRED = "All blacklist items must start with npub";
 const ERROR_NAME_REQUIRED = "Name is required";
 const ERROR_TAGS_REQUIRED = "Tags are required";
 const ERROR_ID_REQUIRED = "ID is required";
-const ERROR_COLOR_REQUIRED = "Color is required";
+const _ERROR_COLOR_TOKEN_REQUIRED = "Queue color is required";
 const ERROR_TIMEZONE_REQUIRED = "Timezone is required";
 const ERROR_SCHEDULE_INTERVAL_ALLOWED =
   "Schedule interval must be 0.25 (15 min), 0.5 (30 min), or a whole number of hours";
@@ -175,7 +175,22 @@ export const createQueueTypeSchema = z
   .object({
     name: z.string().trim().min(1, ERROR_NAME_REQUIRED),
     scheduleType: scheduleTypeSchema,
-    color: z.string().min(1, ERROR_COLOR_REQUIRED),
+    colorToken: z
+      .enum([
+        "slate",
+        "blue",
+        "cyan",
+        "teal",
+        "green",
+        "lime",
+        "amber",
+        "orange",
+        "red",
+        "pink",
+        "violet",
+        "indigo",
+      ])
+      .default("slate"),
     description: z.string().optional(),
     hashTagPresetId: z
       .string()
@@ -270,7 +285,20 @@ export const updateQueueTypeSchema = z
     id: z.string().min(1, ERROR_ID_REQUIRED),
     name: z.string().trim().min(1, ERROR_NAME_REQUIRED),
     scheduleType: scheduleTypeSchema,
-    color: z.string().min(1, ERROR_COLOR_REQUIRED),
+    colorToken: z.enum([
+      "slate",
+      "blue",
+      "cyan",
+      "teal",
+      "green",
+      "lime",
+      "amber",
+      "orange",
+      "red",
+      "pink",
+      "violet",
+      "indigo",
+    ]),
     description: z.string().optional(),
     isEnabled: z
       .union([z.string(), z.boolean()])

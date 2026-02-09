@@ -18,7 +18,7 @@ import {
   toUnixTimestamp,
 } from "~/lib/temporal";
 
-import { getSelectedQueueStyle } from "../queue-colors";
+import { getQueueAccentHex, getSelectedQueueStyle } from "../queue-colors";
 import {
   isIntervalScheduleConfig,
   isFixedSlotsScheduleConfig,
@@ -709,11 +709,17 @@ export default function DraftBulkResume({
                 .map((queue) => {
                   const queueName =
                     typeof queue === "string" ? queue : queue.name;
-                  const queueColor =
-                    typeof queue === "object" ? queue.color : null;
+                  const colorToken =
+                    typeof queue === "object"
+                      ? (queue as { colorToken?: string | null }).colorToken
+                      : null;
                   const isAllSelected =
                     posts.length > 0 &&
                     posts.every((p) => p.queueType === queueName);
+                  const accent =
+                    colorToken != null
+                      ? getQueueAccentHex(colorToken)
+                      : undefined;
                   return (
                     <button
                       key={queueName}
@@ -724,10 +730,10 @@ export default function DraftBulkResume({
                         )
                       }
                       disabled={isSubmitting}
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 ${getSelectedQueueStyle(queueName, isAllSelected)}`}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 ${getSelectedQueueStyle(colorToken ?? queueName, isAllSelected)}`}
                       style={{
-                        backgroundColor: queueColor ?? undefined,
-                        borderColor: queueColor ?? undefined,
+                        backgroundColor: accent,
+                        borderColor: accent,
                       }}
                       title={
                         isAllSelected
@@ -791,9 +797,16 @@ export default function DraftBulkResume({
                         .map((queue) => {
                           const queueName =
                             typeof queue === "string" ? queue : queue.name;
-                          const queueColor =
-                            typeof queue === "object" ? queue.color : null;
+                          const colorToken =
+                            typeof queue === "object"
+                              ? (queue as { colorToken?: string | null })
+                                  .colorToken
+                              : null;
                           const isSelected = post.queueType === queueName;
+                          const accent =
+                            colorToken != null
+                              ? getQueueAccentHex(colorToken)
+                              : undefined;
                           return (
                             <button
                               key={queueName}
@@ -805,10 +818,10 @@ export default function DraftBulkResume({
                                 );
                               }}
                               disabled={isSubmitting}
-                              className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${getSelectedQueueStyle(queueName, isSelected)}`}
+                              className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${getSelectedQueueStyle(colorToken ?? queueName, isSelected)}`}
                               style={{
-                                backgroundColor: queueColor ?? undefined,
-                                borderColor: queueColor ?? undefined,
+                                backgroundColor: accent,
+                                borderColor: accent,
                               }}
                               title={
                                 isSelected

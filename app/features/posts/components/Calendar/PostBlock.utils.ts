@@ -1,6 +1,8 @@
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { fromDate, fromUnixTimestamp, nowUTC, toDate } from "~/lib/temporal";
 
+import { getQueueColorBundle } from "../../queue-colors";
+
 import type {
   CalendarPost,
   QueueColorStyle,
@@ -126,28 +128,31 @@ export function getQueueColorStyle(
     return null;
   }
 
-  // First try to use queue color if available
+  let token: string | null = null;
   if (post.queueType && queueTypes) {
     const queueTypeData = queueTypes.find(
       (qt) =>
         (qt.id && post.queueType?.id && qt.id === post.queueType.id) ??
         (qt.name && post.queueType?.name === qt.name)
     );
-    if (queueTypeData?.color) {
-      return {
-        backgroundColor: `${queueTypeData.color}20`,
-        color: queueTypeData.color,
-        borderColor: queueTypeData.color,
-      };
-    }
+    token =
+      (queueTypeData as { colorToken?: string | null } | undefined)
+        ?.colorToken ??
+      (post.queueType as { colorToken?: string | null }).colorToken ??
+      null;
+  } else {
+    token =
+      (post.queueType as { colorToken?: string | null }).colorToken ?? null;
   }
 
-  // Fallback: try to use the color directly from post.queueType if it exists
-  if (post.queueType?.color) {
+  if (token) {
+    const bundle = getQueueColorBundle(
+      token as Parameters<typeof getQueueColorBundle>[0]
+    );
     return {
-      backgroundColor: `${post.queueType.color}20`,
-      color: post.queueType.color,
-      borderColor: post.queueType.color,
+      backgroundColor: bundle.surface,
+      color: bundle.accent,
+      borderColor: bundle.accent,
     };
   }
 

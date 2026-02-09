@@ -21,19 +21,20 @@ export function updateQueueType(
     name: string;
     scheduleType: ScheduleType;
     scheduleConfig: QueueType["scheduleConfig"];
-    color?: string;
+    colorToken?: string;
     description?: string;
     isEnabled?: boolean;
     hashTagPresetId?: string | null;
   }
 ): Promise<QueueType> {
+  const colorToken = queueTypeData.colorToken ?? "slate";
   if (queueTypeData.id) {
     // Update existing queue type
     const updateData: Prisma.QueueTypeUpdateInput = {
       name: queueTypeData.name.trim(),
       scheduleType: queueTypeData.scheduleType,
       scheduleConfig: queueTypeData.scheduleConfig as Prisma.InputJsonValue,
-      color: queueTypeData.color,
+      colorToken,
       description: queueTypeData.description,
       isEnabled: queueTypeData.isEnabled ?? true,
     };
@@ -61,7 +62,7 @@ export function updateQueueType(
       name: queueTypeData.name.trim(),
       scheduleType: queueTypeData.scheduleType,
       scheduleConfig: queueTypeData.scheduleConfig as Prisma.InputJsonValue,
-      color: queueTypeData.color,
+      colorToken,
       description: queueTypeData.description,
       isEnabled: queueTypeData.isEnabled ?? true,
     };

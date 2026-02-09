@@ -2,6 +2,7 @@ import { memo, type ReactNode } from "react";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
+import { getQueueAccentHex } from "../queue-colors";
 import type { CombinedContent } from "../types";
 import { getMediaPreviewUrls } from "../utils/content-helpers";
 
@@ -184,7 +185,10 @@ function FlowCardInner({
   const contentSummaryText = getContentSummaryText(item);
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
-  const queueColor = item.queueType?.color;
+  const queueColor =
+    item.queueType?.colorToken != null
+      ? getQueueAccentHex(item.queueType.colorToken)
+      : undefined;
   const queueName = item.queueType?.name ?? "";
   const statusLabel = getStatusLabel(item);
   const postKindLabel =

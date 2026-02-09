@@ -139,6 +139,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
             id: queueType.id,
             name: queueType.name,
             color: queueType.color,
+            colorToken: queueType.colorToken ?? undefined,
             description: queueType.description,
             scheduleType: scheduleTypeValue,
             scheduleConfig: convertJsonValueToScheduleConfig(
@@ -177,6 +178,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
             id: queueType.id,
             name: queueType.name,
             color: queueType.color,
+            colorToken: queueType.colorToken ?? undefined,
             description: queueType.description,
             scheduleType: scheduleTypeValue,
             scheduleConfig: convertJsonValueToScheduleConfig(
@@ -209,6 +211,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
         scheduleConfig?: unknown;
         isEnabled?: boolean | null;
         color?: string | null;
+        colorToken?: string | null;
         description?: string | null;
         userId?: string | null;
       } | null;
@@ -234,6 +237,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
             id: queueType.id,
             name: queueType.name,
             color: queueType.color ?? null,
+            colorToken: queueType.colorToken ?? undefined,
             description: queueType.description ?? null,
             scheduleType: scheduleTypeValue,
             scheduleConfig: convertJsonValueToScheduleConfig(
@@ -268,6 +272,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
         scheduleConfig?: unknown;
         isEnabled?: boolean | null;
         color?: string | null;
+        colorToken?: string | null;
         description?: string | null;
         userId?: string | null;
       } | null;
@@ -287,6 +292,8 @@ export async function loadCalendarData(userId: string, queueType: string) {
             const nameValue: string = queueType.name;
             const colorValue: string | null | undefined =
               "color" in queueType ? queueType.color : undefined;
+            const colorTokenValue: string | null | undefined =
+              "colorToken" in queueType ? queueType.colorToken : undefined;
             const descriptionValue: string | null | undefined =
               "description" in queueType ? queueType.description : undefined;
             const scheduleTypeValue:
@@ -306,6 +313,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
               id: idValue,
               name: nameValue,
               color: colorValue ?? null,
+              colorToken: colorTokenValue ?? undefined,
               description: descriptionValue ?? null,
               scheduleType: scheduleTypeValue,
               scheduleConfig: convertJsonValueToScheduleConfig(
@@ -436,6 +444,7 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
             id: queueType.id,
             name: queueType.name,
             color: queueType.color,
+            colorToken: queueType.colorToken ?? undefined,
             description: queueType.description,
             scheduleType: scheduleTypeValue,
             scheduleConfig: convertJsonValueToScheduleConfig(

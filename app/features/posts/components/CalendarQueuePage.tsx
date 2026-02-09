@@ -3,6 +3,7 @@ import { Link, useParams, useRevalidator } from "@remix-run/react";
 import { postsToCalendarPosts } from "~/features/posts/server";
 import {
   Calendar,
+  getQueueAccentHex,
   getQueueColor,
   useCalendarQueueData,
 } from "~/features/posts/ui";
@@ -51,14 +52,15 @@ export default function CalendarQueuePage() {
             (
               queueType:
                 | string
-                | { name: string; id?: string; color?: string | null }
+                | { name: string; id?: string; colorToken?: string | null }
             ) => {
               const queueName =
                 typeof queueType === "string" ? queueType : queueType.name;
-              const queueColor =
-                typeof queueType === "object" ? queueType.color : null;
-              const colors = getQueueColor(queueName, queueColor);
-              const safeColors = colors ?? getQueueColor("unassigned");
+              const colorToken =
+                typeof queueType === "object"
+                  ? (queueType as { colorToken?: string | null }).colorToken
+                  : null;
+              const colors = getQueueColor(queueName, colorToken);
               const isSelected = params["queueType"] === queueName;
               const queueId =
                 typeof queueType === "object" && queueType.id
@@ -70,8 +72,8 @@ export default function CalendarQueuePage() {
               const unselectedClasses =
                 "border-transparent text-muted-foreground hover:border-border hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground";
 
-              if (isSelected && queueColor) {
-                // Use inline styles for custom colors
+              if (isSelected && colorToken) {
+                const accentHex = getQueueAccentHex(colorToken);
                 return (
                   <Link
                     key={queueId}
@@ -82,8 +84,8 @@ export default function CalendarQueuePage() {
                     }
                     className={`${baseClasses} border-b-2`}
                     style={{
-                      borderBottomColor: queueColor,
-                      color: queueColor,
+                      borderBottomColor: accentHex,
+                      color: accentHex,
                     }}
                   >
                     {queueName}
@@ -99,7 +101,7 @@ export default function CalendarQueuePage() {
                   onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                   className={`${baseClasses} ${
                     isSelected
-                      ? `border-primary ${safeColors?.text ?? ""}`
+                      ? `border-primary ${colors.text}`
                       : unselectedClasses
                   }`}
                 >

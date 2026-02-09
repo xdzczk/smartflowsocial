@@ -131,9 +131,16 @@ export default function SchedulingControls({
     onScheduleChange(e.target.value);
   };
 
+  const selectedQueue = queueTypes.find(
+    (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
+  );
+  const selectedColorToken =
+    typeof selectedQueue === "object"
+      ? (selectedQueue as { colorToken?: string | null }).colorToken
+      : null;
   const selectedQueueColor =
     selectedQueueType !== "unassigned"
-      ? getDynamicQueueStyle(selectedQueueType, false)
+      ? getDynamicQueueStyle(selectedColorToken ?? null, false)
       : "bg-muted text-foreground";
 
   return (

@@ -28,7 +28,7 @@ import {
 } from "~/lib/icon-constants";
 
 import { postToCombinedContent } from "../combined";
-import { getQueueColor } from "../queue-colors";
+import { getQueueColor, getQueueColorBundle } from "../queue-colors";
 import type { PostStats } from "../stats.server";
 import type { PostData, PostFetcher } from "../types";
 import { formatDate } from "../utils/content-helpers";
@@ -342,23 +342,31 @@ export default function PublishedPostsTable({
                     <td className="p-3">{postStats.zaps}</td>
                     <td className="p-3">{postStats.satszapped}</td>
                     <td className="p-3">
-                      {post.queueType?.color ? (
-                        <span
-                          className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize"
-                          style={{
-                            backgroundColor: `${post.queueType.color}20`,
-                            color: post.queueType.color,
-                          }}
-                        >
-                          {post.queueType.name}
-                        </span>
+                      {post.queueType?.colorToken ? (
+                        (() => {
+                          const bundle = getQueueColorBundle(
+                            post.queueType.colorToken
+                          );
+                          return (
+                            <span
+                              className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize"
+                              style={{
+                                backgroundColor: bundle.surface,
+                                color: bundle.accent,
+                              }}
+                            >
+                              {post.queueType.name}
+                            </span>
+                          );
+                        })()
                       ) : (
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
                             const colors = getQueueColor(
-                              post.queueType?.name ?? "unassigned"
+                              post.queueType?.name ?? "unassigned",
+                              post.queueType?.colorToken
                             );
-                            return colors ? `${colors.bg} ${colors.text}` : "";
+                            return `${colors.bg} ${colors.text}`;
                           })()}`}
                         >
                           {post.queueType?.name ?? "unassigned"}

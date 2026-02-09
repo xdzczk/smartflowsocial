@@ -8,7 +8,10 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { getQueueColor } from "~/features/posts/queue-colors";
+import {
+  getQueueColor,
+  getQueueColorBundle,
+} from "~/features/posts/queue-colors";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
@@ -23,7 +26,11 @@ interface Post {
   publishedAt: Date | null;
   fileUrl: string[];
   signedEvent?: { id: string } | null;
-  queueType?: { name: string; color?: string | null } | null;
+  queueType?: {
+    name: string;
+    color?: string | null;
+    colorToken?: string | null;
+  } | null;
   repost?: boolean;
   isQuotedPost?: boolean;
   totalEngagement: number;
@@ -226,23 +233,31 @@ export function GiveawayTable({
                 <td className="p-3">{post.stats?.zaps ?? 0}</td>
                 <td className="p-3">{post.stats?.satszapped ?? 0}</td>
                 <td className="p-3">
-                  {post.queueType?.color ? (
-                    <span
-                      className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize"
-                      style={{
-                        backgroundColor: `${post.queueType.color}20`,
-                        color: post.queueType.color,
-                      }}
-                    >
-                      {post.queueType.name}
-                    </span>
+                  {post.queueType?.colorToken ? (
+                    (() => {
+                      const bundle = getQueueColorBundle(
+                        post.queueType.colorToken
+                      );
+                      return (
+                        <span
+                          className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize"
+                          style={{
+                            backgroundColor: bundle.surface,
+                            color: bundle.accent,
+                          }}
+                        >
+                          {post.queueType.name}
+                        </span>
+                      );
+                    })()
                   ) : (
                     <span
                       className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
                         const colors = getQueueColor(
-                          post.queueType?.name ?? "unassigned"
+                          post.queueType?.name ?? "unassigned",
+                          post.queueType?.colorToken
                         );
-                        return colors ? `${colors.bg} ${colors.text}` : "";
+                        return `${colors.bg} ${colors.text}`;
                       })()}`}
                     >
                       {post.queueType?.name ?? "unassigned"}

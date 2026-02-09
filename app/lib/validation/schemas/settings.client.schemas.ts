@@ -103,7 +103,22 @@ export const queueTypeClientSchema = z
   .object({
     name: z.string().min(1, VALIDATION_NAME_REQUIRED).trim(),
     description: z.string().optional(),
-    color: z.string().min(1, "Color is required"),
+    colorToken: z
+      .enum([
+        "slate",
+        "blue",
+        "cyan",
+        "teal",
+        "green",
+        "lime",
+        "amber",
+        "orange",
+        "red",
+        "pink",
+        "violet",
+        "indigo",
+      ])
+      .default("slate"),
     hashTagPresetId: z.string().optional(),
     scheduleType: z.enum(["INTERVAL", "FIXED_SLOTS", "WEEKLY_SLOTS"]),
     isEnabled: z.boolean().optional(),

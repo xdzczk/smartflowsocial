@@ -14,7 +14,11 @@ export interface ScheduledPostTablePost {
   caption?: string | null;
   scheduledAtUtc: Date | null;
   fileUrl?: string[] | null;
-  queueType?: { name: string; color?: string | null } | null;
+  queueType?: {
+    name: string;
+    color?: string | null;
+    colorToken?: string | null;
+  } | null;
   repost?: boolean;
   isQuotedPost?: boolean;
   isPostSigned?: boolean;
@@ -36,6 +40,9 @@ export function convertPostDataToScheduledTablePost(
       ? {
           name: post.queueType.name,
           color: post.queueType.color ?? null,
+          colorToken:
+            (post.queueType as { colorToken?: string | null }).colorToken ??
+            null,
         }
       : null,
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- repost is optional and may be undefined

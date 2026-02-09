@@ -2,7 +2,7 @@ import { Clock } from "lucide-react";
 
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
-import { getDynamicQueueStyle } from "../queue-colors";
+import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 import type { QueueType } from "../types";
 interface QueueSelectorProps {
   queueTypes: Array<string | QueueType>;
@@ -54,8 +54,13 @@ export function QueueSelector({
           })
           .map((queue) => {
             const queueName = typeof queue === "string" ? queue : queue.name;
-            const queueColor = typeof queue === "object" ? queue.color : null;
+            const colorToken =
+              typeof queue === "object"
+                ? (queue as { colorToken?: string | null }).colorToken
+                : null;
             const isSelected = selectedQueue === queueName;
+            const accent =
+              colorToken != null ? getQueueAccentHex(colorToken) : undefined;
             return (
               <button
                 key={queueName}
@@ -64,11 +69,11 @@ export function QueueSelector({
                   onQueueChange(isSelected ? "unassigned" : queueName);
                 }}
                 disabled={disabled}
-                className={`rounded-full px-4 py-2 text-sm transition-transform duration-150 active:scale-[0.98] ${getDynamicQueueStyle(queueColor ?? null, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
+                className={`rounded-full px-4 py-2 text-sm transition-transform duration-150 active:scale-[0.98] ${getDynamicQueueStyle(colorToken ?? null, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
                 style={{
-                  backgroundColor: queueColor ?? undefined,
-                  borderColor: queueColor ?? undefined,
-                  opacity: queueColor && !isSelected ? 0.85 : undefined,
+                  backgroundColor: accent,
+                  borderColor: accent,
+                  opacity: colorToken && !isSelected ? 0.85 : undefined,
                 }}
                 title={
                   isSelected

@@ -5,6 +5,8 @@ import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 
+import { getQueueColorBundle } from "../queue-colors";
+
 interface QueueType {
   id?: string;
   name: string;
@@ -102,9 +104,16 @@ export function LongFormPublishingOptions({
           >
             {filteredQueues.map((queue) => {
               const queueName = typeof queue === "string" ? queue : queue.name;
-              const queueColor = typeof queue === "object" ? queue.color : null;
+              const colorToken =
+                typeof queue === "object"
+                  ? (queue as { colorToken?: string | null }).colorToken
+                  : null;
               const isSelected = selectedQueueType === queueName;
               const description = getQueueDescription(queueName);
+              const bundle =
+                colorToken && isSelected
+                  ? getQueueColorBundle(colorToken)
+                  : null;
               return (
                 <button
                   key={queueName}
@@ -114,10 +123,10 @@ export function LongFormPublishingOptions({
                   }
                   className={`rounded-md border px-3 py-2 text-left text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${isSelected ? "border-primary/60 bg-primary/10" : "border-border/50 hover:bg-muted/40"}`}
                   style={
-                    queueColor && isSelected
+                    bundle
                       ? {
-                          borderColor: queueColor,
-                          backgroundColor: `${queueColor}22`,
+                          borderColor: bundle.accent,
+                          backgroundColor: bundle.surface,
                         }
                       : {}
                   }

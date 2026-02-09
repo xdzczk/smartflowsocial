@@ -334,13 +334,12 @@ export default function TemplateEditPage() {
                       "string"
                       ? (postQueueType as { name: string }).name
                       : "unassigned";
-                  const queueTypeColor =
+                  const queueTypeColorToken =
                     postQueueType &&
-                    "color" in postQueueType &&
-                    (typeof (postQueueType as { color?: unknown }).color ===
-                      "string" ||
-                      (postQueueType as { color?: unknown }).color === null)
-                      ? (postQueueType as { color: string | null }).color
+                    "colorToken" in postQueueType &&
+                    typeof (postQueueType as { colorToken?: unknown })
+                      .colorToken === "string"
+                      ? (postQueueType as { colorToken: string }).colorToken
                       : null;
 
                   const hasFileUrl =
@@ -391,11 +390,9 @@ export default function TemplateEditPage() {
                               className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
                                 const colors = getQueueColor(
                                   queueTypeName,
-                                  queueTypeColor
+                                  queueTypeColorToken
                                 );
-                                return colors
-                                  ? `${colors.bg} ${colors.text}`
-                                  : "";
+                                return `${colors.bg} ${colors.text}`;
                               })()}`}
                             >
                               {queueTypeName}

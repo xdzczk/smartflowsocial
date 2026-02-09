@@ -4,6 +4,7 @@
 
 import { json } from "@remix-run/node";
 
+import { getQueueColorBundle } from "~/features/posts/queue-colors";
 import {
   deleteQueueType,
   hashTagPresetExistsForUser,
@@ -26,6 +27,7 @@ import { getUserSubscription } from "~/models/payment.server";
 function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
   id: string;
   name: string;
+  colorToken: string | null;
   color: string | null;
   description: string | null;
   scheduleType: string;
@@ -41,10 +43,13 @@ function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
   } | null;
 } {
   const preset = "hashTagPreset" in qt && qt.hashTagPreset;
+  const token = qt.colorToken ?? null;
+  const bundle = getQueueColorBundle(token);
   return {
     id: qt.id,
     name: qt.name,
-    color: qt.color,
+    colorToken: token,
+    color: bundle.accent,
     description: qt.description,
     scheduleType: qt.scheduleType,
     scheduleConfig: qt.scheduleConfig,
@@ -155,7 +160,7 @@ async function handleCreateQueueType(
     name: data.name,
     scheduleType: data.scheduleType,
     scheduleConfig,
-    color: data.color,
+    colorToken: data.colorToken,
     description: data.description,
     hashTagPresetId: data.hashTagPresetId,
   });
@@ -189,7 +194,7 @@ async function handleUpdateQueueType(
     name: data.name,
     scheduleType: data.scheduleType,
     scheduleConfig,
-    color: data.color,
+    colorToken: data.colorToken,
     description: data.description,
     isEnabled: data.isEnabled,
     hashTagPresetId: data.hashTagPresetId,

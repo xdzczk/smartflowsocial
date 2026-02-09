@@ -12,7 +12,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 
-import { getDynamicQueueStyle } from "../queue-colors";
+import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 import type { BulkPostCardProps, BulkPost, QueueType } from "../types";
 // Re-export types for consumers
 export type { BulkPost, QueueType };
@@ -207,16 +207,21 @@ export function BulkPostCard({
         <div className="flex flex-wrap gap-1">
           {queueTypes.map((queue: QueueType | string) => {
             const queueName = typeof queue === "string" ? queue : queue.name;
-            const queueColor = typeof queue === "object" ? queue.color : null;
+            const colorToken =
+              typeof queue === "object"
+                ? (queue as { colorToken?: string | null }).colorToken
+                : null;
+            const accent =
+              colorToken != null ? getQueueAccentHex(colorToken) : undefined;
             return (
               <button
                 key={queueName}
                 type="button"
                 onClick={() => onQueueTypeChange(index, queueName)}
-                className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(queueColor ?? null, post.queueType === queueName)}`}
+                className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, post.queueType === queueName)}`}
                 style={{
-                  backgroundColor: queueColor ?? undefined,
-                  borderColor: queueColor ?? undefined,
+                  backgroundColor: accent,
+                  borderColor: accent,
                 }}
               >
                 {queueName}

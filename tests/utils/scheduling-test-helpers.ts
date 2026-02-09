@@ -28,6 +28,7 @@ export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
     createdAt: new Date(),
     updatedAt: new Date(),
     color: null,
+    colorToken: null,
     description: null,
     hashTagPresetId: null,
     lastPostTime: null,

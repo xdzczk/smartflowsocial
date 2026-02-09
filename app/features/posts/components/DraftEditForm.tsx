@@ -12,7 +12,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
-import { getSelectedQueueStyle } from "../queue-colors";
+import { getQueueColorBundle, getSelectedQueueStyle } from "../queue-colors";
 import type { PostData, QueueType, HashTagPreset } from "../types";
 interface DraftEditFormProps {
   post: PostData;
@@ -126,10 +126,14 @@ export function DraftEditForm({
           <div className="mt-2 flex flex-wrap gap-2">
             {queueTypes.map((queue) => {
               const queueName = typeof queue === "string" ? queue : queue.name;
-              const queueColor = typeof queue === "object" ? queue.color : null;
+              const colorToken =
+                typeof queue === "object"
+                  ? (queue as { colorToken?: string | null }).colorToken
+                  : null;
               const isSelected = selectedQueue === queueName;
 
-              if (queueColor) {
+              if (colorToken) {
+                const bundle = getQueueColorBundle(colorToken);
                 return (
                   <button
                     key={queueName}
@@ -139,28 +143,27 @@ export function DraftEditForm({
                     className="rounded-full border-2 px-4 py-2 text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
                       backgroundColor: isSelected
-                        ? queueColor
-                        : `${queueColor}20`,
-                      color: isSelected ? "white" : queueColor,
-                      borderColor: queueColor,
+                        ? bundle.accent
+                        : bundle.surface,
+                      color: isSelected ? "white" : bundle.accent,
+                      borderColor: bundle.accent,
                     }}
                   >
                     {queueName}
                   </button>
                 );
-              } else {
-                return (
-                  <button
-                    key={queueName}
-                    type="button"
-                    onClick={() => onQueueChange(queueName)}
-                    disabled={isSubmitting}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${getSelectedQueueStyle(queueName, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
-                  >
-                    {queueName}
-                  </button>
-                );
               }
+              return (
+                <button
+                  key={queueName}
+                  type="button"
+                  onClick={() => onQueueChange(queueName)}
+                  disabled={isSubmitting}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${getSelectedQueueStyle(queueName, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  {queueName}
+                </button>
+              );
             })}
           </div>
           <input

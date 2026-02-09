@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-import { getQueueColor } from "../queue-colors";
+import { getQueueAccentHex, getQueueColor } from "../queue-colors";
 import type { QueueType } from "../types";
 
 /** Use dropdown only on mobile (≤768px); on desktop always show tabs (horizontal scroll when many) */
@@ -154,9 +154,11 @@ export default function QueueSelectionTabs({
           .map((queueType) => {
             const queueName =
               typeof queueType === "string" ? queueType : queueType.name;
-            const queueColor =
-              typeof queueType === "object" ? queueType.color : null;
-            const colors = getQueueColor(queueName, queueColor);
+            const colorToken =
+              typeof queueType === "object"
+                ? (queueType as { colorToken?: string | null }).colorToken
+                : null;
+            const colors = getQueueColor(queueName, colorToken);
             const isSelected =
               params["queueType"] === queueName ||
               searchParams.get("queueType") === queueName;
@@ -165,7 +167,8 @@ export default function QueueSelectionTabs({
               ? `${basePath}?tab=${currentTab}&queueType=${queueName}`
               : `${basePath}/${queueName}?tab=${currentTab}`;
 
-            if (isSelected && queueColor) {
+            if (isSelected && colorToken) {
+              const accentHex = getQueueAccentHex(colorToken);
               return (
                 <Link
                   key={
@@ -178,8 +181,8 @@ export default function QueueSelectionTabs({
                   onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                   className={`${baseClasses} border-b-2`}
                   style={{
-                    borderBottomColor: queueColor,
-                    color: queueColor,
+                    borderBottomColor: accentHex,
+                    color: accentHex,
                   }}
                 >
                   {queueName}
@@ -198,7 +201,7 @@ export default function QueueSelectionTabs({
                 prefetch="intent"
                 onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                 className={`${baseClasses} ${
-                  isSelected && colors
+                  isSelected
                     ? `${colors.border.replace("border-", "border-b-") || "border-b-primary"} ${colors.text}`
                     : unselectedClasses
                 }`}

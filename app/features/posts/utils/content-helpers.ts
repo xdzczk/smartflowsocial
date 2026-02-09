@@ -12,7 +12,7 @@ import {
 } from "~/lib/temporal";
 
 import type { CombinedContent } from "../combined.server";
-import { getQueueColor } from "../queue-colors";
+import { getQueueColor, getQueueColorBundle } from "../queue-colors";
 import {
   deriveIsDraftLongForm,
   deriveIsScheduledLongForm,
@@ -244,32 +244,26 @@ export function getQueueTypeDisplay(queueType: CombinedContent["queueType"]): {
   name: string;
 } {
   const name = queueType?.name ?? "unassigned";
+  const colorToken = (queueType as { colorToken?: string | null } | undefined)
+    ?.colorToken;
 
-  if (queueType?.color) {
+  if (colorToken) {
+    const bundle = getQueueColorBundle(colorToken);
     return {
       className:
         "inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-sm",
       style: {
-        backgroundColor: `${queueType.color}20`,
-        color: queueType.color,
-        borderColor: queueType.color,
+        backgroundColor: bundle.surface,
+        color: bundle.accent,
+        borderColor: bundle.accent,
       },
       name,
     };
   }
 
-  const colors = getQueueColor(name);
-  // getQueueColor always returns a value (has fallback to "unassigned")
-  const safeColors = colors ?? getQueueColor("unassigned");
-  if (!safeColors) {
-    // This should never happen, but TypeScript needs this check
-    return {
-      className: `inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-sm`,
-      name,
-    };
-  }
+  const colors = getQueueColor(name, colorToken);
   return {
-    className: `inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${safeColors.bg} ${safeColors.text} ${safeColors.border} shadow-sm`,
+    className: `inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${colors.bg} ${colors.text} ${colors.border} shadow-sm`,
     name,
   };
 }

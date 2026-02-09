@@ -179,21 +179,23 @@ export function convertPrismaQueueTypeToQueueType(
   if (!prismaQueueType) {
     return undefined;
   }
+  const prisma = prismaQueueType as typeof prismaQueueType & {
+    colorToken?: string | null;
+  };
   return {
-    id: prismaQueueType.id,
-    name: prismaQueueType.name,
-    color: prismaQueueType.color,
-    description: prismaQueueType.description,
+    id: prisma.id,
+    name: prisma.name,
+    color: prisma.color,
+    colorToken: prisma.colorToken ?? undefined,
+    description: prisma.description,
     scheduleType: prismaQueueType.scheduleType as
       | "INTERVAL"
       | "FIXED_SLOTS"
       | "WEEKLY_SLOTS"
       | undefined,
-    scheduleConfig: convertJsonValueToScheduleConfig(
-      prismaQueueType.scheduleConfig
-    ),
-    isEnabled: prismaQueueType.isEnabled ?? undefined,
-    userId: prismaQueueType.userId,
+    scheduleConfig: convertJsonValueToScheduleConfig(prisma.scheduleConfig),
+    isEnabled: prisma.isEnabled ?? undefined,
+    userId: prisma.userId,
   };
 }
 
@@ -204,6 +206,7 @@ export interface QueueType {
   id: string;
   name: string;
   color?: string | null;
+  colorToken?: string | null;
   description?: string | null;
   scheduleType?: "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS";
   scheduleConfig?: ScheduleConfig;
@@ -309,6 +312,7 @@ export interface CombinedContent {
     id: string;
     name: string;
     color?: string;
+    colorToken?: string | null;
   };
   queueTypeId?: string;
   userId: string;

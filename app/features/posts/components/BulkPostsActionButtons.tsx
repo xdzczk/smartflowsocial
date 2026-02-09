@@ -1,7 +1,7 @@
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 
-import { getDynamicQueueStyle } from "../queue-colors";
+import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 
 import type { BulkPost, QueueType } from "./BulkPostCard";
 
@@ -68,10 +68,15 @@ export default function BulkPostsActionButtons({
             })
             .map((queue) => {
               const queueName = typeof queue === "string" ? queue : queue.name;
-              const queueColor = typeof queue === "object" ? queue.color : null;
+              const colorToken =
+                typeof queue === "object"
+                  ? (queue as { colorToken?: string | null }).colorToken
+                  : null;
               const isAllSelected =
                 posts.length > 0 &&
                 posts.every((p) => p.queueType === queueName);
+              const accent =
+                colorToken != null ? getQueueAccentHex(colorToken) : undefined;
               return (
                 <button
                   key={queueName}
@@ -82,10 +87,10 @@ export default function BulkPostsActionButtons({
                     )
                   }
                   disabled={isProcessing}
-                  className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
+                  className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(colorToken ?? null, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
                   style={{
-                    backgroundColor: queueColor ?? undefined,
-                    borderColor: queueColor ?? undefined,
+                    backgroundColor: accent,
+                    borderColor: accent,
                   }}
                   title={
                     isAllSelected

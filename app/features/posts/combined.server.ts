@@ -140,6 +140,14 @@ export function postToCombinedContent(post: PostData): CombinedContent {
                       : String(post.queueType.color),
                 }
               : {}),
+            ...("colorToken" in post.queueType && post.queueType.colorToken
+              ? {
+                  colorToken:
+                    typeof post.queueType.colorToken === "string"
+                      ? post.queueType.colorToken
+                      : String(post.queueType.colorToken),
+                }
+              : {}),
           }
         : undefined,
     queueTypeId: nullToUndefined(post.queueTypeId),
@@ -191,6 +199,7 @@ export function longFormPostToCombinedContent(
           id: longFormPost.queueType.id,
           name: longFormPost.queueType.name,
           color: nullToUndefined(longFormPost.queueType.color),
+          colorToken: nullToUndefined(longFormPost.queueType.colorToken),
         }
       : undefined,
     queueTypeId: nullToUndefined(longFormPost.queueTypeId),

@@ -109,10 +109,13 @@ function QueueTypeChip({
 }: {
   queueType: { name: string; color?: string | null; id?: string };
 }) {
-  const colors = getQueueColor(queueType.name, queueType.color);
+  const colors = getQueueColor(
+    queueType.name,
+    (queueType as { colorToken?: string | null }).colorToken
+  );
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${colors?.bg ?? ""} ${colors?.text ?? ""}`}
+      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${colors.bg} ${colors.text}`}
     >
       {queueType.name}
     </span>

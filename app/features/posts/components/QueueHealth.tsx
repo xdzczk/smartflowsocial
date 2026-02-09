@@ -2,6 +2,7 @@ import { Link } from "@remix-run/react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
+import { getQueueAccentHex } from "../queue-colors";
 import type { QueueType } from "../types";
 
 /** Solid Tailwind background class per named queue for bar fill (no arbitrary values). */
@@ -18,7 +19,10 @@ function getBarFillClass(queueName: string): string {
 
 export interface QueueHealthProps {
   queueCounts: Array<{ queueName: string; count: number }>;
-  queueTypes?: Array<QueueType | { name: string; color?: string | null }>;
+  queueTypes?: Array<
+    | QueueType
+    | { name: string; color?: string | null; colorToken?: string | null }
+  >;
 }
 
 function getQueueColorHex(
@@ -30,8 +34,11 @@ function getQueueColorHex(
     (q) => (typeof q === "object" ? q.name : q) === queueName
   );
   if (typeof qt !== "object") return null;
-  const withColor = qt as { color?: string | null };
-  return withColor.color ?? null;
+  const withToken = qt as { colorToken?: string | null; color?: string | null };
+  if (withToken.colorToken) {
+    return getQueueAccentHex(withToken.colorToken);
+  }
+  return withToken.color ?? null;
 }
 
 export default function QueueHealth({

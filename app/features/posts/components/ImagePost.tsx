@@ -15,7 +15,7 @@ import {
   nowInTimezone,
 } from "~/lib/temporal";
 
-import { getDynamicQueueStyle } from "../queue-colors";
+import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 import type { QueueType } from "../types";
 
 const ERROR_PROCESSING_IMAGES =
@@ -499,9 +499,15 @@ export default function ImagePost({
                 .map((queue) => {
                   const queueName =
                     typeof queue === "string" ? queue : queue.name;
-                  const queueColor =
-                    typeof queue === "object" ? queue.color : null;
+                  const colorToken =
+                    typeof queue === "object"
+                      ? (queue as { colorToken?: string | null }).colorToken
+                      : null;
                   const isSelected = selectedQueue === queueName;
+                  const accent =
+                    colorToken != null
+                      ? getQueueAccentHex(colorToken)
+                      : undefined;
                   return (
                     <button
                       key={queueName}
@@ -510,10 +516,10 @@ export default function ImagePost({
                         setSelectedQueue(isSelected ? "unassigned" : queueName)
                       }
                       disabled={fetcher.state !== "idle" || isUploaded}
-                      className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
+                      className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(colorToken ?? null, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
                       style={{
-                        backgroundColor: queueColor ?? undefined,
-                        borderColor: queueColor ?? undefined,
+                        backgroundColor: accent,
+                        borderColor: accent,
                       }}
                       title={
                         isSelected

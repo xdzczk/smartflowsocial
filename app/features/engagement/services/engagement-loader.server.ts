@@ -481,6 +481,7 @@ export async function loadEngagementFeedData(
           id: queueType.id,
           name: queueType.name,
           color: queueType.color,
+          colorToken: queueType.colorToken ?? undefined,
           description: queueType.description,
           scheduleType: queueType.scheduleType as
             | "INTERVAL"
