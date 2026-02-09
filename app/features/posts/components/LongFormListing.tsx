@@ -218,13 +218,8 @@ export default function LongFormListing({
   useEffect(() => {
     if (deleteFetcher.state === "idle" && deleteFetcher.data) {
       const data = deleteFetcher.data;
-      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- fetcher data type narrows at runtime */
-      if (
-        typeof data === "object" &&
-        data !== null &&
-        "success" in data &&
-        data.success
-      ) {
+
+      if ("success" in data && data.success) {
         void queryClient.invalidateQueries({
           queryKey: scheduledPostsKeys.all,
         });

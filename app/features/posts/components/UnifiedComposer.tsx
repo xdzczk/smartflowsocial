@@ -356,8 +356,14 @@ export function UnifiedComposer({
   const {
     restored: localRestored,
     saveSnapshot: saveLocalSnapshot,
+    flushSnapshot: flushLocalSnapshot,
     clearSnapshot: clearLocalSnapshot,
   } = useComposerLocalDraft("composer-newpost-draft", !!initialDraftId);
+
+  const lastLocalSnapshotRef = useRef<Omit<
+    ComposerLocalSnapshot,
+    "savedAt"
+  > | null>(null);
 
   const appliedLocalRestoredRef = useRef(false);
   React.useEffect(() => {
@@ -416,6 +422,7 @@ export function UnifiedComposer({
         .filter((a): a is typeof a & { url: string } => Boolean(a.url))
         .map((a) => ({ localId: a.localId, url: a.url, alt: a.alt })),
     };
+    lastLocalSnapshotRef.current = snapshot;
     saveLocalSnapshot(snapshot);
   }, [
     initialDraftId,
@@ -428,6 +435,21 @@ export function UnifiedComposer({
     attachments,
     saveLocalSnapshot,
   ]);
+
+  // Flush localStorage on unmount and when page is hidden so content is not lost when navigating away
+  React.useEffect(() => {
+    if (initialDraftId) return;
+    const flush = () => {
+      const snap = lastLocalSnapshotRef.current;
+      if (snap) flushLocalSnapshot(snap);
+    };
+    const onHide = () => flush();
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      flush();
+    };
+  }, [initialDraftId, flushLocalSnapshot]);
 
   const hasContent = isThreadMode
     ? threadSegments.some(
@@ -1615,21 +1637,6 @@ export function UnifiedComposer({
           </div>
           <div className="max-sm:bg-background/95 flex flex-col gap-2 max-sm:sticky max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-10 max-sm:mt-4 max-sm:border-t max-sm:py-3 max-sm:backdrop-blur sm:flex-row sm:items-center">
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button
-                ref={draftSubmitRef}
-                type="submit"
-                value="draft-text"
-                name="_action"
-                variant="outline"
-                disabled={disabled}
-              >
-                <Pencil
-                  className="mr-1.5 h-5 w-5"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-                {fetcher.state !== "idle" ? "Saving..." : "Save as Draft"}
-              </Button>
               {signerReady === false ? (
                 <Button variant="default" asChild>
                   <Link to="/dashboard/settings">Connect signer</Link>
@@ -1683,6 +1690,21 @@ export function UnifiedComposer({
                           : "Post Now"}
                 </Button>
               )}
+              <Button
+                ref={draftSubmitRef}
+                type="submit"
+                value="draft-text"
+                name="_action"
+                variant="outline"
+                disabled={disabled}
+              >
+                <Pencil
+                  className="mr-1.5 h-5 w-5"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+                {fetcher.state !== "idle" ? "Saving..." : "Save as Draft"}
+              </Button>
             </div>
           </div>
         </div>

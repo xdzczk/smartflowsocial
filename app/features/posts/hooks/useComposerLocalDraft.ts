@@ -77,6 +77,26 @@ export function useComposerLocalDraft(
     [storageKey]
   );
 
+  /** Write snapshot to localStorage immediately (e.g. on unmount or page hide). Cancels any pending debounced save. */
+  const flushSnapshot = useCallback(
+    (snapshot: Omit<ComposerLocalSnapshot, "savedAt">) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      try {
+        const toStore: ComposerLocalSnapshot = {
+          ...snapshot,
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(storageKey, JSON.stringify(toStore));
+      } catch {
+        // ignore quota / private mode
+      }
+    },
+    [storageKey]
+  );
+
   const clearSnapshot = useCallback(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -95,7 +115,7 @@ export function useComposerLocalDraft(
     };
   }, []);
 
-  return { restored, saveSnapshot, clearSnapshot };
+  return { restored, saveSnapshot, flushSnapshot, clearSnapshot };
 }
 
 /**
@@ -138,7 +158,7 @@ export function useLocalDraft<T extends { savedAt?: number }>(
       saveTimeoutRef.current = setTimeout(() => {
         saveTimeoutRef.current = null;
         try {
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- T extends { savedAt?: number }, we add savedAt
+          /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- T = Omit<T, "savedAt"> & { savedAt: number }, assertion is safe */
           const toStore = { ...snapshot, savedAt: Date.now() } as T;
           localStorage.setItem(storageKey, JSON.stringify(toStore));
         } catch {
@@ -147,6 +167,23 @@ export function useLocalDraft<T extends { savedAt?: number }>(
       }, debounceMs);
     },
     [storageKey, debounceMs]
+  );
+
+  const flushSnapshot = useCallback(
+    (snapshot: Omit<T, "savedAt">) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      try {
+        /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- T = Omit<T, "savedAt"> & { savedAt: number }, assertion is safe */
+        const toStore = { ...snapshot, savedAt: Date.now() } as T;
+        localStorage.setItem(storageKey, JSON.stringify(toStore));
+      } catch {
+        // ignore
+      }
+    },
+    [storageKey]
   );
 
   const clearSnapshot = useCallback(() => {
@@ -167,5 +204,5 @@ export function useLocalDraft<T extends { savedAt?: number }>(
     };
   }, []);
 
-  return { restored, saveSnapshot, clearSnapshot };
+  return { restored, saveSnapshot, flushSnapshot, clearSnapshot };
 }

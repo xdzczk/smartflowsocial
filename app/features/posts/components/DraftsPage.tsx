@@ -212,25 +212,6 @@ export default function DraftsPage() {
               onScrollContainerReady={isMobile ? setScrollRoot : undefined}
             />
 
-            {selectedPost
-              ? (() => {
-                  const postData = posts.find((p) => p.id === selectedPost.id);
-                  const combinedContent = allContent.find(
-                    (c) => c.id === selectedPost.id
-                  );
-                  const postToShow =
-                    postData ?? combinedContent ?? selectedPost;
-                  return (
-                    <PostDetailsModal
-                      post={postToShow as PostData | CombinedContent}
-                      onClose={() => setSelectedPost(null)}
-                      type="draft"
-                      userTimezone={user?.timezone ?? undefined}
-                    />
-                  );
-                })()
-              : null}
-
             {showAdvancedBulkResume ? (
               <div className="bg-background fixed inset-0 z-50">
                 <DraftBulkResume
@@ -272,6 +253,25 @@ export default function DraftsPage() {
           </>
         )}
       </div>
+
+      {/* Short post detail modal: show when a draft post is selected (all or posts tab) */}
+      {(currentTab === "all" || currentTab === "posts") && selectedPost
+        ? (() => {
+            const postData = posts.find((p) => p.id === selectedPost.id);
+            const combinedContent = allContent.find(
+              (c) => c.id === selectedPost.id
+            );
+            const postToShow = postData ?? combinedContent ?? selectedPost;
+            return (
+              <PostDetailsModal
+                post={postToShow as PostData | CombinedContent}
+                onClose={() => setSelectedPost(null)}
+                type="draft"
+                userTimezone={user?.timezone ?? undefined}
+              />
+            );
+          })()
+        : null}
 
       {/* Scroll sentinel for infinite scroll (desktop only; on mobile sentinels are inside listing scroll container) */}
       {!isMobile ? (

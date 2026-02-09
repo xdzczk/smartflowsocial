@@ -3,9 +3,10 @@
  */
 
 import { Link, useFetcher } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal } from "lucide-react";
-import { useRef, useState, type Key } from "react";
+import { useEffect, useRef, useState, type Key } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -22,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { formatForDisplay, fromISOString } from "~/lib/temporal";
@@ -114,7 +116,21 @@ export function DraftsTable({
   const useDedicatedScroll =
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
 
-  const deleteFetcher = useFetcher();
+  const deleteFetcher = useFetcher<{ success?: boolean }>();
+  const queryClient = useQueryClient();
+
+  // Invalidate drafts list when a single draft delete succeeds so the list updates
+  useEffect(() => {
+    if (
+      deleteFetcher.state === "idle" &&
+      deleteFetcher.data &&
+      "success" in deleteFetcher.data &&
+      deleteFetcher.data.success
+    ) {
+      void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
+    }
+  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
+
   const combinedContent = posts.map((post) =>
     postToCombinedContent(post as unknown as PostData)
   );

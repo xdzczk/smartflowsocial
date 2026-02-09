@@ -1,5 +1,8 @@
 import { useFetcher } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
+
+import { draftsKeys } from "./useDraftsQuery";
 interface Post {
   id: string;
   caption?: string | null;
@@ -15,6 +18,7 @@ interface UseDraftsStateProps {
  * Custom hook for managing drafts state and operations
  */
 export function useDraftsState({ posts }: UseDraftsStateProps) {
+  const queryClient = useQueryClient();
   const [sortConfig, setSortConfig] = useState({
     key: "createdAt",
     direction: "desc" as "asc" | "desc",
@@ -124,13 +128,14 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
       typeof resumeData.success === "boolean" &&
       resumeData.success;
     if (deleteSuccess || resumeSuccess) {
+      void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
       // Defer to avoid cascading renders
       setTimeout(() => {
         setSelectedPosts(new Set());
         setShowAdvancedBulkResume(false);
       }, 0);
     }
-  }, [bulkDeleteFetcher.data, bulkResumeFetcher.data]);
+  }, [bulkDeleteFetcher.data, bulkResumeFetcher.data, queryClient]);
 
   return {
     sortConfig,

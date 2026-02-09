@@ -25,10 +25,7 @@ import {
   handlePostImages,
   handleScheduleImages,
 } from "./newpost-action/handlers/media-handlers.server";
-import {
-  handleDraftText,
-  handlePostOrScheduleText,
-} from "./newpost-action/handlers/text-handlers.server";
+import { handlePostOrScheduleText } from "./newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "./newpost-action/hashtag-preset-utils.server";
 import { handleUploadPreview } from "./newpost-action/upload-preview-handler.server";
 
@@ -168,11 +165,7 @@ export async function handleNewPostAction(
     correlationId,
   };
 
-  // Handle different actions
-  if (_action === "draft-text") {
-    return handleDraftText(handlerParams);
-  }
-
+  // Handle different actions (only save-draft creates drafts; draft-text is ignored so Enter does not create drafts)
   if (_action === "post-text" || _action === "schedule-text") {
     return handlePostOrScheduleText({
       ...handlerParams,

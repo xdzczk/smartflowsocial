@@ -147,12 +147,12 @@ export default function AllContentListing({
         void queryClient.invalidateQueries({
           queryKey: scheduledPostsKeys.all,
         });
-        if ("moved" in data && data.moved) {
+        if (type === "draft" || ("moved" in data && data.moved)) {
           void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
         }
       }
     }
-  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
+  }, [deleteFetcher.state, deleteFetcher.data, queryClient, type]);
 
   const [sortConfig, setSortConfig] = useState<{
     key: string;

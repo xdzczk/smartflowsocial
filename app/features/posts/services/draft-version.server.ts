@@ -37,7 +37,7 @@ export const longformSnapshotSchema = z.object({
 });
 export type LongformSnapshot = z.infer<typeof longformSnapshotSchema>;
 
-function getNextVersion(
+async function getNextVersion(
   postId: string | null,
   longFormPostId: string | null
 ): Promise<number> {
