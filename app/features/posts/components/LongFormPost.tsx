@@ -136,7 +136,8 @@ export default function LongFormPost({
   } = useLongFormEditor({
     uploadProvider,
     initialMarkdown: initialData?.content ?? "",
-    onContentChange: (newContent) => form.setValue("content", newContent),
+    onContentChange: (newContent) =>
+      form.setValue("content", newContent, { shouldValidate: true }),
   });
 
   const {
@@ -423,15 +424,15 @@ export default function LongFormPost({
   /** Save draft via fetcher so Tiptap content (not in DOM form) is included */
   const handleSaveDraft = () => {
     flushSync();
+    // Use getValues() after flushSync so we submit latest editor content (watch() would be stale)
+    const values = form.getValues();
     const formData = new FormData();
     formData.set("_action", "save-draft");
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- FormData.set expects string; form.watch() may be undefined */
-    formData.set("title", title ?? "");
-    formData.set("content", content ?? "");
-    formData.set("summary", summary ?? "");
-    formData.set("image", image ?? "");
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-    formData.set("customTags", customTags ?? "");
+    formData.set("title", values.title);
+    formData.set("content", values.content);
+    formData.set("summary", values.summary);
+    formData.set("image", image);
+    formData.set("customTags", values.customTags ?? "");
     formData.set("queueType", schedulingQueueType);
     formData.set("useHashtagPresets", String(useHashtagPresets));
     formData.set("hashTagPresetId", selectedHashtagPresetId ?? "");
