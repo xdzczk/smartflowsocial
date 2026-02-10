@@ -275,7 +275,6 @@ export async function resetTestDatabase(): Promise<void> {
     "QueueType",
     "HashTagPreset",
     "Template",
-    "Asset",
     "Payment",
     "Plan",
     "Subscription",

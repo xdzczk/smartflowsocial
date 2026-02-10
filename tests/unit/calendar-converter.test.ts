@@ -109,16 +109,6 @@ describe("Calendar Post Converter", () => {
       expect(result.hashtags).toBe("tag1 tag2 tag3");
     });
 
-    it("should handle templateId", () => {
-      const longFormData: LongFormPostData = {
-        id: "longform-1",
-        templateId: "template-123",
-      } as unknown as LongFormPostData;
-
-      const result = longFormPostDataToCalendarPost(longFormData);
-      expect(result.templateId).toBe("template-123");
-    });
-
     it("should handle isRecyclable", () => {
       const longFormData: LongFormPostData = {
         id: "longform-1",

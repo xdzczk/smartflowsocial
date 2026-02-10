@@ -1,9 +1,11 @@
-import { useFetcher } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import { Hash } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 import { Badge } from "~/components/ui/badge";
-import { AssetBrowser, type Asset } from "~/features/assets";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import {
   SMALL_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -55,7 +57,6 @@ interface LongFormPostProps {
   queueTypes?: Array<string | QueueType>;
   scheduleIntervals?: number[];
   userTags?: string;
-  assets?: Asset[];
   uploadProvider?: string | null;
   userTimezone?: string;
   onQueueTypeChange?: (name: string) => void;
@@ -73,13 +74,14 @@ interface LongFormPostProps {
   selectedHashtags?: string;
   onUseHashtagPresetsChange?: (value: boolean) => void;
   onHashtagPresetChange?: (presetId: string | null, hashtags: string) => void;
+  /** When "template", only "Save as template" and Cancel are shown. */
+  mode?: "default" | "template";
 }
 
 export default function LongFormPost({
   queueTypes = [],
   scheduleIntervals = [],
   userTags = "",
-  assets = [],
   uploadProvider = null,
   userTimezone = "UTC",
   onQueueTypeChange,
@@ -92,10 +94,12 @@ export default function LongFormPost({
   selectedHashtags = "",
   onUseHashtagPresetsChange,
   onHashtagPresetChange,
+  mode = "default",
 }: LongFormPostProps) {
   const fetcher = useFetcher();
-  const [showAssetBrowser, setShowAssetBrowser] = useState("");
+  const [templateName, setTemplateName] = useState("");
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
+  const isTemplateMode = mode === "template";
   const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>(() => [
     {
       id: crypto.randomUUID(),
@@ -130,7 +134,6 @@ export default function LongFormPost({
     editor,
     editorReady,
     loadInitialData,
-    insertAssetIntoEditor,
     generateSummaryFromContent,
     flushSync,
   } = useLongFormEditor({
@@ -146,7 +149,6 @@ export default function LongFormPost({
     uploadError,
     uploadFetcherState,
     handleImageUpload,
-    handleCoverImageAssets,
     handleFetcherData,
     handleFetcherStateChange,
   } = useCoverImageUpload({
@@ -393,27 +395,6 @@ export default function LongFormPost({
     }
   }, [editorReady, initialData?.content, loadInitialData, editor]);
 
-  const handleAssetBrowserSelect = (selectedAssets: Asset[]) => {
-    if (showAssetBrowser === "cover") {
-      handleCoverImageAssets(
-        selectedAssets.map((asset) => ({
-          assetType: asset.assetType,
-          fileUrl: asset.fileUrl ?? undefined,
-        }))
-      );
-    } else {
-      insertAssetIntoEditor(
-        selectedAssets.map((asset) => ({
-          assetType: asset.assetType,
-          fileUrl: asset.fileUrl ?? undefined,
-          content: asset.content ?? undefined,
-          title: asset.title ?? undefined,
-        }))
-      );
-    }
-    setShowAssetBrowser("");
-  };
-
   const handleGenerateSummary = () => {
     const generatedSummary = generateSummaryFromContent(content);
     if (generatedSummary) {
@@ -428,12 +409,14 @@ export default function LongFormPost({
     const values = form.getValues();
     const formData = new FormData();
     formData.set("_action", "save-draft");
-    formData.set("title", values.title);
-    formData.set("content", values.content);
-    formData.set("summary", values.summary);
-    formData.set("image", image);
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- FormData.set expects string; values may be undefined at runtime */
+    formData.set("title", values.title ?? "");
+    formData.set("content", values.content ?? "");
+    formData.set("summary", values.summary ?? "");
+    formData.set("image", image ?? "");
     formData.set("customTags", values.customTags ?? "");
-    formData.set("queueType", schedulingQueueType);
+    formData.set("queueType", schedulingQueueType ?? "");
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
     formData.set("useHashtagPresets", String(useHashtagPresets));
     formData.set("hashTagPresetId", selectedHashtagPresetId ?? "");
     fetcher.submit(formData, { method: "post" });
@@ -459,6 +442,35 @@ export default function LongFormPost({
   // Form validation using Zod
   const isFormValid = form.formState.isValid && !!image;
 
+  const handleSaveAsTemplate = () => {
+    if (!templateName.trim()) return;
+    flushSync();
+    const values = form.getValues();
+    const formData = new FormData();
+    formData.set("_action", "createTemplate");
+    formData.set("templateName", templateName.trim());
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- FormData.set expects string */
+    formData.set("title", values.title ?? "");
+    formData.set("summary", values.summary ?? "");
+    formData.set("content", values.content ?? "");
+    formData.set("image", image ?? "");
+    formData.set("customTags", values.customTags ?? "");
+    formData.set("queueType", selectedQueueType ?? "unassigned");
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+    const selectedQueue = queueTypes.find(
+      (q) => typeof q === "object" && q.name === selectedQueueType
+    );
+    if (typeof selectedQueue === "object" && selectedQueue.id)
+      formData.set("queueTypeId", selectedQueue.id);
+    if (selectedHashtagPresetId)
+      formData.set("hashTagPresetId", selectedHashtagPresetId);
+    formData.set(
+      "useHashtagPresets",
+      String(Boolean(values.useHashtagPresets))
+    );
+    fetcher.submit(formData, { method: "post" });
+  };
+
   // Word count from markdown (plain text)
   const wordCount = (() => {
     const c = content;
@@ -476,7 +488,7 @@ export default function LongFormPost({
           register={form.register}
           content={content}
           uploadProvider={uploadProvider}
-          onOpenAssetBrowser={() => setShowAssetBrowser("content")}
+          onOpenAssetBrowser={() => {}}
           editorReady={editorReady}
           editor={editor}
         />
@@ -495,152 +507,177 @@ export default function LongFormPost({
           uploadFetcherState={uploadFetcherState}
           onImageUpload={(file) => void handleImageUpload(file)}
           onRemoveImage={() => setCoverImage("")}
-          onOpenAssetBrowser={() => setShowAssetBrowser("cover")}
+          onOpenAssetBrowser={() => {}}
         />
 
         {/* Phase 3: Publish Panel */}
         <div className="border-border/60 bg-background/95 border-t py-4 backdrop-blur">
           <div className="mx-auto w-full max-w-[760px] space-y-4 px-4">
-            {displayedHashtags ? (
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  <Hash
-                    className={`mr-1 inline-block opacity-75 ${SMALL_ICON_SIZE_CLASS}`}
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
+            {isTemplateMode ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="template-name-longform">Template name</Label>
+                  <Input
+                    id="template-name-longform"
+                    type="text"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="e.g. Weekly article"
+                    className="max-w-xs"
                   />
-                  {displayedHashtags}
-                </Badge>
-              </div>
-            ) : null}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={handleSaveAsTemplate}
+                    disabled={
+                      fetcher.state !== "idle" || !templateName.trim() || !image
+                    }
+                  >
+                    {fetcher.state !== "idle"
+                      ? "Saving..."
+                      : "Save as template"}
+                  </Button>
+                  <Button type="button" variant="ghost" asChild>
+                    <Link to="/dashboard/templates">Cancel</Link>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                {displayedHashtags ? (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      <Hash
+                        className={`mr-1 inline-block opacity-75 ${SMALL_ICON_SIZE_CLASS}`}
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                      {displayedHashtags}
+                    </Badge>
+                  </div>
+                ) : null}
 
-            <LongFormPublishingOptions
-              queueTypes={queueTypes}
-              selectedQueueType={selectedQueueType}
-              onQueueTypeChange={(name) => {
-                void updateDisplayedHashtags(name);
-              }}
-              scheduledFor={scheduledFor}
-              onScheduledForChange={setScheduledFor}
-              scheduleIntervals={scheduleIntervals}
-              onScheduleIntervalClick={(intervalHours) => {
-                handleScheduleIntervalClick(intervalHours);
-              }}
-              onNextSlotClick={() => {
-                void calculateQueueScheduleTime(selectedQueueType);
-              }}
-              hashTagPresets={hashTagPresets}
-              useHashtagPresets={useHashtagPresets}
-              selectedHashtagPresetId={selectedHashtagPresetId}
-              selectedHashtags={selectedHashtags}
-              onHashtagPresetChange={
-                onHashtagPresetChange ??
-                ((_id, _tags) => {
-                  void _id;
-                  void _tags;
-                })
-              }
-              onUseHashtagPresetsChange={
-                onUseHashtagPresetsChange ??
-                (() => {
-                  void 0;
-                })
-              }
-            />
+                <LongFormPublishingOptions
+                  queueTypes={queueTypes}
+                  selectedQueueType={selectedQueueType}
+                  onQueueTypeChange={(name) => {
+                    void updateDisplayedHashtags(name);
+                  }}
+                  scheduledFor={scheduledFor}
+                  onScheduledForChange={setScheduledFor}
+                  scheduleIntervals={scheduleIntervals}
+                  onScheduleIntervalClick={(intervalHours) => {
+                    handleScheduleIntervalClick(intervalHours);
+                  }}
+                  onNextSlotClick={() => {
+                    void calculateQueueScheduleTime(selectedQueueType);
+                  }}
+                  hashTagPresets={hashTagPresets}
+                  useHashtagPresets={useHashtagPresets}
+                  selectedHashtagPresetId={selectedHashtagPresetId}
+                  selectedHashtags={selectedHashtags}
+                  onHashtagPresetChange={
+                    onHashtagPresetChange ??
+                    ((_id, _tags) => {
+                      void _id;
+                      void _tags;
+                    })
+                  }
+                  onUseHashtagPresetsChange={
+                    onUseHashtagPresetsChange ??
+                    (() => {
+                      void 0;
+                    })
+                  }
+                />
 
-            <AlsoScheduleLongformQuote
-              alsoScheduleQuote={alsoScheduleQuote}
-              onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-              quoteEntries={quoteEntries}
-              onQuoteEntriesChange={setQuoteEntries}
-              disabled={fetcher.state !== "idle" || isSigning}
-            />
+                <AlsoScheduleLongformQuote
+                  alsoScheduleQuote={alsoScheduleQuote}
+                  onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+                  quoteEntries={quoteEntries}
+                  onQuoteEntriesChange={setQuoteEntries}
+                  disabled={fetcher.state !== "idle" || isSigning}
+                />
 
-            {!image ? (
-              <p className="text-muted-foreground text-xs">
-                Add a cover before publishing
-              </p>
-            ) : null}
+                {!image ? (
+                  <p className="text-muted-foreground text-xs">
+                    Add a cover before publishing
+                  </p>
+                ) : null}
 
-            <LongFormActionButtons
-              fetcherState={fetcher.state}
-              isFormValid={isFormValid}
-              hasScheduledFor={!!scheduledFor}
-              scheduledFor={scheduledFor}
-              statusLabel={scheduledFor ? undefined : "Draft"}
-              onSaveDraft={!initialData ? handleSaveDraft : undefined}
-              saveDraftDisabled={
-                !initialData
-                  ? fetcher.state !== "idle" || !content.trim() || isSigning
-                  : undefined
-              }
-              scheduledForLabel={
-                scheduledFor
-                  ? (() => {
-                      try {
-                        const d = new Date(scheduledFor);
-                        if (Number.isNaN(d.getTime())) return "Scheduled";
-                        const month = d.toLocaleString("default", {
-                          month: "short",
-                        });
-                        const day = d.getDate();
-                        const time = d.toLocaleTimeString("en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        });
-                        return `Scheduled for ${month} ${day}, ${time}`;
-                      } catch {
-                        return "Scheduled";
-                      }
-                    })()
-                  : undefined
-              }
-              wordCount={wordCount}
-              isSigning={isSigning}
-              onPreview={() => {
-                if (onPreview) {
-                  onPreview({
-                    title,
-                    summary: summary ?? generateSummaryFromContent(content),
-                    content,
-                    image,
-                  });
-                }
-              }}
-              onSchedule={() => {
-                flushSync();
-                void handleSchedule("schedule");
-              }}
-              onPublish={() => {
-                flushSync();
-                void handleSchedule("publish");
-              }}
-            />
+                <LongFormActionButtons
+                  fetcherState={fetcher.state}
+                  isFormValid={isFormValid}
+                  hasScheduledFor={!!scheduledFor}
+                  scheduledFor={scheduledFor}
+                  statusLabel={scheduledFor ? undefined : "Draft"}
+                  onSaveDraft={!initialData ? handleSaveDraft : undefined}
+                  saveDraftDisabled={
+                    !initialData
+                      ? fetcher.state !== "idle" || !content.trim() || isSigning
+                      : undefined
+                  }
+                  scheduledForLabel={
+                    scheduledFor
+                      ? (() => {
+                          try {
+                            const d = new Date(scheduledFor);
+                            if (Number.isNaN(d.getTime())) return "Scheduled";
+                            const month = d.toLocaleString("default", {
+                              month: "short",
+                            });
+                            const day = d.getDate();
+                            const time = d.toLocaleTimeString("en-US", {
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true,
+                            });
+                            return `Scheduled for ${month} ${day}, ${time}`;
+                          } catch {
+                            return "Scheduled";
+                          }
+                        })()
+                      : undefined
+                  }
+                  wordCount={wordCount}
+                  isSigning={isSigning}
+                  onPreview={() => {
+                    if (onPreview) {
+                      onPreview({
+                        title,
+                        summary: summary ?? generateSummaryFromContent(content),
+                        content,
+                        image,
+                      });
+                    }
+                  }}
+                  onSchedule={() => {
+                    flushSync();
+                    void handleSchedule("schedule");
+                  }}
+                  onPublish={() => {
+                    flushSync();
+                    void handleSchedule("publish");
+                  }}
+                />
 
-            {isSigning ? (
-              <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground rounded-md border bg-white/50 p-3 text-sm">
-                Waiting for signer approval… If you’re using a remote signer,
-                open it to approve the request.
-              </div>
-            ) : null}
-            {signingError ? (
-              <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
-                {signingError}
-              </div>
-            ) : null}
+                {isSigning ? (
+                  <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground rounded-md border bg-white/50 p-3 text-sm">
+                    Waiting for signer approval… If you’re using a remote
+                    signer, open it to approve the request.
+                  </div>
+                ) : null}
+                {signingError ? (
+                  <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
+                    {signingError}
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Asset Browser Modal */}
-      {showAssetBrowser ? (
-        <AssetBrowser
-          assets={assets}
-          onAssetsSelected={handleAssetBrowserSelect}
-          onClose={() => setShowAssetBrowser("")}
-        />
-      ) : null}
     </>
   );
 }

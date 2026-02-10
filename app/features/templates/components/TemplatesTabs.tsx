@@ -19,7 +19,7 @@ export function TemplatesTabs({ activeTab, onTabChange }: TemplatesTabsProps) {
               : "dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:border-border hover:text-muted-foreground border-transparent"
           }`}
         >
-          Assets
+          Templates
         </button>
         <button
           onClick={() => onTabChange("upload")}

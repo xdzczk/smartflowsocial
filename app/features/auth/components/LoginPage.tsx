@@ -35,10 +35,6 @@ export default function LoginPage() {
             </CardContent>
 
             <div className="relative flex min-h-[200px] items-center justify-center bg-[url('/motifflightmode.webp')] bg-cover bg-center bg-no-repeat px-6 py-10 md:min-h-full md:w-1/2 md:px-10 lg:p-16 dark:bg-[url('/motiffdarkmode.webp')]">
-              {/* Enhanced overlay with gradient */}
-              <div className="from-background/80 via-background/60 to-background/80 dark:from-background/90 dark:via-background/80 dark:to-background/90 absolute inset-0 rounded-r-lg bg-gradient-to-br" />
-              {/* Subtle brand color accent overlay */}
-              <div className="from-primary/5 absolute inset-0 rounded-r-lg bg-gradient-to-br to-transparent" />
               <div className="relative z-10 text-center sm:text-left">
                 <p className="text-foreground mb-2 text-lg leading-relaxed font-bold sm:text-xl">
                   Sign in securely using your{" "}

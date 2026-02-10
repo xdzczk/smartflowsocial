@@ -28,7 +28,6 @@ export interface PostFactoryOptions {
   queueTypeId?: string | null;
   tags?: string[];
   hashTagPresetId?: string | null;
-  templateId?: string | null;
   nostrEventId?: string | null;
   manual_override?: boolean;
   createdAt?: Date;
@@ -73,7 +72,6 @@ export class PostFactory {
       queueTypeId: null,
       tags: [],
       hashTagPresetId: null,
-      templateId: null,
       nostrEventId: null,
       manual_override: false,
       createdAt: new Date(),
@@ -258,7 +256,6 @@ export class PostFactory {
       queueTypeId: this.options.queueTypeId ?? null,
       tags: this.options.tags ?? [],
       hashTagPresetId: this.options.hashTagPresetId ?? null,
-      templateId: this.options.templateId ?? null,
       nostrEventId: this.options.nostrEventId ?? null,
       manual_override: this.options.manual_override ?? false,
       publishAttemptId: this.options.publishAttemptId ?? null,

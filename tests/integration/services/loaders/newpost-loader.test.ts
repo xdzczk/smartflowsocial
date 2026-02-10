@@ -5,13 +5,8 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock dependencies
 vi.mock("~/features/payments/subscriptions.server", () => ({
   requireAnySubscription: vi.fn(),
-}));
-
-vi.mock("~/models/asset.server", () => ({
-  getAssets: vi.fn(),
 }));
 
 vi.mock("~/features/user", () => ({
@@ -29,7 +24,6 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { getAssets } from "~/models/asset.server";
 
 describe("New Post Loader", () => {
   beforeEach(() => {
@@ -40,12 +34,6 @@ describe("New Post Loader", () => {
     const mockScheduleIntervals = ["4", "6", "8"];
     const mockQueueTypes = [{ id: "queue-1", name: "Queue 1" }];
     const mockHashTagPresets = [{ id: "preset-1", name: "Preset 1" }];
-    const mockAssets = {
-      assets: [{ id: "asset-1", title: "Asset 1" }],
-      totalCount: 1,
-      totalPages: 1,
-      currentPage: 1,
-    };
 
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
@@ -59,7 +47,6 @@ describe("New Post Loader", () => {
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockHashTagPresets
     );
-    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssets);
 
     const result = await loadNewPostData(TEST_USER_ID);
 
@@ -67,7 +54,6 @@ describe("New Post Loader", () => {
     expect(result.scheduleIntervals).toEqual(mockScheduleIntervals);
     expect(result.queueTypes).toEqual(mockQueueTypes);
     expect(result.hashTagPresets).toEqual(mockHashTagPresets);
-    expect(result.assets).toEqual(mockAssets.assets);
   });
 
   it("should require subscription before loading", async () => {
@@ -77,12 +63,6 @@ describe("New Post Loader", () => {
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({
-      assets: [],
-      totalCount: 0,
-      totalPages: 0,
-      currentPage: 1,
-    });
 
     await expect(loadNewPostData(TEST_USER_ID)).rejects.toThrow(
       "Subscription required"

@@ -129,7 +129,6 @@ async function updateScheduledPostRead(postId: string): Promise<void> {
       queueTypeName: post.queueType?.name ?? "unassigned",
       queueTypeColorToken: post.queueType?.colorToken ?? null,
       hashTagPresetId: post.hashTagPresetId,
-      templateId: post.templateId,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     },
@@ -139,7 +138,6 @@ async function updateScheduledPostRead(postId: string): Promise<void> {
       queueTypeName: post.queueType?.name ?? "unassigned",
       queueTypeColorToken: post.queueType?.colorToken ?? null,
       hashTagPresetId: post.hashTagPresetId,
-      templateId: post.templateId,
       updatedAt: new Date(),
     },
   });

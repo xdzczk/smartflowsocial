@@ -13,6 +13,9 @@ export interface TemplateFactoryOptions {
   name?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
+  postId?: string | null;
+  longFormPostId?: string | null;
+  templateType?: "POST" | "LONGFORM";
 }
 
 export class TemplateFactory {
@@ -51,6 +54,10 @@ export class TemplateFactory {
       name: this.options.name ?? null,
       createdAt: this.options.createdAt ?? new Date(),
       updatedAt: this.options.updatedAt ?? new Date(),
+      postId: this.options.postId ?? null,
+      longFormPostId: this.options.longFormPostId ?? null,
+      templateType: (this.options.templateType ??
+        "POST") as Template["templateType"],
     };
     return template;
   }

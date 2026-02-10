@@ -1,4 +1,3 @@
-import type { AssetType } from "@prisma/client";
 import {
   Form,
   useActionData,
@@ -8,7 +7,6 @@ import {
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
-import type { Asset } from "~/features/assets";
 import { getActionErrorMessage } from "~/lib/errors";
 
 import { useNewLongFormState } from "../hooks/useNewLongFormState";
@@ -51,10 +49,6 @@ export default function NewLongFormPostPage() {
     "hashTagPresets" in loaderData
       ? (loaderData as { hashTagPresets?: unknown }).hashTagPresets
       : [];
-  const assetsRaw =
-    loaderData && typeof loaderData === "object" && "assets" in loaderData
-      ? (loaderData as { assets?: unknown }).assets
-      : [];
   const userTimezone =
     loaderData && typeof loaderData === "object" && "userTimezone" in loaderData
       ? (loaderData as { userTimezone?: unknown }).userTimezone
@@ -65,6 +59,38 @@ export default function NewLongFormPostPage() {
     "uploadProvider" in loaderData
       ? (loaderData as { uploadProvider?: unknown }).uploadProvider
       : null;
+  const initialTemplateData =
+    loaderData &&
+    typeof loaderData === "object" &&
+    "initialTemplateData" in loaderData &&
+    (loaderData as { initialTemplateData?: unknown }).initialTemplateData !==
+      null &&
+    typeof (loaderData as { initialTemplateData?: unknown })
+      .initialTemplateData === "object"
+      ? (
+          loaderData as {
+            initialTemplateData: {
+              title?: string;
+              summary?: string;
+              content?: string;
+              image?: string;
+              tags?: string[];
+              queueType?: { name: string };
+            };
+          }
+        ).initialTemplateData
+      : null;
+  const templatesRaw =
+    loaderData &&
+    typeof loaderData === "object" &&
+    "templates" in loaderData &&
+    Array.isArray((loaderData as { templates?: unknown }).templates)
+      ? (
+          loaderData as {
+            templates: Array<{ id: string; name: string | null }>;
+          }
+        ).templates
+      : [];
 
   // Type assertions for Remix JsonifyObject serialization (0.25 = 15 min, 0.5 = 30 min; parse as float)
   const scheduleIntervals = Array.isArray(scheduleIntervalsRaw)
@@ -78,55 +104,6 @@ export default function NewLongFormPostPage() {
           return null;
         })
         .filter((n): n is number => n !== null)
-    : [];
-
-  const assets: Asset[] = Array.isArray(assetsRaw)
-    ? assetsRaw
-        .filter(
-          (
-            asset: unknown
-          ): asset is {
-            id: string;
-            title?: unknown;
-            content?: unknown;
-            fileUrl?: unknown;
-            tags?: unknown;
-            assetType?: unknown;
-            createdAt?: unknown;
-            updatedAt?: unknown;
-          } =>
-            typeof asset === "object" &&
-            asset !== null &&
-            "id" in asset &&
-            typeof (asset as { id: unknown }).id === "string"
-        )
-        .map((asset) => ({
-          id: asset.id,
-          title: typeof asset.title === "string" ? asset.title : null,
-          content: typeof asset.content === "string" ? asset.content : null,
-          fileUrl: typeof asset.fileUrl === "string" ? asset.fileUrl : null,
-          tags: Array.isArray(asset.tags)
-            ? asset.tags.filter((tag): tag is string => typeof tag === "string")
-            : [],
-          assetType:
-            typeof asset.assetType === "string"
-              ? (asset.assetType as AssetType)
-              : ("IMAGE" as AssetType),
-          createdAt: (() => {
-            const createdAtValue: unknown = asset.createdAt;
-            if (createdAtValue instanceof Date) return createdAtValue;
-            if (typeof createdAtValue === "string")
-              return new Date(createdAtValue);
-            return new Date();
-          })(),
-          updatedAt: (() => {
-            const updatedAtValue: unknown = asset.updatedAt;
-            if (updatedAtValue instanceof Date) return updatedAtValue;
-            if (typeof updatedAtValue === "string")
-              return new Date(updatedAtValue);
-            return new Date();
-          })(),
-        }))
     : [];
 
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
@@ -346,6 +323,36 @@ export default function NewLongFormPostPage() {
     <div className="p-6">
       <NewLongFormHeader displayedHashtags={displayedHashtags} />
 
+      {templatesRaw.length > 0 ? (
+        <div className="mb-4 flex items-center gap-2">
+          <label
+            htmlFor="load-template-longform"
+            className="text-muted-foreground text-sm"
+          >
+            Load template:
+          </label>
+          <select
+            id="load-template-longform"
+            className="border-input bg-background rounded-md border px-2 py-1.5 text-sm"
+            value=""
+            onChange={(e) => {
+              const id = e.target.value;
+              if (id)
+                navigate(
+                  `/dashboard/newlongformpost?templateId=${encodeURIComponent(id)}`
+                );
+            }}
+          >
+            <option value="">— Choose —</option>
+            {templatesRaw.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name ?? "Unnamed template"}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
       <ErrorMessage
         error={getActionErrorMessage(actionData)}
         success={
@@ -361,11 +368,11 @@ export default function NewLongFormPostPage() {
 
       <Form method="post" encType="multipart/form-data">
         <LongFormPost
+          initialData={initialTemplateData}
           queueTypes={queueTypes}
           scheduleIntervals={scheduleIntervals}
           userTags={safeUserTags}
           hashTagPresets={hashTagPresets}
-          assets={assets}
           uploadProvider={
             typeof uploadProvider === "string" || uploadProvider === null
               ? uploadProvider

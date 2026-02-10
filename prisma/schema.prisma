@@ -42,7 +42,6 @@ model User {
   children                   User[]         @relation("UserChildrenByNpub")
   pendingParentRequests      String[]       @default([])
 
-  assets         Asset[]
   hashTagPresets HashTagPreset[]
   longFormPosts  LongFormPost[]
   Payment        Payment[]
@@ -148,7 +147,6 @@ model Post {
   tags                    String[]
   manual_override         Boolean               @default(false)
   userId                  String
-  templateId              String?
   hashTagPresetId         String?
   // Idempotency keys
   creationIdempotencyKey  String?               @unique
@@ -160,7 +158,7 @@ model Post {
   publishingStartedAt     DateTime?
   hashTagPreset           HashTagPreset?        @relation(fields: [hashTagPresetId], references: [id])
   queueType               QueueType?            @relation(fields: [queueTypeId], references: [id])
-  template                Template?             @relation(fields: [templateId], references: [id])
+  template                Template?             @relation("TemplatePost")
   user                    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   stateTransitions        PostStateTransition[]
   // Source post for scheduled repost/quote (multiple reposts/quotes per source allowed)
@@ -245,6 +243,7 @@ model LongFormPost {
   // Kind 1 quote posts that reference this longform
   quotesFromLongform      Post[]
   draftVersions           DraftVersion[]
+  template                Template?
 
   // Indexes for common query patterns
   // State machine indexes (use currentState as single source of truth)
@@ -296,27 +295,23 @@ model DraftGroupVersion {
   @@index([draftGroupId, version])
 }
 
-model Template {
-  id        String   @id @default(cuid())
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userId    String
-  posts     Post[]
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum TemplateType {
+  POST
+  LONGFORM
 }
 
-model Asset {
-  id        String    @id @default(cuid())
-  title     String?
-  content   String?
-  fileUrl   String?
-  tags      String[]  @default([])
-  assetType AssetType @default(TEXT)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Template {
+  id              String        @id @default(cuid())
+  name            String?
+  templateType    TemplateType  @default(POST)
+  postId          String?       @unique
+  post            Post?         @relation("TemplatePost", fields: [postId], references: [id], onDelete: Cascade)
+  longFormPostId  String?       @unique
+  longFormPost    LongFormPost? @relation(fields: [longFormPostId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Payment {
@@ -350,7 +345,6 @@ model Plan {
   maxPostsPerMonth             Int?
   maxQueueTypes                Int?
   maxTemplates                 Int?
-  maxAssets                    Int?
   maxLongFormPosts             Int?
   isActive                     Boolean        @default(true)
   createdAt                    DateTime       @default(now())
@@ -400,12 +394,6 @@ enum PostType {
   IMAGE
   CAROUSEL
   TEXT
-  VIDEO
-}
-
-enum AssetType {
-  TEXT
-  IMAGE
   VIDEO
 }
 

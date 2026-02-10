@@ -15,8 +15,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
-import AssetBrowser from "~/features/assets/components/AssetBrowser";
-import type { Asset } from "~/features/assets/types";
 import type { SignedEvent } from "~/features/nostr/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import {
@@ -213,7 +211,6 @@ async function buildQuoteSchedules(
 
 export interface UnifiedComposerProps {
   queueTypes?: Array<string | QueueType>;
-  assets?: Asset[];
   hashTagPresets?: Array<{ id: string; name: string; tags: string }>;
   onQueueTypeChange?: (queueType: string) => void;
   selectedHashTagPresetId?: string | null | undefined;
@@ -227,6 +224,8 @@ export interface UnifiedComposerProps {
   /** When opening an existing draft from URL, pass its id so "Save as Draft" updates this draft. */
   initialDraftId?: string | null;
   /** Draft data to prefill the composer (when opening from drafts). Requires initialDraftId. */
+  /** When "template", only "Save as template" and Cancel are shown; no Schedule/Publish/Save as draft. */
+  mode?: "default" | "template";
   initialDraft?: {
     content: string;
     caption: string;
@@ -244,7 +243,6 @@ export interface UnifiedComposerProps {
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
 export function UnifiedComposer({
   queueTypes = [],
-  assets = [],
   hashTagPresets = [],
   onQueueTypeChange,
   selectedHashTagPresetId,
@@ -254,6 +252,7 @@ export function UnifiedComposer({
   onComposerStatusChange,
   initialDraftId = null,
   initialDraft = null,
+  mode = "default",
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
@@ -283,10 +282,11 @@ export function UnifiedComposer({
     })();
   }, []);
   const tags: string[] = [];
-  const [showAssetBrowser, setShowAssetBrowser] = React.useState(false);
   const [selectedHashtags, setSelectedHashtags] = React.useState(
     () => initialDraft?.tags ?? ""
   );
+  const [templateName, setTemplateName] = React.useState("");
+  const isTemplateMode = mode === "template";
   const initialAttachmentsFromDraft = React.useMemo(() => {
     if (!initialDraft?.draftMeta?.attachmentMeta?.length) return [];
     return initialDraft.draftMeta.attachmentMeta.map((a) => ({
@@ -534,6 +534,34 @@ export function UnifiedComposer({
       ? ((event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement)
       : undefined;
     const submitType = submitter?.value ?? "";
+
+    if (isTemplateMode && submitType === "save-as-template") {
+      if (!templateName.trim()) {
+        return;
+      }
+      clearLocalSnapshot();
+      const formData = new FormData();
+      formData.set("_action", "createTemplate");
+      formData.set("templateName", templateName.trim());
+      formData.set("content", data.content);
+      formData.set("queueType", data.queueType);
+      if (queueTypeId) formData.set("queueTypeId", queueTypeId);
+      formData.set("tags", selectedHashtags);
+      if (data.hashTagPresetId)
+        formData.set("hashTagPresetId", data.hashTagPresetId);
+      formData.set(
+        "useHashtagPresets",
+        String(Boolean(data.useHashtagPresets))
+      );
+      const draftAttachmentMeta = attachments
+        .filter((a) => a.url)
+        .map((a) => ({ localId: a.localId, url: a.url, alt: a.alt }));
+      if (draftAttachmentMeta.length > 0) {
+        formData.set("attachmentMeta", JSON.stringify(draftAttachmentMeta));
+      }
+      fetcher.submit(formData, { method: "post" });
+      return;
+    }
 
     if (submitType === "draft-text") {
       clearLocalSnapshot();
@@ -838,22 +866,6 @@ export function UnifiedComposer({
     onHashtagPresetChange?.(presetId, hashtags);
   };
 
-  const handleAssetsSelected = (selectedAssets: Asset[]) => {
-    const textAssets: string[] = [];
-    const imageAssets: string[] = [];
-    selectedAssets.forEach((asset) => {
-      if (asset.assetType === "TEXT") {
-        const textContent = asset.content ?? asset.title ?? "";
-        if (textContent) textAssets.push(textContent);
-      } else if (asset.assetType === "IMAGE" && asset.fileUrl) {
-        imageAssets.push(asset.fileUrl);
-      }
-    });
-    const newContent = [...textAssets, ...imageAssets].join("\n");
-    const updatedContent = content ? content + "\n" + newContent : newContent;
-    form.setValue("content", updatedContent);
-  };
-
   const processNewFilesForSingleNote = React.useCallback(
     (files: File[]) => {
       const accepted = filterMediaFiles(files);
@@ -1059,10 +1071,6 @@ export function UnifiedComposer({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowAssetBrowser(false);
-        return;
-      }
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         if (!disabled) draftSubmitRef.current?.click();
@@ -1371,38 +1379,25 @@ export function UnifiedComposer({
                     rows={6}
                     disabled={disabled}
                   />
-                  <div className="absolute top-4 right-4 flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setDraftPickerOpen(true)}
-                      disabled={disabled}
-                      aria-label="Open draft"
-                    >
-                      <FolderOpen
-                        className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-                        strokeWidth={INLINE_ICON_STROKE}
-                        aria-hidden
-                      />
-                      Open draft
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowAssetBrowser(true)}
-                      disabled={disabled}
-                      aria-label="Insert from assets"
-                    >
-                      <FolderOpen
-                        className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-                        strokeWidth={INLINE_ICON_STROKE}
-                        aria-hidden
-                      />
-                      Assets
-                    </Button>
-                  </div>
+                  {!isTemplateMode ? (
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDraftPickerOpen(true)}
+                        disabled={disabled}
+                        aria-label="Open draft"
+                      >
+                        <FolderOpen
+                          className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+                          strokeWidth={INLINE_ICON_STROKE}
+                          aria-hidden
+                        />
+                        Open draft
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
                 <AttachmentsStrip
                   attachments={attachments}
@@ -1444,6 +1439,20 @@ export function UnifiedComposer({
             processNewFilesForSegment(segmentId, files);
           }}
         />
+        {isTemplateMode ? (
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="template-name">Template name</Label>
+            <Input
+              id="template-name"
+              type="text"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="e.g. Weekly tip"
+              className="max-w-xs"
+              required
+            />
+          </div>
+        ) : null}
         <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-3">
             <QueueSelector
@@ -1517,205 +1526,216 @@ export function UnifiedComposer({
                   : undefined
               }
             />
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="scheduledFor">Schedule for later</Label>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Input
-                  type="datetime-local"
-                  id="scheduledFor"
-                  {...form.register("scheduledFor")}
-                  disabled={disabled}
-                />
-              </div>
-              <SchedulingSection
-                scheduledFor={formScheduledFor ?? schedulingScheduledFor}
-                onScheduledForChange={(value) => {
-                  form.setValue("scheduledFor", value);
-                  setSchedulingScheduledFor(value);
-                }}
-                scheduleIntervals={scheduleIntervals}
-                queueTypes={queueTypes}
-                selectedQueue={selectedQueue}
-                onScheduleIntervalClick={(intervalHours) => {
-                  handleScheduleIntervalClick(intervalHours);
-                }}
-                onCalculateNextSlot={() => {
-                  void calculateQueueScheduleTime(selectedQueue);
-                }}
-                disabled={disabled}
-                showTimeInput={false}
-              />
-              <div className="border-border rounded-lg border">
-                <button
-                  type="button"
-                  onClick={() => setPostOptionsOpen((o) => !o)}
-                  aria-expanded={postOptionsOpen}
-                  className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors"
-                >
-                  <span>Post options</span>
-                  {!postOptionsOpen &&
-                  (isThreadMode ||
-                    form.watch("isRecyclable") ||
-                    alsoScheduleRepost ||
-                    alsoScheduleQuote) ? (
-                    <span className="truncate text-xs">
-                      {[
-                        isThreadMode &&
-                          `Thread · ${threadSegments.length} segment${threadSegments.length !== 1 ? "s" : ""}`,
-                        form.watch("isRecyclable") && "Recyclable",
-                        (alsoScheduleRepost || alsoScheduleQuote) &&
-                          [
-                            alsoScheduleRepost &&
-                              `${repostDelayList.length} repost${repostDelayList.length !== 1 ? "s" : ""}`,
-                            alsoScheduleQuote &&
-                              `${quoteEntries.length} quote${quoteEntries.length !== 1 ? "s" : ""}`,
-                          ]
-                            .filter(Boolean)
-                            .join(" · "),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  ) : null}
-                  <ChevronDown
-                    className={`h-4 w-4 shrink-0 transition-transform ${postOptionsOpen ? "rotate-180" : ""}`}
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
+            {!isTemplateMode ? (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="scheduledFor">Schedule for later</Label>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Input
+                    type="datetime-local"
+                    id="scheduledFor"
+                    {...form.register("scheduledFor")}
+                    disabled={disabled}
                   />
-                </button>
-                {postOptionsOpen ? (
-                  <>
-                    <Separator className="my-2" />
-                    <div className="border-border space-y-3 px-3 pb-3">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="thread-mode"
-                          checked={isThreadMode}
-                          onCheckedChange={(c) => setIsThreadMode(c === true)}
+                </div>
+                <SchedulingSection
+                  scheduledFor={formScheduledFor ?? schedulingScheduledFor}
+                  onScheduledForChange={(value) => {
+                    form.setValue("scheduledFor", value);
+                    setSchedulingScheduledFor(value);
+                  }}
+                  scheduleIntervals={scheduleIntervals}
+                  queueTypes={queueTypes}
+                  selectedQueue={selectedQueue}
+                  onScheduleIntervalClick={(intervalHours) => {
+                    handleScheduleIntervalClick(intervalHours);
+                  }}
+                  onCalculateNextSlot={() => {
+                    void calculateQueueScheduleTime(selectedQueue);
+                  }}
+                  disabled={disabled}
+                  showTimeInput={false}
+                />
+                <div className="border-border rounded-lg border">
+                  <button
+                    type="button"
+                    onClick={() => setPostOptionsOpen((o) => !o)}
+                    aria-expanded={postOptionsOpen}
+                    className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors"
+                  >
+                    <span>Post options</span>
+                    {!postOptionsOpen &&
+                    (isThreadMode ||
+                      form.watch("isRecyclable") ||
+                      alsoScheduleRepost ||
+                      alsoScheduleQuote) ? (
+                      <span className="truncate text-xs">
+                        {[
+                          isThreadMode &&
+                            `Thread · ${threadSegments.length} segment${threadSegments.length !== 1 ? "s" : ""}`,
+                          form.watch("isRecyclable") && "Recyclable",
+                          (alsoScheduleRepost || alsoScheduleQuote) &&
+                            [
+                              alsoScheduleRepost &&
+                                `${repostDelayList.length} repost${repostDelayList.length !== 1 ? "s" : ""}`,
+                              alsoScheduleQuote &&
+                                `${quoteEntries.length} quote${quoteEntries.length !== 1 ? "s" : ""}`,
+                            ]
+                              .filter(Boolean)
+                              .join(" · "),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    ) : null}
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 transition-transform ${postOptionsOpen ? "rotate-180" : ""}`}
+                      strokeWidth={INLINE_ICON_STROKE}
+                      aria-hidden
+                    />
+                  </button>
+                  {postOptionsOpen ? (
+                    <>
+                      <Separator className="my-2" />
+                      <div className="border-border space-y-3 px-3 pb-3">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="thread-mode"
+                            checked={isThreadMode}
+                            onCheckedChange={(c) => setIsThreadMode(c === true)}
+                            disabled={disabled}
+                          />
+                          <Label htmlFor="thread-mode" className="text-sm">
+                            Thread (multiple posts in sequence)
+                          </Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Controller
+                            name="isRecyclable"
+                            control={form.control}
+                            render={({ field }) => (
+                              <Checkbox
+                                id="isRecyclable"
+                                checked={!!field.value}
+                                onCheckedChange={field.onChange}
+                                disabled={disabled}
+                              />
+                            )}
+                          />
+                          <Label
+                            htmlFor="isRecyclable"
+                            className="text-muted-foreground dark:text-foreground text-sm"
+                          >
+                            Make this post recyclable
+                          </Label>
+                        </div>
+                        <AlsoScheduleBlock
+                          alsoScheduleRepost={alsoScheduleRepost}
+                          onAlsoScheduleRepostChange={setAlsoScheduleRepost}
+                          repostDelayList={repostDelayList}
+                          onRepostDelayListChange={setRepostDelayList}
+                          alsoScheduleQuote={alsoScheduleQuote}
+                          onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+                          quoteEntries={quoteEntries}
+                          onQuoteEntriesChange={setQuoteEntries}
                           disabled={disabled}
                         />
-                        <Label htmlFor="thread-mode" className="text-sm">
-                          Thread (multiple posts in sequence)
-                        </Label>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Controller
-                          name="isRecyclable"
-                          control={form.control}
-                          render={({ field }) => (
-                            <Checkbox
-                              id="isRecyclable"
-                              checked={!!field.value}
-                              onCheckedChange={field.onChange}
-                              disabled={disabled}
-                            />
-                          )}
-                        />
-                        <Label
-                          htmlFor="isRecyclable"
-                          className="text-muted-foreground dark:text-foreground text-sm"
-                        >
-                          Make this post recyclable
-                        </Label>
-                      </div>
-                      <AlsoScheduleBlock
-                        alsoScheduleRepost={alsoScheduleRepost}
-                        onAlsoScheduleRepostChange={setAlsoScheduleRepost}
-                        repostDelayList={repostDelayList}
-                        onRepostDelayListChange={setRepostDelayList}
-                        alsoScheduleQuote={alsoScheduleQuote}
-                        onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-                        quoteEntries={quoteEntries}
-                        onQuoteEntriesChange={setQuoteEntries}
-                        disabled={disabled}
-                      />
-                    </div>
-                  </>
-                ) : null}
+                    </>
+                  ) : null}
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
           <div className="max-sm:bg-background/95 flex flex-col gap-2 max-sm:sticky max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-10 max-sm:mt-4 max-sm:border-t max-sm:py-3 max-sm:backdrop-blur sm:flex-row sm:items-center">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              {signerReady === false ? (
-                <Button variant="default" asChild>
-                  <Link to="/dashboard/settings">Connect signer</Link>
-                </Button>
-              ) : (
+            {isTemplateMode ? (
+              <>
                 <Button
                   ref={primarySubmitRef}
                   type="submit"
-                  value={
-                    hasScheduleTimeForSubmit
-                      ? ACTION_SCHEDULE_TEXT
-                      : ACTION_POST_TEXT
-                  }
+                  value="save-as-template"
                   name="_action"
-                  className="bg-success hover:bg-success/90 text-white"
+                  disabled={disabled || !templateName.trim()}
+                >
+                  {fetcher.state !== "idle" ? "Saving..." : "Save as template"}
+                </Button>
+                <Button type="button" variant="ghost" asChild>
+                  <Link to="/dashboard/templates">Cancel</Link>
+                </Button>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {signerReady === false ? (
+                  <Button variant="default" asChild>
+                    <Link to="/dashboard/settings">Connect signer</Link>
+                  </Button>
+                ) : (
+                  <Button
+                    ref={primarySubmitRef}
+                    type="submit"
+                    value={
+                      hasScheduleTimeForSubmit
+                        ? ACTION_SCHEDULE_TEXT
+                        : ACTION_POST_TEXT
+                    }
+                    name="_action"
+                    className="bg-success hover:bg-success/90 text-white"
+                    disabled={disabled}
+                  >
+                    {hasScheduleTimeForSubmit ? (
+                      <Clock
+                        className="mr-1.5 h-5 w-5"
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                    ) : (
+                      <Send
+                        className="mr-1.5 h-5 w-5"
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                    )}
+                    {isSigning
+                      ? "Waiting for signer…"
+                      : fetcher.state !== "idle"
+                        ? hasScheduleTimeForSubmit
+                          ? isThreadMode
+                            ? "Scheduling thread…"
+                            : "Scheduling..."
+                          : isThreadMode
+                            ? "Posting thread…"
+                            : "Posting..."
+                        : hasScheduleTimeForSubmit
+                          ? scheduleTimeLabel
+                            ? isThreadMode
+                              ? `Schedule thread for ${scheduleTimeLabel}`
+                              : `Schedule for ${scheduleTimeLabel}`
+                            : isThreadMode
+                              ? "Schedule thread"
+                              : "Schedule"
+                          : isThreadMode
+                            ? "Post thread"
+                            : "Post Now"}
+                  </Button>
+                )}
+                <Button
+                  ref={draftSubmitRef}
+                  type="submit"
+                  value="draft-text"
+                  name="_action"
+                  variant="outline"
                   disabled={disabled}
                 >
-                  {hasScheduleTimeForSubmit ? (
-                    <Clock
-                      className="mr-1.5 h-5 w-5"
-                      strokeWidth={INLINE_ICON_STROKE}
-                      aria-hidden
-                    />
-                  ) : (
-                    <Send
-                      className="mr-1.5 h-5 w-5"
-                      strokeWidth={INLINE_ICON_STROKE}
-                      aria-hidden
-                    />
-                  )}
-                  {isSigning
-                    ? "Waiting for signer…"
-                    : fetcher.state !== "idle"
-                      ? hasScheduleTimeForSubmit
-                        ? isThreadMode
-                          ? "Scheduling thread…"
-                          : "Scheduling..."
-                        : isThreadMode
-                          ? "Posting thread…"
-                          : "Posting..."
-                      : hasScheduleTimeForSubmit
-                        ? scheduleTimeLabel
-                          ? isThreadMode
-                            ? `Schedule thread for ${scheduleTimeLabel}`
-                            : `Schedule for ${scheduleTimeLabel}`
-                          : isThreadMode
-                            ? "Schedule thread"
-                            : "Schedule"
-                        : isThreadMode
-                          ? "Post thread"
-                          : "Post Now"}
+                  <Pencil
+                    className="mr-1.5 h-5 w-5"
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                  {fetcher.state !== "idle" ? "Saving..." : "Save as Draft"}
                 </Button>
-              )}
-              <Button
-                ref={draftSubmitRef}
-                type="submit"
-                value="draft-text"
-                name="_action"
-                variant="outline"
-                disabled={disabled}
-              >
-                <Pencil
-                  className="mr-1.5 h-5 w-5"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-                {fetcher.state !== "idle" ? "Saving..." : "Save as Draft"}
-              </Button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {showAssetBrowser ? (
-          <AssetBrowser
-            assets={assets}
-            onAssetsSelected={handleAssetsSelected}
-            onClose={() => setShowAssetBrowser(false)}
-          />
-        ) : null}
       </fetcher.Form>
       <ConfidencePanel
         queueName={selectedQueue}

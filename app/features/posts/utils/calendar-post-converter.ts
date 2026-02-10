@@ -79,12 +79,6 @@ export function longFormPostDataToCalendarPost(
           ? post.publishedAt
           : null
       : null;
-  const templateIdValue =
-    "templateId" in post && post.templateId
-      ? typeof post.templateId === "string"
-        ? post.templateId
-        : null
-      : null;
   const hashtagsValue = Array.isArray(post.tags)
     ? post.tags.join(" ")
     : undefined;
@@ -107,7 +101,6 @@ export function longFormPostDataToCalendarPost(
     hashtags: hashtagsValue,
     isScheduled,
     isPosted,
-    templateId: templateIdValue,
     isRecyclable:
       "isRecyclable" in post && typeof post.isRecyclable === "boolean"
         ? post.isRecyclable

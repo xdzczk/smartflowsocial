@@ -10,35 +10,51 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { getAssets } from "~/models/asset.server";
+import { getTemplatePrefill, getTemplates } from "~/models/template.server";
 
 import { loadDraftEditData } from "./draft-edit-loader.server";
 
 /**
- * Load new post page data. When draftId is in the URL, also load that draft for composer prefill.
+ * Load new post page data. When draftId or templateId is in the URL, load that for composer prefill.
+ * templateId takes precedence over draftId when both are present.
  */
 export async function loadNewPostData(
   userId: string,
-  draftId: string | null = null
+  draftId: string | null = null,
+  templateId: string | null = null
 ) {
   await requireAnySubscription(userId);
 
-  const [scheduleIntervals, queueTypes, hashTagPresets, assetsData, relays] =
+  const [scheduleIntervals, queueTypes, hashTagPresets, relays, templates] =
     await Promise.all([
       getScheduleInterval(userId),
       getQueueTypes(userId),
       getUserHashTagPresets(userId),
-      getAssets({ userId, page: 1, limit: 50 }),
       resolveExecutionRelays(userId),
+      getTemplates({ userId }),
     ]);
 
   const base = {
     scheduleIntervals,
     queueTypes,
     hashTagPresets,
-    assets: assetsData.assets,
     relays,
+    templates: templates.filter(
+      (t) => (t as { templateType?: string }).templateType === "POST"
+    ),
   };
+
+  if (templateId && templateId.length > 0) {
+    const prefill = await getTemplatePrefill({ id: templateId, userId });
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- prefill type discriminated at runtime
+    if (prefill?.type === "POST" && prefill.post) {
+      return {
+        ...base,
+        initialDraft: prefill.post,
+        initialDraftId: null,
+      };
+    }
+  }
 
   if (!draftId || draftId.length === 0) {
     return { ...base, initialDraft: null, initialDraftId: null };

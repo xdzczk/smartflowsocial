@@ -192,10 +192,15 @@ export function ExpandableNavigationSection({
   };
 
   const handleBlurCapture = () => {
-    // After focus leaves, check if it went outside this section; if so, collapse
+    // After focus leaves, check if it went outside this section; if so, collapse.
+    // Do not collapse when current route is a child of this section (e.g. user navigated to longform composer).
     setTimeout(() => {
       const container = sectionRef.current;
-      if (container && !container.contains(document.activeElement)) {
+      if (
+        container &&
+        !container.contains(document.activeElement) &&
+        !isAnyChildActive
+      ) {
         setManuallyExpanded(false);
       }
     }, 0);

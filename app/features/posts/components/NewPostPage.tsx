@@ -1,8 +1,6 @@
-import type { AssetType } from "@prisma/client";
 import { useLoaderData, useSearchParams, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
-import type { Asset } from "~/features/assets";
 import {
   convertJsonValueToScheduleConfig,
   type HashTagPreset,
@@ -127,68 +125,6 @@ function parseHashTagPreset(preset: unknown): HashTagPreset | null {
   return null;
 }
 
-function parseAsset(asset: unknown): Asset | null {
-  if (
-    typeof asset === "object" &&
-    asset !== null &&
-    "id" in asset &&
-    typeof (asset as { id: unknown }).id === "string"
-  ) {
-    const typedAsset = asset as {
-      id: string;
-      title?: unknown;
-      content?: unknown;
-      fileUrl?: unknown;
-      tags?: unknown;
-      assetType?: unknown;
-      createdAt?: unknown;
-      updatedAt?: unknown;
-    };
-    return {
-      id: typedAsset.id,
-      title:
-        typeof typedAsset.title === "string"
-          ? typedAsset.title
-          : typedAsset.title === null
-            ? null
-            : null,
-      content:
-        typeof typedAsset.content === "string"
-          ? typedAsset.content
-          : typedAsset.content === null
-            ? null
-            : null,
-      fileUrl:
-        typeof typedAsset.fileUrl === "string"
-          ? typedAsset.fileUrl
-          : typedAsset.fileUrl === null
-            ? null
-            : null,
-      tags: Array.isArray(typedAsset.tags)
-        ? typedAsset.tags.filter(
-            (tag): tag is string => typeof tag === "string"
-          )
-        : [],
-      assetType: (typeof typedAsset.assetType === "string"
-        ? typedAsset.assetType
-        : "IMAGE") as AssetType,
-      createdAt: (() => {
-        const createdAtValue: unknown = typedAsset.createdAt;
-        if (createdAtValue instanceof Date) return createdAtValue;
-        if (typeof createdAtValue === "string") return new Date(createdAtValue);
-        return new Date();
-      })(),
-      updatedAt: (() => {
-        const updatedAtValue: unknown = typedAsset.updatedAt;
-        if (updatedAtValue instanceof Date) return updatedAtValue;
-        if (typeof updatedAtValue === "string") return new Date(updatedAtValue);
-        return new Date();
-      })(),
-    };
-  }
-  return null;
-}
-
 export default function NewPostPage() {
   const loaderDataRaw = useLoaderData<unknown>();
   const loaderData =
@@ -196,7 +132,6 @@ export default function NewPostPage() {
       ? (loaderDataRaw as {
           queueTypes?: unknown;
           hashTagPresets?: unknown;
-          assets?: unknown;
           relays?: unknown;
         })
       : {};
@@ -209,10 +144,6 @@ export default function NewPostPage() {
     "hashTagPresets" in loaderData && Array.isArray(loaderData.hashTagPresets)
       ? loaderData.hashTagPresets
       : [];
-  const assets =
-    "assets" in loaderData && Array.isArray(loaderData.assets)
-      ? loaderData.assets
-      : [];
 
   const typedQueueTypes: Array<string | QueueType> = Array.isArray(queueTypes)
     ? queueTypes.map((qt) => parseQueueType(qt))
@@ -221,9 +152,6 @@ export default function NewPostPage() {
     ? hashTagPresets
         .map((p) => parseHashTagPreset(p))
         .filter((p): p is HashTagPreset => p !== null)
-    : [];
-  const typedAssets: Asset[] = Array.isArray(assets)
-    ? assets.map((a) => parseAsset(a)).filter((a): a is Asset => a !== null)
     : [];
 
   const {
@@ -282,6 +210,11 @@ export default function NewPostPage() {
     typeof loaderData.initialDraftId === "string"
       ? loaderData.initialDraftId
       : null;
+
+  const templates =
+    "templates" in loaderData && Array.isArray(loaderData.templates)
+      ? (loaderData.templates as Array<{ id: string; name: string | null }>)
+      : [];
 
   const relayCount =
     selectedRelayUrls.length > 0
@@ -365,9 +298,38 @@ export default function NewPostPage() {
         />
       ) : null}
 
+      {templates.length > 0 ? (
+        <div className="mb-4 flex items-center gap-2">
+          <label
+            htmlFor="load-template-post"
+            className="text-muted-foreground text-sm"
+          >
+            Load template:
+          </label>
+          <select
+            id="load-template-post"
+            className="border-input bg-background rounded-md border px-2 py-1.5 text-sm"
+            value=""
+            onChange={(e) => {
+              const id = e.target.value;
+              if (id)
+                navigate(
+                  `/dashboard/newpost?templateId=${encodeURIComponent(id)}`
+                );
+            }}
+          >
+            <option value="">— Choose —</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name ?? "Unnamed template"}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
       <UnifiedComposer
         queueTypes={typedQueueTypes}
-        assets={typedAssets}
         hashTagPresets={typedHashTagPresets}
         onQueueTypeChange={handleQueueTypeChange}
         selectedHashTagPresetId={selectedHashTagPresetId}

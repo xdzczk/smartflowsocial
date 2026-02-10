@@ -67,7 +67,6 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     repost: post.repost,
     isQuotedPost: post.isQuotedPost,
     isRecyclable: post.isRecyclable,
-    templateId: nullToUndefined(post.templateId),
     originalData: post,
   };
 

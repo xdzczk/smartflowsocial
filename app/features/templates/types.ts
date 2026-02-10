@@ -6,7 +6,6 @@
 import type { Template as PrismaTemplate } from "@prisma/client";
 import type { FetcherWithComponents } from "@remix-run/react";
 
-import type { Asset } from "~/features/assets/types";
 /**
  * Template data structure
  */
@@ -36,6 +35,4 @@ export type TemplateFetcher = FetcherWithComponents<{
   success?: boolean;
   error?: string;
   scheduleData?: ScheduleData[];
-  asset?: Asset;
-  assets?: Asset[];
 }>;

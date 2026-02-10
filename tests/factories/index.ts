@@ -12,4 +12,3 @@ export * from "./queue-type.factory";
 export * from "./hashtag-preset.factory";
 export * from "./payment.factory";
 export * from "./template.factory";
-export * from "./asset.factory";

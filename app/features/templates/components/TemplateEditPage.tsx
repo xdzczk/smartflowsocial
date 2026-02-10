@@ -1,4 +1,4 @@
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
@@ -24,11 +24,14 @@ type LoaderData = unknown;
 type Template = Record<string, unknown> & {
   name?: string;
   createdAt?: string | Date;
-  posts?: unknown[];
+  templateType?: string;
+  post?: unknown;
+  longFormPost?: unknown;
 };
 
 export default function TemplateEditPage() {
   const { formatDate } = useFormattedDate();
+  const navigate = useNavigate();
   const data = useLoaderData<LoaderData>();
   const template =
     typeof data === "object" &&
@@ -41,8 +44,10 @@ export default function TemplateEditPage() {
 
   // All hooks must be called before any early returns
   const updateNameFetcher = useFetcher<{ success?: boolean }>();
-  const removePostFetcher = useFetcher();
-  const deleteTemplateFetcher = useFetcher();
+  const deleteTemplateFetcher = useFetcher<{
+    success?: boolean;
+    redirectTo?: string;
+  }>();
   const scheduleFetcher = useFetcher<{
     scheduleData?: Array<{
       caption: string;
@@ -95,6 +100,20 @@ export default function TemplateEditPage() {
     }
   }, [scheduleFetcher.data]);
 
+  // After successful delete, navigate to templates list (redirect from fetcher doesn't navigate)
+  useEffect(() => {
+    const fetcherData = deleteTemplateFetcher.data;
+    if (
+      fetcherData &&
+      typeof fetcherData === "object" &&
+      !Array.isArray(fetcherData) &&
+      "redirectTo" in fetcherData &&
+      typeof fetcherData.redirectTo === "string"
+    ) {
+      navigate(fetcherData.redirectTo);
+    }
+  }, [deleteTemplateFetcher.data, navigate]);
+
   if (!template) {
     return <div>Template not found</div>;
   }
@@ -107,14 +126,6 @@ export default function TemplateEditPage() {
     formData.append("name", templateName.trim());
 
     updateNameFetcher.submit(formData, { method: "post" });
-  };
-
-  const handleRemovePost = (postId: string) => {
-    const formData = new FormData();
-    formData.append("_action", "removePost");
-    formData.append("postId", postId);
-
-    removePostFetcher.submit(formData, { method: "post" });
   };
 
   const handleDeleteTemplate = () => {
@@ -144,18 +155,15 @@ export default function TemplateEditPage() {
           </Link>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={handleScheduleTemplate}
-            disabled={
-              scheduleFetcher.state !== "idle" ||
-              !Array.isArray((template as { posts?: unknown }).posts) ||
-              ((template as { posts?: unknown }).posts as unknown[]).length ===
-                0
-            }
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 disabled:opacity-50"
-          >
-            {scheduleFetcher.state !== "idle" ? "Loading..." : "Schedule Posts"}
-          </button>
+          {template.templateType === "POST" && template.post ? (
+            <button
+              onClick={handleScheduleTemplate}
+              disabled={scheduleFetcher.state !== "idle"}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 disabled:opacity-50"
+            >
+              {scheduleFetcher.state !== "idle" ? "Loading..." : "Schedule"}
+            </button>
+          ) : null}
           <button
             onClick={() => setShowDeleteConfirm(true)}
             disabled={deleteTemplateFetcher.state !== "idle"}
@@ -238,23 +246,15 @@ export default function TemplateEditPage() {
           )}
         </div>
         <p className="dark:text-muted-foreground text-muted-foreground text-sm">
-          {Array.isArray((template as { posts?: unknown }).posts)
-            ? ((template as { posts?: unknown }).posts as unknown[]).length
-            : 0}{" "}
-          post
-          {Array.isArray((template as { posts?: unknown }).posts) &&
-          ((template as { posts?: unknown }).posts as unknown[]).length !== 1
-            ? "s"
-            : ""}{" "}
-          • Created{" "}
+          {template.templateType === "LONGFORM" ? "1 article" : "1 post"} •
+          Created{" "}
           {(template as { createdAt?: unknown }).createdAt
             ? formatDate((template as { createdAt: string | Date }).createdAt)
             : "Unknown"}
         </p>
       </div>
 
-      {!Array.isArray((template as { posts?: unknown }).posts) ||
-      ((template as { posts?: unknown }).posts as unknown[]).length === 0 ? (
+      {!template.post && !template.longFormPost ? (
         <div className="py-12 text-center">
           <div className="mx-auto max-w-md">
             <Trash2
@@ -263,176 +263,148 @@ export default function TemplateEditPage() {
               aria-hidden
             />
             <h3 className="dark:text-foreground text-foreground mt-4 text-lg font-medium">
-              No posts in this template
+              No content in this template
             </h3>
             <p className="dark:text-muted-foreground text-muted-foreground mt-2 text-sm">
-              This template is empty. You can delete it or go back to add posts.
+              This template is empty. You can delete it or go back.
             </p>
           </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.isArray((template as { posts?: unknown }).posts)
-            ? ((template as { posts?: unknown }).posts as unknown[])
-                .map((post: unknown) => {
-                  if (!post || typeof post !== "object" || !("id" in post)) {
-                    return null;
-                  }
-                  const postId =
-                    typeof (post as { id?: unknown }).id === "string"
-                      ? (post as { id: string }).id
-                      : String((post as { id?: unknown }).id ?? "");
-                  const postFileUrl =
-                    "fileUrl" in (post as Record<string, unknown>)
-                      ? (post as { fileUrl?: unknown }).fileUrl
-                      : null;
-                  const postCaption =
-                    "caption" in (post as Record<string, unknown>) &&
-                    typeof (post as { caption?: unknown }).caption === "string"
-                      ? (post as unknown as { caption: string }).caption
-                      : "";
-                  const postQueueType =
-                    "queueType" in (post as Record<string, unknown>) &&
-                    (post as { queueType?: unknown }).queueType &&
-                    typeof (post as { queueType?: unknown }).queueType ===
-                      "object" &&
-                    !Array.isArray((post as { queueType?: unknown }).queueType)
-                      ? (
-                          post as unknown as {
-                            queueType: Record<string, unknown>;
-                          }
-                        ).queueType
-                      : null;
-                  const postPostedAt =
-                    "publishedAt" in (post as Record<string, unknown>)
-                      ? (post as { publishedAt?: unknown }).publishedAt
-                      : null;
-                  const postSignedEvent =
-                    "signedEvent" in (post as Record<string, unknown>) &&
-                    (post as { signedEvent?: unknown }).signedEvent &&
-                    typeof (post as { signedEvent?: unknown }).signedEvent ===
-                      "object" &&
-                    !Array.isArray(
-                      (post as { signedEvent?: unknown }).signedEvent
-                    )
-                      ? (
-                          post as unknown as {
-                            signedEvent: Record<string, unknown>;
-                          }
-                        ).signedEvent
-                      : null;
-                  const signedEventId =
-                    postSignedEvent &&
-                    "id" in postSignedEvent &&
-                    typeof (postSignedEvent as { id?: unknown }).id === "string"
-                      ? (postSignedEvent as { id: string }).id
-                      : "";
-                  const queueTypeName =
-                    postQueueType &&
-                    "name" in postQueueType &&
-                    typeof (postQueueType as { name?: unknown }).name ===
-                      "string"
-                      ? (postQueueType as { name: string }).name
-                      : "unassigned";
-                  const queueTypeColorToken =
-                    postQueueType &&
-                    "colorToken" in postQueueType &&
-                    typeof (postQueueType as { colorToken?: unknown })
-                      .colorToken === "string"
-                      ? (postQueueType as { colorToken: string }).colorToken
-                      : null;
-
-                  const hasFileUrl =
-                    postFileUrl &&
-                    (Array.isArray(postFileUrl)
-                      ? postFileUrl.length > 0
-                      : typeof postFileUrl === "string" &&
-                        postFileUrl.length > 0);
-                  const fileUrlArray = Array.isArray(postFileUrl)
-                    ? postFileUrl
-                    : typeof postFileUrl === "string"
-                      ? [postFileUrl]
-                      : [];
-                  const firstImageUrl =
-                    fileUrlArray.length > 0
-                      ? getImageUrls(fileUrlArray)[0]
-                      : "";
-
-                  return (
-                    <div
-                      key={postId}
-                      className="bg-card dark:border-border border-border rounded-lg border bg-white p-4 shadow-sm"
-                    >
-                      <div className="mb-3">
-                        {hasFileUrl && firstImageUrl ? (
-                          <img
-                            src={firstImageUrl}
-                            alt="Post preview"
-                            className="h-48 w-full rounded object-cover"
-                          />
-                        ) : (
-                          <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-48 w-full items-center justify-center rounded text-xs font-medium">
-                            TEXT POST
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mb-3">
-                        <p className="dark:text-foreground text-muted-foreground line-clamp-3 text-sm">
-                          {postCaption}
-                        </p>
-                      </div>
-
-                      <div className="mb-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {postQueueType ? (
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
-                                const colors = getQueueColor(
-                                  queueTypeName,
-                                  queueTypeColorToken
-                                );
-                                return `${colors.bg} ${colors.text}`;
-                              })()}`}
-                            >
-                              {queueTypeName}
-                            </span>
-                          ) : null}
-                        </div>
-                        <span className="dark:text-muted-foreground text-muted-foreground text-xs">
-                          Posted{" "}
-                          {postPostedAt
-                            ? formatDate(postPostedAt as string | Date)
-                            : "Not posted yet"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <Link
-                          to={`https://primal.net/e/${signedEventId}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground text-xs"
-                        >
-                          View Original
-                        </Link>
-                        <button
-                          onClick={() => handleRemovePost(postId)}
-                          disabled={removePostFetcher.state !== "idle"}
-                          className="border-destructive text-destructive hover:bg-destructive/10 dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10 rounded-lg border px-2 py-1 text-xs disabled:opacity-50"
-                        >
-                          {removePostFetcher.state !== "idle"
-                            ? "..."
-                            : "Remove"}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-                .filter((item): item is React.ReactElement => item !== null)
-            : null}
+      ) : template.templateType === "LONGFORM" && template.longFormPost ? (
+        <div className="rounded-lg border p-4">
+          <p className="dark:text-muted-foreground text-muted-foreground mb-2 text-sm">
+            Longform template
+          </p>
+          <Link
+            to={`/dashboard/longform/${(() => {
+              const lf = template.longFormPost;
+              /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for loader data shape */
+              if (
+                lf &&
+                typeof lf === "object" &&
+                lf !== null &&
+                "id" in lf &&
+                typeof (lf as { id?: string }).id === "string"
+              )
+                return (lf as { id: string }).id;
+              /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+              return "";
+            })()}/edit`}
+            className="text-primary hover:underline"
+          >
+            Edit longform article →
+          </Link>
         </div>
-      )}
+      ) : template.post ? (
+        (() => {
+          const post = template.post as Record<string, unknown>;
+          /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for loader data */
+          if (!post || typeof post !== "object" || !("id" in post)) return null;
+          /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+          const _postId =
+            typeof post["id"] === "string"
+              ? post["id"]
+              : String(post["id"] ?? "");
+          const postFileUrl = post["fileUrl"];
+          const postCaption =
+            typeof post["caption"] === "string" ? post["caption"] : "";
+          const postQueueType =
+            post["queueType"] &&
+            typeof post["queueType"] === "object" &&
+            !Array.isArray(post["queueType"])
+              ? (post["queueType"] as Record<string, unknown>)
+              : null;
+          const postPostedAt = post["publishedAt"];
+          const postSignedEvent =
+            post["signedEvent"] &&
+            typeof post["signedEvent"] === "object" &&
+            !Array.isArray(post["signedEvent"])
+              ? (post["signedEvent"] as Record<string, unknown>)
+              : null;
+          const signedEventId =
+            postSignedEvent && typeof postSignedEvent["id"] === "string"
+              ? postSignedEvent["id"]
+              : "";
+          const queueTypeName =
+            postQueueType && typeof postQueueType["name"] === "string"
+              ? postQueueType["name"]
+              : "unassigned";
+          const queueTypeColorToken =
+            postQueueType && typeof postQueueType["colorToken"] === "string"
+              ? postQueueType["colorToken"]
+              : null;
+          const hasFileUrl =
+            postFileUrl &&
+            (Array.isArray(postFileUrl)
+              ? postFileUrl.length > 0
+              : typeof postFileUrl === "string" && postFileUrl.length > 0);
+          const fileUrlArray = Array.isArray(postFileUrl)
+            ? postFileUrl
+            : typeof postFileUrl === "string"
+              ? [postFileUrl]
+              : [];
+          const firstImageUrl =
+            fileUrlArray.length > 0 ? getImageUrls(fileUrlArray)[0] : "";
+
+          return (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="bg-card dark:border-border border-border rounded-lg border bg-white p-4 shadow-sm">
+                <div className="mb-3">
+                  {hasFileUrl && firstImageUrl ? (
+                    <img
+                      src={firstImageUrl}
+                      alt="Post preview"
+                      className="h-48 w-full rounded object-cover"
+                    />
+                  ) : (
+                    <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-48 w-full items-center justify-center rounded text-xs font-medium">
+                      TEXT POST
+                    </div>
+                  )}
+                </div>
+                <div className="mb-3">
+                  <p className="dark:text-foreground text-muted-foreground line-clamp-3 text-sm">
+                    {postCaption}
+                  </p>
+                </div>
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {postQueueType ? (
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
+                          const colors = getQueueColor(
+                            queueTypeName,
+                            queueTypeColorToken
+                          );
+                          return `${colors.bg} ${colors.text}`;
+                        })()}`}
+                      >
+                        {queueTypeName}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="dark:text-muted-foreground text-muted-foreground text-xs">
+                    Posted{" "}
+                    {postPostedAt
+                      ? formatDate(postPostedAt as string | Date)
+                      : "Not posted yet"}
+                  </span>
+                </div>
+                {signedEventId ? (
+                  <Link
+                    to={`https://primal.net/e/${signedEventId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground text-xs"
+                  >
+                    View Original
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          );
+        })()
+      ) : null}
     </div>
   );
 }

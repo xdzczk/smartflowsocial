@@ -27,7 +27,7 @@ import {
   getTemplateById,
   updateTemplate,
   deleteTemplate,
-  removePostFromTemplate,
+  getTemplatePrefill,
 } from "~/models/template.server";
 
 describe("Template Model", () => {
@@ -36,12 +36,16 @@ describe("Template Model", () => {
   });
 
   describe("createTemplate", () => {
-    it("should create a template with posts", async () => {
+    it("should create a POST template with postId", async () => {
       const mockTemplate = {
         id: "template-123",
         userId: TEST_USER_ID,
         name: "Test Template",
-        posts: [{ id: TEST_POST_ID }],
+        templateType: "POST",
+        postId: TEST_POST_ID,
+        longFormPostId: null,
+        post: { id: TEST_POST_ID },
+        longFormPost: null,
       };
       (prisma.template.create as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockTemplate
@@ -50,30 +54,36 @@ describe("Template Model", () => {
       const result = await createTemplate({
         userId: TEST_USER_ID,
         name: "Test Template",
-        postIds: [TEST_POST_ID],
+        templateType: "POST",
+        postId: TEST_POST_ID,
+        longFormPostId: null,
       });
 
       expect(prisma.template.create).toHaveBeenCalledWith({
         data: {
           userId: TEST_USER_ID,
           name: "Test Template",
-          posts: {
-            connect: [{ id: TEST_POST_ID }],
-          },
+          templateType: "POST",
+          post: { connect: { id: TEST_POST_ID } },
         },
         include: {
-          posts: true,
+          post: true,
+          longFormPost: true,
         },
       });
       expect(result).toEqual(mockTemplate);
     });
 
-    it("should create a template with multiple posts", async () => {
+    it("should create a LONGFORM template with longFormPostId", async () => {
       const mockTemplate = {
-        id: "template-123",
+        id: "template-456",
         userId: TEST_USER_ID,
-        name: "Test Template",
-        posts: [{ id: "post-1" }, { id: "post-2" }],
+        name: "Longform Template",
+        templateType: "LONGFORM",
+        postId: null,
+        longFormPostId: "lf-1",
+        post: null,
+        longFormPost: { id: "lf-1" },
       };
       (prisma.template.create as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockTemplate
@@ -81,52 +91,22 @@ describe("Template Model", () => {
 
       const result = await createTemplate({
         userId: TEST_USER_ID,
-        name: "Test Template",
-        postIds: ["post-1", "post-2"],
+        name: "Longform Template",
+        templateType: "LONGFORM",
+        postId: null,
+        longFormPostId: "lf-1",
       });
 
       expect(prisma.template.create).toHaveBeenCalledWith({
         data: {
           userId: TEST_USER_ID,
-          name: "Test Template",
-          posts: {
-            connect: [{ id: "post-1" }, { id: "post-2" }],
-          },
+          name: "Longform Template",
+          templateType: "LONGFORM",
+          longFormPost: { connect: { id: "lf-1" } },
         },
         include: {
-          posts: true,
-        },
-      });
-      expect(result).toEqual(mockTemplate);
-    });
-
-    it("should create a template with no posts", async () => {
-      const mockTemplate = {
-        id: "template-123",
-        userId: TEST_USER_ID,
-        name: "Test Template",
-        posts: [],
-      };
-      (prisma.template.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTemplate
-      );
-
-      const result = await createTemplate({
-        userId: TEST_USER_ID,
-        name: "Test Template",
-        postIds: [],
-      });
-
-      expect(prisma.template.create).toHaveBeenCalledWith({
-        data: {
-          userId: TEST_USER_ID,
-          name: "Test Template",
-          posts: {
-            connect: [],
-          },
-        },
-        include: {
-          posts: true,
+          post: true,
+          longFormPost: true,
         },
       });
       expect(result).toEqual(mockTemplate);
@@ -136,8 +116,20 @@ describe("Template Model", () => {
   describe("getTemplates", () => {
     it("should get all templates for a user", async () => {
       const mockTemplates = [
-        { id: "template-1", userId: TEST_USER_ID, name: "Template 1" },
-        { id: "template-2", userId: TEST_USER_ID, name: "Template 2" },
+        {
+          id: "template-1",
+          userId: TEST_USER_ID,
+          name: "Template 1",
+          post: null,
+          longFormPost: null,
+        },
+        {
+          id: "template-2",
+          userId: TEST_USER_ID,
+          name: "Template 2",
+          post: null,
+          longFormPost: null,
+        },
       ];
       (prisma.template.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockTemplates
@@ -148,7 +140,8 @@ describe("Template Model", () => {
       expect(prisma.template.findMany).toHaveBeenCalledWith({
         where: { userId: TEST_USER_ID },
         include: {
-          posts: true,
+          post: true,
+          longFormPost: true,
         },
         orderBy: {
           createdAt: "desc",
@@ -164,7 +157,8 @@ describe("Template Model", () => {
         id: "template-123",
         userId: TEST_USER_ID,
         name: "Test Template",
-        posts: [],
+        post: null,
+        longFormPost: null,
       };
       (prisma.template.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockTemplate
@@ -178,7 +172,8 @@ describe("Template Model", () => {
       expect(prisma.template.findFirst).toHaveBeenCalledWith({
         where: { id: "template-123", userId: TEST_USER_ID },
         include: {
-          posts: true,
+          post: true,
+          longFormPost: true,
         },
       });
       expect(result).toEqual(mockTemplate);
@@ -203,7 +198,8 @@ describe("Template Model", () => {
       const mockTemplate = {
         id: "template-123",
         name: "Updated Template",
-        posts: [],
+        post: null,
+        longFormPost: null,
       };
       (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockTemplate
@@ -221,17 +217,19 @@ describe("Template Model", () => {
           name: "Updated Template",
         },
         include: {
-          posts: true,
+          post: true,
+          longFormPost: true,
         },
       });
       expect(result).toEqual(mockTemplate);
     });
 
-    it("should update template posts", async () => {
+    it("should update template postId", async () => {
       const mockTemplate = {
         id: "template-123",
         name: "Test Template",
-        posts: [{ id: "post-1" }, { id: "post-2" }],
+        post: { id: TEST_POST_ID },
+        longFormPost: null,
       };
       (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockTemplate
@@ -240,50 +238,17 @@ describe("Template Model", () => {
       const result = await updateTemplate({
         id: "template-123",
         userId: TEST_USER_ID,
-        postIds: ["post-1", "post-2"],
+        postId: TEST_POST_ID,
       });
 
       expect(prisma.template.update).toHaveBeenCalledWith({
         where: { id: "template-123", userId: TEST_USER_ID },
         data: {
-          posts: {
-            set: [{ id: "post-1" }, { id: "post-2" }],
-          },
+          post: { connect: { id: TEST_POST_ID } },
         },
         include: {
-          posts: true,
-        },
-      });
-      expect(result).toEqual(mockTemplate);
-    });
-
-    it("should update both name and posts", async () => {
-      const mockTemplate = {
-        id: "template-123",
-        name: "Updated Template",
-        posts: [{ id: "post-1" }],
-      };
-      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTemplate
-      );
-
-      const result = await updateTemplate({
-        id: "template-123",
-        userId: TEST_USER_ID,
-        name: "Updated Template",
-        postIds: ["post-1"],
-      });
-
-      expect(prisma.template.update).toHaveBeenCalledWith({
-        where: { id: "template-123", userId: TEST_USER_ID },
-        data: {
-          name: "Updated Template",
-          posts: {
-            set: [{ id: "post-1" }],
-          },
-        },
-        include: {
-          posts: true,
+          post: true,
+          longFormPost: true,
         },
       });
       expect(result).toEqual(mockTemplate);
@@ -309,35 +274,90 @@ describe("Template Model", () => {
     });
   });
 
-  describe("removePostFromTemplate", () => {
-    it("should remove a post from template", async () => {
-      const mockTemplate = {
-        id: "template-123",
-        userId: TEST_USER_ID,
-        posts: [],
-      };
-      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTemplate
+  describe("getTemplatePrefill", () => {
+    it("should return null if template not found", async () => {
+      (prisma.template.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null
       );
 
-      const result = await removePostFromTemplate({
-        templateId: "template-123",
-        postId: TEST_POST_ID,
+      const result = await getTemplatePrefill({
+        id: "nonexistent",
         userId: TEST_USER_ID,
       });
 
-      expect(prisma.template.update).toHaveBeenCalledWith({
-        where: { id: "template-123", userId: TEST_USER_ID },
-        data: {
-          posts: {
-            disconnect: { id: TEST_POST_ID },
+      expect(result).toBeNull();
+    });
+
+    it("should return POST prefill when template has post", async () => {
+      (prisma.template.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        {
+          id: "t-1",
+          templateType: "POST",
+          post: {
+            content: "Hello",
+            caption: "Hello",
+            fileUrl: [],
+            queueType: { name: "Main" },
+            queueTypeId: "q1",
+            tags: ["a", "b"],
+            hashTagPresetId: null,
+            draftMeta: null,
           },
-        },
-        include: {
-          posts: true,
-        },
+          longFormPost: null,
+        }
+      );
+
+      const result = await getTemplatePrefill({
+        id: "t-1",
+        userId: TEST_USER_ID,
       });
-      expect(result).toEqual(mockTemplate);
+
+      expect(result).not.toBeNull();
+      expect(result?.type).toBe("POST");
+      expect(result?.post).toEqual({
+        content: "Hello",
+        caption: "Hello",
+        fileUrl: [],
+        queueType: "Main",
+        queueTypeId: "q1",
+        tags: "a b",
+        hashTagPresetId: null,
+        draftMeta: null,
+      });
+    });
+
+    it("should return LONGFORM prefill when template has longFormPost", async () => {
+      (prisma.template.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        {
+          id: "t-2",
+          templateType: "LONGFORM",
+          post: null,
+          longFormPost: {
+            title: "Article",
+            summary: "Summary",
+            content: "# Hi",
+            image: "https://example.com/img.png",
+            tags: ["tag1"],
+            queueType: { name: "Main" },
+          },
+        }
+      );
+
+      const result = await getTemplatePrefill({
+        id: "t-2",
+        userId: TEST_USER_ID,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.type).toBe("LONGFORM");
+      expect(result?.longform).toEqual({
+        title: "Article",
+        summary: "Summary",
+        content: "# Hi",
+        image: "https://example.com/img.png",
+        tags: ["tag1"],
+        queueType: { name: "Main" },
+      });
     });
   });
 });

@@ -1,85 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="38" failures="0" errors="0" time="0.012907916">
-    <testsuite name="tests/unit/combined-content.test.ts" timestamp="2026-02-09T09:21:57.633Z" hostname="Ivans-MacBook-Pro.local" tests="15" failures="0" errors="0" skipped="0" time="0.005519667">
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; nullToUndefined &gt; should convert null to undefined" time="0.00065125">
+<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.002525208">
+    <testsuite name="tests/integration/templates-loader.test.ts" timestamp="2026-02-10T10:33:32.817Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.002525208">
+        <testcase classname="tests/integration/templates-loader.test.ts" name="Templates Loader &gt; Successful Data Loading &gt; should load templates data" time="0.001674208">
         </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; nullToUndefined &gt; should return value if not null" time="0.000188667">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; postToCombinedContent &gt; should convert PostData to CombinedContent" time="0.000560125">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; postToCombinedContent &gt; should handle null values" time="0.000118583">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; postToCombinedContent &gt; should handle queue type" time="0.000150375">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; longFormPostToCombinedContent &gt; should convert LongFormPostData to CombinedContent" time="0.0002235">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; longFormPostToCombinedContent &gt; should map publishedAt to publishedAt" time="0.000098834">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; combineContent &gt; should combine posts and longform posts" time="0.001802041">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; combineContent &gt; should sort by createdAt descending by default" time="0.000201583">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; combineContent &gt; should sort by scheduledAtUtc" time="0.000196625">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; combineContent &gt; should handle empty arrays" time="0.000052875">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; filterCombinedContent &gt; should filter by caption" time="0.000150167">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; filterCombinedContent &gt; should filter by title" time="0.000077459">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; filterCombinedContent &gt; should return all content if search term is empty" time="0.000051083">
-        </testcase>
-        <testcase classname="tests/unit/combined-content.test.ts" name="Combined Content Utilities &gt; filterCombinedContent &gt; should be case insensitive" time="0.000073083">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/validation-post-data-conversion.test.ts" timestamp="2026-02-09T09:21:57.634Z" hostname="Ivans-MacBook-Pro.local" tests="15" failures="0" errors="0" skipped="0" time="0.003128041">
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should include scheduledAtUtc from PostData" time="0.00093675">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should handle null scheduledAtUtc" time="0.000112375">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should handle undefined scheduledAtUtc" time="0.000070292">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should convert queueType correctly" time="0.000140584">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should handle queueType with null color" time="0.000096875">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should handle null queueType" time="0.00005625">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should convert fileUrl correctly" time="0.000063042">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should handle null fileUrl" time="0.000055292">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should convert repost flag" time="0.000058375">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should default repost to false when not set" time="0.000067167">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should convert isQuotedPost flag" time="0.000045292">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should convert isPostSigned based on signedEvent" time="0.000044958">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataToScheduledTablePost &gt; should set isPostSigned to false when signedEvent is null" time="0.000041083">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataArrayToScheduledTablePosts &gt; should convert array of PostData" time="0.000457334">
-        </testcase>
-        <testcase classname="tests/unit/validation-post-data-conversion.test.ts" name="Post Data Conversion &gt; convertPostDataArrayToScheduledTablePosts &gt; should return empty array for empty input" time="0.000085417">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/outbox/read-model-worker.server.test.ts" timestamp="2026-02-09T09:21:57.635Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.004260208">
-        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should update scheduled post read model for POST_CREATED" time="0.001925458">
-        </testcase>
-        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should remove from scheduled read model if post is not scheduled" time="0.000297083">
-        </testcase>
-        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should move post to published read model for POST_PUBLISHED" time="0.0003365">
-        </testcase>
-        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should delete post from all read models for POST_DELETED" time="0.00017525">
-        </testcase>
-        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should skip longform events" time="0.000141041">
-        </testcase>
-        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should handle post not found gracefully" time="0.000089">
-        </testcase>
-        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should handle errors gracefully without throwing" time="0.000502958">
-        </testcase>
-        <testcase classname="tests/unit/outbox/read-model-worker.server.test.ts" name="Read Model Worker &gt; updateReadModels &gt; should ignore job-related events" time="0.000068">
+        <testcase classname="tests/integration/templates-loader.test.ts" name="Templates Loader &gt; Edge Cases &gt; should handle empty templates" time="0.000150875">
         </testcase>
     </testsuite>
 </testsuites>

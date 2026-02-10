@@ -1,225 +1,187 @@
-import { Outlet } from "@remix-run/react";
+import { Form, Link, Outlet, useFetcher } from "@remix-run/react";
+import { Pencil, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
-import { AssetsTab, UploadTab } from "~/features/assets";
-import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
-import { useIsMobile } from "~/lib/hooks/useIsMobile";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 
-import { useTemplatesInfiniteData } from "../hooks/useTemplatesQuery";
+import { useTemplatesQuery } from "../hooks/useTemplatesQuery";
 import { useTemplatesState } from "../hooks/useTemplatesState";
+import type { Template } from "../types";
 
 import { TemplateDetailsModal } from "./TemplateDetailsModal";
 import { TemplatesHeader } from "./TemplatesHeader";
-import { TemplatesTabs } from "./TemplatesTabs";
-import { ToastNotification } from "./ToastNotification";
+
+function formatDate(template: Template): string {
+  const d = template.createdAt;
+  return d instanceof Date
+    ? d.toLocaleDateString()
+    : new Date(d).toLocaleDateString();
+}
+
+function typeLabel(template: Template): string {
+  const t = (template as Template & { templateType?: string }).templateType;
+  return t === "LONGFORM" ? "Longform" : "Post";
+}
 
 export default function TemplatesPage() {
-  const { assets, searchTerm, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useTemplatesInfiniteData();
+  const { data } = useTemplatesQuery();
+  const templates = Array.isArray(data?.templates) ? data.templates : [];
+  const { selectedTemplate, setSelectedTemplate, isOnChildRoute } =
+    useTemplatesState();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const bulkDeleteFetcher = useFetcher();
 
-  const isMobile = useIsMobile(768);
-  const { sentinelRef, prefetchSentinelRef, setScrollRoot } =
-    useInfiniteScrollSentinel({
-      isMobile,
-      hasNextPage,
-      isFetchingNextPage,
-      fetchNextPage: () => {
-        void fetchNextPage();
-      },
+  useEffect(() => {
+    if (
+      bulkDeleteFetcher.state === "idle" &&
+      bulkDeleteFetcher.data &&
+      typeof bulkDeleteFetcher.data === "object" &&
+      "success" in bulkDeleteFetcher.data &&
+      (bulkDeleteFetcher.data as { success?: boolean }).success
+    ) {
+      queueMicrotask(() => setSelectedIds(new Set()));
+    }
+  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data]);
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
-
-  const {
-    selectedTemplate,
-    activeTab,
-    selectedAssets,
-    searchInput,
-    bulkUploadFiles,
-    showToast,
-    toastMessage,
-    uploadProvider,
-    singleFileUploading,
-    bulkFileUploading,
-    textAssetFormRef,
-    imageAssetFormRef,
-    isOnChildRoute,
-    deleteFetcher,
-    scheduleFetcher: _scheduleFetcher,
-    assetFetcher,
-    setSelectedTemplate,
-    setActiveTab,
-    setSearchInput,
-    handleAssetSelect,
-    handleSelectAllAssets,
-    handleBulkPostAssets,
-    handleBulkDeleteAssets,
-    handleSearch,
-    handleDeleteAsset,
-    handleSingleFileUpload,
-    handleBulkFileUpload,
-    handleBulkFileChange,
-  } = useTemplatesState({ searchTerm });
+  };
 
   return (
     <>
-      {/* Only show parent content when NOT on a child route */}
       {!isOnChildRoute ? (
         <div className="p-6">
           <TemplatesHeader />
+          <div className="rounded-md border">
+            {templates.length === 0 ? (
+              <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-12 text-center">
+                <p className="text-sm">No templates yet</p>
+                <p className="text-xs">
+                  Create a template from scratch to reuse in your composers.
+                </p>
+                <Button asChild variant="secondary">
+                  <Link to="/dashboard/templates/new">Create template</Link>
+                </Button>
+              </div>
+            ) : (
+              <>
+                {selectedIds.size > 0 ? (
+                  <div className="border-border flex items-center gap-2 border-b px-4 py-2">
+                    <bulkDeleteFetcher.Form method="post" key="bulk-delete">
+                      <input type="hidden" name="_action" value="bulkDelete" />
+                      {Array.from(selectedIds).map((id) => (
+                        <input
+                          key={id}
+                          type="hidden"
+                          name="templateIds"
+                          value={id}
+                        />
+                      ))}
+                      <Button
+                        type="submit"
+                        variant="destructive"
+                        size="sm"
+                        disabled={bulkDeleteFetcher.state !== "idle"}
+                      >
+                        {bulkDeleteFetcher.state !== "idle"
+                          ? "Deleting..."
+                          : "Delete selected"}
+                      </Button>
+                    </bulkDeleteFetcher.Form>
+                    <span className="text-muted-foreground text-xs">
+                      {selectedIds.size} selected
+                    </span>
+                  </div>
+                ) : null}
+                <ul className="divide-y">
+                  {templates.map((template) => (
+                    <li
+                      key={template.id}
+                      className="flex items-center gap-3 px-4 py-3"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(template.id)}
+                        onChange={() => toggleSelection(template.id)}
+                        className="rounded border-gray-300"
+                        aria-label={`Select ${template.name ?? "template"}`}
+                      />
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left font-medium hover:underline"
+                        onClick={() =>
+                          setSelectedTemplate(template as unknown as Template)
+                        }
+                      >
+                        {template.name ?? "Unnamed template"}
+                      </button>
+                      <Badge variant="secondary" className="shrink-0 text-xs">
+                        {typeLabel(template as unknown as Template)}
+                      </Badge>
+                      <span className="text-muted-foreground shrink-0 text-xs">
+                        {formatDate(template as unknown as Template)}
+                      </span>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
+                        >
+                          <Link
+                            to={`/dashboard/templates/edit/${template.id}`}
+                            aria-label="Edit template"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Form method="post" className="inline">
+                          <input type="hidden" name="_action" value="delete" />
+                          <input
+                            type="hidden"
+                            name="templateId"
+                            value={template.id}
+                          />
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive h-8 w-8"
+                            aria-label="Delete template"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </Form>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
 
-          <TemplatesTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-          {/* Tab Content */}
-          {activeTab === "assets" ? (
-            <>
-              <AssetsTab
-                assets={
-                  Array.isArray(assets)
-                    ? assets
-                        .filter(
-                          (
-                            asset: unknown
-                          ): asset is {
-                            id: string;
-                            title?: unknown;
-                            content?: unknown;
-                            fileUrl?: unknown;
-                            tags?: unknown;
-                            assetType?: unknown;
-                            createdAt?: unknown;
-                            updatedAt?: unknown;
-                          } =>
-                            typeof asset === "object" &&
-                            asset !== null &&
-                            "id" in asset &&
-                            typeof (asset as { id: unknown }).id === "string"
-                        )
-                        .map((asset) => ({
-                          id: asset.id,
-                          assetType:
-                            typeof asset.assetType === "string"
-                              ? asset.assetType
-                              : "IMAGE",
-                          fileUrl:
-                            typeof asset.fileUrl === "string"
-                              ? asset.fileUrl
-                              : undefined,
-                          content:
-                            typeof asset.content === "string"
-                              ? asset.content
-                              : undefined,
-                          title:
-                            typeof asset.title === "string"
-                              ? asset.title
-                              : undefined,
-                          tags: Array.isArray(asset.tags)
-                            ? asset.tags.filter(
-                                (tag): tag is string => typeof tag === "string"
-                              )
-                            : [],
-                          createdAt: (() => {
-                            const createdAtValue: unknown = asset.createdAt;
-                            if (createdAtValue instanceof Date)
-                              return createdAtValue.toISOString();
-                            if (typeof createdAtValue === "string")
-                              return createdAtValue;
-                            return new Date().toISOString();
-                          })(),
-                          updatedAt: (() => {
-                            const updatedAtValue: unknown = asset.updatedAt;
-                            if (updatedAtValue instanceof Date)
-                              return updatedAtValue.toISOString();
-                            if (typeof updatedAtValue === "string")
-                              return updatedAtValue;
-                            return new Date().toISOString();
-                          })(),
-                        }))
-                    : []
-                }
-                selectedAssets={selectedAssets}
-                searchInput={searchInput}
-                onSearchInputChange={setSearchInput}
-                onSearch={handleSearch}
-                onAssetSelect={handleAssetSelect}
-                onSelectAllAssets={() => handleSelectAllAssets(assets)}
-                onBulkPostAssets={() => handleBulkPostAssets(assets)}
-                onBulkDeleteAssets={handleBulkDeleteAssets}
-                deleteFetcherState={deleteFetcher.state}
-                deleteFetcherForm={
-                  deleteFetcher.Form as unknown as React.ComponentType<{
-                    children: React.ReactNode;
-                    method: string;
-                    className?: string;
-                  }>
-                }
-                onDeleteAsset={handleDeleteAsset}
-                prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-                sentinelRef={isMobile ? sentinelRef : undefined}
-                isFetchingNextPage={isFetchingNextPage}
-                onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-              />
-              {/* Scroll sentinel for infinite scroll (desktop only; on mobile sentinels are inside AssetsTab scroll container) */}
-              {!isMobile ? (
-                <>
-                  <div ref={prefetchSentinelRef} className="h-4 w-full" />
-                  <div ref={sentinelRef} className="h-4 w-full" />
-                  {isFetchingNextPage ? (
-                    <div className="text-muted-foreground mt-4 text-center text-sm">
-                      Loading more assets...
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-            </>
-          ) : (
-            <UploadTab
-              textAssetFormRef={
-                textAssetFormRef as React.RefObject<HTMLFormElement>
-              }
-              imageAssetFormRef={
-                imageAssetFormRef as React.RefObject<HTMLFormElement>
-              }
-              assetFetcher={{
-                Form: assetFetcher.Form as unknown as React.ComponentType<{
-                  children: React.ReactNode;
-                  method: string;
-                  className?: string;
-                }>,
-                state: assetFetcher.state,
-              }}
-              uploadProvider={uploadProvider}
-              bulkUploadFiles={bulkUploadFiles}
-              singleFileUploading={singleFileUploading}
-              bulkFileUploading={bulkFileUploading}
-              onSingleFileUpload={(e, form) =>
-                void handleSingleFileUpload(e, form)
-              }
-              onBulkFileUpload={() => void handleBulkFileUpload()}
-              onBulkFileChange={(e) => void handleBulkFileChange(e)}
-            />
-          )}
-
-          {/* Toast Notification */}
-          {showToast ? (
-            <ToastNotification
-              message={toastMessage}
-              onClose={() => {
-                // Toast close handler
-              }}
-            />
-          ) : null}
-
-          {/* Template Details Modal */}
           {selectedTemplate ? (
             <TemplateDetailsModal
-              template={{
-                id: selectedTemplate.id,
-                name: selectedTemplate.name ?? "",
-                text: null,
-                imageUrl: null,
-                createdAt:
-                  selectedTemplate.createdAt instanceof Date
-                    ? selectedTemplate.createdAt
-                    : new Date(selectedTemplate.createdAt),
-              }}
+              template={(() => {
+                const t = selectedTemplate as unknown as Template;
+                return {
+                  id: t.id,
+                  name: t.name ?? "",
+                  text: null,
+                  imageUrl: null,
+                  createdAt:
+                    t.createdAt instanceof Date
+                      ? t.createdAt
+                      : new Date(t.createdAt),
+                };
+              })()}
               onClose={() => setSelectedTemplate(null)}
             />
           ) : null}

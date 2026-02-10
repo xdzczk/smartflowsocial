@@ -14,9 +14,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const userId = await requireUserId(request);
     const url = new URL(request.url);
     const draftId = url.searchParams.get("draftId");
+    const templateId = url.searchParams.get("templateId");
     const data = await loadNewPostData(
       userId,
-      draftId && draftId.length > 0 ? draftId : null
+      draftId && draftId.length > 0 ? draftId : null,
+      templateId && templateId.length > 0 ? templateId : null
     );
     return json(data);
   } catch (error) {
@@ -31,8 +33,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       scheduleIntervals: [],
       queueTypes: [],
       hashTagPresets: [],
-      assets: [],
       relays: [],
+      templates: [],
     });
   }
 }

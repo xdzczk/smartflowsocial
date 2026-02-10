@@ -37,7 +37,6 @@ async function main() {
       maxPostsPerMonth: 10,
       maxQueueTypes: 1,
       maxTemplates: 3,
-      maxAssets: 10,
       maxLongFormPosts: 2,
       enableBasicScheduling: true,
       enableMultipleQueues: false,
@@ -80,7 +79,6 @@ async function main() {
       maxPostsPerMonth: 100,
       maxQueueTypes: 5,
       maxTemplates: 20,
-      maxAssets: 100,
       maxLongFormPosts: 10,
       enableBasicScheduling: true,
       enableMultipleQueues: true,
@@ -123,7 +121,6 @@ async function main() {
       maxPostsPerMonth: 500,
       maxQueueTypes: 15,
       maxTemplates: 50,
-      maxAssets: 500,
       maxLongFormPosts: 25,
       enableBasicScheduling: true,
       enableMultipleQueues: true,
@@ -166,7 +163,6 @@ async function main() {
       maxPostsPerMonth: null, // Unlimited
       maxQueueTypes: null, // Unlimited
       maxTemplates: null, // Unlimited
-      maxAssets: null, // Unlimited
       maxLongFormPosts: null, // Unlimited
       enableBasicScheduling: true,
       enableMultipleQueues: true,

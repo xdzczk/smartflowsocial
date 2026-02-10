@@ -3,7 +3,7 @@
  * Handles template editing operations
  */
 
-import { json, redirect } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
 import { getUserTimezone } from "~/features/user/services/user-settings.server";
 import { ValidationError } from "~/lib/errors";
@@ -16,10 +16,9 @@ import {
   getTemplateById,
   updateTemplate,
   deleteTemplate,
-  removePostFromTemplate,
 } from "~/models/template.server";
+
 const ACTION_UPDATE_NAME = "updateName";
-const ACTION_REMOVE_POST = "removePost";
 
 /**
  * Load template data for editing
@@ -70,19 +69,6 @@ export async function handleTemplateEditAction(
     return json({ success: true });
   }
 
-  if (_action === ACTION_REMOVE_POST) {
-    // TypeScript guarantees this is "removePost" after the check
-    const removeData = result.data;
-
-    await removePostFromTemplate({
-      templateId,
-      postId: removeData.postId,
-      userId,
-    });
-
-    return json({ success: true });
-  }
-
   if (_action === "delete") {
     await deleteTemplate({
       id: templateId,
@@ -94,7 +80,8 @@ export async function handleTemplateEditAction(
 
   if (_action === "deleteTemplate") {
     await deleteTemplate({ id: templateId, userId });
-    return redirect("/dashboard/templates");
+    // Return JSON so the client can navigate; redirect() from fetcher does not navigate the browser
+    return json({ success: true, redirectTo: "/dashboard/templates" });
   }
 
   // TypeScript guarantees this is "schedule" after checking all other actions
@@ -110,16 +97,24 @@ export async function handleTemplateEditAction(
   const now = nowInTimezone(userTimezone);
   const startTime = now.add({ hours: 1 });
 
-  const templateData = template.posts.map((post, index) => {
-    const scheduleDateTime = startTime.add({ hours: index });
+  // Schedule only applies to post-type templates (one post)
+  const post = template.post;
+  if (!post) {
+    return json({ error: "Template has no post to schedule" }, { status: 400 });
+  }
 
-    return {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Prisma Json type can be array or string
+  const fileUrl = Array.isArray(post.fileUrl)
+    ? (post.fileUrl[0] ?? "")
+    : (post.fileUrl ?? "");
+  const templateData = [
+    {
       caption: post.caption ?? "",
-      fileUrl: post.fileUrl,
+      fileUrl,
       queueType: post.queueTypeId ?? "unassigned",
-      scheduledFor: formatForDateTimeLocal(scheduleDateTime, userTimezone),
-    };
-  });
+      scheduledFor: formatForDateTimeLocal(startTime, userTimezone),
+    },
+  ];
 
   return json({ scheduleData: templateData });
 }

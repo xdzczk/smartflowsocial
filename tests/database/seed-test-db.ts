@@ -21,7 +21,6 @@ async function seedTestDatabase() {
     await prisma.queueType.deleteMany({});
     await prisma.hashTagPreset.deleteMany({});
     await prisma.template.deleteMany({});
-    await prisma.asset.deleteMany({});
     await prisma.payment.deleteMany({});
     await prisma.subscription.deleteMany({});
     await prisma.user.deleteMany({});

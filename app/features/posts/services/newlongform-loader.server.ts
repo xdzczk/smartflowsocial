@@ -11,13 +11,15 @@ import {
   getUserHashTagPresets,
   getUserUploadProvider,
 } from "~/features/user";
-import { getAssets } from "~/models/asset.server";
+import { getTemplatePrefill, getTemplates } from "~/models/template.server";
 
 /**
- * Load new longform post page data
+ * Load new longform post page data. When templateId is in the URL, load that template for prefill.
  */
-export async function loadNewLongFormData(userId: string) {
-  // Check if user has access to long-form posts feature
+export async function loadNewLongFormData(
+  userId: string,
+  templateId: string | null = null
+) {
   await requireFeatureAccess(userId, "longformPosts");
 
   const [
@@ -25,29 +27,43 @@ export async function loadNewLongFormData(userId: string) {
     queueTypes,
     hashTagPresets,
     user,
-    assetsData,
     uploadProvider,
+    templates,
   ] = await Promise.all([
     getScheduleInterval(userId),
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
     getUserById(userId),
-    getAssets({ userId, page: 1, limit: 100 }),
     getUserUploadProvider(userId),
+    getTemplates({ userId }),
   ]);
 
-  // Get "Default" preset tags for backward compatibility
   const defaultPreset = hashTagPresets.find((p) => p.name === "Default");
   const tags = defaultPreset?.tags ?? "";
 
-  return {
+  const base = {
     userId,
     tags,
     scheduleIntervals,
     queueTypes,
     hashTagPresets,
-    assets: assetsData.assets,
     userTimezone: user?.timezone ?? "Etc/GMT",
     uploadProvider,
+    templates: templates.filter(
+      (t) => (t as { templateType?: string }).templateType === "LONGFORM"
+    ),
   };
+
+  if (templateId && templateId.length > 0) {
+    const prefill = await getTemplatePrefill({ id: templateId, userId });
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- prefill type discriminated at runtime
+    if (prefill?.type === "LONGFORM" && prefill.longform) {
+      return {
+        ...base,
+        initialTemplateData: prefill.longform,
+      };
+    }
+  }
+
+  return { ...base, initialTemplateData: null };
 }

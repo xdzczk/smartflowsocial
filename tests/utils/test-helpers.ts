@@ -64,7 +64,6 @@ export {
   hashTagPresetFactory,
   paymentFactory,
   templateFactory,
-  assetFactory,
 } from "../factories";
 
 /**

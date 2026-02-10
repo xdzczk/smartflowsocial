@@ -25,12 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Check if user has access to templates feature
   await requireFeatureAccess(userId, "templates");
 
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("search") ?? "";
-  const page = parseInt(url.searchParams.get("page") ?? "1");
-  const limit = 20;
-
-  const data = await loadTemplatesData(userId, searchTerm, page, limit);
+  const data = await loadTemplatesData(userId);
 
   // Validate loader response with Zod schema
   return json(validateLoaderResponse(data, templatesLoaderDataSchema));

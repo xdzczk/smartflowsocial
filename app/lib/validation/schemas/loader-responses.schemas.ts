@@ -313,42 +313,11 @@ const templateSchema = z
   .passthrough();
 
 /**
- * Schema for Asset
- */
-const assetSchema = z
-  .object({
-    id: z.string(),
-    title: z
-      .string()
-      .nullish()
-      .transform((val) => val ?? null),
-    content: z
-      .string()
-      .nullish()
-      .transform((val) => val ?? null),
-    fileUrl: z
-      .string()
-      .nullish()
-      .transform((val) => val ?? null),
-    tags: z.array(z.string()),
-    assetType: z.enum(["TEXT", "IMAGE", "VIDEO"]),
-    createdAt: z.string().or(z.date()),
-    updatedAt: z.string().or(z.date()),
-    userId: z.string(),
-  })
-  .passthrough();
-
-/**
  * Schema for TemplatesLoaderData
  */
 export const templatesLoaderDataSchema = z.object({
   templates: z.array(templateSchema),
   user: userSchema.nullable(),
-  assets: z.array(assetSchema),
-  totalCount: z.number(),
-  totalPages: z.number(),
-  currentPage: z.number(),
-  searchTerm: z.string(),
 });
 
 export type TemplatesLoaderData = z.infer<typeof templatesLoaderDataSchema>;

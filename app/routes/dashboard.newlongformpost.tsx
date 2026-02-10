@@ -15,7 +15,12 @@ import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
-    const data = await loadNewLongFormData(userId);
+    const url = new URL(request.url);
+    const templateId = url.searchParams.get("templateId");
+    const data = await loadNewLongFormData(
+      userId,
+      templateId && templateId.length > 0 ? templateId : null
+    );
     return json(data);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId or requireFeatureAccess), return it
@@ -31,9 +36,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       scheduleIntervals: [],
       queueTypes: [],
       hashTagPresets: [],
-      assets: [],
       userTimezone: "Etc/GMT",
       uploadProvider: null,
+      templates: [],
+      initialTemplateData: null,
     });
   }
 }

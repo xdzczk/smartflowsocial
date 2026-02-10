@@ -7,7 +7,6 @@ import {
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
-import type { Asset } from "~/features/assets";
 import {
   DraftPickerModal,
   DraftVersionHistory,
@@ -53,16 +52,6 @@ export default function LongFormDraftEditPage() {
       ? (loaderData as { queueTypes: unknown[] }).queueTypes
       : [];
 
-  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
-  const assetsRaw =
-    typeof loaderData === "object" &&
-    loaderData !== null &&
-    "assets" in loaderData &&
-    Array.isArray((loaderData as { assets?: unknown }).assets)
-      ? ((loaderData as { assets: unknown[] }).assets ?? [])
-      : [];
-  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-
   const hashtagPresetsRaw =
     typeof loaderData === "object" &&
     loaderData !== null &&
@@ -84,14 +73,6 @@ export default function LongFormDraftEditPage() {
         )
         .filter((n): n is number => n !== null && !Number.isNaN(n))
     : [];
-
-  const assets = assetsRaw.filter(
-    (asset: unknown): asset is Asset =>
-      typeof asset === "object" &&
-      asset != null &&
-      "id" in asset &&
-      typeof (asset as { id: unknown }).id === "string"
-  );
 
   const typedPost =
     post &&
@@ -239,7 +220,6 @@ export default function LongFormDraftEditPage() {
           queueTypes={queueTypes}
           scheduleIntervals={scheduleIntervals}
           userTags={userTags}
-          assets={assets}
           onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
           onPreview={handlePreview}
           initialData={

@@ -41,7 +41,7 @@ export const action = withCSRFProtection(
       // If user prefers blossom, handle it differently
       if (uploadProvider.includes("BLOSSOM")) {
         throw new ValidationError(
-          "EditorJS uploads with Blossom are not supported. Please use the Asset Browser to insert images into your content."
+          "EditorJS uploads with Blossom are not supported. Please upload images directly into your content."
         );
       }
 

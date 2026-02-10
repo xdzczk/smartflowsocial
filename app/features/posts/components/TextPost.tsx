@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { Clock, FolderOpen, Pencil, Send } from "lucide-react";
+import { Clock, Pencil, Send } from "lucide-react";
 import React from "react";
 import { Controller } from "react-hook-form";
 
@@ -10,13 +10,8 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import AssetBrowser from "~/features/assets/components/AssetBrowser";
-import type { Asset } from "~/features/assets/types";
 import type { SignedEvent } from "~/features/nostr/types";
-import {
-  INLINE_ICON_SIZE_CLASS,
-  INLINE_ICON_STROKE,
-} from "~/lib/icon-constants";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { nowMillis, parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
@@ -187,7 +182,6 @@ async function buildQuoteSchedules(
 
 interface TextPostProps {
   queueTypes?: Array<string | QueueType>;
-  assets?: Asset[];
   hashTagPresets?: Array<{ id: string; name: string; tags: string }>;
   onQueueTypeChange?: (queueType: string) => void;
   selectedHashTagPresetId?: string | null | undefined;
@@ -196,7 +190,6 @@ interface TextPostProps {
 
 export default function TextPost({
   queueTypes = [],
-  assets = [],
   hashTagPresets = [],
   onQueueTypeChange,
   selectedHashTagPresetId,
@@ -208,7 +201,6 @@ export default function TextPost({
   const [signingError, setSigningError] = React.useState<string | null>(null);
   // Note: User doesn't have hashTags property - this would need to come from hashTagPresets relation
   const tags: string[] = [];
-  const [showAssetBrowser, setShowAssetBrowser] = React.useState(false);
   const [selectedHashtags, setSelectedHashtags] = React.useState("");
   const [alsoScheduleRepost, setAlsoScheduleRepost] = React.useState(false);
   const [repostDelayList, setRepostDelayList] = React.useState<
@@ -461,34 +453,6 @@ export default function TextPost({
     }
   };
 
-  const handleAssetsSelected = (selectedAssets: Asset[]) => {
-    // Separate text assets and image assets
-    const textAssets: string[] = [];
-    const imageAssets: string[] = [];
-
-    selectedAssets.forEach((asset) => {
-      if (asset.assetType === "TEXT") {
-        const textContent = asset.content ?? asset.title ?? "";
-        if (textContent) {
-          textAssets.push(textContent);
-        }
-      } else if (asset.assetType === "IMAGE") {
-        const imageUrl = asset.fileUrl ?? "";
-        if (imageUrl) {
-          imageAssets.push(imageUrl);
-        }
-      }
-    });
-
-    // Combine text assets first, then image URLs
-    const allAssets = [...textAssets, ...imageAssets];
-    const newContent = allAssets.join("\n");
-
-    // Always append assets below existing content
-    const updatedContent = content ? content + "\n" + newContent : newContent;
-    form.setValue("content", updatedContent);
-  };
-
   return (
     <fetcher.Form
       method="post"
@@ -518,21 +482,6 @@ export default function TextPost({
           rows={6}
           disabled={fetcher.state !== "idle" || isSigning}
         />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setShowAssetBrowser(true)}
-          disabled={fetcher.state !== "idle" || isSigning}
-          className="absolute top-2 right-2"
-        >
-          <FolderOpen
-            className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-            strokeWidth={INLINE_ICON_STROKE}
-            aria-hidden
-          />
-          Assets
-        </Button>
       </div>
       {form.formState.errors.content ? (
         <div className="text-destructive mt-1 text-sm">
@@ -908,14 +857,6 @@ export default function TextPost({
           </Button>
         </div>
       </div>
-
-      {showAssetBrowser ? (
-        <AssetBrowser
-          assets={assets}
-          onAssetsSelected={handleAssetsSelected}
-          onClose={() => setShowAssetBrowser(false)}
-        />
-      ) : null}
     </fetcher.Form>
   );
 }

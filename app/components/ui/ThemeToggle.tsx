@@ -1,11 +1,6 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import useLocalStorage from "~/lib/useLocalStorage";
 
@@ -55,24 +50,17 @@ export function ThemeToggle() {
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          onClick={toggleTheme}
-          className="border-input bg-background hover:bg-muted focus:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors focus:ring-2 focus:outline-none"
-          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-          type="button"
-        >
-          {theme === "light" ? (
-            <Moon className={INLINE_ICON_SIZE_CLASS} />
-          ) : (
-            <Sun className={INLINE_ICON_SIZE_CLASS} />
-          )}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>Switch to {theme === "light" ? "dark" : "light"} mode</p>
-      </TooltipContent>
-    </Tooltip>
+    <button
+      onClick={toggleTheme}
+      className="border-input bg-background hover:bg-muted focus:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors focus:ring-2 focus:outline-none"
+      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+      type="button"
+    >
+      {theme === "light" ? (
+        <Moon className={INLINE_ICON_SIZE_CLASS} />
+      ) : (
+        <Sun className={INLINE_ICON_SIZE_CLASS} />
+      )}
+    </button>
   );
 }

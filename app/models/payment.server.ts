@@ -704,7 +704,6 @@ const FREE_PLAN_SEED = {
   maxPostsPerMonth: 10,
   maxQueueTypes: 1,
   maxTemplates: 3,
-  maxAssets: 10,
   maxLongFormPosts: 2,
   enableBasicScheduling: true,
   enableMultipleQueues: false,

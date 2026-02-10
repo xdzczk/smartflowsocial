@@ -6,10 +6,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/asset.server", () => ({
-  getAssets: vi.fn(),
-}));
-
 vi.mock("~/models/longformpost.server", () => ({
   getLongFormPost: vi.fn(),
 }));
@@ -30,7 +26,6 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { getAssets } from "~/models/asset.server";
 import { getLongFormPost } from "~/models/longformpost.server";
 
 describe("Longform Edit Loader", () => {
@@ -49,12 +44,6 @@ describe("Longform Edit Loader", () => {
     const mockScheduleIntervals = ["4", "6", "8"];
     const mockQueueTypes = [{ id: "queue-1", name: "Queue 1" }];
     const mockHashTagPresets = [{ id: "preset-1", name: "Preset 1" }];
-    const mockAssets = {
-      assets: [{ id: "asset-1", title: "Asset 1" }],
-      totalCount: 1,
-      totalPages: 1,
-      currentPage: 1,
-    };
 
     (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -68,7 +57,6 @@ describe("Longform Edit Loader", () => {
       { id: "preset-1", name: "Default", tags: mockTags },
       ...mockHashTagPresets,
     ]);
-    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssets);
 
     const result = await loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID);
 
@@ -77,7 +65,6 @@ describe("Longform Edit Loader", () => {
     expect(result.tags).toBe(mockTags);
     expect(result.scheduleIntervals).toEqual(mockScheduleIntervals);
     expect(result.queueTypes).toEqual(mockQueueTypes);
-    expect(result.assets).toEqual(mockAssets.assets);
     expect(result.userTimezone).toBe("America/New_York");
     expect(result.hashtagPresets).toEqual([
       { id: "preset-1", name: "Default", tags: mockTags },
@@ -96,12 +83,6 @@ describe("Longform Edit Loader", () => {
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({
-      assets: [],
-      totalCount: 0,
-      totalPages: 0,
-      currentPage: 1,
-    });
 
     await expect(
       loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID)
@@ -120,12 +101,6 @@ describe("Longform Edit Loader", () => {
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({
-      assets: [],
-      totalCount: 0,
-      totalPages: 0,
-      currentPage: 1,
-    });
 
     const result = await loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID);
 

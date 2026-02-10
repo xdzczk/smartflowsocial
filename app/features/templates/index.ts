@@ -31,6 +31,11 @@ export {
   handleTemplateEditAction,
 } from "./services/template-edit.server";
 
+export {
+  handleCreateTemplateFromScratchPost,
+  handleCreateTemplateFromScratchLongform,
+} from "./services/templates-create-from-scratch.server";
+
 // ============================================================================
 // Components (Public API)
 // ============================================================================

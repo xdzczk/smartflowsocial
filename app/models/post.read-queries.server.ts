@@ -74,7 +74,7 @@ export async function getScheduledPostsFromReadModel({
       queueTypeName: post.queueType?.name ?? "unassigned",
       queueTypeColorToken: post.queueType?.colorToken ?? null,
       hashTagPresetId: post.hashTagPresetId,
-      templateId: post.templateId,
+      templateId: null,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     }));
