@@ -47,7 +47,7 @@ interface FetcherData {
 function getFileUrlFromFetcher(
   fetcher: FetcherWithComponents<FetcherData>,
   index: number
-): { fileUrl: string; scheduledFor: string } {
+): { fileUrl: string[]; scheduledFor: string } {
   const fetcherDataRaw = fetcher.data;
   const fetcherData =
     fetcherDataRaw &&
@@ -55,25 +55,31 @@ function getFileUrlFromFetcher(
     !Array.isArray(fetcherDataRaw)
       ? (fetcherDataRaw as { fileUrls?: unknown })
       : null;
-  const fileUrls =
+  const fileUrlsArray =
     fetcherData &&
     "fileUrls" in fetcherData &&
     Array.isArray(fetcherData.fileUrls)
       ? fetcherData.fileUrls
       : null;
   const fileUrlItem =
-    fileUrls?.[index] &&
-    typeof fileUrls[index] === "object" &&
-    fileUrls[index] !== null &&
-    !Array.isArray(fileUrls[index])
-      ? (fileUrls[index] as { fileUrl?: unknown; scheduledFor?: unknown })
+    fileUrlsArray?.[index] &&
+    typeof fileUrlsArray[index] === "object" &&
+    fileUrlsArray[index] !== null &&
+    !Array.isArray(fileUrlsArray[index])
+      ? (fileUrlsArray[index] as {
+          fileUrl?: unknown;
+          scheduledFor?: unknown;
+        })
       : null;
-  const fileUrl =
-    fileUrlItem &&
-    "fileUrl" in fileUrlItem &&
-    typeof fileUrlItem.fileUrl === "string"
-      ? fileUrlItem.fileUrl
-      : "";
+  let fileUrl: string[] = [];
+  if (fileUrlItem && "fileUrl" in fileUrlItem) {
+    const raw = fileUrlItem.fileUrl;
+    if (Array.isArray(raw)) {
+      fileUrl = raw.filter((u): u is string => typeof u === "string");
+    } else if (typeof raw === "string" && raw.trim() !== "") {
+      fileUrl = [raw];
+    }
+  }
   const scheduledFor =
     fileUrlItem &&
     "scheduledFor" in fileUrlItem &&
@@ -85,7 +91,7 @@ function getFileUrlFromFetcher(
 }
 
 function buildContent(
-  fileUrl: string,
+  fileUrls: string[],
   caption: string,
   tagsString: string,
   user: User | null
@@ -98,7 +104,8 @@ function buildContent(
       ? `${tagsString}`
       : "";
 
-  const contentParts = [fileUrl, caption, addTags].filter(
+  const mediaPart = fileUrls.length > 0 ? fileUrls.join("\n") : "";
+  const contentParts = [mediaPart, caption, addTags].filter(
     (part) => part !== ""
   );
   return contentParts.join("\n");
@@ -167,28 +174,38 @@ function parseOriginalFileUrl(originalFileUrl: string | string[]): string {
   return typeof originalFileUrl === "string" ? originalFileUrl : "";
 }
 
-function getFileUrlFromPost(post: BulkPost): string {
+function _getFileUrlFromPost(post: BulkPost): string {
+  const arr = getFileUrlArray(post);
+  return arr[0] ?? "";
+}
+
+/** All media URLs for this post (from fileUrl or originalFileUrl for kind6). */
+function getFileUrlArray(post: BulkPost): string[] {
   if (
     post.isKind6Repost &&
     post.originalFileUrl &&
     post.originalFileUrl.length > 0
   ) {
-    return parseOriginalFileUrl(post.originalFileUrl);
+    const one = parseOriginalFileUrl(post.originalFileUrl);
+    return one ? [one] : [];
   }
   if (Array.isArray(post.fileUrl)) {
-    return typeof post.fileUrl[0] === "string" ? post.fileUrl[0] : "";
+    return post.fileUrl.filter((u): u is string => typeof u === "string");
   }
-  return typeof post.fileUrl === "string" ? post.fileUrl : "";
+  if (typeof post.fileUrl === "string" && post.fileUrl.trim() !== "") {
+    return [post.fileUrl];
+  }
+  return [];
 }
 
 function _createFakeFileUrlData(posts: BulkPost[]): Array<{
-  fileUrl: string;
+  fileUrl: string[];
   scheduledFor: string;
   queueType: string;
   isRecyclable: boolean;
 }> {
   return posts.map((post) => ({
-    fileUrl: getFileUrlFromPost(post),
+    fileUrl: getFileUrlArray(post),
     scheduledFor: post.scheduledFor,
     queueType: post.queueType,
     isRecyclable: post.isRecyclable,
@@ -236,7 +253,7 @@ function createKind6RepostEvent(
 ): PreparedEvent {
   const displayFileUrl = getDisplayFileUrl(post);
   return {
-    fileUrl: displayFileUrl,
+    fileUrl: displayFileUrl ? [displayFileUrl] : [],
     scheduledFor: Math.floor(
       (post.scheduledFor
         ? Number(
@@ -306,7 +323,7 @@ function createLongformQuoteEvent(
   ];
 
   return {
-    fileUrl,
+    fileUrl: fileUrl ? [fileUrl] : [],
     scheduledFor: Math.floor(scheduledTime / 1000),
     caption: post.caption,
     queueType: post.queueType,
@@ -352,7 +369,7 @@ function createRegularQuoteEvent(
   ];
 
   return {
-    fileUrl,
+    fileUrl: fileUrl ? [fileUrl] : [],
     scheduledFor: Math.floor(scheduledTime / 1000),
     caption: post.caption,
     queueType: post.queueType,
@@ -440,25 +457,12 @@ export function useBulkPostEvents({
     const byPost: Record<number, string[]> = {};
 
     const hasMedia = (post: BulkPost) =>
-      Boolean(
-        post.file != null ||
-        (Array.isArray(post.fileUrl) && post.fileUrl.length > 0) ||
-        (typeof post.fileUrl === "string" && post.fileUrl.trim() !== "")
-      );
+      post.files.length > 0 ||
+      (Array.isArray(post.fileUrl) && post.fileUrl.length > 0) ||
+      (typeof post.fileUrl === "string" && post.fileUrl.trim() !== "");
 
     posts.forEach((post, index) => {
       const rowErrors: string[] = [];
-
-      // Queue required
-      if (
-        !post.queueType ||
-        post.queueType.trim() === "" ||
-        post.queueType === "unassigned"
-      ) {
-        const msg = "Queue is required";
-        rowErrors.push(msg);
-        errors.push(`Post ${index + 1}: ${msg}`);
-      }
 
       // For rows without media, caption is required
       if (!hasMedia(post)) {
@@ -509,9 +513,7 @@ export function useBulkPostEvents({
     );
 
     // Calculate total steps based on whether we had uploads
-    const filesToUpload = posts
-      .map((post) => post.file)
-      .filter((file) => file !== null);
+    const filesToUpload = posts.flatMap((post) => post.files);
     const totalSteps = filesToUpload.length > 0 ? filesToUpload.length + 3 : 4;
     const baseStep = filesToUpload.length > 0 ? filesToUpload.length + 1 : 1;
 
@@ -633,7 +635,7 @@ export function useBulkPostEvents({
             addTags,
             tagArray,
             scheduledTime,
-            fileUrl
+            fileUrl[0] ?? ""
           );
         }
 
@@ -718,9 +720,7 @@ export function useBulkPostEvents({
 
     // Show initial progress immediately
     // Calculate total steps: uploads (if any) + 3 preparation steps
-    const filesToUpload = posts
-      .map((post) => post.file)
-      .filter((file) => file !== null);
+    const filesToUpload = posts.flatMap((post) => post.files);
     const totalSteps = filesToUpload.length > 0 ? filesToUpload.length + 3 : 4;
     setPreparationProgress?.({
       current: 0,
@@ -754,27 +754,23 @@ export function useBulkPostEvents({
         document.dispatchEvent(customEvent);
       } else {
         // Use client-side upload system
-        const filesToUpload = posts
-          .map((post) => post.file)
-          .filter((file) => file !== null);
+        const filesToUpload = posts.flatMap((post) => post.files);
 
         if (filesToUpload.length > 0) {
           try {
-            // Update progress for upload phase
             setPreparationProgress?.({
               current: 0,
-              total: filesToUpload.length + 3, // Uploads + 3 preparation steps
+              total: filesToUpload.length + 3,
               stage: `Starting upload of ${filesToUpload.length} files...`,
             });
 
             const uploadStartTime = nowMillis();
-            // Upload all files using the new upload system with progress tracking
             const uploadResults = await uploadMultipleFiles(
               filesToUpload,
               (completed, total, message) => {
                 setPreparationProgress?.({
                   current: completed,
-                  total: total + 3, // Total includes uploads + 3 preparation steps
+                  total: total + 3,
                   stage: message,
                 });
               }
@@ -784,7 +780,6 @@ export function useBulkPostEvents({
               `[BulkPosts] Uploads completed in ${uploadTime}ms (${filesToUpload.length} files)`
             );
 
-            // Check for failed uploads
             const failedUploads = uploadResults.filter(
               (result) => !result.success
             );
@@ -795,25 +790,27 @@ export function useBulkPostEvents({
               throw new Error(`Upload failed: ${errorMessages}`);
             }
 
-            // Map upload results back to posts (maintaining order)
-            let uploadIndex = 0;
-            const mappedResults = posts.map((post) => {
-              if (post.file) {
-                return uploadResults[uploadIndex++];
+            // Partition flat upload results back to per-post URL arrays
+            let urlIndex = 0;
+            const fileUrlsPerPost: string[][] = posts.map((post) => {
+              const count = post.files.length;
+              const urls: string[] = [];
+              for (let j = 0; j < count; j++) {
+                const url = uploadResults[urlIndex]?.file?.url ?? "";
+                if (url) urls.push(url);
+                urlIndex++;
               }
-              return { success: true, file: { url: "" } }; // Placeholder for posts without files
+              return urls;
             });
 
-            // Update progress - waiting for server
             setPreparationProgress?.({
               current: filesToUpload.length + 1,
               total: filesToUpload.length + 3,
               stage: "Processing uploads...",
             });
 
-            // Send results to server
             const formData = new FormData();
-            formData.append("uploadResults", JSON.stringify(mappedResults));
+            formData.append("fileUrls", JSON.stringify(fileUrlsPerPost));
             posts.forEach((post) => {
               formData.append("scheduledDates", post.scheduledFor);
               formData.append("queueTypes", post.queueType);
@@ -852,21 +849,16 @@ export function useBulkPostEvents({
             return;
           }
         } else {
-          // No files to upload: text-only rows or rows with existing fileUrl (e.g. from draft).
-          // Send one fake upload result per post so server returns fileUrls (empty string for text-only).
+          // No files to upload: text-only or draft URLs. Send fileUrls per post.
           setPreparationProgress?.({
             current: 1,
             total: 4,
             stage: "Processing...",
           });
 
-          const fakeUploadResults = posts.map((post) => ({
-            success: true,
-            file: { url: getFileUrlFromPost(post) || "" },
-          }));
-
+          const fileUrlsPerPost = posts.map((post) => getFileUrlArray(post));
           const formData = new FormData();
-          formData.append("uploadResults", JSON.stringify(fakeUploadResults));
+          formData.append("fileUrls", JSON.stringify(fileUrlsPerPost));
           posts.forEach((post) => {
             formData.append("scheduledDates", post.scheduledFor);
             formData.append("queueTypes", post.queueType);

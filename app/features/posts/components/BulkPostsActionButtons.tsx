@@ -1,9 +1,23 @@
+import { useState } from "react";
+
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 
 import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 
 import type { BulkPost, QueueType } from "./BulkPostCard";
+
+export interface RepostAllDelay {
+  value: number;
+  unit: "hours" | "minutes";
+}
 
 interface BulkPostsActionButtonsProps {
   posts: BulkPost[];
@@ -21,7 +35,7 @@ interface BulkPostsActionButtonsProps {
   ) => void;
   setUseHashtagPresets: (use: boolean) => void;
   handleBulkRecyclableToggle: () => void;
-  onRepostAll12h?: () => void;
+  onRepostAll?: (delay: RepostAllDelay) => void;
 }
 
 export default function BulkPostsActionButtons({
@@ -37,22 +51,83 @@ export default function BulkPostsActionButtons({
   handleHashtagPresetSelect,
   setUseHashtagPresets,
   handleBulkRecyclableToggle,
-  onRepostAll12h,
+  onRepostAll,
 }: BulkPostsActionButtonsProps) {
+  const [repostAllOpen, setRepostAllOpen] = useState(false);
+  const [repostAllValue, setRepostAllValue] = useState(12);
+  const [repostAllUnit, setRepostAllUnit] = useState<"hours" | "minutes">(
+    "hours"
+  );
+
   if (posts.length === 0) return null;
+
+  const handleRepostAllApply = () => {
+    const value = Math.max(1, Math.floor(repostAllValue) || 1);
+    onRepostAll?.({ value, unit: repostAllUnit });
+    setRepostAllOpen(false);
+  };
+
+  const repostAllLabel =
+    repostAllUnit === "hours"
+      ? `${repostAllValue}h after`
+      : `${repostAllValue}min after`;
 
   return (
     <>
-      {onRepostAll12h ? (
+      {onRepostAll ? (
         <div className="mb-4 flex justify-center">
-          <button
-            type="button"
-            onClick={onRepostAll12h}
-            disabled={isProcessing}
-            className="bg-muted text-foreground hover:bg-muted/80 rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Repost all 12h after
-          </button>
+          <Popover open={repostAllOpen} onOpenChange={setRepostAllOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={isProcessing}
+                className="bg-muted text-foreground hover:bg-muted/80"
+              >
+                Repost all {repostAllLabel}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64" align="center">
+              <div className="space-y-3">
+                <p className="text-muted-foreground text-sm font-medium">
+                  Set repost delay for all posts
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={repostAllValue}
+                    onChange={(e) =>
+                      setRepostAllValue(
+                        Math.max(1, parseInt(e.target.value, 10) || 1)
+                      )
+                    }
+                    className="h-9 w-20"
+                    aria-label="Delay value"
+                  />
+                  <select
+                    value={repostAllUnit}
+                    onChange={(e) =>
+                      setRepostAllUnit(e.target.value as "hours" | "minutes")
+                    }
+                    className="border-border bg-background text-foreground h-9 w-24 rounded border px-2 text-sm"
+                    aria-label="Unit"
+                  >
+                    <option value="hours">hours</option>
+                    <option value="minutes">minutes</option>
+                  </select>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleRepostAllApply}
+                >
+                  Apply to all posts
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       ) : null}
       <div className="mt-4 mb-4 flex flex-col items-center gap-3">

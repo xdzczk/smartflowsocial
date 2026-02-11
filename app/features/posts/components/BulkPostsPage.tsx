@@ -218,11 +218,22 @@ function SubmitButton({
     <button
       type="submit"
       disabled={disabled}
-      className="bg-primary text-primary-foreground hover:bg-primary/90 mt-6 w-full rounded-lg p-4 disabled:cursor-not-allowed disabled:opacity-50"
+      className="bg-primary text-primary-foreground hover:bg-primary/90 mt-6 w-full min-w-0 flex-1 rounded-lg p-4 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-0"
     >
       {getButtonContent()}
     </button>
   );
+}
+
+/** Build fileUrl array for a post (for save-as-draft payload). */
+function getFileUrlArrayForDraft(post: BulkPost): string[] {
+  if (Array.isArray(post.fileUrl)) {
+    return post.fileUrl.filter((u): u is string => typeof u === "string");
+  }
+  if (typeof post.fileUrl === "string" && post.fileUrl.trim() !== "") {
+    return [post.fileUrl];
+  }
+  return [];
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Page component with many features; splitting would fragment state */
@@ -326,7 +337,7 @@ export default function BulkPostsPage() {
       caption: string;
       queueType: string;
       scheduledFor: string;
-      fileUrl?: string;
+      fileUrl?: string | string[];
       isRecyclable: boolean;
     }>;
     savedAt: number;
@@ -344,7 +355,7 @@ export default function BulkPostsPage() {
     bulkLocalRestoredAppliedRef.current = true;
     const initialPosts: BulkPost[] = bulkLocalRestored.rows.map((r) => ({
       clientId: createBulkPostClientId(),
-      file: null,
+      files: [],
       caption: r.caption,
       queueType: r.queueType,
       scheduledFor: r.scheduledFor,
@@ -387,14 +398,16 @@ export default function BulkPostsPage() {
               : null;
         return {
           clientId: createBulkPostClientId(),
-          file: null,
+          files: [],
           caption: p.caption ?? "",
           queueType: p.queueType?.name ?? "unassigned",
           scheduledFor: scheduledAt
             ? String(Math.floor(scheduledAt.getTime() / 1000))
             : "",
           isRecyclable: p.isRecyclable ?? false,
-          fileUrl: Array.isArray(p.fileUrl) ? p.fileUrl[0] : p.fileUrl?.[0],
+          fileUrl: Array.isArray(p.fileUrl)
+            ? p.fileUrl
+            : (p.fileUrl ?? undefined),
         };
       });
       setPosts(initialPosts);
@@ -514,30 +527,37 @@ export default function BulkPostsPage() {
     handleBulkRecyclableToggleHandler(posts, setPosts);
   };
 
-  const REPOST_12H = [{ value: 12, unit: "hours" as const }];
-  const QUOTE_12H = [{ value: 12, unit: "hours" as const, caption: "" }];
-
-  const handleRepostScheduleChange = (index: number, add: boolean) => {
+  const handleRepostSchedulesChange = (
+    index: number,
+    list: Array<{ value: number; unit: "hours" | "minutes" }>
+  ) => {
     setPosts((prev) =>
-      prev.map((p, i) =>
-        i === index
-          ? { ...p, repostSchedules: add ? REPOST_12H : undefined }
-          : p
-      )
+      prev.map((p, i) => (i === index ? { ...p, repostSchedules: list } : p))
     );
   };
 
-  const handleQuoteScheduleChange = (index: number, add: boolean) => {
+  const handleQuoteSchedulesChange = (
+    index: number,
+    list: Array<{
+      value: number;
+      unit: "hours" | "minutes";
+      caption?: string;
+    }>
+  ) => {
     setPosts((prev) =>
-      prev.map((p, i) =>
-        i === index ? { ...p, quoteSchedules: add ? QUOTE_12H : undefined } : p
-      )
+      prev.map((p, i) => (i === index ? { ...p, quoteSchedules: list } : p))
     );
   };
 
-  const handleRepostAll12h = () => {
+  const handleRepostAll = (delay: {
+    value: number;
+    unit: "hours" | "minutes";
+  }) => {
     setPosts((prev) =>
-      prev.map((p) => ({ ...p, repostSchedules: REPOST_12H }))
+      prev.map((p) => ({
+        ...p,
+        repostSchedules: [{ value: delay.value, unit: delay.unit }],
+      }))
     );
   };
 
@@ -604,33 +624,37 @@ export default function BulkPostsPage() {
     // State tracking disabled for production
   }, [posts]);
 
-  // Memoize preview URLs and file types to prevent recreation on every render
+  // Memoize preview URLs and file types (one array per row)
   const previewData = useMemo(() => {
     const data = new Map<
       number,
-      { url: string; isVideo: boolean; file: File }
+      Array<{ url: string; isVideo: boolean; file: File }>
     >();
     posts.forEach((post, index) => {
-      if (post.file) {
-        const url = URL.createObjectURL(post.file);
-        const isVideo = isVideoFile(post.file);
-        data.set(index, { url, isVideo, file: post.file });
+      const files = post.files;
+      if (files.length > 0) {
+        data.set(
+          index,
+          files.map((file) => {
+            const url = URL.createObjectURL(file);
+            const isVideo = isVideoFile(file);
+            return { url, isVideo, file };
+          })
+        );
       }
     });
     return data;
   }, [posts]);
 
-  // Cleanup URLs when component unmounts or posts change
+  // Cleanup object URLs when component unmounts or posts change
   useEffect(() => {
     return () => {
-      previewData.forEach((data) => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for serialized data
-        if (typeof data === "object" && data !== null && "url" in data) {
-          const url = data.url;
-          if (typeof url === "string") {
-            URL.revokeObjectURL(url);
+      previewData.forEach((arr) => {
+        arr.forEach((item) => {
+          if (typeof item.url === "string") {
+            URL.revokeObjectURL(item.url);
           }
-        }
+        });
       });
     };
   }, [previewData]);
@@ -723,7 +747,7 @@ export default function BulkPostsPage() {
     const now = nowInTimezone(userTimezone);
     const newPosts: BulkPost[] = Array.from({ length: count }, (_, i) => ({
       clientId: createBulkPostClientId(),
-      file: null,
+      files: [],
       caption: "",
       queueType: "unassigned",
       scheduledFor:
@@ -755,8 +779,57 @@ export default function BulkPostsPage() {
       processed = await resizeImage(file);
     }
     setPosts((prev) =>
-      prev.map((p, i) => (i === index ? { ...p, file: processed } : p))
+      prev.map((p, i) =>
+        i === index ? { ...p, files: [...p.files, processed] } : p
+      )
     );
+  };
+
+  const handleRowFileRemove = (index: number, mediaIndex: number) => {
+    setPosts((prev) =>
+      prev.map((p, i) => {
+        if (i !== index) return p;
+        const files = p.files;
+        const fileUrlArr = Array.isArray(p.fileUrl)
+          ? p.fileUrl
+          : typeof p.fileUrl === "string" && p.fileUrl
+            ? [p.fileUrl]
+            : [];
+        if (mediaIndex < files.length) {
+          return { ...p, files: files.filter((_, j) => j !== mediaIndex) };
+        }
+        const urlIndex = mediaIndex - files.length;
+        if (urlIndex >= 0 && urlIndex < fileUrlArr.length) {
+          const next = fileUrlArr.filter((_, j) => j !== urlIndex);
+          return { ...p, fileUrl: next.length > 0 ? next : undefined };
+        }
+        return p;
+      })
+    );
+  };
+
+  const handleSaveDraftFromTable = () => {
+    if (posts.length === 0) return;
+    const formData = new FormData();
+    posts.forEach((p) => {
+      formData.append("fileUrl", JSON.stringify(getFileUrlArrayForDraft(p)));
+      formData.append("caption", JSON.stringify(p.caption));
+      formData.append("queueType", p.queueType);
+      formData.append("scheduledFor", p.scheduledFor);
+      formData.append("isRecyclable", p.isRecyclable ? "true" : "false");
+      formData.append("originalPostId", p.originalPostId ?? "");
+    });
+    formData.append("_action", "save_as_draft");
+    if (groupId) {
+      formData.append("groupId", groupId);
+    }
+    const currentUrl = new URL(window.location.href);
+    const actionUrl = `/dashboard/bulkposts${currentUrl.search}`;
+    fetcher.submit(formData, {
+      method: "post",
+      encType: "multipart/form-data",
+      action: actionUrl,
+    });
   };
 
   return (
@@ -854,9 +927,9 @@ export default function BulkPostsPage() {
             handleHashtagPresetSelect={handleHashtagPresetSelect}
             setUseHashtagPresets={setUseHashtagPresets}
             handleBulkRecyclableToggle={handleBulkRecyclableToggle}
-            onRepostAll12h={
+            onRepostAll={
               mode !== "repost" && mode !== "quote"
-                ? handleRepostAll12h
+                ? handleRepostAll
                 : undefined
             }
           />
@@ -910,22 +983,29 @@ export default function BulkPostsPage() {
                     ? (idx, file) => void handleRowFileSelect(idx, file)
                     : undefined
                 }
-                onRepostScheduleChange={
+                onRowFileRemove={
                   mode !== "repost" && mode !== "quote"
-                    ? handleRepostScheduleChange
+                    ? handleRowFileRemove
                     : undefined
                 }
-                onQuoteScheduleChange={
+                onRepostSchedulesChange={
                   mode !== "repost" && mode !== "quote"
-                    ? handleQuoteScheduleChange
+                    ? handleRepostSchedulesChange
                     : undefined
                 }
-                showAlsoSchedule={mode !== "repost" ? mode !== "quote" : null}
+                onQuoteSchedulesChange={
+                  mode !== "repost" && mode !== "quote"
+                    ? handleQuoteSchedulesChange
+                    : undefined
+                }
+                showAlsoSchedule={Boolean(
+                  mode !== "repost" && mode !== "quote"
+                )}
               />
 
-              {!validationResult.isValid ? (
+              {validationResult.isValid === false ? (
                 <div
-                  className="bg-destructive/10 border-destructive text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mt-4 rounded-lg border p-3 text-sm"
+                  className="mt-4 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200"
                   role="alert"
                 >
                   <p className="font-medium">
@@ -942,14 +1022,30 @@ export default function BulkPostsPage() {
                 </div>
               ) : null}
 
-              <SubmitButton
-                isSubmitting={isSubmitting}
-                isProcessing={isProcessing}
-                isPreviewSubmitting={isPreviewSubmitting}
-                postsCount={posts.length}
-                preparationProgress={preparationProgress}
-                validationInvalid={!validationResult.isValid}
-              />
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={
+                    posts.length === 0 ||
+                    isSubmitting ||
+                    isProcessing ||
+                    isPreviewSubmitting
+                  }
+                  onClick={handleSaveDraftFromTable}
+                  className="w-full sm:w-auto"
+                >
+                  Save as draft
+                </Button>
+                <SubmitButton
+                  isSubmitting={isSubmitting}
+                  isProcessing={isProcessing}
+                  isPreviewSubmitting={isPreviewSubmitting}
+                  postsCount={posts.length}
+                  preparationProgress={preparationProgress}
+                  validationInvalid={!validationResult.isValid}
+                />
+              </div>
             </>
           ) : null}
         </fetcher.Form>

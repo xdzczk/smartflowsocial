@@ -53,15 +53,52 @@ interface UploadResult {
 }
 
 /**
- * Handle file upload preview results from client-side upload system
+ * Handle file upload preview results from client-side upload system.
+ * Accepts either fileUrls (array of URL arrays per post) or legacy uploadResults.
  */
 export async function handleUploadImagesPreview(formData: FormData) {
   const startTime = nowMillis();
   try {
-    // Optimize: Parse JSON first for large datasets to avoid full Zod validation overhead
+    const scheduledDates = formData.getAll("scheduledDates");
+    const queueTypes = formData.getAll("queueTypes");
+
+    const fileUrlsRaw = formData.get("fileUrls");
+    if (typeof fileUrlsRaw === "string") {
+      try {
+        const parsed = JSON.parse(fileUrlsRaw) as unknown;
+        if (!Array.isArray(parsed)) {
+          return json({ error: "Invalid fileUrls format" }, { status: 400 });
+        }
+        const fileUrlsPerPost = parsed as string[][];
+        if (
+          fileUrlsPerPost.length !== scheduledDates.length ||
+          fileUrlsPerPost.length !== queueTypes.length
+        ) {
+          return json(
+            { error: "Mismatch between fileUrls and post data" },
+            { status: 400 }
+          );
+        }
+        const fileUrls = fileUrlsPerPost.map((urls, index) => ({
+          fileUrl: Array.isArray(urls)
+            ? urls.filter((u): u is string => typeof u === "string")
+            : [],
+          scheduledFor: String(scheduledDates[index] ?? ""),
+        }));
+        const totalTime = nowMillis() - startTime;
+        logInfo("[BulkPosts] handleUploadImagesPreview (fileUrls) completed", {
+          postCount: fileUrls.length,
+          totalTimeMs: totalTime,
+        });
+        return json({ success: true, fileUrls });
+      } catch {
+        return json({ error: "Invalid fileUrls JSON" }, { status: 400 });
+      }
+    }
+
+    // Legacy: uploadResults (one URL per post)
     const uploadResultsRaw = formData.get("uploadResults");
     let uploadResults: UploadResult[] = [];
-
     if (typeof uploadResultsRaw === "string") {
       try {
         const parsed = JSON.parse(uploadResultsRaw) as unknown;
@@ -77,17 +114,8 @@ export async function handleUploadImagesPreview(formData: FormData) {
         return json({ error: "Invalid upload results JSON" }, { status: 400 });
       }
     } else {
-      return json({ error: "Upload results missing" }, { status: 400 });
-    }
-
-    // Get arrays directly (faster than full Zod validation for large arrays)
-    const scheduledDates = formData.getAll("scheduledDates");
-    const queueTypes = formData.getAll("queueTypes");
-
-    // Basic validation
-    if (uploadResults.length === 0) {
       return json(
-        { error: "At least one upload result is required" },
+        { error: "Upload results or fileUrls missing" },
         { status: 400 }
       );
     }
@@ -102,22 +130,16 @@ export async function handleUploadImagesPreview(formData: FormData) {
       );
     }
 
-    const parseTime = nowMillis() - startTime;
-    logInfo("[BulkPosts] Parsed upload results", {
-      uploadResultsCount: uploadResults.length,
-      parseTimeMs: parseTime,
-    });
-
     const fileUrls = uploadResults.map(
       (result: UploadResult, index: number) => ({
-        fileUrl: result.file?.url ?? "",
+        fileUrl: (result.file?.url ?? "") ? [result.file?.url ?? ""] : [],
         scheduledFor: String(scheduledDates[index] ?? ""),
-        queueType: String(queueTypes[index] ?? ""),
       })
     );
 
     const totalTime = nowMillis() - startTime;
     logInfo("[BulkPosts] handleUploadImagesPreview completed", {
+      uploadResultsCount: uploadResults.length,
       totalTimeMs: totalTime,
     });
 
@@ -206,7 +228,9 @@ export async function handleSignAndSchedule(
           content = captions[index];
         }
 
-        const fileUrl = fileUrls[index] ?? "";
+        const fileUrlArr = fileUrls[index] ?? [];
+        const fileUrl =
+          Array.isArray(fileUrlArr) && fileUrlArr.length > 0 ? fileUrlArr : [];
         const tags = signedEvent.tags
           .map((tagArray: string[]) => tagArray[1])
           .filter((tag): tag is string => typeof tag === "string");
@@ -231,9 +255,9 @@ export async function handleSignAndSchedule(
           userId,
         });
 
-        // Determine post type: text-only when no file URL, otherwise IMAGE or VIDEO
-        const isTextOnly = !fileUrl || fileUrl.trim() === "";
-        const isVideo = !isTextOnly && isVideoUrl(fileUrl);
+        const firstUrl = fileUrl[0] ?? "";
+        const isTextOnly = fileUrl.length === 0 || !firstUrl.trim();
+        const isVideo = !isTextOnly && isVideoUrl(firstUrl);
         const postType = isTextOnly ? "TEXT" : isVideo ? "VIDEO" : "IMAGE";
 
         const originalPostId =
@@ -245,7 +269,7 @@ export async function handleSignAndSchedule(
           userId,
           content,
           caption: captions[index] ?? undefined,
-          fileUrl: isTextOnly ? [] : [fileUrl],
+          fileUrl: isTextOnly ? [] : fileUrl,
           postType,
           queueType, // Pass queue type name - use case will resolve
           tags, // Tags extracted from signedEvent
@@ -514,7 +538,7 @@ export async function handleSaveAsDraft(
     const snapshotRows: BulkDraftSnapshotRow[] = [];
 
     const _createdPosts = await Promise.all(
-      fileUrls.map(async (fileUrl: string, index: number) => {
+      fileUrls.map(async (fileUrlArr: string[], index: number) => {
         const caption = captions[index] ?? "";
         const queueType = queueTypes[index] ?? "unassigned";
         const scheduledForStr = scheduledFors[index] ?? "";
@@ -531,19 +555,20 @@ export async function handleSaveAsDraft(
           queueType === "Unassigned" ? null : queueType
         );
 
-        const isTextOnly = !fileUrl || fileUrl.trim() === "";
-        const fileUrlArr = isTextOnly ? [] : [fileUrl];
+        const urls = Array.isArray(fileUrlArr) ? fileUrlArr : [];
+        const isTextOnly = urls.length === 0;
+        const firstUrl = urls[0] ?? "";
 
         snapshotRows.push({
           caption,
-          fileUrl: fileUrlArr,
+          fileUrl: urls,
           queueTypeId,
           scheduledFor: scheduledForStr || null,
           sortOrder: index,
           isRecyclable,
         });
 
-        const isVideo = !isTextOnly && isVideoUrl(fileUrl);
+        const isVideo = !isTextOnly && isVideoUrl(firstUrl);
         const postType = isTextOnly ? "TEXT" : isVideo ? "VIDEO" : "IMAGE";
 
         const createPostUseCase = new CreatePostUseCase();
@@ -551,7 +576,7 @@ export async function handleSaveAsDraft(
           userId,
           content: caption,
           caption: caption,
-          fileUrl: fileUrlArr,
+          fileUrl: urls,
           postType,
           queueType,
           isRecyclable,

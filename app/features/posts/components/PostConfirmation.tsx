@@ -373,22 +373,23 @@ export default function PostConfirmation({
             let tags = "";
 
             if (isRepost) {
-              mediaUrl = eventData.fileUrl;
+              mediaUrl = eventData.fileUrl[0] ?? "";
               caption = eventData.caption;
               tags = "";
             } else {
               const eventsContent = getEventsContent(eventsData);
               if (eventsContent) {
+                const firstUrl = eventData.fileUrl[0] ?? "";
                 const parsed = parseContentForRegularPost(
                   eventsContent,
                   eventData.caption,
-                  eventData.fileUrl
+                  firstUrl
                 );
                 caption = parsed.caption;
                 mediaUrl = parsed.mediaUrl;
               } else {
                 caption = eventData.caption;
-                mediaUrl = eventData.fileUrl;
+                mediaUrl = eventData.fileUrl[0] ?? "";
               }
               const eventsTags = getEventsTags(eventsData);
               tags = extractTagsFromEvents(eventsTags);

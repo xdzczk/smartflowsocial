@@ -232,12 +232,14 @@ export interface BulkPost {
    * Must NOT change when user edits fields like caption/scheduledFor.
    */
   clientId: string;
-  file: File | null;
+  /** Multiple files for this row (to be uploaded). */
+  files: File[];
   caption: string;
   queueType: string;
   scheduledFor: string;
   isRecyclable: boolean;
-  fileUrl?: string;
+  /** Existing URLs (e.g. from draft resume). One or more URLs per row. */
+  fileUrl?: string | string[];
   isRepost?: boolean;
   isKind6Repost?: boolean;
   isQuotePost?: boolean;
@@ -433,7 +435,7 @@ export const COMPOSER_ATTACH_TOKEN_SUFFIX = "]";
  * Prepared event for bulk posting operations
  */
 export interface PreparedEvent {
-  fileUrl: string;
+  fileUrl: string[];
   scheduledFor: number;
   caption: string;
   queueType: string;

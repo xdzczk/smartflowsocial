@@ -247,12 +247,13 @@ describe("File Upload Handler Integration Tests", () => {
       expect(Array.isArray(callArgs)).toBe(true);
       if (Array.isArray(callArgs) && callArgs.length > 0) {
         const post = callArgs[0] as {
-          file: File;
+          files: File[];
           caption: string;
           queueType: string;
           scheduledFor: string;
         };
-        expect(post.file).toBeDefined();
+        expect(post.files).toBeDefined();
+        expect(post.files.length).toBe(1);
         expect(post.caption).toBe("");
         expect(post.queueType).toBe("unassigned");
         expect(post.scheduledFor).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);

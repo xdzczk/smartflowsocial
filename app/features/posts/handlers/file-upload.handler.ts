@@ -127,7 +127,7 @@ export async function handleFileChange(
 
     return {
       clientId: createBulkPostClientId(),
-      file,
+      files: [file],
       caption: "",
       queueType: "unassigned",
       isRecyclable: false,

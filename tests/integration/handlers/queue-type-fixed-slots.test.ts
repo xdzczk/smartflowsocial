@@ -29,7 +29,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     const posts: BulkPost[] = [
       {
         clientId: "post-1",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -37,7 +37,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       },
       {
         clientId: "post-2",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -45,7 +45,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       },
       {
         clientId: "post-3",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -114,7 +114,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     const posts: BulkPost[] = [
       {
         clientId: "post-1",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -122,7 +122,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       },
       {
         clientId: "post-2",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -130,7 +130,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       },
       {
         clientId: "post-3",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -213,7 +213,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     const posts: BulkPost[] = [
       {
         clientId: "post-1",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -221,7 +221,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       },
       {
         clientId: "post-2",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -288,7 +288,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     const posts: BulkPost[] = [
       {
         clientId: "post-1",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -296,7 +296,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       },
       {
         clientId: "post-2",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -364,7 +364,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     const posts: BulkPost[] = [
       {
         clientId: "post-1",
-        file: null,
+        files: [],
         caption: "",
         queueType: "unassigned",
         scheduledFor: "",
@@ -405,7 +405,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     const posts: BulkPost[] = [
       {
         clientId: "post-1",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -465,7 +465,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     const posts: BulkPost[] = [
       {
         clientId: "post-1",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",
@@ -525,7 +525,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     const posts: BulkPost[] = [
       {
         clientId: "post-1",
-        file: null,
+        files: [],
         caption: "",
         queueType: "Queue 1",
         scheduledFor: "",

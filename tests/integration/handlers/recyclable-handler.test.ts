@@ -17,7 +17,7 @@ describe("Recyclable Handler", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -25,7 +25,7 @@ describe("Recyclable Handler", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -39,7 +39,7 @@ describe("Recyclable Handler", () => {
       expect(setPosts).toHaveBeenCalledWith([
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -47,7 +47,7 @@ describe("Recyclable Handler", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -60,7 +60,7 @@ describe("Recyclable Handler", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -74,7 +74,7 @@ describe("Recyclable Handler", () => {
       expect(setPosts).toHaveBeenCalledWith([
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -89,7 +89,7 @@ describe("Recyclable Handler", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -97,7 +97,7 @@ describe("Recyclable Handler", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -111,7 +111,7 @@ describe("Recyclable Handler", () => {
       expect(setPosts).toHaveBeenCalledWith([
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -119,7 +119,7 @@ describe("Recyclable Handler", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -132,7 +132,7 @@ describe("Recyclable Handler", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -140,7 +140,7 @@ describe("Recyclable Handler", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -154,7 +154,7 @@ describe("Recyclable Handler", () => {
       expect(setPosts).toHaveBeenCalledWith([
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -162,7 +162,7 @@ describe("Recyclable Handler", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -175,7 +175,7 @@ describe("Recyclable Handler", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -183,7 +183,7 @@ describe("Recyclable Handler", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -198,7 +198,7 @@ describe("Recyclable Handler", () => {
       expect(setPosts).toHaveBeenCalledWith([
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -206,7 +206,7 @@ describe("Recyclable Handler", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",

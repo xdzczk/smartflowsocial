@@ -56,14 +56,14 @@ export function useBulkPostsState({
 
               return {
                 clientId: createBulkPostClientId(),
-                file: null, // We'll handle URL-based files differently
+                files: [],
                 caption: item.caption ?? "",
                 queueType: item.queueType ?? "unassigned",
                 scheduledFor: item.scheduledFor ?? "",
-                fileUrl: typeof fileUrl === "string" ? fileUrl : undefined, // Ensured to be a single URL string
-                isRepost: true, // Flag to indicate this is a repost
+                fileUrl: typeof fileUrl === "string" ? fileUrl : undefined,
+                isRepost: true,
                 isRecyclable: item.isRecyclable ?? false,
-                originalPostId: item.originalPostId, // Include original post ID for tracking
+                originalPostId: item.originalPostId,
               };
             }
           );
@@ -154,11 +154,11 @@ export function useBulkPostsState({
 
                   return {
                     clientId: createBulkPostClientId(),
-                    file: null, // No file for kind 6 reposts
-                    caption: item.caption ?? "", // Empty for kind 6
+                    files: [],
+                    caption: item.caption ?? "",
                     queueType: item.queueType ?? "unassigned",
                     scheduledFor: item.scheduledFor ?? "",
-                    fileUrl: fileUrlString, // Use original post's images for display (single string)
+                    fileUrl: fileUrlString,
                     originalFileUrl: originalFileUrl ?? [], // Keep original file URLs for display (can be array)
                     isKind6Repost: true, // Flag to indicate this is a kind 6 repost
                     originalPostId: item.originalPostId,
@@ -233,12 +233,12 @@ export function useBulkPostsState({
 
             return {
               clientId: createBulkPostClientId(),
-              file: null, // We'll handle URL-based files differently
-              caption: item.caption ?? "", // Start with empty caption for user to add content
+              files: [],
+              caption: item.caption ?? "",
               queueType: item.queueType ?? "unassigned",
               scheduledFor: item.scheduledFor ?? "",
-              fileUrl: typeof fileUrl === "string" ? fileUrl : undefined, // Ensured to be a single URL string
-              isQuotePost: true, // Flag to indicate this is a quote post
+              fileUrl: typeof fileUrl === "string" ? fileUrl : undefined,
+              isQuotePost: true,
               isLongformQuote: item.isLongformQuote ?? false, // Preserve longform quote flag
               naddr: item.naddr ?? "", // Preserve naddr for longform quotes
               originalPostId: item.originalPostId,

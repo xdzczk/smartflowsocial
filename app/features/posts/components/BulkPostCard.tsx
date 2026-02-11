@@ -20,6 +20,7 @@ export type { BulkPost, QueueType };
 /**
  * Get the image URL to display for a post
  */
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- Multiple post types with different URL shapes */
 function getDisplayImageUrl(post: BulkPost): string | undefined {
   if (post.isKind6Repost) {
     if (
@@ -51,12 +52,15 @@ function getDisplayImageUrl(post: BulkPost): string | undefined {
     return undefined;
   }
 
-  if (post.isQuotePost && post.fileUrl && post.fileUrl.trim() !== "") {
-    return post.fileUrl;
+  if (post.isQuotePost && post.fileUrl) {
+    if (Array.isArray(post.fileUrl) && post.fileUrl[0]) return post.fileUrl[0];
+    if (typeof post.fileUrl === "string" && post.fileUrl.trim() !== "")
+      return post.fileUrl;
   }
 
   if (post.isRepost && post.fileUrl) {
-    return post.fileUrl;
+    if (Array.isArray(post.fileUrl) && post.fileUrl[0]) return post.fileUrl[0];
+    if (typeof post.fileUrl === "string") return post.fileUrl;
   }
 
   return undefined;
@@ -134,31 +138,43 @@ export function BulkPostCard({
     }
 
     // Handle regular reposts with file URL
-    if (post.isRepost && post.fileUrl) {
+    const repostUrl =
+      post.fileUrl &&
+      (Array.isArray(post.fileUrl) ? post.fileUrl[0] : post.fileUrl);
+    if (post.isRepost && repostUrl) {
       return (
         <MediaThumbnail
-          src={post.fileUrl}
+          src={repostUrl}
           alt="Preview"
           className="h-24 w-24 rounded object-cover"
-          onClick={() => onMediaClick(post.fileUrl!)}
+          onClick={() => onMediaClick(repostUrl)}
         />
       );
     }
 
-    // Handle regular file uploads with preview data
-    if (post.file) {
-      const previewInfo = previewData.get(index);
-      if (previewInfo) {
-        return (
-          <MediaThumbnail
-            src={previewInfo.url}
-            alt="Preview"
-            className="h-24 w-24 rounded object-cover"
-            onClick={() => onMediaClick(previewInfo.url)}
-            forceType={previewInfo.isVideo ? "video" : "image"}
-          />
-        );
-      }
+    // Handle regular file uploads with preview data (supports single or array per row)
+    interface PreviewItem {
+      url: string;
+      isVideo: boolean;
+      file: File;
+    }
+    const previewEntry = previewData.get(index) as
+      | PreviewItem
+      | PreviewItem[]
+      | undefined;
+    const previewInfo: PreviewItem | undefined = Array.isArray(previewEntry)
+      ? previewEntry[0]
+      : previewEntry;
+    if (post.files.length > 0 && previewInfo) {
+      return (
+        <MediaThumbnail
+          src={previewInfo.url}
+          alt="Preview"
+          className="h-24 w-24 rounded object-cover"
+          onClick={() => onMediaClick(previewInfo.url)}
+          forceType={previewInfo.isVideo ? "video" : "image"}
+        />
+      );
     }
 
     // Fallback: TEXT placeholder

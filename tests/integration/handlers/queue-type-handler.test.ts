@@ -41,7 +41,7 @@ describe("Queue Type Handler Integration Tests", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -86,7 +86,7 @@ describe("Queue Type Handler Integration Tests", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "Morning",
           scheduledFor: "2024-01-15T10:00",
@@ -120,7 +120,7 @@ describe("Queue Type Handler Integration Tests", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -175,7 +175,7 @@ describe("Queue Type Handler Integration Tests", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -220,7 +220,7 @@ describe("Queue Type Handler Integration Tests", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "Evening",
           scheduledFor: "",
@@ -228,7 +228,7 @@ describe("Queue Type Handler Integration Tests", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "Evening",
           scheduledFor: "",
@@ -236,7 +236,7 @@ describe("Queue Type Handler Integration Tests", () => {
         },
         {
           clientId: "post-3",
-          file: null,
+          files: [],
           caption: "",
           queueType: "Morning",
           scheduledFor: "",
@@ -310,7 +310,7 @@ describe("Queue Type Handler Integration Tests", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -318,7 +318,7 @@ describe("Queue Type Handler Integration Tests", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -369,7 +369,7 @@ describe("Queue Type Handler Integration Tests", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "2024-01-15T14:00",
@@ -377,7 +377,7 @@ describe("Queue Type Handler Integration Tests", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -420,7 +420,7 @@ describe("Queue Type Handler Integration Tests", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -428,7 +428,7 @@ describe("Queue Type Handler Integration Tests", () => {
         },
         {
           clientId: "post-2",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -436,7 +436,7 @@ describe("Queue Type Handler Integration Tests", () => {
         },
         {
           clientId: "post-3",
-          file: null,
+          files: [],
           caption: "",
           queueType: "unassigned",
           scheduledFor: "",
@@ -491,7 +491,7 @@ describe("Queue Type Handler Integration Tests", () => {
       const posts: BulkPost[] = [
         {
           clientId: "post-1",
-          file: null,
+          files: [],
           caption: "",
           queueType: "Morning",
           scheduledFor: "2024-01-15T10:00",

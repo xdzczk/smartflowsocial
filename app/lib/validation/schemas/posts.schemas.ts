@@ -345,20 +345,21 @@ export const signAndScheduleSchema = z.object({
     arr.map((str) => {
       try {
         const parsed = JSON.parse(str) as unknown;
-        // Handle both array format and single string format
+        // Per-post: single string or array of URLs
         if (Array.isArray(parsed)) {
-          return (
-            parsed.find((item): item is string => typeof item === "string") ??
-            ""
+          return parsed.filter(
+            (item): item is string => typeof item === "string"
           );
         }
-        if (typeof parsed === "string") {
-          return parsed;
+        if (typeof parsed === "string" && parsed.trim() !== "") {
+          return [parsed];
         }
-        return "";
+        return [];
       } catch {
-        // If not valid JSON, use the string as-is
-        return str;
+        if (typeof str === "string" && str.trim() !== "") {
+          return [str];
+        }
+        return [];
       }
     })
   ),
@@ -384,21 +385,20 @@ export const saveAsDraftSchema = z.object({
         try {
           const parsed = JSON.parse(str) as unknown;
           if (Array.isArray(parsed)) {
-            const first = parsed.find(
+            return parsed.filter(
               (item): item is string => typeof item === "string"
             );
-            return first ?? "";
           }
-          if (typeof parsed === "string") {
-            return parsed;
+          if (typeof parsed === "string" && parsed.trim() !== "") {
+            return [parsed];
           }
-          return "";
+          return [];
         } catch {
-          return "";
+          return typeof str === "string" && str.trim() !== "" ? [str] : [];
         }
       })
     )
-    .pipe(z.array(z.string()).min(1, "At least one post is required")),
+    .pipe(z.array(z.array(z.string())).min(1, "At least one post is required")),
   caption: z.array(z.string()),
   queueType: z.array(z.string()),
   scheduledFor: z.array(z.string()),

@@ -22,7 +22,7 @@ const createBulkPost = (overrides: Partial<BulkPost> = {}): BulkPost => {
     clientId: "test-client-id",
     caption: "",
     queueType: "unassigned",
-    file: null,
+    files: [],
     scheduledFor: "",
     isRecyclable: false,
   };

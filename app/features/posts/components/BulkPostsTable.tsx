@@ -15,6 +15,11 @@ import {
 
 import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 
+import { BulkAlsoScheduleCell } from "./BulkAlsoScheduleCell";
+import type {
+  QuoteScheduleItem,
+  RepostScheduleItem,
+} from "./BulkAlsoScheduleCell";
 import type { BulkPost, QueueType } from "./BulkPostCard";
 
 // ============================================================================
@@ -52,26 +57,20 @@ function getKind6RepostImageUrl(post: BulkPost): string {
 }
 
 function getQuotePostImageUrl(post: BulkPost): string {
-  if (!post.fileUrl || post.fileUrl.trim() === "") {
-    return "";
-  }
-
+  if (!post.fileUrl) return "";
   if (Array.isArray(post.fileUrl)) {
     return typeof post.fileUrl[0] === "string" ? post.fileUrl[0] : "";
   }
-
-  return typeof post.fileUrl === "string" ? post.fileUrl : "";
+  return typeof post.fileUrl === "string" && post.fileUrl.trim() !== ""
+    ? post.fileUrl
+    : "";
 }
 
 function getRepostImageUrl(post: BulkPost): string {
-  if (!post.fileUrl) {
-    return "";
-  }
-
+  if (!post.fileUrl) return "";
   if (Array.isArray(post.fileUrl)) {
     return typeof post.fileUrl[0] === "string" ? post.fileUrl[0] : "";
   }
-
   return typeof post.fileUrl === "string" ? post.fileUrl : "";
 }
 
@@ -128,9 +127,13 @@ function PlaceholderBadge({
 function renderMediaCell(
   post: BulkPost,
   index: number,
-  previewData: Map<number, { url: string; isVideo: boolean; file: File }>,
+  previewData: Map<
+    number,
+    Array<{ url: string; isVideo: boolean; file: File }>
+  >,
   handleMediaClick: (mediaSrc: string) => void,
-  onRowFileSelect?: (index: number, file: File) => void
+  onRowFileSelect?: (index: number, file: File) => void,
+  onRowFileRemove?: (index: number, fileIndex: number) => void
 ): React.ReactNode {
   // Kind 6 reposts
   if (post.isKind6Repost) {
@@ -205,48 +208,82 @@ function renderMediaCell(
     }
   }
 
-  // Regular file uploads
-  if (post.file) {
-    const previewInfo = previewData.get(index);
-    if (previewInfo) {
-      return (
-        <MediaThumbnail
-          src={previewInfo.url}
-          alt="Preview"
-          className="h-24 w-24 rounded object-cover"
-          onClick={() => handleMediaClick(previewInfo.url)}
-          forceType={previewInfo.isVideo ? "video" : "image"}
-        />
-      );
-    }
-  }
+  // Multiple files / URLs for this row
+  const previewList = previewData.get(index) ?? [];
+  const fileUrlsFromDraft = Array.isArray(post.fileUrl)
+    ? post.fileUrl
+    : post.fileUrl
+      ? [post.fileUrl]
+      : [];
+  const hasFiles = post.files.length > 0;
+  const hasDraftUrls = fileUrlsFromDraft.length > 0;
+  const hasAnyMedia = hasFiles || hasDraftUrls;
 
-  // Fallback: text-only post — show "Add image" so user can add media to this row
-  if (onRowFileSelect) {
+  if (hasAnyMedia || onRowFileSelect) {
+    const filesCount = previewList.length;
     return (
-      <div className="flex flex-col items-center gap-1">
-        <PlaceholderBadge
-          text="TEXT"
-          bgColor="bg-muted dark:bg-muted"
-          textColor="text-foreground dark:text-foreground"
-        />
-        <label className="text-muted-foreground hover:text-foreground cursor-pointer text-xs font-medium transition-colors">
-          <input
-            type="file"
-            accept="image/*,video/*"
-            className="sr-only"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onRowFileSelect(index, file);
-              e.target.value = "";
-            }}
-            aria-label="Add image to this post"
-          />
-          Add image
-        </label>
+      <div className="flex flex-wrap items-start gap-2">
+        {previewList.map((previewInfo, fileIndex) => (
+          <div key={`file-${previewInfo.url}`} className="group relative">
+            <MediaThumbnail
+              src={previewInfo.url}
+              alt="Preview"
+              className="h-24 w-24 rounded object-cover"
+              onClick={() => handleMediaClick(previewInfo.url)}
+              forceType={previewInfo.isVideo ? "video" : "image"}
+            />
+            {onRowFileRemove ? (
+              <button
+                type="button"
+                onClick={() => onRowFileRemove(index, fileIndex)}
+                className="bg-destructive text-destructive-foreground absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full opacity-90 shadow hover:opacity-100"
+                aria-label="Remove media"
+              >
+                ×
+              </button>
+            ) : null}
+          </div>
+        ))}
+        {fileUrlsFromDraft.map((url, urlIndex) => (
+          <div key={`url-${url}`} className="group relative">
+            <MediaThumbnail
+              src={url}
+              alt="Preview"
+              className="h-24 w-24 rounded object-cover"
+              onClick={() => handleMediaClick(url)}
+            />
+            {onRowFileRemove ? (
+              <button
+                type="button"
+                onClick={() => onRowFileRemove(index, filesCount + urlIndex)}
+                className="bg-destructive text-destructive-foreground absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full opacity-90 shadow hover:opacity-100"
+                aria-label="Remove media"
+              >
+                ×
+              </button>
+            ) : null}
+          </div>
+        ))}
+        {onRowFileSelect ? (
+          <label className="border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-0.5 rounded border border-dashed text-xs transition-colors">
+            <input
+              type="file"
+              accept="image/*,video/*"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onRowFileSelect(index, file);
+                e.target.value = "";
+              }}
+              aria-label="Add image to this post"
+            />
+            <span className="font-medium">+ Add</span>
+          </label>
+        ) : null}
       </div>
     );
   }
+
   return (
     <PlaceholderBadge
       text="TEXT"
@@ -259,7 +296,10 @@ function renderMediaCell(
 interface BulkPostsTableProps {
   posts: BulkPost[];
   queueTypes: QueueType[];
-  previewData: Map<number, { url: string; isVideo: boolean; file: File }>;
+  previewData: Map<
+    number,
+    Array<{ url: string; isVideo: boolean; file: File }>
+  >;
   handleCaptionChange: (index: number, value: string) => void;
   handleDateChange: (index: number, value: string) => void;
   handleIsRecyclableChange: (index: number, checked: boolean) => void;
@@ -268,8 +308,9 @@ interface BulkPostsTableProps {
   handleMediaClick: (mediaSrc: string) => void;
   validationErrorsByIndex?: Record<number, string[]>;
   onRowFileSelect?: (index: number, file: File) => void;
-  onRepostScheduleChange?: (index: number, add: boolean) => void;
-  onQuoteScheduleChange?: (index: number, add: boolean) => void;
+  onRowFileRemove?: (index: number, mediaIndex: number) => void;
+  onRepostSchedulesChange?: (index: number, list: RepostScheduleItem[]) => void;
+  onQuoteSchedulesChange?: (index: number, list: QuoteScheduleItem[]) => void;
   showAlsoSchedule?: boolean;
 }
 
@@ -285,8 +326,9 @@ export default function BulkPostsTable({
   handleMediaClick,
   validationErrorsByIndex,
   onRowFileSelect,
-  onRepostScheduleChange,
-  onQuoteScheduleChange,
+  onRowFileRemove,
+  onRepostSchedulesChange,
+  onQuoteSchedulesChange,
   showAlsoSchedule,
 }: BulkPostsTableProps) {
   if (posts.length === 0) return null;
@@ -314,7 +356,7 @@ export default function BulkPostsTable({
               return (
                 <tr
                   key={post.clientId}
-                  className={`border-b ${rowErrors?.length ? "border-l-destructive border-l-4" : ""}`}
+                  className={`border-b ${rowErrors?.length ? "border-l-4 border-l-amber-500" : ""}`}
                 >
                   <td className="p-4">
                     <div className="flex items-start gap-2">
@@ -323,13 +365,14 @@ export default function BulkPostsTable({
                         index,
                         previewData,
                         handleMediaClick,
-                        onRowFileSelect
+                        onRowFileSelect,
+                        onRowFileRemove
                       )}
                       {rowErrors?.length ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span
-                              className="text-destructive flex shrink-0"
+                              className="flex shrink-0 text-amber-600 dark:text-amber-400"
                               aria-label="Validation errors"
                             >
                               <AlertTriangle
@@ -394,14 +437,23 @@ export default function BulkPostsTable({
                           colorToken != null
                             ? getQueueAccentHex(colorToken)
                             : undefined;
+                        const isSelected = post.queueType === queueName;
                         return (
                           <button
                             key={queueName}
                             type="button"
                             onClick={() => {
-                              handleQueueTypeChange(index, queueName);
+                              handleQueueTypeChange(
+                                index,
+                                isSelected ? "unassigned" : queueName
+                              );
                             }}
-                            className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, post.queueType === queueName)}`}
+                            title={
+                              isSelected
+                                ? "Click again to leave unassigned"
+                                : undefined
+                            }
+                            className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, isSelected)}`}
                             style={{
                               backgroundColor: accent,
                               borderColor: accent,
@@ -423,51 +475,20 @@ export default function BulkPostsTable({
                     />
                   </td>
                   {showAlsoSchedule &&
-                  onRepostScheduleChange &&
-                  onQuoteScheduleChange ? (
-                    <td className="p-4">
-                      <div className="flex flex-col gap-1 text-xs">
-                        <div className="flex items-center gap-1">
-                          <Checkbox
-                            id={`bulk-repost-12h-${post.clientId}`}
-                            checked={
-                              post.repostSchedules != null
-                                ? post.repostSchedules.length > 0
-                                : false
-                            }
-                            onCheckedChange={(c) =>
-                              onRepostScheduleChange(index, c === true)
-                            }
-                            aria-label="Repost 12h after"
-                          />
-                          <label
-                            htmlFor={`bulk-repost-12h-${post.clientId}`}
-                            className="cursor-pointer"
-                          >
-                            Repost 12h after
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Checkbox
-                            id={`bulk-quote-12h-${post.clientId}`}
-                            checked={
-                              post.quoteSchedules != null
-                                ? post.quoteSchedules.length > 0
-                                : false
-                            }
-                            onCheckedChange={(c) =>
-                              onQuoteScheduleChange(index, c === true)
-                            }
-                            aria-label="Quote 12h after"
-                          />
-                          <label
-                            htmlFor={`bulk-quote-12h-${post.clientId}`}
-                            className="cursor-pointer"
-                          >
-                            Quote 12h after
-                          </label>
-                        </div>
-                      </div>
+                  onRepostSchedulesChange &&
+                  onQuoteSchedulesChange ? (
+                    <td className="p-4 align-top">
+                      <BulkAlsoScheduleCell
+                        repostSchedules={post.repostSchedules ?? []}
+                        quoteSchedules={post.quoteSchedules ?? []}
+                        onRepostSchedulesChange={(list) =>
+                          onRepostSchedulesChange(index, list)
+                        }
+                        onQuoteSchedulesChange={(list) =>
+                          onQuoteSchedulesChange(index, list)
+                        }
+                        rowLabelId={post.clientId}
+                      />
                     </td>
                   ) : null}
                   <td className="p-4">
