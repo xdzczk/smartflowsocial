@@ -1,4 +1,6 @@
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { AlertTriangle, Quote, Share2 } from "lucide-react";
+import { useRef } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
@@ -21,6 +23,7 @@ import type {
   RepostScheduleItem,
 } from "./BulkAlsoScheduleCell";
 import type { BulkPost, QueueType } from "./BulkPostCard";
+import { BULK_TABLE_ROW_ESTIMATE_PX } from "./constants";
 
 // ============================================================================
 // Helper Functions and Components
@@ -331,197 +334,216 @@ export default function BulkPostsTable({
   onQuoteSchedulesChange,
   showAlsoSchedule,
 }: BulkPostsTableProps) {
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const gridCols = showAlsoSchedule
+    ? "140px minmax(200px, 2fr) 140px 180px 180px 100px 90px"
+    : "140px minmax(200px, 2fr) 140px 180px 100px 90px";
+
+  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
+  const rowVirtualizer = useVirtualizer({
+    count: posts.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => BULK_TABLE_ROW_ESTIMATE_PX,
+    overscan: 3,
+    getItemKey: (index) => posts[index]?.clientId ?? String(index),
+  });
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
   if (posts.length === 0) return null;
 
   return (
     <TooltipProvider>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b">
-              <th className="p-4 text-left">Media</th>
-              <th className="p-4 text-left">Caption</th>
-              <th className="p-4 text-left">Queue</th>
-              <th className="p-4 text-left">Schedule</th>
-              {showAlsoSchedule ? (
-                <th className="p-4 text-left text-xs">Also repost/quote</th>
-              ) : null}
-              <th className="p-4 text-left">Recyclable</th>
-              <th className="p-4 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {posts.map((post, index) => {
-              const rowErrors = validationErrorsByIndex?.[index];
-              return (
-                <tr
-                  key={post.clientId}
-                  className={`border-b ${rowErrors?.length ? "border-l-4 border-l-amber-500" : ""}`}
-                >
-                  <td className="p-4">
-                    <div className="flex items-start gap-2">
-                      {renderMediaCell(
-                        post,
-                        index,
-                        previewData,
-                        handleMediaClick,
-                        onRowFileSelect,
-                        onRowFileRemove
-                      )}
-                      {rowErrors?.length ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span
-                              className="flex shrink-0 text-amber-600 dark:text-amber-400"
-                              aria-label="Validation errors"
-                            >
-                              <AlertTriangle
-                                className="h-5 w-5"
-                                strokeWidth={INLINE_ICON_STROKE}
-                              />
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="max-w-xs">
-                            <ul className="list-inside list-disc text-xs">
-                              {rowErrors.map((err) => (
-                                <li key={err}>{err}</li>
-                              ))}
-                            </ul>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="space-y-2">
-                      <textarea
-                        id={`caption-${index}`}
-                        name="captions"
-                        value={post.caption}
-                        onChange={(e) =>
-                          handleCaptionChange(index, e.target.value)
-                        }
-                        disabled={post.isKind6Repost}
-                        className={`dark:bg-card dark:text-foreground text-foreground w-full rounded-lg border p-2 ${post.isKind6Repost ? "dark:bg-muted bg-muted cursor-not-allowed" : ""}`}
-                        rows={3}
-                        placeholder={
-                          post.isKind6Repost
-                            ? "Kind 6 reposts have no content..."
-                            : post.isQuotePost
-                              ? "Add your comment to this quote post..."
-                              : "Write your caption..."
-                        }
-                      />
-                      {(post.isKind6Repost || post.isQuotePost) &&
-                      post.originalCaption ? (
-                        <div className="dark:bg-card bg-muted text-muted-foreground dark:text-foreground rounded border p-2 text-xs">
-                          <strong>Original:</strong>{" "}
-                          {post.originalCaption.length > 100
-                            ? post.originalCaption.substring(0, 100) + "..."
-                            : post.originalCaption}
-                        </div>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-wrap gap-1">
-                      {queueTypes.map((queue) => {
-                        const queueName =
-                          typeof queue === "string" ? queue : queue.name;
-                        const colorToken =
-                          typeof queue === "object"
-                            ? (queue as { colorToken?: string | null })
-                                .colorToken
-                            : null;
-                        const accent =
-                          colorToken != null
-                            ? getQueueAccentHex(colorToken)
-                            : undefined;
-                        const isSelected = post.queueType === queueName;
-                        return (
-                          <button
-                            key={queueName}
-                            type="button"
-                            onClick={() => {
-                              handleQueueTypeChange(
-                                index,
-                                isSelected ? "unassigned" : queueName
-                              );
-                            }}
-                            title={
-                              isSelected
-                                ? "Click again to leave unassigned"
-                                : undefined
-                            }
-                            className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, isSelected)}`}
-                            style={{
-                              backgroundColor: accent,
-                              borderColor: accent,
-                            }}
-                          >
-                            {queueName}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <input
-                      type="datetime-local"
-                      name="scheduledDates"
-                      value={post.scheduledFor}
-                      onChange={(e) => handleDateChange(index, e.target.value)}
-                      className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
-                    />
-                  </td>
-                  {showAlsoSchedule &&
-                  onRepostSchedulesChange &&
-                  onQuoteSchedulesChange ? (
-                    <td className="p-4 align-top">
-                      <BulkAlsoScheduleCell
-                        repostSchedules={post.repostSchedules ?? []}
-                        quoteSchedules={post.quoteSchedules ?? []}
-                        onRepostSchedulesChange={(list) =>
-                          onRepostSchedulesChange(index, list)
-                        }
-                        onQuoteSchedulesChange={(list) =>
-                          onQuoteSchedulesChange(index, list)
-                        }
-                        rowLabelId={post.clientId}
-                      />
-                    </td>
+      <div
+        ref={parentRef}
+        className="overflow-auto overflow-x-auto rounded border"
+        style={{ maxHeight: "min(70vh, 720px)" }}
+      >
+        {/* Sticky header with same grid as rows for alignment */}
+        <div
+          className="bg-muted/50 sticky top-0 z-10 grid w-full shrink-0 border-b px-4 py-3 text-left text-sm font-medium"
+          style={{ gridTemplateColumns: gridCols }}
+        >
+          <span>Media</span>
+          <span>Caption</span>
+          <span>Queue</span>
+          <span>Schedule</span>
+          {showAlsoSchedule ? (
+            <span className="text-xs">Also repost/quote</span>
+          ) : null}
+          <span>Recyclable</span>
+          <span>Actions</span>
+        </div>
+        <div
+          className="relative w-full"
+          style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+        >
+          {virtualItems.map((virtualRow) => {
+            const index = virtualRow.index;
+            const post = posts[index];
+            if (!post) return null;
+            const rowErrors = validationErrorsByIndex?.[index];
+            return (
+              <div
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                className={`bg-card absolute top-0 left-0 grid w-full border-b px-4 py-3 ${rowErrors?.length ? "border-l-4 border-l-amber-500" : ""}`}
+                style={{
+                  gridTemplateColumns: gridCols,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <div className="flex items-start gap-2">
+                  {renderMediaCell(
+                    post,
+                    index,
+                    previewData,
+                    handleMediaClick,
+                    onRowFileSelect,
+                    onRowFileRemove
+                  )}
+                  {rowErrors?.length ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          className="flex shrink-0 text-amber-600 dark:text-amber-400"
+                          aria-label="Validation errors"
+                        >
+                          <AlertTriangle
+                            className="h-5 w-5"
+                            strokeWidth={INLINE_ICON_STROKE}
+                          />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <ul className="list-inside list-disc text-xs">
+                          {rowErrors.map((err) => (
+                            <li key={err}>{err}</li>
+                          ))}
+                        </ul>
+                      </TooltipContent>
+                    </Tooltip>
                   ) : null}
-                  <td className="p-4">
-                    <div className="flex items-center">
-                      <Checkbox
-                        id={`bulk-recyclable-${post.clientId}`}
-                        checked={post.isRecyclable}
-                        onCheckedChange={(c) =>
-                          handleIsRecyclableChange(index, c === true)
-                        }
-                      />
-                      <label
-                        htmlFor={`bulk-recyclable-${post.clientId}`}
-                        className="text-muted-foreground dark:text-foreground ml-2 text-sm"
-                      >
-                        Recyclable
-                      </label>
+                </div>
+                <div className="min-w-0 space-y-2">
+                  <textarea
+                    id={`caption-${index}`}
+                    name="captions"
+                    value={post.caption}
+                    onChange={(e) => handleCaptionChange(index, e.target.value)}
+                    disabled={post.isKind6Repost}
+                    className={`dark:bg-card dark:text-foreground text-foreground w-full rounded-lg border p-2 ${post.isKind6Repost ? "dark:bg-muted bg-muted cursor-not-allowed" : ""}`}
+                    rows={3}
+                    placeholder={
+                      post.isKind6Repost
+                        ? "Kind 6 reposts have no content..."
+                        : post.isQuotePost
+                          ? "Add your comment to this quote post..."
+                          : "Write your caption..."
+                    }
+                  />
+                  {(post.isKind6Repost || post.isQuotePost) &&
+                  post.originalCaption ? (
+                    <div className="dark:bg-card bg-muted text-muted-foreground dark:text-foreground rounded border p-2 text-xs">
+                      <strong>Original:</strong>{" "}
+                      {post.originalCaption.length > 100
+                        ? post.originalCaption.substring(0, 100) + "..."
+                        : post.originalCaption}
                     </div>
-                  </td>
-                  <td className="p-4">
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePost(index)}
-                      className="bg-destructive hover:bg-destructive rounded px-3 py-1 text-white"
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {queueTypes.map((queue) => {
+                    const queueName =
+                      typeof queue === "string" ? queue : queue.name;
+                    const colorToken =
+                      typeof queue === "object"
+                        ? (queue as { colorToken?: string | null }).colorToken
+                        : null;
+                    const accent =
+                      colorToken != null
+                        ? getQueueAccentHex(colorToken)
+                        : undefined;
+                    const isSelected = post.queueType === queueName;
+                    return (
+                      <button
+                        key={queueName}
+                        type="button"
+                        onClick={() => {
+                          handleQueueTypeChange(
+                            index,
+                            isSelected ? "unassigned" : queueName
+                          );
+                        }}
+                        title={
+                          isSelected
+                            ? "Click again to leave unassigned"
+                            : undefined
+                        }
+                        className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, isSelected)}`}
+                        style={{
+                          backgroundColor: accent,
+                          borderColor: accent,
+                        }}
+                      >
+                        {queueName}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div>
+                  <input
+                    type="datetime-local"
+                    name="scheduledDates"
+                    value={post.scheduledFor}
+                    onChange={(e) => handleDateChange(index, e.target.value)}
+                    className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
+                  />
+                </div>
+                {showAlsoSchedule &&
+                onRepostSchedulesChange &&
+                onQuoteSchedulesChange ? (
+                  <div className="align-top">
+                    <BulkAlsoScheduleCell
+                      repostSchedules={post.repostSchedules ?? []}
+                      quoteSchedules={post.quoteSchedules ?? []}
+                      onRepostSchedulesChange={(list) =>
+                        onRepostSchedulesChange(index, list)
+                      }
+                      onQuoteSchedulesChange={(list) =>
+                        onQuoteSchedulesChange(index, list)
+                      }
+                      rowLabelId={post.clientId}
+                    />
+                  </div>
+                ) : null}
+                <div className="flex items-center">
+                  <Checkbox
+                    id={`bulk-recyclable-${post.clientId}`}
+                    checked={post.isRecyclable}
+                    onCheckedChange={(c) =>
+                      handleIsRecyclableChange(index, c === true)
+                    }
+                  />
+                  <label
+                    htmlFor={`bulk-recyclable-${post.clientId}`}
+                    className="text-muted-foreground dark:text-foreground ml-2 text-sm"
+                  >
+                    Recyclable
+                  </label>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePost(index)}
+                    className="bg-destructive hover:bg-destructive rounded px-3 py-1 text-white"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </TooltipProvider>
   );

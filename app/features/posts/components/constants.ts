@@ -6,3 +6,6 @@ export const CONTENT_LIST_CARD_HEIGHT_PX = 98;
 
 /** Vertical gap (px) between cards in mobile list view. */
 export const CONTENT_LIST_CARD_GAP_PX = 8;
+
+/** Estimated row height (px) for bulk posts table virtualization. */
+export const BULK_TABLE_ROW_ESTIMATE_PX = 220;
