@@ -249,6 +249,14 @@ export interface BulkPost {
   originalTitle?: string;
   originalFileUrl?: string | string[];
   naddr?: string;
+  /** Optional: schedule repost(s) at delay(s) after this row's scheduled time. */
+  repostSchedules?: Array<{ value: number; unit: "hours" | "minutes" }>;
+  /** Optional: schedule quote(s) at delay(s) after this row's scheduled time. */
+  quoteSchedules?: Array<{
+    value: number;
+    unit: "hours" | "minutes";
+    caption?: string;
+  }>;
 }
 
 /**

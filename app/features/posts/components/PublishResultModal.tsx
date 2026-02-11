@@ -74,6 +74,29 @@ function StatusTitle({ status }: { status: StatusType }) {
   );
 }
 
+function formatBulkScheduleDetail(
+  formatScheduledTime: () => string,
+  lastScheduledAt?: string | null,
+  queueSummary?: Record<string, number> | string,
+  formatLastTime?: () => string
+): { firstTime: string; parts: string[] } {
+  const firstTime = formatScheduledTime();
+  const lastTime = lastScheduledAt && formatLastTime ? formatLastTime() : "";
+  const queueStr =
+    queueSummary != null
+      ? typeof queueSummary === "string"
+        ? queueSummary
+        : Object.entries(queueSummary)
+            .map(([name, n]) => `${name} (${n})`)
+            .join(", ")
+      : "";
+  const parts: string[] = [];
+  if (firstTime) parts.push(`First: ${firstTime}`);
+  if (lastTime) parts.push(`Last: ${lastTime}`);
+  if (queueStr) parts.push(`Queues: ${queueStr}`);
+  return { firstTime, parts };
+}
+
 // Helper component for status description
 function StatusDescription({
   action,
@@ -81,23 +104,41 @@ function StatusDescription({
   postType,
   formatScheduledTime,
   bulkCount,
+  lastScheduledAt,
+  queueSummary,
+  formatLastTime,
 }: {
   action: "publish" | "schedule";
   status: StatusType;
   postType: "post" | "longform";
   formatScheduledTime: () => string;
   bulkCount?: number | null;
+  lastScheduledAt?: string | null;
+  queueSummary?: Record<string, number> | string;
+  formatLastTime?: () => string;
 }) {
   const contentType = postType === "longform" ? "article" : "post";
 
   // Use <span> so we can be used inside DialogDescription (which renders <p>); <p> cannot contain <p>
   if (action === "schedule") {
     if (bulkCount && bulkCount > 1) {
+      const { firstTime, parts } = formatBulkScheduleDetail(
+        formatScheduledTime,
+        lastScheduledAt,
+        queueSummary,
+        formatLastTime
+      );
       return (
         <span>
-          Your {bulkCount} {contentType}s have been scheduled successfully. The
-          first post will be published at{" "}
-          <strong>{formatScheduledTime()}</strong>.
+          Your {bulkCount} {contentType}s have been scheduled successfully.
+          {parts.length > 0 ? (
+            <> {parts.join(". ")}.</>
+          ) : (
+            <>
+              {" "}
+              The first post will be published at <strong>{firstTime}</strong>.
+            </>
+          )}
         </span>
       );
     }
@@ -189,6 +230,10 @@ interface PublishResultModalProps {
   onCreateNew: () => void;
   onViewPage: () => void;
   bulkCount?: number | null;
+  /** For bulk schedule: last post's scheduled time (ISO string). */
+  lastScheduledAt?: string | null;
+  /** For bulk schedule: queue name -> count. */
+  queueSummary?: Record<string, number> | string;
 }
 
 export default function PublishResultModal({
@@ -201,6 +246,8 @@ export default function PublishResultModal({
   onCreateNew,
   onViewPage,
   bulkCount,
+  lastScheduledAt,
+  queueSummary,
 }: PublishResultModalProps) {
   const [relayAcks, setRelayAcks] = useState<RelayAck[]>([]);
   const [hasTimedOut, setHasTimedOut] = useState(false);
@@ -538,6 +585,24 @@ export default function PublishResultModal({
     }
   };
 
+  const formatLastTime = () => {
+    if (!lastScheduledAt) return "";
+    try {
+      const date = new Date(lastScheduledAt);
+      return date.toLocaleString("en-US", {
+        timeZone: userTimezone,
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: userTimeFormat === "12h",
+      });
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent
@@ -570,6 +635,9 @@ export default function PublishResultModal({
                 postType={postType}
                 formatScheduledTime={formatScheduledTime}
                 bulkCount={bulkCount}
+                lastScheduledAt={lastScheduledAt}
+                queueSummary={queueSummary}
+                formatLastTime={formatLastTime}
               />
             )}
             {hasTimedOut &&

@@ -431,34 +431,74 @@ export function useBulkPostEvents({
   const isWaitingForUpload = useRef(false);
 
   // Validation function to check if all posts are ready for preview
-  const validatePostsForPreview = () => {
+  const validatePostsForPreview = (): {
+    isValid: boolean;
+    errors: string[];
+    byPost: Record<number, string[]>;
+  } => {
     const errors: string[] = [];
+    const byPost: Record<number, string[]> = {};
+
+    const hasMedia = (post: BulkPost) =>
+      Boolean(
+        post.file != null ||
+        (Array.isArray(post.fileUrl) && post.fileUrl.length > 0) ||
+        (typeof post.fileUrl === "string" && post.fileUrl.trim() !== "")
+      );
 
     posts.forEach((post, index) => {
-      // Check if schedule time is set
-      if (!post.scheduledFor || post.scheduledFor.trim() === "") {
-        errors.push(`Post ${index + 1}: Schedule time is required`);
+      const rowErrors: string[] = [];
+
+      // Queue required
+      if (
+        !post.queueType ||
+        post.queueType.trim() === "" ||
+        post.queueType === "unassigned"
+      ) {
+        const msg = "Queue is required";
+        rowErrors.push(msg);
+        errors.push(`Post ${index + 1}: ${msg}`);
       }
 
-      // Check if schedule time is in the future
-      if (post.scheduledFor) {
-        const userTimezone = user?.timezone ?? "UTC";
+      // For rows without media, caption is required
+      if (!hasMedia(post)) {
+        const caption = post.caption.trim();
+        if (!caption) {
+          const msg = "Caption is required when there is no media";
+          rowErrors.push(msg);
+          errors.push(`Post ${index + 1}: ${msg}`);
+        }
+      }
 
-        // The scheduledFor value is in user's timezone (from datetime-local input)
-        // We need to compare it with current time in the same user timezone
-        // Use Temporal for consistency
+      // Schedule time is set
+      if (!post.scheduledFor || post.scheduledFor.trim() === "") {
+        const msg = "Schedule time is required";
+        rowErrors.push(msg);
+        errors.push(`Post ${index + 1}: ${msg}`);
+      }
+
+      // Schedule time is in the future
+      if (post.scheduledFor && post.scheduledFor.trim() !== "") {
+        const userTimezone = user?.timezone ?? "UTC";
         const nowInUserTz = nowInTimezone(userTimezone);
         const nowFormatted = formatForDateTimeLocal(nowInUserTz, userTimezone);
-
-        // Compare as strings since both are in the same format (YYYY-MM-DDTHH:mm)
-        // This avoids timezone conversion issues
         if (post.scheduledFor <= nowFormatted) {
-          errors.push(`Post ${index + 1}: Schedule time must be in the future`);
+          const msg = "Schedule time must be in the future";
+          rowErrors.push(msg);
+          errors.push(`Post ${index + 1}: ${msg}`);
         }
+      }
+
+      if (rowErrors.length > 0) {
+        byPost[index] = rowErrors;
       }
     });
 
-    return { isValid: errors.length === 0, errors };
+    return {
+      isValid: errors.length === 0,
+      errors,
+      byPost,
+    };
   };
 
   const processEvents = useCallback(async () => {
@@ -812,16 +852,21 @@ export function useBulkPostEvents({
             return;
           }
         } else {
-          // No files to upload, just proceed with existing URLs (for reposts/quotes)
-          // Update progress - waiting for server
+          // No files to upload: text-only rows or rows with existing fileUrl (e.g. from draft).
+          // Send one fake upload result per post so server returns fileUrls (empty string for text-only).
           setPreparationProgress?.({
             current: 1,
             total: 4,
             stage: "Processing...",
           });
 
+          const fakeUploadResults = posts.map((post) => ({
+            success: true,
+            file: { url: getFileUrlFromPost(post) || "" },
+          }));
+
           const formData = new FormData();
-          formData.append("uploadResults", JSON.stringify([])); // Empty results for no uploads
+          formData.append("uploadResults", JSON.stringify(fakeUploadResults));
           posts.forEach((post) => {
             formData.append("scheduledDates", post.scheduledFor);
             formData.append("queueTypes", post.queueType);
@@ -934,5 +979,5 @@ export function useBulkPostEvents({
     }
   }, [fetcher.state, fetcher.data, processEvents, setPreparationProgress]);
 
-  return { prepareEvents };
+  return { prepareEvents, validatePostsForPreview };
 }

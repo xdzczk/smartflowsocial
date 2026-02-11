@@ -3,12 +3,17 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import type { SignedEvent } from "~/features/nostr/types";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { fromUnixTimestamp, formatForDisplay } from "~/lib/temporal";
 
 import { getSelectedQueueStyle } from "../queue-colors";
-import type { PreparedEvent } from "../types";
+import type { BulkPost, PreparedEvent } from "../types";
+import {
+  buildAndSignQuoteSchedules,
+  buildAndSignRepostSchedules,
+} from "../utils/repost-quote-events.client";
 
 // ============================================================================
 // Helper Functions
@@ -97,6 +102,8 @@ function getCreatedAtTimestamp(eventsData: unknown): number {
 
 interface PostConfirmationProps {
   preparedEvents: PreparedEvent[];
+  /** Original posts for per-row repost/quote schedules */
+  posts: BulkPost[];
   postsCount: number;
   /** When editing a bulk draft group, pass so save-as-draft updates that group */
   groupId?: string | null;
@@ -104,6 +111,7 @@ interface PostConfirmationProps {
 
 export default function PostConfirmation({
   preparedEvents,
+  posts,
   postsCount,
   groupId = null,
 }: PostConfirmationProps) {
@@ -198,6 +206,46 @@ export default function PostConfirmation({
         );
         finalFormData.append("originalPostId", data.originalPostId ?? "");
       });
+
+      for (let i = 0; i < signed.length; i++) {
+        const signedEntry = signed[i];
+        if (!signedEntry) continue;
+        const eventData = preparedEvents[i];
+        const mainScheduledUnix =
+          typeof eventData?.scheduledFor === "number"
+            ? eventData.scheduledFor
+            : 0;
+        const mainSigned = signedEntry.signedEvent as
+          | { tags?: string[][] }
+          | undefined;
+        const tagArray = Array.isArray(mainSigned?.tags) ? mainSigned.tags : [];
+
+        const repostSched = posts[i]?.repostSchedules;
+        if (repostSched && repostSched.length > 0 && mainScheduledUnix > 0) {
+          const repostArr = await buildAndSignRepostSchedules(
+            mainScheduledUnix,
+            repostSched,
+            signedEntry.signedEvent as SignedEvent
+          );
+          finalFormData.append("repostSchedules", JSON.stringify(repostArr));
+        } else {
+          finalFormData.append("repostSchedules", JSON.stringify([]));
+        }
+
+        const quoteSched = posts[i]?.quoteSchedules;
+        if (quoteSched && quoteSched.length > 0 && mainScheduledUnix > 0) {
+          const quoteArr = await buildAndSignQuoteSchedules(
+            mainScheduledUnix,
+            quoteSched,
+            signedEntry.signedEvent as SignedEvent,
+            tagArray
+          );
+          finalFormData.append("quoteSchedules", JSON.stringify(quoteArr));
+        } else {
+          finalFormData.append("quoteSchedules", JSON.stringify([]));
+        }
+      }
+
       finalFormData.append("_action", "sign_and_schedule");
 
       // Preserve the current URL's search params (including mode=recycle)

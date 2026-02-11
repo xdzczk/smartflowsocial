@@ -369,6 +369,8 @@ export const signAndScheduleSchema = z.object({
       arr.map((val) => val === "true" || String(val).toLowerCase() === "true")
     ),
   originalPostId: z.array(z.string()).optional().default([]),
+  repostSchedules: z.array(z.string()).optional().default([]),
+  quoteSchedules: z.array(z.string()).optional().default([]),
 });
 
 /**
@@ -378,26 +380,25 @@ export const saveAsDraftSchema = z.object({
   fileUrl: z
     .array(z.string())
     .transform((arr) =>
-      arr
-        .map((str) => {
-          try {
-            const parsed = JSON.parse(str) as unknown;
-            if (Array.isArray(parsed)) {
-              return parsed.filter(
-                (item): item is string => typeof item === "string"
-              );
-            }
-            if (typeof parsed === "string") {
-              return [parsed];
-            }
-            return [];
-          } catch {
-            return [];
+      arr.map((str) => {
+        try {
+          const parsed = JSON.parse(str) as unknown;
+          if (Array.isArray(parsed)) {
+            const first = parsed.find(
+              (item): item is string => typeof item === "string"
+            );
+            return first ?? "";
           }
-        })
-        .flat()
+          if (typeof parsed === "string") {
+            return parsed;
+          }
+          return "";
+        } catch {
+          return "";
+        }
+      })
     )
-    .pipe(z.array(z.string()).min(1, "At least one file URL is required")),
+    .pipe(z.array(z.string()).min(1, "At least one post is required")),
   caption: z.array(z.string()),
   queueType: z.array(z.string()),
   scheduledFor: z.array(z.string()),

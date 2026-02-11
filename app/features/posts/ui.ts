@@ -178,6 +178,7 @@ export { HashtagPresetsSettings } from "./components/HashtagPresetsSettings";
 export { QueueTypesSettings } from "./components/QueueTypesSettings";
 export { ScheduleIntervalsSettings } from "./components/ScheduleIntervalsSettings";
 export { default as BulkPostsActionButtons } from "./components/BulkPostsActionButtons";
+export { default as BulkPostsSchedulingPanel } from "./components/BulkPostsSchedulingPanel";
 export { default as BulkPostsTable } from "./components/BulkPostsTable";
 export { default as BulkPostsUploadArea } from "./components/BulkPostsUploadArea";
 export { default as PostConfirmation } from "./components/PostConfirmation";

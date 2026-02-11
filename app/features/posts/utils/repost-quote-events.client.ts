@@ -6,6 +6,13 @@
 import { nip19 } from "nostr-tools";
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
+
+import {
+  delayAfterMainToSeconds,
+  isValidDelayAfterMain,
+  type DelayAfterMain,
+} from "./delay-after-main";
 
 const DEFAULT_RELAY_URL = "wss://relay.primal.net";
 
@@ -130,6 +137,85 @@ export function buildLongformQuoteEvent(
     kind: 1,
     tags: quoteTags,
   };
+}
+
+/**
+ * Build and sign repost schedules for bulk: given main scheduled time and delay list,
+ * returns array of { scheduledFor, signedEvent } for server.
+ */
+export async function buildAndSignRepostSchedules(
+  mainScheduledUnix: number,
+  delayList: Array<{ value: number; unit: DelayAfterMain["unit"] }>,
+  mainSignedEvent: SignedEvent
+): Promise<Array<{ scheduledFor: number; signedEvent: SignedEvent }>> {
+  const out: Array<{ scheduledFor: number; signedEvent: SignedEvent }> = [];
+  for (const delay of delayList) {
+    const d: DelayAfterMain = { value: delay.value, unit: delay.unit };
+    if (!isValidDelayAfterMain(d)) continue;
+    const offsetSeconds = delayAfterMainToSeconds(d);
+    const scheduledForUnix = mainScheduledUnix + offsetSeconds;
+    if (scheduledForUnix <= mainScheduledUnix) continue;
+    const repostEvent = buildKind6RepostEvent(
+      mainSignedEvent,
+      scheduledForUnix
+    );
+    const { signedEvent } = await nostrAdapter.signEvent({
+      content: repostEvent.content,
+      created_at: repostEvent.created_at,
+      kind: repostEvent.kind,
+      tags: repostEvent.tags,
+    });
+    out.push({ scheduledFor: scheduledForUnix, signedEvent: signedEvent });
+  }
+  return out;
+}
+
+/**
+ * Build and sign quote schedules for bulk: given main scheduled time and entries,
+ * returns array of { scheduledFor, signedEvent, caption } for server.
+ */
+export async function buildAndSignQuoteSchedules(
+  mainScheduledUnix: number,
+  entries: Array<{
+    value: number;
+    unit: DelayAfterMain["unit"];
+    caption?: string;
+  }>,
+  mainSignedEvent: SignedEvent,
+  tagArray: string[][] = []
+): Promise<
+  Array<{ scheduledFor: number; signedEvent: SignedEvent; caption?: string }>
+> {
+  const out: Array<{
+    scheduledFor: number;
+    signedEvent: SignedEvent;
+    caption?: string;
+  }> = [];
+  for (const e of entries) {
+    const d: DelayAfterMain = { value: e.value, unit: e.unit };
+    if (!isValidDelayAfterMain(d)) continue;
+    const offsetSeconds = delayAfterMainToSeconds(d);
+    const scheduledForUnix = mainScheduledUnix + offsetSeconds;
+    if (scheduledForUnix <= mainScheduledUnix) continue;
+    const quoteEvent = buildQuoteEvent(
+      mainSignedEvent,
+      e.caption ?? "",
+      scheduledForUnix,
+      tagArray
+    );
+    const { signedEvent } = await nostrAdapter.signEvent({
+      content: quoteEvent.content,
+      created_at: quoteEvent.created_at,
+      kind: quoteEvent.kind,
+      tags: quoteEvent.tags,
+    });
+    out.push({
+      scheduledFor: scheduledForUnix,
+      signedEvent: signedEvent,
+      caption: e.caption ?? undefined,
+    });
+  }
+  return out;
 }
 
 /**

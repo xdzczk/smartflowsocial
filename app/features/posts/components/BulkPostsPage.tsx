@@ -28,6 +28,7 @@ import {
 } from "~/features/posts/server";
 import {
   BulkPostsActionButtons,
+  BulkPostsSchedulingPanel,
   BulkPostsTable,
   BulkPostsUploadArea,
   DraftPickerModal,
@@ -40,6 +41,11 @@ import { createBulkPostClientId } from "~/features/posts/utils/client-id";
 import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowInTimezone,
+} from "~/lib/temporal";
 import { isVideoFile } from "~/utils/media-helpers";
 
 function extractLoaderData(data: unknown): {
@@ -142,6 +148,7 @@ interface SubmitButtonProps {
     total: number;
     stage: string;
   };
+  validationInvalid?: boolean;
 }
 
 function SubmitButton({
@@ -150,8 +157,13 @@ function SubmitButton({
   isPreviewSubmitting,
   postsCount,
   preparationProgress,
+  validationInvalid,
 }: SubmitButtonProps) {
-  const disabled = isSubmitting || isProcessing || isPreviewSubmitting;
+  const disabled =
+    isSubmitting ||
+    isProcessing ||
+    isPreviewSubmitting ||
+    (validationInvalid ?? false);
   const showProgress =
     isPreviewSubmitting &&
     preparationProgress !== undefined &&
@@ -213,6 +225,7 @@ function SubmitButton({
   );
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- Page component with many features; splitting would fragment state */
 export default function BulkPostsPage() {
   const data = useLoaderData<{
     tags: string[];
@@ -282,6 +295,13 @@ export default function BulkPostsPage() {
   // Modal state for bulk scheduling success
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
+  const [bulkSuccessLastAt, setBulkSuccessLastAt] = useState<string | null>(
+    null
+  );
+  const [bulkSuccessQueueSummary, setBulkSuccessQueueSummary] = useState<Record<
+    string,
+    number
+  > | null>(null);
   const [modalPost, setModalPost] = useState<{
     id: string;
     publishAttemptId: string | null;
@@ -384,7 +404,7 @@ export default function BulkPostsPage() {
 
   // Use extracted hooks
   useBulkPostsState({ mode, posts, setPosts });
-  const { prepareEvents } = useBulkPostEvents({
+  const { prepareEvents, validatePostsForPreview } = useBulkPostEvents({
     posts,
     fetcher,
     user,
@@ -398,6 +418,11 @@ export default function BulkPostsPage() {
     setIsProcessing,
     setPreparationProgress,
   });
+
+  const validationResult = useMemo(
+    () => validatePostsForPreview(),
+    [validatePostsForPreview]
+  );
 
   // Fetch upload provider on component mount
   useEffect(() => {
@@ -489,6 +514,33 @@ export default function BulkPostsPage() {
     handleBulkRecyclableToggleHandler(posts, setPosts);
   };
 
+  const REPOST_12H = [{ value: 12, unit: "hours" as const }];
+  const QUOTE_12H = [{ value: 12, unit: "hours" as const, caption: "" }];
+
+  const handleRepostScheduleChange = (index: number, add: boolean) => {
+    setPosts((prev) =>
+      prev.map((p, i) =>
+        i === index
+          ? { ...p, repostSchedules: add ? REPOST_12H : undefined }
+          : p
+      )
+    );
+  };
+
+  const handleQuoteScheduleChange = (index: number, add: boolean) => {
+    setPosts((prev) =>
+      prev.map((p, i) =>
+        i === index ? { ...p, quoteSchedules: add ? QUOTE_12H : undefined } : p
+      )
+    );
+  };
+
+  const handleRepostAll12h = () => {
+    setPosts((prev) =>
+      prev.map((p) => ({ ...p, repostSchedules: REPOST_12H }))
+    );
+  };
+
   const handleQueueTypeChange = async (index: number, value: string) => {
     const userDeps = user
       ? {
@@ -529,6 +581,7 @@ export default function BulkPostsPage() {
           scheduleInterval: scheduleIntervals,
         }
       : null;
+    const count = posts.length;
     await handleBulkQueueUpdateHandler(queueType, {
       posts,
       setPosts,
@@ -539,6 +592,11 @@ export default function BulkPostsPage() {
       setSelectedQueueType,
       firstItemTimeManuallyChanged,
     });
+    setToast({
+      type: "success",
+      message: `Applied ${queueType} to ${count} post${count !== 1 ? "s" : ""}`,
+    });
+    setTimeout(() => setToast(null), 3000);
   };
 
   // Posts changes now silent for production
@@ -582,6 +640,8 @@ export default function BulkPostsPage() {
     const bulkScheduled = searchParams.get("bulkScheduled");
     const count = searchParams.get("count");
     const firstPostId = searchParams.get("firstPostId");
+    const lastScheduledAt = searchParams.get("lastScheduledAt");
+    const queueSummaryRaw = searchParams.get("queueSummary");
 
     if (
       bulkScheduled === "true" &&
@@ -591,6 +651,16 @@ export default function BulkPostsPage() {
     ) {
       const postCount = count ? parseInt(count, 10) : null;
       setBulkPostCount(postCount);
+      setBulkSuccessLastAt(lastScheduledAt ?? null);
+      try {
+        setBulkSuccessQueueSummary(
+          queueSummaryRaw
+            ? (JSON.parse(queueSummaryRaw) as Record<string, number>)
+            : null
+        );
+      } catch {
+        setBulkSuccessQueueSummary(null);
+      }
 
       // Use setTimeout to avoid setState in effect warning
       setTimeout(() => {
@@ -631,6 +701,8 @@ export default function BulkPostsPage() {
             newSearchParams.delete("bulkScheduled");
             newSearchParams.delete("count");
             newSearchParams.delete("firstPostId");
+            newSearchParams.delete("lastScheduledAt");
+            newSearchParams.delete("queueSummary");
             setSearchParams(newSearchParams, { replace: true });
           }
         } catch (error) {
@@ -646,18 +718,92 @@ export default function BulkPostsPage() {
 
   const [bulkDraftPickerOpen, setBulkDraftPickerOpen] = useState(false);
 
+  const addEmptyRows = (count: number) => {
+    const userTimezone = user?.timezone ?? "UTC";
+    const now = nowInTimezone(userTimezone);
+    const newPosts: BulkPost[] = Array.from({ length: count }, (_, i) => ({
+      clientId: createBulkPostClientId(),
+      file: null,
+      caption: "",
+      queueType: "unassigned",
+      scheduledFor:
+        posts.length === 0 && i === 0
+          ? formatForDateTimeLocal(addHours(now, 1), userTimezone)
+          : "",
+      isRecyclable: false,
+    }));
+    setPosts((prev) => [...prev, ...newPosts]);
+  };
+
+  const handleRowFileSelect = async (index: number, file: File | null) => {
+    if (!file) return;
+    const { isVideoFile } = await import("~/utils/media-helpers");
+    const MAX_IMAGE = 10 * 1024 * 1024;
+    const MAX_VIDEO = 100 * 1024 * 1024;
+    const isVideo = isVideoFile(file);
+    if (isVideo && file.size > MAX_VIDEO) {
+      alert("Video exceeds 100MB limit.");
+      return;
+    }
+    if (!isVideo && file.size > MAX_IMAGE) {
+      alert("Image exceeds 10MB limit.");
+      return;
+    }
+    let processed: File = file;
+    if (!isVideo) {
+      const { resizeImage } = await import("~/features/upload/image-resize");
+      processed = await resizeImage(file);
+    }
+    setPosts((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, file: processed } : p))
+    );
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">{getPageTitle(mode)}</h1>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setBulkDraftPickerOpen(true)}
-        >
-          Open draft
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {mode !== "repost" && mode !== "quote" ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => addEmptyRows(1)}
+                disabled={isProcessing}
+              >
+                + Add 1 Post
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => addEmptyRows(5)}
+                disabled={isProcessing}
+              >
+                + Add 5
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => addEmptyRows(10)}
+                disabled={isProcessing}
+              >
+                + Add 10
+              </Button>
+            </>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setBulkDraftPickerOpen(true)}
+          >
+            Open draft
+          </Button>
+        </div>
       </div>
       <DraftPickerModal
         open={bulkDraftPickerOpen}
@@ -708,7 +854,22 @@ export default function BulkPostsPage() {
             handleHashtagPresetSelect={handleHashtagPresetSelect}
             setUseHashtagPresets={setUseHashtagPresets}
             handleBulkRecyclableToggle={handleBulkRecyclableToggle}
+            onRepostAll12h={
+              mode !== "repost" && mode !== "quote"
+                ? handleRepostAll12h
+                : undefined
+            }
           />
+
+          {posts.length > 0 && mode !== "repost" && mode !== "quote" ? (
+            <BulkPostsSchedulingPanel
+              posts={posts}
+              setPosts={setPosts}
+              scheduleIntervals={scheduleIntervals}
+              userTimezone={user?.timezone ?? "UTC"}
+              disabled={isProcessing}
+            />
+          ) : null}
 
           {(mode === "quote" || mode === "repost") && posts.length === 0 ? (
             <div className="border-border bg-muted/30 rounded-lg border p-6 text-center">
@@ -743,7 +904,43 @@ export default function BulkPostsPage() {
                   void handleQueueTypeChange(index, value)
                 }
                 handleMediaClick={handleMediaClick}
+                validationErrorsByIndex={validationResult.byPost}
+                onRowFileSelect={
+                  mode !== "repost" && mode !== "quote"
+                    ? (idx, file) => void handleRowFileSelect(idx, file)
+                    : undefined
+                }
+                onRepostScheduleChange={
+                  mode !== "repost" && mode !== "quote"
+                    ? handleRepostScheduleChange
+                    : undefined
+                }
+                onQuoteScheduleChange={
+                  mode !== "repost" && mode !== "quote"
+                    ? handleQuoteScheduleChange
+                    : undefined
+                }
+                showAlsoSchedule={mode !== "repost" ? mode !== "quote" : null}
               />
+
+              {!validationResult.isValid ? (
+                <div
+                  className="bg-destructive/10 border-destructive text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mt-4 rounded-lg border p-3 text-sm"
+                  role="alert"
+                >
+                  <p className="font-medium">
+                    Fix the following before preview:
+                  </p>
+                  <ul className="mt-1 list-inside list-disc">
+                    {validationResult.errors.slice(0, 5).map((err) => (
+                      <li key={err}>{err}</li>
+                    ))}
+                    {validationResult.errors.length > 5 ? (
+                      <li>… and {validationResult.errors.length - 5} more</li>
+                    ) : null}
+                  </ul>
+                </div>
+              ) : null}
 
               <SubmitButton
                 isSubmitting={isSubmitting}
@@ -751,6 +948,7 @@ export default function BulkPostsPage() {
                 isPreviewSubmitting={isPreviewSubmitting}
                 postsCount={posts.length}
                 preparationProgress={preparationProgress}
+                validationInvalid={!validationResult.isValid}
               />
             </>
           ) : null}
@@ -758,6 +956,7 @@ export default function BulkPostsPage() {
       ) : (
         <PostConfirmation
           preparedEvents={preparedEvents}
+          posts={posts}
           postsCount={posts.length}
           groupId={groupId}
         />
@@ -790,12 +989,16 @@ export default function BulkPostsPage() {
             null
           }
           bulkCount={bulkPostCount}
+          lastScheduledAt={bulkSuccessLastAt}
+          queueSummary={bulkSuccessQueueSummary ?? undefined}
           onCreateNew={() => {
             setShowPublishModal(false);
             setModalPostId(null);
             setModalPost(null);
             setModalLongFormPost(null);
             setBulkPostCount(null);
+            setBulkSuccessLastAt(null);
+            setBulkSuccessQueueSummary(null);
             // Reset form state and navigate to fresh bulk post page
             setPosts([]);
             setPreparedEvents([]);
@@ -810,6 +1013,8 @@ export default function BulkPostsPage() {
             setModalPost(null);
             setModalLongFormPost(null);
             setBulkPostCount(null);
+            setBulkSuccessLastAt(null);
+            setBulkSuccessQueueSummary(null);
             navigate("/dashboard/scheduled");
           }}
         />

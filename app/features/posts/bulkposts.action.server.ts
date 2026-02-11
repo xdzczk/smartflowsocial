@@ -7,17 +7,22 @@ import { z } from "zod";
 
 import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { RateLimitError } from "~/lib/errors";
+import { recordPostScheduled } from "~/lib/metrics/business-metrics.server";
 import { prisma } from "~/lib/prisma.server";
 import { checkUserPostCreationLimit } from "~/lib/rate-limit.server";
-import { nowMillis } from "~/lib/temporal";
+import { nowMillis, fromUnixTimestamp, toPrismaDate } from "~/lib/temporal";
 import {
   signAndScheduleSchema,
   saveAsDraftSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { updatePost } from "~/models/post.commands.server";
+import {
+  createPostWithOutbox,
+  updatePost,
+} from "~/models/post.commands.server";
 import { isVideoUrl } from "~/utils/media-helpers";
 
 import {
@@ -27,6 +32,7 @@ import {
   type BulkDraftSnapshotRow,
 } from "./services/draft-group.server";
 import { resolveQueueTypeId } from "./services/queue-type-resolver.server";
+import { PostStateMachine } from "./state-machine/post-state-machine.server";
 import { CreatePostUseCase } from "./use-cases/create-post.use-case.server";
 
 /**
@@ -125,6 +131,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
 /**
  * Handle sign and schedule posts action
  */
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- Single handler with multiple branches; splitting would obscure flow */
 export async function handleSignAndSchedule(
   formData: FormData,
   userId: string,
@@ -149,6 +156,8 @@ export async function handleSignAndSchedule(
     const fileUrls = validatedData.fileUrl;
     const queueTypes = validatedData.queueType;
     const isRecyclableFlags = validatedData.isRecyclable;
+    const repostSchedulesRaw = validatedData.repostSchedules;
+    const quoteSchedulesRaw = validatedData.quoteSchedules;
     const originalPostIds = validatedData.originalPostId.filter(
       (id: string) => id && id !== ""
     );
@@ -197,10 +206,7 @@ export async function handleSignAndSchedule(
           content = captions[index];
         }
 
-        const fileUrl = fileUrls[index];
-        if (!fileUrl) {
-          throw new Error(`File URL is missing for post at index ${index}`);
-        }
+        const fileUrl = fileUrls[index] ?? "";
         const tags = signedEvent.tags
           .map((tagArray: string[]) => tagArray[1])
           .filter((tag): tag is string => typeof tag === "string");
@@ -225,9 +231,10 @@ export async function handleSignAndSchedule(
           userId,
         });
 
-        // Determine post type based on file URL
-        const isVideo = isVideoUrl(fileUrl);
-        const postType = isVideo ? "VIDEO" : "IMAGE";
+        // Determine post type: text-only when no file URL, otherwise IMAGE or VIDEO
+        const isTextOnly = !fileUrl || fileUrl.trim() === "";
+        const isVideo = !isTextOnly && isVideoUrl(fileUrl);
+        const postType = isTextOnly ? "TEXT" : isVideo ? "VIDEO" : "IMAGE";
 
         const originalPostId =
           index < originalPostIds.length ? originalPostIds[index] : undefined;
@@ -238,7 +245,7 @@ export async function handleSignAndSchedule(
           userId,
           content,
           caption: captions[index] ?? undefined,
-          fileUrl: [fileUrl],
+          fileUrl: isTextOnly ? [] : [fileUrl],
           postType,
           queueType, // Pass queue type name - use case will resolve
           tags, // Tags extracted from signedEvent
@@ -266,6 +273,126 @@ export async function handleSignAndSchedule(
       })
     );
 
+    const correlationId = getCorrelationId();
+    const stateMachine = new PostStateMachine();
+
+    for (let i = 0; i < createdPosts.length; i++) {
+      const mainPost = createdPosts[i];
+      if (!mainPost) continue;
+      const queueTypeName = queueTypes[i] ?? "unassigned";
+      const queueTypeId = await resolveQueueTypeId(
+        userId,
+        null,
+        queueTypeName === "Unassigned" ? null : queueTypeName
+      );
+      const isRecyclableFlag = isRecyclableFlags[i];
+      const isRecyclable =
+        typeof isRecyclableFlag === "string"
+          ? isRecyclableFlag === "true" ||
+            String(isRecyclableFlag).toLowerCase() === "true"
+          : Boolean(isRecyclableFlag);
+
+      const repostStr = repostSchedulesRaw[i];
+      if (repostStr && typeof repostStr === "string") {
+        try {
+          const repostList = JSON.parse(repostStr) as Array<{
+            scheduledFor: number;
+            signedEvent: SignedEvent;
+          }>;
+          if (Array.isArray(repostList)) {
+            for (const item of repostList) {
+              const repostScheduledForDate = toPrismaDate(
+                fromUnixTimestamp(item.scheduledFor, "UTC")
+              );
+              const repostPost = await createPostWithOutbox(
+                {
+                  userId,
+                  content: "",
+                  caption: "",
+                  fileUrl: [],
+                  postType: mainPost.postType,
+                  queueTypeId,
+                  isRecyclable,
+                  signedEvent: item.signedEvent,
+                  scheduledFor: repostScheduledForDate,
+                  tags: [],
+                  repost: true,
+                  isQuotedPost: false,
+                  repostOfPostId: mainPost.id,
+                  postKind: "REPOST",
+                },
+                item.scheduledFor,
+                correlationId
+              );
+              await stateMachine.transition(
+                repostPost.id,
+                userId,
+                "SCHEDULED",
+                "Repost created with schedule"
+              );
+              recordPostScheduled(mainPost.postType);
+            }
+          }
+        } catch (e) {
+          logInfo("Bulk repost schedule parse/create failed", {
+            index: i,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
+
+      const quoteStr = quoteSchedulesRaw[i];
+      if (quoteStr && typeof quoteStr === "string") {
+        try {
+          const quoteList = JSON.parse(quoteStr) as Array<{
+            scheduledFor: number;
+            signedEvent: SignedEvent;
+            caption?: string;
+          }>;
+          if (Array.isArray(quoteList)) {
+            for (const item of quoteList) {
+              const quoteScheduledForDate = toPrismaDate(
+                fromUnixTimestamp(item.scheduledFor, "UTC")
+              );
+              const quoteCaption = item.caption ?? "";
+              const quotePost = await createPostWithOutbox(
+                {
+                  userId,
+                  content: quoteCaption,
+                  caption: quoteCaption,
+                  fileUrl: [],
+                  postType: mainPost.postType,
+                  queueTypeId,
+                  isRecyclable,
+                  signedEvent: item.signedEvent,
+                  scheduledFor: quoteScheduledForDate,
+                  tags: [],
+                  repost: false,
+                  isQuotedPost: true,
+                  quoteOfPostId: mainPost.id,
+                  postKind: "QUOTE",
+                },
+                item.scheduledFor,
+                correlationId
+              );
+              await stateMachine.transition(
+                quotePost.id,
+                userId,
+                "SCHEDULED",
+                "Quote post created with schedule"
+              );
+              recordPostScheduled(mainPost.postType);
+            }
+          }
+        } catch (e) {
+          logInfo("Bulk quote schedule parse/create failed", {
+            index: i,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
+    }
+
     // If this is a recycle mode (posts have original post IDs), mark original posts as non-recyclable
     if (mode === "recycle" && originalPostIds.length > 0) {
       await markOriginalPostsAsNonRecyclable(originalPostIds, userId);
@@ -274,6 +401,21 @@ export async function handleSignAndSchedule(
     // Redirect back to bulk posts page with success info, or to scheduled page
     const createdPostCount = createdPosts.length;
     const firstPostId = createdPosts[0]?.id;
+    const lastPost = createdPosts[createdPostCount - 1];
+    const lastScheduledAt =
+      lastPost?.scheduledAtUtc instanceof Date
+        ? lastPost.scheduledAtUtc.toISOString()
+        : typeof lastPost?.scheduledAtUtc === "string"
+          ? lastPost.scheduledAtUtc
+          : "";
+    const queueSummary = queueTypes.reduce(
+      (acc: Record<string, number>, name) => {
+        const n = name || "unassigned";
+        acc[n] = (acc[n] ?? 0) + 1;
+        return acc;
+      },
+      {}
+    );
 
     // If we have a first post ID, redirect to bulk posts page with success params
     // Otherwise, redirect to scheduled page
@@ -286,6 +428,10 @@ export async function handleSignAndSchedule(
       params.set("bulkScheduled", "true");
       params.set("count", createdPostCount.toString());
       params.set("firstPostId", firstPostId);
+      if (lastScheduledAt) {
+        params.set("lastScheduledAt", lastScheduledAt);
+      }
+      params.set("queueSummary", JSON.stringify(queueSummary));
       return redirect(`${baseUrl}?${params.toString()}`);
     }
 
@@ -385,24 +531,27 @@ export async function handleSaveAsDraft(
           queueType === "Unassigned" ? null : queueType
         );
 
+        const isTextOnly = !fileUrl || fileUrl.trim() === "";
+        const fileUrlArr = isTextOnly ? [] : [fileUrl];
+
         snapshotRows.push({
           caption,
-          fileUrl: [fileUrl],
+          fileUrl: fileUrlArr,
           queueTypeId,
           scheduledFor: scheduledForStr || null,
           sortOrder: index,
           isRecyclable,
         });
 
-        const isVideo = isVideoUrl(fileUrl);
-        const postType = isVideo ? "VIDEO" : "IMAGE";
+        const isVideo = !isTextOnly && isVideoUrl(fileUrl);
+        const postType = isTextOnly ? "TEXT" : isVideo ? "VIDEO" : "IMAGE";
 
         const createPostUseCase = new CreatePostUseCase();
         const createResult = await createPostUseCase.execute({
           userId,
           content: caption,
           caption: caption,
-          fileUrl: [fileUrl],
+          fileUrl: fileUrlArr,
           postType,
           queueType,
           isRecyclable,
