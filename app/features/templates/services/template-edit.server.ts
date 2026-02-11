@@ -103,10 +103,12 @@ export async function handleTemplateEditAction(
     return json({ error: "Template has no post to schedule" }, { status: 400 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Prisma Json type can be array or string
+  // Prisma JsonValue for fileUrl may be string[] or string at runtime
   const fileUrl = Array.isArray(post.fileUrl)
     ? (post.fileUrl[0] ?? "")
-    : (post.fileUrl ?? "");
+    : typeof post.fileUrl === "string"
+      ? post.fileUrl
+      : "";
   const templateData = [
     {
       caption: post.caption ?? "",

@@ -27,8 +27,17 @@ export function BulkDraftsListing({ groups }: BulkDraftsListingProps) {
   if (groups.length === 0) {
     return (
       <div className="text-muted-foreground p-6 text-center">
-        No bulk drafts. Save a batch of posts as a draft from the Bulk Schedule
-        page to see them here.
+        <p className="mb-3">No bulk drafts.</p>
+        <p className="mb-4">
+          Save a batch of posts as a draft from{" "}
+          <Link
+            to="/dashboard/bulkposts"
+            className="text-primary font-medium hover:underline"
+          >
+            Bulk Posts
+          </Link>{" "}
+          to see them here.
+        </p>
       </div>
     );
   }

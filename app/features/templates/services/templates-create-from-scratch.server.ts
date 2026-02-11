@@ -58,13 +58,7 @@ export async function handleCreateTemplateFromScratchPost(
     queueType,
     result.data.queueTypeId ?? null
   );
-  const hashTagPresetTags =
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- getHashtagPresetTags return type is union
-    typeof hashtagResult === "object" &&
-    hashtagResult !== null &&
-    "tags" in hashtagResult
-      ? (hashtagResult as { tags: string }).tags
-      : "";
+  const hashTagPresetTags = hashtagResult.tags;
   const contentWithHashtags = hashTagPresetTags
     ? `${content}\n${hashTagPresetTags}`.trim()
     : content;

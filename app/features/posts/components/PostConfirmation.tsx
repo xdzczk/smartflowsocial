@@ -1,6 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { logClientError } from "~/lib/error-handler.client";
@@ -107,7 +107,7 @@ export default function PostConfirmation({
   postsCount,
   groupId = null,
 }: PostConfirmationProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{ error?: string }>();
   const isSubmitting = fetcher.state !== "idle";
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
@@ -115,6 +115,20 @@ export default function PostConfirmation({
     current: number;
     total: number;
   } | null>(null);
+
+  const actionError =
+    fetcher.state === "idle" &&
+    fetcher.data != null &&
+    typeof fetcher.data === "object" &&
+    typeof (fetcher.data as { error?: string }).error === "string"
+      ? (fetcher.data as { error: string }).error
+      : null;
+
+  useEffect(() => {
+    if (actionError) {
+      setSigningError(actionError);
+    }
+  }, [actionError]);
 
   const handleSignAndSubmit = async () => {
     try {
@@ -274,9 +288,9 @@ export default function PostConfirmation({
             If you’re using a remote signer, open it to approve the request.
           </div>
         ) : null}
-        {signingError ? (
+        {(signingError ?? actionError) ? (
           <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mx-auto mb-4 max-w-3xl rounded-md border p-3 text-sm">
-            {signingError}
+            {signingError ?? actionError}
           </div>
         ) : null}
 

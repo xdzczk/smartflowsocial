@@ -7,6 +7,7 @@ interface DraftsHeaderProps {
   allContentCount: number;
   postsCount: number;
   longformCount: number;
+  bulkCount?: number;
 }
 
 export function DraftsHeader({
@@ -14,16 +15,19 @@ export function DraftsHeader({
   allContentCount,
   postsCount,
   longformCount,
+  bulkCount = 0,
 }: DraftsHeaderProps) {
   const getCount = () => {
     if (currentTab === "all") return allContentCount;
     if (currentTab === "posts") return postsCount;
+    if (currentTab === "bulk") return bulkCount;
     return longformCount;
   };
 
   const getItemType = () => {
     if (currentTab === "all") return "items";
     if (currentTab === "posts") return "posts";
+    if (currentTab === "bulk") return "bulk draft groups";
     return "longform articles";
   };
 

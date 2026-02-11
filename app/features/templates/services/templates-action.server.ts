@@ -66,10 +66,13 @@ export async function handleTemplatesAction(
   const templateData = [
     {
       caption: post.caption ?? "",
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Prisma Json type
+
+      // Prisma JsonValue for fileUrl may be string[] or string at runtime
       fileUrl: Array.isArray(post.fileUrl)
         ? (post.fileUrl[0] ?? "")
-        : (post.fileUrl ?? ""),
+        : typeof post.fileUrl === "string"
+          ? post.fileUrl
+          : "",
       queueType: post.queueTypeId ?? "unassigned",
       scheduledFor: formatForDateTimeLocal(startTime, userTimezone),
     },

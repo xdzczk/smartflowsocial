@@ -382,11 +382,15 @@ export const saveAsDraftSchema = z.object({
         .map((str) => {
           try {
             const parsed = JSON.parse(str) as unknown;
-            return Array.isArray(parsed)
-              ? parsed.filter(
-                  (item): item is string => typeof item === "string"
-                )
-              : [];
+            if (Array.isArray(parsed)) {
+              return parsed.filter(
+                (item): item is string => typeof item === "string"
+              );
+            }
+            if (typeof parsed === "string") {
+              return [parsed];
+            }
+            return [];
           } catch {
             return [];
           }

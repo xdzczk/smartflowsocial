@@ -119,6 +119,7 @@ export default function DraftsPage() {
         allContentCount={allContent.length}
         postsCount={filteredPosts.length}
         longformCount={longformPosts.length}
+        bulkCount={bulkDraftGroups.length}
       />
 
       {/* Post Type Tabs */}

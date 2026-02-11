@@ -1,11 +1,12 @@
-import { Form, Link, Outlet, useFetcher } from "@remix-run/react";
+import { Link, Outlet, useFetcher } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
-import { useTemplatesQuery } from "../hooks/useTemplatesQuery";
+import { useTemplatesQuery, templatesKeys } from "../hooks/useTemplatesQuery";
 import { useTemplatesState } from "../hooks/useTemplatesState";
 import type { Template } from "../types";
 
@@ -25,12 +26,14 @@ function typeLabel(template: Template): string {
 }
 
 export default function TemplatesPage() {
+  const queryClient = useQueryClient();
   const { data } = useTemplatesQuery();
   const templates = Array.isArray(data?.templates) ? data.templates : [];
   const { selectedTemplate, setSelectedTemplate, isOnChildRoute } =
     useTemplatesState();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const bulkDeleteFetcher = useFetcher();
+  const singleDeleteFetcher = useFetcher();
 
   useEffect(() => {
     if (
@@ -40,9 +43,22 @@ export default function TemplatesPage() {
       "success" in bulkDeleteFetcher.data &&
       (bulkDeleteFetcher.data as { success?: boolean }).success
     ) {
+      void queryClient.invalidateQueries({ queryKey: templatesKeys.list() });
       queueMicrotask(() => setSelectedIds(new Set()));
     }
-  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data]);
+  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, queryClient]);
+
+  useEffect(() => {
+    if (
+      singleDeleteFetcher.state === "idle" &&
+      singleDeleteFetcher.data &&
+      typeof singleDeleteFetcher.data === "object" &&
+      "success" in singleDeleteFetcher.data &&
+      (singleDeleteFetcher.data as { success?: boolean }).success
+    ) {
+      void queryClient.invalidateQueries({ queryKey: templatesKeys.list() });
+    }
+  }, [singleDeleteFetcher.state, singleDeleteFetcher.data, queryClient]);
 
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) => {
@@ -142,7 +158,10 @@ export default function TemplatesPage() {
                             <Pencil className="h-4 w-4" />
                           </Link>
                         </Button>
-                        <Form method="post" className="inline">
+                        <singleDeleteFetcher.Form
+                          method="post"
+                          className="inline"
+                        >
                           <input type="hidden" name="_action" value="delete" />
                           <input
                             type="hidden"
@@ -155,10 +174,11 @@ export default function TemplatesPage() {
                             size="icon"
                             className="text-destructive hover:text-destructive h-8 w-8"
                             aria-label="Delete template"
+                            disabled={singleDeleteFetcher.state !== "idle"}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </Form>
+                        </singleDeleteFetcher.Form>
                       </div>
                     </li>
                   ))}
