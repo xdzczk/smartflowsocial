@@ -72,6 +72,22 @@ export async function handleGeneralSettingsAction(
     const pushNotificationsEnabled = formData.get("pushNotificationsEnabled");
     const pushNotifyPublishSuccess = formData.get("pushNotifyPublishSuccess");
     const pushNotifyPublishFailure = formData.get("pushNotifyPublishFailure");
+    const pushNotifyRunwayLow = formData.get("pushNotifyRunwayLow");
+    const runwayNotifyBelowDaysRaw = formData.get("runwayNotifyBelowDays");
+
+    const hasRunwayDaysKey = formData.has("runwayNotifyBelowDays");
+    const runwayNotifyBelowDays =
+      runwayNotifyBelowDaysRaw !== null && runwayNotifyBelowDaysRaw !== ""
+        ? parseInt(String(runwayNotifyBelowDaysRaw), 10)
+        : undefined;
+    const runwayNotifyBelowDaysValue = hasRunwayDaysKey
+      ? runwayNotifyBelowDays !== undefined &&
+        Number.isInteger(runwayNotifyBelowDays) &&
+        runwayNotifyBelowDays >= 0 &&
+        runwayNotifyBelowDays <= 365
+        ? runwayNotifyBelowDays
+        : null
+      : undefined;
 
     await updateUserPushNotificationPreferences(userId, {
       ...(pushNotificationsEnabled !== null && {
@@ -82,6 +98,12 @@ export async function handleGeneralSettingsAction(
       }),
       ...(pushNotifyPublishFailure !== null && {
         pushNotifyPublishFailure: pushNotifyPublishFailure === "true",
+      }),
+      ...(pushNotifyRunwayLow !== null && {
+        pushNotifyRunwayLow: pushNotifyRunwayLow === "true",
+      }),
+      ...(hasRunwayDaysKey && {
+        runwayNotifyBelowDays: runwayNotifyBelowDaysValue ?? null,
       }),
     });
 

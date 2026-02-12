@@ -31,6 +31,9 @@ model User {
   pushNotificationsEnabled   Boolean        @default(true)
   pushNotifyPublishSuccess   Boolean        @default(true)
   pushNotifyPublishFailure   Boolean        @default(true)
+  pushNotifyRunwayLow        Boolean        @default(false)
+  runwayNotifyBelowDays      Int?
+  lastRunwayLowNotificationAt DateTime?
   // Time format preference (12-hour AM/PM or 24-hour)
   timeFormat                 String?        @default("12h") // "12h" or "24h"
   // Runway KPI: which queues count and mode (last-post vs first-queue-empty)

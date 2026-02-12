@@ -5,10 +5,13 @@
 
 import type { PushSubscription as WebPushSubscription } from "web-push";
 
+import { getRunwaySettings } from "~/features/user/services/user-settings.server";
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
 import { initWebPush } from "./web-push-config.server";
+
+const RUNWAY_LOW_THROTTLE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- web-push uses CommonJS
 const webpush = require("web-push");
@@ -23,12 +26,65 @@ export interface NotificationPayload {
   body: string;
   icon?: string;
   badge?: string;
+  image?: string;
   data?: {
     postId?: string;
     publishAttemptId?: string;
-    action: "publish_success" | "publish_failure";
+    runwayDays?: number;
+    action: "publish_success" | "publish_failure" | "runway_low";
     url?: string;
   };
+}
+
+/** Parse nostrProfile JSON and return picture URL and display name (display_name || name || truncated npub). */
+function parseNostrProfileForNotification(
+  nostrProfile: unknown,
+  npub: string
+): { picture?: string; displayName: string } {
+  let p: { picture?: string; display_name?: string; name?: string } | null =
+    null;
+  try {
+    if (typeof nostrProfile === "string") {
+      const parsed: unknown = JSON.parse(nostrProfile);
+      p =
+        parsed && typeof parsed === "object" && !Array.isArray(parsed)
+          ? (parsed as {
+              picture?: string;
+              display_name?: string;
+              name?: string;
+            })
+          : null;
+    } else if (
+      nostrProfile &&
+      typeof nostrProfile === "object" &&
+      !Array.isArray(nostrProfile)
+    ) {
+      p = nostrProfile as {
+        picture?: string;
+        display_name?: string;
+        name?: string;
+      };
+    }
+  } catch {
+    // ignore
+  }
+  const fromDisplay =
+    p && typeof p.display_name === "string"
+      ? p.display_name.trim() || null
+      : null;
+  const fromName =
+    p && typeof p.name === "string" ? p.name.trim() || null : null;
+  const displayName =
+    fromDisplay ??
+    fromName ??
+    (npub.length > 16 ? `${npub.slice(0, 12)}…` : npub);
+  const picture =
+    p &&
+    typeof p.picture === "string" &&
+    p.picture.trim().toLowerCase().startsWith("https://")
+      ? p.picture.trim()
+      : undefined;
+  return { picture, displayName };
 }
 
 export type SendPushResult = { sent: true } | { sent: false; expired: boolean };
@@ -163,12 +219,14 @@ export async function sendPublishSuccessNotification(
   postId: string,
   publishAttemptId: string
 ): Promise<void> {
-  // Check user preferences
+  // Check user preferences and load profile for account name + pfp
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       pushNotificationsEnabled: true,
       pushNotifyPublishSuccess: true,
+      nostrProfile: true,
+      npub: true,
     },
   });
 
@@ -180,11 +238,19 @@ export async function sendPublishSuccessNotification(
     return; // User has disabled these notifications
   }
 
+  const { picture, displayName } = parseNostrProfileForNotification(
+    user.nostrProfile,
+    user.npub
+  );
+  const icon = picture ?? DEFAULT_ICON;
+  const badge = picture ?? DEFAULT_ICON;
+
   const payload: NotificationPayload = {
-    title: "Post published successfully",
+    title: `Post published from ${displayName}`,
     body: "Your post has been published to Nostr",
-    icon: DEFAULT_ICON,
-    badge: DEFAULT_ICON,
+    icon,
+    badge,
+    ...(picture && { image: picture }),
     data: {
       postId,
       publishAttemptId,
@@ -237,4 +303,60 @@ export async function sendPublishFailureNotification(
   };
 
   await sendPushNotificationToUser(userId, payload);
+}
+
+/**
+ * Send runway low notification when scheduled queue has few days left.
+ * Respects user preference, threshold (runwayNotifyBelowDays or runway red threshold), and 24h throttle.
+ */
+export async function sendRunwayLowNotification(
+  userId: string,
+  runwayDays: number
+): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      pushNotificationsEnabled: true,
+      pushNotifyRunwayLow: true,
+      runwayNotifyBelowDays: true,
+      lastRunwayLowNotificationAt: true,
+    },
+  });
+
+  if (!user || !user.pushNotificationsEnabled || !user.pushNotifyRunwayLow) {
+    return;
+  }
+
+  const runwaySettings = await getRunwaySettings(userId);
+  const threshold =
+    user.runwayNotifyBelowDays ?? runwaySettings.redThresholdDays ?? 3;
+
+  if (runwayDays > threshold) {
+    return;
+  }
+
+  const now = Date.now();
+  const lastAt = user.lastRunwayLowNotificationAt?.getTime();
+  if (lastAt != null && now - lastAt < RUNWAY_LOW_THROTTLE_MS) {
+    return;
+  }
+
+  const payload: NotificationPayload = {
+    title: "Queue runway low",
+    body: `Your scheduled queue has ${runwayDays} day${runwayDays !== 1 ? "s" : ""} left. Add more posts to keep the flow.`,
+    icon: DEFAULT_ICON,
+    badge: DEFAULT_ICON,
+    data: {
+      action: "runway_low",
+      url: "/dashboard",
+      runwayDays,
+    },
+  };
+
+  await sendPushNotificationToUser(userId, payload);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { lastRunwayLowNotificationAt: new Date() },
+  });
 }

@@ -296,12 +296,16 @@ export async function getUserMutedList(userId: string): Promise<{
 /**
  * Gets user's push notification preferences
  */
+export { getUserIdWithRunwayLowNotificationEnabled } from "~/models/user-notifications.server";
+
 export async function getUserPushNotificationPreferences(
   userId: string
 ): Promise<{
   pushNotificationsEnabled: boolean;
   pushNotifyPublishSuccess: boolean;
   pushNotifyPublishFailure: boolean;
+  pushNotifyRunwayLow: boolean;
+  runwayNotifyBelowDays: number | null;
 }> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -309,6 +313,8 @@ export async function getUserPushNotificationPreferences(
       pushNotificationsEnabled: true,
       pushNotifyPublishSuccess: true,
       pushNotifyPublishFailure: true,
+      pushNotifyRunwayLow: true,
+      runwayNotifyBelowDays: true,
     },
   });
 
@@ -316,6 +322,8 @@ export async function getUserPushNotificationPreferences(
     pushNotificationsEnabled: user?.pushNotificationsEnabled ?? true,
     pushNotifyPublishSuccess: user?.pushNotifyPublishSuccess ?? true,
     pushNotifyPublishFailure: user?.pushNotifyPublishFailure ?? true,
+    pushNotifyRunwayLow: user?.pushNotifyRunwayLow ?? false,
+    runwayNotifyBelowDays: user?.runwayNotifyBelowDays ?? null,
   };
 }
 
@@ -328,6 +336,8 @@ export async function updateUserPushNotificationPreferences(
     pushNotificationsEnabled?: boolean;
     pushNotifyPublishSuccess?: boolean;
     pushNotifyPublishFailure?: boolean;
+    pushNotifyRunwayLow?: boolean;
+    runwayNotifyBelowDays?: number | null;
   }
 ): Promise<User> {
   return prisma.user.update({
@@ -341,6 +351,12 @@ export async function updateUserPushNotificationPreferences(
       }),
       ...(preferences.pushNotifyPublishFailure !== undefined && {
         pushNotifyPublishFailure: preferences.pushNotifyPublishFailure,
+      }),
+      ...(preferences.pushNotifyRunwayLow !== undefined && {
+        pushNotifyRunwayLow: preferences.pushNotifyRunwayLow,
+      }),
+      ...(preferences.runwayNotifyBelowDays !== undefined && {
+        runwayNotifyBelowDays: preferences.runwayNotifyBelowDays,
       }),
     },
   });
@@ -581,7 +597,13 @@ export async function updateRunwaySettings(
         },
       });
       if (!user) throw err;
-      const result: User = { ...user, runwaySettings: null };
+      const result: User = {
+        ...user,
+        runwaySettings: null,
+        pushNotifyRunwayLow: false,
+        runwayNotifyBelowDays: null,
+        lastRunwayLowNotificationAt: null,
+      };
       return result;
     }
     throw err;

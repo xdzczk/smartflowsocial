@@ -141,6 +141,29 @@ export class PublishLongFormNowUseCase {
           },
         }
       );
+
+      // Send push notification for publish success
+      try {
+        const { sendPublishSuccessNotification } =
+          await import("~/infra/notifications/push-notification.server");
+        await sendPublishSuccessNotification(
+          input.userId,
+          input.postId,
+          publishAttemptId
+        );
+      } catch (notificationError) {
+        logError(
+          notificationError instanceof Error
+            ? notificationError
+            : new Error(String(notificationError)),
+          {
+            message: "Failed to send publish success notification",
+            postId: input.postId,
+            userId: input.userId,
+            publishAttemptId,
+          }
+        );
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 

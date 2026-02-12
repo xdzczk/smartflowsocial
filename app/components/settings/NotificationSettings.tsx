@@ -22,18 +22,27 @@ interface NotificationSettingsProps {
   pushNotificationsEnabled: boolean;
   pushNotifyPublishSuccess: boolean;
   pushNotifyPublishFailure: boolean;
+  pushNotifyRunwayLow: boolean;
+  runwayNotifyBelowDays: number | null;
 }
 
 export function NotificationSettings({
   pushNotificationsEnabled: _initialEnabled,
   pushNotifyPublishSuccess: initialSuccess,
   pushNotifyPublishFailure: initialFailure,
+  pushNotifyRunwayLow: initialRunwayLow,
+  runwayNotifyBelowDays: initialRunwayNotifyBelowDays,
 }: NotificationSettingsProps) {
   const fetcher = useFetcher();
   const [pushNotifyPublishSuccess, setPushNotifyPublishSuccess] =
     useState(initialSuccess);
   const [pushNotifyPublishFailure, setPushNotifyPublishFailure] =
     useState(initialFailure);
+  const [pushNotifyRunwayLow, setPushNotifyRunwayLow] =
+    useState(initialRunwayLow);
+  const [runwayNotifyBelowDays, setRunwayNotifyBelowDays] = useState<
+    number | null
+  >(initialRunwayNotifyBelowDays ?? null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [isSubscribing, setIsSubscribing] = useState(false);
@@ -374,6 +383,30 @@ export function NotificationSettings({
     fetcher.submit(formData, { method: "post" });
   };
 
+  const handleToggleRunwayLow = (enabled: boolean) => {
+    setPushNotifyRunwayLow(enabled);
+    const formData = new FormData();
+    formData.append("_action", "update_notification_preferences");
+    formData.append("pushNotifyRunwayLow", String(enabled));
+    formData.append(
+      "runwayNotifyBelowDays",
+      runwayNotifyBelowDays !== null ? String(runwayNotifyBelowDays) : ""
+    );
+    fetcher.submit(formData, { method: "post" });
+  };
+
+  const handleRunwayNotifyBelowDaysChange = (value: number | null) => {
+    setRunwayNotifyBelowDays(value ?? null);
+    const formData = new FormData();
+    formData.append("_action", "update_notification_preferences");
+    formData.append("pushNotifyRunwayLow", String(pushNotifyRunwayLow));
+    formData.append(
+      "runwayNotifyBelowDays",
+      value !== null ? String(value) : ""
+    );
+    fetcher.submit(formData, { method: "post" });
+  };
+
   if (hasMounted && !isSupported) {
     return (
       <div className="border-border bg-card rounded-lg border p-6">
@@ -476,6 +509,58 @@ export function NotificationSettings({
                     onCheckedChange={handleToggleFailure}
                   />
                 </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="notify-runway-low">
+                      Notify when Queue Runway is Low
+                    </Label>
+                    <p className="text-muted-foreground text-xs">
+                      Get notified when your scheduled queue has few days left
+                    </p>
+                  </div>
+                  <Switch
+                    id="notify-runway-low"
+                    checked={pushNotifyRunwayLow}
+                    onCheckedChange={handleToggleRunwayLow}
+                  />
+                </div>
+
+                {pushNotifyRunwayLow ? (
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="runway-notify-below-days">
+                        Notify when runway is below (days)
+                      </Label>
+                      <p className="text-muted-foreground text-xs">
+                        Use dashboard red threshold if left empty
+                      </p>
+                    </div>
+                    <input
+                      id="runway-notify-below-days"
+                      type="number"
+                      min={0}
+                      max={365}
+                      value={runwayNotifyBelowDays ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const n = v === "" ? null : parseInt(v, 10);
+                        if (
+                          v === "" ||
+                          (Number.isInteger(n) &&
+                            n !== null &&
+                            n >= 0 &&
+                            n <= 365)
+                        ) {
+                          handleRunwayNotifyBelowDaysChange(
+                            v === "" ? null : n
+                          );
+                        }
+                      }}
+                      className="border-input bg-background w-20 rounded-md border px-2 py-1 text-sm"
+                    />
+                  </div>
+                ) : null}
               </>
             ) : null}
           </div>

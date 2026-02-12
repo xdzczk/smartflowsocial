@@ -63,6 +63,7 @@ export {
   getUserTimeFormat,
   updateUserTimeFormat,
   getRunwaySettings,
+  getUserIdWithRunwayLowNotificationEnabled,
   updateRunwaySettings,
   updateScheduleOverviewTarget,
   type RunwaySettings,

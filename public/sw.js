@@ -65,11 +65,14 @@ self.addEventListener("push", (event) => {
       body: payload.body,
       icon: payload.icon || "/icon-192.png",
       badge: payload.badge || "/icon-192.png",
+      image: payload.image || undefined,
       data: payload.data,
       tag:
-        payload.data && payload.data.postId
-          ? payload.data.postId
-          : "publish-notification",
+        payload.data && payload.data.action === "runway_low"
+          ? "runway-low"
+          : payload.data && payload.data.postId
+            ? payload.data.postId
+            : "publish-notification",
       requireInteraction:
         payload.data && payload.data.action === "publish_failure",
     };

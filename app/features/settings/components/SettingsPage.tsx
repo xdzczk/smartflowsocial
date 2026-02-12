@@ -308,6 +308,8 @@ export default function SettingsPage() {
     pushNotificationsEnabled?: unknown;
     pushNotifyPublishSuccess?: unknown;
     pushNotifyPublishFailure?: unknown;
+    pushNotifyRunwayLow?: unknown;
+    runwayNotifyBelowDays?: unknown;
     timeFormat?: unknown;
   };
 
@@ -338,6 +340,8 @@ export default function SettingsPage() {
     pushNotificationsEnabled,
     pushNotifyPublishSuccess,
     pushNotifyPublishFailure,
+    pushNotifyRunwayLow,
+    runwayNotifyBelowDays,
     timeFormat: timeFormatRaw,
   } = data;
 
@@ -421,6 +425,14 @@ export default function SettingsPage() {
                 pushNotifyPublishFailure,
                 true
               )}
+              pushNotifyRunwayLow={asBoolean(pushNotifyRunwayLow, false)}
+              runwayNotifyBelowDays={
+                typeof runwayNotifyBelowDays === "number" &&
+                Number.isInteger(runwayNotifyBelowDays) &&
+                runwayNotifyBelowDays >= 0
+                  ? runwayNotifyBelowDays
+                  : null
+              }
             />
             <RemoteSignerSettings />
           </div>
