@@ -149,7 +149,8 @@ export class PublishLongFormNowUseCase {
         await sendPublishSuccessNotification(
           input.userId,
           input.postId,
-          publishAttemptId
+          publishAttemptId,
+          { isLongForm: true }
         );
       } catch (notificationError) {
         logError(

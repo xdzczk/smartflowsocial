@@ -132,6 +132,7 @@ export interface SettingsLoaderData {
   pushNotifyPublishSuccess: boolean;
   pushNotifyPublishFailure: boolean;
   pushNotifyRunwayLow: boolean;
+  pushNotifyIncludePreview: boolean;
   runwayNotifyBelowDays: number | null;
   timeFormat: "12h" | "24h";
 }
@@ -357,6 +358,8 @@ export async function loadSettingsData(
     pushNotifyPublishFailure:
       pushNotificationPreferences.pushNotifyPublishFailure,
     pushNotifyRunwayLow: pushNotificationPreferences.pushNotifyRunwayLow,
+    pushNotifyIncludePreview:
+      pushNotificationPreferences.pushNotifyIncludePreview,
     runwayNotifyBelowDays: pushNotificationPreferences.runwayNotifyBelowDays,
     timeFormat,
   };

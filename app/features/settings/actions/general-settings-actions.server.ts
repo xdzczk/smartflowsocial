@@ -20,6 +20,57 @@ import {
   validateFormDataOrRespond,
 } from "~/lib/validation";
 
+function parseNotificationPreferencesFromFormData(formData: FormData): {
+  pushNotificationsEnabled?: boolean;
+  pushNotifyPublishSuccess?: boolean;
+  pushNotifyPublishFailure?: boolean;
+  pushNotifyRunwayLow?: boolean;
+  pushNotifyIncludePreview?: boolean;
+  runwayNotifyBelowDays?: number | null;
+} {
+  const pushNotificationsEnabled = formData.get("pushNotificationsEnabled");
+  const pushNotifyPublishSuccess = formData.get("pushNotifyPublishSuccess");
+  const pushNotifyPublishFailure = formData.get("pushNotifyPublishFailure");
+  const pushNotifyRunwayLow = formData.get("pushNotifyRunwayLow");
+  const pushNotifyIncludePreview = formData.get("pushNotifyIncludePreview");
+  const runwayNotifyBelowDaysRaw = formData.get("runwayNotifyBelowDays");
+
+  const hasRunwayDaysKey = formData.has("runwayNotifyBelowDays");
+  const runwayNotifyBelowDays =
+    runwayNotifyBelowDaysRaw !== null && runwayNotifyBelowDaysRaw !== ""
+      ? parseInt(String(runwayNotifyBelowDaysRaw), 10)
+      : undefined;
+  const runwayNotifyBelowDaysValue = hasRunwayDaysKey
+    ? runwayNotifyBelowDays !== undefined &&
+      Number.isInteger(runwayNotifyBelowDays) &&
+      runwayNotifyBelowDays >= 0 &&
+      runwayNotifyBelowDays <= 365
+      ? runwayNotifyBelowDays
+      : null
+    : undefined;
+
+  return {
+    ...(pushNotificationsEnabled !== null && {
+      pushNotificationsEnabled: pushNotificationsEnabled === "true",
+    }),
+    ...(pushNotifyPublishSuccess !== null && {
+      pushNotifyPublishSuccess: pushNotifyPublishSuccess === "true",
+    }),
+    ...(pushNotifyPublishFailure !== null && {
+      pushNotifyPublishFailure: pushNotifyPublishFailure === "true",
+    }),
+    ...(pushNotifyRunwayLow !== null && {
+      pushNotifyRunwayLow: pushNotifyRunwayLow === "true",
+    }),
+    ...(pushNotifyIncludePreview !== null && {
+      pushNotifyIncludePreview: pushNotifyIncludePreview === "true",
+    }),
+    ...(hasRunwayDaysKey && {
+      runwayNotifyBelowDays: runwayNotifyBelowDaysValue ?? null,
+    }),
+  };
+}
+
 export async function handleGeneralSettingsAction(
   userId: string,
   action: string,
@@ -69,44 +120,8 @@ export async function handleGeneralSettingsAction(
   }
 
   if (action === "update_notification_preferences") {
-    const pushNotificationsEnabled = formData.get("pushNotificationsEnabled");
-    const pushNotifyPublishSuccess = formData.get("pushNotifyPublishSuccess");
-    const pushNotifyPublishFailure = formData.get("pushNotifyPublishFailure");
-    const pushNotifyRunwayLow = formData.get("pushNotifyRunwayLow");
-    const runwayNotifyBelowDaysRaw = formData.get("runwayNotifyBelowDays");
-
-    const hasRunwayDaysKey = formData.has("runwayNotifyBelowDays");
-    const runwayNotifyBelowDays =
-      runwayNotifyBelowDaysRaw !== null && runwayNotifyBelowDaysRaw !== ""
-        ? parseInt(String(runwayNotifyBelowDaysRaw), 10)
-        : undefined;
-    const runwayNotifyBelowDaysValue = hasRunwayDaysKey
-      ? runwayNotifyBelowDays !== undefined &&
-        Number.isInteger(runwayNotifyBelowDays) &&
-        runwayNotifyBelowDays >= 0 &&
-        runwayNotifyBelowDays <= 365
-        ? runwayNotifyBelowDays
-        : null
-      : undefined;
-
-    await updateUserPushNotificationPreferences(userId, {
-      ...(pushNotificationsEnabled !== null && {
-        pushNotificationsEnabled: pushNotificationsEnabled === "true",
-      }),
-      ...(pushNotifyPublishSuccess !== null && {
-        pushNotifyPublishSuccess: pushNotifyPublishSuccess === "true",
-      }),
-      ...(pushNotifyPublishFailure !== null && {
-        pushNotifyPublishFailure: pushNotifyPublishFailure === "true",
-      }),
-      ...(pushNotifyRunwayLow !== null && {
-        pushNotifyRunwayLow: pushNotifyRunwayLow === "true",
-      }),
-      ...(hasRunwayDaysKey && {
-        runwayNotifyBelowDays: runwayNotifyBelowDaysValue ?? null,
-      }),
-    });
-
+    const preferences = parseNotificationPreferencesFromFormData(formData);
+    await updateUserPushNotificationPreferences(userId, preferences);
     return json({ success: true });
   }
 

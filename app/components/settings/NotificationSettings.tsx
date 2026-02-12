@@ -23,6 +23,7 @@ interface NotificationSettingsProps {
   pushNotifyPublishSuccess: boolean;
   pushNotifyPublishFailure: boolean;
   pushNotifyRunwayLow: boolean;
+  pushNotifyIncludePreview: boolean;
   runwayNotifyBelowDays: number | null;
 }
 
@@ -31,6 +32,7 @@ export function NotificationSettings({
   pushNotifyPublishSuccess: initialSuccess,
   pushNotifyPublishFailure: initialFailure,
   pushNotifyRunwayLow: initialRunwayLow,
+  pushNotifyIncludePreview: initialIncludePreview,
   runwayNotifyBelowDays: initialRunwayNotifyBelowDays,
 }: NotificationSettingsProps) {
   const fetcher = useFetcher();
@@ -40,6 +42,9 @@ export function NotificationSettings({
     useState(initialFailure);
   const [pushNotifyRunwayLow, setPushNotifyRunwayLow] =
     useState(initialRunwayLow);
+  const [pushNotifyIncludePreview, setPushNotifyIncludePreview] = useState(
+    initialIncludePreview
+  );
   const [runwayNotifyBelowDays, setRunwayNotifyBelowDays] = useState<
     number | null
   >(initialRunwayNotifyBelowDays ?? null);
@@ -395,6 +400,14 @@ export function NotificationSettings({
     fetcher.submit(formData, { method: "post" });
   };
 
+  const handleToggleIncludePreview = (enabled: boolean) => {
+    setPushNotifyIncludePreview(enabled);
+    const formData = new FormData();
+    formData.append("_action", "update_notification_preferences");
+    formData.append("pushNotifyIncludePreview", String(enabled));
+    fetcher.submit(formData, { method: "post" });
+  };
+
   const handleRunwayNotifyBelowDaysChange = (value: number | null) => {
     setRunwayNotifyBelowDays(value ?? null);
     const formData = new FormData();
@@ -507,6 +520,23 @@ export function NotificationSettings({
                     id="notify-failure"
                     checked={pushNotifyPublishFailure}
                     onCheckedChange={handleToggleFailure}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="notify-include-preview">
+                      Include post preview in notifications
+                    </Label>
+                    <p className="text-muted-foreground text-xs">
+                      Show a short snippet of the post or article in publish
+                      success notifications
+                    </p>
+                  </div>
+                  <Switch
+                    id="notify-include-preview"
+                    checked={pushNotifyIncludePreview}
+                    onCheckedChange={handleToggleIncludePreview}
                   />
                 </div>
 

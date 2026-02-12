@@ -19,6 +19,9 @@ const ALLOWED_HOSTS = [
   "nostr.build",
   "i.nostr.build",
   "img.nostr.build",
+  "image.nostr.build",
+  "media.nostr.band",
+  "nostr.band",
   "void.cat",
   "cdn.void.cat",
 ];

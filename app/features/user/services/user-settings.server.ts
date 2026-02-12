@@ -305,6 +305,7 @@ export async function getUserPushNotificationPreferences(
   pushNotifyPublishSuccess: boolean;
   pushNotifyPublishFailure: boolean;
   pushNotifyRunwayLow: boolean;
+  pushNotifyIncludePreview: boolean;
   runwayNotifyBelowDays: number | null;
 }> {
   const user = await prisma.user.findUnique({
@@ -314,6 +315,7 @@ export async function getUserPushNotificationPreferences(
       pushNotifyPublishSuccess: true,
       pushNotifyPublishFailure: true,
       pushNotifyRunwayLow: true,
+      pushNotifyIncludePreview: true,
       runwayNotifyBelowDays: true,
     },
   });
@@ -323,6 +325,7 @@ export async function getUserPushNotificationPreferences(
     pushNotifyPublishSuccess: user?.pushNotifyPublishSuccess ?? true,
     pushNotifyPublishFailure: user?.pushNotifyPublishFailure ?? true,
     pushNotifyRunwayLow: user?.pushNotifyRunwayLow ?? false,
+    pushNotifyIncludePreview: user?.pushNotifyIncludePreview ?? true,
     runwayNotifyBelowDays: user?.runwayNotifyBelowDays ?? null,
   };
 }
@@ -337,6 +340,7 @@ export async function updateUserPushNotificationPreferences(
     pushNotifyPublishSuccess?: boolean;
     pushNotifyPublishFailure?: boolean;
     pushNotifyRunwayLow?: boolean;
+    pushNotifyIncludePreview?: boolean;
     runwayNotifyBelowDays?: number | null;
   }
 ): Promise<User> {
@@ -354,6 +358,9 @@ export async function updateUserPushNotificationPreferences(
       }),
       ...(preferences.pushNotifyRunwayLow !== undefined && {
         pushNotifyRunwayLow: preferences.pushNotifyRunwayLow,
+      }),
+      ...(preferences.pushNotifyIncludePreview !== undefined && {
+        pushNotifyIncludePreview: preferences.pushNotifyIncludePreview,
       }),
       ...(preferences.runwayNotifyBelowDays !== undefined && {
         runwayNotifyBelowDays: preferences.runwayNotifyBelowDays,
@@ -601,6 +608,7 @@ export async function updateRunwaySettings(
         ...user,
         runwaySettings: null,
         pushNotifyRunwayLow: false,
+        pushNotifyIncludePreview: true,
         runwayNotifyBelowDays: null,
         lastRunwayLowNotificationAt: null,
       };

@@ -818,7 +818,9 @@ async function runScheduledPostJob(input: {
   try {
     const { sendPublishSuccessNotification } =
       await import("~/infra/notifications/push-notification.server");
-    await sendPublishSuccessNotification(userId, postId, publishAttemptId);
+    await sendPublishSuccessNotification(userId, postId, publishAttemptId, {
+      isLongForm: false,
+    });
   } catch (notificationError) {
     // Log but don't fail the job if notification fails
     logError(
@@ -1024,7 +1026,9 @@ async function runScheduledLongFormPostJob(input: {
   try {
     const { sendPublishSuccessNotification } =
       await import("~/infra/notifications/push-notification.server");
-    await sendPublishSuccessNotification(userId, postId, publishAttemptId);
+    await sendPublishSuccessNotification(userId, postId, publishAttemptId, {
+      isLongForm: true,
+    });
   } catch (notificationError) {
     // Log but don't fail the job if notification fails
     logError(

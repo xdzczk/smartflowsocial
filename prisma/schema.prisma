@@ -32,6 +32,7 @@ model User {
   pushNotifyPublishSuccess   Boolean        @default(true)
   pushNotifyPublishFailure   Boolean        @default(true)
   pushNotifyRunwayLow        Boolean        @default(false)
+  pushNotifyIncludePreview   Boolean        @default(true)
   runwayNotifyBelowDays      Int?
   lastRunwayLowNotificationAt DateTime?
   // Time format preference (12-hour AM/PM or 24-hour)

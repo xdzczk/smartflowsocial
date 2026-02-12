@@ -309,6 +309,7 @@ export default function SettingsPage() {
     pushNotifyPublishSuccess?: unknown;
     pushNotifyPublishFailure?: unknown;
     pushNotifyRunwayLow?: unknown;
+    pushNotifyIncludePreview?: unknown;
     runwayNotifyBelowDays?: unknown;
     timeFormat?: unknown;
   };
@@ -341,6 +342,7 @@ export default function SettingsPage() {
     pushNotifyPublishSuccess,
     pushNotifyPublishFailure,
     pushNotifyRunwayLow,
+    pushNotifyIncludePreview,
     runwayNotifyBelowDays,
     timeFormat: timeFormatRaw,
   } = data;
@@ -426,6 +428,10 @@ export default function SettingsPage() {
                 true
               )}
               pushNotifyRunwayLow={asBoolean(pushNotifyRunwayLow, false)}
+              pushNotifyIncludePreview={asBoolean(
+                pushNotifyIncludePreview,
+                true
+              )}
               runwayNotifyBelowDays={
                 typeof runwayNotifyBelowDays === "number" &&
                 Number.isInteger(runwayNotifyBelowDays) &&

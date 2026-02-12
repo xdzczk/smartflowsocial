@@ -18,9 +18,39 @@ const RUNWAY_LOW_THROTTLE_MS = 24 * 60 * 60 * 1000; // 24 hours
 const webpush = require("web-push");
 
 const DEFAULT_ICON = "/icon-192.png";
+const NOTIFICATION_BODY_PREVIEW_MAX_LENGTH = 100;
 
 // Initialize web push on module load
 initWebPush();
+
+function truncateForNotificationBody(text: string, maxLen: number): string {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLen) return normalized;
+  return `${normalized.slice(0, maxLen)}…`;
+}
+
+async function getPublishSuccessPreview(
+  userId: string,
+  postId: string,
+  isLongForm: boolean
+): Promise<string | null> {
+  if (isLongForm) {
+    const row = await prisma.longFormPost.findUnique({
+      where: { id: postId, userId },
+      select: { title: true, content: true },
+    });
+    if (!row) return null;
+    const raw = (row.title ?? row.content ?? "").trim();
+    return raw === "" ? null : raw;
+  }
+  const row = await prisma.post.findUnique({
+    where: { id: postId, userId },
+    select: { caption: true, content: true },
+  });
+  if (!row) return null;
+  const raw = (row.caption ?? row.content ?? "").trim();
+  return raw === "" ? null : raw;
+}
 
 export interface NotificationPayload {
   title: string;
@@ -89,9 +119,11 @@ function parseNostrProfileForNotification(
 }
 
 /**
- * Return a same-origin URL for the given picture so iOS can display it in push
- * notifications. If APP_URL is set, returns /api/notification-asset?url=...
- * otherwise returns the raw picture URL.
+ * Return a same-origin URL for the given picture so push clients can load it.
+ * If APP_URL is set, returns /api/notification-asset?url=... (same-origin).
+ * Note: iOS Safari often ignores custom notification "icon" and shows the PWA
+ * icon; the "image" (large/expandable) may still display when the user expands
+ * the notification.
  */
 function notificationAssetUrl(picture: string): string {
   const base = env.APP_URL;
@@ -230,20 +262,28 @@ export async function sendPushNotificationToUser(
   return { sent, failed };
 }
 
+export interface PublishSuccessNotificationOptions {
+  isLongForm?: boolean;
+}
+
 /**
  * Send publish success notification
  */
 export async function sendPublishSuccessNotification(
   userId: string,
   postId: string,
-  publishAttemptId: string
+  publishAttemptId: string,
+  options?: PublishSuccessNotificationOptions
 ): Promise<void> {
+  const isLongForm = options?.isLongForm ?? false;
+
   // Check user preferences and load profile for account name + pfp
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       pushNotificationsEnabled: true,
       pushNotifyPublishSuccess: true,
+      pushNotifyIncludePreview: true,
       nostrProfile: true,
       npub: true,
     },
@@ -264,9 +304,22 @@ export async function sendPublishSuccessNotification(
   const icon = picture ? notificationAssetUrl(picture) : DEFAULT_ICON;
   const badge = picture ? notificationAssetUrl(picture) : DEFAULT_ICON;
 
+  let body = "Now live on Nostr";
+  if (user.pushNotifyIncludePreview !== false) {
+    const preview = await getPublishSuccessPreview(userId, postId, isLongForm);
+    if (preview) {
+      body = truncateForNotificationBody(
+        preview,
+        NOTIFICATION_BODY_PREVIEW_MAX_LENGTH
+      );
+    }
+  }
+
   const payload: NotificationPayload = {
-    title: `Post published as ${displayName}`,
-    body: "Your post has been published to Nostr",
+    title: isLongForm
+      ? `Article published as ${displayName}`
+      : `Post published as ${displayName}`,
+    body,
     icon,
     badge,
     ...(picture && { image: notificationAssetUrl(picture) }),
@@ -308,7 +361,7 @@ export async function sendPublishFailureNotification(
   }
 
   const payload: NotificationPayload = {
-    title: "Post publish failed",
+    title: "Publish failed",
     body:
       errorMessage ?? "Your post failed to publish. Please check and retry.",
     icon: DEFAULT_ICON,
@@ -361,8 +414,8 @@ export async function sendRunwayLowNotification(
   }
 
   const payload: NotificationPayload = {
-    title: "Queue runway low",
-    body: `Your scheduled queue has ${runwayDays} day${runwayDays !== 1 ? "s" : ""} left. Add more posts to keep the flow.`,
+    title: "Runway low",
+    body: `Your runway has ${runwayDays} day${runwayDays !== 1 ? "s" : ""} left. Schedule more posts to keep the flow.`,
     icon: DEFAULT_ICON,
     badge: DEFAULT_ICON,
     data: {

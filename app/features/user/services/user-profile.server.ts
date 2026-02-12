@@ -78,6 +78,7 @@ const USER_SCALAR_SELECT = {
   pushNotifyPublishSuccess: true,
   pushNotifyPublishFailure: true,
   pushNotifyRunwayLow: true,
+  pushNotifyIncludePreview: true,
   runwayNotifyBelowDays: true,
   lastRunwayLowNotificationAt: true,
   timeFormat: true,
