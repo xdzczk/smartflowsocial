@@ -1,6 +1,6 @@
 /**
  * Skeleton loader for dashboard index.
- * Mirrors layout: 4 KPI cards, header row, Flow strip, Queue Health + Top Posts.
+ * Mirrors layout: 4 KPI cards, header row, Flow strip, Queue Health + Next 7 days.
  */
 
 import { Skeleton } from "~/components/ui/skeleton";
@@ -58,7 +58,7 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      {/* Bottom row: Queue Health + Top Posts */}
+      {/* Bottom row: Queue Health + Next 7 days */}
       <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:gap-4">
         <div className="border-border bg-card min-w-0 flex-1 flex-col rounded-xl border shadow">
           <div className="px-4 pt-3 pb-1">
@@ -79,19 +79,16 @@ export function DashboardSkeleton() {
         <div className="border-border bg-card min-w-0 flex-1 flex-col rounded-xl border shadow">
           <div className="flex flex-row items-center justify-between gap-1.5 px-4 pt-3 pb-1">
             <Skeleton className="h-3 w-20 rounded" />
-            <div className="flex gap-1">
-              <Skeleton className="h-4 w-8 rounded" />
-              <Skeleton className="h-4 w-8 rounded" />
-            </div>
+            <Skeleton className="h-4 w-16 rounded" />
           </div>
-          <div className="flex flex-col gap-1 px-4 pt-0 pb-4">
-            {Array.from({ length: 3 }, (_, i) => (
+          <div className="flex flex-col gap-0.5 px-4 pt-0 pb-4">
+            {Array.from({ length: 7 }, (_, i) => (
               <div
-                key={`tp-${i}`}
-                className="border-border/60 rounded border p-1.5"
+                key={`n7-${i}`}
+                className="border-border/60 flex items-center justify-between rounded border px-2 py-1.5"
               >
-                <Skeleton className="h-3 w-full rounded" />
-                <Skeleton className="mt-0.5 h-3 w-24 rounded" />
+                <Skeleton className="h-3 w-12 rounded" />
+                <Skeleton className="h-3 w-10 rounded" />
               </div>
             ))}
           </div>

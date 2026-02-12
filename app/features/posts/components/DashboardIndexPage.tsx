@@ -18,11 +18,11 @@ import {
   QueueHealth,
   QueueSelectionTabs,
   RunwaySettingsModal,
+  ScheduleNext7DaysCard,
+  ScheduleOverviewTargetModal,
   SimpleRescheduleModal,
   Statistics,
   SuccessMessage,
-  TopPostsList,
-  type TopPostItemDTO,
   type FlowViewHandle,
   useFlowData,
 } from "~/features/posts/ui";
@@ -93,22 +93,24 @@ export default function DashboardIndexPage() {
   } = useFlowData();
 
   const [runwayModalOpen, setRunwayModalOpen] = useState(false);
+  const [scheduleOverviewTargetModalOpen, setScheduleOverviewTargetModalOpen] =
+    useState(false);
 
   const loaderData = useLoaderData<{
     queueCountsByQueue?: Array<{ queueName: string; count: number }>;
-    topPosts?: Array<{ post: unknown; stats: unknown }>;
-    topPostsTimeframe?: number;
+    scheduleNext7Days?: Array<{ dateKey: string; count: number }>;
+    runwaySettings?: { targetPostsPerDay?: number };
   }>();
   const queueCountsByQueue = Array.isArray(loaderData.queueCountsByQueue)
     ? loaderData.queueCountsByQueue
     : [];
-  const topPosts = Array.isArray(loaderData.topPosts)
-    ? loaderData.topPosts
+  const scheduleNext7Days = Array.isArray(loaderData.scheduleNext7Days)
+    ? loaderData.scheduleNext7Days
     : [];
-  const topPostsTimeframe =
-    typeof loaderData.topPostsTimeframe === "number"
-      ? loaderData.topPostsTimeframe
-      : 7;
+  const targetPerDay =
+    typeof loaderData.runwaySettings?.targetPostsPerDay === "number"
+      ? loaderData.runwaySettings.targetPostsPerDay
+      : 1;
 
   const { userTimeFormat } = useFormattedDate();
   const navigation = useNavigation();
@@ -350,10 +352,11 @@ export default function DashboardIndexPage() {
               queueCounts={queueCountsByQueue}
               queueTypes={queueTypesFiltered}
             />
-            <TopPostsList
-              topPosts={topPosts as TopPostItemDTO[]}
-              timeframeDays={topPostsTimeframe}
+            <ScheduleNext7DaysCard
+              days={scheduleNext7Days}
+              targetPerDay={targetPerDay}
               userTimezone={getUserTimezone(user)}
+              onOpenTargetModal={() => setScheduleOverviewTargetModalOpen(true)}
             />
           </div>
         </div>
@@ -364,6 +367,16 @@ export default function DashboardIndexPage() {
         onOpenChange={setRunwayModalOpen}
         queueTypes={queueTypesFiltered}
         runwaySettings={runwaySettings ?? undefined}
+        onSuccess={() => revalidator.revalidate()}
+      />
+
+      <ScheduleOverviewTargetModal
+        key={
+          scheduleOverviewTargetModalOpen ? `open-${targetPerDay}` : "closed"
+        }
+        open={scheduleOverviewTargetModalOpen}
+        onClose={() => setScheduleOverviewTargetModalOpen(false)}
+        targetPerDay={targetPerDay}
         onSuccess={() => revalidator.revalidate()}
       />
 

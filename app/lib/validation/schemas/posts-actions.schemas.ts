@@ -217,6 +217,14 @@ export const updateRunwaySettingsSchema = z.object({
 });
 
 /**
+ * Update schedule overview target (Next 7 days card) only
+ */
+export const updateScheduleOverviewTargetSchema = z.object({
+  _action: z.literal("updateScheduleOverviewTarget"),
+  targetPostsPerDay: z.coerce.number().int().min(0).max(10),
+});
+
+/**
  * Union schema for all dashboard actions
  */
 export const dashboardActionSchema = z.discriminatedUnion("_action", [
@@ -225,6 +233,7 @@ export const dashboardActionSchema = z.discriminatedUnion("_action", [
   bulkDeletePostsSchema,
   bulkDeleteLongFormPostsSchema,
   updateRunwaySettingsSchema,
+  updateScheduleOverviewTargetSchema,
 ]);
 
 /**

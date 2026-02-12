@@ -536,6 +536,8 @@ export const runwaySettingsSchema = z.object({
   mode: z.enum(["last-post", "first-queue-empty"]),
   redThresholdDays: z.number().int().min(0).max(365).optional(),
   orangeThresholdDays: z.number().int().min(0).max(365).optional(),
+  /** Target posts per day for schedule overview (0–10); 0 = off. */
+  targetPostsPerDay: z.number().int().min(0).max(10).optional(),
 });
 
 /**

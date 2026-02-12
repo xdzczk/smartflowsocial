@@ -11,8 +11,8 @@ import { requireFeatureAccess } from "~/features/payments";
 import {
   getContentStatistics,
   getQueueCountsForDashboard,
-  getTopPublishedPostsByEngagement,
   getRunwayLastScheduledAtUtcMs,
+  getScheduleNext7DaysCounts,
   handleDashboardAction,
   loadFlowData,
 } from "~/features/posts/server";
@@ -41,8 +41,7 @@ const FALLBACK_FLOW = {
     | undefined,
   postStatistics: EMPTY_STATS,
   queueCountsByQueue: [] as Array<{ queueName: string; count: number }>,
-  topPosts: [] as Array<{ post: unknown; stats: unknown }>,
-  topPostsTimeframe: 7,
+  scheduleNext7Days: [] as Array<{ dateKey: string; count: number }>,
 };
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -57,32 +56,22 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
     const before = url.searchParams.get("before") ?? undefined;
     const after = url.searchParams.get("after") ?? undefined;
-    const topPostsDaysParam = url.searchParams.get("topPostsDays");
-    const topPostsDays =
-      topPostsDaysParam === "30" ? 30 : topPostsDaysParam === "7" ? 7 : 7;
 
     // Initial load: fetch only ~5–8 visible cards + buffer for fast TTI; load-more fills the rest
     const initialPastLimit = before !== undefined ? 20 : 6;
     const initialFutureLimit = after !== undefined ? 30 : 10;
-    const [data, postStatistics, queueCountsByQueue, topPostsResult] =
-      await Promise.all([
-        loadFlowData({
-          userId,
-          queueType,
-          pastLimit: initialPastLimit,
-          futureLimit: initialFutureLimit,
-          before,
-          after,
-        }),
-        getContentStatistics(userId),
-        getQueueCountsForDashboard(userId),
-        getTopPublishedPostsByEngagement({
-          userId,
-          days: topPostsDays,
-          limit: 5,
-        }),
-      ]);
-    const { topPosts, timeframeDays: topPostsTimeframe } = topPostsResult;
+    const [data, postStatistics, queueCountsByQueue] = await Promise.all([
+      loadFlowData({
+        userId,
+        queueType,
+        pastLimit: initialPastLimit,
+        futureLimit: initialFutureLimit,
+        before,
+        after,
+      }),
+      getContentStatistics(userId),
+      getQueueCountsForDashboard(userId),
+    ]);
 
     // Validate loader response with Zod schema
     let validatedData;
@@ -102,18 +91,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         ...FALLBACK_FLOW,
         postStatistics,
         queueCountsByQueue,
-        topPosts,
-        topPostsTimeframe,
+        scheduleNext7Days: [],
       });
     }
 
     const now = new Date();
+    const userTimezone = validatedData.user?.timezone ?? "Etc/UTC";
     const runwaySettings = await getRunwaySettings(userId);
-    const runwayLastScheduledAtUtc = await getRunwayLastScheduledAtUtcMs(
-      userId,
-      now,
-      runwaySettings
-    );
+    const [runwayLastScheduledAtUtc, scheduleNext7Days] = await Promise.all([
+      getRunwayLastScheduledAtUtcMs(userId, now, runwaySettings),
+      getScheduleNext7DaysCounts(userId, queueType, userTimezone),
+    ]);
 
     return json({
       ...validatedData,
@@ -121,8 +109,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       runwaySettings,
       postStatistics,
       queueCountsByQueue,
-      topPosts,
-      topPostsTimeframe,
+      scheduleNext7Days,
     });
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
@@ -137,8 +124,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       runwaySettings: undefined,
       postStatistics: EMPTY_STATS,
       queueCountsByQueue: [],
-      topPosts: [],
-      topPostsTimeframe: 7,
+      scheduleNext7Days: [],
     });
   }
 };

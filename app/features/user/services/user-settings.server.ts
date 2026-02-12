@@ -438,16 +438,21 @@ export interface RunwaySettings {
   redThresholdDays?: number;
   /** Orange when runway ≤ this (default 7); must be ≥ redThresholdDays. */
   orangeThresholdDays?: number;
+  /** Target posts per day for schedule overview (Next 7 days); 0 = off, highlight only empty days. */
+  targetPostsPerDay?: number;
 }
 
 const DEFAULT_RED_THRESHOLD_DAYS = 3;
 const DEFAULT_ORANGE_THRESHOLD_DAYS = 7;
+
+const DEFAULT_TARGET_POSTS_PER_DAY = 1;
 
 const DEFAULT_RUNWAY_SETTINGS: RunwaySettings = {
   queueNames: [],
   mode: "last-post",
   redThresholdDays: DEFAULT_RED_THRESHOLD_DAYS,
   orangeThresholdDays: DEFAULT_ORANGE_THRESHOLD_DAYS,
+  targetPostsPerDay: DEFAULT_TARGET_POSTS_PER_DAY,
 };
 
 /**
@@ -485,11 +490,19 @@ export async function getRunwaySettings(
       obj["orangeThresholdDays"] >= 0
         ? obj["orangeThresholdDays"]
         : DEFAULT_ORANGE_THRESHOLD_DAYS;
+    const targetPostsPerDay =
+      typeof obj["targetPostsPerDay"] === "number" &&
+      Number.isInteger(obj["targetPostsPerDay"]) &&
+      obj["targetPostsPerDay"] >= 0 &&
+      obj["targetPostsPerDay"] <= 10
+        ? obj["targetPostsPerDay"]
+        : DEFAULT_TARGET_POSTS_PER_DAY;
     return {
       queueNames,
       mode,
       redThresholdDays,
       orangeThresholdDays,
+      targetPostsPerDay,
     };
   } catch (err) {
     const code =
@@ -523,6 +536,8 @@ export async function updateRunwaySettings(
             settings.redThresholdDays ?? DEFAULT_RED_THRESHOLD_DAYS,
           orangeThresholdDays:
             settings.orangeThresholdDays ?? DEFAULT_ORANGE_THRESHOLD_DAYS,
+          targetPostsPerDay:
+            settings.targetPostsPerDay ?? DEFAULT_TARGET_POSTS_PER_DAY,
         },
       },
     });
@@ -571,4 +586,19 @@ export async function updateRunwaySettings(
     }
     throw err;
   }
+}
+
+/**
+ * Updates only the schedule overview target (target posts per day for Next 7 days card).
+ * Merges into current runway settings so other runway fields are unchanged.
+ */
+export async function updateScheduleOverviewTarget(
+  userId: string,
+  targetPostsPerDay: number
+): Promise<User> {
+  const current = await getRunwaySettings(userId);
+  return updateRunwaySettings(userId, {
+    ...current,
+    targetPostsPerDay,
+  });
 }

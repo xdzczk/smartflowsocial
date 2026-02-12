@@ -105,6 +105,52 @@ export async function getScheduledPosts({
 }
 
 /**
+ * Returns scheduled posts with scheduledAtUtc in the given UTC range (inclusive).
+ * Used for Next 7 days schedule overview. Respects queueType filter.
+ */
+export async function getScheduledPostsInDateRange({
+  userId,
+  queueType,
+  fromUtc,
+  toUtc,
+}: {
+  userId: string;
+  queueType?: string;
+  fromUtc: Date;
+  toUtc: Date;
+}): Promise<Array<{ scheduledAtUtc: Date | null }>> {
+  try {
+    const whereClause: Prisma.PostWhereInput = {
+      currentState: "SCHEDULED",
+      userId,
+      scheduledAtUtc: {
+        gte: fromUtc,
+        lte: toUtc,
+      },
+    };
+    if (queueType && queueType !== "all") {
+      if (queueType === "unassigned") {
+        whereClause.queueTypeId = null;
+      } else {
+        whereClause.queueType = { name: queueType };
+      }
+    }
+    return await prisma.post.findMany({
+      where: whereClause,
+      select: { scheduledAtUtc: true },
+    });
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logError(err, {
+      message: "Error fetching scheduled posts in date range",
+      userId,
+      queueType,
+    });
+    throw err;
+  }
+}
+
+/**
  * Returns the latest scheduledAtUtc among future scheduled posts (for runway KPI).
  * Respects queueType filter; use queueType "all" for no filter.
  */

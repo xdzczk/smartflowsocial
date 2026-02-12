@@ -64,6 +64,7 @@ export {
   updateUserTimeFormat,
   getRunwaySettings,
   updateRunwaySettings,
+  updateScheduleOverviewTarget,
   type RunwaySettings,
   type RunwayMode,
 } from "./services/user-settings.server";

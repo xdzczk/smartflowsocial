@@ -3,7 +3,11 @@
  * Centralized action processing for dashboard index page
  */
 
-import { updateRunwaySettings } from "~/features/user";
+import {
+  getRunwaySettings,
+  updateRunwaySettings,
+  updateScheduleOverviewTarget,
+} from "~/features/user";
 import {
   dashboardActionSchema,
   validateFormDataOrRespond,
@@ -42,12 +46,19 @@ export async function handleDashboardAction(
   }
 
   if (_action === "updateRunwaySettings") {
+    const current = await getRunwaySettings(userId);
     await updateRunwaySettings(userId, {
+      ...current,
       queueNames: result.data.queueNames,
       mode: result.data.mode,
       redThresholdDays: result.data.redThresholdDays,
       orangeThresholdDays: result.data.orangeThresholdDays,
     });
+    return { success: true };
+  }
+
+  if (_action === "updateScheduleOverviewTarget") {
+    await updateScheduleOverviewTarget(userId, result.data.targetPostsPerDay);
     return { success: true };
   }
 

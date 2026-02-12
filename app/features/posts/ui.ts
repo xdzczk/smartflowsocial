@@ -112,6 +112,8 @@ export { default as PostTypeTabs } from "./components/PostTypeTabs";
 export { default as QueueHealth } from "./components/QueueHealth";
 export { default as QueueSelectionTabs } from "./components/QueueSelectionTabs";
 export { RunwaySettingsModal } from "./components/RunwaySettingsModal";
+export { ScheduleNext7DaysCard } from "./components/ScheduleNext7DaysCard";
+export { ScheduleOverviewTargetModal } from "./components/ScheduleOverviewTargetModal";
 export { ScheduledPostsTable } from "./components/ScheduledPostsTable";
 export { SimpleRescheduleModal } from "./components/SimpleRescheduleModal";
 export { default as Statistics } from "./components/Statistics";

@@ -691,6 +691,50 @@ export async function getScheduledLongFormPosts({
 }
 
 /**
+ * Returns scheduled longform posts with scheduledAtUtc in the given UTC range (inclusive).
+ * Used for Next 7 days schedule overview. Respects queueType filter.
+ */
+export async function getScheduledLongFormPostsInDateRange({
+  userId,
+  queueType,
+  fromUtc,
+  toUtc,
+}: {
+  userId: string;
+  queueType?: string;
+  fromUtc: Date;
+  toUtc: Date;
+}): Promise<Array<{ scheduledAtUtc: Date | null }>> {
+  try {
+    const where: Prisma.LongFormPostWhereInput = {
+      userId,
+      currentState: "SCHEDULED",
+      scheduledAtUtc: {
+        gte: fromUtc,
+        lte: toUtc,
+      },
+    };
+    if (queueType && queueType !== "all") {
+      if (queueType === "unassigned") {
+        where.queueTypeId = null;
+      } else {
+        where.queueType = { name: queueType };
+      }
+    }
+    return await prisma.longFormPost.findMany({
+      where,
+      select: { scheduledAtUtc: true },
+    });
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching scheduled longform posts in date range",
+      userId,
+    });
+    return [];
+  }
+}
+
+/**
  * Returns the latest scheduledAtUtc among future scheduled longform posts (for runway KPI).
  * Respects queueType filter; use queueType "all" for no filter.
  */
