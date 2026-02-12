@@ -1,4 +1,4 @@
-import { Settings2 } from "lucide-react";
+import { Check, Settings2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -39,6 +39,11 @@ export function ScheduleNext7DaysCard({
   userTimezone = "Etc/UTC",
   onOpenTargetModal,
 }: ScheduleNext7DaysCardProps) {
+  const allSet =
+    targetPerDay > 0 &&
+    days.length > 0 &&
+    days.every((d) => d.count >= targetPerDay);
+
   return (
     <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
@@ -56,9 +61,18 @@ export function ScheduleNext7DaysCard({
           <span>Target</span>
         </button>
       </CardHeader>
-      <CardContent className="px-4 pt-0 pb-3">
+      <CardContent className="px-4 pt-0 pb-4">
+        {allSet ? (
+          <p
+            className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs"
+            aria-label="All days meet your target"
+          >
+            <Check className="text-success size-3.5 shrink-0" />
+            All set
+          </p>
+        ) : null}
         <ul
-          className="flex flex-col gap-0.5"
+          className="flex flex-col gap-3"
           aria-label="Scheduled posts per day for the next 7 days"
         >
           {days.map(({ dateKey, count }) => {
@@ -67,21 +81,19 @@ export function ScheduleNext7DaysCard({
             return (
               <li
                 key={dateKey}
-                className={`flex items-center justify-between rounded border px-2 py-1.5 text-[11px] ${
+                className={`flex min-h-[2.75rem] items-center justify-between rounded-lg border px-3 py-2 text-xs ${
                   gap
                     ? "border-amber-500/50 bg-amber-500/10 dark:border-amber-400/30 dark:bg-amber-500/10"
-                    : "border-border/60"
+                    : "border-border/60 bg-muted/20"
                 }`}
               >
-                <span className="text-muted-foreground/90 font-medium">
-                  {label}
-                </span>
+                <span className="text-foreground font-medium">{label}</span>
                 <span
-                  className={
+                  className={`tabular-nums ${
                     gap
                       ? "text-amber-700 dark:text-amber-400"
-                      : "text-muted-foreground/80"
-                  }
+                      : "text-muted-foreground"
+                  }`}
                 >
                   {count} {count === 1 ? "post" : "posts"}
                 </span>

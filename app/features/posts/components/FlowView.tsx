@@ -146,6 +146,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     );
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const initialScrollDoneRef = useRef(false);
+    /** Id of the item that was the first future (next scheduled) last render; used to detect when it gets published and trigger smooth scroll */
+    const prevFirstFutureIdRef = useRef<string | null>(null);
     /** Rubber-band overscroll offset (px); negative = pulled from left, positive = from right */
     const [overscrollPx, setOverscrollPx] = useState(0);
     const [isOverscrollSpringing, setIsOverscrollSpringing] = useState(false);
@@ -738,6 +740,55 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     useEffect(() => {
       onHasLiveEdgeChange?.(hasLiveEdge);
     }, [hasLiveEdge, onHasLiveEdgeChange]);
+
+    // When the next scheduled post is published (live update), smooth scroll to default position:
+    // desktop = last posted card visible, mobile = next scheduled card visible
+    useEffect(() => {
+      if (flowItems.length === 0) return;
+      const lastPastItem =
+        firstFutureIndex > 0 ? flowItems[firstFutureIndex - 1] : null;
+      const currentFirstFutureId =
+        firstFutureIndex >= 0
+          ? (flowItems[firstFutureIndex]?.id ?? null)
+          : null;
+      const prevId = prevFirstFutureIdRef.current;
+      const justPublished = Boolean(
+        lastPastItem?.id && prevId != null && lastPastItem.id === prevId
+      );
+      prevFirstFutureIdRef.current = currentFirstFutureId;
+
+      if (!justPublished) return;
+
+      const el = scrollContainerRef.current;
+      if (!el) return;
+      const reduceMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const targetIndex = isMobile
+        ? scrollToFirstFutureIndex
+        : scrollToLiveIndex;
+      let offsetPx = 0;
+      for (let i = 0; i < targetIndex; i++) {
+        offsetPx += slots[i]?.size ?? cardSlotSize;
+      }
+      const targetScrollLeft = Math.max(0, offsetPx - SCROLL_EDGE_OFFSET_PX);
+      const delay = 100;
+      const t = setTimeout(() => {
+        el.scrollTo({
+          left: targetScrollLeft,
+          behavior: reduceMotion ? "auto" : "smooth",
+        });
+      }, delay);
+      return () => clearTimeout(t);
+    }, [
+      flowItems,
+      firstFutureIndex,
+      isMobile,
+      scrollToLiveIndex,
+      scrollToFirstFutureIndex,
+      slots,
+      cardSlotSize,
+    ]);
 
     const renderSlotContent = useCallback(
       (

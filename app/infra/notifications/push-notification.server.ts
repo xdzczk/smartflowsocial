@@ -6,6 +6,7 @@
 import type { PushSubscription as WebPushSubscription } from "web-push";
 
 import { getRunwaySettings } from "~/features/user/services/user-settings.server";
+import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -85,6 +86,24 @@ function parseNostrProfileForNotification(
       ? p.picture.trim()
       : undefined;
   return { picture, displayName };
+}
+
+/**
+ * Return a same-origin URL for the given picture so iOS can display it in push
+ * notifications. If APP_URL is set, returns /api/notification-asset?url=...
+ * otherwise returns the raw picture URL.
+ */
+function notificationAssetUrl(picture: string): string {
+  const base = env.APP_URL;
+  if (!base || !picture.startsWith("https://")) {
+    return picture;
+  }
+  try {
+    const origin = new URL(base).origin;
+    return `${origin}/api/notification-asset?url=${encodeURIComponent(picture)}`;
+  } catch {
+    return picture;
+  }
 }
 
 export type SendPushResult = { sent: true } | { sent: false; expired: boolean };
@@ -242,15 +261,15 @@ export async function sendPublishSuccessNotification(
     user.nostrProfile,
     user.npub
   );
-  const icon = picture ?? DEFAULT_ICON;
-  const badge = picture ?? DEFAULT_ICON;
+  const icon = picture ? notificationAssetUrl(picture) : DEFAULT_ICON;
+  const badge = picture ? notificationAssetUrl(picture) : DEFAULT_ICON;
 
   const payload: NotificationPayload = {
-    title: `Post published from ${displayName}`,
+    title: `Post published as ${displayName}`,
     body: "Your post has been published to Nostr",
     icon,
     badge,
-    ...(picture && { image: picture }),
+    ...(picture && { image: notificationAssetUrl(picture) }),
     data: {
       postId,
       publishAttemptId,

@@ -1,9 +1,6 @@
 import { Link } from "@remix-run/react";
-import { LayoutList } from "lucide-react";
-import type { CSSProperties } from "react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import {
   getQueueAccentHex,
@@ -11,13 +8,6 @@ import {
   type QueueColorBundle,
 } from "../queue-colors";
 import type { QueueType } from "../types";
-
-const QUEUE_COLOR_CSS_VAR = "--queue-color";
-
-/** Row style including custom --queue-color (valid CSS, not in React's CSSProperties). */
-type QueueHealthRowStyle = CSSProperties & {
-  [QUEUE_COLOR_CSS_VAR]?: string;
-};
 
 /** Solid Tailwind background class per named queue for bar fill (no arbitrary values). */
 const BAR_FILL_CLASS: Record<string, string> = {
@@ -102,70 +92,47 @@ export default function QueueHealth({
               const bundle = getQueueBundle(queueName, queueTypes);
               const accentHex = getQueueAccentHexOrNull(queueName, queueTypes);
               const widthPercent = (count / maxCount) * 100;
-
-              const rowStyle: QueueHealthRowStyle | undefined = bundle
-                ? {
-                    [QUEUE_COLOR_CSS_VAR]: bundle.accent,
-                    backgroundColor: bundle.soft,
-                    borderLeftColor: bundle.accent,
-                  }
-                : undefined;
+              const scheduledUrl = `/dashboard/scheduled?queueType=${encodeURIComponent(queueName)}`;
 
               return (
-                <li
-                  key={queueName}
-                  className={`flex min-h-[3.5rem] flex-1 flex-col justify-center gap-1.5 rounded-lg transition-shadow ${bundle ? "queue-health-row card-lift border-l-[3px]" : ""}`}
-                  style={rowStyle}
-                >
-                  <div className="flex items-center justify-between gap-2 px-2 pt-1">
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      {bundle ? (
-                        <div
-                          className="flex size-8 flex-shrink-0 items-center justify-center rounded-lg"
-                          style={{
-                            backgroundColor: bundle.surface,
-                            color: bundle.accent,
-                          }}
-                          aria-hidden
-                        >
-                          <LayoutList
-                            className="size-4"
-                            strokeWidth={INLINE_ICON_STROKE}
-                          />
-                        </div>
-                      ) : null}
-                      <Link
-                        to={`/dashboard/scheduled?queueType=${encodeURIComponent(queueName)}`}
-                        className="text-foreground focus:ring-ring min-w-0 truncate rounded text-xs font-medium hover:underline focus:ring-2 focus:outline-none"
-                      >
-                        {queueName}
-                      </Link>
-                    </div>
-                    <span
-                      className={`flex-shrink-0 text-xs tabular-nums ${bundle ? "font-bold" : "text-muted-foreground"}`}
-                      style={bundle ? { color: bundle.accent } : undefined}
-                    >
-                      {count}
-                    </span>
-                  </div>
-                  <div
-                    className={`mx-2 mb-1 h-2.5 w-full overflow-hidden rounded-md ${bundle ? "" : "bg-muted/30"}`}
-                    role="presentation"
-                    aria-label={`${count} posts in ${queueName}`}
+                <li key={queueName}>
+                  <Link
+                    to={scheduledUrl}
+                    className={`focus:ring-ring flex min-h-[3.5rem] flex-1 flex-col justify-center gap-1.5 rounded-lg px-3 py-2 transition-shadow focus:ring-2 focus:outline-none ${bundle ? "card-lift bg-muted/30 hover:bg-muted/50" : "bg-muted/20 hover:bg-muted/40"}`}
                     style={
-                      bundle ? { backgroundColor: bundle.surface } : undefined
+                      bundle ? { backgroundColor: bundle.soft } : undefined
                     }
                   >
+                    <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                      <span className="text-foreground min-w-0 truncate text-xs font-medium">
+                        {queueName}
+                      </span>
+                      <span
+                        className={`flex-shrink-0 text-xs tabular-nums ${bundle ? "font-bold" : "text-muted-foreground"}`}
+                        style={bundle ? { color: bundle.accent } : undefined}
+                      >
+                        {count}
+                      </span>
+                    </div>
                     <div
-                      className={`h-full rounded-md transition-[width] ${accentHex ? "" : getBarFillClass(queueName)}`}
-                      style={{
-                        width: `${widthPercent}%`,
-                        ...(accentHex
-                          ? { backgroundColor: accentHex }
-                          : undefined),
-                      }}
-                    />
-                  </div>
+                      className={`h-2.5 min-w-0 overflow-hidden rounded-md ${bundle ? "" : "bg-muted/30"}`}
+                      role="presentation"
+                      aria-hidden
+                      style={
+                        bundle ? { backgroundColor: bundle.surface } : undefined
+                      }
+                    >
+                      <div
+                        className={`h-full min-w-0 rounded-md transition-[width] ${accentHex ? "" : getBarFillClass(queueName)}`}
+                        style={{
+                          width: `${widthPercent}%`,
+                          ...(accentHex
+                            ? { backgroundColor: accentHex }
+                            : undefined),
+                        }}
+                      />
+                    </div>
+                  </Link>
                 </li>
               );
             })}
