@@ -100,7 +100,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const runwaySettings = await getRunwaySettings(userId);
     const [runwayLastScheduledAtUtc, scheduleNext7Days] = await Promise.all([
       getRunwayLastScheduledAtUtcMs(userId, now, runwaySettings),
-      getScheduleNext7DaysCounts(userId, queueType, userTimezone),
+      getScheduleNext7DaysCounts(userId, "all", userTimezone),
     ]);
 
     return json({

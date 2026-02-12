@@ -348,15 +348,15 @@ export default function DashboardIndexPage() {
 
         <div className="max-w-10xl mx-auto mt-6 w-full flex-shrink-0 px-4 lg:px-8">
           <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
-            <QueueHealth
-              queueCounts={queueCountsByQueue}
-              queueTypes={queueTypesFiltered}
-            />
             <ScheduleNext7DaysCard
               days={scheduleNext7Days}
               targetPerDay={targetPerDay}
               userTimezone={getUserTimezone(user)}
               onOpenTargetModal={() => setScheduleOverviewTargetModalOpen(true)}
+            />
+            <QueueHealth
+              queueCounts={queueCountsByQueue}
+              queueTypes={queueTypesFiltered}
             />
           </div>
         </div>

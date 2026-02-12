@@ -471,6 +471,29 @@
     }
   }
 
+  /* Queue Health rows: queue-coloured shadow on hover/active (requires --queue-color to be set) */
+  @media (hover: hover) {
+    .queue-health-row.card-lift:hover,
+    .queue-health-row.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
+    }
+
+    .dark .queue-health-row.card-lift:hover,
+    .dark .queue-health-row.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
+    }
+  }
+
+  @media (hover: none) {
+    #page-content .queue-health-row.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
+    }
+
+    .dark #page-content .queue-health-row.card-lift:active {
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
+    }
+  }
+
   /* KPI cards: coloured shadow on hover/active (requires --kpi-color to be set) */
   @media (hover: hover) {
     .kpi-card.card-lift:hover,

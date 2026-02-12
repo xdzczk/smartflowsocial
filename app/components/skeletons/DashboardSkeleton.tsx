@@ -58,24 +58,8 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      {/* Bottom row: Queue Health + Next 7 days */}
+      {/* Bottom row: Next 7 days + Queue Health */}
       <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:gap-4">
-        <div className="border-border bg-card min-w-0 flex-1 flex-col rounded-xl border shadow">
-          <div className="px-4 pt-3 pb-1">
-            <Skeleton className="h-3 w-24 rounded" />
-          </div>
-          <div className="flex flex-col gap-1.5 px-4 pt-0 pb-4">
-            {Array.from({ length: 3 }, (_, i) => (
-              <div key={`qh-${i}`} className="flex flex-col gap-0.5">
-                <div className="flex items-center justify-between">
-                  <Skeleton className="h-3 w-20 rounded" />
-                  <Skeleton className="h-3 w-6 rounded" />
-                </div>
-                <Skeleton className="h-1 w-full rounded-full" />
-              </div>
-            ))}
-          </div>
-        </div>
         <div className="border-border bg-card min-w-0 flex-1 flex-col rounded-xl border shadow">
           <div className="flex flex-row items-center justify-between gap-1.5 px-4 pt-3 pb-1">
             <Skeleton className="h-3 w-20 rounded" />
@@ -89,6 +73,22 @@ export function DashboardSkeleton() {
               >
                 <Skeleton className="h-3 w-12 rounded" />
                 <Skeleton className="h-3 w-10 rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="border-border bg-card min-w-0 flex-1 flex-col rounded-xl border shadow">
+          <div className="px-4 pt-3 pb-1">
+            <Skeleton className="h-3 w-24 rounded" />
+          </div>
+          <div className="flex flex-col gap-1.5 px-4 pt-0 pb-4">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={`qh-${i}`} className="flex flex-col gap-0.5">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-20 rounded" />
+                  <Skeleton className="h-3 w-6 rounded" />
+                </div>
+                <Skeleton className="h-1 w-full rounded-full" />
               </div>
             ))}
           </div>
