@@ -88,7 +88,7 @@ export default function QueueHealth({
           </p>
         ) : (
           <ul
-            className={`flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto ${
+            className={`flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4 ${
               countsByQueue.length <= 6
                 ? "[&>li]:flex [&>li]:min-h-0 [&>li]:flex-1"
                 : ""

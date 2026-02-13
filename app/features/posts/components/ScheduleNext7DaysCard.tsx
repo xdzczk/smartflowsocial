@@ -2,22 +2,53 @@ import { Check, Settings2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
+import { getQueueAccentHex } from "../queue-colors";
+import type { QueueType } from "../types";
+
+export type ScheduleNext7DaysQueueTypes = Array<
+  | QueueType
+  | { name: string; color?: string | null; colorToken?: string | null }
+>;
+
 export interface ScheduleNext7DaysCardProps {
-  days: Array<{ dateKey: string; count: number }>;
+  days: Array<{
+    dateKey: string;
+    count: number;
+    byQueue?: Array<{ queueName: string; count: number }>;
+  }>;
   targetPerDay: number;
   userTimezone?: string;
   onOpenTargetModal: () => void;
+  /** Queue types for resolving block colors (same as Queue Health). */
+  queueTypes?: ScheduleNext7DaysQueueTypes;
+}
+
+const MAX_BLOCKS = 14;
+
+function getQueueAccentHexForName(
+  queueName: string,
+  queueTypes: ScheduleNext7DaysQueueTypes | undefined
+): string | null {
+  if (!queueTypes) return null;
+  const qt = queueTypes.find(
+    (q) => (typeof q === "object" ? q.name : q) === queueName
+  );
+  if (typeof qt !== "object") return null;
+  const token = (qt as { colorToken?: string | null }).colorToken ?? null;
+  if (!token) return null;
+  return getQueueAccentHex(token);
 }
 
 /**
- * Format a dateKey (YYYY-MM-DD) as short label "Thu 13" in the given timezone.
+ * Format a dateKey (YYYY-MM-DD) as full label "Friday, February 13" in the given timezone.
  */
 function formatDayLabel(dateKey: string, timezone: string): string {
   try {
     const date = new Date(dateKey + "T12:00:00.000Z");
     return date.toLocaleDateString("en-US", {
       timeZone: timezone,
-      weekday: "short",
+      weekday: "long",
+      month: "long",
       day: "numeric",
     });
   } catch {
@@ -38,6 +69,7 @@ export function ScheduleNext7DaysCard({
   targetPerDay,
   userTimezone = "Etc/UTC",
   onOpenTargetModal,
+  queueTypes,
 }: ScheduleNext7DaysCardProps) {
   const allSet =
     targetPerDay > 0 &&
@@ -77,28 +109,94 @@ export function ScheduleNext7DaysCard({
           className="flex flex-col gap-2"
           aria-label="Scheduled posts per day for the next 7 days"
         >
-          {days.map(({ dateKey, count }) => {
+          {days.map(({ dateKey, count, byQueue }) => {
             const gap = isGap(count, targetPerDay);
             const label = formatDayLabel(dateKey, userTimezone);
+            const hasBlocks =
+              Array.isArray(byQueue) &&
+              byQueue.length > 0 &&
+              byQueue.some((q) => q.count > 0);
+            const blockSummary = hasBlocks
+              ? byQueue
+                  .filter((q) => q.count > 0)
+                  .map((q) => `${q.count} ${q.queueName}`)
+                  .join(", ")
+              : "";
+
             return (
               <li
                 key={dateKey}
-                className={`flex min-h-[2.25rem] items-center justify-between rounded-lg border px-3 py-1.5 text-xs ${
+                className={`flex min-h-[2.25rem] items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-xs ${
                   gap
                     ? "border-amber-500/50 bg-amber-500/10 dark:border-amber-400/30 dark:bg-amber-500/10"
                     : "border-border/60 bg-muted/20"
                 }`}
               >
-                <span className="text-foreground font-medium">{label}</span>
-                <span
-                  className={`tabular-nums ${
-                    gap
-                      ? "text-amber-700 dark:text-amber-400"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {count} {count === 1 ? "post" : "posts"}
+                <span className="text-foreground min-w-0 shrink-0 font-medium">
+                  {label}
                 </span>
+                <div className="flex min-w-0 flex-shrink items-center gap-1.5">
+                  <span
+                    className={`tabular-nums ${
+                      gap
+                        ? "text-amber-700 dark:text-amber-400"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {count} {count === 1 ? "post" : "posts"}
+                  </span>
+                  {hasBlocks ? (
+                    <span
+                      className="flex shrink-0 items-center gap-0.5"
+                      title={blockSummary}
+                      aria-label={blockSummary}
+                    >
+                      {(() => {
+                        const totalBlocks = byQueue.reduce(
+                          (sum, q) => sum + (q.count > 0 ? q.count : 0),
+                          0
+                        );
+                        let rendered = 0;
+                        const parts: React.ReactNode[] = [];
+                        for (const { queueName, count: n } of byQueue) {
+                          if (n <= 0 || rendered >= MAX_BLOCKS) continue;
+                          const hex = getQueueAccentHexForName(
+                            queueName,
+                            queueTypes
+                          );
+                          const color =
+                            queueName === "Unassigned" || !hex
+                              ? "var(--muted)"
+                              : hex;
+                          const toShow = Math.min(n, MAX_BLOCKS - rendered);
+                          for (let i = 0; i < toShow; i++) {
+                            parts.push(
+                              <span
+                                key={`${queueName}-${i}`}
+                                className="inline-block size-2 rounded-sm"
+                                style={{ backgroundColor: color }}
+                                aria-hidden
+                              />
+                            );
+                            rendered += toShow;
+                          }
+                        }
+                        if (totalBlocks > MAX_BLOCKS) {
+                          parts.push(
+                            <span
+                              key="more"
+                              className="text-muted-foreground text-[10px]"
+                              aria-hidden
+                            >
+                              +{totalBlocks - MAX_BLOCKS}
+                            </span>
+                          );
+                        }
+                        return parts;
+                      })()}
+                    </span>
+                  ) : null}
+                </div>
               </li>
             );
           })}

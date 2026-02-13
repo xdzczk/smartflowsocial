@@ -704,7 +704,12 @@ export async function getScheduledLongFormPostsInDateRange({
   queueType?: string;
   fromUtc: Date;
   toUtc: Date;
-}): Promise<Array<{ scheduledAtUtc: Date | null }>> {
+}): Promise<
+  Array<{
+    scheduledAtUtc: Date | null;
+    queueType: { name: string } | null;
+  }>
+> {
   try {
     const where: Prisma.LongFormPostWhereInput = {
       userId,
@@ -723,7 +728,10 @@ export async function getScheduledLongFormPostsInDateRange({
     }
     return await prisma.longFormPost.findMany({
       where,
-      select: { scheduledAtUtc: true },
+      select: {
+        scheduledAtUtc: true,
+        queueType: { select: { name: true } },
+      },
     });
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {

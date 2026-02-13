@@ -118,7 +118,12 @@ export async function getScheduledPostsInDateRange({
   queueType?: string;
   fromUtc: Date;
   toUtc: Date;
-}): Promise<Array<{ scheduledAtUtc: Date | null }>> {
+}): Promise<
+  Array<{
+    scheduledAtUtc: Date | null;
+    queueType: { name: string } | null;
+  }>
+> {
   try {
     const whereClause: Prisma.PostWhereInput = {
       currentState: "SCHEDULED",
@@ -137,7 +142,10 @@ export async function getScheduledPostsInDateRange({
     }
     return await prisma.post.findMany({
       where: whereClause,
-      select: { scheduledAtUtc: true },
+      select: {
+        scheduledAtUtc: true,
+        queueType: { select: { name: true } },
+      },
     });
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));

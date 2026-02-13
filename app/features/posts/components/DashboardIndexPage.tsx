@@ -98,7 +98,11 @@ export default function DashboardIndexPage() {
 
   const loaderData = useLoaderData<{
     queueCountsByQueue?: Array<{ queueName: string; count: number }>;
-    scheduleNext7Days?: Array<{ dateKey: string; count: number }>;
+    scheduleNext7Days?: Array<{
+      dateKey: string;
+      count: number;
+      byQueue?: Array<{ queueName: string; count: number }>;
+    }>;
     runwaySettings?: { targetPostsPerDay?: number };
   }>();
   const queueCountsByQueue = Array.isArray(loaderData.queueCountsByQueue)
@@ -353,6 +357,7 @@ export default function DashboardIndexPage() {
               targetPerDay={targetPerDay}
               userTimezone={getUserTimezone(user)}
               onOpenTargetModal={() => setScheduleOverviewTargetModalOpen(true)}
+              queueTypes={queueTypesFiltered}
             />
             <QueueHealth
               queueCounts={queueCountsByQueue}

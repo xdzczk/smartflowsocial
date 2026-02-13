@@ -41,7 +41,11 @@ const FALLBACK_FLOW = {
     | undefined,
   postStatistics: EMPTY_STATS,
   queueCountsByQueue: [] as Array<{ queueName: string; count: number }>,
-  scheduleNext7Days: [] as Array<{ dateKey: string; count: number }>,
+  scheduleNext7Days: [] as Array<{
+    dateKey: string;
+    count: number;
+    byQueue?: Array<{ queueName: string; count: number }>;
+  }>,
 };
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {

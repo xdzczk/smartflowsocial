@@ -17,6 +17,8 @@ import { getScheduledPostsInDateRange } from "~/models/post.queries.server";
 export interface ScheduleDayCount {
   dateKey: string;
   count: number;
+  /** Per-queue counts for this day (queue name or "Unassigned"). */
+  byQueue?: Array<{ queueName: string; count: number }>;
 }
 
 const NEXT_7_DAYS = 7;
@@ -53,21 +55,38 @@ export async function getScheduleNext7DaysCounts(
   ]);
 
   const countByDateKey: Record<string, number> = {};
+  const byQueueByDateKey: Record<
+    string,
+    Array<{ queueName: string; count: number }>
+  > = {};
 
-  for (const { scheduledAtUtc } of posts) {
-    if (scheduledAtUtc == null) continue;
+  function addPost(
+    scheduledAtUtc: Date | null,
+    queueType: { name: string } | null
+  ) {
+    if (scheduledAtUtc == null) return;
     const zoned = fromDate(scheduledAtUtc, tz);
     const dateKey = toDateKey(zoned);
     countByDateKey[dateKey] = (countByDateKey[dateKey] ?? 0) + 1;
-  }
-  for (const { scheduledAtUtc } of longformPosts) {
-    if (scheduledAtUtc == null) continue;
-    const zoned = fromDate(scheduledAtUtc, tz);
-    const dateKey = toDateKey(zoned);
-    countByDateKey[dateKey] = (countByDateKey[dateKey] ?? 0) + 1;
+    const queueName = queueType?.name ?? "Unassigned";
+    const arr = byQueueByDateKey[dateKey] ?? [];
+    const entry = arr.find((e) => e.queueName === queueName);
+    if (entry) {
+      entry.count += 1;
+    } else {
+      arr.push({ queueName, count: 1 });
+      byQueueByDateKey[dateKey] = arr;
+    }
   }
 
-  return buildDaysWithCounts(start, tz, countByDateKey);
+  for (const { scheduledAtUtc, queueType } of posts) {
+    addPost(scheduledAtUtc, queueType);
+  }
+  for (const { scheduledAtUtc, queueType } of longformPosts) {
+    addPost(scheduledAtUtc, queueType);
+  }
+
+  return buildDaysWithCounts(start, tz, countByDateKey, byQueueByDateKey);
 }
 
 function toDateKey(zoned: Temporal.ZonedDateTime): string {
@@ -81,13 +100,18 @@ function buildEmptyDays(
   tz: string
 ): ScheduleDayCount[] {
   const countByDateKey: Record<string, number> = {};
-  return buildDaysWithCounts(start, tz, countByDateKey);
+  const byQueueByDateKey: Record<
+    string,
+    Array<{ queueName: string; count: number }>
+  > = {};
+  return buildDaysWithCounts(start, tz, countByDateKey, byQueueByDateKey);
 }
 
 function buildDaysWithCounts(
   start: Temporal.ZonedDateTime,
   tz: string,
-  countByDateKey: Record<string, number>
+  countByDateKey: Record<string, number>,
+  byQueueByDateKey: Record<string, Array<{ queueName: string; count: number }>>
 ): ScheduleDayCount[] {
   const result: ScheduleDayCount[] = [];
   for (let i = 0; i < NEXT_7_DAYS; i++) {
@@ -96,6 +120,7 @@ function buildDaysWithCounts(
     result.push({
       dateKey,
       count: countByDateKey[dateKey] ?? 0,
+      byQueue: byQueueByDateKey[dateKey] ?? [],
     });
   }
   return result;
