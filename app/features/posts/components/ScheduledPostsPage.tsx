@@ -48,6 +48,7 @@ export default function ScheduledPostsPage() {
     hashTagPresets,
     totalContentCount,
     totalPostsCount,
+    totalRepostsCount,
     totalLongformCount,
     isLoading: _isDataLoading,
     isFetchingNextPage,
@@ -148,6 +149,7 @@ export default function ScheduledPostsPage() {
         currentTab={currentTab}
         allContentCount={totalContentCount}
         postsCount={totalPostsCount}
+        repostsCount={totalRepostsCount}
         longformCount={totalLongformCount}
       />
 
@@ -160,12 +162,14 @@ export default function ScheduledPostsPage() {
         basePath="/dashboard/scheduled"
         totalContentCount={totalContentCount}
         totalPostsCount={totalPostsCount}
+        totalRepostsCount={totalRepostsCount}
         totalLongformCount={totalLongformCount}
       />
 
       {/* Queue Selection Tabs */}
       {currentTab === "all" ||
       currentTab === "posts" ||
+      currentTab === "reposts" ||
       currentTab === "longform" ? (
         <QueueSelectionTabs
           currentTab={currentTab}
@@ -223,7 +227,7 @@ export default function ScheduledPostsPage() {
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
           />
-        ) : currentTab === "posts" ? (
+        ) : currentTab === "posts" || currentTab === "reposts" ? (
           <div className="flex min-h-0 flex-1 flex-col">
             <BulkDeleteBar
               selectedCount={selectedPosts.size}

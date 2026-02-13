@@ -34,6 +34,7 @@ import type {
   QueueType,
 } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
+import { isRepostPost } from "../utils/content-helpers";
 
 // PublishedPostsLoaderData is now exported from schemas
 
@@ -350,6 +351,7 @@ function createEmptyPublishedPostsData<TFetchNextPage>(
     stats: {} satisfies Record<string, PostStats>,
     totalContentCount: 0,
     totalPostsCount: 0,
+    totalRepostsCount: 0,
     totalLongformCount: 0,
   };
 }
@@ -562,14 +564,14 @@ export function usePublishedPostsInfiniteData() {
     : [];
   const pagination = processPagination(paginationRaw);
 
-  // Extract pagination totals for displaying counts
-  // processPagination always returns an object with total, so we can safely access it
-  const totalPostsCount =
-    typeof pagination.total === "number" ? pagination.total : allPosts.length;
-  // For posted posts, longform posts are typically fewer, so we can estimate
-  // or use the actual count if available in pagination
-  const totalLongformCount = allLongformPosts.length; // Published longform might not have separate pagination
-  const totalContentCount = totalPostsCount + totalLongformCount;
+  // Extract pagination totals for displaying counts (Posts = original only, Reposts = repost/quote)
+  const totalRepostsCount = allPosts.filter((p) => isRepostPost(p)).length;
+  const totalPostsCount = allPosts.filter((p) => !isRepostPost(p)).length;
+  const totalLongformCount = allLongformPosts.length;
+  const totalContentCount =
+    typeof pagination.total === "number"
+      ? pagination.total
+      : allPosts.length + totalLongformCount;
 
   return {
     posts: allPosts,
@@ -579,8 +581,9 @@ export function usePublishedPostsInfiniteData() {
     queueTypes,
     pagination,
     stats: allStats,
-    // Pagination totals for display
+    // Pagination totals for display (Posts = original only, Reposts = repost/quote)
     totalPostsCount,
+    totalRepostsCount,
     totalLongformCount,
     totalContentCount,
     isLoading,

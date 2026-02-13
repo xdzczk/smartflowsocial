@@ -9,6 +9,7 @@ interface DraftsPostTypeTabsProps {
   currentTab: string;
   allContentCount: number;
   postsCount: number;
+  repostsCount: number;
   longformCount: number;
   bulkCount?: number;
   queueType?: string;
@@ -21,6 +22,7 @@ export function DraftsPostTypeTabs({
   currentTab,
   allContentCount,
   postsCount,
+  repostsCount,
   longformCount,
   bulkCount = 0,
   queueType,
@@ -47,6 +49,14 @@ export function DraftsPostTypeTabs({
           }`}
         >
           Posts ({postsCount})
+        </Link>
+        <Link
+          to={`${basePath}?tab=reposts`}
+          className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+            currentTab === "reposts" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
+          }`}
+        >
+          Reposts ({repostsCount})
         </Link>
         <Link
           to={`${basePath}?tab=longform`}

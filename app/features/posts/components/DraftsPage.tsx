@@ -21,6 +21,7 @@ import {
   useDraftsInfiniteData,
   useDraftsState,
 } from "~/features/posts/ui";
+import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { convertDraftsPostsToPostDataArray } from "~/lib/validation/drafts-post-conversion";
@@ -85,6 +86,9 @@ export default function DraftsPage() {
   // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") ?? "all";
 
+  const repostsCount = posts.filter((p) => isRepostPost(p)).length;
+  const postsCount = posts.length - repostsCount;
+
   const {
     sortConfig,
     setSortConfig,
@@ -105,6 +109,7 @@ export default function DraftsPage() {
   } = useDraftsState({
     posts: posts.map((post) => convertPostDataToDraftsPost(post)),
     allContent: allContent.map((c) => ({ id: c.id, type: c.type })),
+    currentTab,
   });
 
   // If we're on a child route, render the child component
@@ -117,7 +122,8 @@ export default function DraftsPage() {
       <DraftsHeader
         currentTab={currentTab}
         allContentCount={allContent.length}
-        postsCount={filteredPosts.length}
+        postsCount={postsCount}
+        repostsCount={repostsCount}
         longformCount={longformPosts.length}
         bulkCount={bulkDraftGroups.length}
       />
@@ -126,7 +132,8 @@ export default function DraftsPage() {
       <DraftsPostTypeTabs
         currentTab={currentTab}
         allContentCount={allContent.length}
-        postsCount={filteredPosts.length}
+        postsCount={postsCount}
+        repostsCount={repostsCount}
         longformCount={longformPosts.length}
         bulkCount={bulkDraftGroups.length}
         queueType={params["queueType"]}
@@ -135,6 +142,7 @@ export default function DraftsPage() {
       {/* Queue Selection Tabs */}
       {currentTab === "all" ||
       currentTab === "posts" ||
+      currentTab === "reposts" ||
       currentTab === "longform" ? (
         <QueueSelectionTabs
           currentTab={currentTab}
@@ -175,7 +183,7 @@ export default function DraftsPage() {
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
           />
-        ) : currentTab === "posts" ? (
+        ) : currentTab === "posts" || currentTab === "reposts" ? (
           <div className="flex min-h-0 flex-1 flex-col">
             <DraftsBulkActions
               selectedCount={selectedPosts.size}
@@ -262,8 +270,11 @@ export default function DraftsPage() {
         />
       ) : null}
 
-      {/* Short post detail modal: show when a draft post is selected (all or posts tab) */}
-      {(currentTab === "all" || currentTab === "posts") && selectedPost
+      {/* Short post detail modal: show when a draft post is selected (all, posts, or reposts tab) */}
+      {(currentTab === "all" ||
+        currentTab === "posts" ||
+        currentTab === "reposts") &&
+      selectedPost
         ? (() => {
             const postData = posts.find((p) => p.id === selectedPost.id);
             const combinedContent = allContent.find(

@@ -15,16 +15,26 @@ interface CombinedContentItem {
   type: "post" | "longform";
 }
 
+function isRepostDraft(post: Post): boolean {
+  const kind = (post as { postKind?: string }).postKind;
+  return kind === "REPOST";
+}
+
 interface UseDraftsStateProps {
   posts: Post[];
   /** When provided (e.g. on "all" tab), select-all and bulk delete include both posts and longform */
   allContent?: CombinedContentItem[];
+  currentTab?: string;
 }
 
 /**
  * Custom hook for managing drafts state and operations
  */
-export function useDraftsState({ posts, allContent }: UseDraftsStateProps) {
+export function useDraftsState({
+  posts,
+  allContent,
+  currentTab = "all",
+}: UseDraftsStateProps) {
   const queryClient = useQueryClient();
   const [sortConfig, setSortConfig] = useState({
     key: "createdAt",
@@ -65,12 +75,18 @@ export function useDraftsState({ posts, allContent }: UseDraftsStateProps) {
     });
   }, [posts, sortConfig.key, sortConfig.direction]);
 
-  // Filter posts - memoized to prevent unnecessary filtering on every render
+  // Filter posts by tab (Posts = original only, Reposts = repost only) and search
   const filteredPosts = useMemo(() => {
-    return sortedPosts.filter((post) =>
+    const byTab =
+      currentTab === "posts"
+        ? sortedPosts.filter((p) => !isRepostDraft(p))
+        : currentTab === "reposts"
+          ? sortedPosts.filter((p) => isRepostDraft(p))
+          : sortedPosts;
+    return byTab.filter((post) =>
       post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [sortedPosts, searchTerm]);
+  }, [sortedPosts, searchTerm, currentTab]);
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({

@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
 import type { CombinedContent, LongFormPostData, PostData } from "../types";
+import { isRepostPost } from "../utils/content-helpers";
 
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
@@ -159,12 +160,18 @@ export function useScheduledState({
     });
   }, [scheduledPosts, sortConfig.key, sortConfig.direction]);
 
-  // Filter posts - memoized to prevent unnecessary filtering on every render
+  // Filter posts by tab (Posts = original only, Reposts = repost only) and search
   const filteredPosts = useMemo(() => {
-    return sortedPosts.filter((post) =>
+    const byTab =
+      currentTab === "posts"
+        ? sortedPosts.filter((p) => !isRepostPost(p))
+        : currentTab === "reposts"
+          ? sortedPosts.filter((p) => isRepostPost(p))
+          : sortedPosts;
+    return byTab.filter((post) =>
       post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [sortedPosts, searchTerm]);
+  }, [sortedPosts, searchTerm, currentTab]);
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({

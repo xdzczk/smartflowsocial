@@ -6,6 +6,7 @@ interface DashboardHeaderProps {
   currentTab: string;
   allContentCount: number;
   postsCount: number;
+  repostsCount?: number;
   longformCount: number;
   /** Last future item's scheduled time (unused; Runway KPI shows this) */
   flowRunsUntil?: Date | string | null;
@@ -20,6 +21,7 @@ export function DashboardHeader({
   const getTitle = () => {
     if (currentTab === "all") return "Your flow";
     if (currentTab === "posts") return "Scheduled Posts";
+    if (currentTab === "reposts") return "Scheduled Reposts";
     return "Scheduled Longform";
   };
 

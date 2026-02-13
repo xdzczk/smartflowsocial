@@ -16,6 +16,7 @@ import {
   getQueueColor,
   useCalendarData,
 } from "~/features/posts/ui";
+import { isRepostPost } from "~/features/posts/utils/content-helpers";
 
 export default function CalendarPage() {
   // Use TanStack Query for data fetching with caching
@@ -30,6 +31,7 @@ export default function CalendarPage() {
     selectedQueueType: _selectedQueueType,
     isLoading: _isDataLoading,
     totalPostsCount,
+    totalRepostsCount,
     totalLongformCount,
     totalContentCount,
   } = useCalendarData();
@@ -40,6 +42,7 @@ export default function CalendarPage() {
   // Get current tab from URL params - default to "all"
   const TAB_ALL = "all";
   const TAB_POSTS = "posts";
+  const TAB_REPOSTS = "reposts";
   const TAB_LONGFORM = "longform";
   const currentTab = searchParams.get("tab") ?? TAB_ALL;
 
@@ -77,6 +80,16 @@ export default function CalendarPage() {
             Posts ({totalPostsCount})
           </Link>
           <Link
+            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_REPOSTS}`}
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+              currentTab === TAB_REPOSTS
+                ? TAB_ACTIVE_CLASSES
+                : TAB_INACTIVE_CLASSES
+            }`}
+          >
+            Reposts ({totalRepostsCount})
+          </Link>
+          <Link
             to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_LONGFORM}`}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               currentTab === TAB_LONGFORM
@@ -92,6 +105,7 @@ export default function CalendarPage() {
       {/* Queue Selection Tabs - Show for all content types */}
       {currentTab === TAB_ALL ||
       currentTab === TAB_POSTS ||
+      currentTab === TAB_REPOSTS ||
       currentTab === TAB_LONGFORM ? (
         <div className="border-border border-b">
           <nav className="-mb-px flex space-x-8" aria-label="Queue Types">
@@ -186,8 +200,23 @@ export default function CalendarPage() {
           />
         ) : currentTab === TAB_POSTS ? (
           <Calendar
-            scheduledPosts={postsToCalendarPosts(scheduledPosts)}
-            pastPosts={postsToCalendarPosts(pastPosts)}
+            scheduledPosts={postsToCalendarPosts(
+              scheduledPosts.filter((p) => !isRepostPost(p))
+            )}
+            pastPosts={postsToCalendarPosts(
+              pastPosts.filter((p) => !isRepostPost(p))
+            )}
+            user={user}
+            queueTypes={queueTypes}
+          />
+        ) : currentTab === TAB_REPOSTS ? (
+          <Calendar
+            scheduledPosts={postsToCalendarPosts(
+              scheduledPosts.filter((p) => isRepostPost(p))
+            )}
+            pastPosts={postsToCalendarPosts(
+              pastPosts.filter((p) => isRepostPost(p))
+            )}
             user={user}
             queueTypes={queueTypes}
           />

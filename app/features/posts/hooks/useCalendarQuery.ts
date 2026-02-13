@@ -22,6 +22,7 @@ import type {
   UserData,
 } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
+import { isRepostPost } from "../utils/content-helpers";
 
 /**
  * Query key factory for calendar
@@ -108,6 +109,7 @@ export function useCalendarData() {
       queueTypes: [] as QueueType[],
       selectedQueueType: "all",
       totalPostsCount: 0,
+      totalRepostsCount: 0,
       totalLongformCount: 0,
       totalContentCount: 0,
       isLoading,
@@ -215,7 +217,7 @@ export function useCalendarData() {
     typeof selectedQueueTypeRaw === "string" ? selectedQueueTypeRaw : "all";
 
   // Extract pagination totals for display
-  const scheduledPostsPaginationRaw =
+  const _scheduledPostsPaginationRaw =
     "scheduledPostsPagination" in typedData
       ? typedData.scheduledPostsPagination
       : undefined;
@@ -224,21 +226,24 @@ export function useCalendarData() {
       ? typedData.scheduledLongFormPostsPagination
       : undefined;
 
+  const totalRepostsCount =
+    scheduledPosts.filter((p) => isRepostPost(p)).length +
+    pastPosts.filter((p) => isRepostPost(p)).length;
   const totalPostsCount =
-    scheduledPostsPaginationRaw &&
-    typeof scheduledPostsPaginationRaw === "object" &&
-    "total" in scheduledPostsPaginationRaw &&
-    typeof scheduledPostsPaginationRaw.total === "number"
-      ? scheduledPostsPaginationRaw.total
-      : scheduledPosts.length;
+    scheduledPosts.filter((p) => !isRepostPost(p)).length +
+    pastPosts.filter((p) => !isRepostPost(p)).length;
   const totalLongformCount =
     scheduledLongFormPostsPaginationRaw &&
     typeof scheduledLongFormPostsPaginationRaw === "object" &&
     "total" in scheduledLongFormPostsPaginationRaw &&
     typeof scheduledLongFormPostsPaginationRaw.total === "number"
       ? scheduledLongFormPostsPaginationRaw.total
-      : scheduledLongFormPosts.length;
-  const totalContentCount = totalPostsCount + totalLongformCount;
+      : scheduledLongFormPosts.length + pastLongFormPosts.length;
+  const totalContentCount =
+    scheduledPosts.length +
+    pastPosts.length +
+    scheduledLongFormPosts.length +
+    pastLongFormPosts.length;
 
   return {
     scheduledPosts,
@@ -250,6 +255,7 @@ export function useCalendarData() {
     queueTypes,
     selectedQueueType,
     totalPostsCount,
+    totalRepostsCount,
     totalLongformCount,
     totalContentCount,
     isLoading,

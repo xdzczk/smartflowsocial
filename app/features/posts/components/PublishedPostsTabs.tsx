@@ -16,6 +16,7 @@ interface PublishedPostsTabsProps {
   queueTypes: Array<string | QueueType>;
   allContentLength: number;
   postsLength: number;
+  repostsLength: number;
   longformPostsLength: number;
 }
 
@@ -24,6 +25,7 @@ export default function PublishedPostsTabs({
   queueTypes: _queueTypes,
   allContentLength,
   postsLength,
+  repostsLength,
   longformPostsLength,
 }: PublishedPostsTabsProps) {
   const params = useParams();
@@ -48,6 +50,16 @@ export default function PublishedPostsTabs({
             }`}
           >
             Posts ({postsLength})
+          </Link>
+          <Link
+            to={`/dashboard/published${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=reposts`}
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+              currentTab === "reposts"
+                ? ACTIVE_TAB_CLASSES
+                : INACTIVE_TAB_CLASSES
+            }`}
+          >
+            Reposts ({repostsLength})
           </Link>
           <Link
             to={`/dashboard/published${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=longform`}

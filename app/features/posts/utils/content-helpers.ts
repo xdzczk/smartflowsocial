@@ -25,6 +25,7 @@ import {
   deriveIsPublished,
   getStatusTextFromState,
 } from "../state-machine/post-state";
+import type { PostData } from "../types";
 
 export function getImageUrls(fileUrl: string[] | undefined): string[] {
   if (!fileUrl || fileUrl.length === 0) return [];
@@ -270,6 +271,28 @@ export function getQueueTypeDisplay(queueType: CombinedContent["queueType"]): {
 
 const POST_KIND_BADGE_CLASS =
   "inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground dark:text-foreground";
+
+/**
+ * True if the post is a repost (kind 6). Quotes are treated as normal posts (posts with links to other content).
+ * Used to show Reposts as a separate category from Posts.
+ */
+export function isRepostPost(post: PostData): boolean {
+  const kind =
+    "postKind" in post && typeof post.postKind === "string"
+      ? post.postKind
+      : (post as { postKind?: string }).postKind;
+  return kind === "REPOST";
+}
+
+/**
+ * True if the combined content item is a repost (REPOST only). Quotes are normal posts for filtering.
+ */
+export function isRepostContent(item: CombinedContent): boolean {
+  if (item.type !== "post") return false;
+  const kind =
+    item.postKind ?? (item.originalData as { postKind?: string }).postKind;
+  return kind === "REPOST";
+}
 
 export function getContentTypeBadge(item: CombinedContent): {
   className: string;

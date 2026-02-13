@@ -10,6 +10,7 @@ interface PostTypeTabsProps {
   // Optional: Use pagination totals instead of array lengths
   totalContentCount?: number;
   totalPostsCount?: number;
+  totalRepostsCount?: number;
   totalLongformCount?: number;
 }
 
@@ -21,6 +22,7 @@ export default function PostTypeTabs({
   basePath = "/dashboard",
   totalContentCount,
   totalPostsCount,
+  totalRepostsCount,
   totalLongformCount,
 }: PostTypeTabsProps) {
   const params = useParams();
@@ -36,6 +38,7 @@ export default function PostTypeTabs({
   // Use pagination totals if available, otherwise fall back to array lengths
   const allCount = totalContentCount ?? allContent.length;
   const postsCount = totalPostsCount ?? posts.length;
+  const repostsCount = totalRepostsCount ?? 0;
   const longformCount = totalLongformCount ?? longformPosts.length;
 
   return (
@@ -52,6 +55,12 @@ export default function PostTypeTabs({
           className={getTabClasses(currentTab === "posts")}
         >
           Posts ({postsCount})
+        </Link>
+        <Link
+          to={`${basePath}${queueParam}?tab=reposts`}
+          className={getTabClasses(currentTab === "reposts")}
+        >
+          Reposts ({repostsCount})
         </Link>
         <Link
           to={`${basePath}${queueParam}?tab=longform`}

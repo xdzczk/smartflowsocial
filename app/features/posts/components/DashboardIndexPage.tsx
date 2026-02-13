@@ -1,4 +1,5 @@
 import {
+  Link,
   useLoaderData,
   useNavigation,
   useRevalidator,
@@ -32,6 +33,8 @@ import {
   extractPostData,
 } from "~/lib/validation/combined-content";
 import { validateUserData } from "~/lib/validation/user-data";
+
+import { isRepostContent } from "../utils/content-helpers";
 
 function getUserTimezone(user: unknown): string | undefined {
   if (
@@ -71,6 +74,60 @@ function handleContentSelection(
       setSelectedLongFormPost(longFormData);
     }
   }
+}
+
+const DASHBOARD_TAB_ACTIVE_CLASSES =
+  "border-border text-foreground dark:border-primary dark:text-primary";
+const DASHBOARD_TAB_INACTIVE_CLASSES =
+  "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
+
+function DashboardContentTypeTabs({
+  flowItems,
+  currentContentTab,
+  queueType,
+}: {
+  flowItems: CombinedContent[];
+  currentContentTab: string;
+  queueType: string;
+}) {
+  const baseHref =
+    queueType !== "all" ? `?queueType=${queueType}&tab=` : "?tab=";
+  const tabClass = (tab: string) =>
+    `border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+      currentContentTab === tab
+        ? DASHBOARD_TAB_ACTIVE_CLASSES
+        : DASHBOARD_TAB_INACTIVE_CLASSES
+    }`;
+  const postsCount = flowItems.filter(
+    (i) => i.type === "post" && !isRepostContent(i)
+  ).length;
+  const repostsCount = flowItems.filter((i) => isRepostContent(i)).length;
+  const longformCount = flowItems.filter((i) => i.type === "longform").length;
+
+  return (
+    <div className="border-border mt-2 border-b">
+      <nav className="-mb-px flex space-x-6" aria-label="Content types">
+        <Link to={`/dashboard${baseHref}all`} className={tabClass("all")}>
+          All ({flowItems.length})
+        </Link>
+        <Link to={`/dashboard${baseHref}posts`} className={tabClass("posts")}>
+          Posts ({postsCount})
+        </Link>
+        <Link
+          to={`/dashboard${baseHref}reposts`}
+          className={tabClass("reposts")}
+        >
+          Reposts ({repostsCount})
+        </Link>
+        <Link
+          to={`/dashboard${baseHref}longform`}
+          className={tabClass("longform")}
+        >
+          Longform ({longformCount})
+        </Link>
+      </nav>
+    </div>
+  );
 }
 
 export default function DashboardIndexPage() {
@@ -126,6 +183,7 @@ export default function DashboardIndexPage() {
 
   const [searchParams] = useSearchParams();
   const queueType = searchParams.get("queueType") ?? "all";
+  const currentContentTab = searchParams.get("tab") ?? "all";
   const planActivated = searchParams.get("planActivated");
   const successMessage = searchParams.get("message");
   const [showSuccessMessage, setShowSuccessMessage] = useState(
@@ -196,6 +254,18 @@ export default function DashboardIndexPage() {
   const queueTypesFiltered: QueueType[] = Array.isArray(queueTypes)
     ? (queueTypes as QueueType[])
     : [];
+
+  const flowItemsFilteredByTab = useMemo(() => {
+    if (currentContentTab === "all") return flowItems;
+    if (currentContentTab === "posts")
+      return flowItems.filter((i) => i.type === "post" && !isRepostContent(i));
+    if (currentContentTab === "reposts")
+      return flowItems.filter((i) => isRepostContent(i));
+    if (currentContentTab === "longform")
+      return flowItems.filter((i) => i.type === "longform");
+    return flowItems;
+  }, [flowItems, currentContentTab]);
+
   const hashTagPresetsArray = Array.isArray(hashTagPresets)
     ? (hashTagPresets as Parameters<typeof EditPostModal>[0]["hashTagPresets"])
     : [];
@@ -264,16 +334,23 @@ export default function DashboardIndexPage() {
           <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <DashboardHeader
-                currentTab="all"
+                currentTab={currentContentTab}
                 allContentCount={flowItems.length}
-                postsCount={flowItems.filter((i) => i.type === "post").length}
+                postsCount={
+                  flowItems.filter(
+                    (i) => i.type === "post" && !isRepostContent(i)
+                  ).length
+                }
+                repostsCount={
+                  flowItems.filter((i) => isRepostContent(i)).length
+                }
                 longformCount={
                   flowItems.filter((i) => i.type === "longform").length
                 }
                 flowRunsUntil={flowRunsUntil}
                 className="min-w-0"
               />
-              {flowItems.length > 0 ? (
+              {flowItemsFilteredByTab.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => flowViewRef.current?.scrollToNext()}
@@ -292,6 +369,12 @@ export default function DashboardIndexPage() {
               />
             </div>
           </div>
+          {/* Post type filter tabs (All, Posts, Reposts, Longform) */}
+          <DashboardContentTypeTabs
+            flowItems={flowItems}
+            currentContentTab={currentContentTab}
+            queueType={queueType}
+          />
         </div>
 
         {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
@@ -315,7 +398,7 @@ export default function DashboardIndexPage() {
           ) : null}
 
           {flowError ? null : isNavigatingToDashboard &&
-            flowItems.length === 0 ? (
+            flowItemsFilteredByTab.length === 0 ? (
             <div
               className="border-border-subtle mx-4 flex h-[160px] w-full items-center justify-center rounded-xl border border-dashed p-8 lg:mx-8"
               role="status"
@@ -328,7 +411,7 @@ export default function DashboardIndexPage() {
             <div className="flex min-h-0 min-w-0 flex-col">
               <FlowView
                 ref={flowViewRef}
-                flowItems={flowItems}
+                flowItems={flowItemsFilteredByTab}
                 hasMorePast={hasMorePast}
                 hasMoreFuture={hasMoreFuture}
                 isLoadingMorePast={isLoadingMorePast}

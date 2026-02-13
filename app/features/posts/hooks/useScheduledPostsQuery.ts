@@ -32,6 +32,7 @@ import type {
   HashTagPreset,
 } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
+import { isRepostPost } from "../utils/content-helpers";
 
 /**
  * Query key factory for scheduled posts
@@ -310,6 +311,7 @@ export function useScheduledPostsInfiniteData() {
       hashTagPresets: [] as HashTagPreset[],
       totalContentCount: 0,
       totalPostsCount: 0,
+      totalRepostsCount: 0,
       totalLongformCount: 0,
       isLoading,
       isFetchingNextPage,
@@ -370,6 +372,7 @@ export function useScheduledPostsInfiniteData() {
       hashTagPresets: [] as HashTagPreset[],
       totalContentCount: 0,
       totalPostsCount: 0,
+      totalRepostsCount: 0,
       totalLongformCount: 0,
       isLoading,
       isFetchingNextPage,
@@ -470,7 +473,9 @@ export function useScheduledPostsInfiniteData() {
       ? longformPaginationRaw.total
       : allLongformPosts.length;
 
-  // Calculate total content count (posts + longform)
+  // Calculate totals: Posts = original only, Reposts = repost/quote
+  const totalRepostsCount = allPosts.filter((p) => isRepostPost(p)).length;
+  const totalPostsCount = allPosts.filter((p) => !isRepostPost(p)).length;
   const totalContentCount = pagination + longformPagination;
 
   return {
@@ -481,7 +486,8 @@ export function useScheduledPostsInfiniteData() {
     queueTypes,
     hashTagPresets,
     // Pagination totals for display
-    totalPostsCount: pagination,
+    totalPostsCount,
+    totalRepostsCount,
     totalLongformCount: longformPagination,
     totalContentCount,
     isLoading,

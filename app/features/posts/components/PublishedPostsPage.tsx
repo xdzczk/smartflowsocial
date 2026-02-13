@@ -34,6 +34,7 @@ import {
 import { comparePostDataByProperty } from "~/lib/validation/post-data-properties";
 import { getPostStats, getPostStatsValue } from "~/lib/validation/post-stats";
 
+import { isRepostPost } from "../utils/content-helpers";
 import {
   getPostTypeFromPost,
   getNewPostUrl,
@@ -141,6 +142,7 @@ export default function PublishedPostsPage() {
     stats: initialStats,
     totalContentCount,
     totalPostsCount,
+    totalRepostsCount,
     totalLongformCount,
     isLoading: _isLoading,
     isFetchingNextPage,
@@ -250,12 +252,18 @@ export default function PublishedPostsPage() {
     );
   }, [posts, sortConfig, stats]);
 
-  // Memoize filtered posts to prevent unnecessary filtering on every render
+  // Memoize filtered posts by tab (Posts = original only, Reposts = repost only) and search
   const filteredPosts = useMemo(() => {
-    return sortedPosts.filter((post) =>
+    const byTab =
+      currentTab === "posts"
+        ? sortedPosts.filter((p) => !isRepostPost(p))
+        : currentTab === "reposts"
+          ? sortedPosts.filter((p) => isRepostPost(p))
+          : sortedPosts;
+    return byTab.filter((post) =>
       post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [sortedPosts, searchTerm]);
+  }, [sortedPosts, searchTerm, currentTab]);
 
   // Call hook before any conditional returns
   const { userTimeFormat } = useFormattedDate();
@@ -297,12 +305,14 @@ export default function PublishedPostsPage() {
         }))}
         allContentLength={totalContentCount}
         postsLength={totalPostsCount}
+        repostsLength={totalRepostsCount}
         longformPostsLength={totalLongformCount}
       />
 
       {/* Queue filters: dropdown on mobile, tabs on desktop (same as Scheduled page) */}
       {currentTab === "all" ||
       currentTab === "posts" ||
+      currentTab === "reposts" ||
       currentTab === "longform" ? (
         <QueueSelectionTabs
           currentTab={currentTab}
@@ -363,7 +373,7 @@ export default function PublishedPostsPage() {
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
           />
-        ) : currentTab === "posts" ? (
+        ) : currentTab === "posts" || currentTab === "reposts" ? (
           <PublishedPostsTable
             filteredPosts={filteredPosts}
             selectedPosts={selectedPosts}
