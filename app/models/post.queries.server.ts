@@ -128,6 +128,7 @@ export async function getScheduledPostsInDateRange({
     const whereClause: Prisma.PostWhereInput = {
       currentState: "SCHEDULED",
       userId,
+      repost: false,
       scheduledAtUtc: {
         gte: fromUtc,
         lte: toUtc,
@@ -389,6 +390,7 @@ export async function getScheduledPostsCountByQueue({
       where: {
         userId,
         currentState: "SCHEDULED",
+        repost: false,
       },
       _count: { id: true },
     });
@@ -412,21 +414,21 @@ export async function getPostStatistics({
 }): Promise<PostStatistics> {
   try {
     const [scheduledCount, successCount] = await Promise.all([
-      // Get count of scheduled posts
+      // Get count of scheduled posts (exclude reposts; only posts, articles, quotes)
       prisma.post.count({
         where: {
           userId,
-          // Use currentState as single source of truth
           currentState: "SCHEDULED",
+          repost: false,
         },
       }),
 
-      // Get count of successfully posted
+      // Get count of successfully posted (exclude reposts)
       prisma.post.count({
         where: {
           userId,
-          // Use currentState as single source of truth
           currentState: "PUBLISHED",
+          repost: false,
         },
       }),
     ]);

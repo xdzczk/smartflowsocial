@@ -127,7 +127,7 @@ export function ScheduleNext7DaysCard({
               return (
                 <li
                   key={dateKey}
-                  className={`flex min-h-[2.25rem] items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-xs ${
+                  className={`flex min-h-[2.25rem] items-center gap-2 rounded-lg border px-3 py-1.5 text-xs ${
                     gap
                       ? "border-amber-500/50 bg-amber-500/10 dark:border-amber-400/30 dark:bg-amber-500/10"
                       : "border-border/60 bg-muted/20"
@@ -139,7 +139,7 @@ export function ScheduleNext7DaysCard({
                   >
                     {label}
                   </span>
-                  <div className="flex min-w-[11rem] shrink-0 items-center gap-1.5">
+                  <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 overflow-hidden">
                     {hasBlocks ? (
                       <span
                         className="flex shrink-0 items-center gap-0.5"
@@ -172,7 +172,7 @@ export function ScheduleNext7DaysCard({
                               parts.push(
                                 <span
                                   key={`${queueName}-${i}`}
-                                  className="inline-block size-2 rounded-sm bg-[var(--block-accent)] opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
+                                  className="inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
                                   style={blockStyle}
                                   aria-hidden
                                 />
@@ -195,16 +195,16 @@ export function ScheduleNext7DaysCard({
                         })()}
                       </span>
                     ) : null}
-                    <span
-                      className={`tabular-nums ${
-                        gap
-                          ? "text-amber-700 dark:text-amber-400"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {count} {count === 1 ? "post" : "posts"}
-                    </span>
                   </div>
+                  <span
+                    className={`shrink-0 tabular-nums ${
+                      gap
+                        ? "text-amber-700 dark:text-amber-400"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {count} {count === 1 ? "post" : "posts"}
+                  </span>
                 </li>
               );
             })}

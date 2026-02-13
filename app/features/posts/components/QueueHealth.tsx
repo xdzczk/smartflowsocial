@@ -129,7 +129,7 @@ export default function QueueHealth({
                         </span>
                       </div>
                       <div
-                        className={`h-2.5 min-w-0 overflow-hidden rounded-sm ${bundle ? "" : "bg-muted/30"}`}
+                        className={`h-2.5 min-w-0 overflow-hidden rounded-[1px] ${bundle ? "" : "bg-muted/30"}`}
                         role="presentation"
                         aria-hidden
                         style={
@@ -139,7 +139,7 @@ export default function QueueHealth({
                         }
                       >
                         <div
-                          className={`h-full min-w-0 rounded-sm transition-[width,opacity] duration-200 ${accentHex ? "opacity-40 group-focus-within:opacity-100 group-hover:opacity-100" : getBarFillClass(queueName)}`}
+                          className={`h-full min-w-0 rounded-[1px] transition-[width,opacity] duration-200 ${accentHex ? "opacity-40 group-focus-within:opacity-100 group-hover:opacity-100" : getBarFillClass(queueName)}`}
                           style={{
                             width: `${widthPercent}%`,
                             ...(accentHex
