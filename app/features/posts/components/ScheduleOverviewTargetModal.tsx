@@ -30,22 +30,22 @@ export function ScheduleOverviewTargetModal({
 }: ScheduleOverviewTargetModalProps) {
   const fetcher = useFetcher<{ success?: boolean; error?: string }>();
   const [value, setValue] = useState(targetPerDay);
-  const didSubmitRef = useRef(false);
+  const prevFetcherStateRef = useRef(fetcher.state);
 
   useEffect(() => {
+    const prevState = prevFetcherStateRef.current;
+    prevFetcherStateRef.current = fetcher.state;
     if (
-      didSubmitRef.current &&
+      prevState !== "idle" &&
       fetcher.state === "idle" &&
       fetcher.data?.success
     ) {
-      didSubmitRef.current = false;
       onSuccess?.();
       onClose();
     }
   }, [fetcher.state, fetcher.data, onSuccess, onClose]);
 
   const handleSave = () => {
-    didSubmitRef.current = true;
     const formData = new FormData();
     formData.set("_action", "updateScheduleOverviewTarget");
     formData.set("targetPostsPerDay", String(value));

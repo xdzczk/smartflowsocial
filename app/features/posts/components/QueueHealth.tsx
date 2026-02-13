@@ -75,80 +75,87 @@ export default function QueueHealth({
       : 1;
 
   return (
-    <Card className="flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
-      <CardHeader className="px-4 pt-2 pb-1.5">
-        <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
-          Queue Health
-        </h3>
-      </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
-        {countsByQueue.length === 0 ? (
-          <p className="text-muted-foreground text-xs">
-            No queues with scheduled posts.
-          </p>
-        ) : (
-          <ul
-            className={`flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4 ${
-              countsByQueue.length <= 6
-                ? "[&>li]:flex [&>li]:min-h-0 [&>li]:flex-1"
-                : ""
-            }`}
-            aria-label="Scheduled posts per queue"
-          >
-            {countsByQueue.map(({ queueName, count }) => {
-              const bundle = getQueueBundle(queueName, queueTypes);
-              const accentHex = getQueueAccentHexOrNull(queueName, queueTypes);
-              const widthPercent = (count / maxCount) * 100;
-              const scheduledUrl = `/dashboard/scheduled?queueType=${encodeURIComponent(queueName)}`;
-              const linkStyle:
-                | (CSSProperties & Record<string, string>)
-                | undefined = bundle
-                ? { [QUEUE_COLOR_CSS_VAR]: bundle.accent }
-                : undefined;
+    <div className="group flex min-w-0 flex-1 flex-col">
+      <Card className="flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
+        <CardHeader className="px-4 pt-2 pb-1.5">
+          <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
+            Queue Health
+          </h3>
+        </CardHeader>
+        <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
+          {countsByQueue.length === 0 ? (
+            <p className="text-muted-foreground text-xs">
+              No queues with scheduled posts.
+            </p>
+          ) : (
+            <ul
+              className={`flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4 ${
+                countsByQueue.length <= 6
+                  ? "[&>li]:flex [&>li]:min-h-0 [&>li]:flex-1"
+                  : ""
+              }`}
+              aria-label="Scheduled posts per queue"
+            >
+              {countsByQueue.map(({ queueName, count }) => {
+                const bundle = getQueueBundle(queueName, queueTypes);
+                const accentHex = getQueueAccentHexOrNull(
+                  queueName,
+                  queueTypes
+                );
+                const widthPercent = (count / maxCount) * 100;
+                const scheduledUrl = `/dashboard/scheduled?queueType=${encodeURIComponent(queueName)}`;
+                const linkStyle:
+                  | (CSSProperties & Record<string, string>)
+                  | undefined = bundle
+                  ? { [QUEUE_COLOR_CSS_VAR]: bundle.accent }
+                  : undefined;
 
-              return (
-                <li key={queueName} className="flex min-h-[2.75rem] flex-col">
-                  <Link
-                    to={scheduledUrl}
-                    className={`focus:ring-ring card-lift bg-muted/30 hover:bg-muted/50 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-shadow focus:ring-2 focus:outline-none ${bundle ? "queue-health-row" : ""}`}
-                    style={linkStyle}
-                  >
-                    <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                      <span className="text-foreground min-w-0 truncate text-xs font-medium">
-                        {queueName}
-                      </span>
-                      <span
-                        className={`flex-shrink-0 text-xs tabular-nums ${bundle ? "font-bold" : "text-muted-foreground"}`}
-                        style={bundle ? { color: bundle.accent } : undefined}
-                      >
-                        {count}
-                      </span>
-                    </div>
-                    <div
-                      className={`h-2.5 min-w-0 overflow-hidden rounded-none ${bundle ? "" : "bg-muted/30"}`}
-                      role="presentation"
-                      aria-hidden
-                      style={
-                        bundle ? { backgroundColor: bundle.surface } : undefined
-                      }
+                return (
+                  <li key={queueName} className="flex min-h-[2.75rem] flex-col">
+                    <Link
+                      to={scheduledUrl}
+                      className={`focus:ring-ring card-lift bg-muted/30 hover:bg-muted/50 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-shadow focus:ring-2 focus:outline-none ${bundle ? "queue-health-row" : ""}`}
+                      style={linkStyle}
                     >
+                      <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                        <span className="text-foreground min-w-0 truncate text-xs font-medium">
+                          {queueName}
+                        </span>
+                        <span
+                          className={`flex-shrink-0 text-xs tabular-nums transition-opacity duration-200 ${bundle ? "font-bold opacity-50 group-focus-within:opacity-100 group-hover:opacity-100" : "text-muted-foreground"}`}
+                          style={bundle ? { color: bundle.accent } : undefined}
+                        >
+                          {count}
+                        </span>
+                      </div>
                       <div
-                        className={`h-full min-w-0 rounded-none transition-[width] ${accentHex ? "" : getBarFillClass(queueName)}`}
-                        style={{
-                          width: `${widthPercent}%`,
-                          ...(accentHex
-                            ? { backgroundColor: accentHex }
-                            : undefined),
-                        }}
-                      />
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+                        className={`h-2.5 min-w-0 overflow-hidden rounded-sm ${bundle ? "" : "bg-muted/30"}`}
+                        role="presentation"
+                        aria-hidden
+                        style={
+                          bundle
+                            ? { backgroundColor: bundle.surface }
+                            : undefined
+                        }
+                      >
+                        <div
+                          className={`h-full min-w-0 rounded-sm transition-[width,opacity] duration-200 ${accentHex ? "opacity-40 group-focus-within:opacity-100 group-hover:opacity-100" : getBarFillClass(queueName)}`}
+                          style={{
+                            width: `${widthPercent}%`,
+                            ...(accentHex
+                              ? { backgroundColor: accentHex }
+                              : undefined),
+                          }}
+                        />
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
