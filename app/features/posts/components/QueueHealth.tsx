@@ -129,7 +129,7 @@ export default function QueueHealth({
                           {queueName}
                         </span>
                         <span
-                          className={`flex-shrink-0 text-xs tabular-nums transition-opacity duration-200 ${bundle ? "font-bold opacity-50 group-focus-within:opacity-100 group-hover:opacity-100" : "text-muted-foreground"}`}
+                          className={`flex-shrink-0 text-xs tabular-nums transition-opacity duration-200 ${bundle ? "font-bold opacity-50 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100" : "text-muted-foreground"}`}
                           style={bundle ? { color: bundle.accent } : undefined}
                         >
                           {count}
@@ -146,7 +146,7 @@ export default function QueueHealth({
                         }
                       >
                         <div
-                          className={`h-full min-w-0 rounded-[1px] transition-[width,opacity] duration-200 ${accentHex ? "opacity-40 group-focus-within:opacity-100 group-hover:opacity-100" : getBarFillClass(queueName)}`}
+                          className={`h-full min-w-0 rounded-[1px] transition-[width,opacity] duration-200 ${accentHex ? "opacity-40 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100" : getBarFillClass(queueName)}`}
                           style={{
                             width: `${widthPercent}%`,
                             ...(accentHex

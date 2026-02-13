@@ -4,14 +4,15 @@
 
 interface DashboardHeaderProps {
   currentTab: string;
-  allContentCount: number;
-  postsCount: number;
-  repostsCount?: number;
-  longformCount: number;
   /** Last future item's scheduled time (unused; Runway KPI shows this) */
   flowRunsUntil?: Date | string | null;
   /** Optional class for layout (e.g. flex-shrink-0 when in a row with tabs) */
   className?: string;
+  /** Optional counts (used on Scheduled page; not displayed on Dashboard Flow) */
+  allContentCount?: number;
+  postsCount?: number;
+  repostsCount?: number;
+  longformCount?: number;
 }
 
 export function DashboardHeader({

@@ -82,21 +82,11 @@ const DASHBOARD_TAB_INACTIVE_CLASSES =
   "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
 function DashboardContentTypeTabs({
-  flowItems,
   currentContentTab,
   queueType,
-  totalCount,
-  postsCount: postsCountProp,
-  repostsCount: repostsCountProp,
-  longformCount: longformCountProp,
 }: {
-  flowItems: CombinedContent[];
   currentContentTab: string;
   queueType: string;
-  totalCount?: number;
-  postsCount?: number;
-  repostsCount?: number;
-  longformCount?: number;
 }) {
   const baseHref =
     queueType !== "all" ? `?queueType=${queueType}&tab=` : "?tab=";
@@ -106,35 +96,26 @@ function DashboardContentTypeTabs({
         ? DASHBOARD_TAB_ACTIVE_CLASSES
         : DASHBOARD_TAB_INACTIVE_CLASSES
     }`;
-  const allCount = totalCount ?? flowItems.length;
-  const postsCount =
-    postsCountProp ??
-    flowItems.filter((i) => i.type === "post" && !isRepostContent(i)).length;
-  const repostsCount =
-    repostsCountProp ?? flowItems.filter((i) => isRepostContent(i)).length;
-  const longformCount =
-    longformCountProp ?? flowItems.filter((i) => i.type === "longform").length;
-
   return (
     <div className="border-border mt-2 border-b">
       <nav className="-mb-px flex space-x-6" aria-label="Content types">
         <Link to={`/dashboard${baseHref}all`} className={tabClass("all")}>
-          All ({allCount})
+          All
         </Link>
         <Link to={`/dashboard${baseHref}posts`} className={tabClass("posts")}>
-          Posts ({postsCount})
+          Posts
         </Link>
         <Link
           to={`/dashboard${baseHref}longform`}
           className={tabClass("longform")}
         >
-          Articles ({longformCount})
+          Articles
         </Link>
         <Link
           to={`/dashboard${baseHref}reposts`}
           className={tabClass("reposts")}
         >
-          Reposts ({repostsCount})
+          Reposts
         </Link>
       </nav>
     </div>
@@ -158,10 +139,6 @@ export default function DashboardIndexPage() {
     clearPrependedPastCount,
     fetchMorePast,
     fetchMoreFuture,
-    flowTotalCount,
-    flowPostsCount,
-    flowRepostsCount,
-    flowLongformCount,
   } = useFlowData();
 
   const [runwayModalOpen, setRunwayModalOpen] = useState(false);
@@ -350,21 +327,6 @@ export default function DashboardIndexPage() {
             <div className="flex min-w-0 items-center gap-3">
               <DashboardHeader
                 currentTab={currentContentTab}
-                allContentCount={flowTotalCount ?? flowItems.length}
-                postsCount={
-                  flowPostsCount ??
-                  flowItems.filter(
-                    (i) => i.type === "post" && !isRepostContent(i)
-                  ).length
-                }
-                repostsCount={
-                  flowRepostsCount ??
-                  flowItems.filter((i) => isRepostContent(i)).length
-                }
-                longformCount={
-                  flowLongformCount ??
-                  flowItems.filter((i) => i.type === "longform").length
-                }
                 flowRunsUntil={flowRunsUntil}
                 className="min-w-0"
               />
@@ -389,13 +351,8 @@ export default function DashboardIndexPage() {
           </div>
           {/* Post type filter tabs (All, Posts, Reposts, Articles) */}
           <DashboardContentTypeTabs
-            flowItems={flowItems}
             currentContentTab={currentContentTab}
             queueType={queueType}
-            totalCount={flowTotalCount}
-            postsCount={flowPostsCount}
-            repostsCount={flowRepostsCount}
-            longformCount={flowLongformCount}
           />
         </div>
 

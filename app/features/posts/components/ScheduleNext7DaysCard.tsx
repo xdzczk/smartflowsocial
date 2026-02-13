@@ -146,6 +146,7 @@ export function ScheduleNext7DaysCard({
                   >
                     {label}
                   </span>
+                  <div className="min-w-0 flex-1" aria-hidden />
                   <div
                     className="flex shrink-0 items-center justify-end gap-1.5 overflow-hidden"
                     style={{
@@ -163,35 +164,63 @@ export function ScheduleNext7DaysCard({
                             (sum, q) => sum + (q.count > 0 ? q.count : 0),
                             0
                           );
-                          let rendered = 0;
-                          const parts: React.ReactNode[] = [];
-                          for (const { queueName, count: n } of byQueue) {
-                            if (n <= 0 || rendered >= MAX_BLOCKS) continue;
-                            const bundle = getQueueBundleForName(
-                              queueName,
-                              queueTypes
-                            );
-                            const accent =
-                              queueName === "Unassigned" || !bundle
-                                ? "var(--muted)"
-                                : bundle.accent;
-                            const toShow = Math.min(n, MAX_BLOCKS - rendered);
-                            for (let i = 0; i < toShow; i++) {
-                              const blockStyle: React.CSSProperties &
-                                Record<string, string> = {
-                                "--block-accent": accent,
-                              };
-                              parts.push(
-                                <span
-                                  key={`${queueName}-${i}`}
-                                  className="inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
-                                  style={blockStyle}
-                                  aria-hidden
-                                />
+                          const queuesWithCount = byQueue
+                            .filter((q) => q.count > 0)
+                            .map((q) => {
+                              const bundle = getQueueBundleForName(
+                                q.queueName,
+                                queueTypes
                               );
-                              rendered += toShow;
+                              const accent =
+                                q.queueName === "Unassigned" || !bundle
+                                  ? "var(--muted)"
+                                  : bundle.accent;
+                              return {
+                                queueName: q.queueName,
+                                count: q.count,
+                                accent,
+                              };
+                            });
+                          const slots: Array<{ id: number; accent: string }> =
+                            [];
+                          let slotId = 0;
+                          const remaining = queuesWithCount.map((q) => q.count);
+                          for (let i = 0; i < MAX_BLOCKS; i++) {
+                            let j = i % queuesWithCount.length;
+                            let tried = 0;
+                            while (tried < queuesWithCount.length) {
+                              const count = remaining[j];
+                              const queue = queuesWithCount[j];
+                              if (
+                                typeof count === "number" &&
+                                count > 0 &&
+                                queue
+                              ) {
+                                slots.push({
+                                  id: slotId++,
+                                  accent: queue.accent,
+                                });
+                                remaining[j] = count - 1;
+                                break;
+                              }
+                              j = (j + 1) % queuesWithCount.length;
+                              tried += 1;
                             }
                           }
+                          const parts: React.ReactNode[] = slots.map((slot) => {
+                            const blockStyle: React.CSSProperties &
+                              Record<string, string> = {
+                              "--block-accent": slot.accent,
+                            };
+                            return (
+                              <span
+                                key={slot.id}
+                                className="inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100"
+                                style={blockStyle}
+                                aria-hidden
+                              />
+                            );
+                          });
                           if (totalBlocks > MAX_BLOCKS) {
                             parts.push(
                               <span
