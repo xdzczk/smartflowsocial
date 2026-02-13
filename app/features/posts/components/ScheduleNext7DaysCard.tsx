@@ -72,7 +72,7 @@ export function ScheduleNext7DaysCard({
           </p>
         ) : null}
         <ul
-          className="flex flex-col gap-3"
+          className="flex flex-col gap-2"
           aria-label="Scheduled posts per day for the next 7 days"
         >
           {days.map(({ dateKey, count }) => {
@@ -81,7 +81,7 @@ export function ScheduleNext7DaysCard({
             return (
               <li
                 key={dateKey}
-                className={`flex min-h-[2.75rem] items-center justify-between rounded-lg border px-3 py-2 text-xs ${
+                className={`flex min-h-[2.25rem] items-center justify-between rounded-lg border px-3 py-1.5 text-xs ${
                   gap
                     ? "border-amber-500/50 bg-amber-500/10 dark:border-amber-400/30 dark:bg-amber-500/10"
                     : "border-border/60 bg-muted/20"

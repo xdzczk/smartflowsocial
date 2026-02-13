@@ -193,7 +193,7 @@ export function DashboardLayoutPage(): ReactNode {
           ) : null}
 
           <div
-            className={`flex w-full flex-1 flex-col pt-4.5 pb-24 ${isDashboardIndex ? "lg:min-h-0 lg:overflow-hidden" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
+            className={`flex w-full flex-1 flex-col pt-4.5 pb-24 ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
           >
             <Outlet />
           </div>
