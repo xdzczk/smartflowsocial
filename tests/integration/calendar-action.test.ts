@@ -692,7 +692,7 @@ describe("Calendar Action Handler", () => {
               signed?: boolean;
             })
           : {};
-      expect(jsonResult.error).toBe("Longform post not found");
+      expect(jsonResult.error).toBe("Article not found");
     });
 
     it("should handle invalid JSON in signed events gracefully", async () => {

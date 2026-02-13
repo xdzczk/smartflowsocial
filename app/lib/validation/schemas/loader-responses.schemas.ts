@@ -239,6 +239,10 @@ export const publishedPostsLoaderDataSchema = z.object({
   stats: z.record(z.string(), postStatsSchema),
   selectedQueueType: z.string().optional(),
   longformPagination: paginationSchema.optional(),
+  totalPostsCount: z.number().int().min(0).optional(),
+  totalRepostsCount: z.number().int().min(0).optional(),
+  totalLongformCount: z.number().int().min(0).optional(),
+  totalContentCount: z.number().int().min(0).optional(),
 });
 
 export type PublishedPostsLoaderData = z.infer<
@@ -466,6 +470,10 @@ export const scheduledPostsLoaderDataSchema = z.object({
   hashTagPresets: z.array(hashTagPresetSchema),
   pagination: paginationSchema,
   longformPagination: paginationSchema.optional(),
+  totalPostsCount: z.number().int().min(0).optional(),
+  totalRepostsCount: z.number().int().min(0).optional(),
+  totalLongformCount: z.number().int().min(0).optional(),
+  totalContentCount: z.number().int().min(0).optional(),
 });
 
 export type ScheduledPostsLoaderData = z.infer<
@@ -559,6 +567,11 @@ export const flowLoaderDataSchema = z.object({
   runwayLastScheduledAtUtc: z.number().nullable().optional(),
   /** Runway settings for modal; only from dashboard index loader. */
   runwaySettings: runwaySettingsSchema.optional(),
+  /** Total counts for full flow window (only on initial load). */
+  flowTotalCount: z.number().int().min(0).optional(),
+  flowPostsCount: z.number().int().min(0).optional(),
+  flowRepostsCount: z.number().int().min(0).optional(),
+  flowLongformCount: z.number().int().min(0).optional(),
 });
 
 export type FlowLoaderData = z.infer<typeof flowLoaderDataSchema>;

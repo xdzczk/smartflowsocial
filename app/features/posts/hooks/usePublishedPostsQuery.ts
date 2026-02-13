@@ -564,14 +564,52 @@ export function usePublishedPostsInfiniteData() {
     : [];
   const pagination = processPagination(paginationRaw);
 
-  // Extract pagination totals for displaying counts (Posts = original only, Reposts = repost/quote)
-  const totalRepostsCount = allPosts.filter((p) => isRepostPost(p)).length;
-  const totalPostsCount = allPosts.filter((p) => !isRepostPost(p)).length;
-  const totalLongformCount = allLongformPosts.length;
+  // Use server-provided totals from first page when available (complete before load-more)
+  const firstPage = data.pages[0];
+  const serverTotalPostsCount =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "totalPostsCount" in firstPage &&
+    typeof (firstPage as { totalPostsCount?: number }).totalPostsCount ===
+      "number"
+      ? (firstPage as { totalPostsCount: number }).totalPostsCount
+      : undefined;
+  const serverTotalRepostsCount =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "totalRepostsCount" in firstPage &&
+    typeof (firstPage as { totalRepostsCount?: number }).totalRepostsCount ===
+      "number"
+      ? (firstPage as { totalRepostsCount: number }).totalRepostsCount
+      : undefined;
+  const serverTotalLongformCount =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "totalLongformCount" in firstPage &&
+    typeof (firstPage as { totalLongformCount?: number }).totalLongformCount ===
+      "number"
+      ? (firstPage as { totalLongformCount: number }).totalLongformCount
+      : undefined;
+  const serverTotalContentCount =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "totalContentCount" in firstPage &&
+    typeof (firstPage as { totalContentCount?: number }).totalContentCount ===
+      "number"
+      ? (firstPage as { totalContentCount: number }).totalContentCount
+      : undefined;
+
+  const totalPostsCount =
+    serverTotalPostsCount ?? allPosts.filter((p) => !isRepostPost(p)).length;
+  const totalRepostsCount =
+    serverTotalRepostsCount ?? allPosts.filter((p) => isRepostPost(p)).length;
+  const totalLongformCount =
+    serverTotalLongformCount ?? allLongformPosts.length;
   const totalContentCount =
-    typeof pagination.total === "number"
+    serverTotalContentCount ??
+    (typeof pagination.total === "number"
       ? pagination.total
-      : allPosts.length + totalLongformCount;
+      : allPosts.length + allLongformPosts.length);
 
   return {
     posts: allPosts,
@@ -581,7 +619,7 @@ export function usePublishedPostsInfiniteData() {
     queueTypes,
     pagination,
     stats: allStats,
-    // Pagination totals for display (Posts = original only, Reposts = repost/quote)
+    // Pagination totals for display (server totals when available)
     totalPostsCount,
     totalRepostsCount,
     totalLongformCount,

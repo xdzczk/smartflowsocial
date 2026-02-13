@@ -13,7 +13,10 @@ import {
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
-import { getPublishedPosts } from "~/models/post.queries.server";
+import {
+  getPublishedPosts,
+  getPublishedRepostsCount,
+} from "~/models/post.queries.server";
 
 import {
   toPostDTOArray,
@@ -41,18 +44,24 @@ export async function getPublishedDashboardData({
   const queueType =
     params.queueType ?? url.searchParams.get("queueType") ?? "all";
 
-  const [{ posts, pagination }, allLongformResultRaw, user, queueTypesRaw] =
-    await Promise.all([
-      getPublishedPosts({
-        userId,
-        page,
-        limit,
-        queueType,
-      }),
-      getPublishedLongFormPosts({ userId, page, limit }),
-      getUserById(userId),
-      getQueueTypesCached(userId),
-    ]);
+  const [
+    { posts, pagination },
+    allLongformResultRaw,
+    user,
+    queueTypesRaw,
+    repostsCount,
+  ] = await Promise.all([
+    getPublishedPosts({
+      userId,
+      page,
+      limit,
+      queueType,
+    }),
+    getPublishedLongFormPosts({ userId, page, limit }),
+    getUserById(userId),
+    getQueueTypesCached(userId),
+    getPublishedRepostsCount({ userId, queueType }),
+  ]);
 
   /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const allLongformResult =
@@ -189,6 +198,16 @@ export async function getPublishedDashboardData({
   const longformPostsDTO: LongFormPostDTO[] =
     toLongFormPostDTOArray(longformPostsData);
 
+  const longformPaginationObj = longformResult.pagination as
+    | { total?: number }
+    | undefined;
+  const totalLongform =
+    longformPaginationObj && typeof longformPaginationObj.total === "number"
+      ? longformPaginationObj.total
+      : 0;
+  const totalPosts =
+    typeof pagination.total === "number" ? pagination.total : 0;
+
   return {
     posts: postsDTO,
     longformPosts: longformPostsDTO,
@@ -204,5 +223,9 @@ export async function getPublishedDashboardData({
         qt.isEnabled !== false
     ),
     selectedQueueType: queueType,
+    totalPostsCount: totalPosts - repostsCount,
+    totalRepostsCount: repostsCount,
+    totalLongformCount: totalLongform,
+    totalContentCount: totalPosts + totalLongform,
   };
 }

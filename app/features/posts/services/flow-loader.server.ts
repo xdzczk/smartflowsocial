@@ -163,6 +163,11 @@ export interface LoadFlowDataResult {
   /** App QueueType[] with color derived from colorToken for client display */
   queueTypes: QueueType[];
   hashTagPresets: Awaited<ReturnType<typeof getHashTagPresetsCached>>;
+  /** Total counts for the full flow window (only on initial load, not on load-more). */
+  flowTotalCount?: number;
+  flowPostsCount?: number;
+  flowRepostsCount?: number;
+  flowLongformCount?: number;
 }
 
 /**
@@ -441,6 +446,23 @@ export async function loadFlowData({
     now
   );
 
+  // Total counts for the full flow window (so tab counts are complete before load-more)
+  const fullWindow = [...pastItems, ...futureItems];
+  const flowTotalCount = fullWindow.length;
+  const flowPostsCount = fullWindow.filter(
+    (i) =>
+      i.type === "post" &&
+      (i as CombinedContent & { postKind?: string }).postKind !== "REPOST"
+  ).length;
+  const flowRepostsCount = fullWindow.filter(
+    (i) =>
+      i.type === "post" &&
+      (i as CombinedContent & { postKind?: string }).postKind === "REPOST"
+  ).length;
+  const flowLongformCount = fullWindow.filter(
+    (i) => i.type === "longform"
+  ).length;
+
   return {
     flowItems,
     hasMorePast,
@@ -451,5 +473,9 @@ export async function loadFlowData({
     user,
     queueTypes: queueTypesForClient,
     hashTagPresets,
+    flowTotalCount,
+    flowPostsCount,
+    flowRepostsCount,
+    flowLongformCount,
   };
 }

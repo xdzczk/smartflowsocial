@@ -32,7 +32,7 @@ export function DraftsHeader({
     if (currentTab === "posts") return "posts";
     if (currentTab === "reposts") return "reposts";
     if (currentTab === "bulk") return "bulk draft groups";
-    return "longform articles";
+    return "articles";
   };
 
   return (

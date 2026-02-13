@@ -291,6 +291,52 @@ export function useScheduledPostsData() {
   };
 }
 
+function emptyScheduledPostsInfiniteResult(
+  isLoading: boolean,
+  isFetchingNextPage: boolean,
+  fetchNextPage: () => void
+) {
+  return {
+    posts: [] as PostData[],
+    longformPosts: [] as LongFormPostData[],
+    allContent: [] as CombinedContent[],
+    user: null as UserData | null,
+    queueTypes: [] as QueueType[],
+    hashTagPresets: [] as HashTagPreset[],
+    totalContentCount: 0,
+    totalPostsCount: 0,
+    totalRepostsCount: 0,
+    totalLongformCount: 0,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage: false,
+    fetchNextPage,
+    error: null,
+  };
+}
+
+function parsePagePosts(pageData: Record<string, unknown>) {
+  const pagePostsRaw =
+    "posts" in pageData && Array.isArray(pageData["posts"])
+      ? pageData["posts"]
+      : [];
+  const pageLongformPostsRaw =
+    "longformPosts" in pageData && Array.isArray(pageData["longformPosts"])
+      ? pageData["longformPosts"]
+      : [];
+  const pagePosts: PostData[] = Array.isArray(pagePostsRaw)
+    ? fromPostDTOArray(pagePostsRaw as unknown as PostDTO[])
+    : [];
+  const pageLongformPosts: LongFormPostData[] = Array.isArray(
+    pageLongformPostsRaw
+  )
+    ? fromLongFormPostDTOArray(
+        pageLongformPostsRaw as unknown as LongFormPostDTO[]
+      )
+    : [];
+  return { pagePosts, pageLongformPosts };
+}
+
 /**
  * Hook to get processed scheduled posts data from infinite query
  * Flattens posts and longform posts across all pages
@@ -302,23 +348,13 @@ export function useScheduledPostsInfiniteData() {
 
   // data.pages always exists due to initialData, so we process it directly
   if (data.pages.length === 0) {
-    return {
-      posts: [] as PostData[],
-      longformPosts: [] as LongFormPostData[],
-      allContent: [] as CombinedContent[],
-      user: null as UserData | null,
-      queueTypes: [] as QueueType[],
-      hashTagPresets: [] as HashTagPreset[],
-      totalContentCount: 0,
-      totalPostsCount: 0,
-      totalRepostsCount: 0,
-      totalLongformCount: 0,
+    return emptyScheduledPostsInfiniteResult(
       isLoading,
       isFetchingNextPage,
-      hasNextPage: false,
-      fetchNextPage,
-      error: null,
-    };
+      () => {
+        void fetchNextPage();
+      }
+    );
   }
 
   // Flatten all pages
@@ -328,26 +364,9 @@ export function useScheduledPostsInfiniteData() {
 
   // Process each page
   for (const pageData of allPages) {
-    const pagePostsRaw =
-      "posts" in pageData && Array.isArray(pageData.posts)
-        ? pageData.posts
-        : [];
-    const pageLongformPostsRaw =
-      "longformPosts" in pageData && Array.isArray(pageData.longformPosts)
-        ? pageData.longformPosts
-        : [];
-
-    const pagePosts: PostData[] = Array.isArray(pagePostsRaw)
-      ? fromPostDTOArray(pagePostsRaw as unknown as PostDTO[])
-      : [];
-    const pageLongformPosts: LongFormPostData[] = Array.isArray(
-      pageLongformPostsRaw
-    )
-      ? fromLongFormPostDTOArray(
-          pageLongformPostsRaw as unknown as LongFormPostDTO[]
-        )
-      : [];
-
+    const { pagePosts, pageLongformPosts } = parsePagePosts(
+      pageData as Record<string, unknown>
+    );
     allPosts.push(...pagePosts);
     allLongformPosts.push(...pageLongformPosts);
   }
@@ -363,22 +382,13 @@ export function useScheduledPostsInfiniteData() {
   // Get other data from last page
   const lastPage = allPages[allPages.length - 1];
   if (!lastPage) {
-    return {
-      posts: [] as PostData[],
-      longformPosts: [] as LongFormPostData[],
-      allContent: [] as CombinedContent[],
-      user: null as UserData | null,
-      queueTypes: [] as QueueType[],
-      hashTagPresets: [] as HashTagPreset[],
-      totalContentCount: 0,
-      totalPostsCount: 0,
-      totalRepostsCount: 0,
-      totalLongformCount: 0,
+    return emptyScheduledPostsInfiniteResult(
       isLoading,
       isFetchingNextPage,
-      hasNextPage: false,
-      fetchNextPage,
-    };
+      () => {
+        void fetchNextPage();
+      }
+    );
   }
 
   const userRaw = "user" in lastPage ? lastPage.user : null;
@@ -390,7 +400,7 @@ export function useScheduledPostsInfiniteData() {
     "hashTagPresets" in lastPage && Array.isArray(lastPage.hashTagPresets)
       ? lastPage.hashTagPresets
       : [];
-  const paginationRaw =
+  const _paginationRaw =
     "pagination" in lastPage ? lastPage.pagination : undefined;
   const longformPaginationRaw =
     "longformPagination" in lastPage ? lastPage.longformPagination : undefined;
@@ -457,14 +467,45 @@ export function useScheduledPostsInfiniteData() {
   const hashTagPresets: HashTagPreset[] =
     validateHashTagPresets(hashTagPresetsRaw);
 
-  // Extract pagination totals for displaying counts
-  const pagination =
-    paginationRaw &&
-    typeof paginationRaw === "object" &&
-    "total" in paginationRaw &&
-    typeof paginationRaw.total === "number"
-      ? paginationRaw.total
-      : allPosts.length;
+  // Use server-provided totals from first page when available (complete before load-more)
+  const firstPage = allPages[0];
+  const serverTotalPostsCount =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "totalPostsCount" in firstPage &&
+    typeof (firstPage as { totalPostsCount?: number }).totalPostsCount ===
+      "number"
+      ? (firstPage as { totalPostsCount: number }).totalPostsCount
+      : undefined;
+  const serverTotalRepostsCount =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "totalRepostsCount" in firstPage &&
+    typeof (firstPage as { totalRepostsCount?: number }).totalRepostsCount ===
+      "number"
+      ? (firstPage as { totalRepostsCount: number }).totalRepostsCount
+      : undefined;
+  const serverTotalLongformCount =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "totalLongformCount" in firstPage &&
+    typeof (firstPage as { totalLongformCount?: number }).totalLongformCount ===
+      "number"
+      ? (firstPage as { totalLongformCount: number }).totalLongformCount
+      : undefined;
+  const serverTotalContentCount =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "totalContentCount" in firstPage &&
+    typeof (firstPage as { totalContentCount?: number }).totalContentCount ===
+      "number"
+      ? (firstPage as { totalContentCount: number }).totalContentCount
+      : undefined;
+
+  const totalPostsCount =
+    serverTotalPostsCount ?? allPosts.filter((p) => !isRepostPost(p)).length;
+  const totalRepostsCount =
+    serverTotalRepostsCount ?? allPosts.filter((p) => isRepostPost(p)).length;
   const longformPagination =
     longformPaginationRaw &&
     typeof longformPaginationRaw === "object" &&
@@ -472,11 +513,9 @@ export function useScheduledPostsInfiniteData() {
     typeof longformPaginationRaw.total === "number"
       ? longformPaginationRaw.total
       : allLongformPosts.length;
-
-  // Calculate totals: Posts = original only, Reposts = repost/quote
-  const totalRepostsCount = allPosts.filter((p) => isRepostPost(p)).length;
-  const totalPostsCount = allPosts.filter((p) => !isRepostPost(p)).length;
-  const totalContentCount = pagination + longformPagination;
+  const totalLongformCount = serverTotalLongformCount ?? longformPagination;
+  const totalContentCount =
+    serverTotalContentCount ?? allPosts.length + allLongformPosts.length;
 
   return {
     posts: allPosts,
@@ -485,10 +524,10 @@ export function useScheduledPostsInfiniteData() {
     user: userRaw,
     queueTypes,
     hashTagPresets,
-    // Pagination totals for display
+    // Pagination totals for display (server totals when available)
     totalPostsCount,
     totalRepostsCount,
-    totalLongformCount: longformPagination,
+    totalLongformCount,
     totalContentCount,
     isLoading,
     isFetchingNextPage,

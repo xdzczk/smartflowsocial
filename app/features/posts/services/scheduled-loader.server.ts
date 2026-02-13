@@ -13,7 +13,10 @@ import {
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
 import { getScheduledLongFormPosts } from "~/models/longformpost.server";
-import { getScheduledPosts } from "~/models/post.queries.server";
+import {
+  getScheduledPosts,
+  getScheduledRepostsCount,
+} from "~/models/post.queries.server";
 
 import { combineContent as _combineContent } from "../combined.server";
 import {
@@ -42,12 +45,14 @@ export async function loadScheduledData(
     user,
     queueTypes,
     hashTagPresets,
+    repostsCount,
   ] = await Promise.all([
     getScheduledPosts({ userId, queueType, page, limit }),
     getScheduledLongFormPosts({ userId, page, limit }),
     getUserById(userId),
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
+    getScheduledRepostsCount({ userId, queueType }),
   ]);
 
   // Extract posts and pagination from paginated result
@@ -97,6 +102,12 @@ export async function loadScheduledData(
   const longformPostsDTO: LongFormPostDTO[] =
     toLongFormPostDTOArray(longformPostsData);
 
+  const totalPosts = postsPagination.total;
+  const totalLongform =
+    typeof longformPostsPagination.total === "number"
+      ? longformPostsPagination.total
+      : 0;
+
   return {
     posts: postsDTO,
     longformPosts: longformPostsDTO,
@@ -104,7 +115,11 @@ export async function loadScheduledData(
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,
     hashTagPresets,
-    pagination: postsPagination, // Use posts pagination as primary
+    pagination: postsPagination,
     longformPagination: longformPostsPagination,
+    totalPostsCount: totalPosts - repostsCount,
+    totalRepostsCount: repostsCount,
+    totalLongformCount: totalLongform,
+    totalContentCount: totalPosts + totalLongform,
   };
 }

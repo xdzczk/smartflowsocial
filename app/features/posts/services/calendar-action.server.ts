@@ -137,7 +137,7 @@ export async function handleCalendarRescheduleLongform(
   // Get the original longform post
   const originalPost = await getLongFormPost({ id: postId, userId });
   if (!originalPost) {
-    return json({ error: "Longform post not found" }, { status: 404 });
+    return json({ error: "Article not found" }, { status: 404 });
   }
 
   // Parse signed events if provided (from client-side re-signing)

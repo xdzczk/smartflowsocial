@@ -22,7 +22,7 @@ export function DashboardHeader({
     if (currentTab === "all") return "Your flow";
     if (currentTab === "posts") return "Scheduled Posts";
     if (currentTab === "reposts") return "Scheduled Reposts";
-    return "Scheduled Longform";
+    return "Scheduled Articles";
   };
 
   return (

@@ -57,16 +57,16 @@ export default function PostTypeTabs({
           Posts ({postsCount})
         </Link>
         <Link
+          to={`${basePath}${queueParam}?tab=longform`}
+          className={getTabClasses(currentTab === "longform")}
+        >
+          Articles ({longformCount})
+        </Link>
+        <Link
           to={`${basePath}${queueParam}?tab=reposts`}
           className={getTabClasses(currentTab === "reposts")}
         >
           Reposts ({repostsCount})
-        </Link>
-        <Link
-          to={`${basePath}${queueParam}?tab=longform`}
-          className={getTabClasses(currentTab === "longform")}
-        >
-          Longform ({longformCount})
         </Link>
       </nav>
     </div>

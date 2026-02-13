@@ -22,7 +22,7 @@ function formatDate(template: Template): string {
 
 function typeLabel(template: Template): string {
   const t = (template as Template & { templateType?: string }).templateType;
-  return t === "LONGFORM" ? "Longform" : "Post";
+  return t === "LONGFORM" ? "Article" : "Post";
 }
 
 export default function TemplatesPage() {

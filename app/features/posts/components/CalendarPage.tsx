@@ -80,6 +80,16 @@ export default function CalendarPage() {
             Posts ({totalPostsCount})
           </Link>
           <Link
+            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_LONGFORM}`}
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+              currentTab === TAB_LONGFORM
+                ? TAB_ACTIVE_CLASSES
+                : TAB_INACTIVE_CLASSES
+            }`}
+          >
+            Articles ({totalLongformCount})
+          </Link>
+          <Link
             to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_REPOSTS}`}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               currentTab === TAB_REPOSTS
@@ -88,16 +98,6 @@ export default function CalendarPage() {
             }`}
           >
             Reposts ({totalRepostsCount})
-          </Link>
-          <Link
-            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_LONGFORM}`}
-            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
-              currentTab === TAB_LONGFORM
-                ? TAB_ACTIVE_CLASSES
-                : TAB_INACTIVE_CLASSES
-            }`}
-          >
-            Longform ({totalLongformCount})
           </Link>
         </nav>
       </div>

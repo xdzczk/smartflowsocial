@@ -18,7 +18,7 @@ export function getPostPreview(
         ? post.title.substring(0, 30) + "..."
         : post.title;
     }
-    return "Longform post";
+    return "Article";
   }
 
   if (post.caption) {

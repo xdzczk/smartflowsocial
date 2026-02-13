@@ -273,7 +273,7 @@ export default function TemplateEditPage() {
       ) : template.templateType === "LONGFORM" && template.longFormPost ? (
         <div className="rounded-lg border p-4">
           <p className="dark:text-muted-foreground text-muted-foreground mb-2 text-sm">
-            Longform template
+            Article template
           </p>
           <Link
             to={`/dashboard/longform/${(() => {
@@ -292,7 +292,7 @@ export default function TemplateEditPage() {
             })()}/edit`}
             className="text-primary hover:underline"
           >
-            Edit longform article →
+            Edit article →
           </Link>
         </div>
       ) : template.post ? (

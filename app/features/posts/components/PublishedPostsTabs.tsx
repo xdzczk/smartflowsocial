@@ -52,6 +52,16 @@ export default function PublishedPostsTabs({
             Posts ({postsLength})
           </Link>
           <Link
+            to={`/dashboard/published${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=longform`}
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+              currentTab === "longform"
+                ? ACTIVE_TAB_CLASSES
+                : INACTIVE_TAB_CLASSES
+            }`}
+          >
+            Articles ({longformPostsLength})
+          </Link>
+          <Link
             to={`/dashboard/published${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=reposts`}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               currentTab === "reposts"
@@ -60,16 +70,6 @@ export default function PublishedPostsTabs({
             }`}
           >
             Reposts ({repostsLength})
-          </Link>
-          <Link
-            to={`/dashboard/published${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=longform`}
-            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
-              currentTab === "longform"
-                ? ACTIVE_TAB_CLASSES
-                : INACTIVE_TAB_CLASSES
-            }`}
-          >
-            Longform ({longformPostsLength})
           </Link>
         </nav>
       </div>

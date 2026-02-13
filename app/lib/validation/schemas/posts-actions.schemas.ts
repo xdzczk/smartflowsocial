@@ -458,7 +458,7 @@ export const repostSchema = z.object({
  */
 export const longformRepostSchema = z.object({
   _action: z.literal("longformRepost"),
-  longformPostId: z.string().min(1, "Longform post ID is required"),
+  longformPostId: z.string().min(1, "Article ID is required"),
 });
 
 /**

@@ -31,7 +31,7 @@ import { deletePost } from "~/models/post.commands.server";
 import { getPostsByIds } from "~/models/post.queries.server";
 
 const ERROR_POST_NOT_FOUND = "Post not found";
-const ERROR_LONGFORM_POST_NOT_FOUND = "Longform post not found";
+const ERROR_LONGFORM_POST_NOT_FOUND = "Article not found";
 const DEFAULT_RELAY = "wss://relay.primal.net";
 const DEFAULT_QUEUE_TYPE = "unassigned";
 

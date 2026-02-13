@@ -259,7 +259,7 @@ export default function DraftsPage() {
         )}
       </div>
 
-      {/* Longform detail modal: show when a longform draft is selected (all or longform tab) */}
+      {/* Article detail modal: show when an article draft is selected (all or longform tab) */}
       {(currentTab === "all" || currentTab === "longform") &&
       selectedLongFormPost ? (
         <LongFormDetailsModal

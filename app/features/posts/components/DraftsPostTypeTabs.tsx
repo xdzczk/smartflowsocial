@@ -51,14 +51,6 @@ export function DraftsPostTypeTabs({
           Posts ({postsCount})
         </Link>
         <Link
-          to={`${basePath}?tab=reposts`}
-          className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
-            currentTab === "reposts" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
-          }`}
-        >
-          Reposts ({repostsCount})
-        </Link>
-        <Link
           to={`${basePath}?tab=longform`}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
             currentTab === "longform"
@@ -66,7 +58,15 @@ export function DraftsPostTypeTabs({
               : INACTIVE_TAB_CLASSES
           }`}
         >
-          Longform ({longformCount})
+          Articles ({longformCount})
+        </Link>
+        <Link
+          to={`${basePath}?tab=reposts`}
+          className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+            currentTab === "reposts" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
+          }`}
+        >
+          Reposts ({repostsCount})
         </Link>
         <Link
           to={`${basePath}?tab=bulk`}

@@ -105,6 +105,32 @@ export async function getScheduledPosts({
 }
 
 /**
+ * Count of scheduled posts that are reposts (postKind REPOST).
+ * Used for tab counts so they are complete before all pages are loaded.
+ */
+export async function getScheduledRepostsCount({
+  userId,
+  queueType,
+}: {
+  userId: string;
+  queueType?: string;
+}): Promise<number> {
+  const whereClause: Prisma.PostWhereInput = {
+    currentState: "SCHEDULED",
+    userId,
+    postKind: "REPOST",
+  };
+  if (queueType && queueType !== "all") {
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
+  }
+  return prisma.post.count({ where: whereClause });
+}
+
+/**
  * Returns scheduled posts with scheduledAtUtc in the given UTC range (inclusive).
  * Used for Next 7 days schedule overview. Respects queueType filter.
  */
@@ -319,6 +345,32 @@ export async function getPublishedPosts({
       limit,
     },
   };
+}
+
+/**
+ * Count of published posts that are reposts (postKind REPOST).
+ * Used for tab counts so they are complete before all pages are loaded.
+ */
+export async function getPublishedRepostsCount({
+  userId,
+  queueType,
+}: {
+  userId: string;
+  queueType?: string;
+}): Promise<number> {
+  const whereClause: Prisma.PostWhereInput = {
+    currentState: "PUBLISHED",
+    userId,
+    postKind: "REPOST",
+  };
+  if (queueType && queueType !== "all") {
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
+  }
+  return prisma.post.count({ where: whereClause });
 }
 
 export async function getRecentPublishedPosts({

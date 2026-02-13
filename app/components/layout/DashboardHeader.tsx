@@ -58,7 +58,7 @@ const CREATE_SECTION_ITEMS = [
     icon: (
       <FileText className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
     ),
-    label: "New Long-form",
+    label: "New Article",
   },
   {
     to: "/dashboard/bulkposts",

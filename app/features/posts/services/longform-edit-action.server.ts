@@ -250,7 +250,7 @@ async function handleSaveDraft(
     postId,
     userId,
     "DRAFT",
-    "Longform post saved as draft"
+    "Article saved as draft"
   );
 
   await createLongformDraftVersion(

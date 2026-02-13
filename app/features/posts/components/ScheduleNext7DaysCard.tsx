@@ -77,7 +77,14 @@ export function ScheduleNext7DaysCard({
     days.every((d) => d.count >= targetPerDay);
 
   return (
-    <div className="group flex min-w-0 flex-1 flex-col">
+    /* eslint-disable jsx-a11y/no-noninteractive-tabindex -- div is focusable so touch can reveal full queue colors via :focus-within */
+    <div
+      className="group focus-visible:ring-ring flex min-w-0 flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+      tabIndex={0}
+      role="group"
+      aria-label="Next 7 days schedule"
+    >
+      {/* eslint-enable jsx-a11y/no-noninteractive-tabindex */}
       <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -134,12 +141,17 @@ export function ScheduleNext7DaysCard({
                   }`}
                 >
                   <span
-                    className="text-foreground min-w-0 shrink truncate overflow-hidden font-medium"
+                    className="text-foreground min-w-[10rem] shrink-0 truncate overflow-hidden font-medium"
                     title={label}
                   >
                     {label}
                   </span>
-                  <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 overflow-hidden">
+                  <div
+                    className="flex shrink-0 items-center justify-end gap-1.5 overflow-hidden"
+                    style={{
+                      width: `calc(${MAX_BLOCKS} * 0.5rem + ${MAX_BLOCKS - 1} * 0.125rem + 1.5rem)`,
+                    }}
+                  >
                     {hasBlocks ? (
                       <span
                         className="flex shrink-0 items-center gap-0.5"

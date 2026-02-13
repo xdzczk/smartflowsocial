@@ -75,7 +75,14 @@ export default function QueueHealth({
       : 1;
 
   return (
-    <div className="group flex min-w-0 flex-1 flex-col">
+    /* eslint-disable jsx-a11y/no-noninteractive-tabindex -- div is focusable so touch can reveal full queue colors via :focus-within */
+    <div
+      className="group focus-visible:ring-ring flex min-w-0 flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+      tabIndex={0}
+      role="group"
+      aria-label="Queue Health"
+    >
+      {/* eslint-enable jsx-a11y/no-noninteractive-tabindex */}
       <Card className="flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
         <CardHeader className="px-4 pt-2 pb-1.5">
           <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">

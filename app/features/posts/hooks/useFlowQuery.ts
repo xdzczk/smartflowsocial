@@ -77,6 +77,11 @@ export interface UseFlowDataResult {
   clearPrependedPastCount: () => void;
   fetchMorePast: () => void;
   fetchMoreFuture: () => void;
+  /** Total counts for full flow window (from server on initial load; stable after load-more). */
+  flowTotalCount: number | undefined;
+  flowPostsCount: number | undefined;
+  flowRepostsCount: number | undefined;
+  flowLongformCount: number | undefined;
 }
 
 export function useFlowData(): UseFlowDataResult {
@@ -112,6 +117,14 @@ export function useFlowData(): UseFlowDataResult {
   const [pastLoadMoreLoading, setPastLoadMoreLoading] = useState(false);
   const [futureLoadMoreLoading, setFutureLoadMoreLoading] = useState(false);
   const [lastPrependedPastCount, setLastPrependedPastCount] = useState(0);
+  const [flowTotalCount, setFlowTotalCount] = useState<number | undefined>();
+  const [flowPostsCount, setFlowPostsCount] = useState<number | undefined>();
+  const [flowRepostsCount, setFlowRepostsCount] = useState<
+    number | undefined
+  >();
+  const [flowLongformCount, setFlowLongformCount] = useState<
+    number | undefined
+  >();
 
   /** Cursor we've sent for past; clear when response is processed to avoid duplicate requests */
   const pastSentinelInFlightRef = useRef<string | null>(null);
@@ -167,6 +180,14 @@ export function useFlowData(): UseFlowDataResult {
       setQueueTypes(validated.queueTypes);
       setHashTagPresets(validated.hashTagPresets);
       setRunwaySettings(validated.runwaySettings);
+      if (validated.flowTotalCount !== undefined)
+        setFlowTotalCount(validated.flowTotalCount);
+      if (validated.flowPostsCount !== undefined)
+        setFlowPostsCount(validated.flowPostsCount);
+      if (validated.flowRepostsCount !== undefined)
+        setFlowRepostsCount(validated.flowRepostsCount);
+      if (validated.flowLongformCount !== undefined)
+        setFlowLongformCount(validated.flowLongformCount);
     });
   }, [loaderDataRaw, queueType]);
 
@@ -296,5 +317,9 @@ export function useFlowData(): UseFlowDataResult {
     clearPrependedPastCount: () => setLastPrependedPastCount(0),
     fetchMorePast,
     fetchMoreFuture,
+    flowTotalCount,
+    flowPostsCount,
+    flowRepostsCount,
+    flowLongformCount,
   };
 }

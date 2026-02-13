@@ -62,7 +62,7 @@ export function DraftPickerModal({
     type === "short"
       ? "Open short draft"
       : type === "longform"
-        ? "Open longform draft"
+        ? "Open article draft"
         : "Open bulk draft";
 
   return (
@@ -102,7 +102,7 @@ export function DraftPickerModal({
             <ul className="space-y-1">
               {longformPosts.length === 0 ? (
                 <li className="text-muted-foreground text-sm">
-                  No longform drafts.
+                  No article drafts.
                 </li>
               ) : (
                 longformPosts.map((p) => (

@@ -30,7 +30,7 @@ import {
 import { getScheduledPosts, getPostById } from "~/models/post.queries.server";
 
 const ERROR_POST_NOT_FOUND = "Post not found";
-const ERROR_LONGFORM_POST_NOT_FOUND = "Longform post not found";
+const ERROR_LONGFORM_POST_NOT_FOUND = "Article not found";
 const ERROR_PARSING_SIGNED_EVENTS = "Error parsing signed events";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Reserved for future use
 const QUEUE_SCHEDULED_POSTS = "scheduled-posts";

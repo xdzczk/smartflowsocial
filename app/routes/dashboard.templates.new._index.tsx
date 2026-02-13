@@ -27,7 +27,7 @@ export default function TemplateNewTypePicker() {
           <Link to="/dashboard/templates/new/post">Short post</Link>
         </Button>
         <Button asChild variant="outline" size="lg">
-          <Link to="/dashboard/templates/new/longform">Longform</Link>
+          <Link to="/dashboard/templates/new/longform">Article</Link>
         </Button>
       </div>
     </div>
