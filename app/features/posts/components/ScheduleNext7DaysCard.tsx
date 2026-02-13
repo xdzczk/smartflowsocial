@@ -159,10 +159,6 @@ export function ScheduleNext7DaysCard({
                               queueName,
                               queueTypes
                             );
-                            const muted =
-                              queueName === "Unassigned" || !bundle
-                                ? "var(--muted)"
-                                : bundle.surface;
                             const accent =
                               queueName === "Unassigned" || !bundle
                                 ? "var(--muted)"
@@ -171,13 +167,12 @@ export function ScheduleNext7DaysCard({
                             for (let i = 0; i < toShow; i++) {
                               const blockStyle: React.CSSProperties &
                                 Record<string, string> = {
-                                "--block-muted": muted,
                                 "--block-accent": accent,
                               };
                               parts.push(
                                 <span
                                   key={`${queueName}-${i}`}
-                                  className="inline-block size-2 rounded-sm bg-[var(--block-muted)] transition-colors duration-200 group-focus-within:bg-[var(--block-accent)] group-hover:bg-[var(--block-accent)]"
+                                  className="inline-block size-2 rounded-sm bg-[var(--block-accent)] opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
                                   style={blockStyle}
                                   aria-hidden
                                 />

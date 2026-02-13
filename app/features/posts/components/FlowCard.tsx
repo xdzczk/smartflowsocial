@@ -212,12 +212,14 @@ function FlowCardInner({
   // Coloured shadow on hover/touch and for next-scheduled glow: queue color or primary (same as unassigned next scheduled)
   const shadowColor = queueColor ?? "hsl(var(--primary))";
 
+  const isPublished = Boolean(item.publishedAt);
+
   return (
     <button
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`card-lift flow-card-queue-shadow border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
+      className={`card-lift flow-card-queue-shadow flow-card-surface border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${isPublished ? "opacity-90" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
       style={{
         ["--queue-color" as string]: shadowColor,
         ...(glowStyle ?? {}),
@@ -256,6 +258,10 @@ function FlowCardInner({
         {isLastPosted ? (
           <span className="text-muted-foreground bg-muted/50 mb-0.5 self-start rounded px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
             Last post
+          </span>
+        ) : isNextScheduledAndFuture ? (
+          <span className="text-muted-foreground bg-muted/50 mb-0.5 self-start rounded px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+            Next post
           </span>
         ) : null}
         <span className="text-foreground text-xl leading-tight font-bold tabular-nums">

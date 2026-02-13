@@ -55,6 +55,11 @@
     animation: flow-next-shadow-glow var(--flow-glow-duration, 3s) ease-in-out infinite;
   }
 
+  /* Flow cards: slightly lighter surface in dark mode for contrast with Flow section */
+  .dark .flow-card-surface {
+    background-color: hsl(0 0% 9.5%);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-flow-next-shadow-glow {
       animation-duration: 4s;

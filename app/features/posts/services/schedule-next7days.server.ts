@@ -69,13 +69,16 @@ export async function getScheduleNext7DaysCounts(
     const dateKey = toDateKey(zoned);
     countByDateKey[dateKey] = (countByDateKey[dateKey] ?? 0) + 1;
     const queueName = queueType?.name ?? "Unassigned";
-    const arr = byQueueByDateKey[dateKey] ?? [];
-    const entry = arr.find((e) => e.queueName === queueName);
+    const existing = byQueueByDateKey[dateKey] ?? [];
+    const entry = existing.find((e) => e.queueName === queueName);
     if (entry) {
-      entry.count += 1;
+      byQueueByDateKey[dateKey] = existing.map((e) =>
+        e.queueName === queueName
+          ? { queueName: e.queueName, count: e.count + 1 }
+          : e
+      );
     } else {
-      arr.push({ queueName, count: 1 });
-      byQueueByDateKey[dateKey] = arr;
+      byQueueByDateKey[dateKey] = [...existing, { queueName, count: 1 }];
     }
   }
 
