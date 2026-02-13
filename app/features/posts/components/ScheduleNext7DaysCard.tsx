@@ -136,15 +136,6 @@ export function ScheduleNext7DaysCard({
                   {label}
                 </span>
                 <div className="flex min-w-0 flex-shrink items-center gap-1.5">
-                  <span
-                    className={`tabular-nums ${
-                      gap
-                        ? "text-amber-700 dark:text-amber-400"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {count} {count === 1 ? "post" : "posts"}
-                  </span>
                   {hasBlocks ? (
                     <span
                       className="flex shrink-0 items-center gap-0.5"
@@ -173,7 +164,7 @@ export function ScheduleNext7DaysCard({
                             parts.push(
                               <span
                                 key={`${queueName}-${i}`}
-                                className="inline-block size-2 rounded-sm"
+                                className="inline-block size-2 rounded-none"
                                 style={{ backgroundColor: color }}
                                 aria-hidden
                               />
@@ -196,6 +187,15 @@ export function ScheduleNext7DaysCard({
                       })()}
                     </span>
                   ) : null}
+                  <span
+                    className={`tabular-nums ${
+                      gap
+                        ? "text-amber-700 dark:text-amber-400"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {count} {count === 1 ? "post" : "posts"}
+                  </span>
                 </div>
               </li>
             );
