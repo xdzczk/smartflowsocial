@@ -1,4 +1,5 @@
 import { Check, Settings2 } from "lucide-react";
+import { useRef, useState } from "react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -71,20 +72,46 @@ export function ScheduleNext7DaysCard({
   onOpenTargetModal,
   queueTypes,
 }: ScheduleNext7DaysCardProps) {
+  const [colorsRevealed, setColorsRevealed] = useState(false);
+  const wasRevealedAtPointerDownRef = useRef(false);
   const allSet =
     targetPerDay > 0 &&
     days.length > 0 &&
     days.every((d) => d.count >= targetPerDay);
 
   return (
-    /* eslint-disable jsx-a11y/no-noninteractive-tabindex -- div is focusable so touch can reveal full queue colors via :focus-within */
     <div
-      className="group focus-visible:ring-ring flex min-w-0 flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+      className={`group focus-visible:ring-ring flex min-w-0 flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
       tabIndex={0}
-      role="group"
+      role="button"
       aria-label="Next 7 days schedule"
+      aria-pressed={colorsRevealed}
+      onPointerDown={(e) => {
+        if ((e.target as HTMLElement).closest("button, a, [role='button']"))
+          return;
+        wasRevealedAtPointerDownRef.current = colorsRevealed;
+        if (e.pointerType !== "mouse") {
+          setColorsRevealed(true);
+        }
+      }}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("button, a, [role='button']"))
+          return;
+        if (e.detail === 0) return;
+        if (wasRevealedAtPointerDownRef.current) {
+          setColorsRevealed(false);
+        } else {
+          setColorsRevealed(true);
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setColorsRevealed((v) => !v);
+        }
+      }}
     >
-      {/* eslint-enable jsx-a11y/no-noninteractive-tabindex */}
       <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -141,16 +168,17 @@ export function ScheduleNext7DaysCard({
                   }`}
                 >
                   <span
-                    className="text-foreground min-w-[10rem] shrink-0 truncate overflow-hidden font-medium"
+                    className="text-foreground min-w-0 shrink-0 truncate font-medium sm:min-w-[10rem]"
                     title={label}
+                    style={{ maxWidth: "12rem" }}
                   >
                     {label}
                   </span>
                   <div className="min-w-0 flex-1" aria-hidden />
                   <div
-                    className="flex shrink-0 items-center justify-end gap-1.5 overflow-hidden"
+                    className="flex min-w-0 shrink items-center justify-end gap-1.5 overflow-hidden"
                     style={{
-                      width: `calc(${MAX_BLOCKS} * 0.5rem + ${MAX_BLOCKS - 1} * 0.125rem + 1.5rem)`,
+                      maxWidth: `calc(${MAX_BLOCKS} * 0.5rem + ${MAX_BLOCKS - 1} * 0.125rem + 1.5rem)`,
                     }}
                   >
                     {hasBlocks ? (
@@ -215,7 +243,7 @@ export function ScheduleNext7DaysCard({
                             return (
                               <span
                                 key={slot.id}
-                                className="inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100"
+                                className="inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100"
                                 style={blockStyle}
                                 aria-hidden
                               />
@@ -238,11 +266,12 @@ export function ScheduleNext7DaysCard({
                     ) : null}
                   </div>
                   <span
-                    className={`shrink-0 tabular-nums ${
+                    className={`shrink-0 whitespace-nowrap tabular-nums ${
                       gap
                         ? "text-amber-700 dark:text-amber-400"
                         : "text-muted-foreground"
                     }`}
+                    style={{ minWidth: "4rem" }}
                   >
                     {count} {count === 1 ? "post" : "posts"}
                   </span>

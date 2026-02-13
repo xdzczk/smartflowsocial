@@ -1,4 +1,5 @@
 import { Link } from "@remix-run/react";
+import { useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -68,6 +69,8 @@ export default function QueueHealth({
   queueCounts,
   queueTypes,
 }: QueueHealthProps) {
+  const [colorsRevealed, setColorsRevealed] = useState(false);
+  const wasRevealedAtPointerDownRef = useRef(false);
   const countsByQueue = queueCounts.filter((c) => c.queueName !== "Unassigned");
   const maxCount =
     countsByQueue.length > 0
@@ -75,14 +78,38 @@ export default function QueueHealth({
       : 1;
 
   return (
-    /* eslint-disable jsx-a11y/no-noninteractive-tabindex -- div is focusable so touch can reveal full queue colors via :focus-within */
     <div
-      className="group focus-visible:ring-ring flex min-w-0 flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+      className={`group focus-visible:ring-ring flex min-w-0 flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
       tabIndex={0}
-      role="group"
+      role="button"
       aria-label="Queue Health"
+      aria-pressed={colorsRevealed}
+      onPointerDown={(e) => {
+        if ((e.target as HTMLElement).closest("button, a, [role='button']"))
+          return;
+        wasRevealedAtPointerDownRef.current = colorsRevealed;
+        if (e.pointerType !== "mouse") {
+          setColorsRevealed(true);
+        }
+      }}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("button, a, [role='button']"))
+          return;
+        if (e.detail === 0) return;
+        if (wasRevealedAtPointerDownRef.current) {
+          setColorsRevealed(false);
+        } else {
+          setColorsRevealed(true);
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setColorsRevealed((v) => !v);
+        }
+      }}
     >
-      {/* eslint-enable jsx-a11y/no-noninteractive-tabindex */}
       <Card className="flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
         <CardHeader className="px-4 pt-2 pb-1.5">
           <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
@@ -129,7 +156,7 @@ export default function QueueHealth({
                           {queueName}
                         </span>
                         <span
-                          className={`flex-shrink-0 text-xs tabular-nums transition-opacity duration-200 ${bundle ? "font-bold opacity-50 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100" : "text-muted-foreground"}`}
+                          className={`flex-shrink-0 text-xs tabular-nums transition-opacity duration-200 ${bundle ? "font-bold opacity-50 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100" : "text-muted-foreground"}`}
                           style={bundle ? { color: bundle.accent } : undefined}
                         >
                           {count}
@@ -146,7 +173,7 @@ export default function QueueHealth({
                         }
                       >
                         <div
-                          className={`h-full min-w-0 rounded-[1px] transition-[width,opacity] duration-200 ${accentHex ? "opacity-40 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100" : getBarFillClass(queueName)}`}
+                          className={`h-full min-w-0 rounded-[1px] transition-[width,opacity] duration-200 ${accentHex ? "opacity-40 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100" : getBarFillClass(queueName)}`}
                           style={{
                             width: `${widthPercent}%`,
                             ...(accentHex

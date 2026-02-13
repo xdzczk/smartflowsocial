@@ -164,6 +164,12 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const allowFetchRef = useRef(false);
     /** State so fetch effect re-runs when we allow fetch (ref alone doesn't trigger re-render) */
     const [allowFetch, setAllowFetch] = useState(false);
+    /** On mobile: defer scroll compensation for prepended past until scroll has settled so we don't break momentum */
+    const pendingPastCompensationRef = useRef<{
+      delta: number;
+      onDone?: () => void;
+      fallbackId: ReturnType<typeof setTimeout>;
+    } | null>(null);
     /** Only fetch past when we've scrolled away from left (initial scroll succeeded); prevents loop when stuck at scroll 0 */
     const hasScrolledAwayFromLeftRef = useRef(false);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
@@ -212,6 +218,16 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           scrollEndTimeoutRef.current = null;
           scrollViewportLastMsRef.current = 0;
           updateViewport();
+          const pending = pendingPastCompensationRef.current;
+          if (pending) {
+            clearTimeout(pending.fallbackId);
+            pendingPastCompensationRef.current = null;
+            const container = scrollContainerRef.current;
+            if (container) {
+              container.scrollLeft += pending.delta;
+            }
+            pending.onDone?.();
+          }
         }, 150);
       };
       const resizeObserver = new ResizeObserver(updateViewport);
@@ -516,14 +532,44 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       });
 
     // When older posts are prepended, shift scroll so the user's view doesn't jump.
+    // On mobile, defer compensation until scroll has settled so we don't interrupt smooth scroll (momentum).
     useLayoutEffect(() => {
       if (lastPrependedPastCount <= 0) return;
       const el = scrollContainerRef.current;
       if (!el) return;
       const delta = lastPrependedPastCount * cardSlotSize;
-      el.scrollLeft += delta;
-      onPrependedPastCompensated?.();
-    }, [lastPrependedPastCount, cardSlotSize, onPrependedPastCompensated]);
+      const applyCompensation = () => {
+        if (!scrollContainerRef.current) return;
+        scrollContainerRef.current.scrollLeft += delta;
+        onPrependedPastCompensated?.();
+      };
+      if (isMobile) {
+        if (pendingPastCompensationRef.current) {
+          clearTimeout(pendingPastCompensationRef.current.fallbackId);
+        }
+        const fallbackId = setTimeout(() => {
+          pendingPastCompensationRef.current = null;
+          applyCompensation();
+        }, 350);
+        pendingPastCompensationRef.current = {
+          delta,
+          onDone: onPrependedPastCompensated,
+          fallbackId,
+        };
+        return () => {
+          if (pendingPastCompensationRef.current?.fallbackId === fallbackId) {
+            clearTimeout(fallbackId);
+            pendingPastCompensationRef.current = null;
+          }
+        };
+      }
+      applyCompensation();
+    }, [
+      lastPrependedPastCount,
+      cardSlotSize,
+      onPrependedPastCompensated,
+      isMobile,
+    ]);
 
     // Past-fetch when past sentinel is visible. Debounce so we don't fetch mid fast-scroll (reduces lag/flicker).
     const pastFetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(

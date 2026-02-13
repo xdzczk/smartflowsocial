@@ -140,9 +140,14 @@ export type FlowItemDTO =
   | { type: "post"; data: PostDTO }
   | { type: "longform"; data: LongFormPostDTO };
 
+/** Content type filter for flow: all, posts only, reposts only, or longform (articles) only. */
+export type FlowContentTab = "all" | "posts" | "longform" | "reposts";
+
 export interface LoadFlowDataParams {
   userId: string;
   queueType?: string;
+  /** When set, flow returns only items of this type (posts, reposts, longform). */
+  contentTab?: FlowContentTab;
   pastLimit?: number;
   futureLimit?: number;
   /** Cursor for load more past (go-live timestamp ms as string). */
@@ -177,6 +182,7 @@ export interface LoadFlowDataResult {
 export async function loadFlowData({
   userId,
   queueType = "all",
+  contentTab = "all",
   pastLimit = DEFAULT_PAST_LIMIT,
   futureLimit = DEFAULT_FUTURE_LIMIT,
   before,
@@ -200,26 +206,43 @@ export async function loadFlowData({
   const enabledQueueTypes = queueTypes.filter((qt) => qt.isEnabled !== false);
   const queueTypesForClient = toAppQueueTypes(enabledQueueTypes);
 
+  const fetchPosts =
+    contentTab === "all" || contentTab === "posts" || contentTab === "reposts";
+  const postsContentTab =
+    contentTab === "posts"
+      ? "posts"
+      : contentTab === "reposts"
+        ? "reposts"
+        : undefined;
+  const fetchLongform = contentTab === "all" || contentTab === "longform";
+
   // Load more past only
   if (before !== undefined && before !== "") {
     const beforeDate = new Date(Number(before));
     const [pastPostsRaw, pastLongFormRaw] = await Promise.all([
-      getPastPosts({
-        userId,
-        startDate: thirtyDaysAgo,
-        endDate: beforeDate,
-        queueType,
-        beforeDate,
-        limit: pastLimit + 1,
-      }),
-      getPastLongFormPosts({
-        userId,
-        startDate: thirtyDaysAgo,
-        endDate: beforeDate,
-        queueType,
-        beforeDate,
-        limit: pastLimit + 1,
-      }),
+      fetchPosts
+        ? getPastPosts({
+            userId,
+            startDate: thirtyDaysAgo,
+            endDate: beforeDate,
+            queueType,
+            beforeDate,
+            limit: pastLimit + 1,
+            contentTab: postsContentTab,
+          })
+        : Promise.resolve([] as Awaited<ReturnType<typeof getPastPosts>>),
+      fetchLongform
+        ? getPastLongFormPosts({
+            userId,
+            startDate: thirtyDaysAgo,
+            endDate: beforeDate,
+            queueType,
+            beforeDate,
+            limit: pastLimit + 1,
+          })
+        : Promise.resolve(
+            [] as Awaited<ReturnType<typeof getPastLongFormPosts>>
+          ),
     ]);
 
     const pastPostsData: PostData[] = pastPostsRaw.map((p) =>
@@ -274,20 +297,41 @@ export async function loadFlowData({
   if (after !== undefined && after !== "") {
     const afterDate = new Date(Number(after));
     const [scheduledResult, scheduledLongFormResult] = await Promise.all([
-      getScheduledPosts({
-        userId,
-        queueType,
-        page: 1,
-        limit: futureLimit + 1,
-        afterScheduledAtUtc: afterDate,
-      }),
-      getScheduledLongFormPosts({
-        userId,
-        queueType,
-        page: 1,
-        limit: futureLimit + 1,
-        afterScheduledAtUtc: afterDate,
-      }),
+      fetchPosts
+        ? getScheduledPosts({
+            userId,
+            queueType,
+            page: 1,
+            limit: futureLimit + 1,
+            afterScheduledAtUtc: afterDate,
+            contentTab: postsContentTab,
+          })
+        : Promise.resolve({
+            posts: [],
+            pagination: {
+              total: 0,
+              pages: 0,
+              currentPage: 1,
+              limit: futureLimit + 1,
+            },
+          }),
+      fetchLongform
+        ? getScheduledLongFormPosts({
+            userId,
+            queueType,
+            page: 1,
+            limit: futureLimit + 1,
+            afterScheduledAtUtc: afterDate,
+          })
+        : Promise.resolve({
+            posts: [],
+            pagination: {
+              total: 0,
+              pages: 0,
+              currentPage: 1,
+              limit: futureLimit + 1,
+            },
+          }),
     ]);
 
     const scheduledPosts = scheduledResult.posts;
@@ -356,32 +400,60 @@ export async function loadFlowData({
     scheduledResult,
     scheduledLongFormResult,
   ] = await Promise.all([
-    getPastPosts({
-      userId,
-      startDate: thirtyDaysAgo,
-      endDate: now,
-      queueType,
-      limit: pastLimit + 1,
-    }),
-    getPastLongFormPosts({
-      userId,
-      startDate: thirtyDaysAgo,
-      endDate: now,
-      queueType,
-      limit: pastLimit + 1,
-    }),
-    getScheduledPosts({
-      userId,
-      queueType,
-      page: 1,
-      limit: futureLimit + 1,
-    }),
-    getScheduledLongFormPosts({
-      userId,
-      queueType,
-      page: 1,
-      limit: futureLimit + 1,
-    }),
+    fetchPosts
+      ? getPastPosts({
+          userId,
+          startDate: thirtyDaysAgo,
+          endDate: now,
+          queueType,
+          limit: pastLimit + 1,
+          contentTab: postsContentTab,
+        })
+      : Promise.resolve([] as Awaited<ReturnType<typeof getPastPosts>>),
+    fetchLongform
+      ? getPastLongFormPosts({
+          userId,
+          startDate: thirtyDaysAgo,
+          endDate: now,
+          queueType,
+          limit: pastLimit + 1,
+        })
+      : Promise.resolve([] as Awaited<ReturnType<typeof getPastLongFormPosts>>),
+    fetchPosts
+      ? getScheduledPosts({
+          userId,
+          queueType,
+          page: 1,
+          limit: futureLimit + 1,
+          contentTab: postsContentTab,
+        })
+      : Promise.resolve({
+          posts: [] as Awaited<ReturnType<typeof getScheduledPosts>>["posts"],
+          pagination: {
+            total: 0,
+            pages: 0,
+            currentPage: 1,
+            limit: futureLimit + 1,
+          },
+        }),
+    fetchLongform
+      ? getScheduledLongFormPosts({
+          userId,
+          queueType,
+          page: 1,
+          limit: futureLimit + 1,
+        })
+      : Promise.resolve({
+          posts: [] as Awaited<
+            ReturnType<typeof getScheduledLongFormPosts>
+          >["posts"],
+          pagination: {
+            total: 0,
+            pages: 0,
+            currentPage: 1,
+            limit: futureLimit + 1,
+          },
+        }),
   ]);
 
   const pastPostsData: PostData[] = pastPostsRaw.map((p) =>

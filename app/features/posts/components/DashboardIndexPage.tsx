@@ -34,8 +34,6 @@ import {
 } from "~/lib/validation/combined-content";
 import { validateUserData } from "~/lib/validation/user-data";
 
-import { isRepostContent } from "../utils/content-helpers";
-
 function getUserTimezone(user: unknown): string | undefined {
   if (
     user &&
@@ -247,17 +245,6 @@ export default function DashboardIndexPage() {
     ? (queueTypes as QueueType[])
     : [];
 
-  const flowItemsFilteredByTab = useMemo(() => {
-    if (currentContentTab === "all") return flowItems;
-    if (currentContentTab === "posts")
-      return flowItems.filter((i) => i.type === "post" && !isRepostContent(i));
-    if (currentContentTab === "reposts")
-      return flowItems.filter((i) => isRepostContent(i));
-    if (currentContentTab === "longform")
-      return flowItems.filter((i) => i.type === "longform");
-    return flowItems;
-  }, [flowItems, currentContentTab]);
-
   const hashTagPresetsArray = Array.isArray(hashTagPresets)
     ? (hashTagPresets as Parameters<typeof EditPostModal>[0]["hashTagPresets"])
     : [];
@@ -330,7 +317,7 @@ export default function DashboardIndexPage() {
                 flowRunsUntil={flowRunsUntil}
                 className="min-w-0"
               />
-              {flowItemsFilteredByTab.length > 0 ? (
+              {flowItems.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => flowViewRef.current?.scrollToNext()}
@@ -377,7 +364,7 @@ export default function DashboardIndexPage() {
           ) : null}
 
           {flowError ? null : isNavigatingToDashboard &&
-            flowItemsFilteredByTab.length === 0 ? (
+            flowItems.length === 0 ? (
             <div
               className="border-border-subtle mx-4 flex h-[160px] w-full items-center justify-center rounded-xl border border-dashed p-8 lg:mx-8"
               role="status"
@@ -390,7 +377,7 @@ export default function DashboardIndexPage() {
             <div className="flex min-h-0 min-w-0 flex-col">
               <FlowView
                 ref={flowViewRef}
-                flowItems={flowItemsFilteredByTab}
+                flowItems={flowItems}
                 hasMorePast={hasMorePast}
                 hasMoreFuture={hasMoreFuture}
                 isLoadingMorePast={isLoadingMorePast}

@@ -23,6 +23,7 @@ export async function getScheduledPosts({
   queueType,
   since,
   afterScheduledAtUtc,
+  contentTab,
 }: {
   userId: string;
   page?: number;
@@ -31,6 +32,8 @@ export async function getScheduledPosts({
   since?: number; // Unix timestamp in milliseconds for delta sync
   /** When set, return only posts with scheduledAtUtc > this date (for cursor-based load more). */
   afterScheduledAtUtc?: Date;
+  /** When "reposts", only REPOST. When "posts", exclude REPOST. When "all" or undefined, no filter. */
+  contentTab?: "all" | "posts" | "reposts";
 }): Promise<PostsWithPagination> {
   try {
     const skip = afterScheduledAtUtc ? 0 : (page - 1) * limit;
@@ -40,6 +43,12 @@ export async function getScheduledPosts({
       currentState: "SCHEDULED",
       userId: userId,
     };
+
+    if (contentTab === "reposts") {
+      whereClause.postKind = "REPOST";
+    } else if (contentTab === "posts") {
+      whereClause.postKind = { not: "REPOST" };
+    }
 
     // Add delta sync filter if since timestamp is provided
     if (since !== undefined) {
@@ -509,6 +518,7 @@ export function getPastPosts({
   queueType,
   beforeDate,
   limit: takeLimit,
+  contentTab,
 }: {
   userId: string;
   startDate: Date;
@@ -518,6 +528,8 @@ export function getPastPosts({
   beforeDate?: Date;
   /** Max number of posts to return (for Flow load more past). */
   limit?: number;
+  /** When "reposts", only REPOST. When "posts", exclude REPOST. When "all" or undefined, no filter. */
+  contentTab?: "all" | "posts" | "reposts";
 }): Promise<PostWithQueueType[]> {
   const whereClause: Prisma.PostWhereInput = {
     userId,
@@ -531,6 +543,12 @@ export function getPastPosts({
           not: null,
         },
   };
+
+  if (contentTab === "reposts") {
+    whereClause.postKind = "REPOST";
+  } else if (contentTab === "posts") {
+    whereClause.postKind = { not: "REPOST" };
+  }
 
   // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
   if (queueType && queueType !== "all") {

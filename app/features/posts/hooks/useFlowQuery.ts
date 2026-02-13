@@ -87,6 +87,7 @@ export interface UseFlowDataResult {
 export function useFlowData(): UseFlowDataResult {
   const [searchParams] = useSearchParams();
   const queueType = searchParams.get("queueType") ?? "all";
+  const contentTab = searchParams.get("tab") ?? "all";
 
   // Prefer index route loader data so we get flowItems/pastCursor/hasMorePast (layout may not expose them)
   const indexLoaderData = useRouteLoaderData(DASHBOARD_INDEX_ROUTE_ID);
@@ -131,6 +132,7 @@ export function useFlowData(): UseFlowDataResult {
   const futureSentinelInFlightRef = useRef<string | null>(null);
   const flowItemsLengthRef = useRef(0);
   const lastSyncedQueueTypeRef = useRef(queueType);
+  const lastSyncedContentTabRef = useRef(contentTab);
   /** True after we've merged any load-more response; prevents revalidation from overwriting cursors (refs update sync, state in startTransition is deferred). */
   const hasMergedLoadMoreRef = useRef(false);
 
@@ -152,12 +154,13 @@ export function useFlowData(): UseFlowDataResult {
     );
     if (!validated) return;
     const queueUnchanged = lastSyncedQueueTypeRef.current === queueType;
+    const tabUnchanged = lastSyncedContentTabRef.current === contentTab;
     // Use runway value when dashboard set it (including null = 0 days); only fall back to flow's lastScheduledAtUtc when runway is undefined (e.g. other routes).
     const runwayMs =
       validated.runwayLastScheduledAtUtc !== undefined
         ? validated.runwayLastScheduledAtUtc
         : (validated.lastScheduledAtUtc ?? null);
-    if (queueUnchanged && hasMergedLoadMoreRef.current) {
+    if (queueUnchanged && tabUnchanged && hasMergedLoadMoreRef.current) {
       startTransition(() => {
         setUser(validated.user);
         setQueueTypes(validated.queueTypes);
@@ -168,6 +171,7 @@ export function useFlowData(): UseFlowDataResult {
       return;
     }
     lastSyncedQueueTypeRef.current = queueType;
+    lastSyncedContentTabRef.current = contentTab;
     hasMergedLoadMoreRef.current = false;
     startTransition(() => {
       setFlowItems(flowItemsToCombinedContent(validated.flowItems));
@@ -189,7 +193,7 @@ export function useFlowData(): UseFlowDataResult {
       if (validated.flowLongformCount !== undefined)
         setFlowLongformCount(validated.flowLongformCount);
     });
-  }, [loaderDataRaw, queueType]);
+  }, [loaderDataRaw, queueType, contentTab]);
 
   /** Build URL for dashboard index loader so we get flow JSON; use raw fetch() so Remix cannot overwrite _data */
   const buildFlowLoadMoreUrl = useCallback(
@@ -197,11 +201,12 @@ export function useFlowData(): UseFlowDataResult {
       const search = new URLSearchParams();
       search.set("_data", "routes/dashboard._index");
       if (queueType !== "all") search.set("queueType", queueType);
+      if (contentTab !== "all") search.set("tab", contentTab);
       if (params.before != null) search.set("before", params.before);
       if (params.after != null) search.set("after", params.after);
       return `/dashboard?${search.toString()}`;
     },
-    [queueType]
+    [queueType, contentTab]
   );
 
   const fetchMorePast = useCallback(() => {

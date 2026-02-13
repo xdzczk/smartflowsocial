@@ -58,6 +58,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const url = new URL(request.url);
     const queueType =
       url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
+    const contentTab =
+      (url.searchParams.get("tab") as
+        | "all"
+        | "posts"
+        | "longform"
+        | "reposts"
+        | null) ?? "all";
     const before = url.searchParams.get("before") ?? undefined;
     const after = url.searchParams.get("after") ?? undefined;
 
@@ -68,6 +75,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       loadFlowData({
         userId,
         queueType,
+        contentTab: contentTab === "all" ? undefined : contentTab,
         pastLimit: initialPastLimit,
         futureLimit: initialFutureLimit,
         before,
