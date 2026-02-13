@@ -209,28 +209,19 @@ function FlowCardInner({
       }
     : undefined;
 
-  // Coloured shadow on hover/touch and for next-scheduled glow: queue color or primary
-  const shadowColor =
-    queueColor ??
-    (isNextScheduledAndFuture ? "hsl(var(--primary))" : undefined);
-  const hasQueueShadow = shadowColor != null;
+  // Coloured shadow on hover/touch and for next-scheduled glow: queue color or primary (same as unassigned next scheduled)
+  const shadowColor = queueColor ?? "hsl(var(--primary))";
 
   return (
     <button
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`card-lift border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${hasQueueShadow ? "flow-card-queue-shadow" : ""} ${isNextScheduledAndFuture && glowStyle ? "animate-flow-next-shadow-glow" : ""}`}
-      style={
-        shadowColor || glowStyle
-          ? {
-              ...(shadowColor
-                ? { ["--queue-color" as string]: shadowColor }
-                : {}),
-              ...(glowStyle ?? {}),
-            }
-          : undefined
-      }
+      className={`card-lift flow-card-queue-shadow border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
+      style={{
+        ["--queue-color" as string]: shadowColor,
+        ...(glowStyle ?? {}),
+      }}
       aria-label={ariaLabel ?? defaultAriaLabel}
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >

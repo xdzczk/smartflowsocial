@@ -47,13 +47,24 @@ export function ScheduleNext7DaysCard({
   return (
     <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
-        <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
-          Next 7 days
-        </h3>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
+            Next 7 days
+          </h3>
+          {allSet ? (
+            <span
+              className="text-muted-foreground flex items-center gap-1 text-xs"
+              aria-label="All days meet your target"
+            >
+              <Check className="text-success size-3.5 shrink-0" />
+              All set
+            </span>
+          ) : null}
+        </div>
         <button
           type="button"
           onClick={onOpenTargetModal}
-          className="text-muted-foreground hover:text-foreground focus:ring-ring inline-flex items-center gap-1 rounded p-1 text-xs focus:ring-2 focus:outline-none"
+          className="text-muted-foreground hover:text-foreground focus:ring-ring inline-flex flex-shrink-0 items-center gap-1 rounded p-1 text-xs focus:ring-2 focus:outline-none"
           title="Set target per day"
           aria-label="Set target posts per day"
         >
@@ -62,15 +73,6 @@ export function ScheduleNext7DaysCard({
         </button>
       </CardHeader>
       <CardContent className="px-4 pt-0 pb-4">
-        {allSet ? (
-          <p
-            className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs"
-            aria-label="All days meet your target"
-          >
-            <Check className="text-success size-3.5 shrink-0" />
-            All set
-          </p>
-        ) : null}
         <ul
           className="flex flex-col gap-2"
           aria-label="Scheduled posts per day for the next 7 days"

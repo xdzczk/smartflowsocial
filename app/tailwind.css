@@ -449,10 +449,17 @@
       box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
     }
 
-    /* Next scheduled card: pause shadow glow on hover/active so static coloured shadow shows */
+    /* Next scheduled card: show static coloured shadow on hover/active (animation would keep keyframe shadow, so cancel it) */
     .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:hover,
     .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
-      animation-play-state: paused;
+      animation: none;
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
+    }
+
+    .dark .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:hover,
+    .dark .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
+      animation: none;
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
     }
   }
 
@@ -465,9 +472,15 @@
       box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
     }
 
-    /* Next scheduled card: pause shadow glow on touch active so coloured shadow shows */
+    /* Next scheduled card: show static coloured shadow on touch (same as hover so shadow is always visible) */
     #page-content .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
-      animation-play-state: paused;
+      animation: none;
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
+    }
+
+    .dark #page-content .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
+      animation: none;
+      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
     }
   }
 

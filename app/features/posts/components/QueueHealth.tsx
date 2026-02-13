@@ -1,4 +1,5 @@
 import { Link } from "@remix-run/react";
+import type { CSSProperties } from "react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -8,6 +9,8 @@ import {
   type QueueColorBundle,
 } from "../queue-colors";
 import type { QueueType } from "../types";
+
+const QUEUE_COLOR_CSS_VAR = "--queue-color";
 
 /** Solid Tailwind background class per named queue for bar fill (no arbitrary values). */
 const BAR_FILL_CLASS: Record<string, string> = {
@@ -78,14 +81,18 @@ export default function QueueHealth({
           Queue Health
         </h3>
       </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col gap-2 px-4 pt-0 pb-3">
+      <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
         {countsByQueue.length === 0 ? (
           <p className="text-muted-foreground text-xs">
             No queues with scheduled posts.
           </p>
         ) : (
           <ul
-            className="flex min-h-0 flex-1 flex-col gap-2"
+            className={`flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto ${
+              countsByQueue.length <= 6
+                ? "[&>li]:flex [&>li]:min-h-0 [&>li]:flex-1"
+                : ""
+            }`}
             aria-label="Scheduled posts per queue"
           >
             {countsByQueue.map(({ queueName, count }) => {
@@ -93,12 +100,18 @@ export default function QueueHealth({
               const accentHex = getQueueAccentHexOrNull(queueName, queueTypes);
               const widthPercent = (count / maxCount) * 100;
               const scheduledUrl = `/dashboard/scheduled?queueType=${encodeURIComponent(queueName)}`;
+              const linkStyle:
+                | (CSSProperties & Record<string, string>)
+                | undefined = bundle
+                ? { [QUEUE_COLOR_CSS_VAR]: bundle.accent }
+                : undefined;
 
               return (
-                <li key={queueName}>
+                <li key={queueName} className="flex min-h-[2.75rem] flex-col">
                   <Link
                     to={scheduledUrl}
-                    className="focus:ring-ring card-lift bg-muted/30 hover:bg-muted/50 flex min-h-[2.75rem] flex-1 flex-col justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-shadow focus:ring-2 focus:outline-none"
+                    className={`focus:ring-ring card-lift bg-muted/30 hover:bg-muted/50 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-shadow focus:ring-2 focus:outline-none ${bundle ? "queue-health-row" : ""}`}
+                    style={linkStyle}
                   >
                     <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                       <span className="text-foreground min-w-0 truncate text-xs font-medium">
