@@ -70,7 +70,7 @@ export default function PostTypeTabs({
   if (isMobile) {
     const label =
       currentTab === "all"
-        ? `All (${allCount})`
+        ? `All Types (${allCount})`
         : currentTab === "posts"
           ? `Posts (${postsCount})`
           : currentTab === "longform"
@@ -90,7 +90,7 @@ export default function PostTypeTabs({
             <SelectValue>{label}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All ({allCount})</SelectItem>
+            <SelectItem value="all">All Types ({allCount})</SelectItem>
             <SelectItem value="posts">Posts ({postsCount})</SelectItem>
             <SelectItem value="longform">Articles ({longformCount})</SelectItem>
             <SelectItem value="reposts">Reposts ({repostsCount})</SelectItem>

@@ -121,7 +121,7 @@ export default function DraftsPage() {
     <div className="flex min-h-screen flex-col">
       <ContentListPageHeader pageType="drafts" currentTab={currentTab} />
 
-      <div className="border-border mb-6 flex flex-row items-end justify-between gap-2 border-b">
+      <div className="border-border mb-6 flex flex-row flex-nowrap items-end gap-2 border-b">
         <PostTypeTabs
           currentTab={currentTab}
           basePath="/dashboard/drafts"

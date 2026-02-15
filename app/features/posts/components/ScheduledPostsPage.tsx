@@ -28,6 +28,7 @@ import {
 } from "~/lib/validation/combined-content";
 import { validateUserData } from "~/lib/validation/user-data";
 
+import { getTodayInTimezone } from "../utils/date-range-filter";
 import {
   getPostTypeFromPost,
   getNewPostUrl,
@@ -161,36 +162,40 @@ export default function ScheduledPostsPage() {
     <div className="flex min-h-screen flex-col">
       <ContentListPageHeader pageType="scheduled" currentTab={currentTab} />
 
-      <div className="border-border mb-6 flex flex-row flex-wrap items-end justify-between gap-2 border-b">
-        <PostTypeTabs
-          currentTab={currentTab}
-          allContent={allContent}
-          posts={filteredPosts}
-          longformPosts={longformPosts}
-          basePath="/dashboard/scheduled"
-          totalContentCount={totalContentCount}
-          totalPostsCount={totalPostsCount}
-          totalRepostsCount={totalRepostsCount}
-          totalLongformCount={totalLongformCount}
-          inRow
-        />
-        <div className="flex flex-wrap items-center gap-4">
-          <DateRangeFilter
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            idPrefix="scheduled"
+      <div className="border-border mb-6 flex flex-row flex-wrap items-end gap-2 border-b sm:flex-nowrap">
+        <div className="order-1 min-w-0 flex-1">
+          <PostTypeTabs
+            currentTab={currentTab}
+            allContent={allContent}
+            posts={filteredPosts}
+            longformPosts={longformPosts}
+            basePath="/dashboard/scheduled"
+            totalContentCount={totalContentCount}
+            totalPostsCount={totalPostsCount}
+            totalRepostsCount={totalRepostsCount}
+            totalLongformCount={totalLongformCount}
+            inRow
           />
-          {currentTab === "all" ||
-          currentTab === "posts" ||
-          currentTab === "reposts" ||
-          currentTab === "longform" ? (
+        </div>
+        <DateRangeFilter
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          idPrefix="scheduled"
+          className="order-3 sm:order-2"
+          minDate={getTodayInTimezone(userTimezone)}
+        />
+        {currentTab === "all" ||
+        currentTab === "posts" ||
+        currentTab === "reposts" ||
+        currentTab === "longform" ? (
+          <div className="order-2 flex-shrink-0 sm:order-3">
             <QueueSelectionTabs
               currentTab={currentTab}
               queueTypes={queueTypes}
               basePath="/dashboard/scheduled"
             />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">

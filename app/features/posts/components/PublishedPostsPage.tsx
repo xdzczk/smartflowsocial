@@ -35,6 +35,7 @@ import { comparePostDataByProperty } from "~/lib/validation/post-data-properties
 import { getPostStats, getPostStatsValue } from "~/lib/validation/post-stats";
 
 import { isRepostPost } from "../utils/content-helpers";
+import { getTodayInTimezone } from "../utils/date-range-filter";
 import {
   getPostTypeFromPost,
   getNewPostUrl,
@@ -280,7 +281,7 @@ export default function PublishedPostsPage() {
   }, [sortedPosts, searchTerm, currentTab]);
 
   // Call hook before any conditional returns
-  const { userTimeFormat } = useFormattedDate();
+  const { userTimezone, userTimeFormat } = useFormattedDate();
 
   // Handle nullable user - if user is null, we should not render the component
   if (!user) {
@@ -309,33 +310,37 @@ export default function PublishedPostsPage() {
         <ContentListPageHeader pageType="published" currentTab={currentTab} />
       </div>
 
-      <div className="border-border mb-6 flex flex-row flex-wrap items-end justify-between gap-2 border-b">
-        <PostTypeTabs
-          currentTab={currentTab}
-          basePath="/dashboard/published"
-          totalContentCount={totalContentCount}
-          totalPostsCount={totalPostsCount}
-          totalRepostsCount={totalRepostsCount}
-          totalLongformCount={totalLongformCount}
-          inRow
-        />
-        <div className="flex flex-wrap items-center gap-4">
-          <DateRangeFilter
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            idPrefix="published"
+      <div className="border-border mb-6 flex flex-row flex-wrap items-end gap-2 border-b sm:flex-nowrap">
+        <div className="order-1 min-w-0 flex-1">
+          <PostTypeTabs
+            currentTab={currentTab}
+            basePath="/dashboard/published"
+            totalContentCount={totalContentCount}
+            totalPostsCount={totalPostsCount}
+            totalRepostsCount={totalRepostsCount}
+            totalLongformCount={totalLongformCount}
+            inRow
           />
-          {currentTab === "all" ||
-          currentTab === "posts" ||
-          currentTab === "reposts" ||
-          currentTab === "longform" ? (
+        </div>
+        <DateRangeFilter
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          idPrefix="published"
+          className="order-3 sm:order-2"
+          maxDate={getTodayInTimezone(userTimezone)}
+        />
+        {currentTab === "all" ||
+        currentTab === "posts" ||
+        currentTab === "reposts" ||
+        currentTab === "longform" ? (
+          <div className="order-2 flex-shrink-0 sm:order-3">
             <QueueSelectionTabs
               currentTab={currentTab}
               queueTypes={queueTypes}
               basePath="/dashboard/published"
             />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">

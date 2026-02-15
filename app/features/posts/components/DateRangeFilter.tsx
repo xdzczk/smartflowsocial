@@ -17,6 +17,10 @@ interface DateRangeFilterProps {
   /** Optional id prefix for a11y (e.g. "scheduled", "published") */
   idPrefix?: string;
   className?: string;
+  /** Optional min date (YYYY-MM-DD). E.g. for Scheduled: only allow today and future. */
+  minDate?: string;
+  /** Optional max date (YYYY-MM-DD). E.g. for Published: only allow past and today. */
+  maxDate?: string;
 }
 
 export function DateRangeFilter({
@@ -24,6 +28,8 @@ export function DateRangeFilter({
   onDateRangeChange,
   idPrefix = "date",
   className,
+  minDate,
+  maxDate,
 }: DateRangeFilterProps) {
   const hasActiveFilter = Boolean(dateRange.from || dateRange.to);
 
@@ -48,6 +54,8 @@ export function DateRangeFilter({
             onDateRangeChange({ ...dateRange, from: e.target.value })
           }
           className="h-9 w-auto min-w-[8rem]"
+          min={minDate}
+          max={maxDate}
         />
       </div>
       <div className="flex items-center gap-2">
@@ -65,6 +73,8 @@ export function DateRangeFilter({
             onDateRangeChange({ ...dateRange, to: e.target.value })
           }
           className="h-9 w-auto min-w-[8rem]"
+          min={minDate}
+          max={maxDate}
         />
       </div>
       {hasActiveFilter ? (

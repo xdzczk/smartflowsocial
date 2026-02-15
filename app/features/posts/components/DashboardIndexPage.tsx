@@ -107,7 +107,7 @@ function DashboardContentTypeTabs({
   if (isMobile) {
     const label =
       currentContentTab === "all"
-        ? "All"
+        ? "All Types"
         : currentContentTab === "posts"
           ? "Posts"
           : currentContentTab === "longform"
@@ -123,7 +123,7 @@ function DashboardContentTypeTabs({
             <SelectValue>{label}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="posts">Posts</SelectItem>
             <SelectItem value="longform">Articles</SelectItem>
             <SelectItem value="reposts">Reposts</SelectItem>
