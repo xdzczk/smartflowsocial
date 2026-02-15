@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { CombinedContent, QueueType } from "~/features/posts/types";
 import {
-  FlowSectionHeader,
+  ContentListPageHeader,
   EditPostModal,
   FlowView,
   LongFormDetailsModal,
@@ -265,8 +265,8 @@ export default function DashboardIndexPage() {
     return Math.ceil((thenMs - nowMs) / (24 * 60 * 60 * 1000));
   }, [lastScheduledAtUtcMs, nowMs]);
 
-  /** For FlowSectionHeader (unused there; runway KPI uses runwayDays). */
-  const flowRunsUntil = useMemo((): Date | null => {
+  /** For ContentListPageHeader (unused there; runway KPI uses runwayDays). */
+  const _flowRunsUntil = useMemo((): Date | null => {
     const ms =
       lastScheduledAtUtcMs ??
       (() => {
@@ -315,11 +315,7 @@ export default function DashboardIndexPage() {
           </div>
           <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <FlowSectionHeader
-                currentTab={currentContentTab}
-                flowRunsUntil={flowRunsUntil}
-                className="min-w-0"
-              />
+              <ContentListPageHeader pageType="flow" className="min-w-0" />
               {flowItems.length > 0 ? (
                 <button
                   type="button"

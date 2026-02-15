@@ -9,14 +9,14 @@ import type {
 import {
   AllContentListing,
   BulkDraftsListing,
+  ContentListPageHeader,
   DraftBulkResume,
   DraftsBulkActions,
-  DraftsHeader,
-  DraftsPostTypeTabs,
   DraftsTable,
   LongFormDetailsModal,
   LongFormListing,
   PostDetailsModal,
+  PostTypeTabs,
   QueueSelectionTabs,
   useDraftsInfiniteData,
   useDraftsState,
@@ -119,24 +119,16 @@ export default function DraftsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DraftsHeader
-        currentTab={currentTab}
-        allContentCount={allContent.length}
-        postsCount={postsCount}
-        repostsCount={repostsCount}
-        longformCount={longformPosts.length}
-        bulkCount={bulkDraftGroups.length}
-      />
+      <ContentListPageHeader pageType="drafts" currentTab={currentTab} />
 
-      {/* Post Type Tabs */}
-      <DraftsPostTypeTabs
+      <PostTypeTabs
         currentTab={currentTab}
-        allContentCount={allContent.length}
-        postsCount={postsCount}
-        repostsCount={repostsCount}
-        longformCount={longformPosts.length}
+        basePath="/dashboard/drafts"
+        totalContentCount={allContent.length}
+        totalPostsCount={postsCount}
+        totalRepostsCount={repostsCount}
+        totalLongformCount={longformPosts.length}
         bulkCount={bulkDraftGroups.length}
-        queueType={params["queueType"]}
       />
 
       {/* Queue Selection Tabs */}

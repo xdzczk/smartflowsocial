@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Toast from "~/components/ui/Toast";
 import { usePostResultFromUrl } from "~/features/posts/hooks/usePostResultFromUrl";
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
-import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type {
   PostData,
   CombinedContent,
@@ -18,8 +17,8 @@ import {
   LongFormDetailsModal,
   LongFormListing,
   PostDetailsModal,
+  PostTypeTabs,
   PublishedPostsTable,
-  PublishedPostsTabs,
   QueueSelectionTabs,
   usePublishedPosts,
   usePublishedPostsInfiniteData,
@@ -296,16 +295,13 @@ export default function PublishedPostsPage() {
         <ContentListPageHeader pageType="published" currentTab={currentTab} />
       </div>
 
-      <PublishedPostsTabs
+      <PostTypeTabs
         currentTab={currentTab}
-        queueTypes={queueTypes.map((qt) => ({
-          name: qt.name,
-          color: getQueueAccentHex(qt.colorToken ?? null),
-        }))}
-        allContentLength={totalContentCount}
-        postsLength={totalPostsCount}
-        repostsLength={totalRepostsCount}
-        longformPostsLength={totalLongformCount}
+        basePath="/dashboard/published"
+        totalContentCount={totalContentCount}
+        totalPostsCount={totalPostsCount}
+        totalRepostsCount={totalRepostsCount}
+        totalLongformCount={totalLongformCount}
       />
 
       {/* Queue filters: dropdown on mobile, tabs on desktop (same as Scheduled page) */}

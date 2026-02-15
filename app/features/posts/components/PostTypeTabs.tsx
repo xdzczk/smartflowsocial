@@ -12,6 +12,8 @@ interface PostTypeTabsProps {
   totalPostsCount?: number;
   totalRepostsCount?: number;
   totalLongformCount?: number;
+  /** When set, show a fifth "Bulk (n)" tab (e.g. for Drafts page). */
+  bulkCount?: number;
 }
 
 export default function PostTypeTabs({
@@ -24,6 +26,7 @@ export default function PostTypeTabs({
   totalPostsCount,
   totalRepostsCount,
   totalLongformCount,
+  bulkCount,
 }: PostTypeTabsProps) {
   const params = useParams();
   const queueParam = params["queueType"] ? `/${params["queueType"]}` : "";
@@ -40,6 +43,7 @@ export default function PostTypeTabs({
   const postsCount = totalPostsCount ?? posts.length;
   const repostsCount = totalRepostsCount ?? 0;
   const longformCount = totalLongformCount ?? longformPosts.length;
+  const showBulkTab = bulkCount !== undefined;
 
   return (
     <div className="border-border mb-6 border-b">
@@ -68,6 +72,14 @@ export default function PostTypeTabs({
         >
           Reposts ({repostsCount})
         </Link>
+        {showBulkTab ? (
+          <Link
+            to={`${basePath}${queueParam}?tab=bulk`}
+            className={getTabClasses(currentTab === "bulk")}
+          >
+            Bulk ({bulkCount})
+          </Link>
+        ) : null}
       </nav>
     </div>
   );

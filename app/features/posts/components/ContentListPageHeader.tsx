@@ -1,22 +1,32 @@
 /**
- * Shared header for list pages (Scheduled and Published).
- * Shows section title that updates with content-type tab.
+ * Shared header for list pages (Scheduled, Published, Calendar, Drafts) and Dashboard flow.
+ * Shows section title that updates with content-type tab (or fixed "Your flow" for Dashboard).
  */
 
 interface ContentListPageHeaderProps {
-  /** Which list page: scheduled or published */
-  pageType: "scheduled" | "published";
-  /** Current content-type tab (all, posts, reposts, longform) */
-  currentTab: string;
+  /** Which page: flow (Dashboard), or list page type */
+  pageType: "flow" | "scheduled" | "published" | "calendar" | "drafts";
+  /** Current content-type tab (all, posts, reposts, longform, bulk). Optional when pageType === "flow". */
+  currentTab?: string;
   /** Optional class for layout */
   className?: string;
 }
 
 function getTitle(
-  pageType: "scheduled" | "published",
+  pageType: "flow" | "scheduled" | "published" | "calendar" | "drafts",
   currentTab: string
 ): string {
-  const prefix = pageType === "scheduled" ? "Scheduled" : "Published";
+  if (pageType === "flow") return "Your flow";
+  if (currentTab === "bulk") return "Bulk drafts";
+
+  const prefix =
+    pageType === "scheduled"
+      ? "Scheduled"
+      : pageType === "published"
+        ? "Published"
+        : pageType === "calendar"
+          ? "Calendar"
+          : "Drafts";
   if (currentTab === "all") return prefix;
   if (currentTab === "posts") return `${prefix} Posts`;
   if (currentTab === "reposts") return `${prefix} Reposts`;
@@ -25,14 +35,17 @@ function getTitle(
 
 export function ContentListPageHeader({
   pageType,
-  currentTab,
+  currentTab = "all",
   className,
 }: ContentListPageHeaderProps) {
+  const title =
+    pageType === "flow" ? "Your flow" : getTitle(pageType, currentTab);
+
   return (
     <div
       className={`flex flex-shrink-0 flex-row items-center text-left ${className ?? ""}`}
     >
-      <h3 className="font-semibold">{getTitle(pageType, currentTab)}</h3>
+      <h3 className="font-semibold">{title}</h3>
     </div>
   );
 }
