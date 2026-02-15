@@ -41,6 +41,7 @@ import {
   determineModalAction,
 } from "../utils/publish-result.utils";
 
+import { DateRangeFilter } from "./DateRangeFilter";
 import PublishResultModal from "./PublishResultModal";
 import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
@@ -170,6 +171,19 @@ export default function PublishedPostsPage() {
     mode: "repost" | "quote";
   } | null>(null);
 
+  const dateFrom = searchParams.get("dateFrom") ?? "";
+  const dateTo = searchParams.get("dateTo") ?? "";
+  const dateRange = { from: dateFrom, to: dateTo };
+  const setDateRange = (range: { from: string; to: string }) => {
+    const next = new URLSearchParams(searchParams);
+    if (range.from) next.set("dateFrom", range.from);
+    else next.delete("dateFrom");
+    if (range.to) next.set("dateTo", range.to);
+    else next.delete("dateTo");
+    next.delete("page");
+    setSearchParams(next);
+  };
+
   usePostResultFromUrl({
     paramName: "published",
     searchParams,
@@ -295,26 +309,34 @@ export default function PublishedPostsPage() {
         <ContentListPageHeader pageType="published" currentTab={currentTab} />
       </div>
 
-      <PostTypeTabs
-        currentTab={currentTab}
-        basePath="/dashboard/published"
-        totalContentCount={totalContentCount}
-        totalPostsCount={totalPostsCount}
-        totalRepostsCount={totalRepostsCount}
-        totalLongformCount={totalLongformCount}
-      />
-
-      {/* Queue filters: dropdown on mobile, tabs on desktop (same as Scheduled page) */}
-      {currentTab === "all" ||
-      currentTab === "posts" ||
-      currentTab === "reposts" ||
-      currentTab === "longform" ? (
-        <QueueSelectionTabs
+      <div className="border-border mb-6 flex flex-row flex-wrap items-end justify-between gap-2 border-b">
+        <PostTypeTabs
           currentTab={currentTab}
-          queueTypes={queueTypes}
           basePath="/dashboard/published"
+          totalContentCount={totalContentCount}
+          totalPostsCount={totalPostsCount}
+          totalRepostsCount={totalRepostsCount}
+          totalLongformCount={totalLongformCount}
+          inRow
         />
-      ) : null}
+        <div className="flex flex-wrap items-center gap-4">
+          <DateRangeFilter
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            idPrefix="published"
+          />
+          {currentTab === "all" ||
+          currentTab === "posts" ||
+          currentTab === "reposts" ||
+          currentTab === "longform" ? (
+            <QueueSelectionTabs
+              currentTab={currentTab}
+              queueTypes={queueTypes}
+              basePath="/dashboard/published"
+            />
+          ) : null}
+        </div>
+      </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
         {currentTab === "all" ? (

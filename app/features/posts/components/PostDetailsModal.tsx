@@ -645,15 +645,15 @@ export default function PostDetailsModal({
               </deleteFetcher.Form>
             </div>
           </div>
+
+          {/* Media full-screen modal: rendered inside DialogContent so closing it does not close the dialog */}
+          <MediaModal
+            src={activeMediaSrc ?? ""}
+            isOpen={Boolean(isMediaOpen && activeMediaSrc)}
+            onClose={() => setIsMediaOpen(false)}
+          />
         </DialogContent>
       </Dialog>
-
-      {/* Media full-screen modal */}
-      <MediaModal
-        src={activeMediaSrc ?? ""}
-        isOpen={Boolean(isMediaOpen && activeMediaSrc)}
-        onClose={() => setIsMediaOpen(false)}
-      />
     </>
   );
 }

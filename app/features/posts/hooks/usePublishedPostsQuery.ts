@@ -44,8 +44,21 @@ import { isRepostPost } from "../utils/content-helpers";
 export const publishedPostsKeys = {
   all: ["published-posts"] as const,
   lists: () => [...publishedPostsKeys.all, "list"] as const,
-  list: (queueType?: string, tab?: string, page?: number) =>
-    [...publishedPostsKeys.lists(), queueType, tab, page] as const,
+  list: (
+    queueType?: string,
+    tab?: string,
+    page?: number,
+    dateFrom?: string,
+    dateTo?: string
+  ) =>
+    [
+      ...publishedPostsKeys.lists(),
+      queueType,
+      tab,
+      page ?? "",
+      dateFrom ?? "",
+      dateTo ?? "",
+    ] as const,
   detail: (id: string) => [...publishedPostsKeys.all, "detail", id] as const,
 };
 
@@ -144,6 +157,8 @@ export function usePublishedPostsInfiniteQuery() {
   const [searchParams] = useSearchParams();
   const queueType = params["queueType"] ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
+  const dateFrom = searchParams.get("dateFrom") ?? undefined;
+  const dateTo = searchParams.get("dateTo") ?? undefined;
 
   const loaderDataRaw = useLoaderData();
 
@@ -157,8 +172,19 @@ export function usePublishedPostsInfiniteQuery() {
     throw new Error("Invalid loader data");
   }
 
+  const dateParams =
+    dateFrom || dateTo
+      ? `&dateFrom=${encodeURIComponent(dateFrom ?? "")}&dateTo=${encodeURIComponent(dateTo ?? "")}`
+      : "";
+
   return useInfiniteRemixQuery<PublishedPostsLoaderData>({
-    queryKey: publishedPostsKeys.list(queueType, currentTab),
+    queryKey: publishedPostsKeys.list(
+      queueType,
+      currentTab,
+      undefined,
+      dateFrom,
+      dateTo
+    ),
     initialData: validatedLoaderData,
     getNextPageParam: (lastPage) => {
       const pagination =
@@ -176,9 +202,9 @@ export function usePublishedPostsInfiniteQuery() {
       return;
     },
     buildUrl: (pageParam) =>
-      `/dashboard/published${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}`,
+      `/dashboard/published${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}${dateParams}`,
     staleTime: 30 * 1000, // 30 seconds
-    maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
+    maxPages: undefined, // No cap – load until server reports no more pages (same as Dashboard Flow)
     refetchInterval: 15_000, // Live updates when new posts are published
     refetchIntervalInBackground: true,
   });

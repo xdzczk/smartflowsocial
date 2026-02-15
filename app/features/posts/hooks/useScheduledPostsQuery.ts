@@ -40,8 +40,19 @@ import { isRepostPost } from "../utils/content-helpers";
 export const scheduledPostsKeys = {
   all: ["scheduled-posts"] as const,
   lists: () => [...scheduledPostsKeys.all, "list"] as const,
-  list: (queueType?: string, tab?: string) =>
-    [...scheduledPostsKeys.lists(), queueType, tab] as const,
+  list: (
+    queueType?: string,
+    tab?: string,
+    dateFrom?: string,
+    dateTo?: string
+  ) =>
+    [
+      ...scheduledPostsKeys.lists(),
+      queueType,
+      tab,
+      dateFrom ?? "",
+      dateTo ?? "",
+    ] as const,
 };
 
 // ScheduledPostsLoaderData is now exported from schemas
@@ -55,6 +66,8 @@ export function useScheduledPostsQuery() {
   const queueType =
     params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
+  const dateFrom = searchParams.get("dateFrom") ?? undefined;
+  const dateTo = searchParams.get("dateTo") ?? undefined;
 
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
@@ -65,16 +78,21 @@ export function useScheduledPostsQuery() {
     scheduledPostsLoaderDataSchema
   );
 
+  const dateParams =
+    dateFrom || dateTo
+      ? `&dateFrom=${encodeURIComponent(dateFrom ?? "")}&dateTo=${encodeURIComponent(dateTo ?? "")}`
+      : "";
+
   return useQuery({
-    queryKey: scheduledPostsKeys.list(queueType, currentTab),
+    queryKey: scheduledPostsKeys.list(queueType, currentTab, dateFrom, dateTo),
     queryFn: async () => {
-      const url =
+      const base =
         queueType !== "all"
           ? params["queueType"]
             ? `/dashboard/scheduled/${queueType}?tab=${currentTab}`
             : `/dashboard/scheduled?tab=${currentTab}&queueType=${queueType}`
           : `/dashboard/scheduled?tab=${currentTab}`;
-      fetcher.load(url);
+      fetcher.load(base + dateParams);
 
       return new Promise<ScheduledPostsLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
@@ -120,6 +138,8 @@ export function useScheduledPostsInfiniteQuery() {
   const queueType =
     params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
+  const dateFrom = searchParams.get("dateFrom") ?? undefined;
+  const dateTo = searchParams.get("dateTo") ?? undefined;
 
   const loaderDataRaw = useLoaderData();
 
@@ -133,8 +153,13 @@ export function useScheduledPostsInfiniteQuery() {
     throw new Error("Invalid loader data");
   }
 
+  const dateParams =
+    dateFrom || dateTo
+      ? `&dateFrom=${encodeURIComponent(dateFrom ?? "")}&dateTo=${encodeURIComponent(dateTo ?? "")}`
+      : "";
+
   return useInfiniteRemixQuery<ScheduledPostsLoaderData>({
-    queryKey: scheduledPostsKeys.list(queueType, currentTab),
+    queryKey: scheduledPostsKeys.list(queueType, currentTab, dateFrom, dateTo),
     initialData: validatedLoaderData,
     getNextPageParam: (lastPage) => {
       const pagination =
@@ -152,14 +177,17 @@ export function useScheduledPostsInfiniteQuery() {
       }
       return;
     },
-    buildUrl: (pageParam) =>
-      queueType !== "all"
-        ? params["queueType"]
-          ? `/dashboard/scheduled/${queueType}?tab=${currentTab}&page=${pageParam}`
-          : `/dashboard/scheduled?tab=${currentTab}&queueType=${queueType}&page=${pageParam}`
-        : `/dashboard/scheduled?tab=${currentTab}&page=${pageParam}`,
+    buildUrl: (pageParam) => {
+      const base =
+        queueType !== "all"
+          ? params["queueType"]
+            ? `/dashboard/scheduled/${queueType}?tab=${currentTab}&page=${pageParam}`
+            : `/dashboard/scheduled?tab=${currentTab}&queueType=${queueType}&page=${pageParam}`
+          : `/dashboard/scheduled?tab=${currentTab}&page=${pageParam}`;
+      return base + dateParams;
+    },
     staleTime: 30 * 1000, // 30 seconds
-    maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
+    maxPages: undefined, // No cap – load until server reports no more pages (same as Dashboard Flow)
     refetchInterval: 15_000, // Live updates when scheduled posts are published
     refetchIntervalInBackground: true,
   });

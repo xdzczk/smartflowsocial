@@ -24,6 +24,8 @@ export async function getScheduledPosts({
   since,
   afterScheduledAtUtc,
   contentTab,
+  scheduledFromUtc,
+  scheduledToUtc,
 }: {
   userId: string;
   page?: number;
@@ -34,6 +36,9 @@ export async function getScheduledPosts({
   afterScheduledAtUtc?: Date;
   /** When "reposts", only REPOST. When "posts", exclude REPOST. When "all" or undefined, no filter. */
   contentTab?: "all" | "posts" | "reposts";
+  /** Filter by scheduled date range (inclusive). Used for Scheduled page date filter. */
+  scheduledFromUtc?: Date;
+  scheduledToUtc?: Date;
 }): Promise<PostsWithPagination> {
   try {
     const skip = afterScheduledAtUtc ? 0 : (page - 1) * limit;
@@ -62,6 +67,15 @@ export async function getScheduledPosts({
     if (afterScheduledAtUtc !== undefined) {
       whereClause.scheduledAtUtc = {
         gt: afterScheduledAtUtc,
+      };
+    }
+
+    // Date range filter (Scheduled page): inclusive [scheduledFromUtc, scheduledToUtc]
+    if (scheduledFromUtc !== undefined || scheduledToUtc !== undefined) {
+      whereClause.scheduledAtUtc = {
+        ...(whereClause.scheduledAtUtc as Prisma.DateTimeFilter),
+        ...(scheduledFromUtc !== undefined && { gte: scheduledFromUtc }),
+        ...(scheduledToUtc !== undefined && { lte: scheduledToUtc }),
       };
     }
 
@@ -120,15 +134,25 @@ export async function getScheduledPosts({
 export async function getScheduledRepostsCount({
   userId,
   queueType,
+  scheduledFromUtc,
+  scheduledToUtc,
 }: {
   userId: string;
   queueType?: string;
+  scheduledFromUtc?: Date;
+  scheduledToUtc?: Date;
 }): Promise<number> {
   const whereClause: Prisma.PostWhereInput = {
     currentState: "SCHEDULED",
     userId,
     postKind: "REPOST",
   };
+  if (scheduledFromUtc !== undefined || scheduledToUtc !== undefined) {
+    whereClause.scheduledAtUtc = {
+      ...(scheduledFromUtc !== undefined && { gte: scheduledFromUtc }),
+      ...(scheduledToUtc !== undefined && { lte: scheduledToUtc }),
+    };
+  }
   if (queueType && queueType !== "all") {
     if (queueType === "unassigned") {
       whereClause.queueTypeId = null;
@@ -306,11 +330,16 @@ export async function getPublishedPosts({
   page = 1,
   limit = 50,
   queueType,
+  publishedFromUtc,
+  publishedToUtc,
 }: {
   userId: string;
   page?: number;
   limit?: number;
   queueType?: string;
+  /** Filter by published date range (inclusive). Used for Published page date filter. */
+  publishedFromUtc?: Date;
+  publishedToUtc?: Date;
 }): Promise<PostsWithPagination> {
   const skip = (page - 1) * limit;
 
@@ -319,6 +348,13 @@ export async function getPublishedPosts({
     currentState: "PUBLISHED",
     userId: userId,
   };
+
+  if (publishedFromUtc !== undefined || publishedToUtc !== undefined) {
+    whereClause.publishedAt = {
+      ...(publishedFromUtc !== undefined && { gte: publishedFromUtc }),
+      ...(publishedToUtc !== undefined && { lte: publishedToUtc }),
+    };
+  }
 
   // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
   if (queueType && queueType !== "all") {
@@ -364,15 +400,25 @@ export async function getPublishedPosts({
 export async function getPublishedRepostsCount({
   userId,
   queueType,
+  publishedFromUtc,
+  publishedToUtc,
 }: {
   userId: string;
   queueType?: string;
+  publishedFromUtc?: Date;
+  publishedToUtc?: Date;
 }): Promise<number> {
   const whereClause: Prisma.PostWhereInput = {
     currentState: "PUBLISHED",
     userId,
     postKind: "REPOST",
   };
+  if (publishedFromUtc !== undefined || publishedToUtc !== undefined) {
+    whereClause.publishedAt = {
+      ...(publishedFromUtc !== undefined && { gte: publishedFromUtc }),
+      ...(publishedToUtc !== undefined && { lte: publishedToUtc }),
+    };
+  }
   if (queueType && queueType !== "all") {
     if (queueType === "unassigned") {
       whereClause.queueTypeId = null;

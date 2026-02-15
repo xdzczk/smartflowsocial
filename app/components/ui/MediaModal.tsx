@@ -16,22 +16,24 @@ const MediaModal: React.FC<MediaModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  // Handle escape key press
+  // Handle escape key press (stop propagation so parent modals e.g. Post Details stay open)
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.stopPropagation();
+        event.preventDefault();
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
+      document.addEventListener("keydown", handleEscape, true);
       // Prevent body scroll when modal is open
       document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleEscape, true);
       document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);

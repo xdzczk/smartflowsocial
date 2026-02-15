@@ -564,31 +564,38 @@ export async function getPublishedLongFormPosts({
   userId,
   page = 1,
   limit = 10,
+  publishedFromUtc,
+  publishedToUtc,
 }: {
   userId: User["id"];
   page?: number;
   limit?: number;
+  /** Filter by published date range (inclusive). Used for Published page date filter. */
+  publishedFromUtc?: Date;
+  publishedToUtc?: Date;
 }) {
   const skip = (page - 1) * limit;
 
+  const where: Prisma.LongFormPostWhereInput = {
+    userId,
+    currentState: "PUBLISHED",
+  };
+  if (publishedFromUtc !== undefined || publishedToUtc !== undefined) {
+    where.publishedAt = {
+      ...(publishedFromUtc !== undefined && { gte: publishedFromUtc }),
+      ...(publishedToUtc !== undefined && { lte: publishedToUtc }),
+    };
+  }
+
   const [posts, total] = await Promise.all([
     prisma.longFormPost.findMany({
-      where: {
-        userId,
-        // Use currentState as single source of truth
-        currentState: "PUBLISHED",
-      },
+      where,
+      include: { queueType: true },
       orderBy: { publishedAt: "desc" },
       skip,
       take: limit,
     }),
-    prisma.longFormPost.count({
-      where: {
-        userId,
-        // Use currentState as single source of truth
-        currentState: "PUBLISHED",
-      },
-    }),
+    prisma.longFormPost.count({ where }),
   ]);
 
   return {
@@ -609,6 +616,8 @@ export async function getScheduledLongFormPosts({
   since,
   afterScheduledAtUtc,
   queueType,
+  scheduledFromUtc,
+  scheduledToUtc,
 }: {
   userId: User["id"];
   page?: number;
@@ -617,6 +626,9 @@ export async function getScheduledLongFormPosts({
   /** When set, return only posts with scheduledAtUtc > this date (for cursor-based load more). */
   afterScheduledAtUtc?: Date;
   queueType?: string;
+  /** Filter by scheduled date range (inclusive). Used for Scheduled page date filter. */
+  scheduledFromUtc?: Date;
+  scheduledToUtc?: Date;
 }) {
   try {
     const skip = afterScheduledAtUtc ? 0 : (page - 1) * limit;
@@ -639,6 +651,15 @@ export async function getScheduledLongFormPosts({
     if (afterScheduledAtUtc !== undefined) {
       where.scheduledAtUtc = {
         gt: afterScheduledAtUtc,
+      };
+    }
+
+    // Date range filter (Scheduled page): inclusive [scheduledFromUtc, scheduledToUtc]
+    if (scheduledFromUtc !== undefined || scheduledToUtc !== undefined) {
+      where.scheduledAtUtc = {
+        ...(where.scheduledAtUtc as Prisma.DateTimeFilter),
+        ...(scheduledFromUtc !== undefined && { gte: scheduledFromUtc }),
+        ...(scheduledToUtc !== undefined && { lte: scheduledToUtc }),
       };
     }
 

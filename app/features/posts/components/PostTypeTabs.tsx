@@ -1,6 +1,17 @@
-import { Link, useParams } from "@remix-run/react";
+import { Link, useNavigate, useParams } from "@remix-run/react";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 
 import type { CombinedContent, PostData, LongFormPostData } from "../types";
+
+import { CONTENT_MOBILE_BREAKPOINT_PX } from "./constants";
 interface PostTypeTabsProps {
   currentTab: string;
   allContent?: CombinedContent[];
@@ -14,6 +25,8 @@ interface PostTypeTabsProps {
   totalLongformCount?: number;
   /** When set, show a fifth "Bulk (n)" tab (e.g. for Drafts page). */
   bulkCount?: number;
+  /** When true, render without outer border/margin so parent can put queue filter on same line. */
+  inRow?: boolean;
 }
 
 export default function PostTypeTabs({
@@ -27,8 +40,11 @@ export default function PostTypeTabs({
   totalRepostsCount,
   totalLongformCount,
   bulkCount,
+  inRow = false,
 }: PostTypeTabsProps) {
   const params = useParams();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const queueParam = params["queueType"] ? `/${params["queueType"]}` : "";
 
   const getTabClasses = (isActive: boolean) =>
@@ -45,9 +61,51 @@ export default function PostTypeTabs({
   const longformCount = totalLongformCount ?? longformPosts.length;
   const showBulkTab = bulkCount !== undefined;
 
+  const wrapperClass = inRow ? "flex-1 min-w-0" : "border-border mb-6 border-b";
+
+  const handleMobileTabChange = (value: string) => {
+    navigate(`${basePath}${queueParam}?tab=${value}`);
+  };
+
+  if (isMobile) {
+    const label =
+      currentTab === "all"
+        ? `All (${allCount})`
+        : currentTab === "posts"
+          ? `Posts (${postsCount})`
+          : currentTab === "longform"
+            ? `Articles (${longformCount})`
+            : currentTab === "reposts"
+              ? `Reposts (${repostsCount})`
+              : showBulkTab && currentTab === "bulk"
+                ? `Bulk (${bulkCount})`
+                : currentTab;
+    return (
+      <div className={wrapperClass}>
+        <Select value={currentTab} onValueChange={handleMobileTabChange}>
+          <SelectTrigger
+            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-xs font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
+            aria-label="Content type"
+          >
+            <SelectValue>{label}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All ({allCount})</SelectItem>
+            <SelectItem value="posts">Posts ({postsCount})</SelectItem>
+            <SelectItem value="longform">Articles ({longformCount})</SelectItem>
+            <SelectItem value="reposts">Reposts ({repostsCount})</SelectItem>
+            {showBulkTab ? (
+              <SelectItem value="bulk">Bulk ({bulkCount})</SelectItem>
+            ) : null}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  }
+
   return (
-    <div className="border-border mb-6 border-b">
-      <nav className="-mb-px flex space-x-8" aria-label="Post Types">
+    <div className={wrapperClass}>
+      <nav className="-mb-px flex space-x-6" aria-label="Post Types">
         <Link
           to={`${basePath}${queueParam}?tab=all`}
           className={getTabClasses(currentTab === "all")}

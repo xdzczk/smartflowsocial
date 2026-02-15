@@ -8,6 +8,7 @@ import type { Prisma } from "@prisma/client";
 
 import { getUserById } from "~/features/user";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
+import { parseDateRangeUtc } from "~/lib/date-range.server";
 import {
   validateSignedEvent,
   validateNostrEvent,
@@ -43,6 +44,11 @@ export async function getPublishedDashboardData({
   const limit = 20;
   const queueType =
     params.queueType ?? url.searchParams.get("queueType") ?? "all";
+  const dateFrom = url.searchParams.get("dateFrom") ?? undefined;
+  const dateTo = url.searchParams.get("dateTo") ?? undefined;
+  const dateRange = parseDateRangeUtc(dateFrom, dateTo);
+  const publishedFromUtc = dateRange?.fromUtc;
+  const publishedToUtc = dateRange?.toUtc;
 
   const [
     { posts, pagination },
@@ -56,11 +62,24 @@ export async function getPublishedDashboardData({
       page,
       limit,
       queueType,
+      publishedFromUtc,
+      publishedToUtc,
     }),
-    getPublishedLongFormPosts({ userId, page, limit }),
+    getPublishedLongFormPosts({
+      userId,
+      page,
+      limit,
+      publishedFromUtc,
+      publishedToUtc,
+    }),
     getUserById(userId),
     getQueueTypesCached(userId),
-    getPublishedRepostsCount({ userId, queueType }),
+    getPublishedRepostsCount({
+      userId,
+      queueType,
+      publishedFromUtc,
+      publishedToUtc,
+    }),
   ]);
 
   /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */

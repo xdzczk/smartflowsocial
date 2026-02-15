@@ -121,27 +121,28 @@ export default function DraftsPage() {
     <div className="flex min-h-screen flex-col">
       <ContentListPageHeader pageType="drafts" currentTab={currentTab} />
 
-      <PostTypeTabs
-        currentTab={currentTab}
-        basePath="/dashboard/drafts"
-        totalContentCount={allContent.length}
-        totalPostsCount={postsCount}
-        totalRepostsCount={repostsCount}
-        totalLongformCount={longformPosts.length}
-        bulkCount={bulkDraftGroups.length}
-      />
-
-      {/* Queue Selection Tabs */}
-      {currentTab === "all" ||
-      currentTab === "posts" ||
-      currentTab === "reposts" ||
-      currentTab === "longform" ? (
-        <QueueSelectionTabs
+      <div className="border-border mb-6 flex flex-row items-end justify-between gap-2 border-b">
+        <PostTypeTabs
           currentTab={currentTab}
-          queueTypes={queueTypes}
           basePath="/dashboard/drafts"
+          totalContentCount={allContent.length}
+          totalPostsCount={postsCount}
+          totalRepostsCount={repostsCount}
+          totalLongformCount={longformPosts.length}
+          bulkCount={bulkDraftGroups.length}
+          inRow
         />
-      ) : null}
+        {currentTab === "all" ||
+        currentTab === "posts" ||
+        currentTab === "reposts" ||
+        currentTab === "longform" ? (
+          <QueueSelectionTabs
+            currentTab={currentTab}
+            queueTypes={queueTypes}
+            basePath="/dashboard/drafts"
+          />
+        ) : null}
+      </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
         {/* Content based on current tab */}

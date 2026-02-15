@@ -44,25 +44,27 @@ export default function CalendarPage() {
     <div className="flex h-full flex-col space-y-6">
       <ContentListPageHeader pageType="calendar" currentTab={currentTab} />
 
-      <PostTypeTabs
-        currentTab={currentTab}
-        basePath="/dashboard/calendar"
-        totalContentCount={totalContentCount}
-        totalPostsCount={totalPostsCount}
-        totalRepostsCount={totalRepostsCount}
-        totalLongformCount={totalLongformCount}
-      />
-
-      {currentTab === TAB_ALL ||
-      currentTab === TAB_POSTS ||
-      currentTab === TAB_REPOSTS ||
-      currentTab === TAB_LONGFORM ? (
-        <QueueSelectionTabs
+      <div className="border-border mb-6 flex flex-row items-end justify-between gap-2 border-b">
+        <PostTypeTabs
           currentTab={currentTab}
-          queueTypes={queueTypes}
           basePath="/dashboard/calendar"
+          totalContentCount={totalContentCount}
+          totalPostsCount={totalPostsCount}
+          totalRepostsCount={totalRepostsCount}
+          totalLongformCount={totalLongformCount}
+          inRow
         />
-      ) : null}
+        {currentTab === TAB_ALL ||
+        currentTab === TAB_POSTS ||
+        currentTab === TAB_REPOSTS ||
+        currentTab === TAB_LONGFORM ? (
+          <QueueSelectionTabs
+            currentTab={currentTab}
+            queueTypes={queueTypes}
+            basePath="/dashboard/calendar"
+          />
+        ) : null}
+      </div>
 
       {/* Content based on current tab */}
       <div className="min-h-0 flex-1">

@@ -1,6 +1,7 @@
 import {
   Link,
   useLoaderData,
+  useNavigate,
   useNavigation,
   useRevalidator,
   useSearchParams,
@@ -8,6 +9,13 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { CombinedContent, QueueType } from "~/features/posts/types";
 import {
@@ -28,6 +36,7 @@ import {
   useFlowData,
 } from "~/features/posts/ui";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   extractLongFormPostData,
   extractPostData,
@@ -86,8 +95,44 @@ function DashboardContentTypeTabs({
   currentContentTab: string;
   queueType: string;
 }) {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile(768);
   const baseHref =
     queueType !== "all" ? `?queueType=${queueType}&tab=` : "?tab=";
+
+  const handleMobileTabChange = (value: string) => {
+    navigate(`/dashboard${baseHref}${value}`);
+  };
+
+  if (isMobile) {
+    const label =
+      currentContentTab === "all"
+        ? "All"
+        : currentContentTab === "posts"
+          ? "Posts"
+          : currentContentTab === "longform"
+            ? "Articles"
+            : "Reposts";
+    return (
+      <div className="min-w-0 flex-1">
+        <Select value={currentContentTab} onValueChange={handleMobileTabChange}>
+          <SelectTrigger
+            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-xs font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
+            aria-label="Content type"
+          >
+            <SelectValue>{label}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="posts">Posts</SelectItem>
+            <SelectItem value="longform">Articles</SelectItem>
+            <SelectItem value="reposts">Reposts</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  }
+
   const tabClass = (tab: string) =>
     `border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
       currentContentTab === tab
@@ -95,7 +140,7 @@ function DashboardContentTypeTabs({
         : DASHBOARD_TAB_INACTIVE_CLASSES
     }`;
   return (
-    <div className="border-border mt-2 border-b">
+    <div className="min-w-0 flex-1">
       <nav className="-mb-px flex space-x-6" aria-label="Content types">
         <Link to={`/dashboard${baseHref}all`} className={tabClass("all")}>
           All
@@ -313,33 +358,30 @@ export default function DashboardIndexPage() {
               runwayOrangeThresholdDays={runwaySettings?.orangeThresholdDays}
             />
           </div>
-          <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <ContentListPageHeader pageType="flow" className="min-w-0" />
-              {flowItems.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => flowViewRef.current?.scrollToNext()}
-                  className="text-muted-foreground hover:text-foreground focus:ring-ring flex-shrink-0 rounded text-xs underline focus:ring-2 focus:outline-none"
-                  aria-label="Scroll timeline to next posts or schedule"
-                >
-                  Scroll to next
-                </button>
-              ) : null}
-            </div>
-            <div className="max-w-[min(100%,28rem)] min-w-0 justify-self-end">
-              <QueueSelectionTabs
-                currentTab="all"
-                queueTypes={queueTypesFiltered}
-                basePath="/dashboard"
-              />
-            </div>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <ContentListPageHeader pageType="flow" className="min-w-0" />
+            {flowItems.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => flowViewRef.current?.scrollToNext()}
+                className="text-muted-foreground hover:text-foreground focus:ring-ring flex-shrink-0 rounded text-xs underline focus:ring-2 focus:outline-none"
+                aria-label="Scroll timeline to next posts or schedule"
+              >
+                Scroll to next
+              </button>
+            ) : null}
           </div>
-          {/* Post type filter tabs (All, Posts, Reposts, Articles) */}
-          <DashboardContentTypeTabs
-            currentContentTab={currentContentTab}
-            queueType={queueType}
-          />
+          <div className="border-border mt-2 flex flex-row items-end justify-between gap-2 border-b">
+            <DashboardContentTypeTabs
+              currentContentTab={currentContentTab}
+              queueType={queueType}
+            />
+            <QueueSelectionTabs
+              currentTab="all"
+              queueTypes={queueTypesFiltered}
+              basePath="/dashboard"
+            />
+          </div>
         </div>
 
         {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}

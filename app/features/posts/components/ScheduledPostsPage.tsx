@@ -33,6 +33,7 @@ import {
   getNewPostUrl,
 } from "../utils/publish-result.utils";
 
+import { DateRangeFilter } from "./DateRangeFilter";
 import PublishResultModal from "./PublishResultModal";
 import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
@@ -78,6 +79,19 @@ export default function ScheduledPostsPage() {
   } | null>(null);
 
   const currentTab = searchParams.get("tab") ?? "all";
+  const dateFrom = searchParams.get("dateFrom") ?? "";
+  const dateTo = searchParams.get("dateTo") ?? "";
+  const dateRange = { from: dateFrom, to: dateTo };
+
+  const setDateRange = (range: { from: string; to: string }) => {
+    const next = new URLSearchParams(searchParams);
+    if (range.from) next.set("dateFrom", range.from);
+    else next.delete("dateFrom");
+    if (range.to) next.set("dateTo", range.to);
+    else next.delete("dateTo");
+    next.delete("page"); // reset to first page when changing date range
+    setSearchParams(next);
+  };
 
   usePostResultFromUrl({
     paramName: "scheduled",
@@ -147,30 +161,37 @@ export default function ScheduledPostsPage() {
     <div className="flex min-h-screen flex-col">
       <ContentListPageHeader pageType="scheduled" currentTab={currentTab} />
 
-      {/* Post Type Tabs */}
-      <PostTypeTabs
-        currentTab={currentTab}
-        allContent={allContent}
-        posts={filteredPosts}
-        longformPosts={longformPosts}
-        basePath="/dashboard/scheduled"
-        totalContentCount={totalContentCount}
-        totalPostsCount={totalPostsCount}
-        totalRepostsCount={totalRepostsCount}
-        totalLongformCount={totalLongformCount}
-      />
-
-      {/* Queue Selection Tabs */}
-      {currentTab === "all" ||
-      currentTab === "posts" ||
-      currentTab === "reposts" ||
-      currentTab === "longform" ? (
-        <QueueSelectionTabs
+      <div className="border-border mb-6 flex flex-row flex-wrap items-end justify-between gap-2 border-b">
+        <PostTypeTabs
           currentTab={currentTab}
-          queueTypes={queueTypes}
+          allContent={allContent}
+          posts={filteredPosts}
+          longformPosts={longformPosts}
           basePath="/dashboard/scheduled"
+          totalContentCount={totalContentCount}
+          totalPostsCount={totalPostsCount}
+          totalRepostsCount={totalRepostsCount}
+          totalLongformCount={totalLongformCount}
+          inRow
         />
-      ) : null}
+        <div className="flex flex-wrap items-center gap-4">
+          <DateRangeFilter
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            idPrefix="scheduled"
+          />
+          {currentTab === "all" ||
+          currentTab === "posts" ||
+          currentTab === "reposts" ||
+          currentTab === "longform" ? (
+            <QueueSelectionTabs
+              currentTab={currentTab}
+              queueTypes={queueTypes}
+              basePath="/dashboard/scheduled"
+            />
+          ) : null}
+        </div>
+      </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
         {/* Content based on current tab */}

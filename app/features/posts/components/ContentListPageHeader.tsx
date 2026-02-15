@@ -17,6 +17,7 @@ function getTitle(
   currentTab: string
 ): string {
   if (pageType === "flow") return "Your flow";
+  if (pageType === "calendar") return "Calendar";
   if (currentTab === "bulk") return "Bulk drafts";
 
   const prefix =
@@ -24,9 +25,7 @@ function getTitle(
       ? "Scheduled"
       : pageType === "published"
         ? "Published"
-        : pageType === "calendar"
-          ? "Calendar"
-          : "Drafts";
+        : "Drafts";
   if (currentTab === "all") return prefix;
   if (currentTab === "posts") return `${prefix} Posts`;
   if (currentTab === "reposts") return `${prefix} Reposts`;

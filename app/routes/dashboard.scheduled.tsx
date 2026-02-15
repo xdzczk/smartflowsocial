@@ -34,8 +34,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
     const page = parseInt(url.searchParams.get("page") ?? "1", 10);
     const limit = 20;
+    const dateFrom = url.searchParams.get("dateFrom") ?? undefined;
+    const dateTo = url.searchParams.get("dateTo") ?? undefined;
 
-    const data = await loadScheduledData(userId, queueType, page, limit);
+    const data = await loadScheduledData(
+      userId,
+      queueType,
+      page,
+      limit,
+      dateFrom,
+      dateTo
+    );
 
     // Validate loader response with Zod schema
     return validateLoaderResponse(data, scheduledPostsLoaderDataSchema);

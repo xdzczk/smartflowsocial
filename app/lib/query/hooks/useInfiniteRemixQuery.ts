@@ -66,16 +66,15 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
   // doesn't work reliably in Promise contexts (the fetcher state doesn't update properly)
   // const fetcher = useFetcher<TData>(); // Not needed anymore - using fetch() directly
 
-  // Wrap getNextPageParam to respect maxPages limit
+  // Wrap getNextPageParam to respect maxPages limit when set (undefined/Infinity = no cap)
+  const capped = typeof maxPages === "number" && Number.isFinite(maxPages);
   const wrappedGetNextPageParam = (
     lastPage: TData,
     allPages: TData[]
   ): number | undefined => {
-    // Check maxPages limit first
-    if (allPages.length >= maxPages) {
+    if (capped && allPages.length >= maxPages) {
       return undefined;
     }
-    // Then call original getNextPageParam
     return getNextPageParam(lastPage, allPages);
   };
 
@@ -169,7 +168,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
     },
     enabled,
     staleTime,
-    maxPages,
+    ...(capped ? { maxPages } : {}),
     placeholderData: placeholderData ?? ((previousData) => previousData),
     refetchInterval,
     refetchIntervalInBackground,

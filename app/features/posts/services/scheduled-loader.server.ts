@@ -8,6 +8,7 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
+import { parseDateRangeUtc } from "~/lib/date-range.server";
 import {
   validateSignedEvent,
   validateNostrEvent,
@@ -32,13 +33,21 @@ import { filterPostsByQueueType } from "./post-filtering.server";
 
 /**
  * Load scheduled dashboard data
+ * @param dateFrom - Optional YYYY-MM-DD (inclusive start)
+ * @param dateTo - Optional YYYY-MM-DD (inclusive end)
  */
 export async function loadScheduledData(
   userId: string,
   queueType: string,
   page = 1,
-  limit = 20
+  limit = 20,
+  dateFrom?: string | null,
+  dateTo?: string | null
 ) {
+  const dateRange = parseDateRangeUtc(dateFrom, dateTo);
+  const scheduledFromUtc = dateRange?.fromUtc;
+  const scheduledToUtc = dateRange?.toUtc;
+
   const [
     postsResult,
     allLongformPostsResult,
@@ -47,12 +56,30 @@ export async function loadScheduledData(
     hashTagPresets,
     repostsCount,
   ] = await Promise.all([
-    getScheduledPosts({ userId, queueType, page, limit }),
-    getScheduledLongFormPosts({ userId, page, limit }),
+    getScheduledPosts({
+      userId,
+      queueType,
+      page,
+      limit,
+      scheduledFromUtc,
+      scheduledToUtc,
+    }),
+    getScheduledLongFormPosts({
+      userId,
+      page,
+      limit,
+      scheduledFromUtc,
+      scheduledToUtc,
+    }),
     getUserById(userId),
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
-    getScheduledRepostsCount({ userId, queueType }),
+    getScheduledRepostsCount({
+      userId,
+      queueType,
+      scheduledFromUtc,
+      scheduledToUtc,
+    }),
   ]);
 
   // Extract posts and pagination from paginated result
