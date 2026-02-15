@@ -140,8 +140,9 @@ export async function getScheduledRepostsCount({
 }
 
 /**
- * Returns scheduled posts with scheduledAtUtc in the given UTC range (inclusive).
- * Used for Next 7 days schedule overview. Respects queueType filter.
+ * Returns posts (scheduled and published) with scheduledAtUtc in the given UTC range (inclusive).
+ * Used for Next 7 days schedule overview: shows both upcoming and past posts per day.
+ * Respects queueType filter.
  */
 export async function getScheduledPostsInDateRange({
   userId,
@@ -161,7 +162,7 @@ export async function getScheduledPostsInDateRange({
 > {
   try {
     const whereClause: Prisma.PostWhereInput = {
-      currentState: "SCHEDULED",
+      currentState: { in: ["SCHEDULED", "PUBLISHED"] },
       userId,
       repost: false,
       scheduledAtUtc: {

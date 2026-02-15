@@ -170,6 +170,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       onDone?: () => void;
       fallbackId: ReturnType<typeof setTimeout>;
     } | null>(null);
+    /** Tracks pending compensation so past-fetch effect re-runs when we clear it (ref alone doesn't trigger re-render). */
+    const [hasPendingPastCompensation, setHasPendingPastCompensation] =
+      useState(false);
     /** Only fetch past when we've scrolled away from left (initial scroll succeeded); prevents loop when stuck at scroll 0 */
     const hasScrolledAwayFromLeftRef = useRef(false);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
@@ -222,6 +225,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           if (pending) {
             clearTimeout(pending.fallbackId);
             pendingPastCompensationRef.current = null;
+            setHasPendingPastCompensation(false);
             const container = scrollContainerRef.current;
             if (container) {
               container.scrollLeft += pending.delta;
@@ -547,8 +551,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         if (pendingPastCompensationRef.current) {
           clearTimeout(pendingPastCompensationRef.current.fallbackId);
         }
+        setHasPendingPastCompensation(true);
         const fallbackId = setTimeout(() => {
           pendingPastCompensationRef.current = null;
+          setHasPendingPastCompensation(false);
           applyCompensation();
         }, 350);
         pendingPastCompensationRef.current = {
@@ -560,6 +566,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           if (pendingPastCompensationRef.current?.fallbackId === fallbackId) {
             clearTimeout(fallbackId);
             pendingPastCompensationRef.current = null;
+            setHasPendingPastCompensation(false);
           }
         };
       }
@@ -572,6 +579,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     ]);
 
     // Past-fetch when past sentinel is visible. Debounce so we don't fetch mid fast-scroll (reduces lag/flicker).
+    // When we have pending scroll compensation (mobile defer), don't fetch again or we get stuck in a loop.
     const pastFetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
       null
     );
@@ -580,7 +588,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         !allowFetch ||
         !isPastSentinelVisible ||
         !hasMorePast ||
-        isLoadingMorePast
+        isLoadingMorePast ||
+        hasPendingPastCompensation
       ) {
         if (pastFetchDebounceRef.current) {
           clearTimeout(pastFetchDebounceRef.current);
@@ -603,6 +612,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       isPastSentinelVisible,
       hasMorePast,
       isLoadingMorePast,
+      hasPendingPastCompensation,
       onFetchMorePast,
     ]);
 

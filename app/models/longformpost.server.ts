@@ -691,8 +691,9 @@ export async function getScheduledLongFormPosts({
 }
 
 /**
- * Returns scheduled longform posts with scheduledAtUtc in the given UTC range (inclusive).
- * Used for Next 7 days schedule overview. Respects queueType filter.
+ * Returns longform posts (scheduled and published) with scheduledAtUtc in the given UTC range (inclusive).
+ * Used for Next 7 days schedule overview: shows both upcoming and past posts per day.
+ * Respects queueType filter.
  */
 export async function getScheduledLongFormPostsInDateRange({
   userId,
@@ -713,7 +714,7 @@ export async function getScheduledLongFormPostsInDateRange({
   try {
     const where: Prisma.LongFormPostWhereInput = {
       userId,
-      currentState: "SCHEDULED",
+      currentState: { in: ["SCHEDULED", "PUBLISHED"] },
       scheduledAtUtc: {
         gte: fromUtc,
         lte: toUtc,

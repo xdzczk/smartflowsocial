@@ -1,5 +1,5 @@
 /**
- * Next 7 days schedule overview: scheduled post counts per day in user timezone.
+ * Next 7 days schedule overview: post counts per day in user timezone (scheduled + past/published).
  */
 
 import type { Temporal } from "~/lib/temporal";
@@ -24,8 +24,9 @@ export interface ScheduleDayCount {
 const NEXT_7_DAYS = 7;
 
 /**
- * Returns scheduled post counts per calendar day for the next 7 days (today through day 6)
- * in the user's timezone. Includes both regular posts and longform posts. Respects queueType.
+ * Returns post counts per calendar day for the next 7 days (today through day 6)
+ * in the user's timezone. Includes scheduled and published (past) posts; both regular
+ * and longform. Respects queueType.
  */
 export async function getScheduleNext7DaysCounts(
   userId: string,
