@@ -140,7 +140,7 @@ export function getQueueColorStyle(
         ?.colorToken ??
       (post.queueType as { colorToken?: string | null }).colorToken ??
       null;
-  } else {
+  } else if (post.queueType) {
     token =
       (post.queueType as { colorToken?: string | null }).colorToken ?? null;
   }

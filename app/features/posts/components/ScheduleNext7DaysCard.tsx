@@ -236,6 +236,7 @@ export function ScheduleNext7DaysCard({
                             }
                           }
                           const parts: React.ReactNode[] = slots.map((slot) => {
+                            const isUnassigned = slot.accent === "var(--muted)";
                             const blockStyle: React.CSSProperties &
                               Record<string, string> = {
                               "--block-accent": slot.accent,
@@ -243,7 +244,7 @@ export function ScheduleNext7DaysCard({
                             return (
                               <span
                                 key={slot.id}
-                                className="inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100"
+                                className={`inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-40 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100 ${isUnassigned ? "ring-border/60 ring-1" : ""}`}
                                 style={blockStyle}
                                 aria-hidden
                               />
