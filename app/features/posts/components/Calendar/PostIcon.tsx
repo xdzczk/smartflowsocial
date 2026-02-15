@@ -1,4 +1,4 @@
-import { AlignLeft, FileText, Image, Share2, Video } from "lucide-react";
+import { AlignLeft, FileText, Image, Repeat, Video } from "lucide-react";
 
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
@@ -19,9 +19,9 @@ export function PostIcon({
     return <FileText className={className} strokeWidth={stroke} aria-hidden />;
   }
 
-  // Reposts: use Share2 as primary icon so it's clearly a repost
+  // Reposts: use Repeat (two arrows in a circle) as primary icon
   if (post.repost === true || post.postKind === "REPOST") {
-    return <Share2 className={className} strokeWidth={stroke} aria-hidden />;
+    return <Repeat className={className} strokeWidth={stroke} aria-hidden />;
   }
 
   if (post.postType === "IMAGE" || post.postType === "CAROUSEL") {

@@ -282,6 +282,7 @@ export default function DraftEditPage() {
           onRepostDelayListChange={setRepostDelayList}
           alsoScheduleQuote={alsoScheduleQuote}
           onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+          userTimezone={typedUser.timezone ?? "UTC"}
           quoteEntries={quoteEntries}
           onQuoteEntriesChange={setQuoteEntries}
         />

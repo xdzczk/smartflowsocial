@@ -12,7 +12,12 @@ import {
 } from "~/lib/temporal";
 
 import type { CombinedContent } from "../combined.server";
-import { getQueueColor, getQueueColorBundle } from "../queue-colors";
+import {
+  getQueueColor,
+  getQueueColorBundle,
+  QUEUE_PILL_OPACITY_CLASS,
+  QUEUE_PILL_SHAPE_CLASS,
+} from "../queue-colors";
 import {
   deriveIsDraftLongForm,
   deriveIsScheduledLongForm,
@@ -251,8 +256,7 @@ export function getQueueTypeDisplay(queueType: CombinedContent["queueType"]): {
   if (colorToken) {
     const bundle = getQueueColorBundle(colorToken);
     return {
-      className:
-        "inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-sm",
+      className: `${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS}`,
       style: {
         backgroundColor: bundle.surface,
         color: bundle.accent,
@@ -264,7 +268,7 @@ export function getQueueTypeDisplay(queueType: CombinedContent["queueType"]): {
 
   const colors = getQueueColor(name, colorToken);
   return {
-    className: `inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${colors.bg} ${colors.text} ${colors.border} shadow-sm`,
+    className: `${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} ${colors.bg} ${colors.text} ${colors.border}`,
     name,
   };
 }
@@ -329,20 +333,12 @@ export function getContentTypeBadge(item: CombinedContent): {
     return { className: POST_KIND_BADGE_CLASS, text: "REPOST" };
   }
   if (kind === 30023) {
-    return {
-      className:
-        "inline-flex rounded-full bg-accent/15 px-2 py-1 text-xs font-medium text-accent-foreground",
-      text: "LONG-FORM",
-    };
+    return { className: POST_KIND_BADGE_CLASS, text: "ARTICLE" };
   }
 
-  // Default: postType for content shape, or "Post" / "Article"
+  // Default: uniform badge (same size/color as REPOST)
   return {
-    className: `inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-      item.type === "post"
-        ? "bg-muted text-muted-foreground"
-        : "bg-muted text-muted-foreground"
-    }`,
+    className: POST_KIND_BADGE_CLASS,
     text: item.type === "post" ? "Post" : "Article",
   };
 }

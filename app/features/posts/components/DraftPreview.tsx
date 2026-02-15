@@ -80,7 +80,7 @@ export function DraftPreview({
           </span>
           {queueColor ? (
             <div
-              className="inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
+              className="inline-flex rounded-md border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
               style={{
                 backgroundColor: `${queueColor}20`,
                 color: queueColor,
@@ -91,7 +91,7 @@ export function DraftPreview({
             </div>
           ) : (
             <div
-              className={`inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold ${getSelectedQueueStyle(selectedQueue, true).replace("hover:scale-105", "")} shadow-sm`}
+              className={`inline-flex rounded-md border-2 px-3 py-1 text-xs leading-4 font-semibold ${getSelectedQueueStyle(selectedQueue, true).replace("hover:scale-105", "")} shadow-sm`}
             >
               {selectedQueue}
             </div>

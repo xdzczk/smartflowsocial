@@ -6,7 +6,12 @@
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 
-import { MOBILE_FILTER_INPUT_CLASS } from "./constants";
+import {
+  DESKTOP_FILTER_INPUT_CLASS,
+  DESKTOP_FILTER_LABEL_CLASS,
+  MOBILE_FILTER_INPUT_CLASS,
+  MOBILE_FILTER_LABEL_CLASS,
+} from "./constants";
 
 export interface DateRangeValue {
   from: string;
@@ -35,6 +40,21 @@ export function DateRangeFilter({
 }: DateRangeFilterProps) {
   const hasActiveFilter = Boolean(dateRange.from || dateRange.to);
 
+  const clampDate = (value: string): string => {
+    if (!value) return value;
+    if (minDate && value < minDate) return minDate;
+    if (maxDate && value > maxDate) return maxDate;
+    return value;
+  };
+
+  const handleFromChange = (value: string) => {
+    onDateRangeChange({ ...dateRange, from: clampDate(value) });
+  };
+
+  const handleToChange = (value: string) => {
+    onDateRangeChange({ ...dateRange, to: clampDate(value) });
+  };
+
   return (
     <div
       className={`flex flex-wrap items-center gap-2 ${className ?? ""}`}
@@ -44,7 +64,7 @@ export function DateRangeFilter({
       <div className="flex items-center gap-2">
         <Label
           htmlFor={`${idPrefix}-from`}
-          className="text-muted-foreground text-sm whitespace-nowrap"
+          className={`text-muted-foreground text-sm whitespace-nowrap ${MOBILE_FILTER_LABEL_CLASS} ${DESKTOP_FILTER_LABEL_CLASS}`}
         >
           From
         </Label>
@@ -52,10 +72,8 @@ export function DateRangeFilter({
           type="date"
           id={`${idPrefix}-from`}
           value={dateRange.from}
-          onChange={(e) =>
-            onDateRangeChange({ ...dateRange, from: e.target.value })
-          }
-          className={`h-9 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS}`}
+          onChange={(e) => handleFromChange(e.target.value)}
+          className={`h-9 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS} ${DESKTOP_FILTER_INPUT_CLASS}`}
           min={minDate}
           max={maxDate}
         />
@@ -63,7 +81,7 @@ export function DateRangeFilter({
       <div className="flex items-center gap-2">
         <Label
           htmlFor={`${idPrefix}-to`}
-          className="text-muted-foreground text-sm whitespace-nowrap"
+          className={`text-muted-foreground text-sm whitespace-nowrap ${MOBILE_FILTER_LABEL_CLASS} ${DESKTOP_FILTER_LABEL_CLASS}`}
         >
           To
         </Label>
@@ -71,10 +89,8 @@ export function DateRangeFilter({
           type="date"
           id={`${idPrefix}-to`}
           value={dateRange.to}
-          onChange={(e) =>
-            onDateRangeChange({ ...dateRange, to: e.target.value })
-          }
-          className={`h-9 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS}`}
+          onChange={(e) => handleToChange(e.target.value)}
+          className={`h-9 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS} ${DESKTOP_FILTER_INPUT_CLASS}`}
           min={minDate}
           max={maxDate}
         />

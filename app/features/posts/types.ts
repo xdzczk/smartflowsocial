@@ -503,6 +503,7 @@ export interface BulkPostCardProps {
   onIsRecyclableChange: (index: number, checked: boolean) => void;
   onRemove: (index: number) => void;
   onMediaClick: (src: string) => void;
+  userTimezone?: string;
 }
 
 /**

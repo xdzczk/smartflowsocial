@@ -12,6 +12,7 @@ import {
   createZonedDateTime,
   formatForDateTimeLocal,
   fromDate,
+  getNowForDateTimeLocal,
   nowInTimezone,
   parseDateTimeLocal,
   toDate,
@@ -730,7 +731,7 @@ export default function DraftBulkResume({
                         )
                       }
                       disabled={isSubmitting}
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 ${getSelectedQueueStyle(colorToken ?? queueName, isAllSelected)}`}
+                      className={`rounded-md border-2 px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 ${getSelectedQueueStyle(colorToken ?? queueName, isAllSelected)}`}
                       style={{
                         backgroundColor: accent,
                         borderColor: accent,
@@ -818,7 +819,7 @@ export default function DraftBulkResume({
                                 );
                               }}
                               disabled={isSubmitting}
-                              className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${getSelectedQueueStyle(colorToken ?? queueName, isSelected)}`}
+                              className={`rounded-md border-2 px-3 py-1 text-xs font-medium transition-all duration-200 ${getSelectedQueueStyle(colorToken ?? queueName, isSelected)}`}
                               style={{
                                 backgroundColor: accent,
                                 borderColor: accent,
@@ -840,6 +841,7 @@ export default function DraftBulkResume({
                       type="datetime-local"
                       value={post.scheduledFor}
                       onChange={(e) => handleDateChange(index, e.target.value)}
+                      min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}
                       disabled={isSubmitting}
                       className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
                     />

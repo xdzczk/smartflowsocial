@@ -4,6 +4,7 @@ import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
   formatForDateTimeLocal,
+  getNowForDateTimeLocal,
   nowInTimezone,
   parseDateTimeLocal,
 } from "~/lib/temporal";
@@ -88,6 +89,7 @@ export default function BulkPostsSchedulingPanel({
           type="datetime-local"
           value={displayStart}
           onChange={(e) => setStartTime(e.target.value)}
+          min={getNowForDateTimeLocal(userTimezone)}
           className="dark:bg-card text-foreground dark:text-foreground border-input rounded border px-3 py-2 text-sm"
           aria-label="Start time for first post"
         />

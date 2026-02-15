@@ -1,5 +1,5 @@
 import { Link } from "@remix-run/react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Repeat } from "lucide-react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -10,7 +10,10 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  SMALL_ICON_SIZE_CLASS,
+} from "~/lib/icon-constants";
 
 import type {
   CombinedContent,
@@ -80,7 +83,7 @@ export function ContentTableRow({
   return (
     <tr
       key={`${item.type}-${item.id}`}
-      className="border-border hover:bg-muted cursor-pointer border-b"
+      className="group border-border hover:bg-muted cursor-pointer border-b"
       onClick={() => onPostSelect?.(item)}
     >
       {showBulkActions ? (
@@ -98,6 +101,7 @@ export function ContentTableRow({
       </td>
       <td className="p-3">
         {(() => {
+          const isRepost = isRepostContent(item);
           // For posts, get the first valid image URL (includes reposts with merged original media)
           if (item.type === "post" && item.fileUrl && item.fileUrl.length > 0) {
             const imageUrls = getImageUrls(item.fileUrl);
@@ -105,16 +109,27 @@ export function ContentTableRow({
 
             if (firstImageUrl) {
               return (
-                <MediaThumbnail
-                  src={firstImageUrl}
-                  alt="Post preview"
-                  className="h-12 w-12 rounded object-cover"
-                  fallback={
-                    <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                      {isRepostContent(item) ? "REPOST" : "TEXT"}
+                <div className="relative inline-block">
+                  <MediaThumbnail
+                    src={firstImageUrl}
+                    alt="Post preview"
+                    className="h-12 w-12 rounded object-cover"
+                    fallback={
+                      <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                        {isRepost ? "REPOST" : "TEXT"}
+                      </div>
+                    }
+                  />
+                  {isRepost ? (
+                    <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">
+                      <Repeat
+                        className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                        strokeWidth={2}
+                        aria-hidden
+                      />
                     </div>
-                  }
-                />
+                  ) : null}
+                </div>
               );
             }
           }
@@ -137,12 +152,19 @@ export function ContentTableRow({
 
           // Default fallback: repost with no media vs text post vs article
           return (
-            <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-              {item.type === "post"
-                ? isRepostContent(item)
-                  ? "REPOST"
-                  : "TEXT"
-                : "ART"}
+            <div className="relative inline-block">
+              <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                {item.type === "post" ? (isRepost ? "REPOST" : "TEXT") : "ART"}
+              </div>
+              {isRepost ? (
+                <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">
+                  <Repeat
+                    className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                </div>
+              ) : null}
             </div>
           );
         })()}

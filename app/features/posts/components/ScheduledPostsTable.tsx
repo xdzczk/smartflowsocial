@@ -5,7 +5,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { MoreHorizontal, Quote, Share2 } from "lucide-react";
+import { MoreHorizontal, Quote, Repeat } from "lucide-react";
 import { useEffect, useRef, useState, type Key } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
@@ -35,13 +35,19 @@ import {
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 
 import { postToCombinedContent } from "../combined";
-import { getQueueColor, getQueueColorBundle } from "../queue-colors";
+import {
+  getQueueColor,
+  getQueueColorBundle,
+  QUEUE_PILL_OPACITY_CLASS,
+  QUEUE_PILL_SHAPE_CLASS,
+} from "../queue-colors";
 import type { PostData } from "../types";
 
 import {
-  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
+  MOBILE_FILTER_LABEL_CLASS,
+  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "./constants";
 import { ContentListCard } from "./ContentListCard";
 
@@ -284,7 +290,7 @@ export function ScheduledPostsTable({
               {posts.map((post) => (
                 <tr
                   key={post.id}
-                  className="border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
+                  className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
                   onClick={() => onPostClick(post)}
                 >
                   <td className="p-3 text-center">
@@ -316,7 +322,7 @@ export function ScheduledPostsTable({
                         />
                       ) : post.repost ? (
                         <div className="bg-accent/15 text-accent-foreground flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded text-[10px] font-medium">
-                          <Share2
+                          <Repeat
                             className={`${SMALL_ICON_SIZE_CLASS} shrink-0`}
                             strokeWidth={INLINE_ICON_STROKE}
                             aria-hidden
@@ -334,7 +340,7 @@ export function ScheduledPostsTable({
                       )}
                       {post.repost ? (
                         <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
-                          <Share2
+                          <Repeat
                             className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                             strokeWidth={INLINE_ICON_STROKE}
                             aria-hidden
@@ -375,7 +381,7 @@ export function ScheduledPostsTable({
                           );
                           return (
                             <div
-                              className="inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
+                              className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS}`}
                               style={{
                                 backgroundColor: bundle.surface,
                                 color: bundle.accent,
@@ -393,7 +399,7 @@ export function ScheduledPostsTable({
                           );
                           return (
                             <div
-                              className={`inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold ${colors.bg} ${colors.text} ${colors.border} shadow-sm`}
+                              className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} ${colors.bg} ${colors.text} ${colors.border}`}
                             >
                               {post.queueType?.name ?? "unassigned"}
                             </div>
@@ -504,7 +510,11 @@ export function ScheduledPostsTable({
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           {onSortChange ? (
             <div className="mb-3 flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">Sort:</span>
+              <span
+                className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
+              >
+                Sort:
+              </span>
               <Select
                 value={
                   sortConfig.key === "caption"

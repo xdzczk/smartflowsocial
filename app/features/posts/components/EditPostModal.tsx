@@ -8,7 +8,12 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { parseDateTimeLocal, toDate, fromDate } from "~/lib/temporal";
+import {
+  fromDate,
+  getNowForDateTimeLocal,
+  parseDateTimeLocal,
+  toDate,
+} from "~/lib/temporal";
 
 import { useEditPostModal } from "../hooks/useEditPostModal";
 import type {
@@ -460,6 +465,7 @@ export function EditPostModal({
                   value={
                     scheduledFor ? formatDateTimeForInput(scheduledFor) : ""
                   }
+                  min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}
                   onChange={(e) => {
                     if (e.target.value) {
                       try {

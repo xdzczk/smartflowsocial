@@ -69,7 +69,7 @@ export function QueueSelector({
                   onQueueChange(isSelected ? "unassigned" : queueName);
                 }}
                 disabled={disabled}
-                className={`rounded-full px-4 py-2 text-sm transition-transform duration-150 active:scale-[0.98] ${getDynamicQueueStyle(colorToken ?? null, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
+                className={`rounded-md border-2 px-4 py-2 text-sm transition-transform duration-150 active:scale-[0.98] ${getDynamicQueueStyle(colorToken ?? null, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
                 style={{
                   backgroundColor: accent,
                   borderColor: accent,

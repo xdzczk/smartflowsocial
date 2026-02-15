@@ -1001,6 +1001,7 @@ export default function BulkPostsPage() {
                 showAlsoSchedule={Boolean(
                   mode !== "repost" && mode !== "quote"
                 )}
+                userTimezone={user?.timezone ?? "UTC"}
               />
 
               {validationResult.isValid === false ? (

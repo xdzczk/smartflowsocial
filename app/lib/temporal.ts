@@ -69,6 +69,32 @@ export function formatForDateTimeLocal(
 }
 
 /**
+ * Current time in the given timezone, formatted for HTML datetime-local input.
+ * Use as the min attribute when scheduling (no past dates/times).
+ */
+export function getNowForDateTimeLocal(timezone: string): string {
+  return formatForDateTimeLocal(nowInTimezone(timezone), timezone);
+}
+
+/**
+ * Minimum datetime for a schedule picker: current time, or a later time (e.g. original post's scheduled time).
+ * Use when scheduling repost/quote from a scheduled post so the new time is not before the original.
+ * @param timezone - User timezone for display
+ * @param notBeforeUtc - Optional: schedule must be at or after this time (e.g. post.scheduledAtUtc)
+ */
+export function getMinDatetimeLocalForSchedule(
+  timezone: string,
+  notBeforeUtc?: Date | null
+): string {
+  const now = nowInTimezone(timezone);
+  if (!notBeforeUtc) return formatForDateTimeLocal(now, timezone);
+  const notBeforeZ = fromDate(notBeforeUtc, timezone);
+  const minZ =
+    now.epochMilliseconds > notBeforeZ.epochMilliseconds ? now : notBeforeZ;
+  return formatForDateTimeLocal(minZ, timezone);
+}
+
+/**
  * Convert a ZonedDateTime to Unix timestamp (seconds)
  */
 export function toUnixTimestamp(zonedDateTime: Temporal.ZonedDateTime): number {

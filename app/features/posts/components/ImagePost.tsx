@@ -12,6 +12,7 @@ import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
   formatForDateTimeLocal,
+  getNowForDateTimeLocal,
   nowInTimezone,
 } from "~/lib/temporal";
 
@@ -516,7 +517,7 @@ export default function ImagePost({
                         setSelectedQueue(isSelected ? "unassigned" : queueName)
                       }
                       disabled={fetcher.state !== "idle" || isUploaded}
-                      className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(colorToken ?? null, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
+                      className={`rounded-md border-2 px-4 py-2 text-sm ${getDynamicQueueStyle(colorToken ?? null, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
                       style={{
                         backgroundColor: accent,
                         borderColor: accent,
@@ -562,6 +563,7 @@ export default function ImagePost({
                 setScheduledFor(e.target.value);
                 setTimeError("");
               }}
+              min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}
               className={`rounded-md border ${timeError ? "border-destructive" : "border-border"} text-foreground p-2`}
               disabled={fetcher.state !== "idle" || isUploaded}
             />

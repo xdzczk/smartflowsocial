@@ -424,6 +424,7 @@ export default function MediaPost({
             }}
             disabled={isUploading || isUploaded}
             showTimeInput={true}
+            userTimezone={user?.timezone ?? "UTC"}
           />
           {timeError ? (
             <p className="text-destructive text-sm">{timeError}</p>

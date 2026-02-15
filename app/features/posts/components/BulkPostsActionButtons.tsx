@@ -176,7 +176,7 @@ export default function BulkPostsActionButtons({
                     )
                   }
                   disabled={isProcessing}
-                  className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(colorToken ?? null, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
+                  className={`rounded-md border-2 px-4 py-2 text-sm ${getDynamicQueueStyle(colorToken ?? null, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
                   style={{
                     backgroundColor: accent,
                     borderColor: accent,

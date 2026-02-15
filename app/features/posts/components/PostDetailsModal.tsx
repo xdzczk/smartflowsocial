@@ -82,7 +82,7 @@ function PostStatusBadge({
   type: "draft" | "published" | "scheduled";
 }) {
   const base =
-    "inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium";
+    "inline-flex items-center rounded-md border px-3 py-1 text-sm font-medium";
   if (type === "draft")
     return (
       <span className={`${base} border-border bg-muted/50 text-foreground`}>
@@ -115,7 +115,7 @@ function QueueTypeChip({
   );
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${colors.bg} ${colors.text}`}
+      className={`inline-flex items-center rounded-md border-2 px-3 py-1 text-sm font-medium capitalize ${colors.bg} ${colors.text} ${colors.border}`}
     >
       {queueType.name}
     </span>

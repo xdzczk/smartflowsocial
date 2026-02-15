@@ -602,6 +602,7 @@ export default function LongFormPost({
                       void 0;
                     })
                   }
+                  userTimezone={userTimezone}
                 />
 
                 <AlsoScheduleLongformQuote

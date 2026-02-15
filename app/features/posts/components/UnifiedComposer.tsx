@@ -23,7 +23,12 @@ import {
 } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-import { nowMillis, parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
+import {
+  getNowForDateTimeLocal,
+  nowMillis,
+  parseDateTimeLocal,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
@@ -1550,6 +1555,7 @@ export function UnifiedComposer({
                     type="datetime-local"
                     id="scheduledFor"
                     {...form.register("scheduledFor")}
+                    min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}
                     disabled={disabled}
                   />
                 </div>
@@ -1570,6 +1576,7 @@ export function UnifiedComposer({
                   }}
                   disabled={disabled}
                   showTimeInput={false}
+                  userTimezone={user?.timezone ?? "UTC"}
                 />
                 <div className="border-border rounded-lg border">
                   <button

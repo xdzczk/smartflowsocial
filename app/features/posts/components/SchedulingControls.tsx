@@ -14,6 +14,7 @@ import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
   formatForDateTimeLocal,
+  getNowForDateTimeLocal,
   nowInTimezone,
 } from "~/lib/temporal";
 
@@ -186,6 +187,7 @@ export default function SchedulingControls({
           type="datetime-local"
           value={localScheduledFor}
           onChange={handleDateTimeChange}
+          min={getNowForDateTimeLocal(userTimezone)}
           className="w-full"
         />
       </div>

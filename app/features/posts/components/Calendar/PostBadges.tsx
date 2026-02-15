@@ -1,4 +1,4 @@
-import { Quote, Share2 } from "lucide-react";
+import { Quote, Repeat } from "lucide-react";
 
 import type { CalendarPost } from "./PostBlock.types";
 interface PostBadgesProps {
@@ -38,7 +38,7 @@ export function PostBadges({
     <>
       {post.repost ? (
         <div className={`${positionClass} bg-primary rounded-full p-0.5`}>
-          <Share2
+          <Repeat
             className={`${sizeClass} text-white`}
             strokeWidth={strokeWidth}
             aria-hidden

@@ -6,12 +6,17 @@
 import { useFetcher } from "@remix-run/react";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
+import {
+  getMinDatetimeLocalForSchedule,
+  parseDateTimeLocal,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 import type { UserData } from "~/lib/validation/user-data";
 
 import type { PostData } from "../types";
@@ -156,8 +161,6 @@ export function ScheduleRepostQuoteModal({
     }
   };
 
-  if (!open) return null;
-
   const isSubmitting =
     fetcher.state === "submitting" || fetcher.state === "loading";
   const hasSignedEvent =
@@ -166,107 +169,124 @@ export function ScheduleRepostQuoteModal({
     "id" in post.signedEvent &&
     "pubkey" in post.signedEvent;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="border-border bg-card w-full max-w-md rounded-lg border shadow-xl">
-        <div className="p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-foreground text-lg font-semibold">
-              {mode === "repost" ? "Schedule repost" : "Schedule quote"}
-            </h3>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground"
-              aria-label="Close"
-            >
-              <X
-                className="h-6 w-6"
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-            </button>
-          </div>
-
-          {!post || !hasSignedEvent ? (
-            <p className="text-muted-foreground text-sm">
-              This post cannot be used to schedule a repost or quote.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-muted-foreground text-sm">
-                {mode === "repost"
-                  ? "Choose when to schedule the repost."
-                  : "Choose when to schedule the quote and add an optional caption."}
-              </p>
-              <div>
-                <label
-                  htmlFor="schedule-repost-quote-datetime"
-                  className="text-foreground mb-1 block text-sm font-medium"
-                >
-                  Schedule at
-                </label>
-                <input
-                  id="schedule-repost-quote-datetime"
-                  type="datetime-local"
-                  value={scheduledFor}
-                  onChange={(e) => setScheduledFor(e.target.value)}
-                  className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
+  const modalContent =
+    !open || typeof document === "undefined" ? null : (
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="schedule-repost-quote-title"
+      >
+        <div className="border-border bg-card w-full max-w-md rounded-lg border shadow-xl">
+          <div className="p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3
+                id="schedule-repost-quote-title"
+                className="text-foreground text-lg font-semibold"
+              >
+                {mode === "repost" ? "Schedule repost" : "Schedule quote"}
+              </h3>
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Close"
+              >
+                <X
+                  className="h-6 w-6"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
                 />
-              </div>
-              {mode === "quote" ? (
+              </button>
+            </div>
+
+            {!post || !hasSignedEvent ? (
+              <p className="text-muted-foreground text-sm">
+                This post cannot be used to schedule a repost or quote.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  {mode === "repost"
+                    ? "Choose when to schedule the repost."
+                    : "Choose when to schedule the quote and add an optional caption."}
+                </p>
                 <div>
                   <label
-                    htmlFor="schedule-quote-caption"
+                    htmlFor="schedule-repost-quote-datetime"
                     className="text-foreground mb-1 block text-sm font-medium"
                   >
-                    Quote caption (optional)
+                    Schedule at
                   </label>
-                  <textarea
-                    id="schedule-quote-caption"
-                    value={quoteCaption}
-                    onChange={(e) => setQuoteCaption(e.target.value)}
-                    placeholder="Add your comment..."
-                    rows={3}
+                  <input
+                    id="schedule-repost-quote-datetime"
+                    type="datetime-local"
+                    value={scheduledFor}
+                    onChange={(e) => setScheduledFor(e.target.value)}
+                    min={getMinDatetimeLocalForSchedule(
+                      userTimezone,
+                      post.scheduledAtUtc ?? undefined
+                    )}
                     className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
                   />
                 </div>
-              ) : null}
-              {(fetcher.data?.error ?? signingError) ? (
-                <div className="border-destructive/30 bg-destructive/10 rounded-lg border p-3">
-                  <div className="text-destructive text-sm">
-                    {fetcher.data?.error ?? signingError}
+                {mode === "quote" ? (
+                  <div>
+                    <label
+                      htmlFor="schedule-quote-caption"
+                      className="text-foreground mb-1 block text-sm font-medium"
+                    >
+                      Quote caption (optional)
+                    </label>
+                    <textarea
+                      id="schedule-quote-caption"
+                      value={quoteCaption}
+                      onChange={(e) => setQuoteCaption(e.target.value)}
+                      placeholder="Add your comment..."
+                      rows={3}
+                      className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
+                    />
                   </div>
-                </div>
-              ) : null}
-            </div>
-          )}
+                ) : null}
+                {(fetcher.data?.error ?? signingError) ? (
+                  <div className="border-destructive/30 bg-destructive/10 rounded-lg border p-3">
+                    <div className="text-destructive text-sm">
+                      {fetcher.data?.error ?? signingError}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
 
-          <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
-            >
-              Cancel
-            </button>
-            {post && hasSignedEvent ? (
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => void handleConfirm()}
-                disabled={isSubmitting || !scheduledFor.trim()}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
               >
-                {isSubmitting
-                  ? "Signing..."
-                  : mode === "repost"
-                    ? "Schedule repost"
-                    : "Schedule quote"}
+                Cancel
               </button>
-            ) : null}
+              {post && hasSignedEvent ? (
+                <button
+                  type="button"
+                  onClick={() => void handleConfirm()}
+                  disabled={isSubmitting || !scheduledFor.trim()}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                >
+                  {isSubmitting
+                    ? "Signing..."
+                    : mode === "repost"
+                      ? "Schedule repost"
+                      : "Schedule quote"}
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(modalContent, document.body);
 }

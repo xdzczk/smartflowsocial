@@ -239,6 +239,14 @@ export const getDynamicQueueStyle = (
   return `${baseStyle} border opacity-70 hover:opacity-100 hover:shadow-sm`;
 };
 
+/** Rectangle pill with minimal rounded corners for queue labels (use across app). */
+export const QUEUE_PILL_SHAPE_CLASS =
+  "inline-flex rounded-md border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-sm";
+
+/** Opacity for queue pills in tables/lists: lower by default, full on hover/focus/touch (match Queue Health). */
+export const QUEUE_PILL_OPACITY_CLASS =
+  "opacity-70 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 group-active:opacity-100";
+
 /** Get accent hex for a token (for inline styles). Null/unknown → slate accent. */
 export function getQueueAccentHex(colorToken: string | null): string {
   const token =

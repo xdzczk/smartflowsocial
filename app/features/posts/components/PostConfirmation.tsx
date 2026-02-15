@@ -409,7 +409,7 @@ export default function PostConfirmation({
                     {isRepost ? `Repost ${index + 1}` : `Post ${index + 1}`}
                   </h3>
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${getSelectedQueueStyle(eventData.queueType, true)}`}
+                    className={`rounded-md border-2 px-3 py-1 text-xs font-medium ${getSelectedQueueStyle(eventData.queueType, true)}`}
                   >
                     {eventData.queueType}
                   </span>

@@ -1,5 +1,5 @@
 import { Link } from "@remix-run/react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Repeat } from "lucide-react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -9,7 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  SMALL_ICON_SIZE_CLASS,
+} from "~/lib/icon-constants";
 
 import type {
   CombinedContent,
@@ -111,7 +114,7 @@ export function ContentListCard({
           onPostSelect?.(item);
         }
       }}
-      className="border-border bg-card hover:bg-muted/50 flex cursor-pointer items-stretch gap-3 overflow-hidden rounded-lg border p-3 text-left shadow-sm transition-colors"
+      className="group border-border bg-card hover:bg-muted/50 flex cursor-pointer items-stretch gap-3 overflow-hidden rounded-lg border p-3 text-left shadow-sm transition-colors"
       style={{
         height: CONTENT_LIST_CARD_HEIGHT_PX,
         minHeight: CONTENT_LIST_CARD_HEIGHT_PX,
@@ -136,7 +139,7 @@ export function ContentListCard({
           />
         </div>
       ) : null}
-      <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-md">
+      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md">
         {hasMedia ? (
           <MediaPreviewCollage
             urls={mediaUrls}
@@ -164,6 +167,15 @@ export function ContentListCard({
               : "ART"}
           </div>
         )}
+        {isRepostContent(item) ? (
+          <div className="bg-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+            <Repeat
+              className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+              strokeWidth={2}
+              aria-hidden
+            />
+          </div>
+        ) : null}
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
         <p className="truncate font-medium">{getContentTitle(item)}</p>

@@ -1,6 +1,8 @@
+import { Repeat } from "lucide-react";
 import { memo, type ReactNode } from "react";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { SMALL_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import { getQueueAccentHex } from "../queue-colors";
 import type { CombinedContent } from "../types";
@@ -245,9 +247,27 @@ function FlowCardInner({
             twoItemLayout="vertical"
             fallback={<div className="bg-muted h-full w-full flex-shrink-0" />}
           />
+          {isRepostContent(item) ? (
+            <div className="bg-primary absolute top-1 right-1 rounded-full p-1">
+              <Repeat
+                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                strokeWidth={2}
+                aria-hidden
+              />
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="bg-muted/50 relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-xl p-2 md:w-32 md:min-w-[128px] md:p-3">
+          {isRepostContent(item) ? (
+            <div className="bg-primary absolute top-1 right-1 rounded-full p-1">
+              <Repeat
+                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                strokeWidth={2}
+                aria-hidden
+              />
+            </div>
+          ) : null}
           <span className="text-muted-foreground line-clamp-4 text-sm">
             {contentSummaryText}
           </span>

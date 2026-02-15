@@ -14,6 +14,7 @@ import {
   INLINE_ICON_STROKE,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
+import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 
@@ -315,6 +316,7 @@ interface BulkPostsTableProps {
   onRepostSchedulesChange?: (index: number, list: RepostScheduleItem[]) => void;
   onQuoteSchedulesChange?: (index: number, list: QuoteScheduleItem[]) => void;
   showAlsoSchedule?: boolean;
+  userTimezone?: string;
 }
 
 export default function BulkPostsTable({
@@ -333,6 +335,7 @@ export default function BulkPostsTable({
   onRepostSchedulesChange,
   onQuoteSchedulesChange,
   showAlsoSchedule,
+  userTimezone = "UTC",
 }: BulkPostsTableProps) {
   const parentRef = useRef<HTMLDivElement | null>(null);
   const gridCols = showAlsoSchedule
@@ -479,7 +482,7 @@ export default function BulkPostsTable({
                             ? "Click again to leave unassigned"
                             : undefined
                         }
-                        className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, isSelected)}`}
+                        className={`rounded-md border-2 px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, isSelected)}`}
                         style={{
                           backgroundColor: accent,
                           borderColor: accent,
@@ -496,6 +499,7 @@ export default function BulkPostsTable({
                     name="scheduledDates"
                     value={post.scheduledFor}
                     onChange={(e) => handleDateChange(index, e.target.value)}
+                    min={getNowForDateTimeLocal(userTimezone)}
                     className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
                   />
                 </div>

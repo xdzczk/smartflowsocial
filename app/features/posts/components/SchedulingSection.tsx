@@ -2,6 +2,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
+import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import type { QueueType } from "../types";
 interface SchedulingSectionProps {
@@ -16,6 +17,7 @@ interface SchedulingSectionProps {
   label?: string;
   showTimeInput?: boolean;
   className?: string;
+  userTimezone?: string;
 }
 
 export function SchedulingSection({
@@ -30,6 +32,7 @@ export function SchedulingSection({
   label = "Schedule for later",
   showTimeInput = true,
   className = "",
+  userTimezone = "UTC",
 }: SchedulingSectionProps) {
   // Find the currently selected queue type
   const selectedQueueType = queueTypes.find((qt) =>
@@ -54,6 +57,7 @@ export function SchedulingSection({
               name="scheduledFor"
               value={scheduledFor}
               onChange={(e) => onScheduledForChange(e.target.value)}
+              min={getNowForDateTimeLocal(userTimezone)}
               disabled={disabled}
             />
           </div>

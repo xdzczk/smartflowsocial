@@ -10,6 +10,7 @@ import {
   formatForDateTimeLocal,
   formatForDisplay,
   fromDate,
+  getNowForDateTimeLocal,
   nowUTC,
   parseDateTimeLocal,
   toDate,
@@ -318,6 +319,7 @@ export function SimpleRescheduleModal({
                   name="simple-reschedule-datetime"
                   type="datetime-local"
                   value={formatDateTimeForInput(scheduledFor)}
+                  min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}
                   onChange={(e) => {
                     if (e.target.value) {
                       try {

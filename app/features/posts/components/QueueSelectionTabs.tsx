@@ -15,6 +15,8 @@ import {
 
 import type { QueueType } from "../types";
 
+import { DESKTOP_FILTER_SELECT_TRIGGER_CLASS } from "./constants";
+
 interface QueueSelectionTabsProps {
   currentTab: string;
   queueTypes: Array<QueueType | string>;
@@ -50,7 +52,7 @@ export default function QueueSelectionTabs({
     <div className="border-border w-full max-w-[12rem] min-w-0 min-w-[8rem] flex-shrink-0 border-b-0 sm:max-w-[14rem]">
       <Select value={currentValue} onValueChange={handleDropdownChange}>
         <SelectTrigger
-          className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-xs font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
+          className={`h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-xs font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0 ${DESKTOP_FILTER_SELECT_TRIGGER_CLASS}`}
           aria-label="Filter by queue"
         >
           <SelectValue placeholder="Queue" />

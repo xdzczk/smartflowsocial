@@ -5,7 +5,7 @@
 import { Link, useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Repeat } from "lucide-react";
 import { useEffect, useRef, useState, type Key } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
@@ -25,16 +25,25 @@ import {
 } from "~/components/ui/select";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
-import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  SMALL_ICON_SIZE_CLASS,
+} from "~/lib/icon-constants";
 import { formatForDisplay, fromISOString } from "~/lib/temporal";
 
 import { postToCombinedContent } from "../combined";
-import { getQueueColor, getQueueColorBundle } from "../queue-colors";
+import {
+  getQueueColor,
+  getQueueColorBundle,
+  QUEUE_PILL_OPACITY_CLASS,
+  QUEUE_PILL_SHAPE_CLASS,
+} from "../queue-colors";
 import type { PostData } from "../types";
 
 import {
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
+  MOBILE_FILTER_LABEL_CLASS,
   MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "./constants";
 import { ContentListCard } from "./ContentListCard";
@@ -262,7 +271,7 @@ export function DraftsTable({
               {posts.map((post) => (
                 <tr
                   key={post.id}
-                  className="border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
+                  className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
                   onClick={() => onPostClick(post)}
                 >
                   <td className="p-3 text-center">
@@ -274,17 +283,46 @@ export function DraftsTable({
                     />
                   </td>
                   <td className="p-3">
-                    {post.fileUrl && post.fileUrl.length > 0 ? (
-                      <img
-                        src={getImageUrls(post.fileUrl)[0]}
-                        alt="Post preview"
-                        className="h-12 w-12 rounded object-cover"
-                      />
-                    ) : (
-                      <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                        TEXT
-                      </div>
-                    )}
+                    {(() => {
+                      const isRepost =
+                        (post as { repost?: boolean; postKind?: string })
+                          .repost === true ||
+                        (post as { repost?: boolean; postKind?: string })
+                          .postKind === "REPOST";
+                      return post.fileUrl && post.fileUrl.length > 0 ? (
+                        <div className="relative inline-block">
+                          <img
+                            src={getImageUrls(post.fileUrl)[0]}
+                            alt="Post preview"
+                            className="h-12 w-12 rounded object-cover"
+                          />
+                          {isRepost ? (
+                            <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">
+                              <Repeat
+                                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <div className="relative inline-block">
+                          <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                            {isRepost ? "REPOST" : "TEXT"}
+                          </div>
+                          {isRepost ? (
+                            <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">
+                              <Repeat
+                                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                strokeWidth={2}
+                                aria-hidden
+                              />
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="p-3">
                     <p className="font-medium">{post.caption ?? "—"}</p>
@@ -298,7 +336,7 @@ export function DraftsTable({
                         );
                         return (
                           <div
-                            className="inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
+                            className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS}`}
                             style={{
                               backgroundColor: bundle.surface,
                               color: bundle.accent,
@@ -311,13 +349,13 @@ export function DraftsTable({
                       })()
                     ) : (
                       <div
-                        className={`inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold ${(() => {
+                        className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} ${(() => {
                           const colors = getQueueColor(
                             post.queueType?.name ?? "unassigned",
                             post.queueType?.colorToken
                           );
                           return `${colors.bg} ${colors.text} ${colors.border}`;
-                        })()} shadow-sm`}
+                        })()}`}
                       >
                         {post.queueType?.name ?? "unassigned"}
                       </div>
@@ -383,7 +421,11 @@ export function DraftsTable({
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           {onSortChange ? (
             <div className="mb-3 flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">Sort:</span>
+              <span
+                className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
+              >
+                Sort:
+              </span>
               <Select
                 value={
                   sortConfig.key === "caption"

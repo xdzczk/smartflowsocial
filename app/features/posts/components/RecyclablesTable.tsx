@@ -5,7 +5,12 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
-import { getQueueColor, getQueueColorBundle } from "../queue-colors";
+import {
+  getQueueColor,
+  getQueueColorBundle,
+  QUEUE_PILL_OPACITY_CLASS,
+  QUEUE_PILL_SHAPE_CLASS,
+} from "../queue-colors";
 
 interface Post {
   id: string;
@@ -186,7 +191,7 @@ export function RecyclablesTable({
             return (
               <tr
                 key={post.id}
-                className="border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
+                className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3 text-center">
@@ -234,10 +239,11 @@ export function RecyclablesTable({
                       );
                       return (
                         <span
-                          className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize"
+                          className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS}`}
                           style={{
                             backgroundColor: bundle.surface,
                             color: bundle.accent,
+                            borderColor: bundle.accent,
                           }}
                         >
                           {post.queueType.name}
@@ -246,12 +252,12 @@ export function RecyclablesTable({
                     })()
                   ) : (
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
+                      className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} ${(() => {
                         const colors = getQueueColor(
                           post.queueType?.name ?? "unassigned",
                           post.queueType?.colorToken
                         );
-                        return `${colors.bg} ${colors.text}`;
+                        return `${colors.bg} ${colors.text} ${colors.border}`;
                       })()}`}
                     >
                       {post.queueType?.name ?? "unassigned"}

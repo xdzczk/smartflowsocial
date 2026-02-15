@@ -17,6 +17,8 @@ import {
   formatForDateTimeLocal,
   formatForDisplay,
   fromDate,
+  getMinDatetimeLocalForSchedule,
+  getNowForDateTimeLocal,
   isAfter,
   nowInTimezone,
   parseDateTimeLocal,
@@ -345,6 +347,7 @@ function renderModalContent(
                 ? formatDateTimeForInput(editableDateTime, userTimezone)
                 : ""
             }
+            min={getNowForDateTimeLocal(userTimezone)}
             onChange={handleDateTimeChange}
             className="border-border bg-background text-foreground focus:border-primary focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2"
           />
@@ -734,6 +737,10 @@ export function RescheduleModal({
                   type="datetime-local"
                   value={repostQuoteScheduledFor}
                   onChange={(e) => setRepostQuoteScheduledFor(e.target.value)}
+                  min={getMinDatetimeLocalForSchedule(
+                    userTimezone,
+                    data.post.scheduledAtUtc ?? undefined
+                  )}
                   className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
                 />
               </div>

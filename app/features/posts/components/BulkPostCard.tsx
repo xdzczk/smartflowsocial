@@ -11,6 +11,7 @@ import {
   INLINE_ICON_STROKE,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
+import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 import type { BulkPostCardProps, BulkPost, QueueType } from "../types";
@@ -77,6 +78,7 @@ export function BulkPostCard({
   onIsRecyclableChange,
   onRemove,
   onMediaClick,
+  userTimezone = "UTC",
 }: BulkPostCardProps) {
   const renderMediaPreview = () => {
     // Handle kind 6 reposts
@@ -234,7 +236,7 @@ export function BulkPostCard({
                 key={queueName}
                 type="button"
                 onClick={() => onQueueTypeChange(index, queueName)}
-                className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, post.queueType === queueName)}`}
+                className={`rounded-md border-2 px-3 py-1 text-xs ${getDynamicQueueStyle(colorToken ?? null, post.queueType === queueName)}`}
                 style={{
                   backgroundColor: accent,
                   borderColor: accent,
@@ -252,6 +254,7 @@ export function BulkPostCard({
           name="scheduledDates"
           value={post.scheduledFor}
           onChange={(e) => onDateChange(index, e.target.value)}
+          min={getNowForDateTimeLocal(userTimezone)}
           className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
         />
       </td>

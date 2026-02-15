@@ -14,7 +14,12 @@ import type { SignedEvent } from "~/features/nostr/types";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-import { nowMillis, parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
+import {
+  getNowForDateTimeLocal,
+  nowMillis,
+  parseDateTimeLocal,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
@@ -545,6 +550,7 @@ export default function TextPost({
                 type="datetime-local"
                 id="scheduledFor"
                 {...form.register("scheduledFor")}
+                min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}
                 disabled={fetcher.state !== "idle" || isSigning}
               />
               <Button
@@ -583,6 +589,7 @@ export default function TextPost({
               }}
               disabled={fetcher.state !== "idle" || isSigning}
               showTimeInput={false}
+              userTimezone={user?.timezone ?? "UTC"}
             />
             <div className="border-border mt-4 space-y-3 border-t pt-4">
               <div className="flex items-center gap-2">

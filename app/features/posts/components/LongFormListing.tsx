@@ -40,9 +40,10 @@ import { longFormPostToCombinedContent } from "../combined";
 import type { PostFetcher, LongFormPostData } from "../types";
 
 import {
-  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
+  MOBILE_FILTER_LABEL_CLASS,
+  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "./constants";
 import { ContentListCard } from "./ContentListCard";
 
@@ -914,7 +915,11 @@ export default function LongFormListing({
       {isMobile ? (
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           <div className="mt-3 flex items-center gap-2">
-            <span className="text-muted-foreground text-sm">Sort:</span>
+            <span
+              className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
+            >
+              Sort:
+            </span>
             <Select
               value={
                 sortConfig.key === "title"

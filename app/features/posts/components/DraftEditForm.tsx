@@ -11,6 +11,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import { getQueueColorBundle, getSelectedQueueStyle } from "../queue-colors";
 import type { PostData, QueueType, HashTagPreset } from "../types";
@@ -43,6 +44,7 @@ interface DraftEditFormProps {
   ) => void;
   alsoScheduleQuote?: boolean;
   onAlsoScheduleQuoteChange?: (value: boolean) => void;
+  userTimezone?: string;
   quoteEntries?: Array<{
     id: string;
     value: number;
@@ -82,6 +84,7 @@ export function DraftEditForm({
   onRepostDelayListChange,
   alsoScheduleQuote = false,
   onAlsoScheduleQuoteChange,
+  userTimezone = "UTC",
   quoteEntries = [
     { id: "default-quote", value: 2, unit: "hours" as const, caption: "" },
   ],
@@ -140,7 +143,7 @@ export function DraftEditForm({
                     type="button"
                     onClick={() => onQueueChange(queueName)}
                     disabled={isSubmitting}
-                    className="rounded-full border-2 px-4 py-2 text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-md border-2 px-4 py-2 text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
                       backgroundColor: isSelected
                         ? bundle.accent
@@ -159,7 +162,7 @@ export function DraftEditForm({
                   type="button"
                   onClick={() => onQueueChange(queueName)}
                   disabled={isSubmitting}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${getSelectedQueueStyle(queueName, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`rounded-md border-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${getSelectedQueueStyle(queueName, isSelected)} disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   {queueName}
                 </button>
@@ -215,6 +218,7 @@ export function DraftEditForm({
             name="scheduledFor"
             value={scheduledFor}
             onChange={(e) => onScheduledForChange(e.target.value)}
+            min={getNowForDateTimeLocal(userTimezone)}
             className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-lg border p-2"
             disabled={isSubmitting}
           />

@@ -4,6 +4,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
+import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import { getQueueColorBundle } from "../queue-colors";
 
@@ -38,6 +39,7 @@ interface LongFormPublishingOptionsProps {
   selectedHashtags: string;
   onHashtagPresetChange: (presetId: string | null, hashtags: string) => void;
   onUseHashtagPresetsChange: (value: boolean) => void;
+  userTimezone?: string;
 }
 
 export function LongFormPublishingOptions({
@@ -55,6 +57,7 @@ export function LongFormPublishingOptions({
   selectedHashtags: _selectedHashtags,
   onHashtagPresetChange,
   onUseHashtagPresetsChange,
+  userTimezone = "UTC",
 }: LongFormPublishingOptionsProps) {
   // Find the currently selected queue type
   const currentQueueType = queueTypes.find(
@@ -203,6 +206,7 @@ export function LongFormPublishingOptions({
               name="scheduledFor"
               value={scheduledFor ?? ""}
               onChange={(e) => onScheduledForChange(e.target.value || null)}
+              min={getNowForDateTimeLocal(userTimezone)}
               className="dark:bg-card flex-1 bg-white"
               placeholder="Select date and time"
             />

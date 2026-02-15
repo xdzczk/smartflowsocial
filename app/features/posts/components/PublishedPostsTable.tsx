@@ -1,6 +1,6 @@
 import { Link } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { MoreHorizontal, Quote, Share2 } from "lucide-react";
+import { MoreHorizontal, Quote, Repeat } from "lucide-react";
 import { useRef, useState, type Key } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
@@ -28,7 +28,12 @@ import {
 } from "~/lib/icon-constants";
 
 import { postToCombinedContent } from "../combined";
-import { getQueueColor, getQueueColorBundle } from "../queue-colors";
+import {
+  getQueueColor,
+  getQueueColorBundle,
+  QUEUE_PILL_OPACITY_CLASS,
+  QUEUE_PILL_SHAPE_CLASS,
+} from "../queue-colors";
 import type { PostStats } from "../stats.server";
 import type { PostData, PostFetcher } from "../types";
 import { formatDate } from "../utils/content-helpers";
@@ -36,6 +41,7 @@ import { formatDate } from "../utils/content-helpers";
 import {
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
+  MOBILE_FILTER_LABEL_CLASS,
   MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "./constants";
 import { ContentListCard } from "./ContentListCard";
@@ -255,7 +261,7 @@ export default function PublishedPostsTable({
                 return (
                   <tr
                     key={post.id}
-                    className="border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
+                    className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
                     onClick={() => setSelectedPost(post)}
                   >
                     <td className="p-3 text-center">
@@ -281,7 +287,7 @@ export default function PublishedPostsTable({
                           />
                           {post.repost ? (
                             <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
-                              <Share2
+                              <Repeat
                                 className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                                 strokeWidth={INLINE_ICON_STROKE}
                                 aria-hidden
@@ -305,7 +311,7 @@ export default function PublishedPostsTable({
                           </div>
                           {post.repost ? (
                             <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
-                              <Share2
+                              <Repeat
                                 className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                                 strokeWidth={INLINE_ICON_STROKE}
                                 aria-hidden
@@ -355,10 +361,11 @@ export default function PublishedPostsTable({
                           );
                           return (
                             <span
-                              className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize"
+                              className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS}`}
                               style={{
                                 backgroundColor: bundle.surface,
                                 color: bundle.accent,
+                                borderColor: bundle.accent,
                               }}
                             >
                               {post.queueType.name}
@@ -367,12 +374,12 @@ export default function PublishedPostsTable({
                         })()
                       ) : (
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
+                          className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} ${(() => {
                             const colors = getQueueColor(
                               post.queueType?.name ?? "unassigned",
                               post.queueType?.colorToken
                             );
-                            return `${colors.bg} ${colors.text}`;
+                            return `${colors.bg} ${colors.text} ${colors.border}`;
                           })()}`}
                         >
                           {post.queueType?.name ?? "unassigned"}
@@ -549,7 +556,11 @@ export default function PublishedPostsTable({
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           {onSortChange ? (
             <div className="mb-3 flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">Sort:</span>
+              <span
+                className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
+              >
+                Sort:
+              </span>
               <Select
                 value={
                   sortConfig.key === "caption"
