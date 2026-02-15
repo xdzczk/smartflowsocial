@@ -76,6 +76,10 @@ interface LongFormPostProps {
   onHashtagPresetChange?: (presetId: string | null, hashtags: string) => void;
   /** When "template", only "Save as template" and Cancel are shown. */
   mode?: "default" | "template";
+  /** When set with mode="template", submit uses updateTemplateLongform instead of createTemplate. */
+  editTemplateContext?: { templateId: string; longFormPostId: string } | null;
+  /** When editing a template, pass the current template name to prefill the composer field. */
+  initialTemplateName?: string | null;
 }
 
 export default function LongFormPost({
@@ -95,9 +99,13 @@ export default function LongFormPost({
   onUseHashtagPresetsChange,
   onHashtagPresetChange,
   mode = "default",
+  editTemplateContext = null,
+  initialTemplateName = null,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
-  const [templateName, setTemplateName] = useState("");
+  const [templateName, setTemplateName] = useState(
+    () => initialTemplateName ?? ""
+  );
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const isTemplateMode = mode === "template";
   const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>(() => [
@@ -447,21 +455,23 @@ export default function LongFormPost({
     flushSync();
     const values = form.getValues();
     const formData = new FormData();
-    formData.set("_action", "createTemplate");
-    formData.set("templateName", templateName.trim());
+    if (editTemplateContext?.templateId && editTemplateContext.longFormPostId) {
+      formData.set("_action", "updateTemplateLongform");
+      formData.set("templateId", editTemplateContext.templateId);
+      formData.set("longFormPostId", editTemplateContext.longFormPostId);
+      formData.set("name", templateName.trim());
+    } else {
+      formData.set("_action", "createTemplate");
+      formData.set("templateName", templateName.trim());
+    }
     /* eslint-disable @typescript-eslint/no-unnecessary-condition -- FormData.set expects string */
     formData.set("title", values.title ?? "");
     formData.set("summary", values.summary ?? "");
     formData.set("content", values.content ?? "");
     formData.set("image", image ?? "");
     formData.set("customTags", values.customTags ?? "");
-    formData.set("queueType", selectedQueueType ?? "unassigned");
+    formData.set("queueType", "unassigned");
     /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-    const selectedQueue = queueTypes.find(
-      (q) => typeof q === "object" && q.name === selectedQueueType
-    );
-    if (typeof selectedQueue === "object" && selectedQueue.id)
-      formData.set("queueTypeId", selectedQueue.id);
     if (selectedHashtagPresetId)
       formData.set("hashTagPresetId", selectedHashtagPresetId);
     formData.set(
@@ -536,7 +546,9 @@ export default function LongFormPost({
                   >
                     {fetcher.state !== "idle"
                       ? "Saving..."
-                      : "Save as template"}
+                      : editTemplateContext
+                        ? "Save"
+                        : "Save as template"}
                   </Button>
                   <Button type="button" variant="ghost" asChild>
                     <Link to="/dashboard/templates">Cancel</Link>

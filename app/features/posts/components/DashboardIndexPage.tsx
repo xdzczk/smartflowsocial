@@ -328,14 +328,11 @@ export default function DashboardIndexPage() {
   }, [lastScheduledAtUtcMs, flowItems]);
 
   const flowViewRef = useRef<FlowViewHandle | null>(null);
-  const flowZoneRef = useRef<HTMLDivElement | null>(null);
   const [_hasLiveEdge, setHasLiveEdge] = useState(false);
 
-  // Reset flow scroll to default position when content tab or queue filter changes
+  // Reset Flow section horizontal scroll to default position (live edge / next scheduled) when content tab or queue filter changes; do not reset page vertical scroll
   useEffect(() => {
-    const zone = flowZoneRef.current;
-    if (zone) zone.scrollTop = 0;
-    flowViewRef.current?.scrollToInitial();
+    flowViewRef.current?.scrollToNext();
   }, [currentContentTab, queueType]);
 
   return (
@@ -385,10 +382,7 @@ export default function DashboardIndexPage() {
         </div>
 
         {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
-        <div
-          ref={flowZoneRef}
-          className="flow-zone bg-muted/40 dark:bg-muted/20 mt-4 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]"
-        >
+        <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-4 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
           {flowError ? (
             <Alert
               variant="destructive"

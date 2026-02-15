@@ -24,6 +24,7 @@ import type {
 } from "../types";
 
 import {
+  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_LIST_CARD_HEIGHT_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
@@ -366,7 +367,9 @@ export default function AllContentListing({
               }
               onValueChange={setMobileSort}
             >
-              <SelectTrigger className="w-[11rem]">
+              <SelectTrigger
+                className={`w-[11rem] ${MOBILE_FILTER_SELECT_TRIGGER_CLASS}`}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

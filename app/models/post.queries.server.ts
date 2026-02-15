@@ -95,6 +95,7 @@ export async function getScheduledPosts({
           queueType: true,
           hashTagPreset: true,
           template: true,
+          repostOf: { select: { fileUrl: true, postType: true } },
         },
         orderBy: {
           scheduledAtUtc: "asc",
@@ -370,6 +371,7 @@ export async function getPublishedPosts({
       where: whereClause,
       include: {
         queueType: true,
+        repostOf: { select: { fileUrl: true, postType: true } },
       },
       orderBy: {
         publishedAt: "desc",
@@ -612,6 +614,7 @@ export function getPastPosts({
       queueType: true,
       hashTagPreset: true,
       template: true,
+      repostOf: { select: { fileUrl: true, postType: true } },
     },
     orderBy: {
       publishedAt: "desc",

@@ -4,7 +4,7 @@
  * Handles published posts data loading
  */
 
-import type { Prisma } from "@prisma/client";
+import type { PostType, Prisma } from "@prisma/client";
 
 import { getUserById } from "~/features/user";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
@@ -120,12 +120,25 @@ export async function getPublishedDashboardData({
 
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {
-    const { queueType, ...rest } = post;
+    const rawPost = post as typeof post & {
+      repostOf?: { fileUrl: string[]; postType: string | null } | null;
+    };
+    const { queueType, repostOf, ...rest } = rawPost;
+    // For reposts with no media, use original post's fileUrl/postType for display
+    const isRepostWithNoMedia =
+      (rawPost.repost || rawPost.postKind === "REPOST") &&
+      repostOf &&
+      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- fileUrl can be empty at runtime for reposts */
+      (!rawPost.fileUrl || rawPost.fileUrl.length === 0);
+    const fileUrl = isRepostWithNoMedia ? repostOf.fileUrl : rawPost.fileUrl;
+    const postType = isRepostWithNoMedia ? repostOf.postType : rawPost.postType;
     // Validate Prisma JsonValue with Zod schemas
     const signedEventValue = validateSignedEvent(post.signedEvent);
     const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: PostData = {
       ...rest,
+      fileUrl,
+      postType: (postType ?? rest.postType) as PostType,
       queueType: convertPrismaQueueTypeToQueueType(
         "queueType" in post ? post.queueType : undefined
       ),

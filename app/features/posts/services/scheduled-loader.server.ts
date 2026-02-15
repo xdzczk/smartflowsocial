@@ -3,6 +3,8 @@
  * Centralized data fetching for scheduled posts page
  */
 
+import type { PostType } from "@prisma/client";
+
 import {
   getUserById,
   getQueueTypes,
@@ -94,12 +96,24 @@ export async function loadScheduledData(
 
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {
-    const { queueType, ...rest } = post;
+    const { queueType, repostOf, ...rest } = post as typeof post & {
+      repostOf?: { fileUrl: string[]; postType: string | null } | null;
+    };
+    // For reposts with no media, use original post's fileUrl/postType for display
+    const isRepostWithNoMedia =
+      (post.repost || post.postKind === "REPOST") &&
+      repostOf &&
+      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- fileUrl can be empty at runtime for reposts */
+      (!post.fileUrl || post.fileUrl.length === 0);
+    const fileUrl = isRepostWithNoMedia ? repostOf.fileUrl : post.fileUrl;
+    const postType = isRepostWithNoMedia ? repostOf.postType : post.postType;
     // Validate Prisma JsonValue with Zod schemas (prevents DbNull / invalid-shape issues)
     const signedEventValue = validateSignedEvent(post.signedEvent);
     const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: PostData = {
       ...rest,
+      fileUrl,
+      postType: (postType ?? rest.postType) as PostType,
       queueType: convertPrismaQueueTypeToQueueType(queueType),
       signedEvent: signedEventValue,
       nostrEvent: nostrEventValue,

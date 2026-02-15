@@ -1,3 +1,4 @@
+import { Link } from "@remix-run/react";
 import { Check, Settings2 } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -158,124 +159,140 @@ export function ScheduleNext7DaysCard({
                     .join(", ")
                 : "";
 
+              const scheduledUrl = `/dashboard/scheduled?dateFrom=${encodeURIComponent(dateKey)}&dateTo=${encodeURIComponent(dateKey)}`;
               return (
-                <li
-                  key={dateKey}
-                  className={`flex min-h-[2.25rem] items-center gap-2 rounded-lg border px-3 py-1.5 text-xs ${
-                    gap
-                      ? "border-amber-500/50 bg-amber-500/10 dark:border-amber-400/30 dark:bg-amber-500/10"
-                      : "border-border/60 bg-muted/20"
-                  }`}
-                >
-                  <span
-                    className="text-foreground min-w-0 shrink-0 truncate font-medium sm:min-w-[10rem]"
-                    title={label}
-                    style={{ maxWidth: "12rem" }}
-                  >
-                    {label}
-                  </span>
-                  <div className="min-w-0 flex-1" aria-hidden />
-                  <div
-                    className="flex min-w-0 shrink items-center justify-end gap-1.5 overflow-hidden"
-                    style={{
-                      maxWidth: `calc(${MAX_BLOCKS} * 0.5rem + ${MAX_BLOCKS - 1} * 0.125rem + 1.5rem)`,
-                    }}
-                  >
-                    {hasBlocks ? (
-                      <span
-                        className="flex shrink-0 items-center gap-0.5"
-                        title={blockSummary}
-                        aria-label={blockSummary}
-                      >
-                        {(() => {
-                          const totalBlocks = byQueue.reduce(
-                            (sum, q) => sum + (q.count > 0 ? q.count : 0),
-                            0
-                          );
-                          const queuesWithCount = byQueue
-                            .filter((q) => q.count > 0)
-                            .map((q) => {
-                              const bundle = getQueueBundleForName(
-                                q.queueName,
-                                queueTypes
-                              );
-                              const accent =
-                                q.queueName === "Unassigned" || !bundle
-                                  ? "var(--muted)"
-                                  : bundle.accent;
-                              return {
-                                queueName: q.queueName,
-                                count: q.count,
-                                accent,
-                              };
-                            });
-                          const slots: Array<{ id: number; accent: string }> =
-                            [];
-                          let slotId = 0;
-                          const remaining = queuesWithCount.map((q) => q.count);
-                          for (let i = 0; i < MAX_BLOCKS; i++) {
-                            let j = i % queuesWithCount.length;
-                            let tried = 0;
-                            while (tried < queuesWithCount.length) {
-                              const count = remaining[j];
-                              const queue = queuesWithCount[j];
-                              if (
-                                typeof count === "number" &&
-                                count > 0 &&
-                                queue
-                              ) {
-                                slots.push({
-                                  id: slotId++,
-                                  accent: queue.accent,
-                                });
-                                remaining[j] = count - 1;
-                                break;
-                              }
-                              j = (j + 1) % queuesWithCount.length;
-                              tried += 1;
-                            }
-                          }
-                          const parts: React.ReactNode[] = slots.map((slot) => {
-                            const isUnassigned = slot.accent === "var(--muted)";
-                            const blockStyle: React.CSSProperties &
-                              Record<string, string> = {
-                              "--block-accent": slot.accent,
-                            };
-                            return (
-                              <span
-                                key={slot.id}
-                                className={`inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-65 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100 ${isUnassigned ? "ring-border/60 ring-1" : ""}`}
-                                style={blockStyle}
-                                aria-hidden
-                              />
-                            );
-                          });
-                          if (totalBlocks > MAX_BLOCKS) {
-                            parts.push(
-                              <span
-                                key="more"
-                                className="text-muted-foreground text-[10px]"
-                                aria-hidden
-                              >
-                                +{totalBlocks - MAX_BLOCKS}
-                              </span>
-                            );
-                          }
-                          return parts;
-                        })()}
-                      </span>
-                    ) : null}
-                  </div>
-                  <span
-                    className={`shrink-0 whitespace-nowrap tabular-nums ${
+                <li key={dateKey} className="flex min-h-[2.25rem] flex-col">
+                  <Link
+                    to={scheduledUrl}
+                    className={`focus:ring-ring queue-health-row card-lift flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-shadow focus:ring-2 focus:outline-none ${
                       gap
-                        ? "text-amber-700 dark:text-amber-400"
-                        : "text-muted-foreground"
+                        ? "border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 dark:border-amber-400/30 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+                        : "border-border/60 bg-muted/20 hover:bg-muted/50"
                     }`}
-                    style={{ minWidth: "4rem" }}
+                    style={
+                      // CSS custom property not in React.CSSProperties; assertion required
+                      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- CSS custom properties require type assertion */
+                      {
+                        "--queue-color": "hsl(var(--primary))",
+                      } as React.CSSProperties
+                    }
+                    title={`View posts scheduled for ${label}`}
                   >
-                    {count} {count === 1 ? "post" : "posts"}
-                  </span>
+                    <span
+                      className="text-foreground min-w-0 shrink-0 truncate font-medium sm:min-w-[10rem]"
+                      title={label}
+                      style={{ maxWidth: "12rem" }}
+                    >
+                      {label}
+                    </span>
+                    <div className="min-w-0 flex-1" aria-hidden />
+                    <div
+                      className="flex min-w-0 shrink items-center justify-end gap-1.5 overflow-hidden"
+                      style={{
+                        maxWidth: `calc(${MAX_BLOCKS} * 0.5rem + ${MAX_BLOCKS - 1} * 0.125rem + 1.5rem)`,
+                      }}
+                    >
+                      {hasBlocks ? (
+                        <span
+                          className="flex shrink-0 items-center gap-0.5"
+                          title={blockSummary}
+                          aria-label={blockSummary}
+                        >
+                          {(() => {
+                            const totalBlocks = byQueue.reduce(
+                              (sum, q) => sum + (q.count > 0 ? q.count : 0),
+                              0
+                            );
+                            const queuesWithCount = byQueue
+                              .filter((q) => q.count > 0)
+                              .map((q) => {
+                                const bundle = getQueueBundleForName(
+                                  q.queueName,
+                                  queueTypes
+                                );
+                                const accent =
+                                  q.queueName === "Unassigned" || !bundle
+                                    ? "var(--muted)"
+                                    : bundle.accent;
+                                return {
+                                  queueName: q.queueName,
+                                  count: q.count,
+                                  accent,
+                                };
+                              });
+                            const slots: Array<{ id: number; accent: string }> =
+                              [];
+                            let slotId = 0;
+                            const remaining = queuesWithCount.map(
+                              (q) => q.count
+                            );
+                            for (let i = 0; i < MAX_BLOCKS; i++) {
+                              let j = i % queuesWithCount.length;
+                              let tried = 0;
+                              while (tried < queuesWithCount.length) {
+                                const count = remaining[j];
+                                const queue = queuesWithCount[j];
+                                if (
+                                  typeof count === "number" &&
+                                  count > 0 &&
+                                  queue
+                                ) {
+                                  slots.push({
+                                    id: slotId++,
+                                    accent: queue.accent,
+                                  });
+                                  remaining[j] = count - 1;
+                                  break;
+                                }
+                                j = (j + 1) % queuesWithCount.length;
+                                tried += 1;
+                              }
+                            }
+                            const parts: React.ReactNode[] = slots.map(
+                              (slot) => {
+                                const isUnassigned =
+                                  slot.accent === "var(--muted)";
+                                const blockStyle: React.CSSProperties &
+                                  Record<string, string> = {
+                                  "--block-accent": slot.accent,
+                                };
+                                return (
+                                  <span
+                                    key={slot.id}
+                                    className={`inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-65 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100 ${isUnassigned ? "ring-border/60 ring-1" : ""}`}
+                                    style={blockStyle}
+                                    aria-hidden
+                                  />
+                                );
+                              }
+                            );
+                            if (totalBlocks > MAX_BLOCKS) {
+                              parts.push(
+                                <span
+                                  key="more"
+                                  className="text-muted-foreground text-[10px]"
+                                  aria-hidden
+                                >
+                                  +{totalBlocks - MAX_BLOCKS}
+                                </span>
+                              );
+                            }
+                            return parts;
+                          })()}
+                        </span>
+                      ) : null}
+                    </div>
+                    <span
+                      className={`shrink-0 whitespace-nowrap tabular-nums ${
+                        gap
+                          ? "text-amber-700 dark:text-amber-400"
+                          : "text-muted-foreground"
+                      }`}
+                      style={{ minWidth: "4rem" }}
+                    >
+                      {count} {count === 1 ? "post" : "posts"}
+                    </span>
+                  </Link>
                 </li>
               );
             })}

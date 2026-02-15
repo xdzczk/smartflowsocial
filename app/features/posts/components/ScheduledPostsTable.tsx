@@ -39,6 +39,7 @@ import { getQueueColor, getQueueColorBundle } from "../queue-colors";
 import type { PostData } from "../types";
 
 import {
+  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
 } from "./constants";
@@ -314,7 +315,12 @@ export function ScheduledPostsTable({
                           }
                         />
                       ) : post.repost ? (
-                        <div className="bg-accent/15 text-accent-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                        <div className="bg-accent/15 text-accent-foreground flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded text-[10px] font-medium">
+                          <Share2
+                            className={`${SMALL_ICON_SIZE_CLASS} shrink-0`}
+                            strokeWidth={INLINE_ICON_STROKE}
+                            aria-hidden
+                          />
                           REPOST
                         </div>
                       ) : post.isQuotedPost ? (
@@ -326,7 +332,7 @@ export function ScheduledPostsTable({
                           TEXT
                         </div>
                       )}
-                      {post.repost && post.fileUrl.length > 0 ? (
+                      {post.repost ? (
                         <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
                           <Share2
                             className={`${SMALL_ICON_SIZE_CLASS} text-white`}
@@ -523,7 +529,9 @@ export function ScheduledPostsTable({
                   }
                 }}
               >
-                <SelectTrigger className="w-[11rem]">
+                <SelectTrigger
+                  className={`w-[11rem] ${MOBILE_FILTER_SELECT_TRIGGER_CLASS}`}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

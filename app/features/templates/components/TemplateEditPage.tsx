@@ -1,5 +1,5 @@
 import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import {
@@ -12,13 +12,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
-import { getQueueColor } from "~/features/posts/queue-colors";
-import { getImageUrls } from "~/lib/helpers";
-import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import type { HashTagPreset, QueueType } from "~/features/posts/types";
 import {
-  INLINE_ICON_SIZE_CLASS,
-  INLINE_ICON_STROKE,
-} from "~/lib/icon-constants";
+  NewPostHeader,
+  UnifiedComposer,
+  LongFormPost,
+  convertJsonValueToScheduleConfig,
+} from "~/features/posts/ui";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 type LoaderData = unknown;
 type Template = Record<string, unknown> & {
@@ -28,6 +30,44 @@ type Template = Record<string, unknown> & {
   post?: unknown;
   longFormPost?: unknown;
 };
+
+function parseQueueType(qt: unknown): string | QueueType {
+  if (typeof qt === "string") return qt;
+  if (
+    typeof qt === "object" &&
+    qt !== null &&
+    "id" in qt &&
+    "name" in qt &&
+    typeof (qt as { id: unknown; name: unknown }).id === "string" &&
+    typeof (qt as { id: unknown; name: unknown }).name === "string"
+  ) {
+    const o = qt as { id: string; name: string; [key: string]: unknown };
+    const result: QueueType = {
+      id: o.id,
+      name: o.name,
+      scheduleConfig: convertJsonValueToScheduleConfig(o["scheduleConfig"]),
+    };
+    return result;
+  }
+  return qt as string | QueueType;
+}
+
+function parseHashTagPreset(preset: unknown): HashTagPreset | null {
+  if (
+    typeof preset === "object" &&
+    preset !== null &&
+    "id" in preset &&
+    "name" in preset &&
+    "tags" in preset &&
+    typeof (preset as { id: unknown }).id === "string" &&
+    typeof (preset as { name: unknown }).name === "string" &&
+    typeof (preset as { tags: unknown }).tags === "string"
+  ) {
+    const p = preset as { id: string; name: string; tags: string };
+    return { id: p.id, name: p.name, tags: p.tags };
+  }
+  return null;
+}
 
 export default function TemplateEditPage() {
   const { formatDate } = useFormattedDate();
@@ -42,8 +82,22 @@ export default function TemplateEditPage() {
       ? (data as { template: Template }).template
       : null;
 
+  const rawData = typeof data === "object" && data !== null ? data : {};
+  const postContext = (rawData as { postContext?: unknown }).postContext;
+  const longformContext = (rawData as { longformContext?: unknown })
+    .longformContext;
+  const hasPostContext =
+    typeof postContext === "object" &&
+    postContext !== null &&
+    template?.post &&
+    template.templateType === "POST";
+  const hasLongformContext =
+    typeof longformContext === "object" &&
+    longformContext !== null &&
+    template?.longFormPost &&
+    template.templateType === "LONGFORM";
+
   // All hooks must be called before any early returns
-  const updateNameFetcher = useFetcher<{ success?: boolean }>();
   const deleteTemplateFetcher = useFetcher<{
     success?: boolean;
     redirectTo?: string;
@@ -57,28 +111,7 @@ export default function TemplateEditPage() {
     }>;
   }>();
 
-  const templateNameValue = template?.name ?? "";
-  const [templateName, setTemplateName] = useState(templateNameValue);
-  const [isEditingName, setIsEditingName] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Handle successful name update
-  useEffect(() => {
-    const fetcherData = updateNameFetcher.data;
-    if (
-      fetcherData &&
-      typeof fetcherData === "object" &&
-      !Array.isArray(fetcherData) &&
-      "success" in fetcherData &&
-      typeof fetcherData.success === "boolean" &&
-      fetcherData.success
-    ) {
-      // Defer state update to avoid cascading renders
-      setTimeout(() => {
-        setIsEditingName(false);
-      }, 0);
-    }
-  }, [updateNameFetcher.data]);
 
   // Handle schedule data response
   useEffect(() => {
@@ -117,16 +150,6 @@ export default function TemplateEditPage() {
   if (!template) {
     return <div>Template not found</div>;
   }
-
-  const handleUpdateName = () => {
-    if (!templateName.trim()) return;
-
-    const formData = new FormData();
-    formData.append("_action", "updateName");
-    formData.append("name", templateName.trim());
-
-    updateNameFetcher.submit(formData, { method: "post" });
-  };
 
   const handleDeleteTemplate = () => {
     const formData = new FormData();
@@ -198,53 +221,9 @@ export default function TemplateEditPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Header and description below back button */}
+      {/* Header: title and meta (template name is edited inside the composer) */}
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2">
-          {isEditingName ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-                className="dark:border-border dark:bg-card border-border rounded-lg border px-3 py-1 text-xl font-bold"
-              />
-              <button
-                onClick={handleUpdateName}
-                disabled={
-                  updateNameFetcher.state !== "idle" || !templateName.trim()
-                }
-                className="bg-success hover:bg-success/90 rounded-lg px-3 py-1 text-sm text-white disabled:opacity-50"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => {
-                  setIsEditingName(false);
-                  setTemplateName(templateNameValue);
-                }}
-                className="dark:border-border dark:hover:bg-muted border-border hover:bg-muted rounded-lg border px-3 py-1 text-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{templateNameValue}</h1>
-              <button
-                onClick={() => setIsEditingName(true)}
-                className="dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:text-muted-foreground"
-                aria-label="Edit name"
-              >
-                <Pencil
-                  className={INLINE_ICON_SIZE_CLASS}
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-              </button>
-            </div>
-          )}
-        </div>
+        <h1 className="text-2xl font-bold">Edit template</h1>
         <p className="dark:text-muted-foreground text-muted-foreground text-sm">
           {template.templateType === "LONGFORM" ? "1 article" : "1 post"} •
           Created{" "}
@@ -270,138 +249,147 @@ export default function TemplateEditPage() {
             </p>
           </div>
         </div>
-      ) : template.templateType === "LONGFORM" && template.longFormPost ? (
-        <div className="rounded-lg border p-4">
-          <p className="dark:text-muted-foreground text-muted-foreground mb-2 text-sm">
-            Article template
-          </p>
-          <Link
-            to={`/dashboard/longform/${(() => {
-              const lf = template.longFormPost;
-              /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for loader data shape */
-              if (
-                lf &&
-                typeof lf === "object" &&
-                lf !== null &&
-                "id" in lf &&
-                typeof (lf as { id?: string }).id === "string"
-              )
-                return (lf as { id: string }).id;
-              /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-              return "";
-            })()}/edit`}
-            className="text-primary hover:underline"
-          >
-            Edit article →
-          </Link>
-        </div>
-      ) : template.post ? (
+      ) : hasPostContext && typeof postContext === "object" ? (
         (() => {
-          const post = template.post as Record<string, unknown>;
-          /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for loader data */
-          if (!post || typeof post !== "object" || !("id" in post)) return null;
-          /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-          const _postId =
-            typeof post["id"] === "string"
-              ? post["id"]
-              : String(post["id"] ?? "");
-          const postFileUrl = post["fileUrl"];
-          const postCaption =
-            typeof post["caption"] === "string" ? post["caption"] : "";
-          const postQueueType =
-            post["queueType"] &&
-            typeof post["queueType"] === "object" &&
-            !Array.isArray(post["queueType"])
-              ? (post["queueType"] as Record<string, unknown>)
-              : null;
-          const postPostedAt = post["publishedAt"];
-          const postSignedEvent =
-            post["signedEvent"] &&
-            typeof post["signedEvent"] === "object" &&
-            !Array.isArray(post["signedEvent"])
-              ? (post["signedEvent"] as Record<string, unknown>)
-              : null;
-          const signedEventId =
-            postSignedEvent && typeof postSignedEvent["id"] === "string"
-              ? postSignedEvent["id"]
-              : "";
-          const queueTypeName =
-            postQueueType && typeof postQueueType["name"] === "string"
-              ? postQueueType["name"]
-              : "unassigned";
-          const queueTypeColorToken =
-            postQueueType && typeof postQueueType["colorToken"] === "string"
-              ? postQueueType["colorToken"]
-              : null;
-          const hasFileUrl =
-            postFileUrl &&
-            (Array.isArray(postFileUrl)
-              ? postFileUrl.length > 0
-              : typeof postFileUrl === "string" && postFileUrl.length > 0);
-          const fileUrlArray = Array.isArray(postFileUrl)
-            ? postFileUrl
-            : typeof postFileUrl === "string"
-              ? [postFileUrl]
-              : [];
-          const firstImageUrl =
-            fileUrlArray.length > 0 ? getImageUrls(fileUrlArray)[0] : "";
+          const ctx = postContext as {
+            queueTypes?: unknown[];
+            hashTagPresets?: unknown[];
+            initialDraft?: {
+              content: string;
+              caption: string;
+              fileUrl: string[];
+              queueType: string;
+              queueTypeId: string | null;
+              tags: string;
+              draftMeta?: {
+                attachmentMeta?: Array<{
+                  localId: string;
+                  url: string;
+                  alt?: string;
+                }>;
+              } | null;
+              hashTagPresetId: string | null;
+            } | null;
+          };
+          const queueTypesRaw = Array.isArray(ctx.queueTypes)
+            ? ctx.queueTypes
+            : [];
+          const hashTagPresetsRaw = Array.isArray(ctx.hashTagPresets)
+            ? ctx.hashTagPresets
+            : [];
+          const typedQueueTypes = queueTypesRaw.map((qt) => parseQueueType(qt));
+          const typedHashTagPresets = hashTagPresetsRaw
+            .map((p) => parseHashTagPreset(p))
+            .filter((p): p is HashTagPreset => p !== null);
+          const post = template.post as { id: string };
+          const templateId = (template as { id?: string }).id ?? "";
+          const postId =
+            typeof post.id === "string" ? post.id : String(post.id);
 
           return (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <div className="bg-card dark:border-border border-border rounded-lg border bg-white p-4 shadow-sm">
-                <div className="mb-3">
-                  {hasFileUrl && firstImageUrl ? (
-                    <img
-                      src={firstImageUrl}
-                      alt="Post preview"
-                      className="h-48 w-full rounded object-cover"
-                    />
-                  ) : (
-                    <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-48 w-full items-center justify-center rounded text-xs font-medium">
-                      TEXT POST
-                    </div>
-                  )}
-                </div>
-                <div className="mb-3">
-                  <p className="dark:text-foreground text-muted-foreground line-clamp-3 text-sm">
-                    {postCaption}
-                  </p>
-                </div>
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {postQueueType ? (
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
-                          const colors = getQueueColor(
-                            queueTypeName,
-                            queueTypeColorToken
-                          );
-                          return `${colors.bg} ${colors.text}`;
-                        })()}`}
-                      >
-                        {queueTypeName}
-                      </span>
-                    ) : null}
-                  </div>
-                  <span className="dark:text-muted-foreground text-muted-foreground text-xs">
-                    Posted{" "}
-                    {postPostedAt
-                      ? formatDate(postPostedAt as string | Date)
-                      : "Not posted yet"}
-                  </span>
-                </div>
-                {signedEventId ? (
-                  <Link
-                    to={`https://primal.net/e/${signedEventId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground text-xs"
-                  >
-                    View Original
-                  </Link>
-                ) : null}
-              </div>
-            </div>
+            <>
+              <NewPostHeader status="Draft" relayCount={0} />
+              <UnifiedComposer
+                mode="template"
+                queueTypes={typedQueueTypes}
+                hashTagPresets={typedHashTagPresets}
+                initialDraft={
+                  ctx.initialDraft
+                    ? {
+                        ...ctx.initialDraft,
+                        draftMeta: ctx.initialDraft.draftMeta ?? null,
+                      }
+                    : null
+                }
+                initialDraftId={null}
+                editTemplateContext={{
+                  templateId,
+                  postId,
+                }}
+                initialTemplateName={(template as { name?: string }).name ?? ""}
+              />
+            </>
+          );
+        })()
+      ) : hasLongformContext && typeof longformContext === "object" ? (
+        (() => {
+          const ctx = longformContext as {
+            queueTypes?: unknown[];
+            scheduleIntervals?: unknown[];
+            hashTagPresets?: unknown[];
+            userTimezone?: string;
+            uploadProvider?: string | null;
+            tags?: string;
+            initialTemplateData?: {
+              title?: string;
+              summary?: string;
+              content?: string;
+              image?: string;
+              tags?: string[];
+              queueType?: { name: string };
+            } | null;
+          };
+          const queueTypesRaw = Array.isArray(ctx.queueTypes)
+            ? ctx.queueTypes
+            : [];
+          const scheduleIntervalsRaw = Array.isArray(ctx.scheduleIntervals)
+            ? ctx.scheduleIntervals
+            : [];
+          const scheduleIntervals = scheduleIntervalsRaw
+            .map((s: unknown) => {
+              if (typeof s === "number") return s;
+              if (typeof s === "string") {
+                const n = parseFloat(s);
+                return Number.isNaN(n) ? null : n;
+              }
+              return null;
+            })
+            .filter((n): n is number => n !== null);
+          const hashTagPresetsRaw = Array.isArray(ctx.hashTagPresets)
+            ? ctx.hashTagPresets
+            : [];
+          const typedHashTagPresets = hashTagPresetsRaw
+            .map((p) => parseHashTagPreset(p))
+            .filter((p): p is HashTagPreset => p !== null);
+          const lf = template.longFormPost as { id: string } | null;
+          const longFormPostId = lf && typeof lf.id === "string" ? lf.id : "";
+          const templateId = (template as { id?: string }).id ?? "";
+          const initialTemplateData = ctx.initialTemplateData ?? null;
+          const initialData = initialTemplateData
+            ? {
+                id: longFormPostId,
+                title: initialTemplateData.title ?? "",
+                summary: initialTemplateData.summary ?? "",
+                content: initialTemplateData.content ?? "",
+                image: initialTemplateData.image ?? "",
+                tags: Array.isArray(initialTemplateData.tags)
+                  ? initialTemplateData.tags
+                  : [],
+                queueType: initialTemplateData.queueType ?? {
+                  name: "unassigned",
+                },
+              }
+            : undefined;
+
+          const typedQueueTypes = queueTypesRaw.map((qt) => parseQueueType(qt));
+
+          return (
+            <LongFormPost
+              mode="template"
+              queueTypes={typedQueueTypes}
+              scheduleIntervals={scheduleIntervals}
+              userTags={ctx.tags ?? ""}
+              userTimezone={ctx.userTimezone ?? "Etc/GMT"}
+              uploadProvider={ctx.uploadProvider ?? null}
+              hashTagPresets={typedHashTagPresets}
+              initialData={initialData ?? null}
+              onPreview={() => {}}
+              editTemplateContext={{
+                templateId,
+                longFormPostId,
+              }}
+              initialTemplateName={(template as { name?: string }).name ?? ""}
+            />
           );
         })()
       ) : null}

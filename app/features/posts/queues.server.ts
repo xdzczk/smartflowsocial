@@ -620,6 +620,53 @@ async function handleScheduledLongFormPostJobError(input: {
   });
 }
 
+/** Delay helper for retries (avoids pulling in a sleep util). */
+function delayMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const POST_LOOKUP_RETRY_ATTEMPTS = 3;
+const POST_LOOKUP_RETRY_DELAYS_MS = [0, 1000, 2000];
+
+/**
+ * Fetch scheduled post with retries to tolerate replica lag (e.g. reposts
+ * created in the same second as outbox processing may not be visible on replicas yet).
+ */
+async function getScheduledPostWithRetry(
+  postId: string,
+  userId: string,
+  context: { correlationId?: string; jobId?: string }
+): Promise<{
+  scheduledAtUtc: Date | null;
+  currentState: string | null;
+} | null> {
+  for (let attempt = 0; attempt < POST_LOOKUP_RETRY_ATTEMPTS; attempt++) {
+    if (attempt > 0) {
+      const delayMsVal = POST_LOOKUP_RETRY_DELAYS_MS[attempt] ?? 0;
+      logInfo(
+        "Post not found on first lookup, retrying after delay (possible replica lag)",
+        {
+          postId,
+          userId,
+          attempt: attempt + 1,
+          delayMs: delayMsVal,
+          ...context,
+        }
+      );
+      await delayMs(delayMsVal);
+    }
+    const post = await prisma.post.findUnique({
+      where: { id: postId, userId },
+      select: {
+        scheduledAtUtc: true,
+        currentState: true,
+      },
+    });
+    if (post) return post;
+  }
+  return null;
+}
+
 async function runScheduledPostJob(input: {
   job: Job<PostJobData>;
   startTime: number;
@@ -630,17 +677,16 @@ async function runScheduledPostJob(input: {
   const queueName = QUEUE_SCHEDULED_POSTS;
   const stateMachine = new PostStateMachine();
 
-  // Idempotency check: verify post exists and get scheduled time
-  const existingPost = await prisma.post.findUnique({
-    where: { id: postId, userId },
-    select: {
-      scheduledAtUtc: true,
-      currentState: true,
-    },
+  // Idempotency check: verify post exists and get scheduled time (with retries for replica lag)
+  const existingPost = await getScheduledPostWithRetry(postId, userId, {
+    correlationId,
+    jobId: String(job.id ?? "unknown"),
   });
 
   if (!existingPost) {
-    throw new Error(`Post ${postId} not found for user ${userId}`);
+    throw new Error(
+      `Post ${postId} not found for user ${userId}. If this is a repost, the row may not be visible yet on this node (replication lag); the job will retry.`
+    );
   }
 
   const isAlreadyPosted = existingPost.currentState === "PUBLISHED";

@@ -35,6 +35,7 @@ import type { PostData } from "../types";
 import {
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
+  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "./constants";
 import { ContentListCard } from "./ContentListCard";
 
@@ -404,7 +405,9 @@ export function DraftsTable({
                   }
                 }}
               >
-                <SelectTrigger className="w-[11rem]">
+                <SelectTrigger
+                  className={`w-[11rem] ${MOBILE_FILTER_SELECT_TRIGGER_CLASS}`}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

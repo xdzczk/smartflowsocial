@@ -27,18 +27,20 @@ export function getPostPreview(
       : post.caption;
   }
 
+  const isRepost = post.repost === true || post.postKind === "REPOST";
+
   // Check postType to provide accurate labels
   if (post.fileUrl.length > 0) {
     if (post.postType === "VIDEO") {
-      return "Media post";
+      return isRepost ? "Repost (media)" : "Media post";
     } else if (post.postType === "CAROUSEL") {
-      return "Media post";
+      return isRepost ? "Repost (media)" : "Media post";
     } else {
-      return "Image post";
+      return isRepost ? "Repost (image)" : "Image post";
     }
   }
 
-  return "Text post";
+  return isRepost ? "Repost" : "Text post";
 }
 
 export function getFirstImage(

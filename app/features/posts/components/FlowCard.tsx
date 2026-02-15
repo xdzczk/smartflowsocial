@@ -4,7 +4,7 @@ import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import { getQueueAccentHex } from "../queue-colors";
 import type { CombinedContent } from "../types";
-import { getMediaPreviewUrls } from "../utils/content-helpers";
+import { getMediaPreviewUrls, isRepostContent } from "../utils/content-helpers";
 
 import { MediaPreviewCollage } from "./MediaPreviewCollage";
 
@@ -25,11 +25,11 @@ function getFlowPreview(item: CombinedContent): string {
   const fileUrl = item.fileUrl;
   if (fileUrl && fileUrl.length > 0) {
     if (item.postType === "VIDEO" || item.postType === "CAROUSEL") {
-      return "Media post";
+      return isRepostContent(item) ? "Repost (media)" : "Media post";
     }
-    return "Image post";
+    return isRepostContent(item) ? "Repost (image)" : "Image post";
   }
-  return "Text post";
+  return isRepostContent(item) ? "Repost" : "Text post";
 }
 
 /** Text for content summary (right column) and text-as-surface (left column). Prefer real content; fallback to getFlowPreview. */

@@ -40,6 +40,7 @@ import { longFormPostToCombinedContent } from "../combined";
 import type { PostFetcher, LongFormPostData } from "../types";
 
 import {
+  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
 } from "./constants";
@@ -938,7 +939,9 @@ export default function LongFormListing({
                 }
               }}
             >
-              <SelectTrigger className="w-[11rem]">
+              <SelectTrigger
+                className={`w-[11rem] ${MOBILE_FILTER_SELECT_TRIGGER_CLASS}`}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

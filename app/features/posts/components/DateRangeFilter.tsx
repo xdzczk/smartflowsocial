@@ -6,6 +6,8 @@
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 
+import { MOBILE_FILTER_INPUT_CLASS } from "./constants";
+
 export interface DateRangeValue {
   from: string;
   to: string;
@@ -53,7 +55,7 @@ export function DateRangeFilter({
           onChange={(e) =>
             onDateRangeChange({ ...dateRange, from: e.target.value })
           }
-          className="h-9 w-auto min-w-[8rem]"
+          className={`h-9 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS}`}
           min={minDate}
           max={maxDate}
         />
@@ -72,7 +74,7 @@ export function DateRangeFilter({
           onChange={(e) =>
             onDateRangeChange({ ...dateRange, to: e.target.value })
           }
-          className="h-9 w-auto min-w-[8rem]"
+          className={`h-9 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS}`}
           min={minDate}
           max={maxDate}
         />

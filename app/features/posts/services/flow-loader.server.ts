@@ -90,9 +90,22 @@ function toPostData(post: {
   queueType: unknown;
   signedEvent: unknown;
   nostrEvent: unknown;
+  repostOf?: { fileUrl: string[]; postType: string | null } | null;
+  fileUrl?: string[];
+  postType?: string | null;
+  repost?: boolean;
+  postKind?: string | null;
   [key: string]: unknown;
 }): PostData {
-  const { queueType, ...rest } = post;
+  const { queueType, repostOf, ...rest } = post;
+  const isRepostWithNoMedia =
+    (post.repost ?? post.postKind === "REPOST") &&
+    repostOf &&
+    (!post.fileUrl || post.fileUrl.length === 0);
+  const fileUrl = isRepostWithNoMedia ? repostOf.fileUrl : (post.fileUrl ?? []);
+  const postType = isRepostWithNoMedia
+    ? repostOf.postType
+    : (post.postType ?? rest.postType);
   const signedEventValue = validateSignedEvent(
     post.signedEvent as Parameters<typeof validateSignedEvent>[0]
   );
@@ -105,6 +118,8 @@ function toPostData(post: {
   /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- rest is Prisma post shape, typed at runtime */
   return {
     ...rest,
+    fileUrl,
+    postType: postType ?? undefined,
     queueType: convertedQueueType,
     signedEvent: signedEventValue,
     nostrEvent: nostrEventValue,

@@ -3,7 +3,7 @@
  * Centralized data fetching for calendar pages
  */
 
-import type { Prisma } from "@prisma/client";
+import type { PostType, Prisma } from "@prisma/client";
 
 import { getUserById, getQueueTypes } from "~/features/user";
 import { addDays, nowUTC, toPrismaDate } from "~/lib/temporal";
@@ -122,9 +122,37 @@ export async function loadCalendarData(userId: string, queueType: string) {
     queueType
   ) as typeof pastLongFormPostsArray;
 
+  // Helper: merge repost original media for display
+  const mergeRepostMedia = (
+    post: (typeof filteredScheduledPosts)[0]
+  ): { fileUrl: string[]; postType: string | null | undefined } => {
+    const raw = post as typeof post & {
+      repostOf?: { fileUrl: string[]; postType: string | null } | null;
+    };
+    const isRepostWithNoMedia =
+      (raw.repost || raw.postKind === "REPOST") &&
+      raw.repostOf &&
+      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- fileUrl can be empty at runtime for reposts */
+      (!raw.fileUrl || raw.fileUrl.length === 0);
+    return {
+      fileUrl: isRepostWithNoMedia ? raw.repostOf!.fileUrl : raw.fileUrl,
+      postType: isRepostWithNoMedia
+        ? raw.repostOf!.postType
+        : /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- postType from repost can be null at runtime */
+          (raw.postType ?? undefined),
+    };
+  };
+
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const scheduledPostsData: PostData[] = filteredScheduledPosts.map((post) => {
-    const { queueType, ...rest } = post;
+    const {
+      queueType,
+      repostOf: _ro,
+      ...rest
+    } = post as typeof post & {
+      repostOf?: { fileUrl: string[]; postType: string | null } | null;
+    };
+    const { fileUrl, postType } = mergeRepostMedia(post);
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {
           const scheduleTypeValue:
@@ -156,6 +184,8 @@ export async function loadCalendarData(userId: string, queueType: string) {
     const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: PostData = {
       ...rest,
+      fileUrl,
+      postType: (postType ?? rest.postType) as PostType,
       queueType: convertedQueueType,
       signedEvent: signedEventValue,
       nostrEvent: nostrEventValue,
@@ -163,7 +193,14 @@ export async function loadCalendarData(userId: string, queueType: string) {
     return result;
   });
   const pastPostsData: PostData[] = filteredPastPosts.map((post) => {
-    const { queueType, ...rest } = post;
+    const {
+      queueType,
+      repostOf: _ro2,
+      ...rest
+    } = post as typeof post & {
+      repostOf?: { fileUrl: string[]; postType: string | null } | null;
+    };
+    const { fileUrl, postType } = mergeRepostMedia(post);
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {
           const scheduleTypeValue:
@@ -195,6 +232,8 @@ export async function loadCalendarData(userId: string, queueType: string) {
     const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: PostData = {
       ...rest,
+      fileUrl,
+      postType: (postType ?? rest.postType) as PostType,
       queueType: convertedQueueType,
       signedEvent: signedEventValue,
       nostrEvent: nostrEventValue,

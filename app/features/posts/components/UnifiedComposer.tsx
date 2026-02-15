@@ -226,6 +226,10 @@ export interface UnifiedComposerProps {
   /** Draft data to prefill the composer (when opening from drafts). Requires initialDraftId. */
   /** When "template", only "Save as template" and Cancel are shown; no Schedule/Publish/Save as draft. */
   mode?: "default" | "template";
+  /** When set with mode="template", submit uses updateTemplatePost instead of createTemplate. */
+  editTemplateContext?: { templateId: string; postId: string } | null;
+  /** When editing a template, pass the current template name to prefill the composer field. */
+  initialTemplateName?: string | null;
   initialDraft?: {
     content: string;
     caption: string;
@@ -253,6 +257,8 @@ export function UnifiedComposer({
   initialDraftId = null,
   initialDraft = null,
   mode = "default",
+  editTemplateContext = null,
+  initialTemplateName = null,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
@@ -285,7 +291,9 @@ export function UnifiedComposer({
   const [selectedHashtags, setSelectedHashtags] = React.useState(
     () => initialDraft?.tags ?? ""
   );
-  const [templateName, setTemplateName] = React.useState("");
+  const [templateName, setTemplateName] = React.useState(
+    () => initialTemplateName ?? ""
+  );
   const isTemplateMode = mode === "template";
   const initialAttachmentsFromDraft = React.useMemo(() => {
     if (!initialDraft?.draftMeta?.attachmentMeta?.length) return [];
@@ -541,11 +549,17 @@ export function UnifiedComposer({
       }
       clearLocalSnapshot();
       const formData = new FormData();
-      formData.set("_action", "createTemplate");
-      formData.set("templateName", templateName.trim());
+      if (editTemplateContext?.templateId && editTemplateContext.postId) {
+        formData.set("_action", "updateTemplatePost");
+        formData.set("templateId", editTemplateContext.templateId);
+        formData.set("postId", editTemplateContext.postId);
+        formData.set("name", templateName.trim());
+      } else {
+        formData.set("_action", "createTemplate");
+        formData.set("templateName", templateName.trim());
+      }
       formData.set("content", data.content);
-      formData.set("queueType", data.queueType);
-      if (queueTypeId) formData.set("queueTypeId", queueTypeId);
+      formData.set("queueType", "unassigned");
       formData.set("tags", selectedHashtags);
       if (data.hashTagPresetId)
         formData.set("hashTagPresetId", data.hashTagPresetId);
@@ -1455,43 +1469,45 @@ export function UnifiedComposer({
         ) : null}
         <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-3">
-            <QueueSelector
-              queueTypes={queueTypes}
-              selectedQueue={selectedQueue}
-              onQueueChange={setSelectedQueue}
-              disabled={disabled}
-              className="mb-2"
-              nextSlot={
-                selectedQueueType &&
-                typeof selectedQueueType === "object" &&
-                (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                  selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-                  ? (() => {
-                      const s = formScheduledFor ?? schedulingScheduledFor;
-                      if (typeof s !== "string" || !s.trim()) return;
-                      try {
-                        const [datePart, timePart] = s.split("T");
-                        if (!datePart || !timePart) return s;
-                        const d = new Date(s);
-                        const today = new Date();
-                        const isToday =
-                          d.getDate() === today.getDate() &&
-                          d.getMonth() === today.getMonth() &&
-                          d.getFullYear() === today.getFullYear();
-                        const shortDate = isToday
-                          ? "Today"
-                          : d.toLocaleDateString(undefined, {
-                              weekday: "short",
-                            });
-                        const [h, m] = timePart.split(":");
-                        return `${shortDate} ${h ?? ""}:${m ?? "00"}`;
-                      } catch {
-                        return s;
-                      }
-                    })()
-                  : undefined
-              }
-            />
+            {!isTemplateMode ? (
+              <QueueSelector
+                queueTypes={queueTypes}
+                selectedQueue={selectedQueue}
+                onQueueChange={setSelectedQueue}
+                disabled={disabled}
+                className="mb-2"
+                nextSlot={
+                  selectedQueueType &&
+                  typeof selectedQueueType === "object" &&
+                  (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                    selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+                    ? (() => {
+                        const s = formScheduledFor ?? schedulingScheduledFor;
+                        if (typeof s !== "string" || !s.trim()) return;
+                        try {
+                          const [datePart, timePart] = s.split("T");
+                          if (!datePart || !timePart) return s;
+                          const d = new Date(s);
+                          const today = new Date();
+                          const isToday =
+                            d.getDate() === today.getDate() &&
+                            d.getMonth() === today.getMonth() &&
+                            d.getFullYear() === today.getFullYear();
+                          const shortDate = isToday
+                            ? "Today"
+                            : d.toLocaleDateString(undefined, {
+                                weekday: "short",
+                              });
+                          const [h, m] = timePart.split(":");
+                          return `${shortDate} ${h ?? ""}:${m ?? "00"}`;
+                        } catch {
+                          return s;
+                        }
+                      })()
+                    : undefined
+                }
+              />
+            ) : null}
             <TagsChipRow
               tags={selectedHashtags}
               onTagsChange={(newTags) => {
@@ -1656,7 +1672,11 @@ export function UnifiedComposer({
                   name="_action"
                   disabled={disabled || !templateName.trim()}
                 >
-                  {fetcher.state !== "idle" ? "Saving..." : "Save as template"}
+                  {fetcher.state !== "idle"
+                    ? "Saving..."
+                    : editTemplateContext
+                      ? "Save"
+                      : "Save as template"}
                 </Button>
                 <Button type="button" variant="ghost" asChild>
                   <Link to="/dashboard/templates">Cancel</Link>

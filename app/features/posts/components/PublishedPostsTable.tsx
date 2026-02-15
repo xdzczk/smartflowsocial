@@ -36,6 +36,7 @@ import { formatDate } from "../utils/content-helpers";
 import {
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
+  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "./constants";
 import { ContentListCard } from "./ContentListCard";
 
@@ -272,6 +273,11 @@ export default function PublishedPostsTable({
                             src={getImageUrls(post.fileUrl)[0]}
                             alt="Post preview"
                             className="h-12 w-12 rounded object-cover"
+                            fallback={
+                              <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                                {post.repost ? "REPOST" : "TEXT"}
+                              </div>
+                            }
                           />
                           {post.repost ? (
                             <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
@@ -295,7 +301,7 @@ export default function PublishedPostsTable({
                       ) : (
                         <div className="relative">
                           <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                            TEXT
+                            {post.repost ? "REPOST" : "TEXT"}
                           </div>
                           {post.repost ? (
                             <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
@@ -568,7 +574,9 @@ export default function PublishedPostsTable({
                   }
                 }}
               >
-                <SelectTrigger className="w-[11rem]">
+                <SelectTrigger
+                  className={`w-[11rem] ${MOBILE_FILTER_SELECT_TRIGGER_CLASS}`}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -27,6 +27,7 @@ import {
   getQueueTypeDisplay,
   getStatusColor,
   getStatusText,
+  isRepostContent,
 } from "../utils/content-helpers";
 
 // Helper to safely access formData from a fetcher
@@ -97,7 +98,7 @@ export function ContentTableRow({
       </td>
       <td className="p-3">
         {(() => {
-          // For posts, get the first valid image URL
+          // For posts, get the first valid image URL (includes reposts with merged original media)
           if (item.type === "post" && item.fileUrl && item.fileUrl.length > 0) {
             const imageUrls = getImageUrls(item.fileUrl);
             const firstImageUrl = imageUrls.length > 0 ? imageUrls[0] : null;
@@ -110,7 +111,7 @@ export function ContentTableRow({
                   className="h-12 w-12 rounded object-cover"
                   fallback={
                     <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                      TEXT
+                      {isRepostContent(item) ? "REPOST" : "TEXT"}
                     </div>
                   }
                 />
@@ -134,10 +135,14 @@ export function ContentTableRow({
             );
           }
 
-          // Default fallback based on content type
+          // Default fallback: repost with no media vs text post vs article
           return (
             <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-              {item.type === "post" ? "TEXT" : "ART"}
+              {item.type === "post"
+                ? isRepostContent(item)
+                  ? "REPOST"
+                  : "TEXT"
+                : "ART"}
             </div>
           );
         })()}

@@ -4,7 +4,8 @@
  */
 
 import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
@@ -32,11 +33,20 @@ export const templatesKeys = {
 export function useTemplatesQuery() {
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+  const queryClient = useQueryClient();
 
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
     templatesLoaderDataSchema
   );
+
+  // Sync fresh loader data into the cache when it changes (e.g. after creating a
+  // template and redirecting back to the list), so the new template appears without reload.
+  useEffect(() => {
+    if (validatedLoaderData) {
+      queryClient.setQueryData(templatesKeys.list(), validatedLoaderData);
+    }
+  }, [queryClient, validatedLoaderData]);
 
   return useQuery({
     queryKey: templatesKeys.list(),

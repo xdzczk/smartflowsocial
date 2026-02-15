@@ -25,6 +25,7 @@ import {
   getQueueTypeDisplay,
   getStatusColor,
   getStatusText,
+  isRepostContent,
 } from "../utils/content-helpers";
 
 import { CONTENT_LIST_CARD_HEIGHT_PX } from "./constants";
@@ -143,7 +144,11 @@ export function ContentListCard({
             thumbnailClassName="h-full w-full object-cover"
             fallback={
               <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
-                {item.type === "post" ? "TEXT" : "ART"}
+                {item.type === "post"
+                  ? isRepostContent(item)
+                    ? "REPOST"
+                    : "TEXT"
+                  : "ART"}
               </div>
             }
           />
@@ -152,7 +157,11 @@ export function ContentListCard({
             className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium"
             aria-hidden
           >
-            {item.type === "post" ? "TEXT" : "ART"}
+            {item.type === "post"
+              ? isRepostContent(item)
+                ? "REPOST"
+                : "TEXT"
+              : "ART"}
           </div>
         )}
       </div>
