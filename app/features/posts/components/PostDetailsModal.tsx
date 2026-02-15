@@ -1,6 +1,6 @@
 import type { Post } from "@prisma/client";
 import { useFetcher, Link } from "@remix-run/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import MediaModal from "~/components/ui/MediaModal";
@@ -430,6 +430,28 @@ export default function PostDetailsModal({
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [activeMediaSrc, setActiveMediaSrc] = useState<string | null>(null);
   const [showEventData, setShowEventData] = useState(false);
+
+  // Close modal when delete completes successfully (e.g. from Flow or Scheduled section)
+  useEffect(() => {
+    if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
+    const data = deleteFetcher.data as { success?: boolean; error?: unknown };
+    if (data.error || !data.success) return;
+    const formData = deleteFetcher.formData as FormData | undefined;
+    const submittedPostId = formData?.get("postId");
+    const isOurDelete =
+      formData?.get("_action") === "delete" &&
+      (submittedPostId === post.id ||
+        String(submittedPostId) === String(post.id));
+    if (isOurDelete) {
+      onClose();
+    }
+  }, [
+    deleteFetcher.state,
+    deleteFetcher.data,
+    deleteFetcher.formData,
+    post.id,
+    onClose,
+  ]);
 
   const hasQueueType = (
     p: Post | PostData | CombinedContent

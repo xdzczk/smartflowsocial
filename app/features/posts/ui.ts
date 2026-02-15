@@ -95,7 +95,8 @@ export {
 
 export { default as AllContentListing } from "./components/AllContentListing";
 export { BulkDeleteBar } from "./components/BulkDeleteBar";
-export { DashboardHeader } from "./components/DashboardHeader";
+export { ContentListPageHeader } from "./components/ContentListPageHeader";
+export { FlowSectionHeader } from "./components/FlowSectionHeader";
 export { EditPostModal } from "./components/EditPostModal";
 export {
   FlowView,

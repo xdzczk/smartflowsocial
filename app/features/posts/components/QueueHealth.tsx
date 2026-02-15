@@ -124,9 +124,7 @@ export default function QueueHealth({
           ) : (
             <ul
               className={`flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4 ${
-                countsByQueue.length <= 6
-                  ? "[&>li]:flex [&>li]:min-h-0 [&>li]:flex-1"
-                  : ""
+                countsByQueue.length <= 6 ? "justify-evenly" : ""
               }`}
               aria-label="Scheduled posts per queue"
             >
@@ -156,7 +154,7 @@ export default function QueueHealth({
                           {queueName}
                         </span>
                         <span
-                          className={`flex-shrink-0 text-xs tabular-nums transition-opacity duration-200 ${bundle ? "font-bold opacity-50 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100" : "text-muted-foreground"}`}
+                          className={`flex-shrink-0 text-xs tabular-nums transition-opacity duration-200 ${bundle ? "font-bold opacity-70 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100" : "text-muted-foreground"}`}
                           style={bundle ? { color: bundle.accent } : undefined}
                         >
                           {count}
@@ -173,7 +171,7 @@ export default function QueueHealth({
                         }
                       >
                         <div
-                          className={`h-full min-w-0 rounded-[1px] transition-[width,opacity] duration-200 ${accentHex ? "opacity-40 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100" : getBarFillClass(queueName)}`}
+                          className={`h-full min-w-0 rounded-[1px] transition-[width,opacity] duration-200 ${accentHex ? "opacity-65 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100" : getBarFillClass(queueName)}`}
                           style={{
                             width: `${widthPercent}%`,
                             ...(accentHex

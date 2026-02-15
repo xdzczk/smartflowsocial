@@ -7,7 +7,7 @@ import type { LongFormPostData, PostData } from "~/features/posts/server";
 import {
   AllContentListing,
   BulkDeleteBar,
-  DashboardHeader,
+  ContentListPageHeader,
   EditPostModal,
   LongFormDetailsModal,
   LongFormListing,
@@ -145,13 +145,7 @@ export default function ScheduledPostsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader
-        currentTab={currentTab}
-        allContentCount={totalContentCount}
-        postsCount={totalPostsCount}
-        repostsCount={totalRepostsCount}
-        longformCount={totalLongformCount}
-      />
+      <ContentListPageHeader pageType="scheduled" currentTab={currentTab} />
 
       {/* Post Type Tabs */}
       <PostTypeTabs
@@ -268,27 +262,6 @@ export default function ScheduledPostsPage() {
               isFetchingNextPage={isFetchingNextPage}
               onScrollContainerReady={isMobile ? setScrollRoot : undefined}
             />
-
-            {selectedPost ? (
-              <PostDetailsModal
-                post={selectedPost}
-                onClose={() => setSelectedPost(null)}
-                showSignedEvent={true}
-                type="scheduled"
-                userTimezone={userTimezone}
-                userTimeFormat={userTimeFormat}
-              />
-            ) : null}
-
-            {/* Media Modal */}
-            {selectedMedia ? (
-              <MediaModal
-                src={selectedMedia}
-                alt="Post media"
-                isOpen={isMediaModalOpen}
-                onClose={handleCloseMediaModal}
-              />
-            ) : null}
           </div>
         ) : (
           <LongFormListing
@@ -326,6 +299,28 @@ export default function ScheduledPostsPage() {
             </div>
           ) : null}
         </>
+      ) : null}
+
+      {/* Post Details Modal (rendered at page level so it opens from any tab) */}
+      {selectedPost ? (
+        <PostDetailsModal
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+          showSignedEvent={true}
+          type="scheduled"
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
+        />
+      ) : null}
+
+      {/* Media Modal */}
+      {selectedMedia ? (
+        <MediaModal
+          src={selectedMedia}
+          alt="Post media"
+          isOpen={isMediaModalOpen}
+          onClose={handleCloseMediaModal}
+        />
       ) : null}
 
       {/* Long Form Post Details Modal */}

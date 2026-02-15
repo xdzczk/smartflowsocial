@@ -385,29 +385,27 @@ export function ContentListCard({
             </>
           ) : null}
           <DropdownMenuSeparator />
-          <deleteFetcher.Form method="post">
-            <input type="hidden" name="postId" value={item.id} />
-            <input
-              type="hidden"
-              name="_action"
-              value={item.type === "post" ? "delete" : "deleteLongForm"}
-            />
-            <DropdownMenuItem asChild>
-              <button
-                type="submit"
-                disabled={deleteFetcher.state !== "idle"}
-                className="text-destructive w-full cursor-pointer disabled:opacity-50"
-              >
-                {deleteFetcher.state !== "idle" &&
-                (deleteFetcher.formData
-                  ? (deleteFetcher.formData.get("postId") as string | null) ===
-                    item.id
-                  : false)
-                  ? "Deleting..."
-                  : "Delete"}
-              </button>
-            </DropdownMenuItem>
-          </deleteFetcher.Form>
+          <DropdownMenuItem
+            disabled={deleteFetcher.state !== "idle"}
+            className="text-destructive w-full cursor-pointer disabled:opacity-50"
+            onSelect={() => {
+              const formData = new FormData();
+              formData.set("postId", item.id);
+              formData.set(
+                "_action",
+                item.type === "post" ? "delete" : "deleteLongForm"
+              );
+              deleteFetcher.submit(formData, { method: "post" });
+            }}
+          >
+            {deleteFetcher.state !== "idle" &&
+            (deleteFetcher.formData
+              ? (deleteFetcher.formData.get("postId") as string | null) ===
+                item.id
+              : false)
+              ? "Deleting..."
+              : "Delete"}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

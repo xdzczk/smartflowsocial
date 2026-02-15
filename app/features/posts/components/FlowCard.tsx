@@ -221,7 +221,7 @@ function FlowCardInner({
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`card-lift flow-card-queue-shadow flow-card-surface border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm transition-opacity duration-200 focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${isPastCard ? "opacity-40 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
+      className={`card-lift flow-card-queue-shadow flow-card-surface border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm transition-opacity duration-200 focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${isPastCard ? "opacity-65 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
       style={{
         ["--queue-color" as string]: shadowColor,
         ...(glowStyle ?? {}),
@@ -229,13 +229,11 @@ function FlowCardInner({
       aria-label={ariaLabel ?? defaultAriaLabel}
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
-      {/* Queue tint overlay on hover/active only (when card has a queue color) */}
-      {queueColor != null ? (
-        <div
-          className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_8%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_12%,transparent)]"
-          aria-hidden
-        />
-      ) : null}
+      {/* Queue tint overlay on hover/active (uses --queue-color: queue accent or primary for no-queue cards) */}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_8%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_12%,transparent)]"
+        aria-hidden
+      />
       {/* Visual anchor: count-based collage (1 full, 2 side-by-side, 3 one-big-two-small, 4 grid) */}
       {hasMedia ? (
         <div className="relative z-10 h-full w-24 min-w-[96px] flex-shrink-0 rounded-l-xl md:w-32 md:min-w-[128px]">

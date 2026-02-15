@@ -164,15 +164,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const allowFetchRef = useRef(false);
     /** State so fetch effect re-runs when we allow fetch (ref alone doesn't trigger re-render) */
     const [allowFetch, setAllowFetch] = useState(false);
-    /** On mobile: defer scroll compensation for prepended past until scroll has settled so we don't break momentum */
-    const pendingPastCompensationRef = useRef<{
-      delta: number;
-      onDone?: () => void;
-      fallbackId: ReturnType<typeof setTimeout>;
-    } | null>(null);
-    /** Tracks pending compensation so past-fetch effect re-runs when we clear it (ref alone doesn't trigger re-render). */
-    const [hasPendingPastCompensation, setHasPendingPastCompensation] =
-      useState(false);
     /** Only fetch past when we've scrolled away from left (initial scroll succeeded); prevents loop when stuck at scroll 0 */
     const hasScrolledAwayFromLeftRef = useRef(false);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
@@ -221,17 +212,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           scrollEndTimeoutRef.current = null;
           scrollViewportLastMsRef.current = 0;
           updateViewport();
-          const pending = pendingPastCompensationRef.current;
-          if (pending) {
-            clearTimeout(pending.fallbackId);
-            pendingPastCompensationRef.current = null;
-            setHasPendingPastCompensation(false);
-            const container = scrollContainerRef.current;
-            if (container) {
-              container.scrollLeft += pending.delta;
-            }
-            pending.onDone?.();
-          }
         }, 150);
       };
       const resizeObserver = new ResizeObserver(updateViewport);
@@ -536,50 +516,16 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       });
 
     // When older posts are prepended, shift scroll so the user's view doesn't jump.
-    // On mobile, defer compensation until scroll has settled so we don't interrupt smooth scroll (momentum).
     useLayoutEffect(() => {
       if (lastPrependedPastCount <= 0) return;
       const el = scrollContainerRef.current;
       if (!el) return;
       const delta = lastPrependedPastCount * cardSlotSize;
-      const applyCompensation = () => {
-        if (!scrollContainerRef.current) return;
-        scrollContainerRef.current.scrollLeft += delta;
-        onPrependedPastCompensated?.();
-      };
-      if (isMobile) {
-        if (pendingPastCompensationRef.current) {
-          clearTimeout(pendingPastCompensationRef.current.fallbackId);
-        }
-        setHasPendingPastCompensation(true);
-        const fallbackId = setTimeout(() => {
-          pendingPastCompensationRef.current = null;
-          setHasPendingPastCompensation(false);
-          applyCompensation();
-        }, 350);
-        pendingPastCompensationRef.current = {
-          delta,
-          onDone: onPrependedPastCompensated,
-          fallbackId,
-        };
-        return () => {
-          if (pendingPastCompensationRef.current?.fallbackId === fallbackId) {
-            clearTimeout(fallbackId);
-            pendingPastCompensationRef.current = null;
-            setHasPendingPastCompensation(false);
-          }
-        };
-      }
-      applyCompensation();
-    }, [
-      lastPrependedPastCount,
-      cardSlotSize,
-      onPrependedPastCompensated,
-      isMobile,
-    ]);
+      el.scrollLeft += delta;
+      onPrependedPastCompensated?.();
+    }, [lastPrependedPastCount, cardSlotSize, onPrependedPastCompensated]);
 
     // Past-fetch when past sentinel is visible. Debounce so we don't fetch mid fast-scroll (reduces lag/flicker).
-    // When we have pending scroll compensation (mobile defer), don't fetch again or we get stuck in a loop.
     const pastFetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
       null
     );
@@ -588,8 +534,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         !allowFetch ||
         !isPastSentinelVisible ||
         !hasMorePast ||
-        isLoadingMorePast ||
-        hasPendingPastCompensation
+        isLoadingMorePast
       ) {
         if (pastFetchDebounceRef.current) {
           clearTimeout(pastFetchDebounceRef.current);
@@ -612,7 +557,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       isPastSentinelVisible,
       hasMorePast,
       isLoadingMorePast,
-      hasPendingPastCompensation,
       onFetchMorePast,
     ]);
 

@@ -198,7 +198,6 @@ export function ContentTableRow({
   );
 }
 
-/* eslint-disable sonarjs/cognitive-complexity -- Row actions menu: many action branches by design */
 function ContentRowActions({
   item,
   type,
@@ -438,52 +437,51 @@ function ContentRowActions({
               </DropdownMenuItem>
             ) : null}
             <DropdownMenuSeparator />
-            <deleteFetcher.Form method="post">
-              <input type="hidden" name="postId" value={item.id} />
-              <input type="hidden" name="_action" value="moveToDraft" />
-              <input
-                type="hidden"
-                name="type"
-                value={item.type === "post" ? "post" : "longform"}
-              />
-              <DropdownMenuItem asChild>
-                <button type="submit" disabled={deleteFetcher.state !== "idle"}>
-                  {deleteFetcher.state !== "idle" &&
-                  deleteFetcher.formData?.get("_action") === "moveToDraft" &&
-                  (deleteFetcher.formData.get("postId") as string | null) ===
-                    item.id
-                    ? "Moving..."
-                    : "Move to drafts"}
-                </button>
-              </DropdownMenuItem>
-            </deleteFetcher.Form>
+            <DropdownMenuItem
+              disabled={deleteFetcher.state !== "idle"}
+              onSelect={() => {
+                const formData = new FormData();
+                formData.set("postId", item.id);
+                formData.set("_action", "moveToDraft");
+                formData.set(
+                  "type",
+                  item.type === "post" ? "post" : "longform"
+                );
+                deleteFetcher.submit(formData, { method: "post" });
+              }}
+            >
+              {deleteFetcher.state !== "idle" &&
+              deleteFetcher.formData?.get("_action") === "moveToDraft" &&
+              (deleteFetcher.formData.get("postId") as string | null) ===
+                item.id
+                ? "Moving..."
+                : "Move to drafts"}
+            </DropdownMenuItem>
           </>
         ) : null}
         <DropdownMenuSeparator />
-        <deleteFetcher.Form method="post">
-          <input type="hidden" name="postId" value={item.id} />
-          <input
-            type="hidden"
-            name="_action"
-            value={item.type === "post" ? "delete" : "deleteLongForm"}
-          />
-          <DropdownMenuItem asChild>
-            <button
-              type="submit"
-              disabled={deleteFetcher.state !== "idle"}
-              className="text-destructive focus:text-destructive"
-            >
-              {deleteFetcher.state !== "idle" &&
-              (deleteFetcher.formData
-                ? (deleteFetcher.formData.get("postId") as string | null) ===
-                  item.id
-                : false)
-                ? "Deleting..."
-                : "Delete"}
-            </button>
-          </DropdownMenuItem>
-        </deleteFetcher.Form>
+        <DropdownMenuItem
+          disabled={deleteFetcher.state !== "idle"}
+          className="text-destructive focus:text-destructive"
+          onSelect={() => {
+            const formData = new FormData();
+            formData.set("postId", item.id);
+            formData.set(
+              "_action",
+              item.type === "post" ? "delete" : "deleteLongForm"
+            );
+            deleteFetcher.submit(formData, { method: "post" });
+          }}
+        >
+          {deleteFetcher.state !== "idle" &&
+          (deleteFetcher.formData
+            ? (deleteFetcher.formData.get("postId") as string | null) ===
+              item.id
+            : false)
+            ? "Deleting..."
+            : "Delete"}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  ); /* eslint-enable sonarjs/cognitive-complexity */
+  );
 }

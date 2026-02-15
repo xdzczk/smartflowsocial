@@ -14,6 +14,7 @@ import type {
 import type { PostStats } from "~/features/posts/stats.server";
 import {
   AllContentListing,
+  ContentListPageHeader,
   LongFormDetailsModal,
   LongFormListing,
   PostDetailsModal,
@@ -291,10 +292,8 @@ export default function PublishedPostsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-        <div>
-          <h3 className="mb-1 font-semibold">Published</h3>
-        </div>
+      <div className="mt-5 mb-5">
+        <ContentListPageHeader pageType="published" currentTab={currentTab} />
       </div>
 
       <PublishedPostsTabs

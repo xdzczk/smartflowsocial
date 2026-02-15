@@ -1,6 +1,6 @@
 import { useFetcher, Link } from "@remix-run/react";
 import { Bookmark, MoreVertical } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -308,6 +308,28 @@ export default function LongFormDetailsModal({
 }: LongFormDetailsModalProps) {
   const [showEventData, setShowEventData] = useState(false);
   const deleteFetcher = useFetcher();
+
+  // Close modal when delete completes successfully (e.g. from Flow or Scheduled section)
+  useEffect(() => {
+    if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
+    const data = deleteFetcher.data as { success?: boolean; error?: unknown };
+    if (data.error || !data.success) return;
+    const formData = deleteFetcher.formData as FormData | undefined;
+    const submittedPostId = formData?.get("postId");
+    const isOurDelete =
+      formData?.get("_action") === "deleteLongForm" &&
+      (submittedPostId === post.id ||
+        String(submittedPostId) === String(post.id));
+    if (isOurDelete) {
+      onClose();
+    }
+  }, [
+    deleteFetcher.state,
+    deleteFetcher.data,
+    deleteFetcher.formData,
+    post.id,
+    onClose,
+  ]);
 
   const postWithEvent = post as {
     nostrEventId?: string;
