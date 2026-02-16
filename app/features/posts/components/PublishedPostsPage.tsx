@@ -448,20 +448,19 @@ export default function PublishedPostsPage() {
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
           />
         )}
+        {/* Scroll sentinel for infinite scroll (desktop); on mobile sentinels are inside listing scroll container */}
+        {!isMobile ? (
+          <>
+            <div ref={prefetchSentinelRef} className="h-4 w-full shrink-0" />
+            <div ref={sentinelRef} className="h-4 w-full shrink-0" />
+            {isFetchingNextPage ? (
+              <div className="text-muted-foreground mt-4 text-center text-sm">
+                Loading more posts...
+              </div>
+            ) : null}
+          </>
+        ) : null}
       </div>
-
-      {/* Scroll sentinel for infinite scroll (desktop only; on mobile sentinels are inside listing scroll container) */}
-      {!isMobile ? (
-        <>
-          <div ref={prefetchSentinelRef} className="h-4 w-full" />
-          <div ref={sentinelRef} className="h-4 w-full" />
-          {isFetchingNextPage ? (
-            <div className="text-muted-foreground mt-4 text-center text-sm">
-              Loading more posts...
-            </div>
-          ) : null}
-        </>
-      ) : null}
 
       {selectedPost ? (
         <PostDetailsModal

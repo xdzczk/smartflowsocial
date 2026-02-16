@@ -200,7 +200,7 @@ export function MonthlyView({
   const { formatDate } = useFormattedDate();
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Weekday headers */}
       <div className="border-border/40 grid flex-shrink-0 grid-cols-7 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
         {weekdays.map((day) => (
@@ -214,7 +214,7 @@ export function MonthlyView({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid min-h-0 flex-1 auto-rows-[minmax(7.5rem,1fr)] grid-cols-7 gap-0 overflow-auto">
+      <div className="grid h-0 min-h-0 flex-1 auto-rows-[minmax(7.5rem,1fr)] grid-cols-7 gap-0 overflow-auto">
         {calendarDays.map((dayInfo) => {
           // Use local date to match the posts grouping
           const year = dayInfo.date.getFullYear();
@@ -251,46 +251,46 @@ export function MonthlyView({
                 {dayInfo.date.getDate()}
               </div>
 
-              {/* Posts: max 3 visible, then "+N more" */}
-              <div className="flex max-h-[13rem] flex-1 flex-col space-y-1 overflow-hidden">
-                {postsToShow.map((post) => {
-                  const postIsLongform = isAll
-                    ? Boolean(post.title && post.publishedAt)
-                    : isLongform;
-                  const postIsPast =
-                    typeof post.isPast === "boolean" ? post.isPast : false;
-                  const displayTime = getDisplayTime(
-                    post,
-                    postIsLongform,
-                    postIsPast
-                  );
-                  const userTz = user?.timezone ?? "Etc/UTC";
-                  const timeString = formatDate(displayTime, {
-                    timezone: userTz,
-                    dateFormatOptions: {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  });
-                  return (
-                    <PostBlock
-                      key={post.id}
-                      post={post}
-                      compact={true}
-                      minimal={true}
-                      user={user}
-                      queueTypes={queueTypes}
-                      onEdit={onPostEdit}
-                      isLongform={postIsLongform}
-                      isPast={postIsPast}
-                      timeLabel={timeString}
-                    />
-                  );
-                })}
-
-                {/* Show remaining count */}
+              {/* Posts: max 3 visible in scroll area, then "+N more" always visible */}
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+                  {postsToShow.map((post) => {
+                    const postIsLongform = isAll
+                      ? Boolean(post.title && post.publishedAt)
+                      : isLongform;
+                    const postIsPast =
+                      typeof post.isPast === "boolean" ? post.isPast : false;
+                    const displayTime = getDisplayTime(
+                      post,
+                      postIsLongform,
+                      postIsPast
+                    );
+                    const userTz = user?.timezone ?? "Etc/UTC";
+                    const timeString = formatDate(displayTime, {
+                      timezone: userTz,
+                      dateFormatOptions: {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    });
+                    return (
+                      <PostBlock
+                        key={post.id}
+                        post={post}
+                        compact={true}
+                        minimal={true}
+                        user={user}
+                        queueTypes={queueTypes}
+                        onEdit={onPostEdit}
+                        isLongform={postIsLongform}
+                        isPast={postIsPast}
+                        timeLabel={timeString}
+                      />
+                    );
+                  })}
+                </div>
                 {remainingCount > 0 ? (
-                  <div className="text-muted-foreground/80 flex-shrink-0 px-2 py-1 text-[11px]">
+                  <div className="text-muted-foreground/80 border-border/30 flex-shrink-0 border-t px-2 py-1 text-[11px]">
                     +{remainingCount > 9 ? "9" : remainingCount} more
                   </div>
                 ) : null}

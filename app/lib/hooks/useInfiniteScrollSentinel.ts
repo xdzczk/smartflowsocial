@@ -23,7 +23,13 @@ export function useInfiniteScrollSentinel({
 }: UseInfiniteScrollSentinelOptions) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
 
-  const root = isMobile ? (scrollRoot ?? undefined) : undefined;
+  // On desktop use the document's scrolling element so the observer tracks the
+  // actual scroll container; on mobile use the listing's scroll container when set.
+  const root = isMobile
+    ? (scrollRoot ?? undefined)
+    : typeof document !== "undefined"
+      ? (document.scrollingElement ?? undefined)
+      : undefined;
 
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
     threshold: 0.8,

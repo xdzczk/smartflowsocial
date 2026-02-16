@@ -263,23 +263,35 @@ export function WeeklyView({
     setDragOverSlot(null);
   };
 
-  // Default scroll to 6:00 once on mount (Apple Calendar–style)
+  // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {
-    if (hasSetInitialScrollRef.current || !gridScrollRef.current) return;
     const el = gridScrollRef.current;
+    if (!el || hasSetInitialScrollRef.current) return;
     const slotIndex = DEFAULT_SCROLL_HOUR * 2; // 30-min slots: 6:00 is index 12
     const scrollTop = slotIndex * ROW_HEIGHT_PX;
+
     const apply = () => {
-      if (!hasSetInitialScrollRef.current) {
-        el.scrollTop = scrollTop;
-        hasSetInitialScrollRef.current = true;
-      }
+      if (hasSetInitialScrollRef.current || !gridScrollRef.current) return;
+      gridScrollRef.current.scrollTop = scrollTop;
+      hasSetInitialScrollRef.current = true;
     };
-    requestAnimationFrame(apply);
+
+    // Wait for layout: ResizeObserver fires when the element gets a non-zero height
+    const ro = new ResizeObserver(() => {
+      if (el.clientHeight > 0 && !hasSetInitialScrollRef.current) {
+        apply();
+      }
+    });
+    ro.observe(el);
+    // Fallback if already laid out (e.g. in tests)
+    if (el.clientHeight > 0) {
+      requestAnimationFrame(apply);
+    }
+    return () => ro.disconnect();
   }, []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
       {/* Days header */}
       <div className="border-border/40 flex border-b bg-[hsl(var(--calendar-surface-2-bg))]">
         <div className="w-16 flex-shrink-0" />
@@ -294,30 +306,30 @@ export function WeeklyView({
           return (
             <div
               key={day.toISOString()}
-              className={`border-border/30 flex min-w-0 flex-1 flex-col items-center justify-center border-r px-2 py-1.5 text-center last:border-r-0 ${
+              className={`border-border/30 flex min-w-0 flex-1 items-center justify-center gap-1 border-r px-2 py-1 text-center last:border-r-0 ${
                 isToday ? "border-l-primary bg-primary/5 border-l-2" : ""
               }`}
             >
-              <div className="text-muted-foreground text-xs leading-tight font-normal">
+              <span className="text-muted-foreground text-xs font-normal">
                 {day.toLocaleDateString("en-US", {
                   weekday: "short",
                   timeZone: user?.timezone ?? "Etc/UTC",
                 })}
-              </div>
-              <div
-                className={`mt-0.5 text-base leading-tight font-semibold ${
+              </span>
+              <span
+                className={`text-sm leading-tight font-semibold ${
                   isToday ? "text-primary" : "text-foreground"
                 }`}
               >
                 {day.getDate()}
-              </div>
+              </span>
             </div>
           );
         })}
       </div>
 
       {/* Time grid */}
-      <div ref={gridScrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={gridScrollRef} className="h-0 min-h-0 flex-1 overflow-y-auto">
         <div className="relative">
           {hours.map((time, index) => (
             <div
