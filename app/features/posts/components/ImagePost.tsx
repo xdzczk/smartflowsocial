@@ -12,8 +12,10 @@ import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
   formatForDateTimeLocal,
+  getMinScheduleTimestampMs,
   getNowForDateTimeLocal,
   nowInTimezone,
+  parseDateTimeLocal,
 } from "~/lib/temporal";
 
 import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
@@ -159,6 +161,23 @@ export default function ImagePost({
     if (!scheduledFor) {
       setTimeError("Please set a scheduled time before uploading");
       toast.error("Please set a scheduled time before uploading");
+      return;
+    }
+
+    const userTz = user?.timezone ?? "UTC";
+    try {
+      const zoned = parseDateTimeLocal(scheduledFor, userTz);
+      const utcZoned = zoned.withTimeZone("UTC");
+      const scheduledMs = utcZoned.epochMilliseconds;
+      const minMs = getMinScheduleTimestampMs(userTz);
+      if (scheduledMs < minMs) {
+        setTimeError("Please select a date and time in the future.");
+        toast.error("Please select a date and time in the future.");
+        return;
+      }
+    } catch {
+      setTimeError("Invalid date or time.");
+      toast.error("Invalid date or time.");
       return;
     }
 
@@ -560,7 +579,9 @@ export default function ImagePost({
               name="scheduledFor"
               value={scheduledFor}
               onChange={(e) => {
-                setScheduledFor(e.target.value);
+                const v = e.target.value;
+                const min = getNowForDateTimeLocal(user?.timezone ?? "UTC");
+                setScheduledFor(v && v < min ? min : v);
                 setTimeError("");
               }}
               min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}

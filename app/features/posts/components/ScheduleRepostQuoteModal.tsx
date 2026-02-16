@@ -14,6 +14,7 @@ import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   getMinDatetimeLocalForSchedule,
+  getMinScheduleTimestampMs,
   parseDateTimeLocal,
   toUnixTimestamp,
 } from "~/lib/temporal";
@@ -90,6 +91,19 @@ export function ScheduleRepostQuoteModal({
       const zoned = parseDateTimeLocal(scheduledFor, userTimezone);
       const utcZoned = zoned.withTimeZone("UTC");
       const scheduledForUnix = toUnixTimestamp(utcZoned);
+
+      const minMs = getMinScheduleTimestampMs(
+        userTimezone,
+        post.scheduledAtUtc ?? undefined
+      );
+      if (utcZoned.epochMilliseconds < minMs) {
+        toast.error(
+          post.scheduledAtUtc
+            ? "Repost/quote must be scheduled at or after the original post's scheduled time."
+            : "Please select a date and time in the future."
+        );
+        return;
+      }
 
       const signed = originalSignedEvent as {
         id: string;
@@ -222,7 +236,14 @@ export function ScheduleRepostQuoteModal({
                     id="schedule-repost-quote-datetime"
                     type="datetime-local"
                     value={scheduledFor}
-                    onChange={(e) => setScheduledFor(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      const min = getMinDatetimeLocalForSchedule(
+                        userTimezone,
+                        post.scheduledAtUtc ?? undefined
+                      );
+                      setScheduledFor(v && v < min ? min : v);
+                    }}
                     min={getMinDatetimeLocalForSchedule(
                       userTimezone,
                       post.scheduledAtUtc ?? undefined

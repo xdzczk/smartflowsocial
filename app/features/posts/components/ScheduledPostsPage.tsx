@@ -196,7 +196,7 @@ export default function ScheduledPostsPage() {
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           idPrefix="scheduled"
-          className="w-full md:order-2"
+          className="w-full md:order-2 md:w-auto md:flex-shrink-0"
           minDate={getTodayInTimezone(userTimezone)}
         />
       </div>

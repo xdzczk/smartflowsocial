@@ -1555,6 +1555,19 @@ export function UnifiedComposer({
                     type="datetime-local"
                     id="scheduledFor"
                     {...form.register("scheduledFor")}
+                    value={
+                      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formScheduledFor fallback for controlled input display */
+                      formScheduledFor ?? schedulingScheduledFor ?? ""
+                    }
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      const min = getNowForDateTimeLocal(
+                        user?.timezone ?? "UTC"
+                      );
+                      const clamped = v && v < min ? min : v;
+                      form.setValue("scheduledFor", clamped);
+                      setSchedulingScheduledFor(clamped);
+                    }}
                     min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}
                     disabled={disabled}
                   />

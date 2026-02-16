@@ -128,8 +128,11 @@ export default function SchedulingControls({
   };
 
   const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalScheduledFor(e.target.value);
-    onScheduleChange(e.target.value);
+    const v = e.target.value;
+    const min = getNowForDateTimeLocal(userTimezone);
+    const clamped = v && v < min ? min : v;
+    setLocalScheduledFor(clamped);
+    onScheduleChange(clamped);
   };
 
   const selectedQueue = queueTypes.find(

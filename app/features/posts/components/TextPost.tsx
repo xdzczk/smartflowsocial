@@ -15,6 +15,7 @@ import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
+  getMinScheduleTimestampMs,
   getNowForDateTimeLocal,
   nowMillis,
   parseDateTimeLocal,
@@ -37,6 +38,21 @@ import {
 
 import { QueueSelector } from "./QueueSelector";
 import { SchedulingSection } from "./SchedulingSection";
+
+function validateScheduleTime(
+  submitType: string,
+  scheduledTime: number,
+  userTimezone: string,
+  setSigningError: React.Dispatch<React.SetStateAction<string | null>>
+): boolean {
+  if (submitType !== "schedule-text") return true;
+  const minMs = getMinScheduleTimestampMs(userTimezone);
+  if (scheduledTime < minMs) {
+    setSigningError("Schedule time must be in the future.");
+    return false;
+  }
+  return true;
+}
 
 /** Resolve effective hashtags for submit: manual preset or queue default from API. */
 async function getEffectiveHashtagsForSubmit(
@@ -353,6 +369,17 @@ export default function TextPost({
           : await parseScheduledTime(data.scheduledFor ?? "", userTimezone);
       const scheduledForUnix = Math.floor(scheduledTime / 1000);
 
+      if (
+        !validateScheduleTime(
+          submitType,
+          scheduledTime,
+          userTimezone,
+          setSigningError
+        )
+      ) {
+        return;
+      }
+
       const effectiveHashtags = await getEffectiveHashtagsForSubmit(
         data.useHashtagPresets,
         selectedHashtags,
@@ -550,6 +577,17 @@ export default function TextPost({
                 type="datetime-local"
                 id="scheduledFor"
                 {...form.register("scheduledFor")}
+                value={
+                  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formScheduledFor fallback for controlled input display */
+                  formScheduledFor ?? schedulingScheduledFor ?? ""
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  const min = getNowForDateTimeLocal(user?.timezone ?? "UTC");
+                  const clamped = v && v < min ? min : v;
+                  form.setValue("scheduledFor", clamped);
+                  setSchedulingScheduledFor(clamped);
+                }}
                 min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}
                 disabled={fetcher.state !== "idle" || isSigning}
               />

@@ -341,7 +341,7 @@ export default function PublishedPostsPage() {
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           idPrefix="published"
-          className="w-full md:order-2"
+          className="w-full md:order-2 md:w-auto md:flex-shrink-0"
           maxDate={getTodayInTimezone(userTimezone)}
         />
       </div>

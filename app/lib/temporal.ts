@@ -95,6 +95,22 @@ export function getMinDatetimeLocalForSchedule(
 }
 
 /**
+ * Minimum allowed timestamp (epoch milliseconds) for schedule validation.
+ * Use when validating submit: chosen time must be >= this value.
+ */
+export function getMinScheduleTimestampMs(
+  timezone: string,
+  notBeforeUtc?: Date | null
+): number {
+  const now = nowInTimezone(timezone);
+  if (!notBeforeUtc) return Number(now.epochMilliseconds);
+  const notBeforeZ = fromDate(notBeforeUtc, timezone);
+  const minZ =
+    now.epochMilliseconds > notBeforeZ.epochMilliseconds ? now : notBeforeZ;
+  return Number(minZ.epochMilliseconds);
+}
+
+/**
  * Convert a ZonedDateTime to Unix timestamp (seconds)
  */
 export function toUnixTimestamp(zonedDateTime: Temporal.ZonedDateTime): number {

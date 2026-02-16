@@ -445,6 +445,7 @@ export default function LongFormPost({
     selectedHashtags,
     alsoScheduleQuote,
     quoteEntries,
+    userTimezone,
   });
 
   // Form validation using Zod

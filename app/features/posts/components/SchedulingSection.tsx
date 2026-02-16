@@ -56,7 +56,11 @@ export function SchedulingSection({
               id="scheduledFor"
               name="scheduledFor"
               value={scheduledFor}
-              onChange={(e) => onScheduledForChange(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                const min = getNowForDateTimeLocal(userTimezone);
+                onScheduledForChange(v && v < min ? min : v);
+              }}
               min={getNowForDateTimeLocal(userTimezone)}
               disabled={disabled}
             />

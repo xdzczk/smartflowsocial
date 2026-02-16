@@ -19,10 +19,71 @@ import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   fromDate,
   fromISOString,
+  getMinScheduleTimestampMs,
   nowSeconds,
   parseDateTimeLocal,
   toUnixTimestamp,
 } from "~/lib/temporal";
+
+/**
+ * Parse scheduled timestamp with fallbacks
+ */
+async function parseScheduledTimestamp(
+  scheduledForValue: string
+): Promise<number | undefined> {
+  try {
+    const zoned = parseDateTimeLocal(scheduledForValue, "UTC");
+    const utcZoned = zoned.withTimeZone("UTC");
+    return toUnixTimestamp(utcZoned);
+  } catch {
+    try {
+      const zoned = fromISOString(scheduledForValue, "UTC");
+      return toUnixTimestamp(zoned);
+    } catch {
+      try {
+        const scheduledTime = new Date(scheduledForValue);
+        if (!isNaN(scheduledTime.getTime())) {
+          const zoned = fromDate(scheduledTime, "UTC");
+          return toUnixTimestamp(zoned);
+        }
+      } catch {
+        const scheduledTime = new Date(scheduledForValue);
+        if (!isNaN(scheduledTime.getTime())) {
+          return Math.floor(scheduledTime.getTime() / 1000);
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+function getEffectiveHashtagsAndUniqueTags(
+  useHashtagPresets: boolean,
+  selectedHashtags: string,
+  displayedHashtags: string | null,
+  customTags: string
+): string[] {
+  const effectiveHashtags = useHashtagPresets
+    ? selectedHashtags
+    : (displayedHashtags ?? "");
+  const hashtagsFromQueue = effectiveHashtags
+    ? effectiveHashtags
+        .split(" ")
+        .map((tag) => tag.replace("#", "").trim())
+        .filter(Boolean)
+    : [];
+  const customTagsList = customTags
+    ? customTags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    : [];
+  const allTags = [...hashtagsFromQueue, ...customTagsList];
+  return allTags.filter(
+    (tag, index) =>
+      allTags.findIndex((t) => t.toLowerCase() === tag.toLowerCase()) === index
+  );
+}
 
 export interface LongformQuoteEntry {
   id: string;
@@ -44,6 +105,7 @@ interface UseLongFormSubmissionProps {
   selectedHashtags: string;
   alsoScheduleQuote?: boolean;
   quoteEntries?: LongformQuoteEntry[];
+  userTimezone?: string;
 }
 
 export function useLongFormSubmission({
@@ -59,6 +121,7 @@ export function useLongFormSubmission({
   selectedHashtags,
   alsoScheduleQuote = false,
   quoteEntries = [],
+  userTimezone = "UTC",
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
@@ -74,77 +137,25 @@ export function useLongFormSubmission({
       const finalSummary = summary || generateSummaryFromMarkdown(content);
       const identifier = generateArticleIdentifier(title);
 
-      /**
-       * Parse scheduled timestamp with fallbacks
-       */
-      async function parseScheduledTimestamp(
-        scheduledForValue: string
-      ): Promise<number | undefined> {
-        try {
-          const userTimezone = "UTC"; // Default, could be passed as prop
-          const zoned = parseDateTimeLocal(scheduledForValue, userTimezone);
-          const utcZoned = zoned.withTimeZone("UTC");
-          return toUnixTimestamp(utcZoned);
-        } catch {
-          try {
-            const zoned = fromISOString(scheduledForValue, "UTC");
-            return toUnixTimestamp(zoned);
-          } catch {
-            try {
-              const scheduledTime = new Date(scheduledForValue);
-              if (!isNaN(scheduledTime.getTime())) {
-                const zoned = fromDate(scheduledTime, "UTC");
-                return toUnixTimestamp(zoned);
-              }
-            } catch {
-              const scheduledTime = new Date(scheduledForValue);
-              if (!isNaN(scheduledTime.getTime())) {
-                return Math.floor(scheduledTime.getTime() / 1000);
-              }
-            }
-          }
-        }
-        return undefined;
-      }
-
       const scheduledTimestamp =
         actionType === "schedule" && scheduledFor
           ? await parseScheduledTimestamp(scheduledFor)
           : undefined;
 
-      // Get effective hashtags - prioritize manual selection over queue defaults
-      let effectiveHashtags = "";
-
-      if (useHashtagPresets) {
-        // Manual hashtag presets are enabled
-        if (selectedHashtags) {
-          // Use manually selected hashtag preset
-          effectiveHashtags = selectedHashtags;
-        }
-        // If useHashtagPresets is true but no manual preset selected, use no hashtags
-      } else {
-        // Manual hashtag presets are disabled, use displayed hashtags (queue defaults)
-        effectiveHashtags = displayedHashtags ?? "";
+      if (
+        actionType === "schedule" &&
+        scheduledTimestamp !== undefined &&
+        scheduledTimestamp * 1000 < getMinScheduleTimestampMs(userTimezone)
+      ) {
+        setSigningError("Schedule time must be in the future.");
+        return;
       }
 
-      const hashtagsFromQueue = effectiveHashtags
-        ? effectiveHashtags
-            .split(" ")
-            .map((tag) => tag.replace("#", "").trim())
-            .filter(Boolean)
-        : [];
-      const customTagsList = customTags
-        ? customTags
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter(Boolean)
-        : [];
-      // Combine and deduplicate tags (case insensitive)
-      const allTags = [...hashtagsFromQueue, ...customTagsList];
-      const uniqueTags = allTags.filter(
-        (tag, index) =>
-          allTags.findIndex((t) => t.toLowerCase() === tag.toLowerCase()) ===
-          index
+      const uniqueTags = getEffectiveHashtagsAndUniqueTags(
+        useHashtagPresets,
+        selectedHashtags,
+        displayedHashtags,
+        customTags
       );
 
       const eventData = {

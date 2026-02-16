@@ -205,7 +205,15 @@ export function LongFormPublishingOptions({
               id="scheduledFor"
               name="scheduledFor"
               value={scheduledFor ?? ""}
-              onChange={(e) => onScheduledForChange(e.target.value || null)}
+              onChange={(e) => {
+                const v = e.target.value || null;
+                if (!v) {
+                  onScheduledForChange(null);
+                  return;
+                }
+                const min = getNowForDateTimeLocal(userTimezone);
+                onScheduledForChange(v < min ? min : v);
+              }}
               min={getNowForDateTimeLocal(userTimezone)}
               className="dark:bg-card flex-1 bg-white"
               placeholder="Select date and time"

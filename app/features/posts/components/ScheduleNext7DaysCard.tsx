@@ -203,6 +203,8 @@ export function ScheduleNext7DaysCard({
                               (sum, q) => sum + (q.count > 0 ? q.count : 0),
                               0
                             );
+                            const unassignedAccent =
+                              "hsl(var(--muted-foreground) / 0.55)";
                             const queuesWithCount = byQueue
                               .filter((q) => q.count > 0)
                               .map((q) => {
@@ -210,18 +212,23 @@ export function ScheduleNext7DaysCard({
                                   q.queueName,
                                   queueTypes
                                 );
-                                const accent =
-                                  q.queueName === "Unassigned" || !bundle
-                                    ? "var(--muted)"
-                                    : bundle.accent;
+                                const isUnassigned =
+                                  q.queueName === "Unassigned" || !bundle;
+                                const accent = isUnassigned
+                                  ? unassignedAccent
+                                  : bundle.accent;
                                 return {
                                   queueName: q.queueName,
                                   count: q.count,
                                   accent,
+                                  isUnassigned,
                                 };
                               });
-                            const slots: Array<{ id: number; accent: string }> =
-                              [];
+                            const slots: Array<{
+                              id: number;
+                              accent: string;
+                              isUnassigned: boolean;
+                            }> = [];
                             let slotId = 0;
                             const remaining = queuesWithCount.map(
                               (q) => q.count
@@ -240,6 +247,7 @@ export function ScheduleNext7DaysCard({
                                   slots.push({
                                     id: slotId++,
                                     accent: queue.accent,
+                                    isUnassigned: queue.isUnassigned,
                                   });
                                   remaining[j] = count - 1;
                                   break;
@@ -250,8 +258,7 @@ export function ScheduleNext7DaysCard({
                             }
                             const parts: React.ReactNode[] = slots.map(
                               (slot) => {
-                                const isUnassigned =
-                                  slot.accent === "var(--muted)";
+                                const isUnassigned = slot.isUnassigned;
                                 const blockStyle: React.CSSProperties &
                                   Record<string, string> = {
                                   "--block-accent": slot.accent,
@@ -259,7 +266,7 @@ export function ScheduleNext7DaysCard({
                                 return (
                                   <span
                                     key={slot.id}
-                                    className={`inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-65 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100 ${isUnassigned ? "ring-border/60 ring-1" : ""}`}
+                                    className={`inline-block size-2 rounded-[1px] bg-[var(--block-accent)] transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100 ${isUnassigned ? "ring-muted-foreground/40 opacity-90 ring-2" : "opacity-65"}`}
                                     style={blockStyle}
                                     aria-hidden
                                   />

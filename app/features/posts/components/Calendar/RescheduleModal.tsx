@@ -18,6 +18,7 @@ import {
   formatForDisplay,
   fromDate,
   getMinDatetimeLocalForSchedule,
+  getMinScheduleTimestampMs,
   getNowForDateTimeLocal,
   isAfter,
   nowInTimezone,
@@ -651,6 +652,20 @@ export function RescheduleModal({
       const zoned = parseDateTimeLocal(repostQuoteScheduledFor, userTimezone);
       const utcZoned = zoned.withTimeZone("UTC");
       const scheduledForUnix = toUnixTimestamp(utcZoned);
+
+      const minMs = getMinScheduleTimestampMs(
+        userTimezone,
+        post.scheduledAtUtc ?? undefined
+      );
+      if (utcZoned.epochMilliseconds < minMs) {
+        toast.error(
+          post.scheduledAtUtc
+            ? "Repost/quote must be scheduled at or after the original post's scheduled time."
+            : "Please select a date and time in the future."
+        );
+        return;
+      }
+
       const ev = originalSignedEvent as SignedEventForRepost & {
         created_at: number;
         kind: number;
@@ -736,7 +751,14 @@ export function RescheduleModal({
                   id="repostQuoteScheduledFor"
                   type="datetime-local"
                   value={repostQuoteScheduledFor}
-                  onChange={(e) => setRepostQuoteScheduledFor(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const min = getMinDatetimeLocalForSchedule(
+                      userTimezone,
+                      data.post.scheduledAtUtc ?? undefined
+                    );
+                    setRepostQuoteScheduledFor(v && v < min ? min : v);
+                  }}
                   min={getMinDatetimeLocalForSchedule(
                     userTimezone,
                     data.post.scheduledAtUtc ?? undefined

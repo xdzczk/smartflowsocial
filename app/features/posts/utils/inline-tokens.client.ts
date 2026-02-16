@@ -60,20 +60,22 @@ export function getTokenLocalIds(content: string): string[] {
 }
 
 /**
- * Resolve tokens in content for signing: replace each [attach:localId] with "".
- * Used so the signed event has clean content (no tokens).
+ * Resolve tokens in content for signing: replace each [attach:localId] with the
+ * actual media URL so the signed Nostr event content includes media and clients
+ * can display it.
  */
 export function resolveContentForSigning(
   content: string,
   attachmentsWithUrl: Array<{ localId: string; url?: string }>
 ): string {
-  const urlByLocalId = new Set(
-    attachmentsWithUrl.filter((a) => a.url).map((a) => a.localId)
+  const urlByLocalId = new Map(
+    attachmentsWithUrl
+      .filter((a): a is { localId: string; url: string } => Boolean(a.url))
+      .map((a) => [a.localId, a.url])
   );
-  return content
-    .replace(ATTACH_TOKEN_REGEX, (_, localId) =>
-      urlByLocalId.has(localId) ? "" : _
-    )
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  const resolved = content.replace(ATTACH_TOKEN_REGEX, (_, localId) => {
+    const url = urlByLocalId.get(localId);
+    return url ?? "";
+  });
+  return resolved.replace(/\n{3,}/g, "\n\n").trim();
 }

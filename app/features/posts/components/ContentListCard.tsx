@@ -139,34 +139,36 @@ export function ContentListCard({
           />
         </div>
       ) : null}
-      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md">
-        {hasMedia ? (
-          <MediaPreviewCollage
-            urls={mediaUrls}
-            className="h-full w-full rounded-md"
-            thumbnailClassName="h-full w-full object-cover"
-            fallback={
-              <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
-                {item.type === "post"
-                  ? isRepostContent(item)
-                    ? "REPOST"
-                    : "TEXT"
-                  : "ART"}
-              </div>
-            }
-          />
-        ) : (
-          <div
-            className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium"
-            aria-hidden
-          >
-            {item.type === "post"
-              ? isRepostContent(item)
-                ? "REPOST"
-                : "TEXT"
-              : "ART"}
-          </div>
-        )}
+      <div className="relative h-14 w-14 flex-shrink-0">
+        <div className="h-full w-full overflow-hidden rounded-md">
+          {hasMedia ? (
+            <MediaPreviewCollage
+              urls={mediaUrls}
+              className="h-full w-full rounded-md"
+              thumbnailClassName="h-full w-full object-cover"
+              fallback={
+                <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
+                  {item.type === "post"
+                    ? isRepostContent(item)
+                      ? "REPOST"
+                      : "TEXT"
+                    : "ART"}
+                </div>
+              }
+            />
+          ) : (
+            <div
+              className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium"
+              aria-hidden
+            >
+              {item.type === "post"
+                ? isRepostContent(item)
+                  ? "REPOST"
+                  : "TEXT"
+                : "ART"}
+            </div>
+          )}
+        </div>
         {isRepostContent(item) ? (
           <div className="bg-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
             <Repeat

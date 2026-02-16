@@ -170,19 +170,25 @@ function FlowCardInner({
       ? minutesUntil
       : minutesUntilComputed;
 
-  const timeLabel = isScheduled
-    ? getRelativeTimeLabel(
-        effectiveMinutesUntil,
-        displayTime,
-        userTimezone,
-        userTimeFormat
-      )
-    : getRelativeTimeLabelForPast(
-        minutesAgo,
-        displayTime,
-        userTimezone,
-        userTimeFormat
-      );
+  // When this card is the next scheduled slot with a future time, always show it as scheduled
+  // (avoids showing "Published · just now" when item incorrectly has publishedAt or due to stale/race data)
+  const displayAsScheduled =
+    Boolean(isNextScheduled) && minutesUntil != null && minutesUntil >= 0;
+
+  const timeLabel =
+    isScheduled || displayAsScheduled
+      ? getRelativeTimeLabel(
+          effectiveMinutesUntil,
+          displayTime,
+          userTimezone,
+          userTimeFormat
+        )
+      : getRelativeTimeLabelForPast(
+          minutesAgo,
+          displayTime,
+          userTimezone,
+          userTimeFormat
+        );
   const preview = getFlowPreview(item);
   const contentSummaryText = getContentSummaryText(item);
   const mediaUrls = getMediaPreviewUrls(item, 4);
@@ -192,19 +198,21 @@ function FlowCardInner({
       ? getQueueAccentHex(item.queueType.colorToken)
       : undefined;
   const queueName = item.queueType?.name ?? "";
-  const statusLabel = getStatusLabel(item);
+  const statusLabel = displayAsScheduled ? "Scheduled" : getStatusLabel(item);
   const postKindLabel =
     item.type === "post" && item.postKind && item.postKind !== "POST"
       ? item.postKind.charAt(0) + item.postKind.slice(1).toLowerCase()
       : null;
   const defaultAriaLabel = `${item.type === "longform" ? "Article" : (postKindLabel ?? "Post")}: ${preview}, ${statusLabel} ${timeLabel}`;
 
-  // Only the next scheduled (first future) post glows; stop glowing as soon as it's posted
+  // Only the next scheduled (first future) post glows; stop glowing as soon as it's posted.
+  // Use displayAsScheduled so we still show glow when we're forcing scheduled display (stale/wrong publishedAt).
   const isNextScheduledAndFuture =
-    isNextScheduled &&
-    !item.publishedAt &&
-    minutesUntil != null &&
-    minutesUntil >= 0;
+    (isNextScheduled &&
+      !item.publishedAt &&
+      minutesUntil != null &&
+      minutesUntil >= 0) ||
+    displayAsScheduled;
   const glowStyle = isNextScheduledAndFuture
     ? {
         ["--flow-glow-duration" as string]: `${getNextGlowDurationMs(minutesUntil)}ms`,

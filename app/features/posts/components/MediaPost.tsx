@@ -7,6 +7,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { getMinScheduleTimestampMs, parseDateTimeLocal } from "~/lib/temporal";
 
 import { usePostScheduling } from "../hooks/usePostScheduling";
 import type { QueueType, HashTagPreset } from "../types";
@@ -157,6 +158,23 @@ export default function MediaPost({
     if (!scheduledFor) {
       setTimeError("Please set a scheduled time before uploading");
       toast.error("Please set a scheduled time before uploading");
+      return;
+    }
+
+    const userTz = user?.timezone ?? "UTC";
+    try {
+      const zoned = parseDateTimeLocal(scheduledFor, userTz);
+      const utcZoned = zoned.withTimeZone("UTC");
+      const scheduledMs = utcZoned.epochMilliseconds;
+      const minMs = getMinScheduleTimestampMs(userTz);
+      if (scheduledMs < minMs) {
+        setTimeError("Please select a date and time in the future.");
+        toast.error("Please select a date and time in the future.");
+        return;
+      }
+    } catch {
+      setTimeError("Invalid date or time.");
+      toast.error("Invalid date or time.");
       return;
     }
 

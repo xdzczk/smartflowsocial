@@ -339,6 +339,6 @@ export function getContentTypeBadge(item: CombinedContent): {
   // Default: uniform badge (same size/color as REPOST)
   return {
     className: POST_KIND_BADGE_CLASS,
-    text: item.type === "post" ? "Post" : "Article",
+    text: item.type === "post" ? "POST" : "Article",
   };
 }

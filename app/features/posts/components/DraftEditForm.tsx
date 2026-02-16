@@ -217,7 +217,11 @@ export function DraftEditForm({
             id="scheduledFor"
             name="scheduledFor"
             value={scheduledFor}
-            onChange={(e) => onScheduledForChange(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              const min = getNowForDateTimeLocal(userTimezone);
+              onScheduledForChange(v && v < min ? min : v);
+            }}
             min={getNowForDateTimeLocal(userTimezone)}
             className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-lg border p-2"
             disabled={isSubmitting}
