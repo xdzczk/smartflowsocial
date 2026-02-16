@@ -20,6 +20,11 @@ export function HomePage(): ReactNode {
   return (
     <>
       <div className="bg-background landing-texture relative min-h-screen">
+        {/* Hero background images (same as login page) */}
+        <div
+          className="absolute inset-0 bg-[url('/motifflightmode.webp')] bg-cover bg-center bg-no-repeat dark:bg-[url('/motiffdarkmode.webp')]"
+          aria-hidden
+        />
         {/* Enhanced background gradient with micro-depth */}
         <div className="hero-gradient-light dark:hero-gradient-dark absolute inset-0" />
 

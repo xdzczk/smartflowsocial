@@ -163,7 +163,7 @@ export default function ScheduledPostsPage() {
       <ContentListPageHeader pageType="scheduled" currentTab={currentTab} />
 
       <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap">
-        {/* Mobile: content type + queue on first row; desktop: participates in single row with order */}
+        {/* Mobile: content type + queue each 50% width; desktop: participates in single row with order */}
         <div className="flex w-full flex-row flex-nowrap gap-2 md:contents">
           <div className="min-w-0 flex-1 md:order-1">
             <PostTypeTabs
@@ -183,7 +183,7 @@ export default function ScheduledPostsPage() {
           currentTab === "posts" ||
           currentTab === "reposts" ||
           currentTab === "longform" ? (
-            <div className="flex-shrink-0 md:order-3">
+            <div className="min-w-0 flex-1 md:order-3 md:flex-shrink-0">
               <QueueSelectionTabs
                 currentTab={currentTab}
                 queueTypes={queueTypes}
@@ -192,13 +192,15 @@ export default function ScheduledPostsPage() {
             </div>
           ) : null}
         </div>
-        <DateRangeFilter
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          idPrefix="scheduled"
-          className="w-full md:order-2 md:w-auto md:flex-shrink-0"
-          minDate={getTodayInTimezone(userTimezone)}
-        />
+        <div className="flex w-full justify-center md:contents">
+          <DateRangeFilter
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            idPrefix="scheduled"
+            className="w-full max-md:w-auto md:order-2 md:w-auto md:flex-shrink-0"
+            minDate={getTodayInTimezone(userTimezone)}
+          />
+        </div>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">

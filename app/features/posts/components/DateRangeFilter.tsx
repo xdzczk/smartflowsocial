@@ -73,7 +73,7 @@ export function DateRangeFilter({
           id={`${idPrefix}-from`}
           value={dateRange.from}
           onChange={(e) => handleFromChange(e.target.value)}
-          className={`h-9 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS} ${DESKTOP_FILTER_INPUT_CLASS}`}
+          className={`h-8 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS} ${DESKTOP_FILTER_INPUT_CLASS}`}
           min={minDate}
           max={maxDate}
         />
@@ -90,7 +90,7 @@ export function DateRangeFilter({
           id={`${idPrefix}-to`}
           value={dateRange.to}
           onChange={(e) => handleToChange(e.target.value)}
-          className={`h-9 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS} ${DESKTOP_FILTER_INPUT_CLASS}`}
+          className={`h-8 w-auto min-w-[8rem] ${MOBILE_FILTER_INPUT_CLASS} ${DESKTOP_FILTER_INPUT_CLASS}`}
           min={minDate}
           max={maxDate}
         />

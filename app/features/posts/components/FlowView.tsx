@@ -51,6 +51,9 @@ const OVERSCROLL_EDGE_PX = 16;
 /** Inset (px) from left edge for initial position and "Scroll to next": last-posted card sits away from sidebar */
 const SCROLL_EDGE_OFFSET_PX = 24;
 
+/** Media query for user's reduced-motion preference (scroll behavior) */
+const PREFERS_REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
 const LOADING_LABEL = "Loading…";
 
 const SLOT_PAST_SENTINEL = "past-sentinel";
@@ -113,6 +116,8 @@ export interface FlowViewHandle {
   scrollToNext: () => void;
   /** Reset horizontal scroll to initial position (e.g. when queue filter changes). */
   scrollToInitial: () => void;
+  /** Request scroll to default position after next flowItems update (use when filter changes so we scroll with new data). */
+  scrollToNextWhenReady: () => void;
 }
 
 const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
@@ -166,6 +171,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const [allowFetch, setAllowFetch] = useState(false);
     /** Only fetch past when we've scrolled away from left (initial scroll succeeded); prevents loop when stuck at scroll 0 */
     const hasScrolledAwayFromLeftRef = useRef(false);
+    /** When set, scroll to default position after next flowItems update (filter change from parent). */
+    const scrollToNextWhenReadyRef = useRef(false);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
       null
     );
@@ -695,7 +702,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       if (!el) return;
       const reduceMotion =
         typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        window.matchMedia(PREFERS_REDUCED_MOTION_QUERY).matches;
       // When no scheduled posts, scroll to Flow Card CTA (last slot); otherwise to next/live edge
       const index = hasLiveEdge
         ? isMobile
@@ -728,14 +735,55 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       rowVirtualizer.scrollToIndex(0, { align: "start", behavior: "auto" });
     }, [rowVirtualizer]);
 
+    const scrollToNextWhenReady = useCallback(() => {
+      scrollToNextWhenReadyRef.current = true;
+    }, []);
+
     useImperativeHandle(
       ref,
       () => ({
         scrollToNext: handleScrollToNext,
         scrollToInitial: handleScrollToInitial,
+        scrollToNextWhenReady,
       }),
-      [handleScrollToNext, handleScrollToInitial]
+      [handleScrollToNext, handleScrollToInitial, scrollToNextWhenReady]
     );
+
+    // When parent requested scroll after filter change, run scroll once flowItems have updated so we use new slots
+    useEffect(() => {
+      if (!scrollToNextWhenReadyRef.current) return;
+      scrollToNextWhenReadyRef.current = false;
+      const rafId = requestAnimationFrame(() => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        const reduceMotion =
+          typeof window !== "undefined" &&
+          window.matchMedia(PREFERS_REDUCED_MOTION_QUERY).matches;
+        const index = hasLiveEdge
+          ? isMobile
+            ? scrollToFirstFutureIndex
+            : scrollToLiveIndex
+          : slots.length - 1;
+        let offsetPx = 0;
+        for (let i = 0; i < index; i++) {
+          offsetPx += slots[i]?.size ?? cardSlotSize;
+        }
+        const targetScrollLeft = Math.max(0, offsetPx - SCROLL_EDGE_OFFSET_PX);
+        el.scrollTo({
+          left: targetScrollLeft,
+          behavior: reduceMotion ? "auto" : "auto",
+        });
+      });
+      return () => cancelAnimationFrame(rafId);
+    }, [
+      flowItems,
+      hasLiveEdge,
+      isMobile,
+      scrollToFirstFutureIndex,
+      scrollToLiveIndex,
+      slots,
+      cardSlotSize,
+    ]);
 
     useEffect(() => {
       onHasLiveEdgeChange?.(hasLiveEdge);
@@ -763,7 +811,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       if (!el) return;
       const reduceMotion =
         typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        window.matchMedia(PREFERS_REDUCED_MOTION_QUERY).matches;
       const targetIndex = isMobile
         ? scrollToFirstFutureIndex
         : scrollToLiveIndex;

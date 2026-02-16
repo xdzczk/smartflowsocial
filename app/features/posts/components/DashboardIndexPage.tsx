@@ -329,11 +329,30 @@ export default function DashboardIndexPage() {
 
   const flowViewRef = useRef<FlowViewHandle | null>(null);
   const [_hasLiveEdge, setHasLiveEdge] = useState(false);
+  const prevFilterRef = useRef<{
+    tab: string;
+    queue: string;
+  } | null>(null);
+  const pendingScrollToNextRef = useRef(false);
 
-  // Reset Flow section horizontal scroll to default position (live edge / next scheduled) when content tab or queue filter changes; do not reset page vertical scroll
+  // When user changes content tab or queue filter, mark that we should scroll after the new data loads
   useEffect(() => {
-    flowViewRef.current?.scrollToNext();
+    const filterChanged =
+      prevFilterRef.current !== null &&
+      (prevFilterRef.current.tab !== currentContentTab ||
+        prevFilterRef.current.queue !== queueType);
+    prevFilterRef.current = { tab: currentContentTab, queue: queueType };
+    if (filterChanged) {
+      pendingScrollToNextRef.current = true;
+    }
   }, [currentContentTab, queueType]);
+
+  // When navigation (loader) completes after a filter change, request Flow to scroll to default once it has the new data
+  useEffect(() => {
+    if (navigation.state !== "idle" || !pendingScrollToNextRef.current) return;
+    pendingScrollToNextRef.current = false;
+    flowViewRef.current?.scrollToNextWhenReady();
+  }, [navigation.state]);
 
   return (
     <>

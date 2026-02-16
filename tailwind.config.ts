@@ -198,6 +198,9 @@ export default {
     "text-gray-400",
     "h-5",
     "w-5",
+    // Login page background images (light + dark)
+    "bg-[url('/motifflightmode.webp')]",
+    "dark:bg-[url('/motiffdarkmode.webp')]",
   ],
   // Note: tailwindcss-animate plugin generates CSS with nesting syntax
   // This may cause harmless CSS syntax warnings from esbuild about `:where(& > ...)`

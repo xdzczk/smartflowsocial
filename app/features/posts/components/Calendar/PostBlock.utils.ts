@@ -109,22 +109,15 @@ export function getStatusColor(
   return "bg-secondary text-secondary-foreground";
 }
 
+/** Opacity for past (older) posts so they stay queue-colored but visually recede (same idea as Queue Health without hover). */
+const PAST_POST_QUEUE_OPACITY = 0.65;
+
 export function getQueueColorStyle(
   post: CalendarPost,
   queueTypes: QueueType[] | undefined,
   isLongform: boolean,
   isPast: boolean
 ): QueueColorStyle | null {
-  // Past posts get grayed styling regardless of queue color
-  if (isPast) {
-    return {
-      backgroundColor: "hsl(var(--muted))",
-      color: "hsl(var(--muted-foreground))",
-      borderColor: "hsl(var(--border))",
-      opacity: 0.6,
-    };
-  }
-
   // Longform posts don't have queue types
   if (isLongform) {
     return null;
@@ -155,6 +148,17 @@ export function getQueueColorStyle(
       backgroundColor: bundle.surface,
       color: bundle.accent,
       borderColor: bundle.accent,
+      ...(isPast ? { opacity: PAST_POST_QUEUE_OPACITY } : {}),
+    };
+  }
+
+  // Past posts without a queue type keep grayed styling
+  if (isPast) {
+    return {
+      backgroundColor: "hsl(var(--muted))",
+      color: "hsl(var(--muted-foreground))",
+      borderColor: "hsl(var(--border))",
+      opacity: 0.6,
     };
   }
 
