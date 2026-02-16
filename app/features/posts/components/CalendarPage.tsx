@@ -41,10 +41,10 @@ export default function CalendarPage() {
   const currentTab = searchParams.get("tab") ?? TAB_ALL;
 
   return (
-    <div className="flex h-full flex-col space-y-6">
+    <div className="flex h-full min-h-0 flex-col space-y-4">
       <ContentListPageHeader pageType="calendar" currentTab={currentTab} />
 
-      <div className="border-border/50 mb-6 flex flex-row flex-nowrap items-end gap-2 border-b">
+      <div className="border-border/50 mb-4 flex flex-row flex-nowrap items-end gap-2 border-b">
         <PostTypeTabs
           currentTab={currentTab}
           basePath="/dashboard/calendar"

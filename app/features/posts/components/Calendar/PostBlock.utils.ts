@@ -169,6 +169,33 @@ export function getQueueColorStyle(
   return null;
 }
 
+/**
+ * Normalize publishedAt (string, Date, or number) to a Date in UTC.
+ * Used so we don't fall back to "current time" when publishedAt is a Date object.
+ */
+function publishedAtToDate(
+  publishedAt: string | Date | number | null | undefined
+): Date | null {
+  if (publishedAt == null) return null;
+  try {
+    if (typeof publishedAt === "string") {
+      const zoned = fromDate(new Date(publishedAt), "UTC");
+      return toDate(zoned);
+    }
+    if (publishedAt instanceof Date) {
+      const zoned = fromDate(publishedAt, "UTC");
+      return toDate(zoned);
+    }
+    if (typeof publishedAt === "number") {
+      const zoned = fromUnixTimestamp(publishedAt, "UTC");
+      return toDate(zoned);
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 export function getDisplayTime(
   post: CalendarPost,
   isLongform: boolean,
@@ -176,42 +203,25 @@ export function getDisplayTime(
 ): Date {
   try {
     if (isPast) {
-      const publishedAt = post.publishedAt;
-      if (typeof publishedAt === "string") {
-        const zoned = fromDate(new Date(publishedAt), "UTC");
+      const date = publishedAtToDate(post.publishedAt);
+      if (date) return date;
+      return toDate(nowUTC());
+    }
+    if (isLongform) {
+      const date = publishedAtToDate(post.publishedAt);
+      if (date) return date;
+      return toDate(nowUTC());
+    }
+    const scheduledFor = post.scheduledFor;
+    if (typeof scheduledFor === "string") {
+      const timestamp = Number(scheduledFor);
+      if (!isNaN(timestamp)) {
+        const zoned = fromUnixTimestamp(timestamp, "UTC");
         return toDate(zoned);
       }
-      // Use Temporal for consistency even in fallback
-      return toDate(nowUTC());
-    } else {
-      if (isLongform) {
-        const publishedAt = post.publishedAt;
-        if (typeof publishedAt === "string") {
-          const zoned = fromDate(new Date(publishedAt), "UTC");
-          return toDate(zoned);
-        }
-        // Use Temporal for consistency even in fallback
-        return toDate(nowUTC());
-      } else {
-        const scheduledFor = post.scheduledFor;
-        if (typeof scheduledFor === "string") {
-          const timestamp = Number(scheduledFor);
-          if (!isNaN(timestamp)) {
-            const zoned = fromUnixTimestamp(timestamp, "UTC");
-            return toDate(zoned);
-          }
-        }
-        // Use Temporal for consistency even in fallback
-        return toDate(nowUTC());
-      }
     }
+    return toDate(nowUTC());
   } catch {
-    // Final fallback - still use Temporal
-    try {
-      return toDate(nowUTC());
-    } catch {
-      // Final fallback - still use Temporal
-      return toDate(nowUTC());
-    }
+    return toDate(nowUTC());
   }
 }

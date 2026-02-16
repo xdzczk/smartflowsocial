@@ -21,6 +21,7 @@ export function PostBlock({
   isLongform = false,
   isPast = false,
   hideVideoPlayButton = false,
+  timeLabel,
 }: PostBlockProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStarted, setDragStarted] = useState(false);
@@ -112,6 +113,7 @@ export function PostBlock({
         userTimezone={userTimezone}
         multipleInCell={multipleInCell}
         hideVideoPlayButton={hideVideoPlayButton}
+        timeLabel={timeLabel}
       />
     );
   }

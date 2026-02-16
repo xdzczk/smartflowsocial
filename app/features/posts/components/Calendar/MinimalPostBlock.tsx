@@ -20,6 +20,8 @@ interface MinimalPostBlockProps extends PostBlockBaseProps {
   userTimezone: string;
   multipleInCell?: boolean;
   hideVideoPlayButton?: boolean;
+  /** Rendered inside block (e.g. time in month view) with same background */
+  timeLabel?: string;
 }
 
 // ============================================================================
@@ -215,6 +217,7 @@ interface RegularLayoutProps {
   displayTime: Date;
   userTimezone: string;
   hideVideoPlayButton: boolean;
+  timeLabel?: string;
 }
 
 function RegularLayout({
@@ -232,6 +235,7 @@ function RegularLayout({
   displayTime,
   userTimezone: _userTimezone,
   hideVideoPlayButton,
+  timeLabel,
 }: RegularLayoutProps) {
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
@@ -258,7 +262,12 @@ function RegularLayout({
       style={queueColorStyle ?? {}}
       title={title}
     >
-      <div className="flex items-center space-x-1">
+      <div className="flex items-center gap-1.5">
+        {timeLabel ? (
+          <span className="flex-shrink-0 text-xs tabular-nums opacity-90">
+            {timeLabel}
+          </span>
+        ) : null}
         <PostThumbnail
           firstImage={firstImage}
           post={post}
@@ -266,7 +275,7 @@ function RegularLayout({
           size="sm"
           hideVideoPlayButton={hideVideoPlayButton}
         />
-        <span className="flex-1 truncate">{postPreview}</span>
+        <span className="min-w-0 flex-1 truncate">{postPreview}</span>
       </div>
     </div>
   );
@@ -286,6 +295,7 @@ export function MinimalPostBlock({
   userTimezone,
   multipleInCell = false,
   hideVideoPlayButton = false,
+  timeLabel,
 }: MinimalPostBlockProps) {
   const firstImage = getFirstImage(post, isLongform ?? false);
   const postPreview = getPostPreview(post, isLongform ?? false);
@@ -331,6 +341,7 @@ export function MinimalPostBlock({
       displayTime={displayTime}
       userTimezone={userTimezone}
       hideVideoPlayButton={hideVideoPlayButton}
+      timeLabel={timeLabel}
     />
   );
 }

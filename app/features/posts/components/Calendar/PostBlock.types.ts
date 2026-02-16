@@ -55,6 +55,8 @@ export interface PostBlockProps {
   isLongform?: boolean;
   isPast?: boolean;
   hideVideoPlayButton?: boolean;
+  /** When set (e.g. in month view), rendered inside minimal block with same background as block */
+  timeLabel?: string;
 }
 
 export interface PostBlockBaseProps {

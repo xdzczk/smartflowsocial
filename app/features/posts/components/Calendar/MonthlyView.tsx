@@ -206,7 +206,7 @@ export function MonthlyView({
         {weekdays.map((day) => (
           <div
             key={day}
-            className="text-muted-foreground p-3 text-center text-sm font-medium"
+            className="text-muted-foreground px-2 py-2 text-center text-sm font-medium"
           >
             {day}
           </div>
@@ -214,7 +214,7 @@ export function MonthlyView({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid min-h-0 flex-1 grid-cols-7 gap-0 overflow-auto">
+      <div className="grid min-h-0 flex-1 auto-rows-[minmax(7.5rem,1fr)] grid-cols-7 gap-0 overflow-auto">
         {calendarDays.map((dayInfo) => {
           // Use local date to match the posts grouping
           const year = dayInfo.date.getFullYear();
@@ -251,8 +251,8 @@ export function MonthlyView({
                 {dayInfo.date.getDate()}
               </div>
 
-              {/* Posts */}
-              <div className="flex-1 space-y-1 overflow-hidden">
+              {/* Posts: max 3 visible, then "+N more" */}
+              <div className="flex max-h-[13rem] flex-1 flex-col space-y-1 overflow-hidden">
                 {postsToShow.map((post) => {
                   const postIsLongform = isAll
                     ? Boolean(post.title && post.publishedAt)
@@ -264,39 +264,33 @@ export function MonthlyView({
                     postIsLongform,
                     postIsPast
                   );
+                  const userTz = user?.timezone ?? "Etc/UTC";
                   const timeString = formatDate(displayTime, {
+                    timezone: userTz,
                     dateFormatOptions: {
                       hour: "2-digit",
                       minute: "2-digit",
                     },
                   });
                   return (
-                    <div
+                    <PostBlock
                       key={post.id}
-                      className="flex items-start gap-1 overflow-hidden"
-                    >
-                      <span className="text-muted-foreground flex-shrink-0 text-xs tabular-nums">
-                        {timeString}
-                      </span>
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <PostBlock
-                          post={post}
-                          compact={true}
-                          minimal={true}
-                          user={user}
-                          queueTypes={queueTypes}
-                          onEdit={onPostEdit}
-                          isLongform={postIsLongform}
-                          isPast={postIsPast}
-                        />
-                      </div>
-                    </div>
+                      post={post}
+                      compact={true}
+                      minimal={true}
+                      user={user}
+                      queueTypes={queueTypes}
+                      onEdit={onPostEdit}
+                      isLongform={postIsLongform}
+                      isPast={postIsPast}
+                      timeLabel={timeString}
+                    />
                   );
                 })}
 
                 {/* Show remaining count */}
-                {remainingCount > 0 && Boolean(remainingCount) ? (
-                  <div className="text-muted-foreground/80 px-2 py-1 text-[11px]">
+                {remainingCount > 0 ? (
+                  <div className="text-muted-foreground/80 flex-shrink-0 px-2 py-1 text-[11px]">
                     +{remainingCount > 9 ? "9" : remainingCount} more
                   </div>
                 ) : null}

@@ -294,18 +294,18 @@ export function WeeklyView({
           return (
             <div
               key={day.toISOString()}
-              className={`border-border/30 flex min-w-0 flex-1 flex-col items-center justify-center border-r p-3 text-center last:border-r-0 ${
+              className={`border-border/30 flex min-w-0 flex-1 flex-col items-center justify-center border-r px-2 py-1.5 text-center last:border-r-0 ${
                 isToday ? "border-l-primary bg-primary/5 border-l-2" : ""
               }`}
             >
-              <div className="text-muted-foreground text-sm leading-tight font-normal">
+              <div className="text-muted-foreground text-xs leading-tight font-normal">
                 {day.toLocaleDateString("en-US", {
                   weekday: "short",
                   timeZone: user?.timezone ?? "Etc/UTC",
                 })}
               </div>
               <div
-                className={`mt-1 text-lg leading-tight font-semibold ${
+                className={`mt-0.5 text-base leading-tight font-semibold ${
                   isToday ? "text-primary" : "text-foreground"
                 }`}
               >
@@ -317,7 +317,7 @@ export function WeeklyView({
       </div>
 
       {/* Time grid */}
-      <div ref={gridScrollRef} className="flex-1 overflow-y-auto">
+      <div ref={gridScrollRef} className="min-h-0 flex-1 overflow-y-auto">
         <div className="relative">
           {hours.map((time, index) => (
             <div

@@ -185,7 +185,7 @@ export function Calendar({
       style={{ boxShadow: "var(--calendar-surface-2-shadow)" }}
     >
       {/* Header with view toggle */}
-      <div className="border-border/60 border-b bg-[hsl(var(--calendar-surface-1-bg))] p-5">
+      <div className="border-border/60 border-b bg-[hsl(var(--calendar-surface-1-bg))] p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Navigation */}
@@ -335,9 +335,9 @@ export function Calendar({
       </div>
 
       {/* Calendar content */}
-      <div className="min-h-0 flex-1 overflow-hidden p-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-3">
         <div
-          className="h-full transition-opacity duration-200"
+          className="flex min-h-0 flex-1 flex-col transition-opacity duration-200"
           style={{
             transitionTimingFunction: "var(--calendar-transition-ease)",
           }}
