@@ -4,7 +4,7 @@ import {
   type FetcherWithComponents,
 } from "@remix-run/react";
 import { CalendarDays, Info, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import { toast } from "react-hot-toast";
 
@@ -530,6 +530,55 @@ export function RescheduleModal({
     postId?: string;
     error?: string;
   }>();
+  const previousActiveRef = useRef<HTMLElement | null>(null);
+  const modalContentRef = useRef<HTMLDivElement>(null);
+
+  // Save focus on open, restore on close
+  useEffect(() => {
+    previousActiveRef.current = document.activeElement as HTMLElement | null;
+    return () => {
+      previousActiveRef.current?.focus();
+    };
+  }, []);
+
+  // Escape closes modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  const FOCUSABLE_SELECTOR =
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  const handleModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Tab" || !modalContentRef.current) return;
+    const focusable =
+      modalContentRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+    const list = Array.from(focusable).filter(
+      (el) => el.offsetParent !== null && !el.hasAttribute("aria-hidden")
+    );
+    if (list.length === 0) return;
+    const first = list[0];
+    const last = list[list.length - 1];
+    if (!first || !last) return;
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -712,7 +761,14 @@ export function RescheduleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="border-border bg-card w-full max-w-md rounded-lg border shadow-xl">
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- focus trap requires onKeyDown on dialog container */}
+      <div
+        ref={modalContentRef}
+        role="dialog"
+        aria-modal="true"
+        onKeyDown={handleModalKeyDown}
+        className="w-full max-w-md rounded-[var(--calendar-radius-lg)] border border-[hsl(var(--calendar-surface-3-border))] bg-[hsl(var(--calendar-surface-3-bg))] shadow-[var(--calendar-surface-3-shadow)]"
+      >
         <div className="p-6">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">

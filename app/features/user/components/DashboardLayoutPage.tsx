@@ -39,12 +39,18 @@ function isDashboardIndexPath(pathname: string): boolean {
   return normalized === "/dashboard";
 }
 
+/** Calendar route: lock viewport height on desktop so only the time grid scrolls. */
+function isCalendarPath(pathname: string): boolean {
+  return pathname.startsWith("/dashboard/calendar");
+}
+
 export function DashboardLayoutPage(): ReactNode {
   const location = useLocation();
   const { currentSubscription, pendingParentUsers } =
     useLoaderData<typeof dashboardLoader>();
   const isFreePlan = currentSubscription?.planId === "free";
   const isDashboardIndex = isDashboardIndexPath(location.pathname);
+  const isCalendar = isCalendarPath(location.pathname);
   const isSubscriptionExpired =
     currentSubscription && currentSubscription.status !== "ACTIVE";
   const navigation = useNavigation();
@@ -72,7 +78,7 @@ export function DashboardLayoutPage(): ReactNode {
     <>
       <div
         id="page-container"
-        className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
+        className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col ${isDashboardIndex || isCalendar ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
         {...(mobileSidebarOpen ? { "data-mobile-sidebar-open": "" } : {})}
       >
         <Header
@@ -193,7 +199,7 @@ export function DashboardLayoutPage(): ReactNode {
           ) : null}
 
           <div
-            className={`flex w-full flex-1 flex-col pt-4.5 pb-24 ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
+            className={`flex w-full flex-1 flex-col pt-4.5 pb-24 ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "max-w-10xl mx-auto px-4 lg:min-h-0 lg:overflow-hidden lg:px-8" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
           >
             <Outlet />
           </div>

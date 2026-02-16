@@ -62,11 +62,15 @@ export function FullPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "published" : "scheduled"} for ${formattedDateTime}`}
-      className={`border-border focus:ring-ring rounded-lg border p-3 transition-all focus:ring-2 focus:outline-none ${
-        isPast ? "cursor-default" : "cursor-pointer"
-      } ${
-        isDragging ? "rotate-2 opacity-50" : isPast ? "" : "hover:shadow-lg"
-      } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)} ${queueColorStyle ? "" : "border-opacity-20 border-current"}`}
+      className={`focus:ring-ring rounded-[var(--calendar-radius-md)] border p-3 transition-[transform,opacity,box-shadow] focus:ring-2 focus:outline-none ${
+        queueColorStyle ? "border-0" : "border-opacity-20 border border-current"
+      } ${isPast ? "cursor-default" : "cursor-pointer"} ${
+        isDragging
+          ? "rotate-2 opacity-50"
+          : isPast
+            ? ""
+            : "hover:shadow-[var(--calendar-surface-4-shadow)]"
+      } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
       style={queueColorStyle ?? {}}
     >
       <div className="mb-2 flex items-center justify-between">
@@ -102,11 +106,11 @@ export function FullPostBlock({
       {/* Show large image thumbnail if available */}
       {firstImage ? (
         <div className="mb-3">
-          <div className="post-thumbnail relative h-24 w-full overflow-hidden rounded-md">
+          <div className="post-thumbnail relative h-24 w-full overflow-hidden rounded-[var(--calendar-radius-md)]">
             <MediaThumbnail
               src={firstImage}
               alt="Post preview"
-              className="h-full w-full rounded-md"
+              className="h-full w-full rounded-[var(--calendar-radius-md)]"
               forceType={isVideoFile(firstImage) ? "video" : "image"}
               hidePlayButton={hideVideoPlayButton}
               fallback={

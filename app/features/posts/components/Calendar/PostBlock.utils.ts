@@ -112,6 +112,10 @@ export function getStatusColor(
 /** Opacity for past (older) posts so they stay queue-colored but visually recede (same idea as Queue Health without hover). */
 const PAST_POST_QUEUE_OPACITY = 0.65;
 
+/**
+ * Queue color base, surface tint, text color, border logic — locked system-wide for calendar.
+ * Derives from getQueueColorBundle; no random color math in components.
+ */
 export function getQueueColorStyle(
   post: CalendarPost,
   queueTypes: QueueType[] | undefined,

@@ -56,7 +56,8 @@ function getClassName(
   post: CalendarPost,
   isLongform: boolean
 ): string {
-  const baseClasses = "rounded text-xs transition-opacity focus:outline-none";
+  const baseClasses =
+    "rounded-[var(--calendar-radius-sm)] text-xs transition-opacity focus:outline-none";
   const cursorClass = isPast
     ? "cursor-default"
     : "cursor-pointer hover:opacity-80";
@@ -91,11 +92,13 @@ function PostThumbnail({
         <MediaThumbnail
           src={firstImage}
           alt="Post thumbnail"
-          className={`${sizeClasses} flex-shrink-0 rounded`}
+          className={`${sizeClasses} flex-shrink-0 rounded-[var(--calendar-radius-sm)]`}
           forceType={isVideoFile(firstImage) ? "video" : "image"}
           hidePlayButton={size === "xs" ? true : hideVideoPlayButton}
           fallback={
-            <div className={`${sizeClasses} bg-muted flex-shrink-0 rounded`} />
+            <div
+              className={`${sizeClasses} bg-muted flex-shrink-0 rounded-[var(--calendar-radius-sm)]`}
+            />
           }
         />
         <PostBadges post={post} size={badgeSize} />

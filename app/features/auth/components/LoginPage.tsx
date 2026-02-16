@@ -34,17 +34,7 @@ export default function LoginPage() {
               </div>
             </CardContent>
 
-            <div className="relative flex min-h-[200px] items-center justify-center overflow-hidden px-6 py-10 md:min-h-full md:w-1/2 md:px-10 lg:p-16">
-              {/* Light motif: visible in light mode only */}
-              <div
-                className="absolute inset-0 bg-[url('/motifflightmode.webp')] bg-cover bg-center bg-no-repeat dark:hidden"
-                aria-hidden
-              />
-              {/* Dark motif: visible in dark mode only */}
-              <div
-                className="absolute inset-0 hidden bg-[url('/motiffdarkmode.webp')] bg-cover bg-center bg-no-repeat dark:block"
-                aria-hidden
-              />
+            <div className="hero-motif-bg relative flex min-h-[200px] items-center justify-center px-6 py-10 md:min-h-full md:w-1/2 md:px-10 lg:p-16">
               <div className="relative z-10 text-center sm:text-left">
                 <p className="text-foreground mb-2 text-lg leading-relaxed font-bold sm:text-xl">
                   Sign in securely using your{" "}

@@ -39,6 +39,7 @@ import {
   detectSignerAppName,
   getAllSessions,
   setActiveSession,
+  setCurrentUserNpub,
   updateSession,
 } from "~/lib/remote-signer-sessions.client";
 import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
@@ -1069,6 +1070,9 @@ export default function NostrLoginPanel() {
           };
           setActiveSignerConfig(config);
 
+          // Store sessions under this profile so they appear in Settings after login
+          setCurrentUserNpub(convertHexToNpub(pk));
+
           // Find existing session with matching config or create new one
           const allSessions = getAllSessions();
           const existingSession = allSessions.find(
@@ -1188,6 +1192,9 @@ export default function NostrLoginPanel() {
           clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
         };
         setActiveSignerConfig(config);
+
+        // Store sessions under this profile so they appear in Settings after login
+        setCurrentUserNpub(convertHexToNpub(pk));
 
         // Find existing session with matching config or create new one
         const allSessions = getAllSessions();
@@ -1371,6 +1378,9 @@ export default function NostrLoginPanel() {
         clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
       };
       setActiveSignerConfig(config);
+
+      // Store sessions under this profile so they appear in Settings after login
+      setCurrentUserNpub(convertHexToNpub(pk));
 
       // Create or update session
       const session = createSession(config);

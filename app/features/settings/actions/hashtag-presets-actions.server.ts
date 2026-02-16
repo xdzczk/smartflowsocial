@@ -9,6 +9,7 @@ import {
   updateHashTagPreset,
   deleteHashTagPreset,
 } from "~/features/user";
+import { invalidateHashTagPresetsCache } from "~/features/user/services/user-cache.server";
 import {
   createHashtagPresetSchema,
   updateHashtagPresetSchema,
@@ -35,6 +36,7 @@ export async function handleHashtagPresetAction(
       result.data.tags,
       result.data.description
     );
+    await invalidateHashTagPresetsCache(userId);
     return json({ success: true });
   }
 
@@ -53,6 +55,7 @@ export async function handleHashtagPresetAction(
       result.data.tags,
       result.data.description
     );
+    await invalidateHashTagPresetsCache(userId);
     return json({ success: true });
   }
 
@@ -65,6 +68,7 @@ export async function handleHashtagPresetAction(
       return result.response;
     }
     await deleteHashTagPreset(userId, result.data.id);
+    await invalidateHashTagPresetsCache(userId);
     return json({ success: true });
   }
 

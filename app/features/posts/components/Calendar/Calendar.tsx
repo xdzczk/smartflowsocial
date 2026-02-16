@@ -1,10 +1,16 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useCallback } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import {
   addDays,
   addMonths,
+  createZonedDateTime,
   formatForDisplay,
   fromDate,
   fromISOString,
@@ -47,7 +53,7 @@ export function Calendar({
   isLongform = false,
   isAll = false,
 }: CalendarProps) {
-  const [view, setView] = useState<"week" | "month">("week");
+  const [view, setView] = useState<"day" | "week" | "month">("week");
   const userTimezone = user?.timezone ?? "Etc/UTC";
   const [currentDate, setCurrentDate] = useState(() => {
     const now = nowInTimezone(userTimezone);
@@ -57,6 +63,11 @@ export function Calendar({
   const [rescheduleData, setRescheduleData] = useState<RescheduleData | null>(
     null
   );
+  const [miniCalendarOpen, setMiniCalendarOpen] = useState(false);
+  const [miniCalendarMonth, setMiniCalendarMonth] = useState<Date>(() => {
+    const now = nowInTimezone(user?.timezone ?? "Etc/UTC");
+    return toDate(now);
+  });
 
   const handlePostDrop = useCallback(
     (post: CalendarPost, newDateTime: Date) => {
@@ -78,6 +89,52 @@ export function Calendar({
     },
     [isLongform, isAll]
   );
+
+  // Keyboard shortcuts: T = Today, Left/Right = prev/next period (ignore when modal open or focus in input)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showRescheduleModal) return;
+      const target = document.activeElement;
+      if (
+        target &&
+        ["INPUT", "TEXTAREA", "SELECT"].includes(
+          (target as HTMLElement).tagName
+        )
+      ) {
+        return;
+      }
+      if (e.key === "t" || e.key === "T") {
+        e.preventDefault();
+        setCurrentDate(toDate(nowInTimezone(userTimezone)));
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        const currentZoned = fromDate(currentDate, userTimezone);
+        const newZoned =
+          view === "day"
+            ? addDays(currentZoned, -1)
+            : view === "week"
+              ? addDays(currentZoned, -7)
+              : addMonths(currentZoned, -1);
+        setCurrentDate(toDate(newZoned));
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        const currentZoned = fromDate(currentDate, userTimezone);
+        const newZoned =
+          view === "day"
+            ? addDays(currentZoned, 1)
+            : view === "week"
+              ? addDays(currentZoned, 7)
+              : addMonths(currentZoned, 1);
+        setCurrentDate(toDate(newZoned));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showRescheduleModal, currentDate, view, userTimezone]);
 
   const handlePostEdit = useCallback(
     (post: CalendarPost) => {
@@ -123,9 +180,12 @@ export function Calendar({
   );
 
   return (
-    <div className="border-border bg-card flex h-full flex-col rounded-lg border shadow">
+    <div
+      className="flex h-full flex-col rounded-[var(--calendar-radius-lg)] border border-[hsl(var(--calendar-surface-2-border))] bg-[hsl(var(--calendar-surface-2-bg))]"
+      style={{ boxShadow: "var(--calendar-surface-2-shadow)" }}
+    >
       {/* Header with view toggle */}
-      <div className="border-border border-b p-4">
+      <div className="border-border/60 border-b bg-[hsl(var(--calendar-surface-1-bg))] p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Navigation */}
@@ -133,9 +193,11 @@ export function Calendar({
               onClick={() => {
                 const currentZoned = fromDate(currentDate, userTimezone);
                 const newZoned =
-                  view === "week"
-                    ? addDays(currentZoned, -7)
-                    : addMonths(currentZoned, -1);
+                  view === "day"
+                    ? addDays(currentZoned, -1)
+                    : view === "week"
+                      ? addDays(currentZoned, -7)
+                      : addMonths(currentZoned, -1);
                 setCurrentDate(toDate(newZoned));
               }}
               className="text-muted-foreground hover:text-foreground p-2"
@@ -148,19 +210,35 @@ export function Calendar({
               />
             </button>
 
-            <h2 className="text-foreground text-lg font-semibold">
+            <h2 className="text-foreground text-lg font-medium">
               {(() => {
                 const currentZoned = fromDate(currentDate, userTimezone);
-                return view === "week"
-                  ? `Week of ${formatForDisplay(currentZoned, userTimezone, {
+                if (view === "day") {
+                  return `Day of ${formatForDisplay(
+                    currentZoned,
+                    userTimezone,
+                    {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
-                    })}`
-                  : formatForDisplay(currentZoned, userTimezone, {
-                      month: "long",
+                    }
+                  )}`;
+                }
+                if (view === "week") {
+                  return `Week of ${formatForDisplay(
+                    currentZoned,
+                    userTimezone,
+                    {
+                      month: "short",
+                      day: "numeric",
                       year: "numeric",
-                    });
+                    }
+                  )}`;
+                }
+                return formatForDisplay(currentZoned, userTimezone, {
+                  month: "long",
+                  year: "numeric",
+                });
               })()}
             </h2>
 
@@ -168,9 +246,11 @@ export function Calendar({
               onClick={() => {
                 const currentZoned = fromDate(currentDate, userTimezone);
                 const newZoned =
-                  view === "week"
-                    ? addDays(currentZoned, 7)
-                    : addMonths(currentZoned, 1);
+                  view === "day"
+                    ? addDays(currentZoned, 1)
+                    : view === "week"
+                      ? addDays(currentZoned, 7)
+                      : addMonths(currentZoned, 1);
                 setCurrentDate(toDate(newZoned));
               }}
               className="text-muted-foreground hover:text-foreground p-2"
@@ -189,64 +269,106 @@ export function Calendar({
                 setCurrentDate(toDate(now));
               }}
               className="text-primary hover:text-primary/80 px-3 py-1 text-sm"
+              title="Today (T)"
             >
               Today
             </button>
+
+            {/* Mini calendar / date picker: only in Day view (Apple Calendar–style) */}
+            {view === "day" ? (
+              <Popover
+                open={miniCalendarOpen}
+                onOpenChange={(open) => {
+                  setMiniCalendarOpen(open);
+                  if (open) setMiniCalendarMonth(currentDate);
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground rounded-[var(--calendar-radius-sm)] p-2"
+                    aria-label="Pick a date"
+                  >
+                    <CalendarDays
+                      className="h-5 w-5"
+                      strokeWidth={INLINE_ICON_STROKE}
+                      aria-hidden
+                    />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto rounded-[var(--calendar-radius-md)] border-[hsl(var(--calendar-surface-2-border))] bg-[hsl(var(--calendar-surface-2-bg))] p-3"
+                  align="end"
+                >
+                  <MiniCalendarGrid
+                    displayedMonth={miniCalendarMonth}
+                    currentDate={currentDate}
+                    userTimezone={userTimezone}
+                    onMonthChange={setMiniCalendarMonth}
+                    onSelectDate={(date) => {
+                      setCurrentDate(date);
+                      setMiniCalendarOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : null}
           </div>
 
-          {/* View toggle */}
-          <div className="bg-secondary/30 flex items-center space-x-1 rounded-lg p-1">
-            <button
-              onClick={() => setView("week")}
-              className={`rounded-md px-3 py-1 text-sm font-medium ${
-                view === "week"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Week
-            </button>
-            <button
-              onClick={() => setView("month")}
-              className={`rounded-md px-3 py-1 text-sm font-medium ${
-                view === "month"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Month
-            </button>
+          {/* View toggle: Day | Week | Month (calendar radius sm, surface tokens) */}
+          <div className="bg-muted/50 flex items-center space-x-1 rounded-[var(--calendar-radius-sm)] p-1">
+            {(["day", "week", "month"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`rounded-[var(--calendar-radius-sm)] px-3 py-1 text-sm font-medium ${
+                  view === v
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Calendar content */}
       <div className="min-h-0 flex-1 overflow-hidden p-4">
-        {view === "week" ? (
-          <WeeklyView
-            scheduledPosts={scheduledPosts}
-            pastPosts={pastPosts}
-            currentDate={currentDate}
-            onPostDrop={handlePostDrop}
-            onPostEdit={handlePostEdit}
-            user={user}
-            queueTypes={queueTypes}
-            isLongform={isLongform}
-            isAll={isAll}
-          />
-        ) : (
-          <MonthlyView
-            scheduledPosts={scheduledPosts}
-            pastPosts={pastPosts}
-            currentDate={currentDate}
-            onPostDrop={handlePostDrop}
-            onPostEdit={handlePostEdit}
-            user={user}
-            queueTypes={queueTypes}
-            isLongform={isLongform}
-            isAll={isAll}
-          />
-        )}
+        <div
+          className="h-full transition-opacity duration-200"
+          style={{
+            transitionTimingFunction: "var(--calendar-transition-ease)",
+          }}
+        >
+          {view === "day" || view === "week" ? (
+            <WeeklyView
+              scheduledPosts={scheduledPosts}
+              pastPosts={pastPosts}
+              currentDate={currentDate}
+              weekDaysOverride={view === "day" ? [currentDate] : undefined}
+              onPostDrop={handlePostDrop}
+              onPostEdit={handlePostEdit}
+              user={user}
+              queueTypes={queueTypes}
+              isLongform={isLongform}
+              isAll={isAll}
+            />
+          ) : (
+            <MonthlyView
+              scheduledPosts={scheduledPosts}
+              pastPosts={pastPosts}
+              currentDate={currentDate}
+              onPostDrop={handlePostDrop}
+              onPostEdit={handlePostEdit}
+              user={user}
+              queueTypes={queueTypes}
+              isLongform={isLongform}
+              isAll={isAll}
+            />
+          )}
+        </div>
       </div>
 
       {/* Reschedule Modal */}
@@ -267,6 +389,112 @@ export function Calendar({
           }}
         />
       ) : null}
+    </div>
+  );
+}
+
+interface MiniCalendarGridProps {
+  displayedMonth: Date;
+  currentDate: Date;
+  userTimezone: string;
+  onMonthChange: (date: Date) => void;
+  onSelectDate: (date: Date) => void;
+}
+
+function MiniCalendarGrid({
+  displayedMonth,
+  currentDate: _currentDate,
+  userTimezone,
+  onMonthChange,
+  onSelectDate,
+}: MiniCalendarGridProps) {
+  const currentZoned = fromDate(displayedMonth, "UTC");
+  const year = currentZoned.year;
+  const month = currentZoned.month;
+  const firstDayZoned = createZonedDateTime(year, month, 1, 0, 0, "UTC");
+  const dayOfWeek = firstDayZoned.dayOfWeek;
+  const daysFromMonday = dayOfWeek === 7 ? 6 : dayOfWeek - 1;
+  const startDateZoned = addDays(firstDayZoned, -daysFromMonday);
+  const todayZoned = nowInTimezone(userTimezone);
+
+  const days = useMemo(() => {
+    const out: Array<{
+      date: Date;
+      isCurrentMonth: boolean;
+      isToday: boolean;
+    }> = [];
+    for (let i = 0; i < 42; i++) {
+      const dateZoned = addDays(startDateZoned, i);
+      out.push({
+        date: toDate(dateZoned),
+        isCurrentMonth: dateZoned.month === month,
+        isToday:
+          dateZoned.year === todayZoned.year &&
+          dateZoned.month === todayZoned.month &&
+          dateZoned.day === todayZoned.day,
+      });
+    }
+    return out;
+    // Intentionally depend only on displayedMonth and userTimezone; month/startDateZoned/todayZoned are derived
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- avoid recomputing every render from todayZoned
+  }, [displayedMonth, userTimezone]);
+
+  const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() =>
+            onMonthChange(
+              toDate(addMonths(fromDate(displayedMonth, "UTC"), -1))
+            )
+          }
+          className="text-muted-foreground hover:text-foreground rounded-[var(--calendar-radius-sm)] p-1"
+          aria-label="Previous month"
+        >
+          <ChevronLeft className="h-4 w-4" strokeWidth={INLINE_ICON_STROKE} />
+        </button>
+        <span className="text-sm font-medium">
+          {formatForDisplay(fromDate(displayedMonth, "UTC"), userTimezone, {
+            month: "long",
+            year: "numeric",
+          })}
+        </span>
+        <button
+          type="button"
+          onClick={() =>
+            onMonthChange(toDate(addMonths(fromDate(displayedMonth, "UTC"), 1)))
+          }
+          className="text-muted-foreground hover:text-foreground rounded-[var(--calendar-radius-sm)] p-1"
+          aria-label="Next month"
+        >
+          <ChevronRight className="h-4 w-4" strokeWidth={INLINE_ICON_STROKE} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 text-center">
+        {weekdays.map((d) => (
+          <div
+            key={d}
+            className="text-muted-foreground py-0.5 text-xs font-medium"
+          >
+            {d}
+          </div>
+        ))}
+        {days.map(({ date, isCurrentMonth, isToday }) => (
+          <button
+            key={date.toISOString()}
+            type="button"
+            onClick={() => onSelectDate(date)}
+            className={`min-w-[28px] rounded-[var(--calendar-radius-sm)] py-1 text-xs ${
+              !isCurrentMonth ? "text-muted-foreground/70" : "text-foreground"
+            } ${isToday ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+          >
+            {date.getDate()}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

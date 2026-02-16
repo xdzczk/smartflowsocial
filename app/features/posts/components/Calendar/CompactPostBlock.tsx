@@ -47,17 +47,19 @@ function getClassName(
   isLongform: boolean | undefined
 ): string {
   const baseClasses =
-    "rounded-md border border-border p-2 text-xs transition-all focus:outline-none focus:ring-2 focus:ring-ring";
+    "rounded-[var(--calendar-radius-md)] p-2 text-xs transition-[transform,opacity,box-shadow] focus:outline-none focus:ring-2 focus:ring-ring";
   const cursorClass = isPast ? "cursor-default" : "cursor-pointer";
   const dragClass = isDragging
     ? "rotate-2 opacity-50"
     : isPast
       ? ""
-      : "hover:shadow-md";
+      : "hover:shadow-[var(--calendar-surface-4-shadow)]";
   const statusClass = queueColorStyle
     ? ""
     : getStatusColor(post, isLongform ?? false, isPast ?? false);
-  const borderClass = queueColorStyle ? "" : "border-current border-opacity-20";
+  const borderClass = queueColorStyle
+    ? "border-0"
+    : "border border-current border-opacity-20";
   return `${baseClasses} ${cursorClass} ${dragClass} ${statusClass} ${borderClass}`;
 }
 
@@ -93,7 +95,9 @@ function ThumbnailSection({
         className="h-4 w-4 flex-shrink-0 rounded"
         forceType={isVideoFile(firstImage) ? "video" : "image"}
         hidePlayButton={true}
-        fallback={<div className="bg-muted h-4 w-4 flex-shrink-0 rounded" />}
+        fallback={
+          <div className="bg-muted h-4 w-4 flex-shrink-0 rounded-[var(--calendar-radius-sm)]" />
+        }
       />
       <PostBadges post={post} size="sm" />
     </div>
@@ -136,11 +140,11 @@ function MediaPreview({
 
   return (
     <div className="flex h-full min-h-0 flex-col space-y-1">
-      <div className="post-thumbnail relative min-h-0 w-full flex-1 overflow-hidden rounded-md">
+      <div className="post-thumbnail relative min-h-0 w-full flex-1 overflow-hidden rounded-[var(--calendar-radius-md)]">
         <MediaThumbnail
           src={firstImage}
           alt="Post preview"
-          className="h-full w-full rounded-md object-cover"
+          className="h-full w-full rounded-[var(--calendar-radius-md)] object-cover"
           forceType={isVideoFile(firstImage) ? "video" : "image"}
           hidePlayButton={false}
           fallback={

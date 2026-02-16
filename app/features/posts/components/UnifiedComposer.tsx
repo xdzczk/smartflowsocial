@@ -22,6 +22,7 @@ import {
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { SIGNER_CONFIG_HYDRATED_EVENT } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   getNowForDateTimeLocal,
@@ -277,7 +278,7 @@ export function UnifiedComposer({
   const [signerLabel, setSignerLabel] = useState<string | null>(null);
   const [signerReady, setSignerReady] = useState<boolean | null>(null);
 
-  useEffect(() => {
+  const refreshSignerState = React.useCallback(() => {
     void (async () => {
       const { getActiveSignerConfig } =
         await import("~/lib/nostr-signer-manager.client");
@@ -292,6 +293,14 @@ export function UnifiedComposer({
       );
     })();
   }, []);
+
+  useEffect(() => {
+    refreshSignerState();
+    const handler = () => refreshSignerState();
+    window.addEventListener(SIGNER_CONFIG_HYDRATED_EVENT, handler);
+    return () =>
+      window.removeEventListener(SIGNER_CONFIG_HYDRATED_EVENT, handler);
+  }, [refreshSignerState]);
   const tags: string[] = [];
   const [selectedHashtags, setSelectedHashtags] = React.useState(
     () => initialDraft?.tags ?? ""

@@ -22,23 +22,30 @@ export type QueueColorToken = (typeof QUEUE_COLOR_TOKENS)[number];
 
 export const QUEUE_COLOR_ACCENTS: Record<QueueColorToken, string> = {
   slate: "#94A3B8",
-  blue: "#3B82F6",
-  cyan: "#22D3EE",
-  teal: "#2DD4BF",
-  green: "#22C55E",
-  lime: "#A3E635",
-  amber: "#F59E0B",
-  orange: "#FB923C",
-  red: "#EF4444",
-  pink: "#EC4899",
-  violet: "#8B5CF6",
-  indigo: "#6366F1",
+  blue: "#2563EB",
+  cyan: "#0891B2",
+  teal: "#0D9488",
+  green: "#16A34A",
+  lime: "#65A30D",
+  amber: "#D97706",
+  orange: "#EA580C",
+  red: "#DC2626",
+  pink: "#DB2777",
+  violet: "#7C3AED",
+  indigo: "#4338CA",
 };
 
+/**
+ * Queue color bundle: base, surface tint, and text/accent for calendar and other UI.
+ * Queue color base, surface tint, text color, border logic — locked system-wide for calendar.
+ * Surface is luminance-safe (light mode: tinted surface; dark: slightly elevated). Use accent for text on surface.
+ */
 export interface QueueColorBundle {
   accent: string;
   surface: string;
   soft: string;
+  /** Readable text on surface; defaults to accent. Use for labels to ensure contrast (WCAG AA). */
+  text?: string;
 }
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
@@ -60,6 +67,7 @@ const SLATE_BUNDLE: QueueColorBundle = (() => {
     accent,
     surface: `rgba(${rgb.r},${rgb.g},${rgb.b},0.12)`,
     soft: `rgba(${rgb.r},${rgb.g},${rgb.b},0.06)`,
+    text: accent,
   };
 })();
 
@@ -78,6 +86,7 @@ export function getQueueColorBundle(token: string | null): QueueColorBundle {
     accent,
     surface: `rgba(${rgb.r},${rgb.g},${rgb.b},0.12)`,
     soft: `rgba(${rgb.r},${rgb.g},${rgb.b},0.06)`,
+    text: accent,
   };
 }
 

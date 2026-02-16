@@ -6,7 +6,10 @@
 import { CheckCircle, TriangleAlert, Ban } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { getActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
+import {
+  getActiveSignerConfig,
+  SIGNER_CONFIG_HYDRATED_EVENT,
+} from "~/lib/nostr-signer-manager.client";
 import { getActiveSession } from "~/lib/remote-signer-sessions.client";
 import type { ConnectionStatus } from "~/lib/remote-signer-sessions.client";
 import {
@@ -84,11 +87,19 @@ function Nip07Status({ readiness }: { readiness: Nip07Readiness }) {
 
 export function SignerStatusIndicator() {
   const [mounted, setMounted] = useState(false);
+  const [, setHydrationTick] = useState(0);
   const nip07Readiness = useNip07Readiness();
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 0);
     return () => clearTimeout(id);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setHydrationTick((n) => n + 1);
+    window.addEventListener(SIGNER_CONFIG_HYDRATED_EVENT, handler);
+    return () =>
+      window.removeEventListener(SIGNER_CONFIG_HYDRATED_EVENT, handler);
   }, []);
 
   if (!mounted) {

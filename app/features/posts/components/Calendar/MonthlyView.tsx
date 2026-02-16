@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   addDays,
   createZonedDateTime,
@@ -16,6 +17,7 @@ import type { QueueType, UserData } from "../../types";
 
 import { PostBlock } from "./PostBlock";
 import type { CalendarPost } from "./PostBlock.types";
+import { getDisplayTime } from "./PostBlock.utils";
 
 interface MonthlyViewProps {
   scheduledPosts: CalendarPost[];
@@ -195,11 +197,12 @@ export function MonthlyView({
   };
 
   const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const { formatDate } = useFormattedDate();
 
   return (
     <div className="flex h-full flex-col">
       {/* Weekday headers */}
-      <div className="border-border bg-card grid flex-shrink-0 grid-cols-7 border-b">
+      <div className="border-border/40 grid flex-shrink-0 grid-cols-7 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
         {weekdays.map((day) => (
           <div
             key={day}
@@ -227,9 +230,11 @@ export function MonthlyView({
               key={dayInfo.date.toISOString()}
               role="gridcell"
               tabIndex={-1}
-              className={`border-border flex min-h-[120px] flex-col border-r border-b p-2 last:border-r-0 ${
-                dayInfo.isCurrentMonth ? "bg-card" : "bg-secondary/20"
-              } ${dayInfo.isToday ? "ring-primary ring-2" : ""}`}
+              className={`border-border/40 flex min-h-[120px] flex-col border-r border-b p-2.5 last:border-r-0 ${
+                dayInfo.isCurrentMonth
+                  ? "bg-[hsl(var(--calendar-surface-2-bg))]"
+                  : "bg-secondary/20"
+              } ${dayInfo.isToday ? "ring-primary ring-1" : ""}`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, dayInfo.date)}
             >
@@ -248,31 +253,51 @@ export function MonthlyView({
 
               {/* Posts */}
               <div className="flex-1 space-y-1 overflow-hidden">
-                {postsToShow.map((post, postIndex) => (
-                  <PostBlock
-                    // eslint-disable-next-line react/no-array-index-key -- Composite key with stable post ID
-                    key={`${post.id}-${postIndex}`}
-                    post={post}
-                    compact={true}
-                    minimal={true}
-                    user={user}
-                    queueTypes={queueTypes}
-                    onEdit={onPostEdit}
-                    isLongform={
-                      isAll
-                        ? Boolean(post.title && post.publishedAt)
-                        : isLongform
-                    }
-                    isPast={
-                      typeof post.isPast === "boolean" ? post.isPast : false
-                    }
-                  />
-                ))}
+                {postsToShow.map((post) => {
+                  const postIsLongform = isAll
+                    ? Boolean(post.title && post.publishedAt)
+                    : isLongform;
+                  const postIsPast =
+                    typeof post.isPast === "boolean" ? post.isPast : false;
+                  const displayTime = getDisplayTime(
+                    post,
+                    postIsLongform,
+                    postIsPast
+                  );
+                  const timeString = formatDate(displayTime, {
+                    dateFormatOptions: {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    },
+                  });
+                  return (
+                    <div
+                      key={post.id}
+                      className="flex items-start gap-1 overflow-hidden"
+                    >
+                      <span className="text-muted-foreground flex-shrink-0 text-xs tabular-nums">
+                        {timeString}
+                      </span>
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <PostBlock
+                          post={post}
+                          compact={true}
+                          minimal={true}
+                          user={user}
+                          queueTypes={queueTypes}
+                          onEdit={onPostEdit}
+                          isLongform={postIsLongform}
+                          isPast={postIsPast}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
 
                 {/* Show remaining count */}
                 {remainingCount > 0 && Boolean(remainingCount) ? (
-                  <div className="text-muted-foreground dark:text-foreground px-2 py-1 text-xs">
-                    +{remainingCount} more
+                  <div className="text-muted-foreground/80 px-2 py-1 text-[11px]">
+                    +{remainingCount > 9 ? "9" : remainingCount} more
                   </div>
                 ) : null}
               </div>

@@ -14,6 +14,11 @@ import {
   persistUIState,
   clearPersistedState,
 } from "~/lib/lifecycle-manager.client";
+import {
+  getActiveSignerConfig,
+  setActiveSignerConfig,
+  SIGNER_CONFIG_HYDRATED_EVENT,
+} from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { setCurrentUserNpub } from "~/lib/remote-signer-sessions.client";
 import { triggerForegroundSync } from "~/lib/sync-manager.client";
@@ -45,6 +50,16 @@ export function LifecycleHandler() {
 
   useEffect(() => {
     setCurrentUserNpub(user?.npub ?? null);
+  }, [user?.npub]);
+
+  // When user is logged in but sessionStorage has no signer config (e.g. new tab),
+  // default to NIP-07 so extension-only users aren't blocked. We do not restore
+  // from localStorage so users who never used remote signer don't see "Disconnected".
+  useEffect(() => {
+    if (!user?.npub || typeof window === "undefined") return;
+    if (getActiveSignerConfig() != null) return;
+    setActiveSignerConfig({ type: "nip07" });
+    window.dispatchEvent(new CustomEvent(SIGNER_CONFIG_HYDRATED_EVENT));
   }, [user?.npub]);
 
   // Use stable identity (npub string) so revalidation doesn't re-run this effect and cause a loop.

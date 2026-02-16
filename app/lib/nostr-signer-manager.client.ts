@@ -32,6 +32,9 @@ export type ActiveSignerConfig =
 
 const STORAGE_KEY = "__smartflow_active_nostr_signer_v1";
 
+/** Fired when signer config was missing and we defaulted to NIP-07 so components can re-read. */
+export const SIGNER_CONFIG_HYDRATED_EVENT = "smartflow:signer-config-hydrated";
+
 let cachedSigner: NostrSigner | null = null;
 let cachedConfigJson: string | null = null;
 let wasHidden = false;

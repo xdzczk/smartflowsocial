@@ -328,7 +328,7 @@ export default function PublishedPostsPage() {
           currentTab === "posts" ||
           currentTab === "reposts" ||
           currentTab === "longform" ? (
-            <div className="min-w-0 flex-1 md:order-3 md:flex-shrink-0">
+            <div className="min-w-0 flex-1 md:order-3 md:ml-auto md:flex-shrink-0">
               <QueueSelectionTabs
                 currentTab={currentTab}
                 queueTypes={queueTypes}

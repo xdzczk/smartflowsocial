@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import {
@@ -20,6 +20,8 @@ interface WeeklyViewProps {
   scheduledPosts: CalendarPost[];
   pastPosts?: CalendarPost[];
   currentDate: Date;
+  /** When provided (e.g. Day view), use these days instead of computing week from currentDate. */
+  weekDaysOverride?: Date[];
   onPostDrop: (post: CalendarPost, newDateTime: Date) => void;
   onPostEdit: (post: CalendarPost) => void;
   user?: UserData | null;
@@ -30,6 +32,10 @@ interface WeeklyViewProps {
 
 type PostsGrid = Record<string, Record<string, CalendarPost[]>>;
 
+/** Default scroll: show 6:00 at top (Apple Calendar–style). Row height must match time row class (h-[52px]). */
+const DEFAULT_SCROLL_HOUR = 6;
+const ROW_HEIGHT_PX = 52;
+
 interface CurrentTimeIndicatorProps {
   user?: UserData | null;
   weekDays: Date[];
@@ -39,6 +45,7 @@ export function WeeklyView({
   scheduledPosts,
   pastPosts = [],
   currentDate,
+  weekDaysOverride,
   onPostDrop,
   onPostEdit,
   user,
@@ -47,9 +54,14 @@ export function WeeklyView({
   isAll = false,
 }: WeeklyViewProps) {
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
+  const gridScrollRef = useRef<HTMLDivElement>(null);
+  const hasSetInitialScrollRef = useRef(false);
 
-  // Generate week days starting from Monday
+  // Generate week days starting from Monday, or use override (e.g. single day for Day view)
   const weekDays = useMemo(() => {
+    if (weekDaysOverride && weekDaysOverride.length > 0) {
+      return weekDaysOverride;
+    }
     const days: Date[] = [];
     const currentZoned = fromDate(currentDate, "UTC");
     // dayOfWeek: 1 = Monday, 2 = Tuesday, ..., 7 = Sunday
@@ -62,7 +74,7 @@ export function WeeklyView({
       days.push(toDate(dayZoned));
     }
     return days;
-  }, [currentDate]);
+  }, [currentDate, weekDaysOverride]);
 
   // Get user time format preference
   const userTimeFormat =
@@ -251,11 +263,26 @@ export function WeeklyView({
     setDragOverSlot(null);
   };
 
+  // Default scroll to 6:00 once on mount (Apple Calendar–style)
+  useEffect(() => {
+    if (hasSetInitialScrollRef.current || !gridScrollRef.current) return;
+    const el = gridScrollRef.current;
+    const slotIndex = DEFAULT_SCROLL_HOUR * 2; // 30-min slots: 6:00 is index 12
+    const scrollTop = slotIndex * ROW_HEIGHT_PX;
+    const apply = () => {
+      if (!hasSetInitialScrollRef.current) {
+        el.scrollTop = scrollTop;
+        hasSetInitialScrollRef.current = true;
+      }
+    };
+    requestAnimationFrame(apply);
+  }, []);
+
   return (
-    <div className="flex h-[70vh] flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* Days header */}
-      <div className="border-border bg-card flex border-b">
-        <div className="w-16 flex-shrink-0"></div>
+      <div className="border-border/40 flex border-b bg-[hsl(var(--calendar-surface-2-bg))]">
+        <div className="w-16 flex-shrink-0" />
         {weekDays.map((day) => {
           const userTimezone = user?.timezone ?? "Etc/UTC";
           const todayZoned = nowInTimezone(userTimezone);
@@ -267,18 +294,18 @@ export function WeeklyView({
           return (
             <div
               key={day.toISOString()}
-              className={`border-border min-w-0 flex-1 border-r p-3 text-center last:border-r-0 ${
-                isToday ? "bg-muted" : ""
+              className={`border-border/30 flex min-w-0 flex-1 flex-col items-center justify-center border-r p-3 text-center last:border-r-0 ${
+                isToday ? "border-l-primary bg-primary/5 border-l-2" : ""
               }`}
             >
-              <div className="text-foreground text-sm font-medium">
+              <div className="text-muted-foreground text-sm leading-tight font-normal">
                 {day.toLocaleDateString("en-US", {
                   weekday: "short",
                   timeZone: user?.timezone ?? "Etc/UTC",
                 })}
               </div>
               <div
-                className={`mt-1 text-lg font-semibold ${
+                className={`mt-1 text-lg leading-tight font-semibold ${
                   isToday ? "text-primary" : "text-foreground"
                 }`}
               >
@@ -290,12 +317,15 @@ export function WeeklyView({
       </div>
 
       {/* Time grid */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={gridScrollRef} className="flex-1 overflow-y-auto">
         <div className="relative">
           {hours.map((time, index) => (
-            <div key={time} className="border-border flex h-12 border-b">
+            <div
+              key={time}
+              className="border-border/40 flex h-[52px] items-center border-b"
+            >
               {/* Time label */}
-              <div className="text-muted-foreground w-16 flex-shrink-0 p-2 text-right text-xs">
+              <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
                 {hourLabels[index]}
               </div>
 
@@ -315,7 +345,7 @@ export function WeeklyView({
                     key={`${dateKey}-${time}`}
                     role="gridcell"
                     tabIndex={-1}
-                    className={`border-border relative min-w-0 flex-1 overflow-hidden border-r p-1 last:border-r-0 ${
+                    className={`border-border/30 relative min-w-0 flex-1 overflow-hidden border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
                       isDragOver
                         ? "bg-primary/5 border-primary/20"
                         : "dark:hover:bg-muted hover:bg-muted"
@@ -449,21 +479,22 @@ function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
   if (!isTodayInWeek) return null;
 
   // Find the exact position for current time
-  // Each hour has 2 slots (30-minute intervals), each 48px tall (h-12 = 48px)
+  // Each hour has 2 slots (30-minute intervals), each ROW_HEIGHT_PX tall
   const hourIndex = currentHour;
   const minuteProgress = currentMinutes / 60; // 0-1 progress through the hour
 
   // Calculate position:
   // - Each hour has 2 slots (00 and 30), so multiply by 2
   // - Add progress within the current hour
-  const topOffset = hourIndex * 2 * 48 + minuteProgress * 48 * 2;
+  const topOffset =
+    hourIndex * 2 * ROW_HEIGHT_PX + minuteProgress * ROW_HEIGHT_PX * 2;
 
   return (
     <div
-      className="bg-destructive pointer-events-none absolute right-0 left-16 z-20 h-0.5"
+      className="bg-primary/90 pointer-events-none absolute right-0 left-16 z-20 h-0.5"
       style={{ top: `${topOffset}px` }}
     >
-      <div className="bg-destructive absolute -top-1 -left-2 h-3 w-3 rounded-full"></div>
+      <div className="bg-primary absolute -top-1 -left-2 h-2.5 w-2.5 rounded-full" />
     </div>
   );
 }

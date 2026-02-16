@@ -72,6 +72,22 @@ export async function getHashTagPresetsCached(
 }
 
 /**
+ * Invalidate hashtag presets cache for a user (call after create/update/delete)
+ */
+export async function invalidateHashTagPresetsCache(
+  userId: string
+): Promise<void> {
+  const cacheKey = buildCacheKey({
+    namespace: USER_DATA_CACHE,
+    parts: { userId, type: "hashTagPresets" },
+  });
+  await deleteFromRedis({
+    cache: USER_DATA_CACHE,
+    key: cacheKey,
+  });
+}
+
+/**
  * Get relay intent with caching (2 minute TTL)
  */
 export async function getRelayIntentCached(
