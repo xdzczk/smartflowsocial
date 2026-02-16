@@ -4,8 +4,8 @@ import {
   Loader2,
   XCircle,
   Plus,
-  Calendar,
   CheckSquare,
+  LayoutDashboard,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -36,7 +36,7 @@ function StatusTitle({ status }: { status: StatusType }) {
   if (status === "scheduled") {
     return (
       <>
-        <Calendar className="h-6 w-6 text-green-500" />
+        <Clock className="h-6 w-6 text-green-500" />
         Scheduled Successfully
       </>
     );
@@ -142,10 +142,17 @@ function StatusDescription({
         </span>
       );
     }
+    const timeStr = formatScheduledTime();
     return (
       <span>
-        Your {contentType} has been scheduled and will be published at{" "}
-        <strong>{formatScheduledTime()}</strong>.
+        Your {contentType} has been scheduled
+        {timeStr ? (
+          <>
+            {" "}
+            and will be published at <strong>{timeStr}</strong>
+          </>
+        ) : null}
+        .
       </span>
     );
   }
@@ -229,6 +236,8 @@ interface PublishResultModalProps {
   scheduledFor?: Date | string | null;
   onCreateNew: () => void;
   onViewPage: () => void;
+  /** Optional: when provided, shows a "Go to Dashboard" button. */
+  onGoToDashboard?: () => void;
   bulkCount?: number | null;
   /** For bulk schedule: last post's scheduled time (ISO string). */
   lastScheduledAt?: string | null;
@@ -245,6 +254,7 @@ export default function PublishResultModal({
   scheduledFor,
   onCreateNew,
   onViewPage,
+  onGoToDashboard,
   bulkCount,
   lastScheduledAt,
   queueSummary,
@@ -690,7 +700,7 @@ export default function PublishResultModal({
           </div>
         ) : null}
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <Button
             variant="outline"
             onClick={onCreateNew}
@@ -703,6 +713,16 @@ export default function PublishResultModal({
             <CheckSquare className="mr-2 h-4 w-4" />
             View {action === "schedule" ? "Scheduled" : "Published"}
           </Button>
+          {onGoToDashboard ? (
+            <Button
+              variant="outline"
+              onClick={onGoToDashboard}
+              className="w-full sm:w-auto"
+            >
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Go to Dashboard
+            </Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

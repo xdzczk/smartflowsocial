@@ -168,11 +168,13 @@ export default function NewPostPage() {
     id: string;
     publishAttemptId: string | null;
     currentState?: string | null;
+    scheduledAtUtc?: string | Date | null;
   } | null>(null);
   const [modalLongFormPost, setModalLongFormPost] = useState<{
     id: string;
     publishAttemptId: string | null;
     currentState?: string | null;
+    scheduledAtUtc?: string | Date | null;
   } | null>(null);
   const [composerStatus, setComposerStatus] = useState<ComposerStatus>("Draft");
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
@@ -245,11 +247,13 @@ export default function NewPostPage() {
               id: string;
               publishAttemptId: string | null;
               currentState?: string | null;
+              scheduledAtUtc?: string | null;
             };
             longFormPost?: {
               id: string;
               publishAttemptId: string | null;
               currentState?: string | null;
+              scheduledAtUtc?: string | null;
             };
             error?: string;
           };
@@ -356,14 +360,31 @@ export default function NewPostPage() {
           }
           action={determineModalAction(modalPost, modalLongFormPost)}
           postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
+          scheduledFor={
+            modalPost?.scheduledAtUtc ??
+            modalLongFormPost?.scheduledAtUtc ??
+            null
+          }
           onCreateNew={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
             setShowPublishModal(false);
             setModalPostId(null);
             setModalPost(null);
             setModalLongFormPost(null);
-            // Navigate to fresh form page - this will trigger a full reload and reset all state
+            // Clear composer localStorage so the new post page shows an empty composer
+            try {
+              localStorage.removeItem("composer-newpost-draft");
+            } catch {
+              // ignore
+            }
             window.location.href = getNewPostUrl(postType);
+          }}
+          onGoToDashboard={() => {
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
+            navigate("/dashboard");
           }}
           onViewPage={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);

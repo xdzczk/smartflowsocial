@@ -321,13 +321,28 @@ export async function handleSignAndSchedule(
         try {
           const repostList = JSON.parse(repostStr) as Array<{
             scheduledFor: number;
-            signedEvent: SignedEvent;
+            signedEvent?: SignedEvent | null;
           }>;
           if (Array.isArray(repostList)) {
             for (const item of repostList) {
               const repostScheduledForDate = toPrismaDate(
                 fromUnixTimestamp(item.scheduledFor, "UTC")
               );
+              // Normalize signedEvent to a plain object so it survives JSON round-trip in outbox payload
+              const raw = item.signedEvent;
+              const normalizedRepostSignedEvent =
+                raw != null && typeof raw === "object" && !Array.isArray(raw)
+                  ? (JSON.parse(JSON.stringify(raw)) as SignedEvent)
+                  : raw != null
+                    ? (raw as SignedEvent)
+                    : null;
+              if (normalizedRepostSignedEvent == null) {
+                logInfo("Bulk repost skipped: missing signedEvent", {
+                  index: i,
+                  mainPostId: mainPost.id,
+                });
+                continue;
+              }
               const repostPost = await createPostWithOutbox(
                 {
                   userId,
@@ -337,7 +352,7 @@ export async function handleSignAndSchedule(
                   postType: mainPost.postType,
                   queueTypeId,
                   isRecyclable,
-                  signedEvent: item.signedEvent,
+                  signedEvent: normalizedRepostSignedEvent,
                   scheduledFor: repostScheduledForDate,
                   tags: [],
                   repost: true,
@@ -370,7 +385,7 @@ export async function handleSignAndSchedule(
         try {
           const quoteList = JSON.parse(quoteStr) as Array<{
             scheduledFor: number;
-            signedEvent: SignedEvent;
+            signedEvent?: SignedEvent | null;
             caption?: string;
           }>;
           if (Array.isArray(quoteList)) {
@@ -379,6 +394,21 @@ export async function handleSignAndSchedule(
                 fromUnixTimestamp(item.scheduledFor, "UTC")
               );
               const quoteCaption = item.caption ?? "";
+              // Normalize signedEvent to a plain object so it survives JSON round-trip in outbox payload
+              const raw = item.signedEvent;
+              const normalizedQuoteSignedEvent =
+                raw != null && typeof raw === "object" && !Array.isArray(raw)
+                  ? (JSON.parse(JSON.stringify(raw)) as SignedEvent)
+                  : raw != null
+                    ? (raw as SignedEvent)
+                    : null;
+              if (normalizedQuoteSignedEvent == null) {
+                logInfo("Bulk quote skipped: missing signedEvent", {
+                  index: i,
+                  mainPostId: mainPost.id,
+                });
+                continue;
+              }
               const quotePost = await createPostWithOutbox(
                 {
                   userId,
@@ -388,7 +418,7 @@ export async function handleSignAndSchedule(
                   postType: mainPost.postType,
                   queueTypeId,
                   isRecyclable,
-                  signedEvent: item.signedEvent,
+                  signedEvent: normalizedQuoteSignedEvent,
                   scheduledFor: quoteScheduledForDate,
                   tags: [],
                   repost: false,

@@ -673,7 +673,9 @@ async function runScheduledPostJob(input: {
   ctx: { lease: PublishLease | null };
 }): Promise<WorkerSuccessResult> {
   const job = input.job;
-  const { postId, userId, signedEvent, correlationId } = job.data;
+  const { postId, userId, correlationId } = job.data;
+  // Allow undefined at runtime (e.g. legacy or corrupted payload); fallback to post row
+  const signedEventFromJob = job.data.signedEvent as SignedEvent | undefined;
   const queueName = QUEUE_SCHEDULED_POSTS;
   const stateMachine = new PostStateMachine();
 
@@ -757,8 +759,37 @@ async function runScheduledPostJob(input: {
     "Job started processing"
   );
 
+  // Use signedEvent from job payload; fallback to post row (e.g. reposts/quotes from bulk where payload may have been lost)
+  let eventToPublish: SignedEvent | undefined =
+    signedEventFromJob &&
+    typeof signedEventFromJob === "object" &&
+    !Array.isArray(signedEventFromJob)
+      ? signedEventFromJob
+      : undefined;
+  if (eventToPublish == null) {
+    const postWithEvent = await prisma.post.findUnique({
+      where: { id: postId, userId },
+      select: { signedEvent: true },
+    });
+    const fromDb = postWithEvent?.signedEvent;
+    if (fromDb && typeof fromDb === "object" && !Array.isArray(fromDb)) {
+      eventToPublish = fromDb as unknown as SignedEvent;
+      logInfo("Using signedEvent from post row (job payload missing)", {
+        postId,
+        userId,
+        correlationId,
+        queueName,
+      });
+    }
+  }
+  if (eventToPublish == null) {
+    throw new Error(
+      `Post ${postId}: no signedEvent in job data or post row; cannot publish to Nostr`
+    );
+  }
+
   const validatedSignedEvent =
-    validateSignedEventCryptographically(signedEvent);
+    validateSignedEventCryptographically(eventToPublish);
   const sanitizedRelays = await getSanitizedUserRelays(userId);
 
   const { publishLatencyMs, publishResult } = await publishWithQueueSpan({

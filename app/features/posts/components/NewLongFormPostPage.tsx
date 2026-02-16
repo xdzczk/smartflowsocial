@@ -256,11 +256,13 @@ export default function NewLongFormPostPage() {
     id: string;
     publishAttemptId: string | null;
     currentState?: string | null;
+    scheduledAtUtc?: string | Date | null;
   } | null>(null);
   const [modalLongFormPost, setModalLongFormPost] = useState<{
     id: string;
     publishAttemptId: string | null;
     currentState?: string | null;
+    scheduledAtUtc?: string | Date | null;
   } | null>(null);
 
   // Check for published/scheduled URL param
@@ -287,11 +289,13 @@ export default function NewLongFormPostPage() {
               id: string;
               publishAttemptId: string | null;
               currentState?: string | null;
+              scheduledAtUtc?: string | null;
             };
             longFormPost?: {
               id: string;
               publishAttemptId: string | null;
               currentState?: string | null;
+              scheduledAtUtc?: string | null;
             };
             error?: string;
           };
@@ -412,13 +416,30 @@ export default function NewLongFormPostPage() {
           }
           action={determineModalAction(modalPost, modalLongFormPost)}
           postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
+          scheduledFor={
+            modalPost?.scheduledAtUtc ??
+            modalLongFormPost?.scheduledAtUtc ??
+            null
+          }
           onCreateNew={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
             setShowPublishModal(false);
             setModalPostId(null);
             setModalPost(null);
             setModalLongFormPost(null);
+            try {
+              localStorage.removeItem("longform-draft-new");
+            } catch {
+              // ignore
+            }
             navigate(getNewPostUrl(postType));
+          }}
+          onGoToDashboard={() => {
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
+            navigate("/dashboard");
           }}
           onViewPage={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
