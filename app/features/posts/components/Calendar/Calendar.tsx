@@ -543,41 +543,46 @@ interface MiniCalendarGridProps {
 
 function MiniCalendarGrid({
   displayedMonth,
-  currentDate: _currentDate,
+  currentDate,
   userTimezone,
   onMonthChange,
   onSelectDate,
 }: MiniCalendarGridProps) {
-  const currentZoned = fromDate(displayedMonth, "UTC");
-  const year = currentZoned.year;
-  const month = currentZoned.month;
-  const firstDayZoned = createZonedDateTime(year, month, 1, 0, 0, "UTC");
-  const dayOfWeek = firstDayZoned.dayOfWeek;
-  const daysFromMonday = dayOfWeek === 7 ? 6 : dayOfWeek - 1;
-  const startDateZoned = addDays(firstDayZoned, -daysFromMonday);
-  const todayZoned = nowInTimezone(userTimezone);
-
   const days = useMemo(() => {
+    const currentZoned = fromDate(displayedMonth, "UTC");
+    const year = currentZoned.year;
+    const month = currentZoned.month;
+    const firstDayZoned = createZonedDateTime(year, month, 1, 0, 0, "UTC");
+    const dayOfWeek = firstDayZoned.dayOfWeek;
+    const daysFromMonday = dayOfWeek === 7 ? 6 : dayOfWeek - 1;
+    const startDateZoned = addDays(firstDayZoned, -daysFromMonday);
+    const todayZoned = nowInTimezone(userTimezone);
+    const selectedZoned = fromDate(currentDate, userTimezone);
     const out: Array<{
       date: Date;
       isCurrentMonth: boolean;
       isToday: boolean;
+      isSelected: boolean;
     }> = [];
     for (let i = 0; i < 42; i++) {
       const dateZoned = addDays(startDateZoned, i);
+      const isToday =
+        dateZoned.year === todayZoned.year &&
+        dateZoned.month === todayZoned.month &&
+        dateZoned.day === todayZoned.day;
+      const isSelected =
+        dateZoned.year === selectedZoned.year &&
+        dateZoned.month === selectedZoned.month &&
+        dateZoned.day === selectedZoned.day;
       out.push({
         date: toDate(dateZoned),
         isCurrentMonth: dateZoned.month === month,
-        isToday:
-          dateZoned.year === todayZoned.year &&
-          dateZoned.month === todayZoned.month &&
-          dateZoned.day === todayZoned.day,
+        isToday,
+        isSelected,
       });
     }
     return out;
-    // Intentionally depend only on displayedMonth and userTimezone; month/startDateZoned/todayZoned are derived
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- avoid recomputing every render from todayZoned
-  }, [displayedMonth, userTimezone]);
+  }, [displayedMonth, userTimezone, currentDate]);
 
   const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -622,14 +627,20 @@ function MiniCalendarGrid({
             {d}
           </div>
         ))}
-        {days.map(({ date, isCurrentMonth, isToday }) => (
+        {days.map(({ date, isCurrentMonth, isToday, isSelected }) => (
           <button
             key={date.toISOString()}
             type="button"
             onClick={() => onSelectDate(date)}
             className={`min-w-[28px] rounded-[var(--calendar-radius-sm)] py-1 text-xs ${
               !isCurrentMonth ? "text-muted-foreground/70" : "text-foreground"
-            } ${isToday ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+            } ${
+              isSelected
+                ? "bg-primary text-primary-foreground"
+                : isToday
+                  ? "ring-primary bg-primary/10 ring-1"
+                  : "hover:bg-muted"
+            }`}
           >
             {date.getDate()}
           </button>
