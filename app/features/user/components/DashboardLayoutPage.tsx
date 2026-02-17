@@ -199,7 +199,7 @@ export function DashboardLayoutPage(): ReactNode {
           ) : null}
 
           <div
-            className={`flex w-full flex-1 flex-col pt-4.5 ${isCalendar ? "pb-6" : "pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "max-w-10xl mx-auto px-4 lg:min-h-0 lg:overflow-hidden lg:px-8" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
+            className={`flex w-full flex-1 flex-col ${isCalendar ? "pt-2 pb-6" : "pt-4.5 pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "max-w-10xl mx-auto px-4 lg:min-h-0 lg:overflow-hidden lg:px-8" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
           >
             <Outlet />
           </div>

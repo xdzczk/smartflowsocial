@@ -8,8 +8,6 @@ import {
 import {
   Calendar,
   ContentListPageHeader,
-  PostTypeTabs,
-  QueueSelectionTabs,
   useCalendarData,
 } from "~/features/posts/ui";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
@@ -38,35 +36,14 @@ export default function CalendarPage() {
   const TAB_POSTS = "posts";
   const TAB_REPOSTS = "reposts";
   const TAB_LONGFORM = "longform";
+  const CALENDAR_BASE_PATH = "/dashboard/calendar";
   const currentTab = searchParams.get("tab") ?? TAB_ALL;
 
   return (
-    <div className="flex h-full min-h-0 flex-col space-y-4">
+    <div className="flex h-full min-h-0 flex-col space-y-2">
       <ContentListPageHeader pageType="calendar" currentTab={currentTab} />
 
-      <div className="border-border/50 mb-4 flex flex-row flex-nowrap items-end gap-2 border-b">
-        <PostTypeTabs
-          currentTab={currentTab}
-          basePath="/dashboard/calendar"
-          totalContentCount={totalContentCount}
-          totalPostsCount={totalPostsCount}
-          totalRepostsCount={totalRepostsCount}
-          totalLongformCount={totalLongformCount}
-          inRow
-        />
-        {currentTab === TAB_ALL ||
-        currentTab === TAB_POSTS ||
-        currentTab === TAB_REPOSTS ||
-        currentTab === TAB_LONGFORM ? (
-          <QueueSelectionTabs
-            currentTab={currentTab}
-            queueTypes={queueTypes}
-            basePath="/dashboard/calendar"
-          />
-        ) : null}
-      </div>
-
-      {/* Content based on current tab */}
+      {/* Content based on current tab; content-type and queue tabs are inside Calendar header */}
       <div className="min-h-0 flex-1">
         {currentTab === TAB_ALL ? (
           <Calendar
@@ -78,6 +55,14 @@ export default function CalendarPage() {
             user={user}
             queueTypes={queueTypes}
             isAll={true}
+            calendarPageTabs={{
+              currentTab,
+              basePath: CALENDAR_BASE_PATH,
+              totalContentCount,
+              totalPostsCount,
+              totalRepostsCount,
+              totalLongformCount,
+            }}
           />
         ) : currentTab === TAB_POSTS ? (
           <Calendar
@@ -89,6 +74,14 @@ export default function CalendarPage() {
             )}
             user={user}
             queueTypes={queueTypes}
+            calendarPageTabs={{
+              currentTab,
+              basePath: CALENDAR_BASE_PATH,
+              totalContentCount,
+              totalPostsCount,
+              totalRepostsCount,
+              totalLongformCount,
+            }}
           />
         ) : currentTab === TAB_REPOSTS ? (
           <Calendar
@@ -100,8 +93,16 @@ export default function CalendarPage() {
             )}
             user={user}
             queueTypes={queueTypes}
+            calendarPageTabs={{
+              currentTab,
+              basePath: CALENDAR_BASE_PATH,
+              totalContentCount,
+              totalPostsCount,
+              totalRepostsCount,
+              totalLongformCount,
+            }}
           />
-        ) : (
+        ) : currentTab === TAB_LONGFORM ? (
           <Calendar
             scheduledPosts={longFormPostsToCalendarPosts(
               scheduledLongFormPosts
@@ -110,8 +111,16 @@ export default function CalendarPage() {
             user={user}
             queueTypes={queueTypes}
             isLongform={true}
+            calendarPageTabs={{
+              currentTab,
+              basePath: CALENDAR_BASE_PATH,
+              totalContentCount,
+              totalPostsCount,
+              totalRepostsCount,
+              totalLongformCount,
+            }}
           />
-        )}
+        ) : null}
       </div>
     </div>
   );

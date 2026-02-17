@@ -36,6 +36,26 @@ type PostsGrid = Record<string, Record<string, CalendarPost[]>>;
 const DEFAULT_SCROLL_HOUR = 6;
 const ROW_HEIGHT_PX = 52;
 
+/** Number of empty slots below to fill (0, 1, or 2). Only counts consecutive empty slots for the same date. */
+function getExpandDown(
+  dateKey: string,
+  timeSlot: string,
+  postsGrid: PostsGrid,
+  hours: string[]
+): 0 | 1 | 2 {
+  const idx = hours.indexOf(timeSlot);
+  if (idx < 0 || idx >= hours.length - 1) return 0;
+  const next1 = hours[idx + 1];
+  if (next1 === undefined) return 0;
+  const hasNext1 = (postsGrid[dateKey]?.[next1]?.length ?? 0) > 0;
+  if (hasNext1) return 0;
+  if (idx >= hours.length - 2) return 1;
+  const next2 = hours[idx + 2];
+  if (next2 === undefined) return 1;
+  const hasNext2 = (postsGrid[dateKey]?.[next2]?.length ?? 0) > 0;
+  return hasNext2 ? 1 : 2;
+}
+
 interface CurrentTimeIndicatorProps {
   user?: UserData | null;
   weekDays: Date[];
@@ -54,6 +74,7 @@ export function WeeklyView({
   isAll = false,
 }: WeeklyViewProps) {
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
+  const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const hasSetInitialScrollRef = useRef(false);
 
@@ -183,6 +204,7 @@ export function WeeklyView({
     time: string
   ) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
     setDragOverSlot(`${date}-${time}`);
   };
 
@@ -323,137 +345,236 @@ export function WeeklyView({
       {/* Time grid */}
       <div ref={gridScrollRef} className="h-0 min-h-0 flex-1 overflow-y-auto">
         <div className="relative">
-          {hours.map((time, index) => (
-            <div
-              key={time}
-              className="border-border/40 flex h-[52px] items-stretch overflow-hidden border-b"
-            >
-              {/* Time label */}
-              <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
-                {hourLabels[index]}
+          {hours.map((time, index) => {
+            const dateKeysForRow = weekDays.map((day) => {
+              const y = day.getFullYear();
+              const m = String(day.getMonth() + 1).padStart(2, "0");
+              const d = String(day.getDate()).padStart(2, "0");
+              return `${y}-${m}-${d}`;
+            });
+            const rowHasExpanded = dateKeysForRow.some((dateKey) => {
+              const posts = postsGrid[dateKey]?.[time] ?? [];
+              return (
+                posts.length === 1 &&
+                getExpandDown(dateKey, time, postsGrid, hours) > 0
+              );
+            });
+            const rowHasHovered = dateKeysForRow.some((dateKey) => {
+              const posts = postsGrid[dateKey]?.[time] ?? [];
+              return posts.some(
+                (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
+              );
+            });
+            const rowZ = rowHasHovered ? "z-10" : rowHasExpanded ? "z-[1]" : "";
+
+            return (
+              <div
+                key={time}
+                className={`border-border/40 relative flex h-[52px] min-h-[52px] items-stretch overflow-visible border-b ${rowZ}`}
+              >
+                {/* Time label */}
+                <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
+                  {hourLabels[index]}
+                </div>
+
+                {/* Day columns */}
+                {weekDays.map((day) => {
+                  // Use local date to match the posts grouping
+                  const year = day.getFullYear();
+                  const month = String(day.getMonth() + 1).padStart(2, "0");
+                  const dayStr = String(day.getDate()).padStart(2, "0");
+                  const dateKey = `${year}-${month}-${dayStr}`;
+                  const posts = postsGrid[dateKey]?.[time] ?? [];
+                  const slotKey = `${dateKey}-${time}`;
+                  const isDragOver = dragOverSlot === slotKey;
+                  const expandDown =
+                    posts.length === 1
+                      ? getExpandDown(dateKey, time, postsGrid, hours)
+                      : 0;
+                  const singlePostKey =
+                    posts.length === 1 && posts[0]
+                      ? `${dateKey}-${time}-${posts[0].id}`
+                      : null;
+                  const isHovered =
+                    singlePostKey !== null && hoveredPostKey === singlePostKey;
+                  const expandRows = 1 + expandDown + (isHovered ? 2 : 0);
+                  const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
+
+                  return (
+                    <div
+                      key={`${dateKey}-${time}`}
+                      role="gridcell"
+                      tabIndex={-1}
+                      className={`border-border/30 relative min-w-0 flex-1 overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
+                        isDragOver
+                          ? "bg-primary/5 border-primary/20"
+                          : "dark:hover:bg-muted hover:bg-muted"
+                      }`}
+                      onDragOver={(e) => handleDragOver(e, dateKey, time)}
+                      onDrop={(e) => handleDrop(e, dateKey, time)}
+                      onDragLeave={handleDragLeave}
+                    >
+                      {posts.length === 1 ? (
+                        // Single post - expand into empty slots below; on hover/focus expand over others
+                        posts[0] ? (
+                          // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
+                          <div
+                            className="relative z-0 transition-[height] duration-200 ease-out"
+                            style={{ height: blockHeightPx }}
+                            onMouseEnter={() =>
+                              singlePostKey && setHoveredPostKey(singlePostKey)
+                            }
+                            onMouseLeave={() => setHoveredPostKey(null)}
+                            onFocusCapture={() =>
+                              singlePostKey && setHoveredPostKey(singlePostKey)
+                            }
+                            onBlurCapture={() => setHoveredPostKey(null)}
+                            onTouchStart={() =>
+                              singlePostKey && setHoveredPostKey(singlePostKey)
+                            }
+                            onTouchEnd={() =>
+                              setTimeout(() => setHoveredPostKey(null), 300)
+                            }
+                          >
+                            <PostBlock
+                              post={posts[0]}
+                              compact={true}
+                              user={user}
+                              queueTypes={queueTypes}
+                              onEdit={onPostEdit}
+                              isLongform={
+                                isAll
+                                  ? Boolean(
+                                      posts[0].title && posts[0].publishedAt
+                                    )
+                                  : isLongform
+                              }
+                              isPast={
+                                typeof posts[0].isPast === "boolean"
+                                  ? posts[0].isPast
+                                  : false
+                              }
+                            />
+                          </div>
+                        ) : null
+                      ) : posts.length <= 6 ? (
+                        // 2-6 posts - dynamic equal width distribution; each can expand on hover/focus
+                        <div className="flex h-full space-x-0.5">
+                          {posts.map((post, postIndex) => {
+                            const multiPostKey = `${dateKey}-${time}-${post.id}`;
+                            const multiHovered =
+                              hoveredPostKey === multiPostKey;
+                            const multiHeightPx =
+                              (1 + (multiHovered ? 2 : 0)) * ROW_HEIGHT_PX - 4;
+                            return (
+                              // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
+                              <div
+                                // eslint-disable-next-line react/no-array-index-key -- Composite key with stable post ID
+                                key={`${post.id}-${postIndex}`}
+                                className="relative z-0 min-w-0 flex-1 transition-[height] duration-200 ease-out"
+                                style={{ height: multiHeightPx }}
+                                onMouseEnter={() =>
+                                  setHoveredPostKey(multiPostKey)
+                                }
+                                onMouseLeave={() => setHoveredPostKey(null)}
+                                onFocusCapture={() =>
+                                  setHoveredPostKey(multiPostKey)
+                                }
+                                onBlurCapture={() => setHoveredPostKey(null)}
+                                onTouchStart={() =>
+                                  setHoveredPostKey(multiPostKey)
+                                }
+                                onTouchEnd={() =>
+                                  setTimeout(() => setHoveredPostKey(null), 300)
+                                }
+                              >
+                                <PostBlock
+                                  post={post}
+                                  compact={true}
+                                  minimal={true}
+                                  user={user}
+                                  queueTypes={queueTypes}
+                                  onEdit={onPostEdit}
+                                  isLongform={
+                                    isAll
+                                      ? Boolean(post.title && post.publishedAt)
+                                      : isLongform
+                                  }
+                                  isPast={
+                                    typeof post.isPast === "boolean"
+                                      ? post.isPast
+                                      : false
+                                  }
+                                  multipleInCell={true}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        // More than 6 posts - show first 5 with overflow indicator; each can expand on hover/focus
+                        <div className="flex h-full space-x-0.5">
+                          {posts.slice(0, 5).map((post, postIndex) => {
+                            const multiPostKey = `${dateKey}-${time}-${post.id}`;
+                            const multiHovered =
+                              hoveredPostKey === multiPostKey;
+                            const multiHeightPx =
+                              (1 + (multiHovered ? 2 : 0)) * ROW_HEIGHT_PX - 4;
+                            return (
+                              // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
+                              <div
+                                // eslint-disable-next-line react/no-array-index-key -- Composite key with post.id ensures uniqueness
+                                key={`${post.id}-${postIndex}`}
+                                className="relative z-0 min-w-0 flex-1 transition-[height] duration-200 ease-out"
+                                style={{ height: multiHeightPx }}
+                                onMouseEnter={() =>
+                                  setHoveredPostKey(multiPostKey)
+                                }
+                                onMouseLeave={() => setHoveredPostKey(null)}
+                                onFocusCapture={() =>
+                                  setHoveredPostKey(multiPostKey)
+                                }
+                                onBlurCapture={() => setHoveredPostKey(null)}
+                                onTouchStart={() =>
+                                  setHoveredPostKey(multiPostKey)
+                                }
+                                onTouchEnd={() =>
+                                  setTimeout(() => setHoveredPostKey(null), 300)
+                                }
+                              >
+                                <PostBlock
+                                  post={post}
+                                  compact={true}
+                                  minimal={true}
+                                  user={user}
+                                  queueTypes={queueTypes}
+                                  onEdit={onPostEdit}
+                                  isLongform={
+                                    isAll
+                                      ? Boolean(post.title && post.publishedAt)
+                                      : isLongform
+                                  }
+                                  isPast={
+                                    typeof post.isPast === "boolean"
+                                      ? post.isPast
+                                      : false
+                                  }
+                                  multipleInCell={true}
+                                />
+                              </div>
+                            );
+                          })}
+                          <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
+                            +{posts.length - 5}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-
-              {/* Day columns */}
-              {weekDays.map((day) => {
-                // Use local date to match the posts grouping
-                const year = day.getFullYear();
-                const month = String(day.getMonth() + 1).padStart(2, "0");
-                const dayStr = String(day.getDate()).padStart(2, "0");
-                const dateKey = `${year}-${month}-${dayStr}`;
-                const posts = postsGrid[dateKey]?.[time] ?? [];
-                const slotKey = `${dateKey}-${time}`;
-                const isDragOver = dragOverSlot === slotKey;
-
-                return (
-                  <div
-                    key={`${dateKey}-${time}`}
-                    role="gridcell"
-                    tabIndex={-1}
-                    className={`border-border/30 relative min-w-0 flex-1 overflow-hidden border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
-                      isDragOver
-                        ? "bg-primary/5 border-primary/20"
-                        : "dark:hover:bg-muted hover:bg-muted"
-                    }`}
-                    onDragOver={(e) => handleDragOver(e, dateKey, time)}
-                    onDrop={(e) => handleDrop(e, dateKey, time)}
-                    onDragLeave={handleDragLeave}
-                  >
-                    {posts.length === 1 ? (
-                      // Single post - full width with height constraint
-                      posts[0] ? (
-                        <div className="h-full">
-                          <PostBlock
-                            post={posts[0]}
-                            compact={true}
-                            user={user}
-                            queueTypes={queueTypes}
-                            onEdit={onPostEdit}
-                            isLongform={
-                              isAll
-                                ? Boolean(
-                                    posts[0].title && posts[0].publishedAt
-                                  )
-                                : isLongform
-                            }
-                            isPast={
-                              typeof posts[0].isPast === "boolean"
-                                ? posts[0].isPast
-                                : false
-                            }
-                          />
-                        </div>
-                      ) : null
-                    ) : posts.length <= 6 ? (
-                      // 2-6 posts - dynamic equal width distribution with height constraint
-                      <div className="flex h-full space-x-0.5">
-                        {posts.map((post, postIndex) => (
-                          <div
-                            // eslint-disable-next-line react/no-array-index-key -- Composite key with stable post ID
-                            key={`${post.id}-${postIndex}`}
-                            className="h-full min-w-0 flex-1 overflow-hidden"
-                          >
-                            <PostBlock
-                              post={post}
-                              compact={true}
-                              minimal={true}
-                              user={user}
-                              queueTypes={queueTypes}
-                              onEdit={onPostEdit}
-                              isLongform={
-                                isAll
-                                  ? Boolean(post.title && post.publishedAt)
-                                  : isLongform
-                              }
-                              isPast={
-                                typeof post.isPast === "boolean"
-                                  ? post.isPast
-                                  : false
-                              }
-                              multipleInCell={true}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      // More than 6 posts - show first 5 with overflow indicator
-                      <div className="flex h-full space-x-0.5">
-                        {posts.slice(0, 5).map((post, postIndex) => (
-                          <div
-                            // eslint-disable-next-line react/no-array-index-key -- Composite key with post.id ensures uniqueness
-                            key={`${post.id}-${postIndex}`}
-                            className="h-full min-w-0 flex-1 overflow-hidden"
-                          >
-                            <PostBlock
-                              post={post}
-                              compact={true}
-                              minimal={true}
-                              user={user}
-                              queueTypes={queueTypes}
-                              onEdit={onPostEdit}
-                              isLongform={
-                                isAll
-                                  ? Boolean(post.title && post.publishedAt)
-                                  : isLongform
-                              }
-                              isPast={
-                                typeof post.isPast === "boolean"
-                                  ? post.isPast
-                                  : false
-                              }
-                              multipleInCell={true}
-                            />
-                          </div>
-                        ))}
-                        <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
-                          +{posts.length - 5}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+            );
+          })}
 
           {/* Current time indicator - only show if today is in this week */}
           <CurrentTimeIndicator user={user} weekDays={weekDays} />

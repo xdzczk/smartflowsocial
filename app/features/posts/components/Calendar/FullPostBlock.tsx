@@ -62,7 +62,7 @@ export function FullPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "published" : "scheduled"} for ${formattedDateTime}`}
-      className={`focus:ring-ring rounded-[var(--calendar-radius-md)] border p-3 transition-[transform,opacity,box-shadow] focus:ring-2 focus:outline-none ${
+      className={`focus:ring-ring relative overflow-hidden rounded-[var(--calendar-radius-md)] border p-3 transition-[transform,opacity,box-shadow] focus:ring-2 focus:outline-none ${
         queueColorStyle ? "border-0" : "border-opacity-20 border border-current"
       } ${isPast ? "cursor-default" : "cursor-pointer"} ${
         isDragging
@@ -73,7 +73,14 @@ export function FullPostBlock({
       } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
       style={queueColorStyle ?? {}}
     >
-      <div className="mb-2 flex items-center justify-between">
+      {queueColorStyle ? (
+        <div
+          className="absolute top-0 bottom-0 left-0 w-1 rounded-l-[var(--calendar-radius-md)]"
+          style={{ backgroundColor: queueColorStyle.borderColor }}
+          aria-hidden
+        />
+      ) : null}
+      <div className="relative mb-2 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           {firstImage ? (
             <div className="relative">

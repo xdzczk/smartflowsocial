@@ -21,10 +21,13 @@ import {
 } from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../types";
+import PostTypeTabs from "../PostTypeTabs";
+import QueueSelectionTabs from "../QueueSelectionTabs";
 
 import { DayViewSidebar, useIsLg } from "./DayViewSidebar";
 import { MonthlyView } from "./MonthlyView";
 import type { CalendarPost } from "./PostBlock.types";
+import { getPostScheduleInstant } from "./PostBlock.utils";
 import { RescheduleModal } from "./RescheduleModal";
 import { WeeklyView } from "./WeeklyView";
 
@@ -44,6 +47,15 @@ interface CalendarProps {
   queueTypes?: QueueType[];
   isLongform?: boolean;
   isAll?: boolean;
+  /** When set, content-type tabs and queue filter are rendered inside the calendar header (main calendar page). */
+  calendarPageTabs?: {
+    currentTab: string;
+    basePath: string;
+    totalContentCount?: number;
+    totalPostsCount?: number;
+    totalRepostsCount?: number;
+    totalLongformCount?: number;
+  };
 }
 
 export function Calendar({
@@ -53,6 +65,7 @@ export function Calendar({
   queueTypes,
   isLongform = false,
   isAll = false,
+  calendarPageTabs,
 }: CalendarProps) {
   const [view, setView] = useState<"day" | "week" | "month">("week");
   const userTimezone = user?.timezone ?? "Etc/UTC";
@@ -80,6 +93,42 @@ export function Calendar({
         : isLongform;
       const wasAutoScheduled = postIsLongform ? false : !post.manual_override;
 
+      // Don't open reschedule modal when dropping on the same slot (all views)
+      const postIsPast = typeof post.isPast === "boolean" ? post.isPast : false;
+      const currentMs = getPostScheduleInstant(
+        post,
+        postIsLongform,
+        postIsPast
+      );
+      if (currentMs != null) {
+        const currentZoned = fromDate(new Date(currentMs), userTimezone);
+        const newZoned = fromDate(newDateTime, userTimezone);
+        const slotMin = (m: number) => (m < 30 ? 0 : 30);
+        const toSlotKey = (
+          y: number,
+          m: number,
+          d: number,
+          h: number,
+          min: number
+        ) =>
+          `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}-${String(h).padStart(2, "0")}:${String(slotMin(min)).padStart(2, "0")}`;
+        const currentKey = toSlotKey(
+          currentZoned.year,
+          currentZoned.month,
+          currentZoned.day,
+          currentZoned.hour,
+          currentZoned.minute
+        );
+        const newKey = toSlotKey(
+          newZoned.year,
+          newZoned.month,
+          newZoned.day,
+          newZoned.hour,
+          newZoned.minute
+        );
+        if (currentKey === newKey) return;
+      }
+
       setRescheduleData({
         post,
         newDateTime,
@@ -90,7 +139,7 @@ export function Calendar({
       });
       setShowRescheduleModal(true);
     },
-    [isLongform, isAll]
+    [isLongform, isAll, userTimezone]
   );
 
   // Keyboard shortcuts: T = Today, Left/Right = prev/next period (ignore when modal open or focus in input)
@@ -208,9 +257,32 @@ export function Calendar({
       className="flex min-h-[60vh] flex-col rounded-[var(--calendar-radius-lg)] border border-[hsl(var(--calendar-surface-2-border))] bg-[hsl(var(--calendar-surface-2-bg))] lg:h-full lg:min-h-0"
       style={{ boxShadow: "var(--calendar-surface-2-shadow)" }}
     >
-      {/* Header with view toggle: wraps on mobile so nav and view toggles don't overflow */}
-      <div className="border-border/60 border-b bg-[hsl(var(--calendar-surface-1-bg))] p-3 sm:p-4">
+      {/* Header: optional content-type/queue tabs (left), date nav + Today (center), view toggle (right) */}
+      <div className="border-border/60 border-b bg-[hsl(var(--calendar-surface-1-bg))] p-2 sm:p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* Left: content-type tabs + queue filter when on main calendar page */}
+          {calendarPageTabs ? (
+            <div className="border-border/60 flex flex-shrink-0 flex-row flex-nowrap items-end gap-2 border-b-0">
+              <PostTypeTabs
+                currentTab={calendarPageTabs.currentTab}
+                basePath={calendarPageTabs.basePath}
+                totalContentCount={calendarPageTabs.totalContentCount}
+                totalPostsCount={calendarPageTabs.totalPostsCount}
+                totalRepostsCount={calendarPageTabs.totalRepostsCount}
+                totalLongformCount={calendarPageTabs.totalLongformCount}
+                inRow
+              />
+              {["all", "posts", "reposts", "longform"].includes(
+                calendarPageTabs.currentTab
+              ) && queueTypes ? (
+                <QueueSelectionTabs
+                  currentTab={calendarPageTabs.currentTab}
+                  queueTypes={queueTypes}
+                  basePath={calendarPageTabs.basePath}
+                />
+              ) : null}
+            </div>
+          ) : null}
           <div className="flex min-w-0 flex-1 flex-shrink-0 items-center gap-1 sm:gap-2">
             {/* Navigation */}
             <button

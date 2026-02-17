@@ -1,4 +1,4 @@
-import { Check, Settings } from "lucide-react";
+import { Check } from "lucide-react";
 
 import {
   INLINE_ICON_STROKE,
@@ -11,19 +11,9 @@ interface PostStatusIconsProps {
   isLongform: boolean;
 }
 
-export function PostStatusIcons({ post, isLongform }: PostStatusIconsProps) {
+export function PostStatusIcons({ post }: PostStatusIconsProps) {
   return (
     <div className="flex items-center space-x-1">
-      {!isLongform &&
-      !post.manual_override &&
-      Boolean(!post.manual_override) ? (
-        <Settings
-          className={`text-muted-foreground ${SMALL_ICON_SIZE_CLASS}`}
-          strokeWidth={INLINE_ICON_STROKE}
-          aria-hidden
-        />
-      ) : null}
-
       {post.signedEvent && Boolean(post.signedEvent) ? (
         <Check
           className={`text-success ${SMALL_ICON_SIZE_CLASS}`}

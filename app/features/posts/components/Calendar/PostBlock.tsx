@@ -105,20 +105,20 @@ export function PostBlock({
     );
   }
 
-  if (minimal) {
+  if (minimal && !multipleInCell) {
     return (
       <MinimalPostBlock
         {...baseProps}
         queueColorStyle={queueColorStyle}
         userTimezone={userTimezone}
-        multipleInCell={multipleInCell}
+        multipleInCell={false}
         hideVideoPlayButton={hideVideoPlayButton}
         timeLabel={timeLabel}
       />
     );
   }
 
-  if (compact) {
+  if (compact || (minimal && multipleInCell)) {
     return (
       <CompactPostBlock
         {...baseProps}

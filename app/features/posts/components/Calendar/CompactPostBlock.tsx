@@ -58,7 +58,7 @@ function getClassName(
     ? ""
     : getStatusColor(post, isLongform ?? false, isPast ?? false);
   const borderClass = queueColorStyle
-    ? "border-0 border-l-4"
+    ? "border-0"
     : "border border-current border-opacity-20";
   return `${baseClasses} ${cursorClass} ${dragClass} ${statusClass} ${borderClass}`;
 }
@@ -206,19 +206,28 @@ export function CompactPostBlock({
         queueColorStyle,
         post,
         isLongform
-      )} flex h-full flex-col overflow-hidden`}
+      )} relative flex h-full flex-col overflow-hidden`}
       style={
         queueColorStyle
           ? {
-              ...(queueColorStyle as unknown as React.CSSProperties),
-              backgroundColor: "hsl(var(--calendar-surface-3-bg))",
-              borderLeftColor: queueColorStyle.borderColor,
+              backgroundColor: queueColorStyle.backgroundColor,
+              color: queueColorStyle.color,
+              ...(queueColorStyle.opacity != null
+                ? { opacity: queueColorStyle.opacity }
+                : {}),
             }
           : undefined
       }
       title={getTitle(postPreview, isPast, isLongform, formattedTime)}
     >
-      <div className="mb-1 flex flex-shrink-0 items-start justify-between">
+      {queueColorStyle ? (
+        <div
+          className="absolute top-0 bottom-0 left-0 w-1 rounded-l-[var(--calendar-radius-md)]"
+          style={{ backgroundColor: queueColorStyle.borderColor }}
+          aria-hidden
+        />
+      ) : null}
+      <div className="relative mb-1 flex flex-shrink-0 items-start justify-between">
         <div className="flex items-center space-x-1">
           {firstImage ? (
             <ThumbnailSection

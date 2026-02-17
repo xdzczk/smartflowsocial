@@ -49,7 +49,7 @@ export function ThumbnailPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} ${isLongform ? "article" : "post"}: ${postPreview}, ${isPast ? "published" : isLongform ? "published" : "scheduled"} for ${formattedTime}`}
-      className={`focus:ring-ring rounded-[var(--calendar-radius-sm)] p-1 text-xs transition-opacity focus:ring-2 focus:outline-none ${
+      className={`focus:ring-ring relative overflow-hidden rounded-[var(--calendar-radius-sm)] p-1 text-xs transition-opacity focus:ring-2 focus:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer hover:opacity-80"
       } ${
         isDragging ? "opacity-50" : ""
@@ -57,6 +57,13 @@ export function ThumbnailPostBlock({
       style={queueColorStyle ?? {}}
       title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${formattedTime}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
     >
+      {queueColorStyle ? (
+        <div
+          className="absolute top-0 bottom-0 left-0 w-1 rounded-l-[var(--calendar-radius-sm)]"
+          style={{ backgroundColor: queueColorStyle.borderColor }}
+          aria-hidden
+        />
+      ) : null}
       {firstImage ? (
         <div className="relative">
           <MediaThumbnail
