@@ -253,10 +253,7 @@ export function Calendar({
       : "12h";
 
   return (
-    <div
-      className="flex min-h-[60vh] flex-col rounded-[var(--calendar-radius-lg)] border border-[hsl(var(--calendar-surface-2-border))] bg-[hsl(var(--calendar-surface-2-bg))] lg:h-full lg:min-h-0"
-      style={{ boxShadow: "var(--calendar-surface-2-shadow)" }}
-    >
+    <div className="flex min-h-[60vh] flex-col bg-[hsl(var(--calendar-surface-2-bg))] lg:h-full lg:min-h-0">
       {/* Header: left = date nav + Today, middle = content-type + queue filters, right = view toggle */}
       <div className="border-border/60 border-b bg-[hsl(var(--calendar-surface-1-bg))] p-2 sm:p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -394,27 +391,31 @@ export function Calendar({
             ) : null}
           </div>
 
-          {/* Middle: content-type dropdown + queue filter when on main calendar page */}
+          {/* Middle: content-type dropdown + queue filter when on main calendar page (equal width) */}
           {calendarPageTabs ? (
-            <div className="border-border/60 flex flex-1 flex-shrink-0 justify-center gap-2 border-b-0">
-              <PostTypeTabs
-                currentTab={calendarPageTabs.currentTab}
-                basePath={calendarPageTabs.basePath}
-                totalContentCount={calendarPageTabs.totalContentCount}
-                totalPostsCount={calendarPageTabs.totalPostsCount}
-                totalRepostsCount={calendarPageTabs.totalRepostsCount}
-                totalLongformCount={calendarPageTabs.totalLongformCount}
-                inRow
-                forceDropdown
-              />
+            <div className="border-border/60 flex min-w-0 flex-1 flex-shrink-0 gap-2 border-b-0">
+              <div className="flex min-w-0 flex-1 justify-center">
+                <PostTypeTabs
+                  currentTab={calendarPageTabs.currentTab}
+                  basePath={calendarPageTabs.basePath}
+                  totalContentCount={calendarPageTabs.totalContentCount}
+                  totalPostsCount={calendarPageTabs.totalPostsCount}
+                  totalRepostsCount={calendarPageTabs.totalRepostsCount}
+                  totalLongformCount={calendarPageTabs.totalLongformCount}
+                  inRow
+                  forceDropdown
+                />
+              </div>
               {["all", "posts", "reposts", "longform"].includes(
                 calendarPageTabs.currentTab
               ) && queueTypes ? (
-                <QueueSelectionTabs
-                  currentTab={calendarPageTabs.currentTab}
-                  queueTypes={queueTypes}
-                  basePath={calendarPageTabs.basePath}
-                />
+                <div className="flex min-w-0 flex-1 justify-center">
+                  <QueueSelectionTabs
+                    currentTab={calendarPageTabs.currentTab}
+                    queueTypes={queueTypes}
+                    basePath={calendarPageTabs.basePath}
+                  />
+                </div>
               ) : null}
             </div>
           ) : null}

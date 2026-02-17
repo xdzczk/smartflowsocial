@@ -40,32 +40,31 @@ const ROW_HEIGHT_PX = 52;
 const EXPANDED_BLOCK_WRAPPER_CLASS =
   "z-10 bg-[hsl(var(--calendar-surface-2-bg))]";
 
-/** In day view, limit post block width to half the row. */
-const DAY_VIEW_MAX_BLOCK_CLASS = "max-w-[50%]";
+/** Single-post blocks only: max half the row width; multi-post blocks use full width. */
+const SINGLE_POST_MAX_WIDTH_CLASS = "max-w-[50%]";
 
-/** Number of empty slots below to fill (0–3). Only counts consecutive empty slots for the same date. Max 3 so block can span up to 4 rows when space allows; on hover it then doesn't need to grow. */
+/** Max empty slots to count below (week view: 3 → up to 4 rows; day view: 6 → up to 7 rows). */
+const WEEK_VIEW_MAX_EXPAND = 3;
+const DAY_VIEW_MAX_EXPAND = 6;
+
+/** Number of empty slots below to fill. Counts consecutive empty slots for the same date. */
 function getExpandDown(
   dateKey: string,
   timeSlot: string,
   postsGrid: PostsGrid,
-  hours: string[]
-): 0 | 1 | 2 | 3 {
+  hours: string[],
+  maxEmptySlots: number = WEEK_VIEW_MAX_EXPAND
+): number {
   const idx = hours.indexOf(timeSlot);
   if (idx < 0 || idx >= hours.length - 1) return 0;
-  const next1 = hours[idx + 1];
-  if (next1 === undefined) return 0;
-  const hasNext1 = (postsGrid[dateKey]?.[next1]?.length ?? 0) > 0;
-  if (hasNext1) return 0;
-  if (idx >= hours.length - 2) return 1;
-  const next2 = hours[idx + 2];
-  if (next2 === undefined) return 1;
-  const hasNext2 = (postsGrid[dateKey]?.[next2]?.length ?? 0) > 0;
-  if (hasNext2) return 1;
-  if (idx >= hours.length - 3) return 2;
-  const next3 = hours[idx + 3];
-  if (next3 === undefined) return 2;
-  const hasNext3 = (postsGrid[dateKey]?.[next3]?.length ?? 0) > 0;
-  return hasNext3 ? 2 : 3;
+  let count = 0;
+  for (let i = 1; i <= maxEmptySlots && idx + i < hours.length; i++) {
+    const nextSlot = hours[idx + i];
+    if (nextSlot === undefined) break;
+    if ((postsGrid[dateKey]?.[nextSlot]?.length ?? 0) > 0) break;
+    count = i;
+  }
+  return count;
 }
 
 interface SlotState {
@@ -85,7 +84,8 @@ function getSlotState(
   postsGrid: PostsGrid,
   hours: string[],
   hoveredPostKey: string | null,
-  dragOverSlot: string | null
+  dragOverSlot: string | null,
+  isDayView: boolean
 ): SlotState {
   const year = day.getFullYear();
   const month = String(day.getMonth() + 1).padStart(2, "0");
@@ -94,17 +94,26 @@ function getSlotState(
   const posts = postsGrid[dateKey]?.[time] ?? [];
   const slotKey = `${dateKey}-${time}`;
   const isDragOver = dragOverSlot === slotKey;
+  const maxExpand = isDayView ? DAY_VIEW_MAX_EXPAND : WEEK_VIEW_MAX_EXPAND;
   const expandDown =
-    posts.length === 1 ? getExpandDown(dateKey, time, postsGrid, hours) : 0;
+    posts.length === 1
+      ? getExpandDown(dateKey, time, postsGrid, hours, maxExpand)
+      : 0;
   const singlePostKey =
     posts.length === 1 && posts[0] ? `${dateKey}-${time}-${posts[0].id}` : null;
   const isHovered = singlePostKey !== null && hoveredPostKey === singlePostKey;
   const baseRows = 1 + expandDown;
-  const expandRows = isHovered
-    ? baseRows >= 3
-      ? baseRows
-      : Math.min(baseRows + 2, 3)
-    : baseRows;
+  const expandRows = isDayView
+    ? isHovered
+      ? baseRows <= 4
+        ? 5
+        : baseRows
+      : baseRows
+    : isHovered
+      ? baseRows >= 3
+        ? baseRows
+        : Math.min(baseRows + 2, 3)
+      : baseRows;
   const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
   return {
     dateKey,
@@ -122,6 +131,8 @@ interface SlotCellContentProps {
   slotState: SlotState;
   time: string;
   isDayView: boolean;
+  /** In day view: 0 = left column, 1 = right column for alternating single-post blocks */
+  slotColumn?: 0 | 1;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
   onPostEdit: (post: CalendarPost) => void;
@@ -135,6 +146,7 @@ function SlotCellContent({
   slotState,
   time,
   isDayView,
+  slotColumn,
   hoveredPostKey,
   setHoveredPostKey,
   onPostEdit,
@@ -150,8 +162,8 @@ function SlotCellContent({
     return (
       // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
       <div
-        className={`relative transition-[height] duration-200 ease-out ${
-          isDayView ? DAY_VIEW_MAX_BLOCK_CLASS : ""
+        className={`relative transition-[height] duration-200 ease-out ${SINGLE_POST_MAX_WIDTH_CLASS} ${
+          slotColumn === 1 ? "ml-auto" : ""
         } ${isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "z-0"}`}
         style={{ height: blockHeightPx }}
         onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
@@ -181,17 +193,14 @@ function SlotCellContent({
 
   if (posts.length <= 6) {
     return (
-      <div
-        className={`relative flex h-full space-x-0.5 ${
-          isDayView ? DAY_VIEW_MAX_BLOCK_CLASS : ""
-        }`}
-      >
+      <div className="relative flex h-full space-x-0.5">
         {posts.map((post) => (
           <MultiPostBlock
             key={post.id}
             post={post}
             dateKey={dateKey}
             time={time}
+            isDayView={isDayView}
             hoveredPostKey={hoveredPostKey}
             setHoveredPostKey={setHoveredPostKey}
             onPostEdit={onPostEdit}
@@ -206,17 +215,14 @@ function SlotCellContent({
   }
 
   return (
-    <div
-      className={`relative flex h-full space-x-0.5 ${
-        isDayView ? DAY_VIEW_MAX_BLOCK_CLASS : ""
-      }`}
-    >
+    <div className="relative flex h-full space-x-0.5">
       {posts.slice(0, 5).map((post) => (
         <MultiPostBlock
           key={post.id}
           post={post}
           dateKey={dateKey}
           time={time}
+          isDayView={isDayView}
           hoveredPostKey={hoveredPostKey}
           setHoveredPostKey={setHoveredPostKey}
           onPostEdit={onPostEdit}
@@ -237,6 +243,7 @@ interface MultiPostBlockProps {
   post: CalendarPost;
   dateKey: string;
   time: string;
+  isDayView: boolean;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
   onPostEdit: (post: CalendarPost) => void;
@@ -250,6 +257,7 @@ function MultiPostBlock({
   post,
   dateKey,
   time,
+  isDayView,
   hoveredPostKey,
   setHoveredPostKey,
   onPostEdit,
@@ -262,14 +270,13 @@ function MultiPostBlock({
   const multiHovered = hoveredPostKey === multiPostKey;
   const multiExpandRows = Math.min(1 + (multiHovered ? 2 : 0), 3);
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
+  const expandedClass = multiHovered
+    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full${isDayView ? ` ${SINGLE_POST_MAX_WIDTH_CLASS}` : ""}`
+    : "relative z-0 min-w-0 flex-1";
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
-      className={`transition-[height] duration-200 ease-out ${
-        multiHovered
-          ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full`
-          : "relative z-0 min-w-0 flex-1"
-      }`}
+      className={`transition-[height] duration-200 ease-out ${expandedClass}`}
       style={{ height: multiHeightPx }}
       onMouseEnter={() => setHoveredPostKey(multiPostKey)}
       onMouseLeave={() => setHoveredPostKey(null)}
@@ -519,6 +526,47 @@ export function WeeklyView({
     setDragOverSlot(null);
   };
 
+  // In day view: assign single-post slots to column 0 (left) or 1 (right) so overlapping blocks alternate
+  const dayViewColumnMap = useMemo((): Record<string, 0 | 1> => {
+    const firstDay = weekDays[0];
+    const empty: Record<string, 0 | 1> = {};
+    if (!isDayView || !firstDay) return empty;
+    const map: Record<string, 0 | 1> = {};
+    let column0End = 0;
+    let column1End = 0;
+    const dateKey = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, "0")}-${String(firstDay.getDate()).padStart(2, "0")}`;
+    for (let timeIdx = 0; timeIdx < hours.length; timeIdx++) {
+      const time = hours[timeIdx];
+      if (time === undefined) continue;
+      const posts = postsGrid[dateKey]?.[time] ?? [];
+      if (posts.length !== 1) continue;
+      const expandDown = getExpandDown(
+        dateKey,
+        time,
+        postsGrid,
+        hours,
+        DAY_VIEW_MAX_EXPAND
+      );
+      const baseRows = 1 + expandDown;
+      const slotKey = `${dateKey}-${time}`;
+      const start = timeIdx;
+      const end = timeIdx + baseRows;
+      if (start >= column0End) {
+        map[slotKey] = 0;
+        column0End = end;
+      } else if (start >= column1End) {
+        map[slotKey] = 1;
+        column1End = end;
+      } else {
+        const useCol = column0End <= column1End ? 0 : 1;
+        map[slotKey] = useCol;
+        if (useCol === 0) column0End = end;
+        else column1End = end;
+      }
+    }
+    return map;
+  }, [isDayView, weekDays, hours, postsGrid]);
+
   // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {
     const el = gridScrollRef.current;
@@ -622,7 +670,8 @@ export function WeeklyView({
                     postsGrid,
                     hours,
                     hoveredPostKey,
-                    dragOverSlot
+                    dragOverSlot,
+                    isDayView
                   );
                   return (
                     <div
@@ -644,6 +693,11 @@ export function WeeklyView({
                         slotState={slotState}
                         time={time}
                         isDayView={isDayView}
+                        slotColumn={
+                          isDayView
+                            ? (dayViewColumnMap[slotState.slotKey] ?? 0)
+                            : undefined
+                        }
                         hoveredPostKey={hoveredPostKey}
                         setHoveredPostKey={setHoveredPostKey}
                         onPostEdit={onPostEdit}
