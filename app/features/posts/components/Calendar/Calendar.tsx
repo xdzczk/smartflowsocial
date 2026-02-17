@@ -257,34 +257,11 @@ export function Calendar({
       className="flex min-h-[60vh] flex-col rounded-[var(--calendar-radius-lg)] border border-[hsl(var(--calendar-surface-2-border))] bg-[hsl(var(--calendar-surface-2-bg))] lg:h-full lg:min-h-0"
       style={{ boxShadow: "var(--calendar-surface-2-shadow)" }}
     >
-      {/* Header: optional content-type/queue tabs (left), date nav + Today (center), view toggle (right) */}
+      {/* Header: left = date nav + Today, middle = content-type + queue filters, right = view toggle */}
       <div className="border-border/60 border-b bg-[hsl(var(--calendar-surface-1-bg))] p-2 sm:p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          {/* Left: content-type tabs + queue filter when on main calendar page */}
-          {calendarPageTabs ? (
-            <div className="border-border/60 flex flex-shrink-0 flex-row flex-nowrap items-end gap-2 border-b-0">
-              <PostTypeTabs
-                currentTab={calendarPageTabs.currentTab}
-                basePath={calendarPageTabs.basePath}
-                totalContentCount={calendarPageTabs.totalContentCount}
-                totalPostsCount={calendarPageTabs.totalPostsCount}
-                totalRepostsCount={calendarPageTabs.totalRepostsCount}
-                totalLongformCount={calendarPageTabs.totalLongformCount}
-                inRow
-              />
-              {["all", "posts", "reposts", "longform"].includes(
-                calendarPageTabs.currentTab
-              ) && queueTypes ? (
-                <QueueSelectionTabs
-                  currentTab={calendarPageTabs.currentTab}
-                  queueTypes={queueTypes}
-                  basePath={calendarPageTabs.basePath}
-                />
-              ) : null}
-            </div>
-          ) : null}
-          <div className="flex min-w-0 flex-1 flex-shrink-0 items-center gap-1 sm:gap-2">
-            {/* Navigation */}
+          {/* Left: week/day nav + Today + mini-calendar (day view) */}
+          <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
             <button
               onClick={() => {
                 const currentZoned = fromDate(currentDate, userTimezone);
@@ -417,7 +394,32 @@ export function Calendar({
             ) : null}
           </div>
 
-          {/* View toggle: Day | Week | Month; flex-shrink-0 so it doesn't get cut off, wraps to own row on narrow screens */}
+          {/* Middle: content-type dropdown + queue filter when on main calendar page */}
+          {calendarPageTabs ? (
+            <div className="border-border/60 flex flex-1 flex-shrink-0 justify-center gap-2 border-b-0">
+              <PostTypeTabs
+                currentTab={calendarPageTabs.currentTab}
+                basePath={calendarPageTabs.basePath}
+                totalContentCount={calendarPageTabs.totalContentCount}
+                totalPostsCount={calendarPageTabs.totalPostsCount}
+                totalRepostsCount={calendarPageTabs.totalRepostsCount}
+                totalLongformCount={calendarPageTabs.totalLongformCount}
+                inRow
+                forceDropdown
+              />
+              {["all", "posts", "reposts", "longform"].includes(
+                calendarPageTabs.currentTab
+              ) && queueTypes ? (
+                <QueueSelectionTabs
+                  currentTab={calendarPageTabs.currentTab}
+                  queueTypes={queueTypes}
+                  basePath={calendarPageTabs.basePath}
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Right: view toggle Day | Week | Month */}
           <div className="bg-muted/50 flex flex-shrink-0 items-center gap-0.5 rounded-[var(--calendar-radius-sm)] p-0.5 sm:gap-1 sm:p-1">
             {(["day", "week", "month"] as const).map((v) => (
               <button

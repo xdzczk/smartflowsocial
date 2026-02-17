@@ -5,11 +5,7 @@ import {
   mixedPostsToCalendarPosts,
   postsToCalendarPosts,
 } from "~/features/posts/server";
-import {
-  Calendar,
-  ContentListPageHeader,
-  useCalendarData,
-} from "~/features/posts/ui";
+import { Calendar, useCalendarData } from "~/features/posts/ui";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 
 export default function CalendarPage() {
@@ -40,10 +36,8 @@ export default function CalendarPage() {
   const currentTab = searchParams.get("tab") ?? TAB_ALL;
 
   return (
-    <div className="flex h-full min-h-0 flex-col space-y-2">
-      <ContentListPageHeader pageType="calendar" currentTab={currentTab} />
-
-      {/* Content based on current tab; content-type and queue tabs are inside Calendar header */}
+    <div className="flex h-full min-h-0 flex-col">
+      {/* Content-type and queue filters are inside Calendar header; no page title to maximize calendar space */}
       <div className="min-h-0 flex-1">
         {currentTab === TAB_ALL ? (
           <Calendar

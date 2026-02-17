@@ -57,13 +57,6 @@ export function ThumbnailPostBlock({
       style={queueColorStyle ?? {}}
       title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${formattedTime}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
     >
-      {queueColorStyle ? (
-        <div
-          className="absolute top-0 bottom-0 left-0 w-1 rounded-l-[var(--calendar-radius-sm)]"
-          style={{ backgroundColor: queueColorStyle.borderColor }}
-          aria-hidden
-        />
-      ) : null}
       {firstImage ? (
         <div className="relative">
           <MediaThumbnail

@@ -57,6 +57,8 @@ export interface PostBlockProps {
   hideVideoPlayButton?: boolean;
   /** When set (e.g. in month view), rendered inside minimal block with same background as block */
   timeLabel?: string;
+  /** When true, past posts render at full opacity (e.g. when expanded in weekly view). */
+  forceOpaque?: boolean;
 }
 
 export interface PostBlockBaseProps {
@@ -71,4 +73,6 @@ export interface PostBlockBaseProps {
   onDragEnd: () => void;
   onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+  /** When true, past posts render at full opacity (e.g. when expanded in weekly view). */
+  forceOpaque?: boolean;
 }

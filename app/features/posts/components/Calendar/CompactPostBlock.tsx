@@ -220,13 +220,6 @@ export function CompactPostBlock({
       }
       title={getTitle(postPreview, isPast, isLongform, formattedTime)}
     >
-      {queueColorStyle ? (
-        <div
-          className="absolute top-0 bottom-0 left-0 w-1 rounded-l-[var(--calendar-radius-md)]"
-          style={{ backgroundColor: queueColorStyle.borderColor }}
-          aria-hidden
-        />
-      ) : null}
       <div className="relative mb-1 flex flex-shrink-0 items-start justify-between">
         <div className="flex items-center space-x-1">
           {firstImage ? (

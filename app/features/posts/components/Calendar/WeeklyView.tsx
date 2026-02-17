@@ -36,6 +36,10 @@ type PostsGrid = Record<string, Record<string, CalendarPost[]>>;
 const DEFAULT_SCROLL_HOUR = 6;
 const ROW_HEIGHT_PX = 52;
 
+/** Class for expanded post block wrapper so it sits on top with opaque background. */
+const EXPANDED_BLOCK_WRAPPER_CLASS =
+  "z-10 bg-[hsl(var(--calendar-surface-2-bg))]";
+
 /** Number of empty slots below to fill (0, 1, or 2). Only counts consecutive empty slots for the same date. */
 function getExpandDown(
   dateKey: string,
@@ -397,7 +401,10 @@ export function WeeklyView({
                       : null;
                   const isHovered =
                     singlePostKey !== null && hoveredPostKey === singlePostKey;
-                  const expandRows = 1 + expandDown + (isHovered ? 2 : 0);
+                  const expandRows = Math.min(
+                    1 + expandDown + (isHovered ? 2 : 0),
+                    4
+                  );
                   const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
 
                   return (
@@ -419,7 +426,9 @@ export function WeeklyView({
                         posts[0] ? (
                           // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
                           <div
-                            className="relative z-0 transition-[height] duration-200 ease-out"
+                            className={`relative transition-[height] duration-200 ease-out ${
+                              isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "z-0"
+                            }`}
                             style={{ height: blockHeightPx }}
                             onMouseEnter={() =>
                               singlePostKey && setHoveredPostKey(singlePostKey)
@@ -454,6 +463,7 @@ export function WeeklyView({
                                   ? posts[0].isPast
                                   : false
                               }
+                              forceOpaque={isHovered}
                             />
                           </div>
                         ) : null
@@ -464,14 +474,22 @@ export function WeeklyView({
                             const multiPostKey = `${dateKey}-${time}-${post.id}`;
                             const multiHovered =
                               hoveredPostKey === multiPostKey;
+                            const multiExpandRows = Math.min(
+                              1 + (multiHovered ? 2 : 0),
+                              4
+                            );
                             const multiHeightPx =
-                              (1 + (multiHovered ? 2 : 0)) * ROW_HEIGHT_PX - 4;
+                              multiExpandRows * ROW_HEIGHT_PX - 4;
                             return (
                               // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
                               <div
                                 // eslint-disable-next-line react/no-array-index-key -- Composite key with stable post ID
                                 key={`${post.id}-${postIndex}`}
-                                className="relative z-0 min-w-0 flex-1 transition-[height] duration-200 ease-out"
+                                className={`relative min-w-0 flex-1 transition-[height] duration-200 ease-out ${
+                                  multiHovered
+                                    ? EXPANDED_BLOCK_WRAPPER_CLASS
+                                    : "z-0"
+                                }`}
                                 style={{ height: multiHeightPx }}
                                 onMouseEnter={() =>
                                   setHoveredPostKey(multiPostKey)
@@ -506,6 +524,7 @@ export function WeeklyView({
                                       : false
                                   }
                                   multipleInCell={true}
+                                  forceOpaque={multiHovered}
                                 />
                               </div>
                             );
@@ -518,14 +537,22 @@ export function WeeklyView({
                             const multiPostKey = `${dateKey}-${time}-${post.id}`;
                             const multiHovered =
                               hoveredPostKey === multiPostKey;
+                            const multiExpandRows = Math.min(
+                              1 + (multiHovered ? 2 : 0),
+                              4
+                            );
                             const multiHeightPx =
-                              (1 + (multiHovered ? 2 : 0)) * ROW_HEIGHT_PX - 4;
+                              multiExpandRows * ROW_HEIGHT_PX - 4;
                             return (
                               // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
                               <div
                                 // eslint-disable-next-line react/no-array-index-key -- Composite key with post.id ensures uniqueness
                                 key={`${post.id}-${postIndex}`}
-                                className="relative z-0 min-w-0 flex-1 transition-[height] duration-200 ease-out"
+                                className={`relative min-w-0 flex-1 transition-[height] duration-200 ease-out ${
+                                  multiHovered
+                                    ? EXPANDED_BLOCK_WRAPPER_CLASS
+                                    : "z-0"
+                                }`}
                                 style={{ height: multiHeightPx }}
                                 onMouseEnter={() =>
                                   setHoveredPostKey(multiPostKey)
@@ -560,6 +587,7 @@ export function WeeklyView({
                                       : false
                                   }
                                   multipleInCell={true}
+                                  forceOpaque={multiHovered}
                                 />
                               </div>
                             );

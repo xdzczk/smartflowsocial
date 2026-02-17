@@ -27,6 +27,8 @@ interface PostTypeTabsProps {
   bulkCount?: number;
   /** When true, render without outer border/margin so parent can put queue filter on same line. */
   inRow?: boolean;
+  /** When true, always use dropdown (Select) instead of tabs (e.g. in calendar header to save space). */
+  forceDropdown?: boolean;
 }
 
 export default function PostTypeTabs({
@@ -41,10 +43,12 @@ export default function PostTypeTabs({
   totalLongformCount,
   bulkCount,
   inRow = false,
+  forceDropdown = false,
 }: PostTypeTabsProps) {
   const params = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
+  const useDropdown = isMobile || forceDropdown;
   const queueParam = params["queueType"] ? `/${params["queueType"]}` : "";
 
   const getTabClasses = (isActive: boolean) =>
@@ -67,7 +71,7 @@ export default function PostTypeTabs({
     navigate(`${basePath}${queueParam}?tab=${value}`);
   };
 
-  if (isMobile) {
+  if (useDropdown) {
     const label =
       currentTab === "all"
         ? `All Types (${allCount})`

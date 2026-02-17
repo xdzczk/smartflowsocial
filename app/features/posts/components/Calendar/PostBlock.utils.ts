@@ -126,7 +126,9 @@ export function getQueueColorStyle(
   post: CalendarPost,
   queueTypes: QueueType[] | undefined,
   isLongform: boolean,
-  isPast: boolean
+  isPast: boolean,
+  /** When true, past posts render at full opacity (e.g. when expanded in weekly view). */
+  forceOpaque?: boolean
 ): QueueColorStyle | null {
   // Longform posts don't have queue types
   if (isLongform) {
@@ -158,7 +160,7 @@ export function getQueueColorStyle(
       backgroundColor: bundle.surface,
       color: bundle.accent,
       borderColor: bundle.accent,
-      ...(isPast ? { opacity: PAST_POST_QUEUE_OPACITY } : {}),
+      ...(isPast && !forceOpaque ? { opacity: PAST_POST_QUEUE_OPACITY } : {}),
     };
   }
 
@@ -168,7 +170,7 @@ export function getQueueColorStyle(
       backgroundColor: "hsl(var(--muted))",
       color: "hsl(var(--muted-foreground))",
       borderColor: "hsl(var(--border))",
-      opacity: 0.6,
+      ...(forceOpaque ? {} : { opacity: 0.6 }),
     };
   }
 

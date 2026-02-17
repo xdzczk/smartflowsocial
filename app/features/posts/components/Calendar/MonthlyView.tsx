@@ -286,7 +286,7 @@ export function MonthlyView({
               key={dayInfo.date.toISOString()}
               role="gridcell"
               tabIndex={-1}
-              className={`border-border/40 flex min-h-[120px] flex-col border-r border-b p-2.5 last:border-r-0 ${
+              className={`border-border/40 flex min-h-[120px] flex-col border-r border-b px-2 py-1.5 last:border-r-0 ${
                 dayInfo.isCurrentMonth
                   ? "bg-[hsl(var(--calendar-surface-2-bg))]"
                   : "bg-secondary/20"
@@ -307,8 +307,8 @@ export function MonthlyView({
                 {dayInfo.date.getDate()}
               </div>
 
-              {/* Posts: 2×3 grid, up to 6 posts or 5 + "+N more", no internal scroll */}
-              <div className="grid min-h-[7rem] min-w-0 flex-1 grid-cols-2 grid-rows-3 gap-1 overflow-hidden">
+              {/* Posts: 2×3 grid, up to 6 posts or 5 + "+N more"; tight gap so blocks fit without increasing cell height */}
+              <div className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-3 gap-0.5 overflow-hidden">
                 {layout.map((placement, slotIndex) => {
                   if (!placement) return null;
                   const { row, col, colSpan } = placement;

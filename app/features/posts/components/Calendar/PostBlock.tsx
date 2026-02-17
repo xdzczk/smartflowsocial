@@ -22,6 +22,7 @@ export function PostBlock({
   isPast = false,
   hideVideoPlayButton = false,
   timeLabel,
+  forceOpaque = false,
 }: PostBlockProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStarted, setDragStarted] = useState(false);
@@ -78,7 +79,8 @@ export function PostBlock({
     post,
     queueTypes,
     isLongform,
-    isPast
+    isPast,
+    forceOpaque
   );
 
   const baseProps = {
@@ -93,6 +95,7 @@ export function PostBlock({
     onDragEnd: handleDragEnd,
     onClick: handleClick,
     onKeyDown: handleKeyDown,
+    forceOpaque,
   };
 
   if (thumbnailOnly) {

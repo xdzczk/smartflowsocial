@@ -182,13 +182,6 @@ function UltraCompactLayout({
       style={queueColorStyle ?? {}}
       title={title}
     >
-      {queueColorStyle ? (
-        <div
-          className="absolute top-0 bottom-0 left-0 w-1 rounded-l-[var(--calendar-radius-sm)]"
-          style={{ backgroundColor: queueColorStyle.borderColor }}
-          aria-hidden
-        />
-      ) : null}
       <div className="relative flex flex-col items-center space-y-0.5">
         <PostThumbnail
           firstImage={firstImage}
@@ -269,13 +262,6 @@ function RegularLayout({
       style={queueColorStyle ?? {}}
       title={title}
     >
-      {queueColorStyle ? (
-        <div
-          className="absolute top-0 bottom-0 left-0 w-1 rounded-l-[var(--calendar-radius-sm)]"
-          style={{ backgroundColor: queueColorStyle.borderColor }}
-          aria-hidden
-        />
-      ) : null}
       <div className="relative flex items-center gap-1.5">
         {timeLabel ? (
           <span className="flex-shrink-0 text-xs tabular-nums opacity-90">
