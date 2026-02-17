@@ -40,13 +40,13 @@ const ROW_HEIGHT_PX = 52;
 const EXPANDED_BLOCK_WRAPPER_CLASS =
   "z-10 bg-[hsl(var(--calendar-surface-2-bg))]";
 
-/** Number of empty slots below to fill (0, 1, or 2). Only counts consecutive empty slots for the same date. */
+/** Number of empty slots below to fill (0–3). Only counts consecutive empty slots for the same date. Max 3 so block can span up to 4 rows when space allows; on hover it then doesn't need to grow. */
 function getExpandDown(
   dateKey: string,
   timeSlot: string,
   postsGrid: PostsGrid,
   hours: string[]
-): 0 | 1 | 2 {
+): 0 | 1 | 2 | 3 {
   const idx = hours.indexOf(timeSlot);
   if (idx < 0 || idx >= hours.length - 1) return 0;
   const next1 = hours[idx + 1];
@@ -57,7 +57,12 @@ function getExpandDown(
   const next2 = hours[idx + 2];
   if (next2 === undefined) return 1;
   const hasNext2 = (postsGrid[dateKey]?.[next2]?.length ?? 0) > 0;
-  return hasNext2 ? 1 : 2;
+  if (hasNext2) return 1;
+  if (idx >= hours.length - 3) return 2;
+  const next3 = hours[idx + 3];
+  if (next3 === undefined) return 2;
+  const hasNext3 = (postsGrid[dateKey]?.[next3]?.length ?? 0) > 0;
+  return hasNext3 ? 2 : 3;
 }
 
 interface CurrentTimeIndicatorProps {

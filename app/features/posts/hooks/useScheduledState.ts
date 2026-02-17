@@ -361,6 +361,7 @@ export function useScheduledState({
     requestSort,
     setSearchTerm,
     setSelectedPost,
+    setSelectedPosts,
     setSelectedLongFormPost,
     togglePostSelection,
     toggleSelectAll,

@@ -1,6 +1,12 @@
 import { type FetcherWithComponents } from "@remix-run/react";
 import { nip19 } from "nostr-tools";
-import { useEffect, useRef, useCallback } from "react";
+import {
+  useEffect,
+  useRef,
+  useCallback,
+  type FormEvent,
+  type MutableRefObject,
+} from "react";
 
 import { type ToastMessage } from "~/components/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
@@ -412,6 +418,174 @@ function createQuotePostEvent(
   );
 }
 
+function showValidationErrorToast(
+  errors: string[],
+  setToast: (t: ToastMessage | null) => void
+): void {
+  const message =
+    errors.length === 1
+      ? (errors[0] ?? "Validation error")
+      : `${errors.length} issues found:\n• ${errors.slice(0, 3).join("\n• ")}${errors.length > 3 ? "\n• And more..." : ""}`;
+  setToast({ type: "error", message });
+  setTimeout(() => setToast(null), 5000);
+}
+
+function runRepostOrQuotePreparation(
+  posts: BulkPost[],
+  fetcher: FetcherWithComponents<FetcherData>,
+  setPreparationProgress?: (p: {
+    current: number;
+    total: number;
+    stage: string;
+  }) => void
+): void {
+  const fakeFileUrls = _createFakeFileUrlData(posts);
+  (fetcher as { data?: unknown }).data = { fileUrls: fakeFileUrls };
+  setPreparationProgress?.({
+    current: 1,
+    total: 4,
+    stage: "Processing reposts...",
+  });
+  document.dispatchEvent(new CustomEvent("repostEventsPrepared"));
+}
+
+interface UploadPreparationParams {
+  posts: BulkPost[];
+  fetcher: FetcherWithComponents<FetcherData>;
+  setPreparationProgress?: (p: {
+    current: number;
+    total: number;
+    stage: string;
+  }) => void;
+  extraFormData?: Record<string, string>;
+  submitAction?: string;
+  isWaitingForUploadRef: MutableRefObject<boolean>;
+  setToast: (t: ToastMessage | null) => void;
+  setIsPreviewSubmitting: (v: boolean) => void;
+}
+
+async function runUploadPreparation(
+  params: UploadPreparationParams
+): Promise<boolean> {
+  const {
+    posts,
+    fetcher,
+    setPreparationProgress,
+    extraFormData,
+    submitAction,
+    isWaitingForUploadRef,
+    setToast,
+    setIsPreviewSubmitting,
+  } = params;
+
+  const filesToUpload = posts.flatMap((post) => post.files);
+
+  if (filesToUpload.length > 0) {
+    try {
+      setPreparationProgress?.({
+        current: 0,
+        total: filesToUpload.length + 3,
+        stage: `Starting upload of ${filesToUpload.length} files...`,
+      });
+      const uploadStartTime = nowMillis();
+      const uploadResults = await uploadMultipleFiles(
+        filesToUpload,
+        (completed, total, message) => {
+          setPreparationProgress?.({
+            current: completed,
+            total: total + 3,
+            stage: message,
+          });
+        }
+      );
+      devLog(
+        `[BulkPosts] Uploads completed in ${nowMillis() - uploadStartTime}ms (${filesToUpload.length} files)`
+      );
+      const failedUploads = uploadResults.filter((r) => !r.success);
+      if (failedUploads.length > 0) {
+        throw new Error(
+          `Upload failed: ${failedUploads.map((r) => r.error).join(", ")}`
+        );
+      }
+      let urlIndex = 0;
+      const fileUrlsPerPost: string[][] = posts.map((post) => {
+        const urls: string[] = [];
+        for (let j = 0; j < post.files.length; j++) {
+          const url = uploadResults[urlIndex]?.file?.url ?? "";
+          if (url) urls.push(url);
+          urlIndex++;
+        }
+        return urls;
+      });
+      setPreparationProgress?.({
+        current: filesToUpload.length + 1,
+        total: filesToUpload.length + 3,
+        stage: "Processing uploads...",
+      });
+      const formData = buildUploadFormData(
+        posts,
+        fileUrlsPerPost,
+        extraFormData
+      );
+      devLog(
+        `[BulkPosts] Submitting to server at ${nowUTC().toInstant().toString()}`
+      );
+      isWaitingForUploadRef.current = true;
+      fetcher.submit(formData, {
+        method: "post",
+        ...(submitAction ? { action: submitAction } : {}),
+      });
+      return true;
+    } catch (error: unknown) {
+      const { handleAsyncErrorWithMessage, getErrorMessage } =
+        await import("~/lib/error-handler.client");
+      const errorMessage = `Upload failed: ${getErrorMessage(error)}`;
+      handleAsyncErrorWithMessage(
+        error,
+        errorMessage,
+        { component: "useBulkPostEvents", action: "prepareEvents" },
+        false
+      );
+      setToast({ type: "error", message: errorMessage });
+      setTimeout(() => setToast(null), 5000);
+      setIsPreviewSubmitting(false);
+      return false;
+    }
+  }
+
+  setPreparationProgress?.({ current: 1, total: 4, stage: "Processing..." });
+  const fileUrlsPerPost = posts.map((post) => getFileUrlArray(post));
+  const formData = buildUploadFormData(posts, fileUrlsPerPost, extraFormData);
+  devLog(
+    `[BulkPosts] Submitting to server (no uploads) at ${nowUTC().toInstant().toString()}`
+  );
+  isWaitingForUploadRef.current = true;
+  fetcher.submit(formData, {
+    method: "post",
+    ...(submitAction ? { action: submitAction } : {}),
+  });
+  return true;
+}
+
+function buildUploadFormData(
+  posts: BulkPost[],
+  fileUrlsPerPost: string[][],
+  extraFormData?: Record<string, string>
+): FormData {
+  const formData = new FormData();
+  formData.append("fileUrls", JSON.stringify(fileUrlsPerPost));
+  posts.forEach((post) => {
+    formData.append("scheduledDates", post.scheduledFor);
+    formData.append("queueTypes", post.queueType);
+    formData.append("isRecyclable", post.isRecyclable.toString());
+  });
+  formData.append("_action", "_upload_images_preview");
+  if (extraFormData) {
+    Object.entries(extraFormData).forEach(([k, v]) => formData.append(k, v));
+  }
+  return formData;
+}
+
 interface UseBulkPostEventsProps {
   posts: BulkPost[];
   fetcher: FetcherWithComponents<FetcherData>;
@@ -429,6 +603,10 @@ interface UseBulkPostEventsProps {
     total: number;
     stage: string;
   }) => void;
+  /** Extra form fields to append on submit (e.g. _inModal for in-page composer). */
+  extraFormData?: Record<string, string>;
+  /** Submit action URL (e.g. /dashboard/bulkposts?mode=quote for modal). */
+  submitAction?: string;
 }
 
 export function useBulkPostEvents({
@@ -444,6 +622,8 @@ export function useBulkPostEvents({
   setIsPreviewSubmitting,
   setIsProcessing: _setIsProcessing,
   setPreparationProgress,
+  extraFormData,
+  submitAction,
 }: UseBulkPostEventsProps) {
   const isWaitingForUpload = useRef(false);
 
@@ -689,37 +869,20 @@ export function useBulkPostEvents({
     setPreparationProgress,
   ]);
 
-  const prepareEvents = async (e: React.FormEvent) => {
+  const prepareEvents = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     devLog(
       "[BulkPosts] Starting preparation at",
       nowUTC().toInstant().toString()
     );
 
-    // Validate posts before proceeding
     const { isValid, errors } = validatePostsForPreview();
     if (!isValid) {
-      // Show toast notification with validation errors
-      const errorMessage =
-        errors.length === 1
-          ? (errors[0] ?? "Validation error")
-          : `${errors.length} issues found:\n• ${errors.slice(0, 3).join("\n• ")}${errors.length > 3 ? "\n• And more..." : ""}`;
-
-      setToast({
-        type: "error",
-        message: errorMessage,
-      });
-
-      // Hide toast after 5 seconds
-      setTimeout(() => setToast(null), 5000);
+      showValidationErrorToast(errors, setToast);
       return;
     }
 
-    // Set loading state for preview submission
     setIsPreviewSubmitting(true);
-
-    // Show initial progress immediately
-    // Calculate total steps: uploads (if any) + 3 preparation steps
     const filesToUpload = posts.flatMap((post) => post.files);
     const totalSteps = filesToUpload.length > 0 ? filesToUpload.length + 3 : 4;
     setPreparationProgress?.({
@@ -729,172 +892,40 @@ export function useBulkPostEvents({
     });
 
     try {
-      // Check if this is a repost with existing URLs, kind 6 repost, or quote post
-      const hasRepostData = posts.some((post) => post.isRepost && post.fileUrl);
-      const hasKind6RepostData = posts.some((post) => post.isKind6Repost);
-      const hasQuotePostData = posts.some((post) => post.isQuotePost);
+      const hasRepostOrQuote =
+        posts.some((post) => post.isRepost && post.fileUrl) ||
+        posts.some((post) => post.isKind6Repost) ||
+        posts.some((post) => post.isQuotePost);
 
-      if (hasRepostData || hasKind6RepostData || hasQuotePostData) {
-        // For reposts and quote posts, create fake upload response with existing URLs
-        const fakeFileUrls = _createFakeFileUrlData(posts);
-
-        // Simulate the fetcher response
-        // Note: Direct assignment to fetcher.data is not recommended, but this is a workaround for repost flow
-        (fetcher as { data?: unknown }).data = { fileUrls: fakeFileUrls };
-
-        // Update progress - skipping upload, going straight to processing
-        setPreparationProgress?.({
-          current: 1,
-          total: 4,
-          stage: "Processing reposts...",
-        });
-
-        // Trigger the event creation manually
-        const customEvent = new CustomEvent("repostEventsPrepared");
-        document.dispatchEvent(customEvent);
-      } else {
-        // Use client-side upload system
-        const filesToUpload = posts.flatMap((post) => post.files);
-
-        if (filesToUpload.length > 0) {
-          try {
-            setPreparationProgress?.({
-              current: 0,
-              total: filesToUpload.length + 3,
-              stage: `Starting upload of ${filesToUpload.length} files...`,
-            });
-
-            const uploadStartTime = nowMillis();
-            const uploadResults = await uploadMultipleFiles(
-              filesToUpload,
-              (completed, total, message) => {
-                setPreparationProgress?.({
-                  current: completed,
-                  total: total + 3,
-                  stage: message,
-                });
-              }
-            );
-            const uploadTime = nowMillis() - uploadStartTime;
-            devLog(
-              `[BulkPosts] Uploads completed in ${uploadTime}ms (${filesToUpload.length} files)`
-            );
-
-            const failedUploads = uploadResults.filter(
-              (result) => !result.success
-            );
-            if (failedUploads.length > 0) {
-              const errorMessages = failedUploads
-                .map((result) => result.error)
-                .join(", ");
-              throw new Error(`Upload failed: ${errorMessages}`);
-            }
-
-            // Partition flat upload results back to per-post URL arrays
-            let urlIndex = 0;
-            const fileUrlsPerPost: string[][] = posts.map((post) => {
-              const count = post.files.length;
-              const urls: string[] = [];
-              for (let j = 0; j < count; j++) {
-                const url = uploadResults[urlIndex]?.file?.url ?? "";
-                if (url) urls.push(url);
-                urlIndex++;
-              }
-              return urls;
-            });
-
-            setPreparationProgress?.({
-              current: filesToUpload.length + 1,
-              total: filesToUpload.length + 3,
-              stage: "Processing uploads...",
-            });
-
-            const formData = new FormData();
-            formData.append("fileUrls", JSON.stringify(fileUrlsPerPost));
-            posts.forEach((post) => {
-              formData.append("scheduledDates", post.scheduledFor);
-              formData.append("queueTypes", post.queueType);
-              formData.append("isRecyclable", post.isRecyclable.toString());
-            });
-            formData.append("_action", "_upload_images_preview");
-
-            devLog(
-              `[BulkPosts] Submitting to server at ${nowUTC().toInstant().toString()}`
-            );
-
-            // Submit to server for processing
-            isWaitingForUpload.current = true;
-            fetcher.submit(formData, {
-              method: "post",
-            });
-          } catch (error: unknown) {
-            const { handleAsyncErrorWithMessage, getErrorMessage } =
-              await import("~/lib/error-handler.client");
-            const errorMessage = `Upload failed: ${getErrorMessage(error)}`;
-            handleAsyncErrorWithMessage(
-              error,
-              errorMessage,
-              {
-                component: "useBulkPostEvents",
-                action: "prepareEvents",
-              },
-              false // Don't show toast, we set toast state instead
-            );
-            setToast({
-              type: "error",
-              message: errorMessage,
-            });
-            setTimeout(() => setToast(null), 5000);
-            setIsPreviewSubmitting(false);
-            return;
-          }
-        } else {
-          // No files to upload: text-only or draft URLs. Send fileUrls per post.
-          setPreparationProgress?.({
-            current: 1,
-            total: 4,
-            stage: "Processing...",
-          });
-
-          const fileUrlsPerPost = posts.map((post) => getFileUrlArray(post));
-          const formData = new FormData();
-          formData.append("fileUrls", JSON.stringify(fileUrlsPerPost));
-          posts.forEach((post) => {
-            formData.append("scheduledDates", post.scheduledFor);
-            formData.append("queueTypes", post.queueType);
-            formData.append("isRecyclable", post.isRecyclable.toString());
-          });
-          formData.append("_action", "_upload_images_preview");
-
-          devLog(
-            `[BulkPosts] Submitting to server (no uploads) at ${nowUTC().toInstant().toString()}`
-          );
-
-          // Submit to server for processing
-          isWaitingForUpload.current = true;
-          fetcher.submit(formData, {
-            method: "post",
-          });
-        }
+      if (hasRepostOrQuote) {
+        runRepostOrQuotePreparation(posts, fetcher, setPreparationProgress);
+        return;
       }
+
+      const ok = await runUploadPreparation({
+        posts,
+        fetcher,
+        setPreparationProgress,
+        extraFormData,
+        submitAction,
+        isWaitingForUploadRef: isWaitingForUpload,
+        setToast,
+        setIsPreviewSubmitting,
+      });
+      if (!ok) return;
     } catch (error: unknown) {
       const { handleAsyncErrorWithMessage } =
         await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
         error,
         "An error occurred while preparing posts. Please try again.",
-        {
-          component: "useBulkPostEvents",
-          action: "prepareEvents",
-        },
-        false // Don't show toast, we set toast state instead
+        { component: "useBulkPostEvents", action: "prepareEvents" },
+        false
       );
       setToast({
         type: "error",
         message: "An error occurred while preparing posts. Please try again.",
       });
-
-      // Hide toast after 5 seconds
       setTimeout(() => setToast(null), 5000);
       setIsPreviewSubmitting(false);
     }

@@ -10,7 +10,16 @@ import {
 } from "~/lib/temporal";
 import type { UserData } from "~/lib/validation/user-data";
 
-import type { CombinedContent, PostData, LongFormPostData } from "./types";
+import type {
+  BulkPost,
+  CombinedContent,
+  PostData,
+  LongFormPostData,
+} from "./types";
+import {
+  convertQuoteDataToBulkPosts,
+  convertRepostDataToBulkPosts,
+} from "./utils/bulk-composer-data";
 
 // Action constants
 const ACTION_BULK_SCHEDULED_REPOST = "bulkScheduledRepost";
@@ -48,16 +57,24 @@ interface FetcherErrorResponse {
   message?: string;
 }
 
+export type BulkComposerPayload =
+  | { mode: "recycle"; initialPosts: BulkPost[] }
+  | { mode: "repost"; scheduledRepostData: unknown[] }
+  | { mode: "quote"; initialPosts: BulkPost[] };
+
 interface UsePublishedPostsProps {
   user: UserData | null;
   allContent: CombinedContent[];
   posts: PostData[];
+  /** When set, bulk repost/quote/recycle open the in-page composer modal instead of redirecting. */
+  onOpenBulkComposer?: (payload: BulkComposerPayload) => void;
 }
 
 export function usePublishedPosts({
   user,
   allContent,
   posts: _posts,
+  onOpenBulkComposer,
 }: UsePublishedPostsProps) {
   const _revalidator = useRevalidator();
   const [searchParams] = useSearchParams();
@@ -274,9 +291,8 @@ export function usePublishedPosts({
 
   useEffect(() => {
     if (repostFetcher.data?.repostData) {
-      const postsData = repostFetcher.data.repostData;
+      const postsData = repostFetcher.data.repostData as unknown as PostData[];
 
-      // Prepare repost data with 1 hour default scheduling
       const userTimezone = user?.timezone ?? "UTC";
       const now = nowInTimezone(userTimezone);
       const baseTime = addHours(now, 1);
@@ -287,35 +303,43 @@ export function usePublishedPosts({
           scheduleZoned,
           userTimezone
         );
-
+        const qt = post.queueType;
+        const queueType =
+          typeof qt === "string"
+            ? qt
+            : ((qt && typeof qt === "object" && "name" in qt
+                ? (qt as { name?: string }).name
+                : null) ?? "unassigned");
         return {
-          caption: post.caption,
+          caption: post.caption ?? "",
           fileUrl:
             Array.isArray(post.fileUrl) && post.fileUrl.length > 0
               ? post.fileUrl[0]
               : "",
-          queueType: post.queueType,
+          queueType,
           scheduledFor,
+          isRecyclable: Boolean(post.isRecyclable),
+          originalPostId: post.id,
         };
       });
 
-      // Store repost data in sessionStorage
-      sessionStorage.setItem(
-        STORAGE_KEY_REPOST_DATA,
-        JSON.stringify(repostData)
-      );
-
-      // Navigate to bulk posts page
-      window.location.href = PATH_BULK_POSTS_RECYCLE;
-
-      // Clear selection
-      setSelectedPosts(new Set());
+      if (onOpenBulkComposer) {
+        const initialPosts = convertRepostDataToBulkPosts(repostData);
+        onOpenBulkComposer({ mode: "recycle", initialPosts });
+        setSelectedPosts(new Set());
+      } else {
+        sessionStorage.setItem(
+          STORAGE_KEY_REPOST_DATA,
+          JSON.stringify(repostData)
+        );
+        window.location.href = PATH_BULK_POSTS_RECYCLE;
+        setSelectedPosts(new Set());
+      }
     }
 
     if (repostFetcher.data?.scheduledRepostData) {
       const postsData = repostFetcher.data.scheduledRepostData;
 
-      // Only redirect when we have at least one post (avoid empty Bulk Posts)
       if (postsData.length === 0) {
         setToast({
           type: "error",
@@ -326,22 +350,29 @@ export function usePublishedPosts({
         return;
       }
 
-      // Prepare scheduled repost data with 1 hour default scheduling
       const userTimezone = user?.timezone ?? "UTC";
       const now = nowInTimezone(userTimezone);
       const baseTime = addHours(now, 1);
 
-      const scheduledRepostData = postsData.map((post, index: number) => {
+      const postsDataTyped = repostFetcher.data
+        .scheduledRepostData as unknown as PostData[];
+      const scheduledRepostData = postsDataTyped.map((post, index: number) => {
         const scheduleZoned = addHours(baseTime, index);
         const scheduledFor = formatForDateTimeLocal(
           scheduleZoned,
           userTimezone
         );
-
+        const qt = post.queueType;
+        const queueType =
+          typeof qt === "string"
+            ? qt
+            : ((qt && typeof qt === "object" && "name" in qt
+                ? (qt as { name?: string }).name
+                : null) ?? "unassigned");
         return {
-          caption: "", // Empty content for kind 6 reposts
-          fileUrl: "", // No file URL for kind 6 reposts
-          queueType: post.queueType,
+          caption: "",
+          fileUrl: "",
+          queueType,
           scheduledFor,
           originalPostId: post.id,
           originalEventId: post.signedEvent?.id,
@@ -350,23 +381,22 @@ export function usePublishedPosts({
         };
       });
 
-      // Store scheduled repost data in sessionStorage
-      sessionStorage.setItem(
-        STORAGE_KEY_SCHEDULED_REPOST_DATA,
-        JSON.stringify(scheduledRepostData)
-      );
-
-      // Navigate to bulk posts page with repost mode
-      window.location.href = PATH_BULK_POSTS_REPOST;
-
-      // Clear selection
-      setSelectedPosts(new Set());
+      if (onOpenBulkComposer) {
+        onOpenBulkComposer({ mode: "repost", scheduledRepostData });
+        setSelectedPosts(new Set());
+      } else {
+        sessionStorage.setItem(
+          STORAGE_KEY_SCHEDULED_REPOST_DATA,
+          JSON.stringify(scheduledRepostData)
+        );
+        window.location.href = PATH_BULK_POSTS_REPOST;
+        setSelectedPosts(new Set());
+      }
     }
 
     if (repostFetcher.data?.quotePostData) {
       const quoteData = repostFetcher.data.quotePostData;
 
-      // Only redirect when we have at least one post (avoid empty Bulk Posts)
       if (quoteData.length === 0) {
         setToast({
           type: "error",
@@ -377,32 +407,38 @@ export function usePublishedPosts({
         return;
       }
 
-      // Store quote post data in sessionStorage
-      sessionStorage.setItem(
-        STORAGE_KEY_QUOTE_POST_DATA,
-        JSON.stringify(quoteData)
-      );
-
-      // Navigate to bulk posts page with quote mode
-      window.location.href = PATH_BULK_POSTS_QUOTE;
-
-      // Clear selection
-      setSelectedPosts(new Set());
+      if (onOpenBulkComposer) {
+        const initialPosts = convertQuoteDataToBulkPosts(
+          quoteData as Parameters<typeof convertQuoteDataToBulkPosts>[0]
+        );
+        onOpenBulkComposer({ mode: "quote", initialPosts });
+        setSelectedPosts(new Set());
+      } else {
+        sessionStorage.setItem(
+          STORAGE_KEY_QUOTE_POST_DATA,
+          JSON.stringify(quoteData)
+        );
+        window.location.href = PATH_BULK_POSTS_QUOTE;
+        setSelectedPosts(new Set());
+      }
     }
 
     if (repostFetcher.data?.longformQuotePostData) {
       const quoteData = repostFetcher.data.longformQuotePostData;
 
-      // Store longform quote post data in sessionStorage
-      sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-
-      // Navigate to bulk posts page with quote mode
-      window.location.href = PATH_BULK_POSTS_QUOTE;
-
-      // Clear selection
-      setSelectedPosts(new Set());
+      if (onOpenBulkComposer) {
+        const initialPosts = convertQuoteDataToBulkPosts(
+          quoteData as Parameters<typeof convertQuoteDataToBulkPosts>[0]
+        );
+        onOpenBulkComposer({ mode: "quote", initialPosts });
+        setSelectedPosts(new Set());
+      } else {
+        sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
+        window.location.href = PATH_BULK_POSTS_QUOTE;
+        setSelectedPosts(new Set());
+      }
     }
-  }, [repostFetcher.data, user?.timezone]);
+  }, [repostFetcher.data, user?.timezone, onOpenBulkComposer]);
 
   // Handle longform repost responses
   useEffect(() => {

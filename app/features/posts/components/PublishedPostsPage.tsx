@@ -1,5 +1,5 @@
 import { useParams, useSearchParams, useNavigate } from "@remix-run/react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
 import { usePostResultFromUrl } from "~/features/posts/hooks/usePostResultFromUrl";
@@ -11,8 +11,10 @@ import type {
   PostFetcher,
 } from "~/features/posts/server";
 import type { PostStats } from "~/features/posts/stats.server";
+import type { BulkPost } from "~/features/posts/types";
 import {
   AllContentListing,
+  BulkComposerModal,
   ContentListPageHeader,
   LongFormDetailsModal,
   LongFormListing,
@@ -24,6 +26,8 @@ import {
   usePublishedPostsInfiniteData,
   useBulkDeletePostsMutation,
 } from "~/features/posts/ui";
+import type { BulkComposerPayload } from "~/features/posts/usePublishedPosts";
+import { loadScheduledRepostDataAsBulkPosts } from "~/features/posts/utils/bulk-composer-data";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -171,6 +175,12 @@ export default function PublishedPostsPage() {
     post: PostData;
     mode: "repost" | "quote";
   } | null>(null);
+  const [bulkComposer, setBulkComposer] = useState<{
+    open: boolean;
+    mode: BulkComposerPayload["mode"];
+    initialPosts: BulkPost[];
+    pendingScheduledRepostData?: unknown[];
+  } | null>(null);
 
   const dateFrom = searchParams.get("dateFrom") ?? "";
   const dateTo = searchParams.get("dateTo") ?? "";
@@ -224,6 +234,53 @@ export default function PublishedPostsPage() {
   // Use TanStack Query mutation for bulk delete with optimistic updates
   const bulkDeleteMutation = useBulkDeletePostsMutation();
 
+  const onOpenBulkComposer = useCallback((payload: BulkComposerPayload) => {
+    if (payload.mode === "repost") {
+      setBulkComposer({
+        open: true,
+        mode: "repost",
+        initialPosts: [],
+        pendingScheduledRepostData: payload.scheduledRepostData,
+      });
+    } else {
+      setBulkComposer({
+        open: true,
+        mode: payload.mode,
+        initialPosts: payload.initialPosts,
+      });
+    }
+  }, []);
+
+  // Load scheduled repost data when modal opens with pending data
+  useEffect(() => {
+    if (
+      !bulkComposer?.open ||
+      bulkComposer.mode !== "repost" ||
+      !bulkComposer.pendingScheduledRepostData?.length
+    ) {
+      return;
+    }
+    const data = bulkComposer.pendingScheduledRepostData;
+    void (async () => {
+      const posts = await loadScheduledRepostDataAsBulkPosts(
+        data as Parameters<typeof loadScheduledRepostDataAsBulkPosts>[0]
+      );
+      setBulkComposer((prev) =>
+        prev
+          ? {
+              ...prev,
+              initialPosts: posts,
+              pendingScheduledRepostData: undefined,
+            }
+          : null
+      );
+    })();
+  }, [
+    bulkComposer?.open,
+    bulkComposer?.mode,
+    bulkComposer?.pendingScheduledRepostData,
+  ]);
+
   // Call hook unconditionally - hooks must be called at the top level
   const {
     currentTab,
@@ -255,6 +312,7 @@ export default function PublishedPostsPage() {
     user,
     allContent,
     posts,
+    onOpenBulkComposer,
   });
 
   // Memoize sorted posts to prevent unnecessary re-sorting on every render
@@ -492,6 +550,17 @@ export default function PublishedPostsPage() {
           mode={scheduleRepostQuote.mode}
           onClose={() => setScheduleRepostQuote(null)}
           onSuccess={() => setScheduleRepostQuote(null)}
+          user={user}
+        />
+      ) : null}
+
+      {bulkComposer?.open ? (
+        <BulkComposerModal
+          open={true}
+          onClose={() => setBulkComposer(null)}
+          onSuccess={() => setBulkComposer(null)}
+          mode={bulkComposer.mode}
+          initialPosts={bulkComposer.initialPosts}
           user={user}
         />
       ) : null}

@@ -181,6 +181,11 @@ export { default as BulkPostsSchedulingPanel } from "./components/BulkPostsSched
 export { default as BulkPostsTable } from "./components/BulkPostsTable";
 export { default as BulkPostsUploadArea } from "./components/BulkPostsUploadArea";
 export { default as PostConfirmation } from "./components/PostConfirmation";
+export {
+  BulkComposerModal,
+  type BulkComposerMode,
+  type BulkComposerModalProps,
+} from "./components/BulkComposerModal";
 
 // ============================================================================
 // Hooks (Public API)
@@ -189,7 +194,10 @@ export { default as PostConfirmation } from "./components/PostConfirmation";
 export { useDashboardState } from "./hooks/useDashboardState";
 export { useScheduledState } from "./hooks/useScheduledState";
 export { useDraftsState } from "./hooks/useDraftsState";
-export { usePublishedPosts } from "./usePublishedPosts";
+export {
+  usePublishedPosts,
+  type BulkComposerPayload,
+} from "./usePublishedPosts";
 export {
   usePublishedPostsQuery,
   usePublishedPostsData,

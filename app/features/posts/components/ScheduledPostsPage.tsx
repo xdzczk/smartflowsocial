@@ -1,11 +1,13 @@
-import { useSearchParams, useNavigate } from "@remix-run/react";
-import { useState } from "react";
+import { useFetcher, useSearchParams, useNavigate } from "@remix-run/react";
+import { useCallback, useEffect, useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
 import { usePostResultFromUrl } from "~/features/posts/hooks/usePostResultFromUrl";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
+import type { BulkPost, PostFetcher } from "~/features/posts/types";
 import {
   AllContentListing,
+  BulkComposerModal,
   BulkDeleteBar,
   ContentListPageHeader,
   EditPostModal,
@@ -19,9 +21,20 @@ import {
   useScheduledState,
   useScheduledPostsInfiniteData,
 } from "~/features/posts/ui";
+import type { BulkComposerPayload } from "~/features/posts/usePublishedPosts";
+import {
+  convertQuoteDataToBulkPosts,
+  convertScheduledPostsToBulkPosts,
+  loadScheduledRepostDataAsBulkPosts,
+} from "~/features/posts/utils/bulk-composer-data";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowInTimezone,
+} from "~/lib/temporal";
 import {
   extractLongFormPostData,
   extractPostData,
@@ -78,6 +91,19 @@ export default function ScheduledPostsPage() {
     post: PostData;
     mode: "repost" | "quote";
   } | null>(null);
+  const [bulkComposer, setBulkComposer] = useState<{
+    open: boolean;
+    mode: BulkComposerPayload["mode"] | "reschedule";
+    initialPosts: BulkPost[];
+    pendingScheduledRepostData?: unknown[];
+  } | null>(null);
+
+  const repostFetcher = useFetcher<{
+    repostData?: PostData[];
+    scheduledRepostData?: PostData[];
+    quotePostData?: unknown[];
+    longformQuotePostData?: unknown[];
+  }>();
 
   const currentTab = searchParams.get("tab") ?? "all";
   const dateFrom = searchParams.get("dateFrom") ?? "";
@@ -138,6 +164,7 @@ export default function ScheduledPostsPage() {
     requestSort,
     setSearchTerm,
     setSelectedPost,
+    setSelectedPosts,
     setSelectedLongFormPost,
     togglePostSelection,
     toggleSelectAll,
@@ -157,6 +184,144 @@ export default function ScheduledPostsPage() {
   });
 
   const { userTimezone, userTimeFormat } = useFormattedDate();
+
+  const handleBulkEditReschedule = useCallback(() => {
+    const selected = allContent.filter((item) => selectedPosts.has(item.id));
+    const postsOnly = selected.filter((item) => item.type === "post");
+    if (postsOnly.length === 0) return;
+    const initialPosts = convertScheduledPostsToBulkPosts(
+      postsOnly.map((p) => ({
+        id: p.id,
+        caption: p.caption,
+        fileUrl: p.fileUrl,
+        queueType: p.queueType,
+        scheduledAtUtc: p.scheduledAtUtc,
+        isRecyclable: p.isRecyclable,
+      })),
+      userTimezone || "UTC"
+    );
+    setBulkComposer({ open: true, mode: "reschedule", initialPosts });
+    setSelectedPosts(new Set());
+  }, [allContent, selectedPosts, userTimezone, setSelectedPosts]);
+
+  const handleBulkScheduledRepost = useCallback(() => {
+    const postIds = allContent
+      .filter((item) => selectedPosts.has(item.id) && item.type === "post")
+      .map((item) => item.id);
+    if (postIds.length === 0) return;
+    const formData = new FormData();
+    formData.append("_action", "bulkScheduledRepost");
+    formData.append("postIds", JSON.stringify(postIds));
+    repostFetcher.submit(formData, {
+      method: "post",
+      action: "/dashboard/published",
+    });
+  }, [allContent, selectedPosts, repostFetcher]);
+
+  const handleBulkQuote = useCallback(() => {
+    const postIds = allContent
+      .filter((item) => selectedPosts.has(item.id) && item.type === "post")
+      .map((item) => item.id);
+    if (postIds.length === 0) return;
+    const formData = new FormData();
+    formData.append("_action", "bulkQuote");
+    formData.append("postIds", JSON.stringify(postIds));
+    repostFetcher.submit(formData, {
+      method: "post",
+      action: "/dashboard/published",
+    });
+  }, [allContent, selectedPosts, repostFetcher]);
+
+  useEffect(() => {
+    if (repostFetcher.data?.scheduledRepostData) {
+      const data = repostFetcher.data
+        .scheduledRepostData as unknown as PostData[];
+      if (data.length === 0) return;
+      const tz = user?.timezone ?? "UTC";
+      const scheduledRepostData = data.map((post, index: number) => {
+        const now = nowInTimezone(tz);
+        const baseTime = addHours(now, 1);
+        const scheduleZoned = addHours(baseTime, index);
+        const scheduledFor = formatForDateTimeLocal(scheduleZoned, tz);
+        const qt = post.queueType;
+        const queueType =
+          typeof qt === "string"
+            ? qt
+            : ((qt && typeof qt === "object" && "name" in qt
+                ? (qt as { name?: string }).name
+                : null) ?? "unassigned");
+        return {
+          caption: "",
+          fileUrl: "",
+          queueType,
+          scheduledFor,
+          originalPostId: post.id,
+          originalEventId: post.signedEvent?.id,
+          originalEventPubkey: post.signedEvent?.pubkey,
+          isKind6Repost: true,
+        };
+      });
+      queueMicrotask(() => {
+        setBulkComposer({
+          open: true,
+          mode: "repost",
+          initialPosts: [],
+          pendingScheduledRepostData: scheduledRepostData,
+        });
+        setSelectedPosts(new Set());
+      });
+    }
+    if (repostFetcher.data?.quotePostData) {
+      const quoteData = repostFetcher.data.quotePostData;
+      if (quoteData.length === 0) return;
+      const initialPosts = convertQuoteDataToBulkPosts(
+        quoteData as Parameters<typeof convertQuoteDataToBulkPosts>[0]
+      );
+      queueMicrotask(() => {
+        setBulkComposer({ open: true, mode: "quote", initialPosts });
+        setSelectedPosts(new Set());
+      });
+    }
+    if (repostFetcher.data?.longformQuotePostData) {
+      const quoteData = repostFetcher.data.longformQuotePostData;
+      const initialPosts = convertQuoteDataToBulkPosts(
+        quoteData as Parameters<typeof convertQuoteDataToBulkPosts>[0]
+      );
+      queueMicrotask(() => {
+        setBulkComposer({ open: true, mode: "quote", initialPosts });
+        setSelectedPosts(new Set());
+      });
+    }
+  }, [repostFetcher.data, user?.timezone, setSelectedPosts]);
+
+  useEffect(() => {
+    if (
+      !bulkComposer?.open ||
+      bulkComposer.mode !== "repost" ||
+      !bulkComposer.pendingScheduledRepostData?.length
+    ) {
+      return;
+    }
+    const data = bulkComposer.pendingScheduledRepostData;
+    void (async () => {
+      const posts = await loadScheduledRepostDataAsBulkPosts(
+        data as Parameters<typeof loadScheduledRepostDataAsBulkPosts>[0]
+      );
+      setBulkComposer((prev) =>
+        prev
+          ? {
+              ...prev,
+              initialPosts: posts,
+              pendingScheduledRepostData: undefined,
+            }
+          : null
+      );
+    })();
+  }, [
+    bulkComposer?.open,
+    bulkComposer?.mode,
+    bulkComposer?.pendingScheduledRepostData,
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -233,6 +398,10 @@ export default function ScheduledPostsPage() {
             showBulkActions={true}
             onBulkDelete={handleBulkDelete}
             bulkDeleteState={bulkDeleteFetcher.state}
+            onBulkEditReschedule={handleBulkEditReschedule}
+            onBulkScheduledRepost={handleBulkScheduledRepost}
+            onBulkQuote={handleBulkQuote}
+            repostFetcher={repostFetcher as PostFetcher}
             onEditPost={handleEditPost}
             onReschedulePost={handleReschedulePost}
             onScheduleRepost={(p) =>
@@ -407,6 +576,35 @@ export default function ScheduledPostsPage() {
           onClose={() => setScheduleRepostQuote(null)}
           onSuccess={() => setScheduleRepostQuote(null)}
           user={user ? (validateUserData(user) ?? undefined) : undefined}
+        />
+      ) : null}
+
+      {bulkComposer?.open && user ? (
+        <BulkComposerModal
+          open={true}
+          onClose={() => setBulkComposer(null)}
+          onSuccess={() => setBulkComposer(null)}
+          mode={bulkComposer.mode}
+          initialPosts={bulkComposer.initialPosts}
+          user={{
+            id: user.id,
+            timezone: user.timezone ?? undefined,
+            scheduleInterval: Array.isArray(user.scheduleInterval)
+              ? user.scheduleInterval.map((s) =>
+                  typeof s === "string" ? parseInt(s, 10) : s
+                )
+              : undefined,
+          }}
+          queueTypes={queueTypes}
+          hashTagPresets={
+            Array.isArray(hashTagPresets)
+              ? (hashTagPresets as Array<{
+                  id: string;
+                  name: string;
+                  tags: string;
+                }>)
+              : undefined
+          }
         />
       ) : null}
 

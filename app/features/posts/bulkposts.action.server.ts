@@ -471,6 +471,18 @@ export async function handleSignAndSchedule(
       {}
     );
 
+    // When submitted from in-page modal, return JSON so the client can show success without navigating
+    const inModal = formData.get("_inModal") === "1";
+    if (inModal && firstPostId) {
+      return json({
+        bulkScheduled: true,
+        count: createdPostCount,
+        firstPostId,
+        lastScheduledAt,
+        queueSummary,
+      });
+    }
+
     // If we have a first post ID, redirect to bulk posts page with success params
     // Otherwise, redirect to scheduled page
     if (firstPostId) {

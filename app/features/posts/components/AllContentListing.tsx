@@ -80,6 +80,7 @@ interface AllContentListingProps {
   onBulkRepost?: () => void;
   onBulkScheduledRepost?: () => void;
   onBulkQuote?: () => void;
+  onBulkEditReschedule?: () => void;
   repostFetcher?: PostFetcher;
   // Single-post schedule repost/quote (no redirect to bulk)
   onScheduleRepost?: (post: PostData) => void;
@@ -115,6 +116,7 @@ export default function AllContentListing({
   onBulkRepost,
   onBulkScheduledRepost,
   onBulkQuote,
+  onBulkEditReschedule,
   repostFetcher,
   onScheduleRepost,
   onScheduleQuote,
@@ -310,6 +312,7 @@ export default function AllContentListing({
           onBulkRepost={onBulkRepost}
           onBulkScheduledRepost={onBulkScheduledRepost}
           onBulkQuote={onBulkQuote}
+          onBulkEditReschedule={onBulkEditReschedule}
           bulkDeleteState={bulkDeleteState}
           repostFetcher={repostFetcher}
         />

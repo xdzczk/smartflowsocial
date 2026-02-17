@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, type FetcherWithComponents } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -107,6 +107,12 @@ interface PostConfirmationProps {
   postsCount: number;
   /** When editing a bulk draft group, pass so save-as-draft updates that group */
   groupId?: string | null;
+  /** Override submit action URL (e.g. for in-page modal with mode). */
+  submitAction?: string;
+  /** Extra form fields to append on submit (e.g. _inModal). */
+  extraFormData?: Record<string, string>;
+  /** Optional fetcher to use (e.g. for modal to observe submit result). Must have submit(). */
+  fetcher?: FetcherWithComponents<unknown>;
 }
 
 export default function PostConfirmation({
@@ -114,8 +120,12 @@ export default function PostConfirmation({
   posts,
   postsCount,
   groupId = null,
+  submitAction: submitActionProp,
+  extraFormData,
+  fetcher: fetcherProp,
 }: PostConfirmationProps) {
-  const fetcher = useFetcher<{ error?: string }>();
+  const internalFetcher = useFetcher<{ error?: string }>();
+  const fetcher = fetcherProp ?? internalFetcher;
   const isSubmitting = fetcher.state !== "idle";
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
@@ -247,10 +257,15 @@ export default function PostConfirmation({
       }
 
       finalFormData.append("_action", "sign_and_schedule");
+      if (extraFormData) {
+        Object.entries(extraFormData).forEach(([k, v]) =>
+          finalFormData.append(k, v)
+        );
+      }
 
-      // Preserve the current URL's search params (including mode=recycle)
-      const currentUrl = new URL(window.location.href);
-      const actionUrl = `/dashboard/bulkposts${currentUrl.search}`;
+      const actionUrl =
+        submitActionProp ??
+        `/dashboard/bulkposts${new URL(window.location.href).search}`;
 
       fetcher.submit(finalFormData, {
         method: "post",
@@ -300,10 +315,15 @@ export default function PostConfirmation({
     if (groupId) {
       finalFormData.append("groupId", groupId);
     }
+    if (extraFormData) {
+      Object.entries(extraFormData).forEach(([k, v]) =>
+        finalFormData.append(k, v)
+      );
+    }
 
-    // Preserve the current URL's search params (including mode=recycle)
-    const currentUrl = new URL(window.location.href);
-    const actionUrl = `/dashboard/bulkposts${currentUrl.search}`;
+    const actionUrl =
+      submitActionProp ??
+      `/dashboard/bulkposts${new URL(window.location.href).search}`;
 
     fetcher.submit(finalFormData, {
       method: "post",
