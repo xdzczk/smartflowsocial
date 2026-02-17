@@ -36,6 +36,10 @@ type PostsGrid = Record<string, Record<string, CalendarPost[]>>;
 const DEFAULT_SCROLL_HOUR = 6;
 const ROW_HEIGHT_PX = 52;
 
+/** Row z-index range (below Dialog z-50) so modals and overlays stay on top of the calendar grid. */
+const CALENDAR_ROW_Z_HOVERED = 40;
+const CALENDAR_ROW_Z_BASE = 39;
+
 /** Class for expanded post block wrapper so it sits on top with opaque background. */
 const EXPANDED_BLOCK_WRAPPER_CLASS =
   "z-10 bg-[hsl(var(--calendar-surface-2-bg))]";
@@ -85,12 +89,11 @@ function getSlotState(
   hours: string[],
   hoveredPostKey: string | null,
   dragOverSlot: string | null,
-  isDayView: boolean
+  isDayView: boolean,
+  userTimezone: string
 ): SlotState {
-  const year = day.getFullYear();
-  const month = String(day.getMonth() + 1).padStart(2, "0");
-  const dayStr = String(day.getDate()).padStart(2, "0");
-  const dateKey = `${year}-${month}-${dayStr}`;
+  const dayZoned = fromDate(day, userTimezone);
+  const dateKey = `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
   const posts = postsGrid[dateKey]?.[time] ?? [];
   const slotKey = `${dateKey}-${time}`;
   const isDragOver = dragOverSlot === slotKey;
@@ -102,7 +105,7 @@ function getSlotState(
   const singlePostKey =
     posts.length === 1 && posts[0] ? `${dateKey}-${time}-${posts[0].id}` : null;
   const isHovered = singlePostKey !== null && hoveredPostKey === singlePostKey;
-  const baseRows = 1 + expandDown;
+  const baseRows = 1 + expandDown; // Day view: up to 7 rows by default when empty space below (expandDown 0–6)
   const expandRows = isDayView
     ? isHovered
       ? baseRows <= 4
@@ -159,12 +162,12 @@ function SlotCellContent({
 
   if (posts.length === 1) {
     if (!posts[0]) return null;
-    return (
+    const blockInner = (
       // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
       <div
-        className={`relative transition-[height] duration-200 ease-out ${SINGLE_POST_MAX_WIDTH_CLASS} ${
-          slotColumn === 1 ? "ml-auto" : ""
-        } ${isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "z-0"}`}
+        className={`relative w-full min-w-0 transition-[height] duration-200 ease-out ${
+          isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "z-0"
+        }`}
         style={{ height: blockHeightPx }}
         onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
         onMouseLeave={() => setHoveredPostKey(null)}
@@ -189,18 +192,31 @@ function SlotCellContent({
         />
       </div>
     );
+    if (isDayView && slotColumn === 1) {
+      return (
+        <div className="flex w-full justify-end">
+          <div className="w-[50%] min-w-0 shrink-0">{blockInner}</div>
+        </div>
+      );
+    }
+    if (isDayView) {
+      return <div className={SINGLE_POST_MAX_WIDTH_CLASS}>{blockInner}</div>;
+    }
+    return blockInner;
   }
 
   if (posts.length <= 6) {
     return (
       <div className="relative flex h-full space-x-0.5">
-        {posts.map((post) => (
+        {posts.map((post, index) => (
           <MultiPostBlock
             key={post.id}
             post={post}
             dateKey={dateKey}
             time={time}
             isDayView={isDayView}
+            postsCount={posts.length}
+            alignExpandedRight={index >= posts.length / 2}
             hoveredPostKey={hoveredPostKey}
             setHoveredPostKey={setHoveredPostKey}
             onPostEdit={onPostEdit}
@@ -216,13 +232,15 @@ function SlotCellContent({
 
   return (
     <div className="relative flex h-full space-x-0.5">
-      {posts.slice(0, 5).map((post) => (
+      {posts.slice(0, 5).map((post, index) => (
         <MultiPostBlock
           key={post.id}
           post={post}
           dateKey={dateKey}
           time={time}
           isDayView={isDayView}
+          postsCount={posts.length}
+          alignExpandedRight={index >= 3}
           hoveredPostKey={hoveredPostKey}
           setHoveredPostKey={setHoveredPostKey}
           onPostEdit={onPostEdit}
@@ -239,11 +257,22 @@ function SlotCellContent({
   );
 }
 
+/** In Daily view, max expanded rows per multi-post block by number of blocks in the row: 3→5, 4→4, 5+→3. */
+function getDayViewMultiMaxRows(postsCount: number): number {
+  if (postsCount <= 2) return 3;
+  if (postsCount === 3) return 5;
+  if (postsCount === 4) return 4;
+  return 3;
+}
+
 interface MultiPostBlockProps {
   post: CalendarPost;
   dateKey: string;
   time: string;
   isDayView: boolean;
+  /** Total number of post blocks in this row (for Daily view expansion rules). */
+  postsCount: number;
+  alignExpandedRight?: boolean;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
   onPostEdit: (post: CalendarPost) => void;
@@ -258,6 +287,8 @@ function MultiPostBlock({
   dateKey,
   time,
   isDayView,
+  postsCount,
+  alignExpandedRight: _alignExpandedRight = false,
   hoveredPostKey,
   setHoveredPostKey,
   onPostEdit,
@@ -268,10 +299,16 @@ function MultiPostBlock({
 }: MultiPostBlockProps) {
   const multiPostKey = `${dateKey}-${time}-${post.id}`;
   const multiHovered = hoveredPostKey === multiPostKey;
-  const multiExpandRows = Math.min(1 + (multiHovered ? 2 : 0), 3);
+  const multiExpandRows = isDayView
+    ? multiHovered
+      ? getDayViewMultiMaxRows(postsCount)
+      : 1
+    : Math.min(1 + (multiHovered ? 2 : 0), 3);
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
-    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full${isDayView ? ` ${SINGLE_POST_MAX_WIDTH_CLASS}` : ""}`
+    ? isDayView
+      ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative min-w-0 flex-1`
+      : `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full`
     : "relative z-0 min-w-0 flex-1";
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
@@ -531,10 +568,12 @@ export function WeeklyView({
     const firstDay = weekDays[0];
     const empty: Record<string, 0 | 1> = {};
     if (!isDayView || !firstDay) return empty;
+    const userTimezone = user?.timezone ?? "Etc/UTC";
+    const dayZoned = fromDate(firstDay, userTimezone);
+    const dateKey = `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
     const map: Record<string, 0 | 1> = {};
     let column0End = 0;
     let column1End = 0;
-    const dateKey = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, "0")}-${String(firstDay.getDate()).padStart(2, "0")}`;
     for (let timeIdx = 0; timeIdx < hours.length; timeIdx++) {
       const time = hours[timeIdx];
       if (time === undefined) continue;
@@ -565,7 +604,7 @@ export function WeeklyView({
       }
     }
     return map;
-  }, [isDayView, weekDays, hours, postsGrid]);
+  }, [isDayView, weekDays, hours, postsGrid, user?.timezone]);
 
   // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {
@@ -648,8 +687,10 @@ export function WeeklyView({
                 (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
               );
             });
-            // Row order = stacking order: earlier rows on top so expanded blocks cover cells below
-            const rowZIndex = rowHasHovered ? 2000 : 1000 - index;
+            // Row order = stacking order: earlier rows on top so expanded blocks cover cells below (values < 50 so modals stay on top)
+            const rowZIndex = rowHasHovered
+              ? CALENDAR_ROW_Z_HOVERED
+              : Math.max(1, CALENDAR_ROW_Z_BASE - index);
 
             return (
               <div
@@ -671,7 +712,8 @@ export function WeeklyView({
                     hours,
                     hoveredPostKey,
                     dragOverSlot,
-                    isDayView
+                    isDayView,
+                    user?.timezone ?? "Etc/UTC"
                   );
                   return (
                     <div
@@ -753,7 +795,7 @@ function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
 
   return (
     <div
-      className="bg-primary/90 pointer-events-none absolute right-0 left-16 z-20 h-0.5"
+      className="bg-primary/90 pointer-events-none absolute right-0 left-16 z-[41] h-0.5"
       style={{ top: `${topOffset}px` }}
     >
       <div className="bg-primary absolute -top-1 -left-2 h-2.5 w-2.5 rounded-full" />

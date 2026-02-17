@@ -443,7 +443,7 @@ export function Calendar({
       </div>
 
       {/* Calendar content: Day view on lg shows main + right sidebar */}
-      <div className="flex min-h-0 flex-1 overflow-hidden p-3">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <div
           className={`flex min-h-0 flex-1 transition-opacity duration-200 ${
             view === "day" ? "lg:min-w-0 lg:flex-row" : ""
