@@ -47,9 +47,20 @@ const EXPANDED_BLOCK_WRAPPER_CLASS =
 /** Single-post blocks only: max half the row width; multi-post blocks use full width. */
 const SINGLE_POST_MAX_WIDTH_CLASS = "max-w-[50%]";
 
-/** Max empty slots to count below (week view: 3 → up to 4 rows; day view: 6 → up to 7 rows). */
-const WEEK_VIEW_MAX_EXPAND = 3;
-const DAY_VIEW_MAX_EXPAND = 6;
+/** Day view: 1-2 posts → up to 7 rows (max 6 empty below); 3-4 → up to 5 rows (max 4 below); 5+ → up to 3 rows (max 2 below). */
+function getDayViewMaxExpand(postsCount: number): number {
+  if (postsCount <= 0) return 0;
+  if (postsCount <= 2) return 6;
+  if (postsCount <= 4) return 4;
+  return 2;
+}
+/** Week view: 1-2 posts → up to 3 rows (max 2 empty below); 3-4 posts → up to 2 rows (max 1 empty below). */
+function getWeekViewMaxExpand(postsCount: number): number {
+  if (postsCount <= 0) return 0;
+  if (postsCount <= 2) return 2;
+  if (postsCount <= 4) return 1;
+  return 0;
+}
 
 /** Number of empty slots below to fill. Counts consecutive empty slots for the same date. */
 function getExpandDown(
@@ -57,7 +68,7 @@ function getExpandDown(
   timeSlot: string,
   postsGrid: PostsGrid,
   hours: string[],
-  maxEmptySlots: number = WEEK_VIEW_MAX_EXPAND
+  maxEmptySlots: number
 ): number {
   const idx = hours.indexOf(timeSlot);
   if (idx < 0 || idx >= hours.length - 1) return 0;
@@ -97,11 +108,10 @@ function getSlotState(
   const posts = postsGrid[dateKey]?.[time] ?? [];
   const slotKey = `${dateKey}-${time}`;
   const isDragOver = dragOverSlot === slotKey;
-  const maxExpand = isDayView ? DAY_VIEW_MAX_EXPAND : WEEK_VIEW_MAX_EXPAND;
-  const expandDown =
-    posts.length === 1
-      ? getExpandDown(dateKey, time, postsGrid, hours, maxExpand)
-      : 0;
+  const maxExpand = isDayView
+    ? getDayViewMaxExpand(posts.length)
+    : getWeekViewMaxExpand(posts.length);
+  const expandDown = getExpandDown(dateKey, time, postsGrid, hours, maxExpand);
   const singlePostKey =
     posts.length === 1 && posts[0] ? `${dateKey}-${time}-${posts[0].id}` : null;
   const isHovered = singlePostKey !== null && hoveredPostKey === singlePostKey;
@@ -205,9 +215,13 @@ function SlotCellContent({
     return blockInner;
   }
 
+  const { expandRows } = slotState;
   if (posts.length <= 6) {
     return (
-      <div className="relative flex h-full space-x-0.5">
+      <div
+        className="relative flex space-x-0.5"
+        style={{ height: slotState.blockHeightPx }}
+      >
         {posts.map((post, index) => (
           <MultiPostBlock
             key={post.id}
@@ -216,6 +230,7 @@ function SlotCellContent({
             time={time}
             isDayView={isDayView}
             postsCount={posts.length}
+            slotExpandRows={expandRows}
             alignExpandedRight={index >= posts.length / 2}
             hoveredPostKey={hoveredPostKey}
             setHoveredPostKey={setHoveredPostKey}
@@ -231,7 +246,10 @@ function SlotCellContent({
   }
 
   return (
-    <div className="relative flex h-full space-x-0.5">
+    <div
+      className="relative flex space-x-0.5"
+      style={{ height: slotState.blockHeightPx }}
+    >
       {posts.slice(0, 5).map((post, index) => (
         <MultiPostBlock
           key={post.id}
@@ -240,6 +258,7 @@ function SlotCellContent({
           time={time}
           isDayView={isDayView}
           postsCount={posts.length}
+          slotExpandRows={expandRows}
           alignExpandedRight={index >= 3}
           hoveredPostKey={hoveredPostKey}
           setHoveredPostKey={setHoveredPostKey}
@@ -272,6 +291,8 @@ interface MultiPostBlockProps {
   isDayView: boolean;
   /** Total number of post blocks in this row (for Daily view expansion rules). */
   postsCount: number;
+  /** Default row height when not hovered (day: 1–7; week: 1–3). */
+  slotExpandRows?: number;
   alignExpandedRight?: boolean;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
@@ -288,6 +309,7 @@ function MultiPostBlock({
   time,
   isDayView,
   postsCount,
+  slotExpandRows,
   alignExpandedRight: _alignExpandedRight = false,
   hoveredPostKey,
   setHoveredPostKey,
@@ -302,8 +324,10 @@ function MultiPostBlock({
   const multiExpandRows = isDayView
     ? multiHovered
       ? getDayViewMultiMaxRows(postsCount)
-      : 1
-    : Math.min(1 + (multiHovered ? 2 : 0), 3);
+      : (slotExpandRows ?? 1)
+    : multiHovered
+      ? 3
+      : Math.min(slotExpandRows ?? 1, 3);
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
     ? isDayView
@@ -584,7 +608,7 @@ export function WeeklyView({
         time,
         postsGrid,
         hours,
-        DAY_VIEW_MAX_EXPAND
+        getDayViewMaxExpand(1)
       );
       const baseRows = 1 + expandDown;
       const slotKey = `${dateKey}-${time}`;
@@ -687,10 +711,10 @@ export function WeeklyView({
                 (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
               );
             });
-            // Row order = stacking order: earlier rows on top so expanded blocks cover cells below (values < 50 so modals stay on top)
+            // Row order = stacking order: earlier rows on top so post blocks always paint above rows below (no cap; values < 50 so modals stay on top)
             const rowZIndex = rowHasHovered
               ? CALENDAR_ROW_Z_HOVERED
-              : Math.max(1, CALENDAR_ROW_Z_BASE - index);
+              : CALENDAR_ROW_Z_BASE - index;
 
             return (
               <div
