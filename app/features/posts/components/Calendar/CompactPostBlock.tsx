@@ -47,7 +47,7 @@ function getClassName(
   isLongform: boolean | undefined
 ): string {
   const baseClasses =
-    "rounded-[var(--calendar-radius-md)] p-2 text-xs transition-[transform,opacity,box-shadow] focus:outline-none focus:ring-2 focus:ring-ring";
+    "rounded-[var(--calendar-radius-md)] p-1.5 text-xs transition-[transform,opacity,box-shadow] focus:outline-none focus:ring-2 focus:ring-ring";
   const cursorClass = isPast ? "cursor-default" : "cursor-pointer";
   const dragClass = isDragging
     ? "rotate-2 opacity-50"
@@ -58,7 +58,7 @@ function getClassName(
     ? ""
     : getStatusColor(post, isLongform ?? false, isPast ?? false);
   const borderClass = queueColorStyle
-    ? "border-0"
+    ? "border-0 border-l-4"
     : "border border-current border-opacity-20";
   return `${baseClasses} ${cursorClass} ${dragClass} ${statusClass} ${borderClass}`;
 }
@@ -209,7 +209,11 @@ export function CompactPostBlock({
       )} flex h-full flex-col overflow-hidden`}
       style={
         queueColorStyle
-          ? (queueColorStyle as unknown as React.CSSProperties)
+          ? {
+              ...(queueColorStyle as unknown as React.CSSProperties),
+              backgroundColor: "hsl(var(--calendar-surface-3-bg))",
+              borderLeftColor: queueColorStyle.borderColor,
+            }
           : undefined
       }
       title={getTitle(postPreview, isPast, isLongform, formattedTime)}

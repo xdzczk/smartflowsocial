@@ -1,5 +1,11 @@
 import { handleErrorSafely } from "~/lib/error-handler.client";
-import { fromDate, fromUnixTimestamp, nowUTC, toDate } from "~/lib/temporal";
+import {
+  fromDate,
+  fromISOString,
+  fromUnixTimestamp,
+  nowUTC,
+  toDate,
+} from "~/lib/temporal";
 
 import { getQueueColorBundle } from "../../queue-colors";
 
@@ -196,32 +202,49 @@ function publishedAtToDate(
   return null;
 }
 
+/**
+ * Single source of truth for post schedule instant (epoch milliseconds).
+ * Used for grid slot assignment and display time so they stay in sync.
+ * Handles scheduledFor as numeric string (Unix seconds) or ISO string.
+ */
+export function getPostScheduleInstant(
+  post: CalendarPost,
+  isLongform: boolean,
+  isPast: boolean
+): number | null {
+  try {
+    if (isPast || isLongform) {
+      const date = publishedAtToDate(post.publishedAt);
+      return date ? date.getTime() : null;
+    }
+    const scheduledFor = post.scheduledFor;
+    if (scheduledFor == null) return null;
+    if (typeof scheduledFor === "string") {
+      const numeric = Number(scheduledFor);
+      if (!Number.isNaN(numeric)) {
+        const zoned = fromUnixTimestamp(numeric, "UTC");
+        return toDate(zoned).getTime();
+      }
+      try {
+        const zoned = fromISOString(scheduledFor, "UTC");
+        return toDate(zoned).getTime();
+      } catch {
+        const date = new Date(scheduledFor);
+        return Number.isNaN(date.getTime()) ? null : date.getTime();
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function getDisplayTime(
   post: CalendarPost,
   isLongform: boolean,
   isPast: boolean
 ): Date {
-  try {
-    if (isPast) {
-      const date = publishedAtToDate(post.publishedAt);
-      if (date) return date;
-      return toDate(nowUTC());
-    }
-    if (isLongform) {
-      const date = publishedAtToDate(post.publishedAt);
-      if (date) return date;
-      return toDate(nowUTC());
-    }
-    const scheduledFor = post.scheduledFor;
-    if (typeof scheduledFor === "string") {
-      const timestamp = Number(scheduledFor);
-      if (!isNaN(timestamp)) {
-        const zoned = fromUnixTimestamp(timestamp, "UTC");
-        return toDate(zoned);
-      }
-    }
-    return toDate(nowUTC());
-  } catch {
-    return toDate(nowUTC());
-  }
+  const ms = getPostScheduleInstant(post, isLongform, isPast);
+  if (ms != null) return new Date(ms);
+  return toDate(nowUTC());
 }

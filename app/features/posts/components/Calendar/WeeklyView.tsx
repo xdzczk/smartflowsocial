@@ -5,7 +5,6 @@ import {
   addDays,
   fromDate,
   fromISOString,
-  fromUnixTimestamp,
   nowInTimezone,
   parseDateTimeLocal,
   toDate,
@@ -15,6 +14,7 @@ import type { QueueType, UserData } from "../../types";
 
 import { PostBlock } from "./PostBlock";
 import type { CalendarPost } from "./PostBlock.types";
+import { getPostScheduleInstant } from "./PostBlock.utils";
 
 interface WeeklyViewProps {
   scheduledPosts: CalendarPost[];
@@ -130,55 +130,47 @@ export function WeeklyView({
       grid[dateKey] = {};
     });
 
-    // Process scheduled posts
+    // Process scheduled posts (single source of truth: getPostScheduleInstant)
     scheduledPosts.forEach((post) => {
-      // Determine if this specific post is longform when in All tab
-      const postIsLongform = isAll
-        ? !!post.title && post.publishedAt
-        : isLongform;
-      // For longform posts, use publishedAt, for regular posts use scheduledFor
-      const timestamp = postIsLongform ? post.publishedAt : post.scheduledFor;
-      if (timestamp) {
-        // Parse timestamp and convert to user's timezone
-        const postZoned = postIsLongform
-          ? fromISOString(timestamp as string, "UTC")
-          : fromUnixTimestamp(Number(timestamp), "UTC");
-        const timeInUserTz = postZoned.withTimeZone(userTimezone);
-        const year = timeInUserTz.year;
-        const month = String(timeInUserTz.month).padStart(2, "0");
-        const dayStr = String(timeInUserTz.day).padStart(2, "0");
-        const dateKey = `${year}-${month}-${dayStr}`;
-        const hour = timeInUserTz.hour;
-        const minutes = timeInUserTz.minute;
-        const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
+      const postIsLongform = Boolean(
+        isAll ? !!post.title && post.publishedAt : isLongform
+      );
+      const ms = getPostScheduleInstant(post, postIsLongform, false);
+      if (ms == null) return;
+      const timeInUserTz = fromDate(new Date(ms), userTimezone);
+      const year = timeInUserTz.year;
+      const month = String(timeInUserTz.month).padStart(2, "0");
+      const dayStr = String(timeInUserTz.day).padStart(2, "0");
+      const dateKey = `${year}-${month}-${dayStr}`;
+      const hour = timeInUserTz.hour;
+      const minutes = timeInUserTz.minute;
+      const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
 
-        if (grid[dateKey]) {
-          grid[dateKey][timeSlot] ??= [];
-          grid[dateKey][timeSlot].push({ ...post, isPast: false });
-        }
+      if (grid[dateKey]) {
+        grid[dateKey][timeSlot] ??= [];
+        grid[dateKey][timeSlot].push({ ...post, isPast: false });
       }
     });
 
     // Process past posts
     pastPosts.forEach((post) => {
-      // Use publishedAt for past posts
-      const timestamp = post.publishedAt;
-      if (timestamp) {
-        // Parse timestamp and convert to user's timezone
-        const postZoned = fromISOString(timestamp as string, "UTC");
-        const timeInUserTz = postZoned.withTimeZone(userTimezone);
-        const year = timeInUserTz.year;
-        const month = String(timeInUserTz.month).padStart(2, "0");
-        const dayStr = String(timeInUserTz.day).padStart(2, "0");
-        const dateKey = `${year}-${month}-${dayStr}`;
-        const hour = timeInUserTz.hour;
-        const minutes = timeInUserTz.minute;
-        const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
+      const postIsLongform = Boolean(
+        isAll ? !!post.title && post.publishedAt : isLongform
+      );
+      const ms = getPostScheduleInstant(post, postIsLongform, true);
+      if (ms == null) return;
+      const timeInUserTz = fromDate(new Date(ms), userTimezone);
+      const year = timeInUserTz.year;
+      const month = String(timeInUserTz.month).padStart(2, "0");
+      const dayStr = String(timeInUserTz.day).padStart(2, "0");
+      const dateKey = `${year}-${month}-${dayStr}`;
+      const hour = timeInUserTz.hour;
+      const minutes = timeInUserTz.minute;
+      const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
 
-        if (grid[dateKey]) {
-          grid[dateKey][timeSlot] ??= [];
-          grid[dateKey][timeSlot].push({ ...post, isPast: true });
-        }
+      if (grid[dateKey]) {
+        grid[dateKey][timeSlot] ??= [];
+        grid[dateKey][timeSlot].push({ ...post, isPast: true });
       }
     });
 
@@ -334,7 +326,7 @@ export function WeeklyView({
           {hours.map((time, index) => (
             <div
               key={time}
-              className="border-border/40 flex h-[52px] items-center border-b"
+              className="border-border/40 flex h-[52px] items-stretch overflow-hidden border-b"
             >
               {/* Time label */}
               <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
