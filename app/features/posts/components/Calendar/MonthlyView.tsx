@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   addDays,
   createZonedDateTime,
@@ -14,6 +15,7 @@ import {
 } from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../types";
+import { CONTENT_MOBILE_BREAKPOINT_PX } from "../constants";
 
 import { PostBlock } from "./PostBlock";
 import type { CalendarPost } from "./PostBlock.types";
@@ -247,6 +249,11 @@ export function MonthlyView({
 
   const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const { formatDate } = useFormattedDate();
+  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
+
+  /** On mobile: up to 4 posts per day (3 + "+N more"); on desktop: up to 6 (5 + "+N more"). */
+  const maxPostsPerDay = isMobile ? 4 : 6;
+  const moreSlotIndex = isMobile ? 3 : 5;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -271,14 +278,18 @@ export function MonthlyView({
           const day = String(dayInfo.date.getDate()).padStart(2, "0");
           const dateKey = `${year}-${month}-${day}`;
           const posts = postsByDate[dateKey] ?? [];
-          const hasOverflow = posts.length > 6;
+          const hasOverflow = posts.length > maxPostsPerDay;
           const postsToShow = hasOverflow
-            ? posts.slice(0, 5)
-            : posts.slice(0, 6);
+            ? posts.slice(0, moreSlotIndex)
+            : posts.slice(0, maxPostsPerDay);
           const remainingCount = hasOverflow
-            ? Math.max(0, posts.length - 5)
+            ? Math.max(0, posts.length - moreSlotIndex)
             : 0;
-          const layoutCount = hasOverflow ? 7 : postsToShow.length;
+          const layoutCount = hasOverflow
+            ? isMobile
+              ? 4
+              : 7
+            : postsToShow.length;
           const layout = getMonthlyCellLayout(layoutCount);
 
           return (
@@ -312,7 +323,8 @@ export function MonthlyView({
                 {layout.map((placement, slotIndex) => {
                   if (!placement) return null;
                   const { row, col, colSpan } = placement;
-                  const isMoreLabel = hasOverflow && slotIndex === 5;
+                  const isMoreLabel =
+                    hasOverflow && slotIndex === moreSlotIndex;
                   const post = !isMoreLabel
                     ? postsToShow[slotIndex]
                     : undefined;
@@ -354,12 +366,12 @@ export function MonthlyView({
                             postIsPast
                           );
                           const userTz = user?.timezone ?? "Etc/UTC";
+                          const useHourOnly = isMobile && colSpan === 1;
                           const timeString = formatDate(displayTime, {
                             timezone: userTz,
-                            dateFormatOptions: {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
+                            dateFormatOptions: useHourOnly
+                              ? { hour: "2-digit" }
+                              : { hour: "2-digit", minute: "2-digit" },
                           });
                           return (
                             <PostBlock

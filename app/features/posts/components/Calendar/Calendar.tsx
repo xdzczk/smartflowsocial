@@ -253,148 +253,170 @@ export function Calendar({
       : "12h";
 
   return (
-    <div className="flex min-h-[60vh] flex-col bg-[hsl(var(--calendar-surface-2-bg))] lg:h-full lg:min-h-0">
-      {/* Header: left = date nav + Today, middle = content-type + queue filters, right = view toggle */}
-      <div className="border-border/60 border-b bg-[hsl(var(--calendar-surface-1-bg))] p-2 sm:p-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {/* Left: week/day nav + Today + mini-calendar (day view) */}
-          <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
-            <button
-              onClick={() => {
-                const currentZoned = fromDate(currentDate, userTimezone);
-                const newZoned =
-                  view === "day"
-                    ? addDays(currentZoned, -1)
-                    : view === "week"
-                      ? addDays(currentZoned, -7)
-                      : addMonths(currentZoned, -1);
-                setSelectedPost(null);
-                setCurrentDate(toDate(newZoned));
-              }}
-              className="text-muted-foreground hover:text-foreground p-2"
-              aria-label="Previous"
-            >
-              <ChevronLeft
-                className="h-5 w-5"
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-            </button>
+    <div className="flex h-full min-h-0 flex-col bg-[hsl(var(--calendar-surface-2-bg))]">
+      {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. All header text = text-sm to match view selector. */}
+      <div className="border-border/60 flex flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-2.5 sm:px-3 sm:py-3">
+        <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-2">
+          {/* Row 1 on mobile: calendar controls + Today + view selector */}
+          <div className="flex w-full min-w-0 items-center justify-between gap-1 md:w-auto md:flex-shrink-0">
+            <div className="flex min-w-0 flex-1 items-center gap-0.5 sm:gap-1">
+              <button
+                onClick={() => {
+                  const currentZoned = fromDate(currentDate, userTimezone);
+                  const newZoned =
+                    view === "day"
+                      ? addDays(currentZoned, -1)
+                      : view === "week"
+                        ? addDays(currentZoned, -7)
+                        : addMonths(currentZoned, -1);
+                  setSelectedPost(null);
+                  setCurrentDate(toDate(newZoned));
+                }}
+                className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 sm:p-2"
+                aria-label="Previous"
+              >
+                <ChevronLeft
+                  className="h-4 w-4 sm:h-5 sm:w-5"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+              </button>
 
-            <h2 className="text-foreground min-w-0 truncate text-base font-medium sm:text-lg">
-              {(() => {
-                const currentZoned = fromDate(currentDate, userTimezone);
-                if (view === "day") {
-                  return `Day of ${formatForDisplay(
-                    currentZoned,
-                    userTimezone,
-                    {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    }
-                  )}`;
-                }
-                if (view === "week") {
-                  return `Week of ${formatForDisplay(
-                    currentZoned,
-                    userTimezone,
-                    {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    }
-                  )}`;
-                }
-                return formatForDisplay(currentZoned, userTimezone, {
-                  month: "long",
-                  year: "numeric",
-                });
-              })()}
-            </h2>
+              <h2 className="text-foreground min-w-0 truncate text-sm leading-none font-medium">
+                {(() => {
+                  const currentZoned = fromDate(currentDate, userTimezone);
+                  if (view === "day") {
+                    return `Day of ${formatForDisplay(
+                      currentZoned,
+                      userTimezone,
+                      {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }
+                    )}`;
+                  }
+                  if (view === "week") {
+                    return `Week of ${formatForDisplay(
+                      currentZoned,
+                      userTimezone,
+                      {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }
+                    )}`;
+                  }
+                  return formatForDisplay(currentZoned, userTimezone, {
+                    month: "long",
+                    year: "numeric",
+                  });
+                })()}
+              </h2>
 
-            <button
-              onClick={() => {
-                const currentZoned = fromDate(currentDate, userTimezone);
-                const newZoned =
-                  view === "day"
-                    ? addDays(currentZoned, 1)
-                    : view === "week"
-                      ? addDays(currentZoned, 7)
-                      : addMonths(currentZoned, 1);
-                setSelectedPost(null);
-                setCurrentDate(toDate(newZoned));
-              }}
-              className="text-muted-foreground hover:text-foreground p-2"
-              aria-label="Next"
-            >
-              <ChevronRight
-                className="h-5 w-5"
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-            </button>
+              <button
+                onClick={() => {
+                  const currentZoned = fromDate(currentDate, userTimezone);
+                  const newZoned =
+                    view === "day"
+                      ? addDays(currentZoned, 1)
+                      : view === "week"
+                        ? addDays(currentZoned, 7)
+                        : addMonths(currentZoned, 1);
+                  setSelectedPost(null);
+                  setCurrentDate(toDate(newZoned));
+                }}
+                className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 sm:p-2"
+                aria-label="Next"
+              >
+                <ChevronRight
+                  className="h-4 w-4 sm:h-5 sm:w-5"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+              </button>
 
-            <button
-              onClick={() => {
-                const now = nowInTimezone(userTimezone);
-                setSelectedPost(null);
-                setCurrentDate(toDate(now));
-              }}
-              className="text-primary hover:text-primary/80 px-3 py-1 text-sm"
-              title="Today (T)"
-            >
-              Today
-            </button>
+              <button
+                onClick={() => {
+                  const now = nowInTimezone(userTimezone);
+                  setSelectedPost(null);
+                  setCurrentDate(toDate(now));
+                }}
+                className="text-primary hover:text-primary/80 shrink-0 px-2 py-1 text-sm sm:px-3"
+                title="Today (T)"
+              >
+                Today
+              </button>
 
-            {/* Mini calendar: in Day view only. On desktop (lg) it lives in the sidebar; below lg use header popover */}
-            {view === "day" ? (
-              <div className="lg:hidden">
-                <Popover
-                  open={miniCalendarOpen}
-                  onOpenChange={(open) => {
-                    setMiniCalendarOpen(open);
-                    if (open) setMiniCalendarMonth(currentDate);
-                  }}
-                >
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="text-muted-foreground hover:text-foreground rounded-[var(--calendar-radius-sm)] p-2"
-                      aria-label="Pick a date"
-                    >
-                      <CalendarDays
-                        className="h-5 w-5"
-                        strokeWidth={INLINE_ICON_STROKE}
-                        aria-hidden
-                      />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-auto rounded-[var(--calendar-radius-md)] border-[hsl(var(--calendar-surface-2-border))] bg-[hsl(var(--calendar-surface-2-bg))] p-3"
-                    align="end"
+              {/* Mini calendar: in Day view only. On desktop (lg) it lives in the sidebar; below lg use header popover */}
+              {view === "day" ? (
+                <div className="lg:hidden">
+                  <Popover
+                    open={miniCalendarOpen}
+                    onOpenChange={(open) => {
+                      setMiniCalendarOpen(open);
+                      if (open) setMiniCalendarMonth(currentDate);
+                    }}
                   >
-                    <MiniCalendarGrid
-                      displayedMonth={miniCalendarMonth}
-                      currentDate={currentDate}
-                      userTimezone={userTimezone}
-                      onMonthChange={setMiniCalendarMonth}
-                      onSelectDate={(date) => {
-                        setSelectedPost(null);
-                        setCurrentDate(date);
-                        setMiniCalendarOpen(false);
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            ) : null}
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-foreground rounded-[var(--calendar-radius-sm)] p-1.5 sm:p-2"
+                        aria-label="Pick a date"
+                      >
+                        <CalendarDays
+                          className="h-4 w-4 sm:h-5 sm:w-5"
+                          strokeWidth={INLINE_ICON_STROKE}
+                          aria-hidden
+                        />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto rounded-[var(--calendar-radius-md)] border-[hsl(var(--calendar-surface-2-border))] bg-[hsl(var(--calendar-surface-2-bg))] p-3"
+                      align="end"
+                    >
+                      <MiniCalendarGrid
+                        displayedMonth={miniCalendarMonth}
+                        currentDate={currentDate}
+                        userTimezone={userTimezone}
+                        onMonthChange={setMiniCalendarMonth}
+                        onSelectDate={(date) => {
+                          setSelectedPost(null);
+                          setCurrentDate(date);
+                          setMiniCalendarOpen(false);
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              ) : null}
+            </div>
+
+            {/* View toggle: same row on mobile, right side */}
+            <div className="bg-muted/50 flex shrink-0 items-center gap-0.5 rounded-[var(--calendar-radius-sm)] p-0.5 sm:gap-1 sm:p-1">
+              {(["day", "week", "month"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => {
+                    setSelectedPost(null);
+                    setView(v);
+                  }}
+                  className={`rounded-[var(--calendar-radius-sm)] px-1.5 py-0.5 text-sm font-medium sm:px-2 sm:py-1 md:px-3 ${
+                    view === v
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Middle: content-type dropdown + queue filter when on main calendar page (equal width) */}
+          {/* Row 2 on mobile: content type 50% + queue 50%. On desktop: middle section */}
           {calendarPageTabs ? (
-            <div className="border-border/60 flex min-w-0 flex-1 flex-shrink-0 gap-2 border-b-0">
-              <div className="flex min-w-0 flex-1 justify-center">
+            <div className="border-border/60 flex w-full items-center gap-2 border-b-0 md:min-w-0 md:flex-1">
+              <div className="flex min-w-0 flex-1 justify-center md:flex-1">
                 <PostTypeTabs
                   currentTab={calendarPageTabs.currentTab}
                   basePath={calendarPageTabs.basePath}
@@ -419,26 +441,6 @@ export function Calendar({
               ) : null}
             </div>
           ) : null}
-
-          {/* Right: view toggle Day | Week | Month */}
-          <div className="bg-muted/50 flex flex-shrink-0 items-center gap-0.5 rounded-[var(--calendar-radius-sm)] p-0.5 sm:gap-1 sm:p-1">
-            {(["day", "week", "month"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => {
-                  setSelectedPost(null);
-                  setView(v);
-                }}
-                className={`rounded-[var(--calendar-radius-sm)] px-2 py-1 text-xs font-medium sm:px-3 sm:text-sm ${
-                  view === v
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {v.charAt(0).toUpperCase() + v.slice(1)}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 

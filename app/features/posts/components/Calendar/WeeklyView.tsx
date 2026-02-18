@@ -36,6 +36,12 @@ type PostsGrid = Record<string, Record<string, CalendarPost[]>>;
 const DEFAULT_SCROLL_HOUR = 6;
 const ROW_HEIGHT_PX = 52;
 
+/** Full day range: 00:00–23:30 (24 hours × 2 slots). */
+const HOURS_PER_DAY = 24;
+
+/** Week view: min width so horizontal scroll works on narrow screens (time col 4rem + 7 × 3.5rem). */
+const WEEK_VIEW_MIN_WIDTH = "28.5rem";
+
 /** Row z-index range (below Dialog z-50) so modals and overlays stay on top of the calendar grid. */
 const CALENDAR_ROW_Z_HOVERED = 40;
 const CALENDAR_ROW_Z_BASE = 39;
@@ -44,9 +50,6 @@ const CALENDAR_ROW_Z_BASE = 39;
 const EXPANDED_BLOCK_WRAPPER_CLASS =
   "z-10 bg-[hsl(var(--calendar-surface-2-bg))]";
 
-/** Single-post blocks only: max half the row width; multi-post blocks use full width. */
-const SINGLE_POST_MAX_WIDTH_CLASS = "max-w-[50%]";
-
 /** Day view: 1-2 posts → up to 7 rows (max 6 empty below); 3-4 → up to 5 rows (max 4 below); 5+ → up to 3 rows (max 2 below). */
 function getDayViewMaxExpand(postsCount: number): number {
   if (postsCount <= 0) return 0;
@@ -54,9 +57,10 @@ function getDayViewMaxExpand(postsCount: number): number {
   if (postsCount <= 4) return 4;
   return 2;
 }
-/** Week view: 1-2 posts → up to 3 rows (max 2 empty below); 3-4 posts → up to 2 rows (max 1 empty below). */
+/** Week view: 1 post → up to 4 rows (max 3 empty below); 2 posts → up to 3 rows (max 2 below); 3-4 → up to 2 rows (max 1 below). */
 function getWeekViewMaxExpand(postsCount: number): number {
   if (postsCount <= 0) return 0;
+  if (postsCount === 1) return 3;
   if (postsCount <= 2) return 2;
   if (postsCount <= 4) return 1;
   return 0;
@@ -123,9 +127,9 @@ function getSlotState(
         : baseRows
       : baseRows
     : isHovered
-      ? baseRows >= 3
+      ? baseRows >= 4
         ? baseRows
-        : Math.min(baseRows + 2, 3)
+        : Math.min(baseRows + 2, 4)
       : baseRows;
   const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
   return {
@@ -202,15 +206,21 @@ function SlotCellContent({
         />
       </div>
     );
-    if (isDayView && slotColumn === 1) {
+    if (isDayView) {
       return (
-        <div className="flex w-full justify-end">
-          <div className="w-[50%] min-w-0 shrink-0">{blockInner}</div>
+        <div className="flex w-full gap-1">
+          <div className="min-w-0 flex-1">
+            {slotColumn === 0 ? (
+              <div className="w-full min-w-0">{blockInner}</div>
+            ) : null}
+          </div>
+          <div className="flex min-w-0 flex-1 justify-end">
+            {slotColumn === 1 ? (
+              <div className="w-full min-w-0">{blockInner}</div>
+            ) : null}
+          </div>
         </div>
       );
-    }
-    if (isDayView) {
-      return <div className={SINGLE_POST_MAX_WIDTH_CLASS}>{blockInner}</div>;
     }
     return blockInner;
   }
@@ -291,7 +301,7 @@ interface MultiPostBlockProps {
   isDayView: boolean;
   /** Total number of post blocks in this row (for Daily view expansion rules). */
   postsCount: number;
-  /** Default row height when not hovered (day: 1–7; week: 1–3). */
+  /** Default row height when not hovered (day: 1–7; week: 1–4). */
   slotExpandRows?: number;
   alignExpandedRight?: boolean;
   hoveredPostKey: string | null;
@@ -326,8 +336,8 @@ function MultiPostBlock({
       ? getDayViewMultiMaxRows(postsCount)
       : (slotExpandRows ?? 1)
     : multiHovered
-      ? 3
-      : Math.min(slotExpandRows ?? 1, 3);
+      ? 4
+      : Math.min(slotExpandRows ?? 1, 4);
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
     ? isDayView
@@ -415,28 +425,26 @@ export function WeeklyView({
         : "12h"
       : "12h";
 
-  // Generate hours - keys are always in 24-hour format for grid lookup
+  // Generate hours - keys are always in 24-hour format for grid lookup (00:00–23:30)
   const hours = useMemo(() => {
     const hoursList: string[] = [];
-    for (let h = 0; h < 24; h++) {
+    for (let h = 0; h < HOURS_PER_DAY; h++) {
       hoursList.push(`${h.toString().padStart(2, "0")}:00`);
       hoursList.push(`${h.toString().padStart(2, "0")}:30`);
     }
     return hoursList;
   }, []);
 
-  // Generate display labels based on user's time format preference
+  // Generate display labels based on user's time format preference (00:00–23:30)
   const hourLabels = useMemo(() => {
     const labels: string[] = [];
     if (userTimeFormat === "24h") {
-      // 24-hour format: 00:00 to 23:30
-      for (let h = 0; h < 24; h++) {
+      for (let h = 0; h < HOURS_PER_DAY; h++) {
         labels.push(`${h.toString().padStart(2, "0")}:00`);
         labels.push(`${h.toString().padStart(2, "0")}:30`);
       }
     } else {
-      // 12-hour format: 12:00 AM to 11:30 PM
-      for (let h = 0; h < 24; h++) {
+      for (let h = 0; h < HOURS_PER_DAY; h++) {
         const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
         const period = h < 12 ? "AM" : "PM";
         labels.push(`${hour12}:00 ${period}`);
@@ -659,128 +667,138 @@ export function WeeklyView({
 
   return (
     <div className="flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
-      {/* Days header */}
-      <div className="border-border/40 flex border-b bg-[hsl(var(--calendar-surface-2-bg))]">
-        <div className="w-16 flex-shrink-0" />
-        {weekDays.map((day) => {
-          const userTimezone = user?.timezone ?? "Etc/UTC";
-          const todayZoned = nowInTimezone(userTimezone);
-          const dayZoned = fromDate(day, userTimezone);
-          const isToday =
-            dayZoned.year === todayZoned.year &&
-            dayZoned.month === todayZoned.month &&
-            dayZoned.day === todayZoned.day;
-          return (
-            <div
-              key={day.toISOString()}
-              className={`border-border/30 flex min-w-0 flex-1 items-center justify-center gap-1 border-r px-2 py-1 text-center last:border-r-0 ${
-                isToday ? "border-l-primary bg-primary/5 border-l-2" : ""
-              }`}
-            >
-              <span className="text-muted-foreground text-xs font-normal">
-                {day.toLocaleDateString("en-US", {
-                  weekday: "short",
-                  timeZone: user?.timezone ?? "Etc/UTC",
-                })}
-              </span>
-              <span
-                className={`text-sm leading-tight font-semibold ${
-                  isToday ? "text-primary" : "text-foreground"
-                }`}
-              >
-                {day.getDate()}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Time grid */}
-      <div ref={gridScrollRef} className="h-0 min-h-0 flex-1 overflow-y-auto">
-        <div className="relative">
-          {hours.map((time, index) => {
-            const dateKeysForRow = weekDays.map((day) => {
-              const y = day.getFullYear();
-              const m = String(day.getMonth() + 1).padStart(2, "0");
-              const d = String(day.getDate()).padStart(2, "0");
-              return `${y}-${m}-${d}`;
-            });
-            const rowHasHovered = dateKeysForRow.some((dateKey) => {
-              const posts = postsGrid[dateKey]?.[time] ?? [];
-              return posts.some(
-                (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
-              );
-            });
-            // Row order = stacking order: earlier rows on top so post blocks always paint above rows below (no cap; values < 50 so modals stay on top)
-            const rowZIndex = rowHasHovered
-              ? CALENDAR_ROW_Z_HOVERED
-              : CALENDAR_ROW_Z_BASE - index;
-
-            return (
-              <div
-                key={time}
-                className="border-border/40 relative flex h-[52px] min-h-[52px] items-stretch overflow-visible border-b"
-                style={{ zIndex: rowZIndex }}
-              >
-                {/* Time label */}
-                <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
-                  {hourLabels[index]}
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
+        <div
+          className="flex min-h-0 flex-1 flex-col"
+          style={{ minWidth: WEEK_VIEW_MIN_WIDTH }}
+        >
+          {/* Days header */}
+          <div className="border-border/40 flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
+            <div className="w-16 flex-shrink-0" />
+            {weekDays.map((day) => {
+              const userTimezone = user?.timezone ?? "Etc/UTC";
+              const todayZoned = nowInTimezone(userTimezone);
+              const dayZoned = fromDate(day, userTimezone);
+              const isToday =
+                dayZoned.year === todayZoned.year &&
+                dayZoned.month === todayZoned.month &&
+                dayZoned.day === todayZoned.day;
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={`border-border/30 flex min-w-[3.5rem] flex-1 items-center justify-center gap-1 border-r px-2 py-1 text-center last:border-r-0 ${
+                    isToday ? "border-l-primary bg-primary/5 border-l-2" : ""
+                  }`}
+                >
+                  <span className="text-muted-foreground text-xs font-normal">
+                    {day.toLocaleDateString("en-US", {
+                      weekday: "short",
+                      timeZone: user?.timezone ?? "Etc/UTC",
+                    })}
+                  </span>
+                  <span
+                    className={`text-sm leading-tight font-semibold ${
+                      isToday ? "text-primary" : "text-foreground"
+                    }`}
+                  >
+                    {day.getDate()}
+                  </span>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Day columns */}
-                {weekDays.map((day) => {
-                  const slotState = getSlotState(
-                    day,
-                    time,
-                    postsGrid,
-                    hours,
-                    hoveredPostKey,
-                    dragOverSlot,
-                    isDayView,
-                    user?.timezone ?? "Etc/UTC"
+          {/* Time grid */}
+          <div
+            ref={gridScrollRef}
+            className="h-0 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+          >
+            <div className="relative">
+              {hours.map((time, index) => {
+                const dateKeysForRow = weekDays.map((day) => {
+                  const y = day.getFullYear();
+                  const m = String(day.getMonth() + 1).padStart(2, "0");
+                  const d = String(day.getDate()).padStart(2, "0");
+                  return `${y}-${m}-${d}`;
+                });
+                const rowHasHovered = dateKeysForRow.some((dateKey) => {
+                  const posts = postsGrid[dateKey]?.[time] ?? [];
+                  return posts.some(
+                    (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
                   );
-                  return (
-                    <div
-                      key={slotState.slotKey}
-                      role="gridcell"
-                      tabIndex={-1}
-                      className={`border-border/30 relative min-w-0 flex-1 overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
-                        slotState.isDragOver
-                          ? "bg-primary/5 border-primary/20"
-                          : "dark:hover:bg-muted hover:bg-muted"
-                      }`}
-                      onDragOver={(e) =>
-                        handleDragOver(e, slotState.dateKey, time)
-                      }
-                      onDrop={(e) => handleDrop(e, slotState.dateKey, time)}
-                      onDragLeave={handleDragLeave}
-                    >
-                      <SlotCellContent
-                        slotState={slotState}
-                        time={time}
-                        isDayView={isDayView}
-                        slotColumn={
-                          isDayView
-                            ? (dayViewColumnMap[slotState.slotKey] ?? 0)
-                            : undefined
-                        }
-                        hoveredPostKey={hoveredPostKey}
-                        setHoveredPostKey={setHoveredPostKey}
-                        onPostEdit={onPostEdit}
-                        user={user}
-                        queueTypes={queueTypes}
-                        isLongform={isLongform}
-                        isAll={isAll}
-                      />
+                });
+                // Row order = stacking order: earlier rows on top so post blocks always paint above rows below (no cap; values < 50 so modals stay on top)
+                const rowZIndex = rowHasHovered
+                  ? CALENDAR_ROW_Z_HOVERED
+                  : CALENDAR_ROW_Z_BASE - index;
+
+                return (
+                  <div
+                    key={time}
+                    className="border-border/40 relative flex h-[52px] min-h-[52px] items-stretch overflow-visible border-b"
+                    style={{ zIndex: rowZIndex }}
+                  >
+                    {/* Time label */}
+                    <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
+                      {hourLabels[index]}
                     </div>
-                  );
-                })}
-              </div>
-            );
-          })}
 
-          {/* Current time indicator - only show if today is in this week */}
-          <CurrentTimeIndicator user={user} weekDays={weekDays} />
+                    {/* Day columns */}
+                    {weekDays.map((day) => {
+                      const slotState = getSlotState(
+                        day,
+                        time,
+                        postsGrid,
+                        hours,
+                        hoveredPostKey,
+                        dragOverSlot,
+                        isDayView,
+                        user?.timezone ?? "Etc/UTC"
+                      );
+                      return (
+                        <div
+                          key={slotState.slotKey}
+                          role="gridcell"
+                          tabIndex={-1}
+                          className={`border-border/30 relative min-w-[3.5rem] flex-1 overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
+                            slotState.isDragOver
+                              ? "bg-primary/5 border-primary/20"
+                              : "dark:hover:bg-muted hover:bg-muted"
+                          }`}
+                          onDragOver={(e) =>
+                            handleDragOver(e, slotState.dateKey, time)
+                          }
+                          onDrop={(e) => handleDrop(e, slotState.dateKey, time)}
+                          onDragLeave={handleDragLeave}
+                        >
+                          <SlotCellContent
+                            slotState={slotState}
+                            time={time}
+                            isDayView={isDayView}
+                            slotColumn={
+                              isDayView
+                                ? (dayViewColumnMap[slotState.slotKey] ?? 0)
+                                : undefined
+                            }
+                            hoveredPostKey={hoveredPostKey}
+                            setHoveredPostKey={setHoveredPostKey}
+                            onPostEdit={onPostEdit}
+                            user={user}
+                            queueTypes={queueTypes}
+                            isLongform={isLongform}
+                            isAll={isAll}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+
+              {/* Current time indicator - only show if today is in this week */}
+              <CurrentTimeIndicator user={user} weekDays={weekDays} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

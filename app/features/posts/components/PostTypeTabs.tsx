@@ -88,7 +88,7 @@ export default function PostTypeTabs({
       <div className={wrapperClass}>
         <Select value={currentTab} onValueChange={handleMobileTabChange}>
           <SelectTrigger
-            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-xs font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
+            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
             aria-label="Content type"
           >
             <SelectValue>{label}</SelectValue>
