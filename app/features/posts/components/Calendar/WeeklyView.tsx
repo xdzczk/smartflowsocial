@@ -773,6 +773,7 @@ export function WeeklyView({
                 className="relative w-full"
                 style={{
                   height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
+                  minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
                 }}
               >
                 {hours.map((time, index) => {
