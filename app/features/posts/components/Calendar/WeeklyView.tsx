@@ -173,12 +173,20 @@ function getSlotState(
   };
 }
 
+/** Bottom time rows (22:30, 23:00, 23:30): expand blocks upward so they don't go below 23:30. */
+const BOTTOM_ROWS_EXPAND_UP_THRESHOLD = 45;
+
+/** First row index (19:30) where we stack "row above on top of row below" so hover works on lower parts of blocks. */
+const BOTTOM_ROWS_STACK_ABOVE_THRESHOLD = 39;
+
 interface SlotCellContentProps {
   slotState: SlotState;
   time: string;
   isDayView: boolean;
   /** In day view: 0 = left column, 1 = right column for alternating single-post blocks */
   slotColumn?: 0 | 1;
+  /** Row index (0–47); when >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD, blocks expand upward on hover. */
+  rowIndex?: number;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
   onPostEdit: (post: CalendarPost) => void;
@@ -193,6 +201,7 @@ function SlotCellContent({
   time,
   isDayView,
   slotColumn,
+  rowIndex = 0,
   hoveredPostKey,
   setHoveredPostKey,
   onPostEdit,
@@ -202,14 +211,19 @@ function SlotCellContent({
   isAll,
 }: SlotCellContentProps) {
   const { dateKey, posts, singlePostKey, isHovered, blockHeightPx } = slotState;
+  const expandUp = rowIndex >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
 
   if (posts.length === 1) {
     if (!posts[0]) return null;
     const blockInner = (
       // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
       <div
-        className={`relative w-full min-w-0 transition-[height] duration-200 ease-out ${
-          isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "z-0"
+        className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
+          expandUp && isHovered
+            ? `absolute right-0 bottom-0 left-0 ${EXPANDED_BLOCK_WRAPPER_CLASS}`
+            : isHovered
+              ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
+              : "relative z-0"
         }`}
         style={{ height: blockHeightPx }}
         onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
@@ -270,6 +284,7 @@ function SlotCellContent({
             isDayView={isDayView}
             postsCount={posts.length}
             slotExpandRows={expandRows}
+            expandUp={expandUp}
             alignExpandedRight={index >= posts.length / 2}
             hoveredPostKey={hoveredPostKey}
             setHoveredPostKey={setHoveredPostKey}
@@ -298,6 +313,7 @@ function SlotCellContent({
           isDayView={isDayView}
           postsCount={posts.length}
           slotExpandRows={expandRows}
+          expandUp={expandUp}
           alignExpandedRight={index >= 3}
           hoveredPostKey={hoveredPostKey}
           setHoveredPostKey={setHoveredPostKey}
@@ -332,6 +348,8 @@ interface MultiPostBlockProps {
   postsCount: number;
   /** Default row height when not hovered (day: 1–7; week: 1–4). */
   slotExpandRows?: number;
+  /** When true (bottom rows), expanded block anchors to bottom and grows upward. */
+  expandUp?: boolean;
   alignExpandedRight?: boolean;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
@@ -349,6 +367,7 @@ function MultiPostBlock({
   isDayView,
   postsCount,
   slotExpandRows,
+  expandUp = false,
   alignExpandedRight: _alignExpandedRight = false,
   hoveredPostKey,
   setHoveredPostKey,
@@ -373,7 +392,9 @@ function MultiPostBlock({
   const expandedClass = multiHovered
     ? isDayView
       ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative min-w-0 flex-1`
-      : `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full`
+      : expandUp
+        ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute bottom-0 left-0 right-0 w-full`
+        : `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full`
     : "relative z-0 min-w-0 flex-1";
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
@@ -790,10 +811,15 @@ export function WeeklyView({
                       (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
                     );
                   });
-                  // Row order = stacking order: earlier rows on top so post blocks always paint above rows below. Use min 1 so bottom rows (index 40+) paint above the scroll container's default layer.
+                  // Row order = stacking order: earlier rows on top so post blocks always paint above rows below. Use min 1 so bottom rows paint above the scroll container.
+                  // From 19:30 down: invert order so the row above paints on top of the row below; otherwise the row below captures hover and blocks don't activate.
                   const rowZIndex = rowHasHovered
                     ? CALENDAR_ROW_Z_HOVERED
-                    : Math.max(1, CALENDAR_ROW_Z_BASE - index);
+                    : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+                      ? CALENDAR_ROW_Z_BASE -
+                        index +
+                        BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+                      : Math.max(1, CALENDAR_ROW_Z_BASE - index);
 
                   return (
                     <div
@@ -860,6 +886,7 @@ export function WeeklyView({
                                     ? (dayViewColumnMap[slotState.slotKey] ?? 0)
                                     : undefined
                                 }
+                                rowIndex={index}
                                 hoveredPostKey={hoveredPostKey}
                                 setHoveredPostKey={setHoveredPostKey}
                                 onPostEdit={onPostEdit}
