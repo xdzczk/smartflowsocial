@@ -718,7 +718,10 @@ export function WeeklyView({
             ref={gridScrollRef}
             className="h-0 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
           >
-            <div className="relative">
+            <div
+              className="relative"
+              style={{ minHeight: `${hours.length * ROW_HEIGHT_PX}px` }}
+            >
               {hours.map((time, index) => {
                 const dateKeysForRow = weekDays.map((day) => {
                   const y = day.getFullYear();
