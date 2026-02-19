@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import {
   addDays,
@@ -67,6 +68,7 @@ export function Calendar({
   isAll = false,
   calendarPageTabs,
 }: CalendarProps) {
+  const { dateLocale } = useFormattedDate();
   const [view, setView] = useState<"day" | "week" | "month">("week");
   const userTimezone = user?.timezone ?? "Etc/UTC";
   const [currentDate, setCurrentDate] = useState(() => {
@@ -256,10 +258,10 @@ export function Calendar({
     <div className="flex h-full min-h-0 flex-col bg-[hsl(var(--calendar-surface-2-bg))]">
       {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. All header text = text-sm to match view selector. */}
       <div className="border-border/60 flex flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-2.5 sm:px-3 sm:py-3">
-        <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-2">
+        <div className="flex flex-col gap-2 md:flex-row md:flex-nowrap md:items-center md:gap-4">
           {/* Row 1 on mobile: calendar controls + Today + view selector */}
-          <div className="flex w-full min-w-0 items-center justify-between gap-1 md:w-auto md:flex-shrink-0">
-            <div className="flex min-w-0 flex-1 items-center gap-0.5 sm:gap-1">
+          <div className="flex w-full min-w-0 items-center justify-between gap-2 md:w-auto md:flex-shrink-0">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
               <button
                 onClick={() => {
                   const currentZoned = fromDate(currentDate, userTimezone);
@@ -272,7 +274,7 @@ export function Calendar({
                   setSelectedPost(null);
                   setCurrentDate(toDate(newZoned));
                 }}
-                className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 sm:p-2"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-9 min-w-9 shrink-0 items-center justify-center rounded-[var(--calendar-radius-sm)] p-1.5 sm:p-2"
                 aria-label="Previous"
               >
                 <ChevronLeft
@@ -282,7 +284,7 @@ export function Calendar({
                 />
               </button>
 
-              <h2 className="text-foreground min-w-0 truncate text-sm leading-none font-medium">
+              <h2 className="text-foreground min-w-0 truncate text-sm leading-9 font-medium">
                 {(() => {
                   const currentZoned = fromDate(currentDate, userTimezone);
                   if (view === "day") {
@@ -293,7 +295,9 @@ export function Calendar({
                         month: "short",
                         day: "numeric",
                         year: "numeric",
-                      }
+                      },
+                      undefined,
+                      dateLocale
                     )}`;
                   }
                   if (view === "week") {
@@ -304,13 +308,18 @@ export function Calendar({
                         month: "short",
                         day: "numeric",
                         year: "numeric",
-                      }
+                      },
+                      undefined,
+                      dateLocale
                     )}`;
                   }
-                  return formatForDisplay(currentZoned, userTimezone, {
-                    month: "long",
-                    year: "numeric",
-                  });
+                  return formatForDisplay(
+                    currentZoned,
+                    userTimezone,
+                    { month: "long", year: "numeric" },
+                    undefined,
+                    dateLocale
+                  );
                 })()}
               </h2>
 
@@ -326,7 +335,7 @@ export function Calendar({
                   setSelectedPost(null);
                   setCurrentDate(toDate(newZoned));
                 }}
-                className="text-muted-foreground hover:text-foreground shrink-0 p-1.5 sm:p-2"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-9 min-w-9 shrink-0 items-center justify-center rounded-[var(--calendar-radius-sm)] p-1.5 sm:p-2"
                 aria-label="Next"
               >
                 <ChevronRight
@@ -342,7 +351,7 @@ export function Calendar({
                   setSelectedPost(null);
                   setCurrentDate(toDate(now));
                 }}
-                className="text-primary hover:text-primary/80 shrink-0 px-2 py-1 text-sm sm:px-3"
+                className="text-primary hover:text-primary/80 bg-muted/50 flex h-9 shrink-0 items-center rounded-[var(--calendar-radius-sm)] px-2 py-1.5 text-sm font-medium sm:px-3"
                 title="Today (T)"
               >
                 Today
@@ -361,7 +370,7 @@ export function Calendar({
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="text-muted-foreground hover:text-foreground rounded-[var(--calendar-radius-sm)] p-1.5 sm:p-2"
+                        className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-9 min-w-9 items-center justify-center rounded-[var(--calendar-radius-sm)] p-1.5 sm:p-2"
                         aria-label="Pick a date"
                       >
                         <CalendarDays
@@ -379,6 +388,7 @@ export function Calendar({
                         displayedMonth={miniCalendarMonth}
                         currentDate={currentDate}
                         userTimezone={userTimezone}
+                        dateLocale={dateLocale}
                         onMonthChange={setMiniCalendarMonth}
                         onSelectDate={(date) => {
                           setSelectedPost(null);
@@ -393,7 +403,7 @@ export function Calendar({
             </div>
 
             {/* View toggle: same row on mobile, right side */}
-            <div className="bg-muted/50 flex shrink-0 items-center gap-0.5 rounded-[var(--calendar-radius-sm)] p-0.5 sm:gap-1 sm:p-1">
+            <div className="bg-muted/50 flex h-9 shrink-0 items-center gap-0.5 rounded-[var(--calendar-radius-sm)] p-0.5 sm:gap-1 sm:p-1">
               {(["day", "week", "month"] as const).map((v) => (
                 <button
                   key={v}
@@ -401,7 +411,7 @@ export function Calendar({
                     setSelectedPost(null);
                     setView(v);
                   }}
-                  className={`rounded-[var(--calendar-radius-sm)] px-1.5 py-0.5 text-sm font-medium sm:px-2 sm:py-1 md:px-3 ${
+                  className={`flex h-8 items-center rounded-[var(--calendar-radius-sm)] px-1.5 py-0.5 text-sm font-medium sm:px-2 sm:py-1 md:px-3 ${
                     view === v
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -502,6 +512,7 @@ export function Calendar({
                   displayedMonth={miniCalendarMonth}
                   currentDate={currentDate}
                   userTimezone={userTimezone}
+                  dateLocale={dateLocale}
                   onMonthChange={setMiniCalendarMonth}
                   onSelectDate={(date) => {
                     setSelectedPost(null);
@@ -540,6 +551,7 @@ interface MiniCalendarGridProps {
   displayedMonth: Date;
   currentDate: Date;
   userTimezone: string;
+  dateLocale: "en-GB" | "en-US" | "sv";
   onMonthChange: (date: Date) => void;
   onSelectDate: (date: Date) => void;
 }
@@ -548,6 +560,7 @@ function MiniCalendarGrid({
   displayedMonth,
   currentDate,
   userTimezone,
+  dateLocale,
   onMonthChange,
   onSelectDate,
 }: MiniCalendarGridProps) {
@@ -605,10 +618,13 @@ function MiniCalendarGrid({
           <ChevronLeft className="h-4 w-4" strokeWidth={INLINE_ICON_STROKE} />
         </button>
         <span className="text-sm font-medium">
-          {formatForDisplay(fromDate(displayedMonth, "UTC"), userTimezone, {
-            month: "long",
-            year: "numeric",
-          })}
+          {formatForDisplay(
+            fromDate(displayedMonth, "UTC"),
+            userTimezone,
+            { month: "long", year: "numeric" },
+            undefined,
+            dateLocale
+          )}
         </span>
         <button
           type="button"

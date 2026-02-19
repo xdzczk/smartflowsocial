@@ -13,6 +13,7 @@ import type {
   LongFormPostData,
 } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
@@ -21,6 +22,7 @@ import {
   fromDate,
   fromISOString,
   fromUnixTimestamp,
+  type DateDisplayLocale,
 } from "~/lib/temporal";
 
 import { MarkdownPreview } from "./MarkdownPreview";
@@ -28,7 +30,8 @@ import { MarkdownPreview } from "./MarkdownPreview";
 function formatLongFormDate(
   dateInput: string | Date | number | undefined,
   userTimezone: string,
-  userTimeFormat: "12h" | "24h"
+  userTimeFormat: "12h" | "24h",
+  dateLocale: DateDisplayLocale = "en-GB"
 ): string {
   if (!dateInput) return "—";
   try {
@@ -65,7 +68,8 @@ function formatLongFormDate(
         minute: "2-digit",
         hour12: userTimeFormat === "12h",
       },
-      userTimeFormat
+      userTimeFormat,
+      dateLocale
     );
   } catch (error) {
     handleErrorSafely(error, {
@@ -78,7 +82,7 @@ function formatLongFormDate(
         : typeof dateInput === "number"
           ? new Date(dateInput * 1000)
           : dateInput;
-    return dateObj.toLocaleDateString("en-US", {
+    return dateObj.toLocaleDateString(dateLocale, {
       month: "2-digit",
       day: "2-digit",
       year: "numeric",
@@ -145,6 +149,7 @@ function LongFormDetailsSidebar({
   eventId,
   tz,
   userTimeFormat,
+  dateLocale,
   directReplies,
   isThreadLoading,
   threadMetadata,
@@ -157,6 +162,7 @@ function LongFormDetailsSidebar({
   eventId: string | null | undefined;
   tz: string;
   userTimeFormat: "12h" | "24h";
+  dateLocale: DateDisplayLocale;
   directReplies: ChildReply[];
   isThreadLoading: boolean;
   threadMetadata: Record<string, unknown>;
@@ -198,7 +204,7 @@ function LongFormDetailsSidebar({
                 {dateLabel}
               </span>
               <p className="text-foreground mt-1 text-sm dark:text-white">
-                {formatLongFormDate(dateValue, tz, userTimeFormat)}
+                {formatLongFormDate(dateValue, tz, userTimeFormat, dateLocale)}
               </p>
             </div>
             <div>
@@ -306,6 +312,7 @@ export default function LongFormDetailsModal({
   userTimezone = "UTC",
   userTimeFormat = "12h",
 }: LongFormDetailsModalProps) {
+  const { dateLocale } = useFormattedDate();
   const [showEventData, setShowEventData] = useState(false);
   const deleteFetcher = useFetcher();
 
@@ -443,7 +450,8 @@ export default function LongFormDetailsModal({
                         ? (post.scheduledAtUtc ?? undefined)
                         : post.createdAt,
                     tz,
-                    userTimeFormat
+                    userTimeFormat,
+                    dateLocale
                   )}
                 </span>
                 <span>•</span>
@@ -521,6 +529,7 @@ export default function LongFormDetailsModal({
             eventId={eventId}
             tz={tz}
             userTimeFormat={userTimeFormat}
+            dateLocale={dateLocale}
             directReplies={directReplies}
             isThreadLoading={isThreadLoading}
             threadMetadata={threadMetadata}

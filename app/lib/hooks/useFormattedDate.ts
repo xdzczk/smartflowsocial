@@ -7,10 +7,12 @@ import { useMemo } from "react";
 
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
+  dateFormatToLocale,
   formatForDisplay,
   fromDate,
   fromISOString,
   fromUnixTimestamp,
+  type DateDisplayLocale,
   type Temporal,
 } from "~/lib/temporal";
 
@@ -87,7 +89,8 @@ function formatDateFallback(
   timezone: string,
   timeFormat: "12h" | "24h",
   isUnixTimestamp: boolean,
-  dateFormatOptions: Intl.DateTimeFormatOptions
+  dateFormatOptions: Intl.DateTimeFormatOptions,
+  dateLocale: DateDisplayLocale = "en-GB"
 ): string {
   try {
     const dateObj =
@@ -101,7 +104,7 @@ function formatDateFallback(
       return "-";
     }
 
-    return dateObj.toLocaleString("en-US", {
+    return dateObj.toLocaleString(dateLocale, {
       timeZone: timezone,
       ...dateFormatOptions,
       hour12: timeFormat === "12h",
@@ -129,6 +132,15 @@ export function useFormattedDate() {
         ? "24h"
         : "12h"
       : "12h";
+
+  const userDateFormat: "ddmmyyyy" | "mmddyyyy" | "yyyymmdd" =
+    user && typeof user === "object" && "dateFormat" in user
+      ? user.dateFormat === "mmddyyyy" || user.dateFormat === "yyyymmdd"
+        ? user.dateFormat
+        : "ddmmyyyy"
+      : "ddmmyyyy";
+
+  const dateLocale = dateFormatToLocale(userDateFormat);
 
   /**
    * Format a date with user preferences
@@ -168,7 +180,8 @@ export function useFormattedDate() {
               timezone,
               timeFormat,
               isUnixTimestamp,
-              dateFormatOptions
+              dateFormatOptions,
+              dateLocale
             );
           }
 
@@ -180,7 +193,8 @@ export function useFormattedDate() {
             userZoned,
             timezone,
             dateFormatOptions,
-            timeFormat
+            timeFormat,
+            dateLocale
           );
         } catch {
           // Final fallback - use native Date formatting
@@ -189,16 +203,19 @@ export function useFormattedDate() {
             timezone,
             timeFormat,
             isUnixTimestamp,
-            dateFormatOptions
+            dateFormatOptions,
+            dateLocale
           );
         }
       },
-    [userTimezone, userTimeFormat]
+    [userTimezone, userTimeFormat, dateLocale]
   );
 
   return {
     formatDate,
     userTimezone,
     userTimeFormat,
+    userDateFormat,
+    dateLocale,
   };
 }

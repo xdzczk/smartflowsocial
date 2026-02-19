@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
@@ -196,6 +197,7 @@ export default function NewPostImagesConfirmation({
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
   const user = useOptionalUser();
+  const { dateLocale } = useFormattedDate();
 
   // Calculate addTags for display
   const addTags = user?.showHashTagsinPosts ? `\n${tags}` : "";
@@ -472,13 +474,19 @@ export default function NewPostImagesConfirmation({
                             const zoned = fromUnixTimestamp(timestamp, "UTC");
                             const userTimezone = user?.timezone ?? "UTC";
                             const userZoned = zoned.withTimeZone(userTimezone);
-                            return formatForDisplay(userZoned, userTimezone, {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            });
+                            return formatForDisplay(
+                              userZoned,
+                              userTimezone,
+                              {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                              undefined,
+                              dateLocale
+                            );
                           } catch {
                             return "Invalid date";
                           }

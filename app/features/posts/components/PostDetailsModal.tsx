@@ -1,6 +1,6 @@
 import type { Post } from "@prisma/client";
 import { useFetcher, Link } from "@remix-run/react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import MediaModal from "~/components/ui/MediaModal";
@@ -9,8 +9,13 @@ import { ChildRepliesPanel } from "~/features/engagement/components/ChildReplies
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import { formatDate } from "~/features/posts/utils/content-helpers";
 import { getImageUrls } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
-import { formatForDisplay, fromDate } from "~/lib/temporal";
+import {
+  formatForDisplay,
+  fromDate,
+  type DateDisplayLocale,
+} from "~/lib/temporal";
 
 import { getQueueColor } from "../queue-colors";
 import type { CombinedContent, PostData } from "../types";
@@ -31,7 +36,8 @@ function getPostEventId(
 function formatScheduledDate(
   scheduledAtUtc: Date | null | undefined,
   userTimezone: string | undefined,
-  userTimeFormat: "12h" | "24h"
+  userTimeFormat: "12h" | "24h",
+  dateLocale: DateDisplayLocale = "en-GB"
 ): string {
   if (!scheduledAtUtc) return "Not scheduled";
   try {
@@ -49,10 +55,11 @@ function formatScheduledDate(
         minute: "2-digit",
         hour12: userTimeFormat === "12h",
       },
-      userTimeFormat
+      userTimeFormat,
+      dateLocale
     );
   } catch {
-    return scheduledAtUtc.toLocaleDateString("en-US", {
+    return scheduledAtUtc.toLocaleDateString(dateLocale, {
       month: "2-digit",
       day: "2-digit",
       year: "numeric",
@@ -493,6 +500,24 @@ export default function PostDetailsModal({
   const threadMetadata = threadData?.metadata ?? {};
   const showViewNote = type === "published" && hasViewNoteLink(post);
 
+  const { dateLocale } = useFormattedDate();
+  const formatDateWithLocale = useCallback(
+    (date: Date | string, short: boolean, tz?: string, fmt?: "12h" | "24h") =>
+      formatDate(
+        date,
+        short,
+        tz ?? userTimezone,
+        fmt ?? userTimeFormat,
+        dateLocale
+      ),
+    [dateLocale, userTimezone, userTimeFormat]
+  );
+  const formatScheduledDateWithLocale = useCallback(
+    (d: Date | null | undefined, tz: string | undefined, fmt: "12h" | "24h") =>
+      formatScheduledDate(d, tz, fmt, dateLocale),
+    [dateLocale]
+  );
+
   return (
     <>
       <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -562,7 +587,7 @@ export default function PostDetailsModal({
                     post,
                     queueType,
                     formatDate,
-                    formatScheduledDate,
+                    formatScheduledDateWithLocale,
                     userTimezone,
                     userTimeFormat
                   )}
@@ -585,8 +610,8 @@ export default function PostDetailsModal({
                 showSignedEvent={showSignedEvent}
                 showEventData={showEventData}
                 onToggleEventData={() => setShowEventData((v) => !v)}
-                formatDateFn={formatDate}
-                formatScheduledDateFn={formatScheduledDate}
+                formatDateFn={formatDateWithLocale}
+                formatScheduledDateFn={formatScheduledDateWithLocale}
                 userTimezone={userTimezone}
                 userTimeFormat={userTimeFormat}
               />

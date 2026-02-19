@@ -451,6 +451,38 @@ export function updateUserTimeFormat(
   });
 }
 
+export type DateFormatKey = "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
+
+/**
+ * Gets user's date format preference
+ */
+export async function getUserDateFormat(
+  userId: string
+): Promise<DateFormatKey> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { dateFormat: true },
+  });
+  const v = user?.dateFormat;
+  if (v === "mmddyyyy" || v === "yyyymmdd") return v;
+  return "ddmmyyyy";
+}
+
+/**
+ * Updates user's date format preference
+ */
+export function updateUserDateFormat(
+  userId: string,
+  dateFormat: DateFormatKey
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      dateFormat: dateFormat,
+    },
+  });
+}
+
 export type RunwayMode = "last-post" | "first-queue-empty";
 
 /** Days thresholds for KPI color: red when runway ≤ redThresholdDays, orange when ≤ orangeThresholdDays, amber otherwise. */
@@ -611,6 +643,7 @@ export async function updateRunwaySettings(
         pushNotifyIncludePreview: true,
         runwayNotifyBelowDays: null,
         lastRunwayLowNotificationAt: null,
+        dateFormat: null,
       };
       return result;
     }

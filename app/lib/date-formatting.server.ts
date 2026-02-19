@@ -12,6 +12,7 @@ import {
   fromDate,
   fromISOString,
   fromUnixTimestamp,
+  type DateDisplayLocale,
   type Temporal,
 } from "~/lib/temporal";
 
@@ -27,6 +28,10 @@ interface FormatDateForServerOptions {
    * Custom date format options
    */
   dateFormatOptions?: Intl.DateTimeFormatOptions;
+  /**
+   * Locale for date display (e.g. from dateFormatToLocale(user.dateFormat)); default "en-GB"
+   */
+  dateLocale?: DateDisplayLocale;
 }
 
 /**
@@ -80,7 +85,8 @@ function formatDateFallback(
   timezone: string,
   timeFormat: "12h" | "24h",
   isUnixTimestamp: boolean,
-  dateFormatOptions: Intl.DateTimeFormatOptions
+  dateFormatOptions: Intl.DateTimeFormatOptions,
+  dateLocale: DateDisplayLocale = "en-GB"
 ): string {
   try {
     const dateObj =
@@ -94,7 +100,7 @@ function formatDateFallback(
       return "-";
     }
 
-    return dateObj.toLocaleString("en-US", {
+    return dateObj.toLocaleString(dateLocale, {
       timeZone: timezone,
       ...dateFormatOptions,
       hour12: timeFormat === "12h",
@@ -135,6 +141,7 @@ export function formatDateForServer(
       hour: "numeric",
       minute: "2-digit",
     },
+    dateLocale = "en-GB",
   } = options;
 
   try {
@@ -146,7 +153,8 @@ export function formatDateForServer(
         timezone,
         timeFormat,
         isUnixTimestamp,
-        dateFormatOptions
+        dateFormatOptions,
+        dateLocale
       );
     }
 
@@ -154,7 +162,13 @@ export function formatDateForServer(
     const userZoned = zonedDateTime.withTimeZone(timezone);
 
     // Format with user preferences using Temporal
-    return formatForDisplay(userZoned, timezone, dateFormatOptions, timeFormat);
+    return formatForDisplay(
+      userZoned,
+      timezone,
+      dateFormatOptions,
+      timeFormat,
+      dateLocale
+    );
   } catch {
     // Final fallback - use native Date formatting (should rarely happen)
     return formatDateFallback(
@@ -162,7 +176,8 @@ export function formatDateForServer(
       timezone,
       timeFormat,
       isUnixTimestamp,
-      dateFormatOptions
+      dateFormatOptions,
+      dateLocale
     );
   }
 }

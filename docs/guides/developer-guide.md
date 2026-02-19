@@ -243,7 +243,7 @@ import { formatDate } from "~/lib/helpers";
 describe("formatDate", () => {
   it("should format date correctly", () => {
     const date = new Date("2026-01-02");
-    expect(formatDate(date)).toBe("01/02/2026");
+    expect(formatDate(date)).toBe("02/01/2026");
   });
 });
 ```
@@ -389,6 +389,14 @@ if (cached) return cached;
    - Follow ESLint rules
    - Use Prettier for formatting
    - Write self-documenting code
+
+4. **Date and time display:**
+   - The app supports a user preference for date format: DD/MM/YYYY, MM/DD/YYYY, or YYYY-MM-DD
+     (Settings → General).
+   - In client components use the `useFormattedDate()` hook; it respects the user’s timezone, time
+     format, and date format.
+   - When calling `formatForDisplay` or content-helpers’ `formatDate` directly, pass the user’s date
+     locale (e.g. from `useFormattedDate().dateLocale`) so displayed dates match the preference.
 
 ### Security
 

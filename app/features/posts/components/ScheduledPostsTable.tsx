@@ -26,6 +26,7 @@ import {
 } from "~/components/ui/select";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { scheduledPostsKeys } from "~/features/posts/hooks/useScheduledPostsQuery";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -126,6 +127,7 @@ export function ScheduledPostsTable({
   isFetchingNextPage = false,
   onScrollContainerReady,
 }: ScheduledPostsTableProps) {
+  const { dateLocale } = useFormattedDate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const useDedicatedScroll =
@@ -185,7 +187,8 @@ export function ScheduledPostsTable({
           minute: "2-digit",
           hour12: timeFormat === "12h",
         },
-        timeFormat
+        timeFormat,
+        dateLocale
       );
     } catch {
       // Fallback - still use Temporal for consistency
@@ -205,13 +208,14 @@ export function ScheduledPostsTable({
             minute: "2-digit",
             hour12: timeFormat === "12h",
           },
-          timeFormat
+          timeFormat,
+          dateLocale
         );
       } catch {
         // Final fallback
         if (!scheduledAtUtc) return "-";
         const tz = userTimezone ?? "UTC";
-        return scheduledAtUtc.toLocaleString("en-US", {
+        return scheduledAtUtc.toLocaleString(dateLocale, {
           timeZone: tz,
           month: "2-digit",
           day: "2-digit",

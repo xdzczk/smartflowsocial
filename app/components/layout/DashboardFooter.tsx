@@ -2,6 +2,7 @@ import { Clock, TriangleAlert } from "lucide-react";
 import { useState, useEffect } from "react";
 
 import { SignerStatusIndicator } from "~/components/signer/SignerStatusIndicator";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { getSyncState, subscribeToSyncState } from "~/lib/sync-manager.client";
 
@@ -17,6 +18,7 @@ const CLOCK_PLACEHOLDER = "–";
 
 export default function Footer() {
   const user = useOptionalUser() ?? null;
+  const { dateLocale } = useFormattedDate();
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState<Date | null>(null);
   const [syncNeedsAttention, setSyncNeedsAttention] = useState(false);
@@ -66,7 +68,7 @@ export default function Footer() {
 
   const dateString =
     mounted && time
-      ? time.toLocaleDateString("en-US", {
+      ? time.toLocaleDateString(dateLocale, {
           timeZone: userTimezone,
           month: "short",
           day: "numeric",

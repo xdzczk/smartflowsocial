@@ -72,12 +72,12 @@ function getStatusColor(status: string) {
 
 function formatSubscriptionDate(date: Date | null) {
   if (!date) return "N/A";
-  return format(new Date(date), "MMM dd, yyyy");
+  return format(new Date(date), "dd MMM yyyy");
 }
 
 function formatSubscriptionDateTime(date: Date | null) {
   if (!date) return "N/A";
-  return format(new Date(date), "MMM dd, yyyy 'at' h:mm a");
+  return format(new Date(date), "dd MMM yyyy 'at' h:mm a");
 }
 
 function formatSubscriptionCurrency(

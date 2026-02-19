@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   addDays,
@@ -393,6 +394,7 @@ export function WeeklyView({
   isLongform = false,
   isAll = false,
 }: WeeklyViewProps) {
+  const { dateLocale } = useFormattedDate();
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
   const gridScrollRef = useRef<HTMLDivElement>(null);
@@ -696,7 +698,7 @@ export function WeeklyView({
                   }`}
                 >
                   <span className="text-muted-foreground text-xs font-normal">
-                    {day.toLocaleDateString("en-US", {
+                    {day.toLocaleDateString(dateLocale, {
                       weekday: "short",
                       timeZone: user?.timezone ?? "Etc/UTC",
                     })}
@@ -720,7 +722,7 @@ export function WeeklyView({
           >
             <div
               className="relative"
-              style={{ minHeight: `${hours.length * ROW_HEIGHT_PX}px` }}
+              style={{ height: `${hours.length * ROW_HEIGHT_PX}px` }}
             >
               {hours.map((time, index) => {
                 const dateKeysForRow = weekDays.map((day) => {

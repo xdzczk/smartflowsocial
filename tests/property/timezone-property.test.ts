@@ -58,7 +58,7 @@ describe("Property-Based Tests: Timezone Handling", () => {
           (timezone: string, date: Date) => {
             try {
               // Create date in timezone (simplified check)
-              const dateStr = date.toLocaleString("en-US", {
+              const dateStr = date.toLocaleString("en-GB", {
                 timeZone: timezone,
               });
               return dateStr.length > 0;

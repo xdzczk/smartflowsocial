@@ -28,6 +28,7 @@ import {
   getUserNWC,
   getUserPushNotificationPreferences,
   getUserTimeFormat,
+  getUserDateFormat,
   getUserTimezone,
   getUserUploadProvider,
   getQueueTypes,
@@ -135,6 +136,7 @@ export interface SettingsLoaderData {
   pushNotifyIncludePreview: boolean;
   runwayNotifyBelowDays: number | null;
   timeFormat: "12h" | "24h";
+  dateFormat: "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
 }
 
 /**
@@ -173,6 +175,7 @@ export async function loadSettingsData(
     hidePostsFromLowTrustUsers,
     pushNotificationPreferences,
     timeFormat,
+    dateFormat,
   ] = await Promise.all([
     getUserTimezone(userId),
     getRelayIntentCached(userId),
@@ -191,6 +194,7 @@ export async function loadSettingsData(
     getUserHidePostsFromLowTrustUsers(userId),
     getUserPushNotificationPreferences(userId),
     getUserTimeFormat(userId),
+    getUserDateFormat(userId),
   ]);
 
   const relays = relayIntent.writeRelays;
@@ -362,5 +366,6 @@ export async function loadSettingsData(
       pushNotificationPreferences.pushNotifyIncludePreview,
     runwayNotifyBelowDays: pushNotificationPreferences.runwayNotifyBelowDays,
     timeFormat,
+    dateFormat,
   };
 }

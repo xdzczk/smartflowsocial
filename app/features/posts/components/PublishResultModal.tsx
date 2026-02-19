@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 import { formatRelayUrl } from "../utils/publish-result.utils";
@@ -559,6 +560,7 @@ export default function PublishResultModal({
 
   // Call hook before any conditional returns
   const user = useOptionalUser() ?? null;
+  const { dateLocale } = useFormattedDate();
 
   // Early return if modal is not open to prevent blocking
   if (!isOpen) {
@@ -581,7 +583,7 @@ export default function PublishResultModal({
     try {
       const date =
         scheduledFor instanceof Date ? scheduledFor : new Date(scheduledFor);
-      return date.toLocaleString("en-US", {
+      return date.toLocaleString(dateLocale, {
         timeZone: userTimezone,
         month: "short",
         day: "numeric",
@@ -599,7 +601,7 @@ export default function PublishResultModal({
     if (!lastScheduledAt) return "";
     try {
       const date = new Date(lastScheduledAt);
-      return date.toLocaleString("en-US", {
+      return date.toLocaleString(dateLocale, {
         timeZone: userTimezone,
         month: "short",
         day: "numeric",

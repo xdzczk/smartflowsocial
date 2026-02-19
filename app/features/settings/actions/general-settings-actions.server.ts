@@ -11,6 +11,9 @@ import {
   updateUserRelays,
   updateUserTimezone,
   updateUserTimeFormat,
+  updateUserDateFormat,
+  getUserTimeFormat,
+  getUserDateFormat,
 } from "~/features/user";
 import {
   updateTimezoneSchema,
@@ -132,6 +135,47 @@ export async function handleGeneralSettingsAction(
       return json({ success: true });
     }
     return json({ error: "Invalid time format" }, { status: 400 });
+  }
+
+  if (action === "update_date_format") {
+    const dateFormat = formData.get("dateFormat");
+    if (
+      dateFormat === "ddmmyyyy" ||
+      dateFormat === "mmddyyyy" ||
+      dateFormat === "yyyymmdd"
+    ) {
+      await updateUserDateFormat(userId, dateFormat);
+      return json({ success: true });
+    }
+    return json({ error: "Invalid date format" }, { status: 400 });
+  }
+
+  if (action === "apply_locale_defaults") {
+    const timeFormat = formData.get("timeFormat");
+    const dateFormat = formData.get("dateFormat");
+    if (
+      (timeFormat !== "12h" && timeFormat !== "24h") ||
+      (dateFormat !== "ddmmyyyy" &&
+        dateFormat !== "mmddyyyy" &&
+        dateFormat !== "yyyymmdd")
+    ) {
+      return json(
+        { error: "Invalid time or date format for locale defaults" },
+        { status: 400 }
+      );
+    }
+    const [currentTimeFormat, currentDateFormat] = await Promise.all([
+      getUserTimeFormat(userId),
+      getUserDateFormat(userId),
+    ]);
+    const stillOnDefaults =
+      currentTimeFormat === "12h" && currentDateFormat === "ddmmyyyy";
+    if (!stillOnDefaults) {
+      return json({ success: true, skipped: true });
+    }
+    await updateUserTimeFormat(userId, timeFormat);
+    await updateUserDateFormat(userId, dateFormat);
+    return json({ success: true });
   }
 
   return null;

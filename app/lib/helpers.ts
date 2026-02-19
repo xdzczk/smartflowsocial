@@ -38,7 +38,7 @@ export function convertToHex(key: string): string | null {
  * - Server code: `formatDateForServer(date, timezone, timeFormat)`
  */
 export const formatDate = (date: string | Date): string => {
-  return new Date(date).toLocaleString("en-US", {
+  return new Date(date).toLocaleString("en-GB", {
     month: "2-digit",
     day: "2-digit",
     year: "numeric",

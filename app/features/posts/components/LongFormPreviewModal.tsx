@@ -1,6 +1,7 @@
 import { Bookmark, MoreVertical } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { formatForDisplay, nowUTC } from "~/lib/temporal";
 
@@ -27,15 +28,23 @@ export default function LongFormPreviewModal({
   displayedHashtags,
   author = "You",
 }: LongFormPreviewModalProps) {
+  const { dateLocale } = useFormattedDate();
+
   if (!isOpen) return null;
 
   const formatDate = () => {
     const now = nowUTC();
-    return formatForDisplay(now, "UTC", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    return formatForDisplay(
+      now,
+      "UTC",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      },
+      undefined,
+      dateLocale
+    );
   };
 
   const handleBackdropKeyDown = (e: React.KeyboardEvent) => {

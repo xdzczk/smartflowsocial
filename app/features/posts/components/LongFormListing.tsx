@@ -24,6 +24,7 @@ import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { scheduledPostsKeys } from "~/features/posts/hooks/useScheduledPostsQuery";
 import type { LongFormPostType } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
@@ -195,6 +196,7 @@ export default function LongFormListing({
   isFetchingNextPage = false,
   onScrollContainerReady,
 }: LongFormListingProps) {
+  const { dateLocale } = useFormattedDate();
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const useDedicatedScroll =
@@ -319,7 +321,8 @@ export default function LongFormListing({
           minute: "2-digit",
           hour12: userTimeFormat === "12h",
         },
-        userTimeFormat
+        userTimeFormat,
+        dateLocale
       );
     } catch (error) {
       handleErrorSafely(error, {
@@ -334,7 +337,7 @@ export default function LongFormListing({
             : typeof dateInput === "number"
               ? new Date(dateInput * 1000)
               : dateInput;
-        return dateObj.toLocaleDateString("en-US", {
+        return dateObj.toLocaleDateString(dateLocale, {
           month: "2-digit",
           day: "2-digit",
           year: "numeric",

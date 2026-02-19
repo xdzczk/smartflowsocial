@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   formatForDateTimeLocal,
   fromDate,
@@ -189,6 +190,8 @@ export function useEditPostModal({
   hashTagPresets: _hashTagPresets = [],
   isLongform,
 }: UseEditPostModalProps) {
+  const { dateLocale } = useFormattedDate();
+
   // Get initial values for form
   const getInitialValues = () => {
     if (isLongform && typeof post === "object" && "title" in post) {
@@ -248,7 +251,7 @@ export function useEditPostModal({
       } catch {
         // Final fallback - manual format (should rarely happen)
         const dateInUserTz = new Date(
-          date.toLocaleString("en-US", { timeZone: userTimezone })
+          date.toLocaleString(dateLocale, { timeZone: userTimezone })
         );
         const year = dateInUserTz.getFullYear();
         const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");

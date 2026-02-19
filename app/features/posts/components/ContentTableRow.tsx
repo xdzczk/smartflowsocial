@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
   SMALL_ICON_SIZE_CLASS,
@@ -77,6 +78,7 @@ export function ContentTableRow({
   onScheduleRepost,
   onScheduleQuote,
 }: ContentTableRowProps) {
+  const { dateLocale } = useFormattedDate();
   const typeBadge = getContentTypeBadge(item);
   const queueDisplay = getQueueTypeDisplay(item.queueType);
 
@@ -184,16 +186,24 @@ export function ContentTableRow({
               item.scheduledAtUtc ?? undefined,
               false,
               userTimezone,
-              userTimeFormat
+              userTimeFormat,
+              dateLocale
             )
           : type === "published"
             ? formatDate(
                 item.publishedAt ?? undefined,
                 false,
                 userTimezone,
-                userTimeFormat
+                userTimeFormat,
+                dateLocale
               )
-            : formatDate(item.createdAt, false, userTimezone, userTimeFormat)}
+            : formatDate(
+                item.createdAt,
+                false,
+                userTimezone,
+                userTimeFormat,
+                dateLocale
+              )}
       </td>
       <td className="p-3 text-center">
         <div className={queueDisplay.className} style={queueDisplay.style}>

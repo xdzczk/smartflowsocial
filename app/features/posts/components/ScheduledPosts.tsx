@@ -17,7 +17,7 @@ interface ScheduledPostsLoaderData {
 export default function ScheduledPosts() {
   const { scheduledPosts } = useLoaderData<ScheduledPostsLoaderData>();
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
-  const { userTimezone, userTimeFormat } = useFormattedDate();
+  const { userTimezone, userTimeFormat, dateLocale } = useFormattedDate();
 
   return (
     <>
@@ -153,7 +153,8 @@ export default function ScheduledPosts() {
                                 minute: "2-digit",
                                 hour12: userTimeFormat === "12h",
                               },
-                              userTimeFormat
+                              userTimeFormat,
+                              dateLocale
                             );
                           } catch {
                             return INVALID_DATE;
@@ -286,7 +287,8 @@ export default function ScheduledPosts() {
                             minute: "2-digit",
                             hour12: userTimeFormat === "12h",
                           },
-                          userTimeFormat
+                          userTimeFormat,
+                          dateLocale
                         );
                       } catch {
                         return INVALID_DATE;

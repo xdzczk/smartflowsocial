@@ -82,6 +82,7 @@ const USER_SCALAR_SELECT = {
   runwayNotifyBelowDays: true,
   lastRunwayLowNotificationAt: true,
   timeFormat: true,
+  dateFormat: true,
   isChild: true,
   parentNpub: true,
   pendingParentRequests: true,

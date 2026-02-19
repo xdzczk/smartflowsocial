@@ -235,7 +235,7 @@ describe("Content Helpers", () => {
     it("should format Date object", () => {
       const date = new Date("2024-01-15T14:30:00Z");
       const result = formatDate(date);
-      expect(result).toMatch(/\d{2}\/\d{2}\/\d{4}/); // MM/DD/YYYY format
+      expect(result).toMatch(/\d{2}\/\d{2}\/\d{4}/); // DD/MM/YYYY format
     });
 
     it("should format ISO string", () => {

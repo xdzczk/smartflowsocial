@@ -8,6 +8,7 @@ import {
   fromISOString,
   fromUnixTimestamp,
   formatForDisplay,
+  type DateDisplayLocale,
   type Temporal,
 } from "~/lib/temporal";
 
@@ -204,7 +205,8 @@ export function formatDate(
   date: Date | string | undefined,
   isUnixTimestamp = false,
   userTimezone?: string,
-  timeFormat?: "12h" | "24h" | null
+  timeFormat?: "12h" | "24h" | null,
+  dateLocale?: DateDisplayLocale
 ): string {
   if (!date) return "-";
 
@@ -221,7 +223,8 @@ export function formatDate(
       zonedDateTime,
       timezone,
       DATE_FORMAT_OPTIONS,
-      timeFormat
+      timeFormat,
+      dateLocale ?? "en-GB"
     );
   }
 
@@ -236,7 +239,8 @@ export function formatDate(
       fallbackZoned,
       timezone,
       DATE_FORMAT_OPTIONS,
-      timeFormat
+      timeFormat,
+      dateLocale ?? "en-GB"
     );
   }
 

@@ -3,6 +3,8 @@ import { Check, Settings2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import type { DateDisplayLocale } from "~/lib/temporal";
 
 import { getQueueColorBundle, type QueueColorBundle } from "../queue-colors";
 import type { QueueType } from "../types";
@@ -44,10 +46,14 @@ function getQueueBundleForName(
 /**
  * Format a dateKey (YYYY-MM-DD) as full label "Friday, February 13" in the given timezone.
  */
-function formatDayLabel(dateKey: string, timezone: string): string {
+function formatDayLabel(
+  dateKey: string,
+  timezone: string,
+  dateLocale: DateDisplayLocale = "en-GB"
+): string {
   try {
     const date = new Date(dateKey + "T12:00:00.000Z");
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString(dateLocale, {
       timeZone: timezone,
       weekday: "long",
       month: "long",
@@ -71,6 +77,7 @@ export function ScheduleNext7DaysCard({
   onOpenTargetModal,
   queueTypes,
 }: ScheduleNext7DaysCardProps) {
+  const { dateLocale } = useFormattedDate();
   const [colorsRevealed, setColorsRevealed] = useState(false);
   const wasRevealedAtPointerDownRef = useRef(false);
   const allSet =
@@ -145,7 +152,7 @@ export function ScheduleNext7DaysCard({
           >
             {days.map(({ dateKey, count, byQueue }) => {
               const gap = isGap(count, targetPerDay);
-              const label = formatDayLabel(dateKey, userTimezone);
+              const label = formatDayLabel(dateKey, userTimezone, dateLocale);
               const hasBlocks =
                 Array.isArray(byQueue) &&
                 byQueue.length > 0 &&

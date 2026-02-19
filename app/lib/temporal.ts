@@ -211,18 +211,40 @@ export function addMonths(
   return zonedDateTime.add({ months });
 }
 
+/** User date format key → Intl locale for display (dd/mm, mm/dd, yyyy-mm-dd) */
+export type DateDisplayLocale = "en-GB" | "en-US" | "sv";
+
+/**
+ * Map user date format preference to Intl locale
+ * ddmmyyyy → en-GB (DD/MM/YYYY), mmddyyyy → en-US (MM/DD/YYYY), yyyymmdd → sv (YYYY-MM-DD)
+ */
+export function dateFormatToLocale(
+  dateFormat: "ddmmyyyy" | "mmddyyyy" | "yyyymmdd"
+): DateDisplayLocale {
+  switch (dateFormat) {
+    case "mmddyyyy":
+      return "en-US";
+    case "yyyymmdd":
+      return "sv";
+    default:
+      return "en-GB";
+  }
+}
+
 /**
  * Format a ZonedDateTime for display
  * @param zonedDateTime - The ZonedDateTime to format
  * @param timezone - Timezone to display in
  * @param options - Intl.DateTimeFormatOptions
  * @param timeFormat - Optional time format preference ("12h" for AM/PM, "24h" for 24-hour)
+ * @param dateLocale - Optional locale for date part (default "en-GB"); use dateFormatToLocale(user.dateFormat)
  */
 export function formatForDisplay(
   zonedDateTime: Temporal.ZonedDateTime,
   timezone: string,
   options?: Intl.DateTimeFormatOptions,
-  timeFormat?: "12h" | "24h" | null
+  timeFormat?: "12h" | "24h" | null,
+  dateLocale: DateDisplayLocale = "en-GB"
 ): string {
   const inTargetTz = zonedDateTime.withTimeZone(timezone);
   const date = toDate(inTargetTz);
@@ -235,7 +257,7 @@ export function formatForDisplay(
         ? true
         : (options?.hour12 ?? true);
 
-  return date.toLocaleString("en-US", {
+  return date.toLocaleString(dateLocale, {
     timeZone: timezone,
     ...options,
     hour12,

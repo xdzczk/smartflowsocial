@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { getImageUrls } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import { useTemplatesQuery, templatesKeys } from "../hooks/useTemplatesQuery";
 import { useTemplatesState } from "../hooks/useTemplatesState";
@@ -14,11 +15,11 @@ import type { Template } from "../types";
 import { TemplateDetailsModal } from "./TemplateDetailsModal";
 import { TemplatesHeader } from "./TemplatesHeader";
 
-function formatDate(template: Template): string {
+function formatTemplateDate(template: Template, dateLocale: string): string {
   const d = template.createdAt;
   return d instanceof Date
-    ? d.toLocaleDateString()
-    : new Date(d).toLocaleDateString();
+    ? d.toLocaleDateString(dateLocale)
+    : new Date(d).toLocaleDateString(dateLocale);
 }
 
 function typeLabel(template: Template): string {
@@ -80,6 +81,7 @@ function templateToModalPayload(
 }
 
 export default function TemplatesPage() {
+  const { dateLocale } = useFormattedDate();
   const queryClient = useQueryClient();
   const { data } = useTemplatesQuery();
   const templates = Array.isArray(data?.templates) ? data.templates : [];
@@ -204,7 +206,10 @@ export default function TemplatesPage() {
                           {typeLabel(template as unknown as Template)}
                         </Badge>
                         <span className="text-muted-foreground shrink-0 text-xs">
-                          {formatDate(template as unknown as Template)}
+                          {formatTemplateDate(
+                            template as unknown as Template,
+                            dateLocale
+                          )}
                         </span>
                         <div className="flex shrink-0 items-center gap-1">
                           <Button

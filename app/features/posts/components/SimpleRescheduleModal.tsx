@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import type { z } from "zod";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -76,6 +77,7 @@ export function SimpleRescheduleModal({
   queueTypes = [],
   userTimeFormat = "12h",
 }: SimpleRescheduleModalProps) {
+  const { dateLocale } = useFormattedDate();
   interface FetcherData {
     success?: boolean;
     error?: string;
@@ -237,7 +239,8 @@ export function SimpleRescheduleModal({
         hour: "2-digit",
         minute: "2-digit",
       },
-      userTimeFormat
+      userTimeFormat,
+      dateLocale
     );
   };
 

@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
   SMALL_ICON_SIZE_CLASS,
@@ -82,6 +83,7 @@ export function ContentListCard({
   onScheduleQuote,
   onMenuOpenChange,
 }: ContentListCardProps) {
+  const { dateLocale } = useFormattedDate();
   const queueDisplay = getQueueTypeDisplay(item.queueType);
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
@@ -92,16 +94,24 @@ export function ContentListCard({
           item.scheduledAtUtc ?? undefined,
           false,
           userTimezone,
-          userTimeFormat
+          userTimeFormat,
+          dateLocale
         )
       : type === "published"
         ? formatDate(
             item.publishedAt ?? undefined,
             false,
             userTimezone,
-            userTimeFormat
+            userTimeFormat,
+            dateLocale
           )
-        : formatDate(item.createdAt, false, userTimezone, userTimeFormat);
+        : formatDate(
+            item.createdAt,
+            false,
+            userTimezone,
+            userTimeFormat,
+            dateLocale
+          );
 
   return (
     <div

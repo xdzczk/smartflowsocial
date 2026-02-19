@@ -1,5 +1,6 @@
 import { useLoaderData, useSearchParams } from "@remix-run/react";
 
+import { DateFormatSettings } from "~/components/settings/DateFormatSettings";
 import { NotificationSettings } from "~/components/settings/NotificationSettings";
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
 import { TimeFormatSettings } from "~/components/settings/TimeFormatSettings";
@@ -312,6 +313,7 @@ export default function SettingsPage() {
     pushNotifyIncludePreview?: unknown;
     runwayNotifyBelowDays?: unknown;
     timeFormat?: unknown;
+    dateFormat?: unknown;
   };
 
   const {
@@ -345,6 +347,7 @@ export default function SettingsPage() {
     pushNotifyIncludePreview,
     runwayNotifyBelowDays,
     timeFormat: timeFormatRaw,
+    dateFormat: dateFormatRaw,
   } = data;
 
   const queueTypes = parseQueueTypes(queueTypesRaw);
@@ -410,6 +413,13 @@ export default function SettingsPage() {
             <TimezoneSettings timezone={timezoneValue} />
             <TimeFormatSettings
               timeFormat={timeFormatRaw === "24h" ? "24h" : "12h"}
+            />
+            <DateFormatSettings
+              dateFormat={
+                dateFormatRaw === "mmddyyyy" || dateFormatRaw === "yyyymmdd"
+                  ? dateFormatRaw
+                  : "ddmmyyyy"
+              }
             />
             <ScheduleIntervalsSettings
               scheduleIntervals={scheduleIntervalsList}

@@ -11,7 +11,9 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import type { DateDisplayLocale } from "~/lib/temporal";
 
 export interface GlobalSearchResult {
   type:
@@ -94,7 +96,10 @@ function getTypeLabel(type: GlobalSearchResult["type"]): string {
   }
 }
 
-function formatDate(date: Date | string): string {
+function formatDate(
+  date: Date | string,
+  dateLocale: DateDisplayLocale
+): string {
   const dateObj = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
   const diffMs = now.getTime() - dateObj.getTime();
@@ -107,7 +112,7 @@ function formatDate(date: Date | string): string {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
 
-  return dateObj.toLocaleDateString();
+  return dateObj.toLocaleDateString(dateLocale);
 }
 
 function getPreviewText(result: GlobalSearchResult): string {
@@ -139,6 +144,8 @@ export function GlobalSearchResults({
   isLoading = false,
   onResultClick,
 }: GlobalSearchResultsProps) {
+  const { dateLocale } = useFormattedDate();
+
   if (isLoading) {
     return (
       <div className="border-border bg-card max-h-96 overflow-y-auto rounded-lg border shadow-lg">
@@ -203,7 +210,7 @@ export function GlobalSearchResults({
                 </div>
                 {result.type !== "feature" ? (
                   <div className="text-muted-foreground mt-1 text-xs">
-                    {formatDate(result.createdAt)}
+                    {formatDate(result.createdAt, dateLocale)}
                   </div>
                 ) : null}
               </div>

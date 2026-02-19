@@ -3,7 +3,7 @@
  * Integrates lifecycle management with Remix revalidation
  */
 
-import { useLocation, useRevalidator } from "@remix-run/react";
+import { useFetcher, useLocation, useRevalidator } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 
@@ -14,6 +14,7 @@ import {
   persistUIState,
   clearPersistedState,
 } from "~/lib/lifecycle-manager.client";
+import { getLocaleTimeAndDateFormat } from "~/lib/locale-defaults.client";
 import {
   getActiveSignerConfig,
   setActiveSignerConfig,
@@ -26,11 +27,17 @@ import { triggerForegroundSync } from "~/lib/sync-manager.client";
 /** Minimum ms between revalidates when app becomes visible (reduces PFP flicker on mobile PWA). */
 const REVALIDATE_DEBOUNCE_MS = 1500;
 
+const LOCALE_DEFAULTS_SYNCED_KEY = "smartflow_locale_defaults_synced";
+
 export function LifecycleHandler() {
   const revalidator = useRevalidator();
   const queryClient = useQueryClient();
   const location = useLocation();
   const user = useOptionalUser();
+  const localeDefaultsFetcher = useFetcher<{
+    success?: boolean;
+    skipped?: boolean;
+  }>();
   const revalidatorRef = useRef(revalidator);
   const lastRevalidateAtRef = useRef(0);
 
@@ -51,6 +58,49 @@ export function LifecycleHandler() {
   useEffect(() => {
     setCurrentUserNpub(user?.npub ?? null);
   }, [user?.npub]);
+
+  // Apply browser/OS locale defaults for time/date format once per session when user is still on app defaults
+  useEffect(() => {
+    if (typeof window === "undefined" || !user?.id) return;
+    if (localeDefaultsFetcher.state !== "idle") return;
+    const timeFormat = user.timeFormat ?? "12h";
+    const userDateFormat =
+      "dateFormat" in user &&
+      typeof (user as { dateFormat?: string }).dateFormat === "string"
+        ? (user as { dateFormat: string }).dateFormat
+        : "ddmmyyyy";
+    const dateFormat =
+      userDateFormat === "mmddyyyy" || userDateFormat === "yyyymmdd"
+        ? userDateFormat
+        : "ddmmyyyy";
+    const stillOnDefaults = timeFormat === "12h" && dateFormat === "ddmmyyyy";
+    if (!stillOnDefaults) return;
+    if (window.sessionStorage.getItem(LOCALE_DEFAULTS_SYNCED_KEY)) return;
+    const { timeFormat: detectedTime, dateFormat: detectedDate } =
+      getLocaleTimeAndDateFormat();
+    if (detectedTime === "12h" && detectedDate === "ddmmyyyy") {
+      window.sessionStorage.setItem(LOCALE_DEFAULTS_SYNCED_KEY, "1");
+      return;
+    }
+    window.sessionStorage.setItem(LOCALE_DEFAULTS_SYNCED_KEY, "1");
+    const formData = new FormData();
+    formData.set("_action", "apply_locale_defaults");
+    formData.set("timeFormat", detectedTime);
+    formData.set("dateFormat", detectedDate);
+    localeDefaultsFetcher.submit(formData, {
+      method: "post",
+      action: "/dashboard/settings",
+    });
+  }, [user, localeDefaultsFetcher.state, localeDefaultsFetcher]);
+
+  useEffect(() => {
+    if (
+      localeDefaultsFetcher.state === "idle" &&
+      localeDefaultsFetcher.data?.success
+    ) {
+      revalidatorRef.current.revalidate();
+    }
+  }, [localeDefaultsFetcher.state, localeDefaultsFetcher.data]);
 
   // When user is logged in but sessionStorage has no signer config (e.g. new tab),
   // default to NIP-07 so extension-only users aren't blocked. We do not restore

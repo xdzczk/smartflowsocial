@@ -128,7 +128,7 @@ describe("Property-Based Tests: Helpers", () => {
       );
     });
 
-    it("should return date in MM/DD/YYYY format", () => {
+    it("should return date in DD/MM/YYYY format", () => {
       fc.assert(
         fc.property(
           fc
@@ -136,7 +136,7 @@ describe("Property-Based Tests: Helpers", () => {
             .filter((date: Date) => !isNaN(date.getTime())),
           (date: Date) => {
             const result = formatDate(date);
-            // Should contain date pattern (MM/DD/YYYY)
+            // Should contain date pattern (DD/MM/YYYY)
             return /\d{2}\/\d{2}\/\d{4}/.test(result);
           }
         ),

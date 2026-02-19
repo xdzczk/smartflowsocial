@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import type { SignedEvent } from "~/features/nostr/types";
 import { logClientError } from "~/lib/error-handler.client";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { fromUnixTimestamp, formatForDisplay } from "~/lib/temporal";
 
@@ -124,6 +125,7 @@ export default function PostConfirmation({
   extraFormData,
   fetcher: fetcherProp,
 }: PostConfirmationProps) {
+  const { dateLocale } = useFormattedDate();
   const internalFetcher = useFetcher<{ error?: string }>();
   const fetcher = fetcherProp ?? internalFetcher;
   const isSubmitting = fetcher.state !== "idle";
@@ -520,13 +522,19 @@ export default function PostConfirmation({
                           const zoned = fromUnixTimestamp(timestamp, "UTC");
                           const userTimezone = "UTC"; // Default timezone - user prop not available in this scope
                           const userZoned = zoned.withTimeZone(userTimezone);
-                          return formatForDisplay(userZoned, userTimezone, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          });
+                          return formatForDisplay(
+                            userZoned,
+                            userTimezone,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                            undefined,
+                            dateLocale
+                          );
                         } catch {
                           return "Invalid date";
                         }

@@ -4,6 +4,7 @@
 
 import { AlertTriangle } from "lucide-react";
 
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { formatForDisplay, fromISOString } from "~/lib/temporal";
 
@@ -32,6 +33,7 @@ export function ResumeModal({
   onClose,
   onConfirm,
 }: ResumeModalProps) {
+  const { dateLocale } = useFormattedDate();
   const userTimezone =
     user && typeof user === "object" && "timezone" in user
       ? (user.timezone ?? "UTC")
@@ -104,7 +106,8 @@ export function ResumeModal({
                       minute: "2-digit",
                       hour12: userTimeFormat === "12h",
                     },
-                    userTimeFormat
+                    userTimeFormat,
+                    dateLocale
                   );
                 } catch {
                   return scheduledFor;

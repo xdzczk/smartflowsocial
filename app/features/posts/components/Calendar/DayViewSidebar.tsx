@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 
@@ -80,6 +81,7 @@ function DayViewPostDetailCard({
   userTimezone,
   userTimeFormat,
 }: DayViewPostDetailCardProps) {
+  const { dateLocale } = useFormattedDate();
   const postIsLongform = isAll
     ? Boolean(post.title && post.publishedAt)
     : isLongform;
@@ -95,7 +97,8 @@ function DayViewPostDetailCard({
       hour: "2-digit",
       minute: "2-digit",
     },
-    userTimeFormat
+    userTimeFormat,
+    dateLocale
   );
   const mediaUrl =
     postIsLongform && post.image

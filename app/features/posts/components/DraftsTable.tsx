@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -121,6 +122,7 @@ export function DraftsTable({
   isFetchingNextPage = false,
   onScrollContainerReady,
 }: DraftsTableProps) {
+  const { dateLocale } = useFormattedDate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const useDedicatedScroll =
@@ -174,7 +176,8 @@ export function DraftsTable({
           hour: "numeric",
           minute: "2-digit",
         },
-        userTimeFormat
+        userTimeFormat,
+        dateLocale
       );
     } catch {
       // Fallback - still use Temporal for consistency
@@ -191,12 +194,13 @@ export function DraftsTable({
             hour: "numeric",
             minute: "2-digit",
           },
-          userTimeFormat
+          userTimeFormat,
+          dateLocale
         );
       } catch {
         // Final fallback
         const date = new Date(isoString);
-        return date.toLocaleString("en-US", {
+        return date.toLocaleString(dateLocale, {
           timeZone: userTimezone,
           month: "2-digit",
           day: "2-digit",

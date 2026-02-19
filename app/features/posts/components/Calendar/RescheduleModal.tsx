@@ -11,6 +11,7 @@ import { toast } from "react-hot-toast";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { isVideoFile } from "~/lib/helpers";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -94,7 +95,8 @@ function getFirstMedia(data: RescheduleData): string | null {
 function formatDateTime(
   date: Date,
   userTimezone: string,
-  userTimeFormat: "12h" | "24h" = "12h"
+  userTimeFormat: "12h" | "24h" = "12h",
+  dateLocale: "en-GB" | "en-US" | "sv" = "en-GB"
 ): string {
   const zonedDateTime = fromDate(date, userTimezone);
   return formatForDisplay(
@@ -107,7 +109,8 @@ function formatDateTime(
       hour: "2-digit",
       minute: "2-digit",
     },
-    userTimeFormat
+    userTimeFormat,
+    dateLocale
   );
 }
 
@@ -260,9 +263,11 @@ function renderModalContent(
   formatDateTime: (
     date: Date,
     tz: string,
-    timeFormat?: "12h" | "24h"
+    timeFormat: "12h" | "24h",
+    dateLocale: "en-GB" | "en-US" | "sv"
   ) => string,
   userTimeFormat: "12h" | "24h",
+  dateLocale: "en-GB" | "en-US" | "sv",
   handleDateTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
   selectedQueueType: string | null,
   setSelectedQueueType: (value: string | null) => void,
@@ -355,7 +360,12 @@ function renderModalContent(
         </div>
         {editableDateTime ? (
           <div className="text-muted-foreground text-xs">
-            {formatDateTime(editableDateTime, userTimezone, userTimeFormat)}
+            {formatDateTime(
+              editableDateTime,
+              userTimezone,
+              userTimeFormat,
+              dateLocale
+            )}
           </div>
         ) : null}
       </div>
@@ -513,6 +523,7 @@ export function RescheduleModal({
   const fetcher = useFetcher<FetcherData>();
   const loaderData = useLoaderData<{ user?: UserData }>();
   const user = userProp ?? loaderData.user;
+  const { dateLocale } = useFormattedDate();
   const [isSigningEvent, setIsSigningEvent] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
   const [editableDateTime, setEditableDateTime] = useState<Date | null>(null);
@@ -858,6 +869,7 @@ export function RescheduleModal({
               formatDateTimeForInput,
               formatDateTime,
               userTimeFormat,
+              dateLocale,
               handleDateTimeChange,
               selectedQueueType,
               setSelectedQueueType,
