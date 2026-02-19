@@ -257,8 +257,8 @@ export function Calendar({
   return (
     <div className="flex h-full min-h-0 flex-col bg-[hsl(var(--calendar-surface-2-bg))]">
       {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. All header text = text-sm to match view selector. */}
-      <div className="border-border/60 flex flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-2.5 sm:px-3 sm:py-3">
-        <div className="flex flex-col gap-2 md:flex-row md:flex-nowrap md:items-center md:gap-4">
+      <div className="border-border/60 flex min-h-[2.75rem] flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-2.5 sm:px-3 sm:py-3">
+        <div className="flex min-h-9 flex-col gap-2 md:flex-row md:flex-nowrap md:items-center md:gap-4">
           {/* Row 1 on mobile: calendar controls + Today + view selector */}
           <div className="flex w-full min-w-0 items-center justify-between gap-2 md:w-auto md:flex-shrink-0">
             <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -423,10 +423,10 @@ export function Calendar({
             </div>
           </div>
 
-          {/* Row 2 on mobile: content type 50% + queue 50%. On desktop: middle section */}
+          {/* Row 2 on mobile: content type 50% + queue 50%. On desktop: right-aligned, same-width filters */}
           {calendarPageTabs ? (
-            <div className="border-border/60 flex w-full items-center gap-2 border-b-0 md:min-w-0 md:flex-1">
-              <div className="flex min-w-0 flex-1 justify-center md:flex-1">
+            <div className="border-border/60 flex w-full items-center gap-2 border-b-0 md:min-w-0 md:flex-1 md:justify-end">
+              <div className="flex min-w-0 flex-1 justify-center md:w-40 md:min-w-40 md:flex-none md:[&_button]:w-full">
                 <PostTypeTabs
                   currentTab={calendarPageTabs.currentTab}
                   basePath={calendarPageTabs.basePath}
@@ -441,7 +441,7 @@ export function Calendar({
               {["all", "posts", "reposts", "longform"].includes(
                 calendarPageTabs.currentTab
               ) && queueTypes ? (
-                <div className="flex min-w-0 flex-1 justify-center">
+                <div className="flex min-w-0 flex-1 justify-center md:w-40 md:min-w-40 md:flex-none md:[&_button]:w-full">
                   <QueueSelectionTabs
                     currentTab={calendarPageTabs.currentTab}
                     queueTypes={queueTypes}

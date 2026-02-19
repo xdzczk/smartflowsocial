@@ -41,6 +41,8 @@ const ROW_HEIGHT_PX = 52;
 
 /** Full day range: 00:00–23:30 (24 hours × 2 slots). */
 const HOURS_PER_DAY = 24;
+/** Number of half-hour slots in the time grid (must match hours.length). Used for scroll height. */
+const TOTAL_TIME_SLOTS = HOURS_PER_DAY * 2;
 
 /** Week view: min width so horizontal scroll works on narrow screens (time col 4rem + 7 × 3.5rem). */
 const WEEK_VIEW_MIN_WIDTH = "28.5rem";
@@ -715,14 +717,15 @@ export function WeeklyView({
             })}
           </div>
 
-          {/* Time grid */}
+          {/* Time grid: scroll container needs min-h-0 so it can shrink and show scroll; content height fixed to full day */}
           <div
             ref={gridScrollRef}
-            className="h-0 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+            style={{ minHeight: 0 }}
           >
             <div
-              className="relative"
-              style={{ height: `${hours.length * ROW_HEIGHT_PX}px` }}
+              className="relative flex-shrink-0"
+              style={{ height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px` }}
             >
               {hours.map((time, index) => {
                 const dateKeysForRow = weekDays.map((day) => {
