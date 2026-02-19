@@ -767,13 +767,14 @@ export function WeeklyView({
           <div className="relative min-h-0 flex-1">
             <div
               ref={gridScrollRef}
-              className="absolute inset-0 overflow-x-hidden overflow-y-scroll"
+              className="absolute inset-0 isolate overflow-x-hidden overflow-y-scroll"
             >
               <div
                 className="relative flex w-full flex-col flex-nowrap"
                 style={{
                   height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
                   minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
+                  transform: "translateZ(0)",
                 }}
               >
                 {hours.map((time, index) => {
@@ -789,10 +790,10 @@ export function WeeklyView({
                       (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
                     );
                   });
-                  // Row order = stacking order: earlier rows on top so post blocks always paint above rows below. Clamp to >= 0 so bottom rows (index 40+) aren't painted behind the scroll area.
+                  // Row order = stacking order: earlier rows on top so post blocks always paint above rows below. Use min 1 so bottom rows (index 40+) paint above the scroll container's default layer.
                   const rowZIndex = rowHasHovered
                     ? CALENDAR_ROW_Z_HOVERED
-                    : Math.max(0, CALENDAR_ROW_Z_BASE - index);
+                    : Math.max(1, CALENDAR_ROW_Z_BASE - index);
 
                   return (
                     <div
