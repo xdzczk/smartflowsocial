@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   addDays,
   fromDate,
@@ -11,6 +12,7 @@ import {
 } from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../types";
+import { CONTENT_MOBILE_BREAKPOINT_PX } from "../constants";
 
 import { PostBlock } from "./PostBlock";
 import type { CalendarPost } from "./PostBlock.types";
@@ -397,6 +399,7 @@ export function WeeklyView({
   const hasSetInitialScrollRef = useRef(false);
 
   const isDayView = Boolean(weekDaysOverride?.length === 1);
+  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
 
   // Generate week days starting from Monday, or use override (e.g. single day for Day view)
   const weekDays = useMemo(() => {
@@ -669,8 +672,10 @@ export function WeeklyView({
     <div className="flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
         <div
-          className="flex min-h-0 flex-1 flex-col"
-          style={{ minWidth: WEEK_VIEW_MIN_WIDTH }}
+          className="flex min-h-0 min-h-[40vh] flex-1 flex-col"
+          style={{
+            minWidth: isMobile ? undefined : WEEK_VIEW_MIN_WIDTH,
+          }}
         >
           {/* Days header */}
           <div className="border-border/40 flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]">

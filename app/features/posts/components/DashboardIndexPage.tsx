@@ -117,7 +117,7 @@ function DashboardContentTypeTabs({
       <div className="min-w-0 flex-1">
         <Select value={currentContentTab} onValueChange={handleMobileTabChange}>
           <SelectTrigger
-            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-xs font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
+            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
             aria-label="Content type"
           >
             <SelectValue>{label}</SelectValue>
@@ -364,7 +364,7 @@ export default function DashboardIndexPage() {
       ) : null}
 
       {/* Dashboard: top block (Statistics + Your Flow row), scrollable Flow section, bottom block (Queue Health + Top Posts) */}
-      <div className="dashboard-canvas flex min-h-[calc(100dvh-12rem)] flex-col lg:h-full lg:min-h-0">
+      <div className="dashboard-canvas flex min-h-[calc(100dvh-12rem)] flex-1 flex-col lg:h-full lg:min-h-0">
         <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-0 px-4 lg:px-8">
           <div className="mt-2.5">
             <Statistics

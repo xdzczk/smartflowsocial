@@ -31,21 +31,27 @@ export function ScheduleOverviewTargetModal({
   const fetcher = useFetcher<{ success?: boolean; error?: string }>();
   const [value, setValue] = useState(targetPerDay);
   const prevFetcherStateRef = useRef(fetcher.state);
+  const didSubmitRef = useRef(false);
 
   useEffect(() => {
     const prevState = prevFetcherStateRef.current;
     prevFetcherStateRef.current = fetcher.state;
-    if (
-      prevState !== "idle" &&
+    const justFinishedSubmit =
+      (prevState === "submitting" || prevState === "loading") &&
+      fetcher.state === "idle";
+    const canClose =
       fetcher.state === "idle" &&
-      fetcher.data?.success
-    ) {
-      onSuccess?.();
+      fetcher.data?.success &&
+      (justFinishedSubmit || didSubmitRef.current);
+    if (canClose) {
+      didSubmitRef.current = false;
       onClose();
+      onSuccess?.();
     }
   }, [fetcher.state, fetcher.data, onSuccess, onClose]);
 
   const handleSave = () => {
+    didSubmitRef.current = true;
     const formData = new FormData();
     formData.set("_action", "updateScheduleOverviewTarget");
     formData.set("targetPostsPerDay", String(value));
@@ -60,8 +66,8 @@ export function ScheduleOverviewTargetModal({
         <DialogHeader>
           <DialogTitle>Schedule overview</DialogTitle>
           <DialogDescription>
-            Set your target posts per day. Days below this target will be
-            highlighted as gaps (0 = only highlight empty days).
+            Set your target posts per day. Days with fewer scheduled posts will
+            be highlighted as gaps. Set to 0 to turn off gap highlighting.
           </DialogDescription>
         </DialogHeader>
 
@@ -98,7 +104,9 @@ export function ScheduleOverviewTargetModal({
               id="schedule-overview-target-hint"
               className="text-muted-foreground text-xs"
             >
-              Days with fewer scheduled posts will show as gaps.
+              {value === 0
+                ? "Gap highlighting is off."
+                : "Days with fewer scheduled posts will show as gaps."}
             </p>
           </div>
         </div>

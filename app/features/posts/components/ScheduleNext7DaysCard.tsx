@@ -60,9 +60,7 @@ function formatDayLabel(dateKey: string, timezone: string): string {
 }
 
 function isGap(count: number, targetPerDay: number): boolean {
-  if (targetPerDay === 0) {
-    return count === 0;
-  }
+  if (targetPerDay === 0) return false;
   return count < targetPerDay;
 }
 
