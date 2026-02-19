@@ -23,6 +23,7 @@ export function PostBlock({
   hideVideoPlayButton = false,
   timeLabel,
   forceOpaque = false,
+  slotExpandRows,
 }: PostBlockProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStarted, setDragStarted] = useState(false);
@@ -117,6 +118,7 @@ export function PostBlock({
         multipleInCell={false}
         hideVideoPlayButton={hideVideoPlayButton}
         timeLabel={timeLabel}
+        slotExpandRows={slotExpandRows}
       />
     );
   }

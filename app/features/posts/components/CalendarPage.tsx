@@ -34,6 +34,14 @@ export default function CalendarPage() {
   const TAB_LONGFORM = "longform";
   const CALENDAR_BASE_PATH = "/dashboard/calendar";
   const currentTab = searchParams.get("tab") ?? TAB_ALL;
+  const initialDate = searchParams.get("date") ?? undefined;
+  const initialViewParam = searchParams.get("view");
+  const initialView =
+    initialViewParam === "day" ||
+    initialViewParam === "week" ||
+    initialViewParam === "month"
+      ? initialViewParam
+      : undefined;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -57,6 +65,8 @@ export default function CalendarPage() {
               totalRepostsCount,
               totalLongformCount,
             }}
+            initialDate={initialDate}
+            initialView={initialView}
           />
         ) : currentTab === TAB_POSTS ? (
           <Calendar
@@ -76,6 +86,8 @@ export default function CalendarPage() {
               totalRepostsCount,
               totalLongformCount,
             }}
+            initialDate={initialDate}
+            initialView={initialView}
           />
         ) : currentTab === TAB_REPOSTS ? (
           <Calendar
@@ -95,6 +107,8 @@ export default function CalendarPage() {
               totalRepostsCount,
               totalLongformCount,
             }}
+            initialDate={initialDate}
+            initialView={initialView}
           />
         ) : currentTab === TAB_LONGFORM ? (
           <Calendar
@@ -113,6 +127,8 @@ export default function CalendarPage() {
               totalRepostsCount,
               totalLongformCount,
             }}
+            initialDate={initialDate}
+            initialView={initialView}
           />
         ) : null}
       </div>

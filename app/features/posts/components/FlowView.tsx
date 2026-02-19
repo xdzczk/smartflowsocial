@@ -47,6 +47,8 @@ const OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS = 140;
 const OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX = 40;
 /** Edge threshold (px); wider so Chrome/macOS and sub-pixel scroll still trigger overscroll */
 const OVERSCROLL_EDGE_PX = 16;
+/** Min scroll range (px) to enable rubber-band; when content doesn't fill viewport we skip overscroll to avoid jitter */
+const OVERSCROLL_MIN_SCROLL_RANGE_PX = 20;
 
 /** Inset (px) from left edge for initial position and "Scroll to next": last-posted card sits away from sidebar */
 const SCROLL_EDGE_OFFSET_PX = 24;
@@ -292,10 +294,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         if (!el.contains(target)) return;
         const { scrollLeft, scrollWidth, clientWidth } = el;
         const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+        if (maxScrollLeft < OVERSCROLL_MIN_SCROLL_RANGE_PX) return;
         const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
-        const atRight =
-          maxScrollLeft <= OVERSCROLL_EDGE_PX ||
-          scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
+        const atRight = scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
         const deltaX = e.deltaX;
         if (deltaX === 0) return;
         if (atLeft && deltaX < 0) {
@@ -313,14 +314,13 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
 
       const handlePointerDown = (e: PointerEvent) => {
         if (e.button !== 0) return;
-        pointerStartXRef.current = e.clientX;
-        pointerStartScrollLeftRef.current = el.scrollLeft;
         const { scrollLeft, scrollWidth, clientWidth } = el;
         const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+        if (maxScrollLeft < OVERSCROLL_MIN_SCROLL_RANGE_PX) return;
+        pointerStartXRef.current = e.clientX;
+        pointerStartScrollLeftRef.current = el.scrollLeft;
         const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
-        const atRight =
-          maxScrollLeft <= OVERSCROLL_EDGE_PX ||
-          scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
+        const atRight = scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
         if (atLeft || atRight) {
           el.setPointerCapture(e.pointerId);
         }
@@ -329,10 +329,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const handlePointerMove = (e: PointerEvent) => {
         const { scrollLeft, scrollWidth, clientWidth } = el;
         const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+        if (maxScrollLeft < OVERSCROLL_MIN_SCROLL_RANGE_PX) return;
         const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
-        const atRight =
-          maxScrollLeft <= OVERSCROLL_EDGE_PX ||
-          scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
+        const atRight = scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
         const deltaX = e.clientX - pointerStartXRef.current;
         if (atLeft && deltaX > 0) {
           e.preventDefault();
@@ -368,10 +367,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       const handleTouchMove = (e: TouchEvent) => {
         const { scrollLeft, scrollWidth, clientWidth } = el;
         const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+        if (maxScrollLeft < OVERSCROLL_MIN_SCROLL_RANGE_PX) return;
         const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
-        const atRight =
-          maxScrollLeft <= OVERSCROLL_EDGE_PX ||
-          scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
+        const atRight = scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
         const touch = e.touches[0];
         if (!touch) return;
         const prevX = touchStartXRef.current;

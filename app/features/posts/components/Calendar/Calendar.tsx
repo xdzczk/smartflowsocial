@@ -57,6 +57,26 @@ interface CalendarProps {
     totalRepostsCount?: number;
     totalLongformCount?: number;
   };
+  /** Optional initial view when opening from URL (e.g. from Next 7 days day row). */
+  initialView?: "day" | "week" | "month";
+  /** Optional initial date (YYYY-MM-DD) when opening from URL. */
+  initialDate?: string;
+}
+
+const VIEW_VALUES = ["day", "week", "month"] as const;
+
+function parseInitialDate(
+  initialDate: string | null | undefined,
+  userTimezone: string
+): Date {
+  if (!initialDate || !/^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
+    const now = nowInTimezone(userTimezone);
+    return toDate(now);
+  }
+  const parsed = new Date(initialDate + "T12:00:00.000Z");
+  return Number.isNaN(parsed.getTime())
+    ? toDate(nowInTimezone(userTimezone))
+    : parsed;
 }
 
 export function Calendar({
@@ -67,14 +87,18 @@ export function Calendar({
   isLongform = false,
   isAll = false,
   calendarPageTabs,
+  initialView,
+  initialDate,
 }: CalendarProps) {
   const { dateLocale } = useFormattedDate();
-  const [view, setView] = useState<"day" | "week" | "month">("week");
   const userTimezone = user?.timezone ?? "Etc/UTC";
-  const [currentDate, setCurrentDate] = useState(() => {
-    const now = nowInTimezone(userTimezone);
-    return toDate(now);
+  const [view, setView] = useState<"day" | "week" | "month">(() => {
+    if (initialView && VIEW_VALUES.includes(initialView)) return initialView;
+    return "week";
   });
+  const [currentDate, setCurrentDate] = useState(() =>
+    parseInitialDate(initialDate, userTimezone)
+  );
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleData, setRescheduleData] = useState<RescheduleData | null>(
     null
@@ -257,8 +281,8 @@ export function Calendar({
   return (
     <div className="flex h-full min-h-0 flex-col bg-[hsl(var(--calendar-surface-2-bg))]">
       {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. All header text = text-sm to match view selector. */}
-      <div className="border-border/60 flex min-h-[2.75rem] flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-2.5 sm:px-3 sm:py-3">
-        <div className="flex min-h-9 flex-col gap-2 md:flex-row md:flex-nowrap md:items-center md:gap-4">
+      <div className="border-border/60 flex min-h-14 flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-0 sm:px-3">
+        <div className="flex flex-col gap-2 md:flex-row md:flex-nowrap md:items-center md:gap-4">
           {/* Row 1 on mobile: calendar controls + Today + view selector */}
           <div className="flex w-full min-w-0 items-center justify-between gap-2 md:w-auto md:flex-shrink-0">
             <div className="flex min-w-0 flex-1 items-center gap-2">

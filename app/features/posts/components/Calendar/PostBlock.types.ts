@@ -59,6 +59,8 @@ export interface PostBlockProps {
   timeLabel?: string;
   /** When true, past posts render at full opacity (e.g. when expanded in weekly view). */
   forceOpaque?: boolean;
+  /** When set (e.g. week multi-post slot rows), minimal block may show 2–3 lines of text when >= 2. */
+  slotExpandRows?: number;
 }
 
 export interface PostBlockBaseProps {

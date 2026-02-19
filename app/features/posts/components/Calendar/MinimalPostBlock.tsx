@@ -22,6 +22,8 @@ interface MinimalPostBlockProps extends PostBlockBaseProps {
   hideVideoPlayButton?: boolean;
   /** Rendered inside block (e.g. time in month view) with same background */
   timeLabel?: string;
+  /** When >= 2, preview text may use 2–3 lines instead of one. */
+  slotExpandRows?: number;
 }
 
 // ============================================================================
@@ -218,6 +220,7 @@ interface RegularLayoutProps {
   userTimezone: string;
   hideVideoPlayButton: boolean;
   timeLabel?: string;
+  slotExpandRows?: number;
 }
 
 function RegularLayout({
@@ -236,6 +239,7 @@ function RegularLayout({
   userTimezone: _userTimezone,
   hideVideoPlayButton,
   timeLabel,
+  slotExpandRows,
 }: RegularLayoutProps) {
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
@@ -247,6 +251,7 @@ function RegularLayout({
     formattedTime
   );
   const title = getTitleText(postPreview, isLongform, isPast, formattedTime);
+  const allowMultipleLines = (slotExpandRows ?? 0) >= 2;
 
   return (
     <div
@@ -275,7 +280,13 @@ function RegularLayout({
           size="sm"
           hideVideoPlayButton={hideVideoPlayButton}
         />
-        <span className="min-w-0 flex-1 truncate">{postPreview}</span>
+        {allowMultipleLines ? (
+          <div className="line-clamp-2 min-w-0 flex-1 text-xs break-words">
+            {postPreview}
+          </div>
+        ) : (
+          <span className="min-w-0 flex-1 truncate">{postPreview}</span>
+        )}
       </div>
     </div>
   );
@@ -296,6 +307,7 @@ export function MinimalPostBlock({
   multipleInCell = false,
   hideVideoPlayButton = false,
   timeLabel,
+  slotExpandRows,
 }: MinimalPostBlockProps) {
   const firstImage = getFirstImage(post, isLongform ?? false);
   const postPreview = getPostPreview(post, isLongform ?? false);
@@ -342,6 +354,7 @@ export function MinimalPostBlock({
       userTimezone={userTimezone}
       hideVideoPlayButton={hideVideoPlayButton}
       timeLabel={timeLabel}
+      slotExpandRows={slotExpandRows}
     />
   );
 }

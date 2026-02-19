@@ -19,7 +19,7 @@ import { CONTENT_MOBILE_BREAKPOINT_PX } from "../constants";
 
 import { PostBlock } from "./PostBlock";
 import type { CalendarPost } from "./PostBlock.types";
-import { getDisplayTime } from "./PostBlock.utils";
+import { getDisplayTime, getPostScheduleInstant } from "./PostBlock.utils";
 
 interface MonthlyViewProps {
   scheduledPosts: CalendarPost[];
@@ -179,6 +179,22 @@ export function MonthlyView({
         grouped[dateKey] ??= [];
         grouped[dateKey].push({ ...post, isPast: true });
       }
+    });
+
+    // Sort posts in each day from earliest to latest
+    const sortBySchedule = (a: CalendarPost, b: CalendarPost) => {
+      const aLongform = Boolean(
+        isAll ? !!a.title && a.publishedAt : isLongform
+      );
+      const bLongform = Boolean(
+        isAll ? !!b.title && b.publishedAt : isLongform
+      );
+      const aMs = getPostScheduleInstant(a, aLongform, Boolean(a.isPast)) ?? 0;
+      const bMs = getPostScheduleInstant(b, bLongform, Boolean(b.isPast)) ?? 0;
+      return aMs - bMs;
+    };
+    Object.keys(grouped).forEach((dateKey) => {
+      grouped[dateKey]?.sort(sortBySchedule);
     });
 
     return grouped;
@@ -385,6 +401,7 @@ export function MonthlyView({
                               isLongform={postIsLongform}
                               isPast={postIsPast}
                               timeLabel={timeString}
+                              slotExpandRows={2}
                             />
                           );
                         })()

@@ -132,9 +132,11 @@ function MediaPreview({
 }) {
   if (!firstImage) {
     return (
-      <p className="truncate-2-lines overflow-hidden text-xs leading-relaxed">
-        {isLongform ? (post.summary ?? postPreview) : postPreview}
-      </p>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <p className="line-clamp-4 min-h-0 flex-1 text-xs leading-relaxed break-words">
+          {isLongform ? (post.summary ?? postPreview) : postPreview}
+        </p>
+      </div>
     );
   }
 

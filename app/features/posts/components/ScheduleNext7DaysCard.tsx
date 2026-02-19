@@ -164,11 +164,11 @@ export function ScheduleNext7DaysCard({
                     .join(", ")
                 : "";
 
-              const scheduledUrl = `/dashboard/scheduled?dateFrom=${encodeURIComponent(dateKey)}&dateTo=${encodeURIComponent(dateKey)}`;
+              const calendarDayUrl = `/dashboard/calendar?date=${encodeURIComponent(dateKey)}&view=day`;
               return (
                 <li key={dateKey} className="flex min-h-[2.25rem] flex-col">
                   <Link
-                    to={scheduledUrl}
+                    to={calendarDayUrl}
                     className={`focus:ring-ring queue-health-row card-lift flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-shadow focus:ring-2 focus:outline-none ${
                       gap
                         ? "border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 dark:border-amber-400/30 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
@@ -181,7 +181,7 @@ export function ScheduleNext7DaysCard({
                         "--queue-color": "hsl(var(--primary))",
                       } as React.CSSProperties
                     }
-                    title={`View posts scheduled for ${label}`}
+                    title={`View ${label} in Calendar`}
                   >
                     <span
                       className="text-foreground min-w-0 shrink-0 truncate font-medium sm:min-w-[10rem]"

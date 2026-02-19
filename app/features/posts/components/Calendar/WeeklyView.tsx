@@ -54,6 +54,8 @@ const CALENDAR_ROW_Z_BASE = 39;
 /** Class for expanded post block wrapper so it sits on top with opaque background. */
 const EXPANDED_BLOCK_WRAPPER_CLASS =
   "z-10 bg-[hsl(var(--calendar-surface-2-bg))]";
+/** z-index for post block wrappers so they always paint above the row's grid line (::after at z-1). */
+const POST_BLOCK_Z_ABOVE_GRID = "z-[2]";
 
 /** Day view: 1-2 posts → up to 7 rows (max 6 empty below); 3-4 → up to 5 rows (max 4 below); 5+ → up to 3 rows (max 2 below). */
 function getDayViewMaxExpand(postsCount: number): number {
@@ -91,6 +93,22 @@ function getExpandDown(
   return count;
 }
 
+/** True when this slot’s block spans baseRows and the next slot below it (same date) has posts. */
+function hasBlocksUnderneath(
+  dateKey: string,
+  time: string,
+  baseRows: number,
+  postsGrid: PostsGrid,
+  hours: string[]
+): boolean {
+  const idx = hours.indexOf(time);
+  const belowIndex = idx + baseRows;
+  if (idx < 0 || belowIndex >= hours.length) return false;
+  const slotBelow = hours[belowIndex];
+  if (slotBelow === undefined) return false;
+  return (postsGrid[dateKey]?.[slotBelow]?.length ?? 0) > 0;
+}
+
 interface SlotState {
   dateKey: string;
   posts: CalendarPost[];
@@ -100,6 +118,8 @@ interface SlotState {
   isHovered: boolean;
   expandRows: number;
   blockHeightPx: number;
+  /** Week view: true when slot is 3 rows and the next slot below has posts (no expand on hover). */
+  noExpandOnHover: boolean;
 }
 
 function getSlotState(
@@ -125,6 +145,10 @@ function getSlotState(
     posts.length === 1 && posts[0] ? `${dateKey}-${time}-${posts[0].id}` : null;
   const isHovered = singlePostKey !== null && hoveredPostKey === singlePostKey;
   const baseRows = 1 + expandDown; // Day view: up to 7 rows by default when empty space below (expandDown 0–6)
+  const noExpandOnHover =
+    !isDayView &&
+    baseRows === 3 &&
+    hasBlocksUnderneath(dateKey, time, baseRows, postsGrid, hours);
   const expandRows = isDayView
     ? isHovered
       ? baseRows <= 4
@@ -132,9 +156,11 @@ function getSlotState(
         : baseRows
       : baseRows
     : isHovered
-      ? baseRows >= 4
+      ? noExpandOnHover
         ? baseRows
-        : Math.min(baseRows + 2, 4)
+        : baseRows >= 4
+          ? baseRows
+          : Math.min(baseRows + 2, 4)
       : baseRows;
   const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
   return {
@@ -146,6 +172,7 @@ function getSlotState(
     isHovered,
     expandRows,
     blockHeightPx,
+    noExpandOnHover,
   };
 }
 
@@ -185,7 +212,7 @@ function SlotCellContent({
       // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
       <div
         className={`relative w-full min-w-0 transition-[height] duration-200 ease-out ${
-          isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "z-0"
+          isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : POST_BLOCK_Z_ABOVE_GRID
         }`}
         style={{ height: blockHeightPx }}
         onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
@@ -341,14 +368,16 @@ function MultiPostBlock({
       ? getDayViewMultiMaxRows(postsCount)
       : (slotExpandRows ?? 1)
     : multiHovered
-      ? 4
+      ? (slotExpandRows ?? 0) >= 3
+        ? (slotExpandRows ?? 1)
+        : 4
       : Math.min(slotExpandRows ?? 1, 4);
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
     ? isDayView
       ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative min-w-0 flex-1`
       : `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full`
-    : "relative z-0 min-w-0 flex-1";
+    : `relative ${POST_BLOCK_Z_ABOVE_GRID} min-w-0 flex-1`;
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
@@ -520,6 +549,26 @@ export function WeeklyView({
       }
     });
 
+    // Sort posts in each slot from earliest to latest
+    const sortBySchedule = (a: CalendarPost, b: CalendarPost) => {
+      const aLongform = Boolean(
+        isAll ? !!a.title && a.publishedAt : isLongform
+      );
+      const bLongform = Boolean(
+        isAll ? !!b.title && b.publishedAt : isLongform
+      );
+      const aMs = getPostScheduleInstant(a, aLongform, Boolean(a.isPast)) ?? 0;
+      const bMs = getPostScheduleInstant(b, bLongform, Boolean(b.isPast)) ?? 0;
+      return aMs - bMs;
+    };
+    Object.keys(grid).forEach((dateKey) => {
+      const daySlots = grid[dateKey];
+      if (!daySlots) return;
+      Object.keys(daySlots).forEach((timeSlot) => {
+        daySlots[timeSlot]?.sort(sortBySchedule);
+      });
+    });
+
     return grid;
   }, [scheduledPosts, pastPosts, weekDays, user?.timezone, isLongform, isAll]);
 
@@ -676,7 +725,7 @@ export function WeeklyView({
     <div className="flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
         <div
-          className="flex min-h-0 min-h-[40vh] flex-1 flex-col"
+          className="flex min-h-0 min-h-[40vh] flex-1 flex-col overflow-hidden"
           style={{
             minWidth: isMobile ? undefined : WEEK_VIEW_MIN_WIDTH,
           }}
@@ -717,99 +766,102 @@ export function WeeklyView({
             })}
           </div>
 
-          {/* Time grid: scroll container needs min-h-0 so it can shrink and show scroll; content height fixed to full day */}
-          <div
-            ref={gridScrollRef}
-            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
-            style={{ minHeight: 0 }}
-          >
+          {/* Time grid: wrapper takes remaining height; scroll area is absolute so it has a definite height and can show scrollbar */}
+          <div className="relative min-h-0 flex-1">
             <div
-              className="relative flex-shrink-0"
-              style={{ height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px` }}
+              ref={gridScrollRef}
+              className="absolute inset-0 overflow-x-hidden overflow-y-auto"
             >
-              {hours.map((time, index) => {
-                const dateKeysForRow = weekDays.map((day) => {
-                  const y = day.getFullYear();
-                  const m = String(day.getMonth() + 1).padStart(2, "0");
-                  const d = String(day.getDate()).padStart(2, "0");
-                  return `${y}-${m}-${d}`;
-                });
-                const rowHasHovered = dateKeysForRow.some((dateKey) => {
-                  const posts = postsGrid[dateKey]?.[time] ?? [];
-                  return posts.some(
-                    (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
-                  );
-                });
-                // Row order = stacking order: earlier rows on top so post blocks always paint above rows below (no cap; values < 50 so modals stay on top)
-                const rowZIndex = rowHasHovered
-                  ? CALENDAR_ROW_Z_HOVERED
-                  : CALENDAR_ROW_Z_BASE - index;
+              <div
+                className="relative"
+                style={{ height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px` }}
+              >
+                {hours.map((time, index) => {
+                  const dateKeysForRow = weekDays.map((day) => {
+                    const y = day.getFullYear();
+                    const m = String(day.getMonth() + 1).padStart(2, "0");
+                    const d = String(day.getDate()).padStart(2, "0");
+                    return `${y}-${m}-${d}`;
+                  });
+                  const rowHasHovered = dateKeysForRow.some((dateKey) => {
+                    const posts = postsGrid[dateKey]?.[time] ?? [];
+                    return posts.some(
+                      (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
+                    );
+                  });
+                  // Row order = stacking order: earlier rows on top so post blocks always paint above rows below (no cap; values < 50 so modals stay on top)
+                  const rowZIndex = rowHasHovered
+                    ? CALENDAR_ROW_Z_HOVERED
+                    : CALENDAR_ROW_Z_BASE - index;
 
-                return (
-                  <div
-                    key={time}
-                    className="border-border/40 relative flex h-[52px] min-h-[52px] items-stretch overflow-visible border-b"
-                    style={{ zIndex: rowZIndex }}
-                  >
-                    {/* Time label */}
-                    <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
-                      {hourLabels[index]}
-                    </div>
+                  return (
+                    <div
+                      key={time}
+                      className="border-border/40 relative flex h-[52px] min-h-[52px] items-stretch overflow-visible after:absolute after:inset-x-0 after:bottom-0 after:z-[1] after:border-b after:content-['']"
+                      style={{ zIndex: rowZIndex }}
+                    >
+                      {/* Time label */}
+                      <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
+                        {hourLabels[index]}
+                      </div>
 
-                    {/* Day columns */}
-                    {weekDays.map((day) => {
-                      const slotState = getSlotState(
-                        day,
-                        time,
-                        postsGrid,
-                        hours,
-                        hoveredPostKey,
-                        dragOverSlot,
-                        isDayView,
-                        user?.timezone ?? "Etc/UTC"
-                      );
-                      return (
-                        <div
-                          key={slotState.slotKey}
-                          role="gridcell"
-                          tabIndex={-1}
-                          className={`border-border/30 relative min-w-[3.5rem] flex-1 overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
-                            slotState.isDragOver
-                              ? "bg-primary/5 border-primary/20"
-                              : "dark:hover:bg-muted hover:bg-muted"
-                          }`}
-                          onDragOver={(e) =>
-                            handleDragOver(e, slotState.dateKey, time)
-                          }
-                          onDrop={(e) => handleDrop(e, slotState.dateKey, time)}
-                          onDragLeave={handleDragLeave}
-                        >
-                          <SlotCellContent
-                            slotState={slotState}
-                            time={time}
-                            isDayView={isDayView}
-                            slotColumn={
-                              isDayView
-                                ? (dayViewColumnMap[slotState.slotKey] ?? 0)
-                                : undefined
+                      {/* Day columns */}
+                      {weekDays.map((day) => {
+                        const slotState = getSlotState(
+                          day,
+                          time,
+                          postsGrid,
+                          hours,
+                          hoveredPostKey,
+                          dragOverSlot,
+                          isDayView,
+                          user?.timezone ?? "Etc/UTC"
+                        );
+                        return (
+                          <div
+                            key={slotState.slotKey}
+                            role="gridcell"
+                            tabIndex={-1}
+                            className={`border-border/30 relative min-w-[3.5rem] flex-1 overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
+                              slotState.isDragOver
+                                ? "bg-primary/5 border-primary/20"
+                                : "dark:hover:bg-muted hover:bg-muted"
+                            }`}
+                            onDragOver={(e) =>
+                              handleDragOver(e, slotState.dateKey, time)
                             }
-                            hoveredPostKey={hoveredPostKey}
-                            setHoveredPostKey={setHoveredPostKey}
-                            onPostEdit={onPostEdit}
-                            user={user}
-                            queueTypes={queueTypes}
-                            isLongform={isLongform}
-                            isAll={isAll}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                            onDrop={(e) =>
+                              handleDrop(e, slotState.dateKey, time)
+                            }
+                            onDragLeave={handleDragLeave}
+                          >
+                            <SlotCellContent
+                              slotState={slotState}
+                              time={time}
+                              isDayView={isDayView}
+                              slotColumn={
+                                isDayView
+                                  ? (dayViewColumnMap[slotState.slotKey] ?? 0)
+                                  : undefined
+                              }
+                              hoveredPostKey={hoveredPostKey}
+                              setHoveredPostKey={setHoveredPostKey}
+                              onPostEdit={onPostEdit}
+                              user={user}
+                              queueTypes={queueTypes}
+                              isLongform={isLongform}
+                              isAll={isAll}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
 
-              {/* Current time indicator - only show if today is in this week */}
-              <CurrentTimeIndicator user={user} weekDays={weekDays} />
+                {/* Current time indicator - only show if today is in this week */}
+                <CurrentTimeIndicator user={user} weekDays={weekDays} />
+              </div>
             </div>
           </div>
         </div>
