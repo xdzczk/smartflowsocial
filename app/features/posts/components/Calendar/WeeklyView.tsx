@@ -770,7 +770,7 @@ export function WeeklyView({
               className="absolute inset-0 overflow-x-hidden overflow-y-auto"
             >
               <div
-                className="relative flex flex-col flex-nowrap"
+                className="relative block w-full"
                 style={{
                   height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
                   minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
@@ -797,7 +797,7 @@ export function WeeklyView({
                   return (
                     <div
                       key={time}
-                      className="relative flex min-h-[52px] shrink-0 items-start overflow-visible"
+                      className="relative flex w-full items-start overflow-visible"
                       style={{
                         zIndex: rowZIndex,
                         height: ROW_HEIGHT_PX,
@@ -809,9 +809,9 @@ export function WeeklyView({
                         className="border-border/40 pointer-events-none absolute inset-x-0 bottom-0 z-0 border-b"
                         aria-hidden
                       />
-                      {/* Row content above grid line */}
+                      {/* Row content above grid line: full width so day columns align with header */}
                       <div
-                        className="relative z-[1] flex min-h-0 shrink-0 items-stretch"
+                        className="relative z-[1] flex min-h-0 w-full min-w-0 flex-1 items-stretch"
                         style={{ height: ROW_HEIGHT_PX - 1 }}
                       >
                         {/* Time label */}
