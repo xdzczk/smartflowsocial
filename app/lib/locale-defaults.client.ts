@@ -7,7 +7,7 @@
 export type LocaleTimeFormat = "12h" | "24h";
 export type LocaleDateFormat = "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
 
-const APP_DEFAULT_TIME_FORMAT: LocaleTimeFormat = "12h";
+const APP_DEFAULT_TIME_FORMAT: LocaleTimeFormat = "24h";
 const APP_DEFAULT_DATE_FORMAT: LocaleDateFormat = "ddmmyyyy";
 
 /** Locales that use MM/DD/YYYY (US-style). */

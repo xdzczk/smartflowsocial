@@ -36,7 +36,7 @@ model User {
   runwayNotifyBelowDays      Int?
   lastRunwayLowNotificationAt DateTime?
   // Time format preference (12-hour AM/PM or 24-hour)
-  timeFormat                 String?        @default("12h") // "12h" or "24h"
+  timeFormat                 String?        @default("24h") // "12h" or "24h"
   // Date format preference for display (dd/mm, mm/dd, or yyyy-mm-dd)
   dateFormat                 String?        @default("ddmmyyyy") // "ddmmyyyy" | "mmddyyyy" | "yyyymmdd"
   // Runway KPI: which queues count and mode (last-post vs first-queue-empty)

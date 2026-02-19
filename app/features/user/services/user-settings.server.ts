@@ -433,7 +433,7 @@ export async function getUserTimeFormat(
     where: { id: userId },
     select: { timeFormat: true },
   });
-  return user?.timeFormat === "24h" ? "24h" : "12h";
+  return user?.timeFormat === "12h" ? "12h" : "24h";
 }
 
 /**

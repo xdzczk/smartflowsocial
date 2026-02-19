@@ -169,7 +169,7 @@ export async function handleGeneralSettingsAction(
       getUserDateFormat(userId),
     ]);
     const stillOnDefaults =
-      currentTimeFormat === "12h" && currentDateFormat === "ddmmyyyy";
+      currentTimeFormat === "24h" && currentDateFormat === "ddmmyyyy";
     if (!stillOnDefaults) {
       return json({ success: true, skipped: true });
     }

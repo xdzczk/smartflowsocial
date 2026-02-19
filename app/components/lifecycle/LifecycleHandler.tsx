@@ -63,7 +63,7 @@ export function LifecycleHandler() {
   useEffect(() => {
     if (typeof window === "undefined" || !user?.id) return;
     if (localeDefaultsFetcher.state !== "idle") return;
-    const timeFormat = user.timeFormat ?? "12h";
+    const timeFormat = user.timeFormat ?? "24h";
     const userDateFormat =
       "dateFormat" in user &&
       typeof (user as { dateFormat?: string }).dateFormat === "string"
@@ -73,12 +73,12 @@ export function LifecycleHandler() {
       userDateFormat === "mmddyyyy" || userDateFormat === "yyyymmdd"
         ? userDateFormat
         : "ddmmyyyy";
-    const stillOnDefaults = timeFormat === "12h" && dateFormat === "ddmmyyyy";
+    const stillOnDefaults = timeFormat === "24h" && dateFormat === "ddmmyyyy";
     if (!stillOnDefaults) return;
     if (window.sessionStorage.getItem(LOCALE_DEFAULTS_SYNCED_KEY)) return;
     const { timeFormat: detectedTime, dateFormat: detectedDate } =
       getLocaleTimeAndDateFormat();
-    if (detectedTime === "12h" && detectedDate === "ddmmyyyy") {
+    if (detectedTime === "24h" && detectedDate === "ddmmyyyy") {
       window.sessionStorage.setItem(LOCALE_DEFAULTS_SYNCED_KEY, "1");
       return;
     }
