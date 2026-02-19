@@ -797,11 +797,11 @@ export function WeeklyView({
                   return (
                     <div
                       key={time}
-                      className="absolute right-0 left-0 flex items-start overflow-visible"
+                      className="relative flex w-full shrink-0 items-start overflow-visible"
                       style={{
                         zIndex: rowZIndex,
-                        top: index * ROW_HEIGHT_PX,
                         height: ROW_HEIGHT_PX,
+                        minHeight: ROW_HEIGHT_PX,
                       }}
                     >
                       {/* Grid line behind content: subtle border at bottom so it never paints over post blocks */}
