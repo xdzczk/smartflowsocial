@@ -770,10 +770,9 @@ export function WeeklyView({
               className="absolute inset-0 overflow-x-hidden overflow-y-auto"
             >
               <div
-                className="relative block w-full"
+                className="relative w-full"
                 style={{
                   height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
-                  minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
                 }}
               >
                 {hours.map((time, index) => {
@@ -797,11 +796,11 @@ export function WeeklyView({
                   return (
                     <div
                       key={time}
-                      className="relative flex w-full items-start overflow-visible"
+                      className="absolute right-0 left-0 flex items-start overflow-visible"
                       style={{
                         zIndex: rowZIndex,
+                        top: index * ROW_HEIGHT_PX,
                         height: ROW_HEIGHT_PX,
-                        minHeight: ROW_HEIGHT_PX,
                       }}
                     >
                       {/* Grid line behind content: subtle border at bottom so it never paints over post blocks */}
