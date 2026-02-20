@@ -48,7 +48,7 @@ const TOTAL_TIME_SLOTS = HOURS_PER_DAY * 2;
 const WEEK_VIEW_MIN_WIDTH = "28.5rem";
 
 /** Row z-index range (below Dialog z-50) so modals and overlays stay on top of the calendar grid. */
-const CALENDAR_ROW_Z_HOVERED = 50;
+const CALENDAR_ROW_Z_HOVERED = 40;
 const CALENDAR_ROW_Z_BASE = 39;
 
 /** Class for expanded post block wrapper so it sits on top with opaque background. */
@@ -839,17 +839,15 @@ export function WeeklyView({
                       (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
                     );
                   });
-                  // Row stacking: top half of day (index < BOTTOM_ROWS_STACK_ABOVE_THRESHOLD): later rows on top
-                  // so the top half of each row is hittable for drag/drop; bottom rows (19:30+): row above on top
-                  // so blocks that extend down stay interactive.
+                  // Row order = stacking order: earlier rows on top so post blocks always paint above rows below.
+                  // From 19:30 down: invert order so the row above paints on top of the row below; otherwise the row below captures hover and blocks don't activate.
                   const rowZIndex = rowHasHovered
                     ? CALENDAR_ROW_Z_HOVERED
                     : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-                      ? CALENDAR_ROW_Z_BASE +
-                        1 +
-                        BOTTOM_ROWS_STACK_ABOVE_THRESHOLD -
-                        index
-                      : index + 1;
+                      ? CALENDAR_ROW_Z_BASE -
+                        index +
+                        BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+                      : Math.max(1, CALENDAR_ROW_Z_BASE - index);
 
                   return (
                     <div
