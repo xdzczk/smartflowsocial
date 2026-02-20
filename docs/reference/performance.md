@@ -449,7 +449,26 @@ Lazy load images below the fold:
 />
 ```
 
-### 4. CDN Usage
+### 4. Media previews (calendar)
+
+Calendar post thumbnails benefit from **stable URLs** and **cache-friendly headers** so the browser
+can reuse cached media when switching day/week/month or date ranges.
+
+- **Stable URLs**: Stored media uses direct S3 (or external) URLs with no query params or
+  short-lived tokens; the same post always has the same `src`.
+- **Cache headers (S3 only)**: All S3 uploads set `Cache-Control: public, max-age=31536000` via
+  `PutObject` (see `app/features/upload/s3.server.ts`). S3 returns this header on GET, so repeat
+  requests for the same URL are served from browser (and CDN) cache.
+- **Blossom uploads** (Primal Blossom, Blosstr): Files are uploaded **directly to the external
+  Blossom server** by the client; our server only receives the resulting URL from the client and
+  stores it. Calendar (and all UI) then loads that URL **directly from the Blossom host** (e.g.
+  `blossom.primal.net`, `blosstr.com` or their CDNs). We **do not set or influence** Cache-Control
+  for these URLs—cache behavior is entirely determined by the Blossom provider. Many such CDNs
+  already send long-lived cache headers for static assets.
+- **Other external URLs** (e.g. user-pasted nostr CDNs): Same as Blossom; cache behavior depends on
+  the upstream host; the app does not proxy calendar media.
+
+### 5. CDN Usage
 
 Use CDN for image delivery:
 

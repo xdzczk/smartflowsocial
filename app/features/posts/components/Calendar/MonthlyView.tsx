@@ -267,9 +267,9 @@ export function MonthlyView({
   const { formatDate } = useFormattedDate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
 
-  /** On mobile: up to 4 posts per day (3 + "+N more"); on desktop: up to 6 (5 + "+N more"). */
-  const maxPostsPerDay = isMobile ? 4 : 6;
-  const moreSlotIndex = isMobile ? 3 : 5;
+  /** Up to 6 posts per day (5 + "+N more") on both mobile and desktop; mobile uses tighter layout so 6 slots fit. */
+  const maxPostsPerDay = 6;
+  const moreSlotIndex = 5;
 
   return (
     <div className="flex h-full min-h-0 flex-col select-none">
@@ -301,11 +301,7 @@ export function MonthlyView({
           const remainingCount = hasOverflow
             ? Math.max(0, posts.length - moreSlotIndex)
             : 0;
-          const layoutCount = hasOverflow
-            ? isMobile
-              ? 4
-              : 7
-            : postsToShow.length;
+          const layoutCount = hasOverflow ? 7 : postsToShow.length;
           const layout = getMonthlyCellLayout(layoutCount);
 
           return (
@@ -313,7 +309,9 @@ export function MonthlyView({
               key={dayInfo.date.toISOString()}
               role="gridcell"
               tabIndex={-1}
-              className={`border-border/40 flex min-h-[120px] flex-col border-r border-b px-2 py-1.5 last:border-r-0 ${
+              className={`border-border/40 flex min-h-[120px] flex-col border-r border-b last:border-r-0 ${
+                isMobile ? "px-1 py-1" : "px-2 py-1.5"
+              } ${
                 dayInfo.isCurrentMonth
                   ? "bg-[hsl(var(--calendar-surface-2-bg))]"
                   : "bg-secondary/20"
@@ -323,7 +321,9 @@ export function MonthlyView({
             >
               {/* Date number */}
               <div
-                className={`mb-1 text-sm font-medium ${
+                className={`font-medium ${
+                  isMobile ? "mb-0.5 text-xs" : "mb-1 text-sm"
+                } ${
                   dayInfo.isToday
                     ? "text-foreground"
                     : dayInfo.isCurrentMonth
@@ -334,8 +334,12 @@ export function MonthlyView({
                 {dayInfo.date.getDate()}
               </div>
 
-              {/* Posts: 2×3 grid, up to 6 posts or 5 + "+N more"; tight gap so blocks fit without increasing cell height */}
-              <div className="grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-3 gap-0.5 overflow-hidden">
+              {/* Posts: 2×3 grid, up to 6 posts or 5 + "+N more"; on mobile use tighter gap so 6 slots fit in cell */}
+              <div
+                className={`grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-3 overflow-hidden ${
+                  isMobile ? "gap-px" : "gap-0.5"
+                }`}
+              >
                 {layout.map((placement, slotIndex) => {
                   if (!placement) return null;
                   const { row, col, colSpan } = placement;
@@ -355,7 +359,7 @@ export function MonthlyView({
                           ? `more-${dateKey}`
                           : `slot-${row}-${col}-${colSpan}`)
                       }
-                      className="min-w-0 overflow-hidden"
+                      className="min-h-0 min-w-0 overflow-hidden"
                       style={{
                         gridRowStart: gridRow,
                         gridRowEnd: gridRow,
@@ -364,7 +368,13 @@ export function MonthlyView({
                       }}
                     >
                       {isMoreLabel ? (
-                        <div className="text-muted-foreground/80 border-border/30 flex h-full items-center justify-center rounded-[var(--calendar-radius-sm)] border border-dashed px-2 py-1 text-[11px]">
+                        <div
+                          className={`text-muted-foreground/80 border-border/30 flex h-full min-h-0 items-center justify-center rounded-[var(--calendar-radius-sm)] border border-dashed ${
+                            isMobile
+                              ? "px-1 py-0.5 text-[10px]"
+                              : "px-2 py-1 text-[11px]"
+                          }`}
+                        >
                           +{remainingCount > 9 ? "9" : remainingCount} more
                         </div>
                       ) : post ? (
@@ -389,7 +399,7 @@ export function MonthlyView({
                               ? { hour: "2-digit" }
                               : { hour: "2-digit", minute: "2-digit" },
                           });
-                          return (
+                          const block = (
                             <PostBlock
                               key={post.id}
                               post={post}
@@ -403,6 +413,13 @@ export function MonthlyView({
                               timeLabel={timeString}
                               slotExpandRows={2}
                             />
+                          );
+                          return isMobile ? (
+                            <div className="h-full min-h-0 text-[10px] [&_.text-xs]:!text-[10px]">
+                              {block}
+                            </div>
+                          ) : (
+                            block
                           );
                         })()
                       ) : null}

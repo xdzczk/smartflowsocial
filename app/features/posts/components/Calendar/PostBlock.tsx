@@ -24,6 +24,7 @@ export function PostBlock({
   timeLabel,
   forceOpaque = false,
   slotExpandRows,
+  hideTimeRowPreview = false,
 }: PostBlockProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStarted, setDragStarted] = useState(false);
@@ -130,6 +131,7 @@ export function PostBlock({
         queueColorStyle={queueColorStyle}
         userTimezone={userTimezone}
         timeString={timeString}
+        hideTimeRowPreview={hideTimeRowPreview}
       />
     );
   }

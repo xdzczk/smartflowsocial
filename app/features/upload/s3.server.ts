@@ -16,6 +16,9 @@ import {
 
 const ERROR_UPLOAD_VALIDATION_FAILED = "Upload validation failed";
 
+/** Cache-Control for uploaded objects (1 year; keys are unique so content is immutable). */
+const S3_CACHE_CONTROL = "public, max-age=31536000";
+
 type UploadStream = AsyncIterable<Uint8Array>;
 
 const uploadStreamToS3 = async (
@@ -50,6 +53,8 @@ const uploadStreamToS3 = async (
     ServerSideEncryption: "AES256" as const,
     // Explicit ACL - private by default
     ACL: "private" as const,
+    // Cache-friendly headers for calendar/media previews (stable URLs; keys are unique)
+    CacheControl: S3_CACHE_CONTROL,
   };
 
   try {
@@ -145,6 +150,8 @@ export async function uploadBufferToS3(
       ServerSideEncryption: "AES256",
       // Explicit ACL - private by default
       ACL: "private",
+      // Cache-friendly headers for calendar/media previews (stable URLs; keys are unique)
+      CacheControl: S3_CACHE_CONTROL,
     });
 
     await s3Client.send(command);
@@ -208,7 +215,7 @@ export async function uploadEditorJSImage(
       // Explicit ACL - private by default
       ACL: "private",
       // Add cache control for better performance
-      CacheControl: "public, max-age=31536000",
+      CacheControl: S3_CACHE_CONTROL,
     });
 
     await s3Client.send(command);

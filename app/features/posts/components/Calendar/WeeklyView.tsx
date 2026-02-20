@@ -35,6 +35,10 @@ interface WeeklyViewProps {
   weekDaysOverride?: Date[];
   onPostDrop: (post: CalendarPost, newDateTime: Date) => void;
   onPostEdit: (post: CalendarPost) => void;
+  /** Day view: post currently selected in the sidebar; its block stays highlighted. */
+  selectedPost?: CalendarPost | null;
+  /** Day view: called when user clicks empty space to clear selection. */
+  onClearSelection?: () => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform?: boolean;
@@ -54,9 +58,12 @@ const TOTAL_TIME_SLOTS = HOURS_PER_DAY * 2;
 
 /** Week view: min width so horizontal scroll works on narrow screens (time col 4rem + 7 × 3.5rem). */
 const WEEK_VIEW_MIN_WIDTH = "28.5rem";
+/** Mobile week view: show 3 day columns at once; each column = (100vw - time col 4rem) / 3. */
+const MOBILE_WEEK_DAY_COLUMN_WIDTH = "calc((100vw - 4rem) / 3)";
+const MOBILE_WEEK_GRID_MIN_WIDTH = "calc(4rem + 7 * ((100vw - 4rem) / 3))";
 
 /** Row z-index range (below Dialog z-50) so modals and overlays stay on top of the calendar grid. */
-const CALENDAR_ROW_Z_HOVERED = 40;
+const _CALENDAR_ROW_Z_HOVERED = 40;
 const CALENDAR_ROW_Z_BASE = 39;
 
 /** Class for expanded post block wrapper so it sits on top with opaque background. */
@@ -163,7 +170,8 @@ function getSlotState(
   dragOverSlot: string | null,
   isDayView: boolean,
   userTimezone: string,
-  dayViewColumnMap?: Record<string, 0 | 1>
+  dayViewColumnMap?: Record<string, 0 | 1>,
+  selectedPost?: CalendarPost | null
 ): SlotState {
   const dayZoned = fromDate(day, userTimezone);
   const dateKey = `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
@@ -187,7 +195,9 @@ function getSlotState(
       : getExpandDown(dateKey, time, postsGrid, hours, maxExpand);
   const singlePostKey =
     posts.length === 1 && posts[0] ? `${dateKey}-${time}-${posts[0].id}` : null;
-  const isHovered = singlePostKey !== null && hoveredPostKey === singlePostKey;
+  const isHovered =
+    (singlePostKey !== null && hoveredPostKey === singlePostKey) ||
+    (!!selectedPost && posts.length === 1 && posts[0]?.id === selectedPost.id);
   const baseRows = 1 + expandDown; // Day view: up to 7 rows by default when empty space below (expandDown 0–6)
   const noExpandOnHover =
     !isDayView &&
@@ -244,22 +254,22 @@ function EmptySlotCreateMenu({
 
   return (
     <DropdownMenu
-      defaultOpen
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
       <DropdownMenuTrigger
-        className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-full w-full items-center justify-center rounded transition-colors"
+        className="text-muted-foreground hover:text-foreground hover:bg-muted/50 inline-flex size-8 shrink-0 items-center justify-center rounded transition-colors"
         onClick={(e) => e.stopPropagation()}
+        aria-label="Create in this slot"
       >
         <Plus
           className={EMPTY_SLOT_ICON_CLASS}
           strokeWidth={2.25}
-          aria-label="Create in this slot"
+          aria-hidden
         />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="right">
+      <DropdownMenuContent align="start" side="right" sideOffset={4}>
         <DropdownMenuItem
           onSelect={() => navigate(q("/dashboard/newpost"))}
           className="flex items-center gap-2"
@@ -299,6 +309,8 @@ interface SlotCellContentProps {
   /** When set, the empty-slot + menu is shown only for this slot (after user click/touch). */
   activeEmptySlotKey: string | null;
   setActiveEmptySlotKey: (key: string | null) => void;
+  /** Day view: clear selected post when empty space is clicked. */
+  onClearSelection?: () => void;
 }
 
 function EmptySlotCellContent({
@@ -308,6 +320,7 @@ function EmptySlotCellContent({
   userTimezone,
   activeEmptySlotKey,
   setActiveEmptySlotKey,
+  onClearSelection,
 }: {
   dateKey: string;
   time: string;
@@ -315,14 +328,16 @@ function EmptySlotCellContent({
   userTimezone: string;
   activeEmptySlotKey: string | null;
   setActiveEmptySlotKey: (key: string | null) => void;
+  onClearSelection?: () => void;
 }) {
   const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTimezone);
   const nowZoned = nowInTimezone(userTimezone);
   const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
   const isActive = activeEmptySlotKey === slotKey;
-  const handleActivate = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleActivate = (e: React.MouseEvent) => {
     if (!isFutureSlot) return;
     e.stopPropagation();
+    onClearSelection?.();
     setActiveEmptySlotKey(slotKey);
   };
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -337,7 +352,6 @@ function EmptySlotCellContent({
       type="button"
       className={`relative flex h-full w-full min-w-0 items-center justify-center border-0 bg-transparent p-0 ${isFutureSlot ? "cursor-pointer" : "cursor-default"}`}
       onClick={handleActivate}
-      onTouchStart={handleActivate}
       onKeyDown={handleKeyDown}
       tabIndex={isFutureSlot ? 0 : -1}
       aria-label={isFutureSlot ? "Create post in this slot" : undefined}
@@ -362,6 +376,7 @@ function DayViewEmptyColumnArea({
   userTimezone,
   activeEmptySlotKey,
   setActiveEmptySlotKey,
+  onClearSelection,
 }: {
   dateKey: string;
   time: string;
@@ -370,13 +385,15 @@ function DayViewEmptyColumnArea({
   userTimezone: string;
   activeEmptySlotKey: string | null;
   setActiveEmptySlotKey: (key: string | null) => void;
+  onClearSelection?: () => void;
 }) {
   const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTimezone);
   const nowZoned = nowInTimezone(userTimezone);
   const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
   const isActive = activeEmptySlotKey === slotKey;
-  const handleActivate = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleActivate = (e: React.MouseEvent) => {
     e.stopPropagation();
+    onClearSelection?.();
     setActiveEmptySlotKey(slotKey);
   };
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -391,7 +408,6 @@ function DayViewEmptyColumnArea({
       className={`relative flex min-h-0 flex-1 items-center justify-center ${isActive ? "" : "cursor-pointer"}`}
       style={{ minHeight: blockHeightPx }}
       onClick={handleActivate}
-      onTouchStart={handleActivate}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
@@ -424,6 +440,7 @@ function SlotCellContent({
   isAll,
   activeEmptySlotKey,
   setActiveEmptySlotKey,
+  onClearSelection,
 }: SlotCellContentProps) {
   const {
     dateKey,
@@ -444,6 +461,7 @@ function SlotCellContent({
         userTimezone={user?.timezone ?? "UTC"}
         activeEmptySlotKey={activeEmptySlotKey}
         setActiveEmptySlotKey={setActiveEmptySlotKey}
+        onClearSelection={onClearSelection}
       />
     );
   }
@@ -454,11 +472,9 @@ function SlotCellContent({
       ? expandRows - availableRowsBelow
       : 0;
 
-  // Anchor block bottom to the bottom of the slot's allocated rows so it expands upward only (no "teleport")
+  // Anchor block bottom to the bottom of the slot's allocated rows (availableRowsBelow = rows from current to end inclusive)
   const expandUpTop =
-    rowsToGrowUp > 0
-      ? (1 + availableRowsBelow) * ROW_HEIGHT_PX - blockHeightPx
-      : 0;
+    rowsToGrowUp > 0 ? availableRowsBelow * ROW_HEIGHT_PX - blockHeightPx : 0;
 
   const wrapExpandUp = (content: React.ReactNode) =>
     rowsToGrowUp > 0 ? (
@@ -508,6 +524,7 @@ function SlotCellContent({
             typeof posts[0].isPast === "boolean" ? posts[0].isPast : false
           }
           forceOpaque={isHovered}
+          hideTimeRowPreview={true}
         />
       </div>
     );
@@ -522,20 +539,25 @@ function SlotCellContent({
           userTimezone={userTz}
           activeEmptySlotKey={activeEmptySlotKey}
           setActiveEmptySlotKey={setActiveEmptySlotKey}
+          onClearSelection={onClearSelection}
         />
       );
       return wrapExpandUp(
         <div className="flex w-full gap-1">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 overflow-hidden">
             {slotColumn === 0 ? (
-              <div className="relative w-full min-w-0">{blockInner}</div>
+              <div className="relative h-full w-full min-w-0 overflow-hidden">
+                {blockInner}
+              </div>
             ) : (
               emptyColumn
             )}
           </div>
-          <div className="flex min-w-0 flex-1 justify-end">
+          <div className="flex min-w-0 flex-1 justify-end overflow-hidden">
             {slotColumn === 1 ? (
-              <div className="relative w-full min-w-0">{blockInner}</div>
+              <div className="relative h-full w-full min-w-0 overflow-hidden">
+                {blockInner}
+              </div>
             ) : (
               emptyColumn
             )}
@@ -698,6 +720,7 @@ function MultiPostBlock({
         isPast={typeof post.isPast === "boolean" ? post.isPast : false}
         multipleInCell={true}
         forceOpaque={multiHovered}
+        hideTimeRowPreview={true}
       />
     </div>
   );
@@ -715,6 +738,8 @@ export function WeeklyView({
   weekDaysOverride,
   onPostDrop,
   onPostEdit,
+  selectedPost,
+  onClearSelection,
   user,
   queueTypes,
   isLongform = false,
@@ -723,6 +748,7 @@ export function WeeklyView({
   const { dateLocale } = useFormattedDate();
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
+  const [hoveredSlotKey, setHoveredSlotKey] = useState<string | null>(null);
   const [activeEmptySlotKey, setActiveEmptySlotKey] = useState<string | null>(
     null
   );
@@ -1032,7 +1058,12 @@ export function WeeklyView({
         <div
           className="flex min-h-0 min-h-[40vh] flex-1 flex-col overflow-hidden select-none"
           style={{
-            minWidth: isMobile ? undefined : WEEK_VIEW_MIN_WIDTH,
+            minWidth:
+              isMobile && !isDayView
+                ? MOBILE_WEEK_GRID_MIN_WIDTH
+                : isMobile
+                  ? undefined
+                  : WEEK_VIEW_MIN_WIDTH,
           }}
         >
           {/* Days header */}
@@ -1046,12 +1077,23 @@ export function WeeklyView({
                 dayZoned.year === todayZoned.year &&
                 dayZoned.month === todayZoned.month &&
                 dayZoned.day === todayZoned.day;
+              const mobileWeekColumnStyle =
+                isMobile && !isDayView
+                  ? {
+                      width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
+                      minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
+                      flex: "0 0 auto" as const,
+                    }
+                  : undefined;
               return (
                 <div
                   key={day.toISOString()}
-                  className={`border-border/30 flex min-w-[3.5rem] flex-1 items-center justify-center gap-1 border-r px-2 py-1 text-center last:border-r-0 ${
-                    isToday ? "border-l-primary bg-primary/5 border-l-2" : ""
-                  }`}
+                  className={`border-border/30 flex items-center justify-center gap-1 border-r px-2 py-1 text-center last:border-r-0 ${
+                    isMobile && !isDayView
+                      ? "min-w-0 shrink-0"
+                      : "min-w-[3.5rem] flex-1"
+                  } ${isToday ? "border-l-primary bg-primary/5 border-l-2" : ""}`}
+                  style={mobileWeekColumnStyle}
                 >
                   <span className="text-muted-foreground text-xs font-normal">
                     {day.toLocaleDateString(dateLocale, {
@@ -1086,23 +1128,11 @@ export function WeeklyView({
                 }}
               >
                 {hours.map((time, index) => {
-                  const dateKeysForRow = weekDays.map((day) => {
-                    const y = day.getFullYear();
-                    const m = String(day.getMonth() + 1).padStart(2, "0");
-                    const d = String(day.getDate()).padStart(2, "0");
-                    return `${y}-${m}-${d}`;
-                  });
-                  const rowHasHovered = dateKeysForRow.some((dateKey) => {
-                    const posts = postsGrid[dateKey]?.[time] ?? [];
-                    return posts.some(
-                      (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
-                    );
-                  });
                   // Row order = stacking order: earlier rows on top so post blocks always paint above rows below.
                   // From 19:30 down: invert order so the row above paints on top of the row below; otherwise the row below captures hover and blocks don't activate.
-                  const rowZIndex = rowHasHovered
-                    ? CALENDAR_ROW_Z_HOVERED
-                    : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+                  // Do not raise the whole row on hover (would make the row's grid line paint over other day columns); we raise only the hovered cell below.
+                  const rowZIndex =
+                    index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
                       ? CALENDAR_ROW_Z_BASE -
                         index +
                         BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
@@ -1145,18 +1175,48 @@ export function WeeklyView({
                             dragOverSlot,
                             isDayView,
                             user?.timezone ?? "Etc/UTC",
-                            isDayView ? dayViewColumnMap : undefined
+                            isDayView ? dayViewColumnMap : undefined,
+                            isDayView ? selectedPost : undefined
                           );
+                          const cellHasHoveredPost = slotState.posts.some(
+                            (p) =>
+                              hoveredPostKey ===
+                              `${slotState.dateKey}-${time}-${p.id}`
+                          );
+                          const cellRaised =
+                            cellHasHoveredPost ||
+                            (isDayView && hoveredSlotKey === slotState.slotKey);
+                          const cellZClass =
+                            cellHasHoveredPost && isDayView
+                              ? "z-[41]"
+                              : cellRaised
+                                ? "z-[40]"
+                                : "";
+                          const mobileWeekCellStyle =
+                            isMobile && !isDayView
+                              ? {
+                                  width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
+                                  minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
+                                  flex: "0 0 auto" as const,
+                                }
+                              : undefined;
                           return (
                             <div
                               key={slotState.slotKey}
                               role="gridcell"
                               tabIndex={-1}
-                              className={`border-border/30 relative min-w-[3.5rem] flex-1 overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
+                              className={`border-border/30 relative overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
+                                isMobile && !isDayView
+                                  ? "min-w-0 shrink-0"
+                                  : "min-w-[3.5rem] flex-1"
+                              } ${cellZClass} ${
                                 slotState.isDragOver
                                   ? "bg-primary/5 border-primary/20"
-                                  : "dark:hover:bg-muted hover:bg-muted"
+                                  : isDayView
+                                    ? ""
+                                    : "dark:hover:bg-muted hover:bg-muted"
                               }`}
+                              style={mobileWeekCellStyle}
                               onDragOver={(e) =>
                                 handleDragOver(e, slotState.dateKey, time)
                               }
@@ -1164,6 +1224,16 @@ export function WeeklyView({
                                 handleDrop(e, slotState.dateKey, time)
                               }
                               onDragLeave={handleDragLeave}
+                              onMouseEnter={
+                                isDayView
+                                  ? () => setHoveredSlotKey(slotState.slotKey)
+                                  : undefined
+                              }
+                              onMouseLeave={
+                                isDayView
+                                  ? () => setHoveredSlotKey(null)
+                                  : undefined
+                              }
                             >
                               <SlotCellContent
                                 slotState={slotState}
@@ -1185,6 +1255,7 @@ export function WeeklyView({
                                 isAll={isAll}
                                 activeEmptySlotKey={activeEmptySlotKey}
                                 setActiveEmptySlotKey={setActiveEmptySlotKey}
+                                onClearSelection={onClearSelection}
                               />
                             </div>
                           );

@@ -61,6 +61,8 @@ export interface PostBlockProps {
   forceOpaque?: boolean;
   /** When set (e.g. week multi-post slot rows), minimal block may show 2–3 lines of text when >= 2. */
   slotExpandRows?: number;
+  /** When true (Day/Week view), compact block does not show thumbnail/icon next to time. */
+  hideTimeRowPreview?: boolean;
 }
 
 export interface PostBlockBaseProps {

@@ -261,6 +261,15 @@ function RegularLayout({
         : rows === 2
           ? "line-clamp-2"
           : "truncate";
+  const useDynamicLineClamp = rows > 4;
+  const lineClampStyle = useDynamicLineClamp
+    ? {
+        display: "-webkit-box" as const,
+        WebkitLineClamp: rows,
+        WebkitBoxOrient: "vertical" as const,
+        overflow: "hidden",
+      }
+    : undefined;
 
   return (
     <div
@@ -291,7 +300,8 @@ function RegularLayout({
         />
         {allowMultipleLines ? (
           <div
-            className={`${lineClampClass} min-w-0 flex-1 text-xs leading-relaxed break-words`}
+            className={`min-w-0 flex-1 text-xs leading-relaxed break-words ${useDynamicLineClamp ? "" : lineClampClass}`}
+            style={lineClampStyle}
           >
             {postPreview}
           </div>
@@ -322,7 +332,7 @@ export function MinimalPostBlock({
 }: MinimalPostBlockProps) {
   const firstImage = getFirstImage(post, isLongform ?? false);
   const rows = slotExpandRows ?? 1;
-  const previewMaxLength = rows >= 2 ? 600 : 30;
+  const previewMaxLength = rows >= 2 ? Math.min(2000, 30 + rows * 220) : 30;
   const postPreview = getPostPreview(
     post,
     isLongform ?? false,

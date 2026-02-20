@@ -21,6 +21,8 @@ interface CompactPostBlockProps extends PostBlockBaseProps {
   queueColorStyle: QueueColorStyle | null;
   userTimezone: string;
   timeString: string;
+  /** When true, do not show thumbnail/icon next to time (Day/Week view). */
+  hideTimeRowPreview?: boolean;
 }
 
 // ============================================================================
@@ -181,6 +183,7 @@ export function CompactPostBlock({
   queueColorStyle,
   userTimezone: _userTimezone,
   timeString,
+  hideTimeRowPreview = false,
 }: CompactPostBlockProps) {
   const { formatDate } = useFormattedDate();
   const firstImage = getFirstImage(post, isLongform ?? false);
@@ -224,15 +227,17 @@ export function CompactPostBlock({
     >
       <div className="relative mb-1 flex flex-shrink-0 items-start justify-between">
         <div className="flex items-center space-x-1">
-          {firstImage ? (
-            <ThumbnailSection
-              firstImage={firstImage}
-              post={post}
-              isLongform={isLongform}
-            />
-          ) : (
-            <IconSection post={post} isLongform={isLongform} />
-          )}
+          {!hideTimeRowPreview ? (
+            firstImage ? (
+              <ThumbnailSection
+                firstImage={firstImage}
+                post={post}
+                isLongform={isLongform}
+              />
+            ) : (
+              <IconSection post={post} isLongform={isLongform} />
+            )
+          ) : null}
           <span className="font-medium">{timeString}</span>
         </div>
 

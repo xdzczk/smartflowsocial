@@ -280,7 +280,7 @@ export function Calendar({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[hsl(var(--calendar-surface-2-bg))]">
-      {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. All header text = text-sm to match view selector. */}
+      {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. Calendar controls use text-xs to match filter dropdown labels. */}
       <div className="border-border/60 flex min-h-14 flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-3 select-none sm:px-3">
         <div className="flex h-fit min-h-0 flex-shrink-0 flex-col justify-center gap-2 md:flex-row md:flex-nowrap md:items-center md:gap-4">
           {/* Row 1 on mobile: calendar controls + Today + view selector */}
@@ -314,7 +314,7 @@ export function Calendar({
                   setSelectedPost(null);
                   setCurrentDate(toDate(now));
                 }}
-                className="text-primary hover:text-primary/80 bg-muted/50 flex h-9 shrink-0 items-center rounded-[var(--calendar-radius-sm)] px-2 py-1.5 text-sm font-medium sm:px-3"
+                className="text-primary hover:text-primary/80 bg-muted/50 flex h-9 shrink-0 items-center rounded-[var(--calendar-radius-sm)] px-2 py-1.5 text-xs font-medium sm:px-3"
                 title="Today (T)"
               >
                 Today
@@ -341,18 +341,6 @@ export function Calendar({
                   aria-hidden
                 />
               </button>
-
-              {view === "month" ? (
-                <h2 className="text-foreground flex min-w-0 items-center truncate text-sm leading-tight font-medium">
-                  {formatForDisplay(
-                    fromDate(currentDate, userTimezone),
-                    userTimezone,
-                    { month: "long", year: "numeric" },
-                    undefined,
-                    dateLocale
-                  )}
-                </h2>
-              ) : null}
 
               {/* Mini calendar: in Day view only. On desktop (lg) it lives in the sidebar; below lg use header popover */}
               {view === "day" ? (
@@ -408,7 +396,7 @@ export function Calendar({
                     setSelectedPost(null);
                     setView(v);
                   }}
-                  className={`flex h-8 items-center rounded-[var(--calendar-radius-sm)] px-1.5 py-0.5 text-sm font-medium sm:px-2 sm:py-1 md:px-3 ${
+                  className={`flex h-8 items-center rounded-[var(--calendar-radius-sm)] px-1.5 py-0.5 text-xs font-medium sm:px-2 sm:py-1 md:px-3 ${
                     view === v
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -418,6 +406,19 @@ export function Calendar({
                 </button>
               ))}
             </div>
+
+            {/* Month label: only in Month view, after Day/Week/Month controls */}
+            {view === "month" ? (
+              <h2 className="text-foreground flex min-w-0 items-center truncate text-xs leading-tight font-medium">
+                {formatForDisplay(
+                  fromDate(currentDate, userTimezone),
+                  userTimezone,
+                  { month: "long", year: "numeric" },
+                  undefined,
+                  dateLocale
+                )}
+              </h2>
+            ) : null}
           </div>
 
           {/* Row 2 on mobile: content type 50% + queue 50%. On desktop: right-aligned, same-width filters */}
@@ -474,6 +475,10 @@ export function Calendar({
                 weekDaysOverride={view === "day" ? [currentDate] : undefined}
                 onPostDrop={handlePostDrop}
                 onPostEdit={handlePostClick}
+                selectedPost={view === "day" ? selectedPost : undefined}
+                onClearSelection={
+                  view === "day" ? () => setSelectedPost(null) : undefined
+                }
                 user={user}
                 queueTypes={queueTypes}
                 isLongform={isLongform}
