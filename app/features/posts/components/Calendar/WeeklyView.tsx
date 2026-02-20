@@ -48,7 +48,7 @@ const TOTAL_TIME_SLOTS = HOURS_PER_DAY * 2;
 const WEEK_VIEW_MIN_WIDTH = "28.5rem";
 
 /** Row z-index range (below Dialog z-50) so modals and overlays stay on top of the calendar grid. */
-const CALENDAR_ROW_Z_HOVERED = 40;
+const CALENDAR_ROW_Z_HOVERED = 50;
 const CALENDAR_ROW_Z_BASE = 39;
 
 /** Class for expanded post block wrapper so it sits on top with opaque background. */
@@ -187,6 +187,8 @@ interface SlotCellContentProps {
   slotColumn?: 0 | 1;
   /** Row index (0–47); when >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD, blocks expand upward on hover. */
   rowIndex?: number;
+  /** Rows from this slot to end of day (for bottom rows: cap expansion downward and grow upward instead). */
+  availableRowsBelow?: number;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
   onPostEdit: (post: CalendarPost) => void;
@@ -202,6 +204,7 @@ function SlotCellContent({
   isDayView,
   slotColumn,
   rowIndex = 0,
+  availableRowsBelow = 0,
   hoveredPostKey,
   setHoveredPostKey,
   onPostEdit,
@@ -210,8 +213,34 @@ function SlotCellContent({
   isLongform,
   isAll,
 }: SlotCellContentProps) {
-  const { dateKey, posts, singlePostKey, isHovered, blockHeightPx } = slotState;
+  const {
+    dateKey,
+    posts,
+    singlePostKey,
+    isHovered,
+    blockHeightPx,
+    expandRows,
+  } = slotState;
   const expandUp = rowIndex >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
+  const rowsToGrowUp =
+    expandUp && availableRowsBelow > 0 && expandRows > availableRowsBelow
+      ? expandRows - availableRowsBelow
+      : 0;
+
+  const wrapExpandUp = (content: React.ReactNode) =>
+    rowsToGrowUp > 0 ? (
+      <div
+        className="relative w-full min-w-0"
+        style={{
+          top: -rowsToGrowUp * ROW_HEIGHT_PX,
+          height: blockHeightPx,
+        }}
+      >
+        {content}
+      </div>
+    ) : (
+      content
+    );
 
   if (posts.length === 1) {
     if (!posts[0]) return null;
@@ -250,27 +279,26 @@ function SlotCellContent({
       </div>
     );
     if (isDayView) {
-      return (
+      return wrapExpandUp(
         <div className="flex w-full gap-1">
           <div className="min-w-0 flex-1">
             {slotColumn === 0 ? (
-              <div className="w-full min-w-0">{blockInner}</div>
+              <div className="relative w-full min-w-0">{blockInner}</div>
             ) : null}
           </div>
           <div className="flex min-w-0 flex-1 justify-end">
             {slotColumn === 1 ? (
-              <div className="w-full min-w-0">{blockInner}</div>
+              <div className="relative w-full min-w-0">{blockInner}</div>
             ) : null}
           </div>
         </div>
       );
     }
-    return blockInner;
+    return wrapExpandUp(blockInner);
   }
 
-  const { expandRows } = slotState;
   if (posts.length <= 6) {
-    return (
+    return wrapExpandUp(
       <div
         className="relative flex space-x-0.5"
         style={{ height: slotState.blockHeightPx }}
@@ -299,7 +327,7 @@ function SlotCellContent({
     );
   }
 
-  return (
+  return wrapExpandUp(
     <div
       className="relative flex space-x-0.5"
       style={{ height: slotState.blockHeightPx }}
@@ -811,15 +839,17 @@ export function WeeklyView({
                       (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
                     );
                   });
-                  // Row order = stacking order: earlier rows on top so post blocks always paint above rows below. Use min 1 so bottom rows paint above the scroll container.
-                  // From 19:30 down: invert order so the row above paints on top of the row below; otherwise the row below captures hover and blocks don't activate.
+                  // Row stacking: top half of day (index < BOTTOM_ROWS_STACK_ABOVE_THRESHOLD): later rows on top
+                  // so the top half of each row is hittable for drag/drop; bottom rows (19:30+): row above on top
+                  // so blocks that extend down stay interactive.
                   const rowZIndex = rowHasHovered
                     ? CALENDAR_ROW_Z_HOVERED
                     : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-                      ? CALENDAR_ROW_Z_BASE -
-                        index +
-                        BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-                      : Math.max(1, CALENDAR_ROW_Z_BASE - index);
+                      ? CALENDAR_ROW_Z_BASE +
+                        1 +
+                        BOTTOM_ROWS_STACK_ABOVE_THRESHOLD -
+                        index
+                      : index + 1;
 
                   return (
                     <div
@@ -887,6 +917,7 @@ export function WeeklyView({
                                     : undefined
                                 }
                                 rowIndex={index}
+                                availableRowsBelow={hours.length - index}
                                 hoveredPostKey={hoveredPostKey}
                                 setHoveredPostKey={setHoveredPostKey}
                                 onPostEdit={onPostEdit}
