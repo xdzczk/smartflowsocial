@@ -1,5 +1,13 @@
+import { useNavigate } from "@remix-run/react";
+import { FilePenLine, FileText, MessageSquare, Plus } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -179,6 +187,59 @@ const BOTTOM_ROWS_EXPAND_UP_THRESHOLD = 45;
 /** First row index (19:30) where we stack "row above on top of row below" so hover works on lower parts of blocks. */
 const BOTTOM_ROWS_STACK_ABOVE_THRESHOLD = 39;
 
+const EMPTY_SLOT_ICON_CLASS = "size-4 shrink-0 opacity-50";
+
+function EmptySlotCreateMenu({
+  dateKey,
+  time,
+}: {
+  dateKey: string;
+  time: string;
+}) {
+  const navigate = useNavigate();
+  const scheduledAt = `${dateKey}T${time}`;
+  const q = (path: string) =>
+    `${path}?scheduledAt=${encodeURIComponent(scheduledAt)}`;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-full w-full items-center justify-center rounded transition-colors"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Plus
+          className={EMPTY_SLOT_ICON_CLASS}
+          strokeWidth={2.25}
+          aria-label="Create in this slot"
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" side="right">
+        <DropdownMenuItem
+          onSelect={() => navigate(q("/dashboard/newpost"))}
+          className="flex items-center gap-2"
+        >
+          <MessageSquare className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
+          New Post
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => navigate(q("/dashboard/newlongformpost"))}
+          className="flex items-center gap-2"
+        >
+          <FileText className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
+          New Article
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => navigate(q("/dashboard/newpost"))}
+          className="flex items-center gap-2"
+        >
+          <FilePenLine className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
+          New Draft
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 interface SlotCellContentProps {
   slotState: SlotState;
   time: string;
@@ -221,6 +282,21 @@ function SlotCellContent({
     blockHeightPx,
     expandRows,
   } = slotState;
+
+  if (posts.length === 0) {
+    const userTz = user?.timezone ?? "UTC";
+    const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTz);
+    const nowZoned = nowInTimezone(userTz);
+    const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
+    return (
+      <div className="relative flex h-full w-full min-w-0 items-center justify-center">
+        {isFutureSlot ? (
+          <EmptySlotCreateMenu dateKey={dateKey} time={time} />
+        ) : null}
+      </div>
+    );
+  }
+
   const expandUp = rowIndex >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
   const rowsToGrowUp =
     expandUp && availableRowsBelow > 0 && expandRows > availableRowsBelow
@@ -573,7 +649,7 @@ export function WeeklyView({
       }
     });
 
-    // Process past posts
+    // Process past (published) posts: always low opacity and no drag, including today's
     pastPosts.forEach((post) => {
       const postIsLongform = Boolean(
         isAll ? !!post.title && post.publishedAt : isLongform
@@ -697,7 +773,7 @@ export function WeeklyView({
     setDragOverSlot(null);
   };
 
-  // In day view: assign single-post slots to column 0 (left) or 1 (right) so overlapping blocks alternate
+  // In day view: assign single-post slots to column 0 (left) or 1 (right), alternating when both columns are free to maximise space
   const dayViewColumnMap = useMemo((): Record<string, 0 | 1> => {
     const firstDay = weekDays[0];
     const empty: Record<string, 0 | 1> = {};
@@ -708,6 +784,7 @@ export function WeeklyView({
     const map: Record<string, 0 | 1> = {};
     let column0End = 0;
     let column1End = 0;
+    let nextCol: 0 | 1 = 0;
     for (let timeIdx = 0; timeIdx < hours.length; timeIdx++) {
       const time = hours[timeIdx];
       if (time === undefined) continue;
@@ -724,7 +801,13 @@ export function WeeklyView({
       const slotKey = `${dateKey}-${time}`;
       const start = timeIdx;
       const end = timeIdx + baseRows;
-      if (start >= column0End) {
+      const bothFree = start >= column0End && start >= column1End;
+      if (bothFree) {
+        map[slotKey] = nextCol;
+        nextCol = nextCol === 0 ? 1 : 0;
+        if (map[slotKey] === 0) column0End = end;
+        else column1End = end;
+      } else if (start >= column0End) {
         map[slotKey] = 0;
         column0End = end;
       } else if (start >= column1End) {
@@ -771,7 +854,7 @@ export function WeeklyView({
     <div className="flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
         <div
-          className="flex min-h-0 min-h-[40vh] flex-1 flex-col overflow-hidden"
+          className="flex min-h-0 min-h-[40vh] flex-1 flex-col overflow-hidden select-none"
           style={{
             minWidth: isMobile ? undefined : WEEK_VIEW_MIN_WIDTH,
           }}

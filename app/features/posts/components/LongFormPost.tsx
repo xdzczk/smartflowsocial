@@ -80,6 +80,8 @@ interface LongFormPostProps {
   editTemplateContext?: { templateId: string; longFormPostId: string } | null;
   /** When editing a template, pass the current template name to prefill the composer field. */
   initialTemplateName?: string | null;
+  /** Prefill schedule (datetime-local format YYYY-MM-DDTHH:mm) when opening from calendar slot. */
+  initialScheduledFor?: string | null;
 }
 
 export default function LongFormPost({
@@ -101,6 +103,7 @@ export default function LongFormPost({
   mode = "default",
   editTemplateContext = null,
   initialTemplateName = null,
+  initialScheduledFor = null,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
   const [templateName, setTemplateName] = useState(
@@ -124,7 +127,7 @@ export default function LongFormPost({
       summary: initialData?.summary ?? "",
       content: initialData?.content ?? "",
       customTags: initialData?.tags?.join(", ") ?? "",
-      scheduledFor: "",
+      scheduledFor: initialScheduledFor ?? "",
       queueType: initialData?.queueType?.name ?? "unassigned",
       useHashtagPresets: useHashtagPresets,
       hashTagPresetId: selectedHashtagPresetId ?? undefined,
@@ -185,6 +188,18 @@ export default function LongFormPost({
     initialQueueType: initialData?.queueType?.name ?? "unassigned",
     onQueueTypeChange,
   });
+
+  const appliedInitialScheduledRef = useRef(false);
+  useEffect(() => {
+    if (
+      !initialScheduledFor ||
+      initialData ||
+      appliedInitialScheduledRef.current
+    )
+      return;
+    appliedInitialScheduledRef.current = true;
+    setSchedulingScheduledFor(initialScheduledFor);
+  }, [initialScheduledFor, initialData, setSchedulingScheduledFor]);
 
   const longformDraftKey =
     initialData?.id != null

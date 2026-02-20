@@ -161,6 +161,7 @@ export default function NewPostPage() {
   } = useNewPostState();
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const scheduledAt = searchParams.get("scheduledAt");
   const navigate = useNavigate();
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
@@ -347,6 +348,7 @@ export default function NewPostPage() {
         onComposerStatusChange={setComposerStatus}
         initialDraft={initialDraft}
         initialDraftId={initialDraftId}
+        initialScheduledFor={scheduledAt ?? undefined}
       />
 
       {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (

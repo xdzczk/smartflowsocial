@@ -249,6 +249,7 @@ export default function NewLongFormPostPage() {
   } = useNewLongFormState({ userTags: safeUserTags });
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const scheduledAt = searchParams.get("scheduledAt");
   const navigate = useNavigate();
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
@@ -373,6 +374,7 @@ export default function NewLongFormPostPage() {
       <Form method="post" encType="multipart/form-data">
         <LongFormPost
           initialData={initialTemplateData}
+          initialScheduledFor={scheduledAt ?? undefined}
           queueTypes={queueTypes}
           scheduleIntervals={scheduleIntervals}
           userTags={safeUserTags}

@@ -86,6 +86,7 @@ export function useCalendarQuery() {
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
     refetchOnMount: false,
+    refetchInterval: 60 * 1000, // Refresh post status every minute (e.g. scheduled → published for today)
   });
 }
 

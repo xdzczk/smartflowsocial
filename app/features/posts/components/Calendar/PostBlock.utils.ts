@@ -14,36 +14,43 @@ import type {
   QueueColorStyle,
   QueueType,
 } from "./PostBlock.types";
+const DEFAULT_PREVIEW_MAX_LENGTH = 30;
+
+function truncatePreview(text: string, maxLength: number): string {
+  const len = Math.max(1, maxLength);
+  const addEllipsis = len <= DEFAULT_PREVIEW_MAX_LENGTH;
+  return text.length > len
+    ? text.substring(0, len) + (addEllipsis ? "..." : "")
+    : text;
+}
+
+function getMediaFallbackLabel(
+  postType: string | undefined,
+  isRepost: boolean
+): string {
+  if (postType === "VIDEO" || postType === "CAROUSEL") {
+    return isRepost ? "Repost (media)" : "Media post";
+  }
+  return isRepost ? "Repost (image)" : "Image post";
+}
+
 export function getPostPreview(
   post: CalendarPost,
-  isLongform: boolean
+  isLongform: boolean,
+  maxLength: number = DEFAULT_PREVIEW_MAX_LENGTH
 ): string {
+  const len = Math.max(1, maxLength);
+
   if (isLongform) {
-    if (post.title) {
-      return post.title.length > 30
-        ? post.title.substring(0, 30) + "..."
-        : post.title;
-    }
+    if (post.title) return truncatePreview(post.title, len);
     return "Article";
   }
 
-  if (post.caption) {
-    return post.caption.length > 30
-      ? post.caption.substring(0, 30) + "..."
-      : post.caption;
-  }
+  if (post.caption) return truncatePreview(post.caption, len);
 
   const isRepost = post.repost === true || post.postKind === "REPOST";
-
-  // Check postType to provide accurate labels
   if (post.fileUrl.length > 0) {
-    if (post.postType === "VIDEO") {
-      return isRepost ? "Repost (media)" : "Media post";
-    } else if (post.postType === "CAROUSEL") {
-      return isRepost ? "Repost (media)" : "Media post";
-    } else {
-      return isRepost ? "Repost (image)" : "Image post";
-    }
+    return getMediaFallbackLabel(post.postType, isRepost);
   }
 
   return isRepost ? "Repost" : "Text post";
@@ -164,17 +171,13 @@ export function getQueueColorStyle(
     };
   }
 
-  // Past posts without a queue type keep grayed styling
-  if (isPast) {
-    return {
-      backgroundColor: "hsl(var(--muted))",
-      color: "hsl(var(--muted-foreground))",
-      borderColor: "hsl(var(--border))",
-      ...(forceOpaque ? {} : { opacity: 0.6 }),
-    };
-  }
-
-  return null;
+  // Unassigned (no queue type): visible muted background, no outline (past and future)
+  return {
+    backgroundColor: "hsl(var(--muted))",
+    color: "hsl(var(--muted-foreground))",
+    borderColor: "transparent",
+    ...(isPast && !forceOpaque ? { opacity: 0.6 } : {}),
+  };
 }
 
 /**

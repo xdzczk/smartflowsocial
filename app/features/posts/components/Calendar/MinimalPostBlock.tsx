@@ -251,7 +251,16 @@ function RegularLayout({
     formattedTime
   );
   const title = getTitleText(postPreview, isLongform, isPast, formattedTime);
-  const allowMultipleLines = (slotExpandRows ?? 0) >= 2;
+  const rows = slotExpandRows ?? 1;
+  const allowMultipleLines = rows >= 2;
+  const lineClampClass =
+    rows >= 4
+      ? "line-clamp-4"
+      : rows === 3
+        ? "line-clamp-3"
+        : rows === 2
+          ? "line-clamp-2"
+          : "truncate";
 
   return (
     <div
@@ -281,7 +290,9 @@ function RegularLayout({
           hideVideoPlayButton={hideVideoPlayButton}
         />
         {allowMultipleLines ? (
-          <div className="line-clamp-2 min-w-0 flex-1 text-xs break-words">
+          <div
+            className={`${lineClampClass} min-w-0 flex-1 text-xs leading-relaxed break-words`}
+          >
             {postPreview}
           </div>
         ) : (
@@ -310,7 +321,13 @@ export function MinimalPostBlock({
   slotExpandRows,
 }: MinimalPostBlockProps) {
   const firstImage = getFirstImage(post, isLongform ?? false);
-  const postPreview = getPostPreview(post, isLongform ?? false);
+  const rows = slotExpandRows ?? 1;
+  const previewMaxLength = rows >= 2 ? 600 : 30;
+  const postPreview = getPostPreview(
+    post,
+    isLongform ?? false,
+    previewMaxLength
+  );
   const displayTime = getDisplayTime(
     post,
     isLongform ?? false,

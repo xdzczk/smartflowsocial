@@ -248,6 +248,8 @@ export interface UnifiedComposerProps {
     } | null;
     hashTagPresetId: string | null;
   } | null;
+  /** Prefill schedule (datetime-local format YYYY-MM-DDTHH:mm) when opening from calendar slot. */
+  initialScheduledFor?: string | null;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -262,6 +264,7 @@ export function UnifiedComposer({
   onComposerStatusChange,
   initialDraftId = null,
   initialDraft = null,
+  initialScheduledFor = null,
   mode = "default",
   editTemplateContext = null,
   initialTemplateName = null,
@@ -347,7 +350,7 @@ export function UnifiedComposer({
   const form = useZodForm(textPostClientSchema, {
     defaultValues: {
       content: initialDraft?.content ?? "",
-      scheduledFor: "",
+      scheduledFor: initialScheduledFor ?? "",
       queueType: initialDraft?.queueType ?? "unassigned",
       isRecyclable: false,
       useHashtagPresets: !!initialDraft?.hashTagPresetId,
@@ -415,6 +418,19 @@ export function UnifiedComposer({
   React.useEffect(() => {
     form.setValue("queueType", selectedQueue);
   }, [selectedQueue, form]);
+
+  // Apply initial schedule from URL (e.g. from calendar empty-slot create)
+  const appliedInitialScheduledRef = React.useRef(false);
+  React.useEffect(() => {
+    if (
+      !initialScheduledFor ||
+      initialDraftId ||
+      appliedInitialScheduledRef.current
+    )
+      return;
+    appliedInitialScheduledRef.current = true;
+    setSchedulingScheduledFor(initialScheduledFor);
+  }, [initialScheduledFor, initialDraftId, setSchedulingScheduledFor]);
 
   React.useEffect(() => {
     if (schedulingScheduledFor) {

@@ -163,7 +163,7 @@ export function MonthlyView({
       }
     });
 
-    // Process past posts
+    // Process past (published) posts: always low opacity and no drag, including today's
     pastPosts.forEach((post) => {
       // Use publishedAt for past posts
       const timestamp = post.publishedAt;
@@ -272,7 +272,7 @@ export function MonthlyView({
   const moreSlotIndex = isMobile ? 3 : 5;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col select-none">
       {/* Weekday headers */}
       <div className="border-border/40 grid flex-shrink-0 grid-cols-7 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
         {weekdays.map((day) => (
