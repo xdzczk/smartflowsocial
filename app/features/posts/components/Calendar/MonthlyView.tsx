@@ -273,12 +273,12 @@ export function MonthlyView({
 
   return (
     <div className="flex h-full min-h-0 flex-col select-none">
-      {/* Weekday headers */}
-      <div className="border-border/40 grid flex-shrink-0 grid-cols-7 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
+      {/* Weekday headers: same height as Weekly/Daily (py-1, items-center) */}
+      <div className="border-border/40 flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
         {weekdays.map((day) => (
           <div
             key={day}
-            className="text-muted-foreground px-2 py-2 text-center text-sm font-medium"
+            className="text-muted-foreground flex min-w-0 flex-1 items-center justify-center border-r px-2 py-1 text-center text-sm font-medium last:border-r-0"
           >
             {day}
           </div>

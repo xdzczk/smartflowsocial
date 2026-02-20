@@ -90,7 +90,7 @@ export function DashboardLayoutPage(): ReactNode {
 
         <main
           id="page-content"
-          className="flex min-h-0 max-w-full flex-1 flex-col pt-[3.25rem]"
+          className="flex min-h-0 max-w-full flex-1 flex-col pt-16"
         >
           {pendingParentUsers.length > 0 ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
@@ -199,7 +199,7 @@ export function DashboardLayoutPage(): ReactNode {
           ) : null}
 
           <div
-            className={`flex w-full flex-1 flex-col ${isCalendar ? "pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-8 md:pb-24" : "pt-4.5 pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "min-h-0 min-w-0 lg:overflow-hidden" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
+            className={`flex w-full flex-1 flex-col ${isCalendar ? "pt-4 pb-0" : isDashboardIndex ? "pt-4.5 pb-8 md:pb-24" : "pt-4.5 pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "min-h-0 min-w-0 lg:overflow-hidden" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
           >
             <Outlet />
           </div>

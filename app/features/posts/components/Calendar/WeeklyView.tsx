@@ -1,5 +1,5 @@
 import { useNavigate } from "@remix-run/react";
-import { FilePenLine, FileText, MessageSquare, Plus } from "lucide-react";
+import { FileText, MessageSquare, Plus } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 
 import {
@@ -98,6 +98,33 @@ function getExpandDown(
   return count;
 }
 
+/** Day view: expand down until the next slot that has a post in the same column (up to maxEmptySlots). */
+function getExpandDownDayView(
+  dateKey: string,
+  timeSlot: string,
+  postsGrid: PostsGrid,
+  hours: string[],
+  maxEmptySlots: number,
+  myColumn: 0 | 1,
+  dayViewColumnMap: Record<string, 0 | 1>
+): number {
+  const idx = hours.indexOf(timeSlot);
+  if (idx < 0 || idx >= hours.length - 1) return 0;
+  let count = 0;
+  for (let i = 1; i <= maxEmptySlots && idx + i < hours.length; i++) {
+    const nextSlot = hours[idx + i];
+    if (nextSlot === undefined) break;
+    const slotKeyBelow = `${dateKey}-${nextSlot}`;
+    const postsBelow = postsGrid[dateKey]?.[nextSlot] ?? [];
+    const hasPostInMyColumn =
+      postsBelow.length > 0 &&
+      (dayViewColumnMap[slotKeyBelow] ?? 0) === myColumn;
+    if (hasPostInMyColumn) break;
+    count = i;
+  }
+  return count;
+}
+
 /** True when this slot’s block spans baseRows and the next slot below it (same date) has posts. */
 function hasBlocksUnderneath(
   dateKey: string,
@@ -135,7 +162,8 @@ function getSlotState(
   hoveredPostKey: string | null,
   dragOverSlot: string | null,
   isDayView: boolean,
-  userTimezone: string
+  userTimezone: string,
+  dayViewColumnMap?: Record<string, 0 | 1>
 ): SlotState {
   const dayZoned = fromDate(day, userTimezone);
   const dateKey = `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
@@ -145,7 +173,18 @@ function getSlotState(
   const maxExpand = isDayView
     ? getDayViewMaxExpand(posts.length)
     : getWeekViewMaxExpand(posts.length);
-  const expandDown = getExpandDown(dateKey, time, postsGrid, hours, maxExpand);
+  const expandDown =
+    isDayView && dayViewColumnMap && posts.length === 1
+      ? getExpandDownDayView(
+          dateKey,
+          time,
+          postsGrid,
+          hours,
+          maxExpand,
+          dayViewColumnMap[slotKey] ?? 0,
+          dayViewColumnMap
+        )
+      : getExpandDown(dateKey, time, postsGrid, hours, maxExpand);
   const singlePostKey =
     posts.length === 1 && posts[0] ? `${dateKey}-${time}-${posts[0].id}` : null;
   const isHovered = singlePostKey !== null && hoveredPostKey === singlePostKey;
@@ -192,9 +231,11 @@ const EMPTY_SLOT_ICON_CLASS = "size-4 shrink-0 opacity-50";
 function EmptySlotCreateMenu({
   dateKey,
   time,
+  onClose,
 }: {
   dateKey: string;
   time: string;
+  onClose: () => void;
 }) {
   const navigate = useNavigate();
   const scheduledAt = `${dateKey}T${time}`;
@@ -202,7 +243,12 @@ function EmptySlotCreateMenu({
     `${path}?scheduledAt=${encodeURIComponent(scheduledAt)}`;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      defaultOpen
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DropdownMenuTrigger
         className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-full w-full items-center justify-center rounded transition-colors"
         onClick={(e) => e.stopPropagation()}
@@ -228,13 +274,6 @@ function EmptySlotCreateMenu({
           <FileText className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
           New Article
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() => navigate(q("/dashboard/newpost"))}
-          className="flex items-center gap-2"
-        >
-          <FilePenLine className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
-          New Draft
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -257,6 +296,116 @@ interface SlotCellContentProps {
   queueTypes?: QueueType[];
   isLongform: boolean;
   isAll: boolean;
+  /** When set, the empty-slot + menu is shown only for this slot (after user click/touch). */
+  activeEmptySlotKey: string | null;
+  setActiveEmptySlotKey: (key: string | null) => void;
+}
+
+function EmptySlotCellContent({
+  dateKey,
+  time,
+  slotKey,
+  userTimezone,
+  activeEmptySlotKey,
+  setActiveEmptySlotKey,
+}: {
+  dateKey: string;
+  time: string;
+  slotKey: string;
+  userTimezone: string;
+  activeEmptySlotKey: string | null;
+  setActiveEmptySlotKey: (key: string | null) => void;
+}) {
+  const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTimezone);
+  const nowZoned = nowInTimezone(userTimezone);
+  const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
+  const isActive = activeEmptySlotKey === slotKey;
+  const handleActivate = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isFutureSlot) return;
+    e.stopPropagation();
+    setActiveEmptySlotKey(slotKey);
+  };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isFutureSlot) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setActiveEmptySlotKey(slotKey);
+    }
+  };
+  return (
+    <button
+      type="button"
+      className={`relative flex h-full w-full min-w-0 items-center justify-center border-0 bg-transparent p-0 ${isFutureSlot ? "cursor-pointer" : "cursor-default"}`}
+      onClick={handleActivate}
+      onTouchStart={handleActivate}
+      onKeyDown={handleKeyDown}
+      tabIndex={isFutureSlot ? 0 : -1}
+      aria-label={isFutureSlot ? "Create post in this slot" : undefined}
+      disabled={!isFutureSlot}
+    >
+      {isFutureSlot && isActive ? (
+        <EmptySlotCreateMenu
+          dateKey={dateKey}
+          time={time}
+          onClose={() => setActiveEmptySlotKey(null)}
+        />
+      ) : null}
+    </button>
+  );
+}
+
+function DayViewEmptyColumnArea({
+  dateKey,
+  time,
+  slotKey,
+  blockHeightPx,
+  userTimezone,
+  activeEmptySlotKey,
+  setActiveEmptySlotKey,
+}: {
+  dateKey: string;
+  time: string;
+  slotKey: string;
+  blockHeightPx: number;
+  userTimezone: string;
+  activeEmptySlotKey: string | null;
+  setActiveEmptySlotKey: (key: string | null) => void;
+}) {
+  const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTimezone);
+  const nowZoned = nowInTimezone(userTimezone);
+  const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
+  const isActive = activeEmptySlotKey === slotKey;
+  const handleActivate = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setActiveEmptySlotKey(slotKey);
+  };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setActiveEmptySlotKey(slotKey);
+    }
+  };
+  if (!isFutureSlot) return null;
+  return (
+    <div
+      className={`relative flex min-h-0 flex-1 items-center justify-center ${isActive ? "" : "cursor-pointer"}`}
+      style={{ minHeight: blockHeightPx }}
+      onClick={handleActivate}
+      onTouchStart={handleActivate}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label="Create post in this slot"
+    >
+      {isActive ? (
+        <EmptySlotCreateMenu
+          dateKey={dateKey}
+          time={time}
+          onClose={() => setActiveEmptySlotKey(null)}
+        />
+      ) : null}
+    </div>
+  );
 }
 
 function SlotCellContent({
@@ -273,6 +422,8 @@ function SlotCellContent({
   queueTypes,
   isLongform,
   isAll,
+  activeEmptySlotKey,
+  setActiveEmptySlotKey,
 }: SlotCellContentProps) {
   const {
     dateKey,
@@ -281,19 +432,19 @@ function SlotCellContent({
     isHovered,
     blockHeightPx,
     expandRows,
+    slotKey,
   } = slotState;
 
   if (posts.length === 0) {
-    const userTz = user?.timezone ?? "UTC";
-    const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTz);
-    const nowZoned = nowInTimezone(userTz);
-    const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
     return (
-      <div className="relative flex h-full w-full min-w-0 items-center justify-center">
-        {isFutureSlot ? (
-          <EmptySlotCreateMenu dateKey={dateKey} time={time} />
-        ) : null}
-      </div>
+      <EmptySlotCellContent
+        dateKey={dateKey}
+        time={time}
+        slotKey={slotKey}
+        userTimezone={user?.timezone ?? "UTC"}
+        activeEmptySlotKey={activeEmptySlotKey}
+        setActiveEmptySlotKey={setActiveEmptySlotKey}
+      />
     );
   }
 
@@ -303,12 +454,18 @@ function SlotCellContent({
       ? expandRows - availableRowsBelow
       : 0;
 
+  // Anchor block bottom to the bottom of the slot's allocated rows so it expands upward only (no "teleport")
+  const expandUpTop =
+    rowsToGrowUp > 0
+      ? (1 + availableRowsBelow) * ROW_HEIGHT_PX - blockHeightPx
+      : 0;
+
   const wrapExpandUp = (content: React.ReactNode) =>
     rowsToGrowUp > 0 ? (
       <div
         className="relative w-full min-w-0"
         style={{
-          top: -rowsToGrowUp * ROW_HEIGHT_PX,
+          top: expandUpTop,
           height: blockHeightPx,
         }}
       >
@@ -355,17 +512,33 @@ function SlotCellContent({
       </div>
     );
     if (isDayView) {
+      const userTz = user?.timezone ?? "UTC";
+      const emptyColumn = (
+        <DayViewEmptyColumnArea
+          dateKey={dateKey}
+          time={time}
+          slotKey={slotKey}
+          blockHeightPx={blockHeightPx}
+          userTimezone={userTz}
+          activeEmptySlotKey={activeEmptySlotKey}
+          setActiveEmptySlotKey={setActiveEmptySlotKey}
+        />
+      );
       return wrapExpandUp(
         <div className="flex w-full gap-1">
           <div className="min-w-0 flex-1">
             {slotColumn === 0 ? (
               <div className="relative w-full min-w-0">{blockInner}</div>
-            ) : null}
+            ) : (
+              emptyColumn
+            )}
           </div>
           <div className="flex min-w-0 flex-1 justify-end">
             {slotColumn === 1 ? (
               <div className="relative w-full min-w-0">{blockInner}</div>
-            ) : null}
+            ) : (
+              emptyColumn
+            )}
           </div>
         </div>
       );
@@ -550,6 +723,9 @@ export function WeeklyView({
   const { dateLocale } = useFormattedDate();
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
+  const [activeEmptySlotKey, setActiveEmptySlotKey] = useState<string | null>(
+    null
+  );
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const hasSetInitialScrollRef = useRef(false);
 
@@ -968,7 +1144,8 @@ export function WeeklyView({
                             hoveredPostKey,
                             dragOverSlot,
                             isDayView,
-                            user?.timezone ?? "Etc/UTC"
+                            user?.timezone ?? "Etc/UTC",
+                            isDayView ? dayViewColumnMap : undefined
                           );
                           return (
                             <div
@@ -1006,6 +1183,8 @@ export function WeeklyView({
                                 queueTypes={queueTypes}
                                 isLongform={isLongform}
                                 isAll={isAll}
+                                activeEmptySlotKey={activeEmptySlotKey}
+                                setActiveEmptySlotKey={setActiveEmptySlotKey}
                               />
                             </div>
                           );
