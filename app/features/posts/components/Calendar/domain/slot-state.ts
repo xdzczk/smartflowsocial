@@ -26,6 +26,7 @@ export function getSlotState(
 ): SlotState {
   const {
     hoveredPostKey,
+    hoveredPostKeyByColumn,
     dragOverSlot,
     isDayView,
     userTimezone: _userTimezone,
@@ -52,8 +53,15 @@ export function getSlotState(
       : getExpandDown(dateKey, time, postsGrid, hours, maxExpand);
   const singlePostKey =
     posts.length === 1 && posts[0] ? `${dateKey}-${time}-${posts[0].id}` : null;
+  const effectiveHoveredKey =
+    isDayView &&
+    hoveredPostKeyByColumn &&
+    dayViewColumnMap &&
+    singlePostKey !== null
+      ? (hoveredPostKeyByColumn[dayViewColumnMap[slotKey] ?? 0] ?? null)
+      : hoveredPostKey;
   const isHovered =
-    (singlePostKey !== null && hoveredPostKey === singlePostKey) ||
+    (singlePostKey !== null && effectiveHoveredKey === singlePostKey) ||
     (!!selectedPost &&
       posts.length === 1 &&
       (posts[0] as CalendarPost | undefined)?.id === selectedPost.id);

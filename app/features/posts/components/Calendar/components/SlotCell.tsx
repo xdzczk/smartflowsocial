@@ -33,6 +33,8 @@ export function SlotCell({
   availableRowsBelow,
   hoveredPostKey,
   setHoveredPostKey,
+  hoveredPostKeyByColumn,
+  setHoveredPostKeyForColumn,
   onPostEdit,
   user,
   queueTypes,
@@ -52,9 +54,14 @@ export function SlotCell({
   isMobile,
   dayViewColumnMap,
 }: SlotCellProps) {
-  const cellHasHoveredPost = slotState.posts.some(
-    (p) => hoveredPostKey === `${slotState.dateKey}-${time}-${p.id}`
-  );
+  const cellHasHoveredPost = slotState.posts.some((p) => {
+    const key = `${slotState.dateKey}-${time}-${p.id}`;
+    if (hoveredPostKeyByColumn)
+      return (
+        hoveredPostKeyByColumn[0] === key || hoveredPostKeyByColumn[1] === key
+      );
+    return hoveredPostKey === key;
+  });
   const cellRaised =
     cellHasHoveredPost || (isDayView && hoveredSlotKey === slotState.slotKey);
   const cellZClass =
@@ -109,6 +116,8 @@ export function SlotCell({
         availableRowsBelow={availableRowsBelow}
         hoveredPostKey={hoveredPostKey}
         setHoveredPostKey={setHoveredPostKey}
+        hoveredPostKeyByColumn={hoveredPostKeyByColumn}
+        setHoveredPostKeyForColumn={setHoveredPostKeyForColumn}
         onPostEdit={onPostEdit}
         user={user}
         queueTypes={queueTypes}

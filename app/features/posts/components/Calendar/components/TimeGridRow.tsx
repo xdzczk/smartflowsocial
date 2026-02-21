@@ -20,6 +20,9 @@ export interface TimeGridRowProps {
   getSlotState: (day: Date, time: string) => SlotState;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
+  /** Day view only: per-column hover so both columns can be active. */
+  hoveredPostKeyByColumn?: Record<0 | 1, string | null>;
+  setHoveredPostKeyForColumn?: (column: 0 | 1, key: string | null) => void;
   dragOverSlot: string | null;
   isDayView: boolean;
   userTimezone: string;
@@ -68,6 +71,8 @@ export function TimeGridRow({
   userTimezone,
   hoveredPostKey,
   setHoveredPostKey,
+  hoveredPostKeyByColumn,
+  setHoveredPostKeyForColumn,
   dragOverSlot: _dragOverSlot,
   isDayView,
   dayViewColumnMap,
@@ -92,9 +97,15 @@ export function TimeGridRow({
     expandUp &&
     weekDays.some((day) => {
       const slotState = getSlotState(day, time);
-      return slotState.posts.some(
-        (p) => hoveredPostKey === `${slotState.dateKey}-${time}-${p.id}`
-      );
+      return slotState.posts.some((p) => {
+        const key = `${slotState.dateKey}-${time}-${p.id}`;
+        if (hoveredPostKeyByColumn)
+          return (
+            hoveredPostKeyByColumn[0] === key ||
+            hoveredPostKeyByColumn[1] === key
+          );
+        return hoveredPostKey === key;
+      });
     });
   const rowZIndex = rowHasHoveredExpandedUp
     ? CALENDAR_ROW_Z_EXPANDED_UP
@@ -136,6 +147,8 @@ export function TimeGridRow({
               availableRowsBelow={hours.length - index}
               hoveredPostKey={hoveredPostKey}
               setHoveredPostKey={setHoveredPostKey}
+              hoveredPostKeyByColumn={hoveredPostKeyByColumn}
+              setHoveredPostKeyForColumn={setHoveredPostKeyForColumn}
               onPostEdit={onPostEdit}
               user={user}
               queueTypes={queueTypes}

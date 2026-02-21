@@ -25,6 +25,8 @@ export function TimeGrid({
   getSlotState,
   hoveredPostKey,
   setHoveredPostKey,
+  hoveredPostKeyByColumn,
+  setHoveredPostKeyForColumn,
   dragOverSlot,
   isDayView,
   userTimezone,
@@ -72,6 +74,8 @@ export function TimeGrid({
               getSlotState={getSlotState}
               hoveredPostKey={hoveredPostKey}
               setHoveredPostKey={setHoveredPostKey}
+              hoveredPostKeyByColumn={hoveredPostKeyByColumn}
+              setHoveredPostKeyForColumn={setHoveredPostKeyForColumn}
               dragOverSlot={dragOverSlot}
               isDayView={isDayView}
               userTimezone={userTimezone}

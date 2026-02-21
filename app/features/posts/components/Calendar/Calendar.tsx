@@ -588,7 +588,7 @@ export function Calendar({
           onConfirm={() => {
             setShowRescheduleModal(false);
             setRescheduleData(null);
-            void queryClient.invalidateQueries({ queryKey: calendarKeys.all });
+            void queryClient.refetchQueries({ queryKey: calendarKeys.all });
           }}
         />
       ) : null}

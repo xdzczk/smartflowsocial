@@ -23,23 +23,27 @@ export function useInfiniteScrollSentinel({
 }: UseInfiniteScrollSentinelOptions) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
 
-  // On desktop use the document's scrolling element so the observer tracks the
-  // actual scroll container; on mobile use the listing's scroll container when set.
-  const root = isMobile
-    ? (scrollRoot ?? undefined)
-    : typeof document !== "undefined"
-      ? (document.scrollingElement ?? undefined)
-      : undefined;
+  // On desktop use the viewport (null) so the sentinel is observed when it nears
+  // the viewport; on mobile use the listing's scroll container when set.
+  // Using null on desktop avoids relying on document.scrollingElement when the
+  // layout scroll container is not the document (e.g. dashboard content wrapper).
+  const root = isMobile ? (scrollRoot ?? undefined) : undefined;
+
+  // Trigger when sentinel is within 400px of viewport bottom so "load more" fires
+  // before the user reaches the end (better UX and works with various scroll roots).
+  const rootMargin = "0px 0px 400px 0px";
 
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
-    threshold: 0.8,
+    threshold: 0,
     root,
+    rootMargin,
   });
 
   const { ref: prefetchSentinelRef, isIntersecting: isPrefetchIntersecting } =
     useIntersectionObserver({
-      threshold: 0.7,
+      threshold: 0,
       root,
+      rootMargin,
     });
 
   // Prefetch next page when user is 70% down (earlier than actual fetch at 80%)

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -56,12 +56,14 @@ function getSlotState(
   isDayView: boolean,
   userTimezone: string,
   dayViewColumnMap?: Record<string, 0 | 1>,
-  selectedPost?: CalendarPost | null
+  selectedPost?: CalendarPost | null,
+  hoveredPostKeyByColumn?: Record<0 | 1, string | null>
 ): SlotState {
   const dayZoned = fromDate(day, userTimezone);
   const dateKey = `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
   return getSlotStateDomain(dateKey, time, postsGrid, hours, {
-    hoveredPostKey,
+    hoveredPostKey: isDayView ? null : hoveredPostKey,
+    hoveredPostKeyByColumn: isDayView ? hoveredPostKeyByColumn : undefined,
     dragOverSlot,
     isDayView,
     userTimezone,
@@ -87,6 +89,17 @@ export function WeeklyView({
   const { dateLocale } = useFormattedDate();
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
+  const [hoveredPostKeyByColumn, setHoveredPostKeyByColumn] = useState<
+    Record<0 | 1, string | null>
+  >(() => ({ 0: null, 1: null }));
+  const setHoveredPostKeyForColumn = useCallback(
+    (column: 0 | 1, key: string | null) => {
+      setHoveredPostKeyByColumn((prev) =>
+        prev[column] === key ? prev : { ...prev, [column]: key }
+      );
+    },
+    []
+  );
   const [hoveredSlotKey, setHoveredSlotKey] = useState<string | null>(null);
   const [activeEmptySlotKey, setActiveEmptySlotKey] = useState<string | null>(
     null
@@ -281,11 +294,18 @@ export function WeeklyView({
                 isDayView,
                 user?.timezone ?? "Etc/UTC",
                 isDayView ? dayViewColumnMap : undefined,
-                isDayView ? selectedPost : undefined
+                isDayView ? selectedPost : undefined,
+                isDayView ? hoveredPostKeyByColumn : undefined
               )
             }
             hoveredPostKey={hoveredPostKey}
             setHoveredPostKey={setHoveredPostKey}
+            hoveredPostKeyByColumn={
+              isDayView ? hoveredPostKeyByColumn : undefined
+            }
+            setHoveredPostKeyForColumn={
+              isDayView ? setHoveredPostKeyForColumn : undefined
+            }
             dragOverSlot={dragOverSlot}
             isDayView={isDayView}
             userTimezone={user?.timezone ?? "Etc/UTC"}

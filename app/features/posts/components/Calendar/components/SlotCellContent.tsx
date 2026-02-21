@@ -24,6 +24,9 @@ export interface SlotCellContentProps {
   availableRowsBelow?: number;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
+  /** Day view only: per-column hover so both columns can be active. */
+  hoveredPostKeyByColumn?: Record<0 | 1, string | null>;
+  setHoveredPostKeyForColumn?: (column: 0 | 1, key: string | null) => void;
   onPostEdit: (post: CalendarPost) => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
@@ -170,11 +173,38 @@ interface MultiPostBlockProps {
   alignExpandedRight?: boolean;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
+  /** Day view: column index so this block uses per-column hover. */
+  columnIndex?: 0 | 1;
+  hoveredPostKeyByColumn?: Record<0 | 1, string | null>;
+  setHoveredPostKeyForColumn?: (column: 0 | 1, key: string | null) => void;
   onPostEdit: (post: CalendarPost) => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform: boolean;
   isAll: boolean;
+}
+
+function getMultiPostBlockHover(
+  multiPostKey: string,
+  columnIndex: 0 | 1 | undefined,
+  hoveredPostKey: string | null,
+  setHoveredPostKey: (key: string | null) => void,
+  hoveredPostKeyByColumn: Record<0 | 1, string | null> | undefined,
+  setHoveredPostKeyForColumn:
+    | ((col: 0 | 1, key: string | null) => void)
+    | undefined
+) {
+  const multiHovered =
+    columnIndex !== undefined &&
+    hoveredPostKeyByColumn &&
+    setHoveredPostKeyForColumn
+      ? hoveredPostKeyByColumn[columnIndex] === multiPostKey
+      : hoveredPostKey === multiPostKey;
+  const setHovered =
+    columnIndex !== undefined && setHoveredPostKeyForColumn
+      ? (key: string | null) => setHoveredPostKeyForColumn(columnIndex, key)
+      : setHoveredPostKey;
+  return { multiHovered, setHovered };
 }
 
 function MultiPostBlock({
@@ -188,6 +218,9 @@ function MultiPostBlock({
   alignExpandedRight: _alignExpandedRight = false,
   hoveredPostKey,
   setHoveredPostKey,
+  columnIndex,
+  hoveredPostKeyByColumn,
+  setHoveredPostKeyForColumn,
   onPostEdit,
   user,
   queueTypes,
@@ -195,7 +228,14 @@ function MultiPostBlock({
   isAll,
 }: MultiPostBlockProps) {
   const multiPostKey = `${dateKey}-${time}-${post.id}`;
-  const multiHovered = hoveredPostKey === multiPostKey;
+  const { multiHovered, setHovered } = getMultiPostBlockHover(
+    multiPostKey,
+    columnIndex,
+    hoveredPostKey,
+    setHoveredPostKey,
+    hoveredPostKeyByColumn,
+    setHoveredPostKeyForColumn
+  );
   const multiExpandRows = isDayView
     ? multiHovered
       ? getDayViewMultiMaxRows(postsCount)
@@ -220,12 +260,12 @@ function MultiPostBlock({
     <div
       className={`transition-[height] duration-200 ease-out ${expandedClass}`}
       style={{ height: multiHeightPx }}
-      onMouseEnter={() => setHoveredPostKey(multiPostKey)}
-      onMouseLeave={() => setHoveredPostKey(null)}
-      onFocusCapture={() => setHoveredPostKey(multiPostKey)}
-      onBlurCapture={() => setHoveredPostKey(null)}
-      onTouchStart={() => setHoveredPostKey(multiPostKey)}
-      onTouchEnd={() => setTimeout(() => setHoveredPostKey(null), 300)}
+      onMouseEnter={() => setHovered(multiPostKey)}
+      onMouseLeave={() => setHovered(null)}
+      onFocusCapture={() => setHovered(multiPostKey)}
+      onBlurCapture={() => setHovered(null)}
+      onTouchStart={() => setHovered(multiPostKey)}
+      onTouchEnd={() => setTimeout(() => setHovered(null), 300)}
     >
       <PostBlock
         post={post}
@@ -259,6 +299,8 @@ function renderMultiPostSlotContent(
     isDayView,
     hoveredPostKey,
     setHoveredPostKey,
+    hoveredPostKeyByColumn,
+    setHoveredPostKeyForColumn,
     onPostEdit,
     user,
     queueTypes,
@@ -276,6 +318,8 @@ function renderMultiPostSlotContent(
     expandUp,
     hoveredPostKey,
     setHoveredPostKey,
+    hoveredPostKeyByColumn,
+    setHoveredPostKeyForColumn,
     onPostEdit,
     user,
     queueTypes,
@@ -294,6 +338,7 @@ function renderMultiPostSlotContent(
             key={post.id}
             post={post}
             {...multiPostBlockProps}
+            columnIndex={isDayView && index < 2 ? (index as 0 | 1) : undefined}
             alignExpandedRight={index >= posts.length / 2}
           />
         ))}
@@ -311,6 +356,7 @@ function renderMultiPostSlotContent(
           key={post.id}
           post={post}
           {...multiPostBlockProps}
+          columnIndex={isDayView && index < 2 ? (index as 0 | 1) : undefined}
           alignExpandedRight={index >= 3}
         />
       ))}
@@ -330,6 +376,8 @@ export function SlotCellContent({
   availableRowsBelow = 0,
   hoveredPostKey,
   setHoveredPostKey,
+  hoveredPostKeyByColumn,
+  setHoveredPostKeyForColumn,
   onPostEdit,
   user,
   queueTypes,
@@ -339,7 +387,12 @@ export function SlotCellContent({
   setActiveEmptySlotKey,
   onClearSelection,
 }: SlotCellContentProps) {
-  const { dateKey, posts, blockHeightPx, expandRows, slotKey } = slotState;
+  const { dateKey, posts, blockHeightPx, slotKey } = slotState;
+
+  const effectiveSetHoveredPostKey =
+    isDayView && slotColumn !== undefined && setHoveredPostKeyForColumn
+      ? (key: string | null) => setHoveredPostKeyForColumn(slotColumn, key)
+      : setHoveredPostKey;
 
   if (posts.length === 0) {
     return (
@@ -356,17 +409,18 @@ export function SlotCellContent({
   }
 
   const expandUp = rowIndex >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
-  const rowsToGrowUp =
-    expandUp && availableRowsBelow > 0 && expandRows > availableRowsBelow
-      ? expandRows - availableRowsBelow
-      : 0;
+  const allocatedHeightPx = availableRowsBelow * ROW_HEIGHT_PX;
+  const blockExceedsBelow = blockHeightPx > allocatedHeightPx;
+  const shouldWrapBottomRow = expandUp && availableRowsBelow > 0;
   const expandUpTop =
-    rowsToGrowUp > 0 ? availableRowsBelow * ROW_HEIGHT_PX - blockHeightPx : 0;
+    shouldWrapBottomRow && blockExceedsBelow
+      ? allocatedHeightPx - blockHeightPx
+      : 0;
   const wrapExpandUp = (content: React.ReactNode) =>
-    rowsToGrowUp > 0 ? (
+    shouldWrapBottomRow ? (
       <div
-        className="relative w-full min-w-0 overflow-hidden"
-        style={{ height: availableRowsBelow * ROW_HEIGHT_PX }}
+        className="relative w-full min-w-0 overflow-x-hidden overflow-y-visible"
+        style={{ height: allocatedHeightPx }}
       >
         <div
           className="relative w-full min-w-0"
@@ -389,7 +443,7 @@ export function SlotCellContent({
         rowIndex,
         availableRowsBelow,
         hoveredPostKey,
-        setHoveredPostKey,
+        setHoveredPostKey: effectiveSetHoveredPostKey,
         onPostEdit,
         user,
         queueTypes,
@@ -413,7 +467,9 @@ export function SlotCellContent({
       rowIndex,
       availableRowsBelow,
       hoveredPostKey,
-      setHoveredPostKey,
+      setHoveredPostKey: effectiveSetHoveredPostKey,
+      hoveredPostKeyByColumn,
+      setHoveredPostKeyForColumn,
       onPostEdit,
       user,
       queueTypes,

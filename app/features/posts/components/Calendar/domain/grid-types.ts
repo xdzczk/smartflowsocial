@@ -22,6 +22,8 @@ export interface SlotState {
 
 export interface GetSlotStateOptions {
   hoveredPostKey: string | null;
+  /** Day view only: hover state per column so both columns can have an active block. */
+  hoveredPostKeyByColumn?: Record<0 | 1, string | null>;
   dragOverSlot: string | null;
   isDayView: boolean;
   userTimezone: string;
