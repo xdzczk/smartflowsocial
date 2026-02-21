@@ -171,9 +171,9 @@ export function getQueueColorStyle(
     };
   }
 
-  // Unassigned (no queue type): visible muted background, no outline (past and future)
+  // Unassigned (no queue type): same visible background as Next 7 days unassigned blocks (muted-foreground tint)
   return {
-    backgroundColor: "hsl(var(--muted))",
+    backgroundColor: "hsl(var(--muted-foreground) / 0.55)",
     color: "hsl(var(--muted-foreground))",
     borderColor: "transparent",
     ...(isPast && !forceOpaque ? { opacity: 0.6 } : {}),

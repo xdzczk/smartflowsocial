@@ -132,6 +132,7 @@ export function PostBlock({
         userTimezone={userTimezone}
         timeString={timeString}
         hideTimeRowPreview={hideTimeRowPreview}
+        slotExpandRows={slotExpandRows}
       />
     );
   }

@@ -280,7 +280,7 @@ export function Calendar({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[hsl(var(--calendar-surface-2-bg))]">
-      {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. Calendar controls use text-xs to match filter dropdown labels. */}
+      {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. Calendar controls use text-sm to match content type and queue filter labels. */}
       <div className="border-border/60 flex min-h-14 flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-3 select-none sm:px-3">
         <div className="flex h-fit min-h-0 flex-shrink-0 flex-col justify-center gap-2 md:flex-row md:flex-nowrap md:items-center md:gap-4">
           {/* Row 1 on mobile: calendar controls + Today + view selector */}
@@ -314,7 +314,7 @@ export function Calendar({
                   setSelectedPost(null);
                   setCurrentDate(toDate(now));
                 }}
-                className="text-primary hover:text-primary/80 bg-muted/50 flex h-9 shrink-0 items-center rounded-[var(--calendar-radius-sm)] px-2 py-1.5 text-xs font-medium sm:px-3"
+                className="text-primary hover:text-primary/80 bg-muted/50 flex h-9 shrink-0 items-center rounded-[var(--calendar-radius-sm)] px-2 py-1.5 text-sm font-medium sm:px-3"
                 title="Today (T)"
               >
                 Today
@@ -387,6 +387,19 @@ export function Calendar({
               ) : null}
             </div>
 
+            {/* Month label on mobile only: between < Today > and Day/Week/Month switch */}
+            {view === "month" ? (
+              <h2 className="text-foreground flex min-w-0 flex-1 items-center justify-center truncate text-sm leading-tight font-medium max-md:flex md:hidden">
+                {formatForDisplay(
+                  fromDate(currentDate, userTimezone),
+                  userTimezone,
+                  { month: "long", year: "numeric" },
+                  undefined,
+                  dateLocale
+                )}
+              </h2>
+            ) : null}
+
             {/* View toggle: same row on mobile, right side */}
             <div className="bg-muted/50 flex h-9 shrink-0 items-center gap-0.5 rounded-[var(--calendar-radius-sm)] p-0.5 sm:gap-1 sm:p-1">
               {(["day", "week", "month"] as const).map((v) => (
@@ -396,7 +409,7 @@ export function Calendar({
                     setSelectedPost(null);
                     setView(v);
                   }}
-                  className={`flex h-8 items-center rounded-[var(--calendar-radius-sm)] px-1.5 py-0.5 text-xs font-medium sm:px-2 sm:py-1 md:px-3 ${
+                  className={`flex h-8 items-center rounded-[var(--calendar-radius-sm)] px-1.5 py-0.5 text-sm font-medium sm:px-2 sm:py-1 md:px-3 ${
                     view === v
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -407,9 +420,9 @@ export function Calendar({
               ))}
             </div>
 
-            {/* Month label: only in Month view, after Day/Week/Month controls */}
+            {/* Month label: only in Month view, after Day/Week/Month controls (desktop); on mobile shown between nav and view toggle */}
             {view === "month" ? (
-              <h2 className="text-foreground flex min-w-0 items-center truncate text-xs leading-tight font-medium">
+              <h2 className="text-foreground hidden min-w-0 items-center truncate text-sm leading-tight font-medium md:flex">
                 {formatForDisplay(
                   fromDate(currentDate, userTimezone),
                   userTimezone,

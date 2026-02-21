@@ -23,6 +23,8 @@ interface CompactPostBlockProps extends PostBlockBaseProps {
   timeString: string;
   /** When true, do not show thumbnail/icon next to time (Day/Week view). */
   hideTimeRowPreview?: boolean;
+  /** When set (e.g. week/day grid), scale text preview length and line-clamp by row count. */
+  slotExpandRows?: number;
 }
 
 // ============================================================================
@@ -126,21 +128,36 @@ function MediaPreview({
   post,
   isLongform,
   postPreview,
+  slotExpandRows,
 }: {
   firstImage: string | null;
   post: CalendarPost;
   isLongform: boolean | undefined;
   postPreview: string;
+  slotExpandRows?: number;
 }) {
+  const lineClampLines =
+    slotExpandRows && slotExpandRows >= 2
+      ? Math.min(12, slotExpandRows * 3)
+      : 4;
+
   if (!firstImage) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <p className="line-clamp-4 min-h-0 flex-1 text-xs leading-relaxed break-words">
+        <p
+          className="[display:-webkit-box] min-h-0 flex-1 text-xs leading-relaxed break-words [-webkit-box-orient:vertical]"
+          style={{ WebkitLineClamp: lineClampLines }}
+        >
           {isLongform ? (post.summary ?? postPreview) : postPreview}
         </p>
       </div>
     );
   }
+
+  const captionLines =
+    slotExpandRows && slotExpandRows >= 2
+      ? Math.min(4, Math.max(2, slotExpandRows))
+      : 2;
 
   return (
     <div className="flex h-full min-h-0 flex-col space-y-1">
@@ -162,7 +179,10 @@ function MediaPreview({
         <PostBadges post={post} size="md" position="absolute-large" />
       </div>
       {(post.caption ?? (isLongform && post.summary)) ? (
-        <p className="truncate-2-lines text-muted-foreground flex-shrink-0 text-xs leading-relaxed">
+        <p
+          className="text-muted-foreground [display:-webkit-box] flex-shrink-0 text-xs leading-relaxed break-words [-webkit-box-orient:vertical]"
+          style={{ WebkitLineClamp: captionLines }}
+        >
           {isLongform ? (post.summary ?? postPreview) : postPreview}
         </p>
       ) : null}
@@ -184,10 +204,17 @@ export function CompactPostBlock({
   userTimezone: _userTimezone,
   timeString,
   hideTimeRowPreview = false,
+  slotExpandRows,
 }: CompactPostBlockProps) {
   const { formatDate } = useFormattedDate();
   const firstImage = getFirstImage(post, isLongform ?? false);
-  const postPreview = getPostPreview(post, isLongform ?? false);
+  const rows = slotExpandRows ?? 1;
+  const previewMaxLength = rows >= 2 ? Math.min(2000, 30 + rows * 220) : 30;
+  const postPreview = getPostPreview(
+    post,
+    isLongform ?? false,
+    previewMaxLength
+  );
   const displayTime = getDisplayTime(
     post,
     isLongform ?? false,
@@ -250,6 +277,7 @@ export function CompactPostBlock({
           post={post}
           isLongform={isLongform}
           postPreview={postPreview}
+          slotExpandRows={slotExpandRows}
         />
       </div>
     </div>

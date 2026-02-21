@@ -65,10 +65,16 @@ const MOBILE_WEEK_GRID_MIN_WIDTH = "calc(4rem + 7 * ((100vw - 4rem) / 3))";
 /** Row z-index range (below Dialog z-50) so modals and overlays stay on top of the calendar grid. */
 const _CALENDAR_ROW_Z_HOVERED = 40;
 const CALENDAR_ROW_Z_BASE = 39;
+/** When a bottom-row block is expanded upward, raise its row so it paints above grid and other rows. */
+const CALENDAR_ROW_Z_EXPANDED_UP = 45;
 
 /** Class for expanded post block wrapper so it sits on top with opaque background. */
 const EXPANDED_BLOCK_WRAPPER_CLASS =
   "z-10 bg-[hsl(var(--calendar-surface-2-bg))]";
+
+/** Reusable overflow classes for day-view expand-up layout (avoid duplicate string literals). */
+const CLASS_OVERFLOW_VISIBLE = "overflow-visible";
+const CLASS_OVERFLOW_HIDDEN = "overflow-hidden";
 /** Day view: 1-2 posts → up to 7 rows (max 6 empty below); 3-4 → up to 5 rows (max 4 below); 5+ → up to 3 rows (max 2 below). */
 function getDayViewMaxExpand(postsCount: number): number {
   if (postsCount <= 0) return 0;
@@ -424,6 +430,190 @@ function DayViewEmptyColumnArea({
   );
 }
 
+/** Renders the single-post slot content (day view two-column or plain block). Reduces SlotCellContent cognitive complexity. */
+function renderSinglePostSlotContent(
+  props: SlotCellContentProps,
+  expandUp: boolean,
+  wrapExpandUp: (content: React.ReactNode) => React.ReactNode
+): React.ReactNode {
+  const {
+    slotState,
+    time,
+    isDayView,
+    slotColumn,
+    setHoveredPostKey,
+    onPostEdit,
+    user,
+    queueTypes,
+    isLongform,
+    isAll,
+    activeEmptySlotKey,
+    setActiveEmptySlotKey,
+    onClearSelection,
+  } = props;
+  const {
+    dateKey,
+    posts,
+    singlePostKey,
+    isHovered,
+    blockHeightPx,
+    expandRows,
+    slotKey,
+  } = slotState;
+  const post = posts[0];
+  if (!post) return null;
+
+  const blockInner = (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
+    <div
+      className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
+        expandUp && isHovered
+          ? `absolute right-0 bottom-0 left-0 ${EXPANDED_BLOCK_WRAPPER_CLASS}`
+          : isHovered
+            ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
+            : "relative z-0"
+      }`}
+      style={{ height: blockHeightPx }}
+      onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
+      onMouseLeave={() => setHoveredPostKey(null)}
+      onFocusCapture={() => singlePostKey && setHoveredPostKey(singlePostKey)}
+      onBlurCapture={() => setHoveredPostKey(null)}
+      onTouchStart={() => singlePostKey && setHoveredPostKey(singlePostKey)}
+      onTouchEnd={() => setTimeout(() => setHoveredPostKey(null), 300)}
+    >
+      <PostBlock
+        post={post}
+        compact={true}
+        user={user}
+        queueTypes={queueTypes}
+        onEdit={onPostEdit}
+        isLongform={
+          isAll ? Boolean(post.title && post.publishedAt) : isLongform
+        }
+        isPast={typeof post.isPast === "boolean" ? post.isPast : false}
+        forceOpaque={isHovered}
+        hideTimeRowPreview={true}
+        slotExpandRows={expandRows}
+      />
+    </div>
+  );
+
+  if (isDayView) {
+    const userTz = user?.timezone ?? "UTC";
+    const emptyColumn = (
+      <DayViewEmptyColumnArea
+        dateKey={dateKey}
+        time={time}
+        slotKey={slotKey}
+        blockHeightPx={blockHeightPx}
+        userTimezone={userTz}
+        activeEmptySlotKey={activeEmptySlotKey}
+        setActiveEmptySlotKey={setActiveEmptySlotKey}
+        onClearSelection={onClearSelection}
+      />
+    );
+    const overflowClass =
+      expandUp && isHovered ? CLASS_OVERFLOW_VISIBLE : CLASS_OVERFLOW_HIDDEN;
+    return wrapExpandUp(
+      <div className="flex w-full gap-1">
+        <div className={`min-w-0 flex-1 ${overflowClass}`}>
+          {slotColumn === 0 ? (
+            <div className={`relative h-full w-full min-w-0 ${overflowClass}`}>
+              {blockInner}
+            </div>
+          ) : (
+            emptyColumn
+          )}
+        </div>
+        <div className={`flex min-w-0 flex-1 justify-end ${overflowClass}`}>
+          {slotColumn === 1 ? (
+            <div className={`relative h-full w-full min-w-0 ${overflowClass}`}>
+              {blockInner}
+            </div>
+          ) : (
+            emptyColumn
+          )}
+        </div>
+      </div>
+    );
+  }
+  return wrapExpandUp(blockInner);
+}
+
+/** Renders multi-post slot row (≤6 posts or 5 + overflow). Reduces SlotCellContent cognitive complexity. */
+function renderMultiPostSlotContent(
+  props: SlotCellContentProps,
+  expandUp: boolean,
+  wrapExpandUp: (content: React.ReactNode) => React.ReactNode
+): React.ReactNode {
+  const {
+    slotState,
+    time,
+    isDayView,
+    hoveredPostKey,
+    setHoveredPostKey,
+    onPostEdit,
+    user,
+    queueTypes,
+    isLongform,
+    isAll,
+  } = props;
+  const { dateKey, posts, expandRows, blockHeightPx } = slotState;
+
+  const multiPostBlockProps = {
+    dateKey,
+    time,
+    isDayView,
+    postsCount: posts.length,
+    slotExpandRows: expandRows,
+    expandUp,
+    hoveredPostKey,
+    setHoveredPostKey,
+    onPostEdit,
+    user,
+    queueTypes,
+    isLongform,
+    isAll,
+  };
+
+  if (posts.length <= 6) {
+    return wrapExpandUp(
+      <div
+        className="relative flex space-x-0.5"
+        style={{ height: blockHeightPx }}
+      >
+        {posts.map((post, index) => (
+          <MultiPostBlock
+            key={post.id}
+            post={post}
+            {...multiPostBlockProps}
+            alignExpandedRight={index >= posts.length / 2}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return wrapExpandUp(
+    <div
+      className="relative flex space-x-0.5"
+      style={{ height: blockHeightPx }}
+    >
+      {posts.slice(0, 5).map((post, index) => (
+        <MultiPostBlock
+          key={post.id}
+          post={post}
+          {...multiPostBlockProps}
+          alignExpandedRight={index >= 3}
+        />
+      ))}
+      <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
+        +{posts.length - 5}
+      </div>
+    </div>
+  );
+}
+
 function SlotCellContent({
   slotState,
   time,
@@ -442,15 +632,7 @@ function SlotCellContent({
   setActiveEmptySlotKey,
   onClearSelection,
 }: SlotCellContentProps) {
-  const {
-    dateKey,
-    posts,
-    singlePostKey,
-    isHovered,
-    blockHeightPx,
-    expandRows,
-    slotKey,
-  } = slotState;
+  const { dateKey, posts, blockHeightPx, expandRows, slotKey } = slotState;
 
   if (posts.length === 0) {
     return (
@@ -471,19 +653,13 @@ function SlotCellContent({
     expandUp && availableRowsBelow > 0 && expandRows > availableRowsBelow
       ? expandRows - availableRowsBelow
       : 0;
-
-  // Anchor block bottom to the bottom of the slot's allocated rows (availableRowsBelow = rows from current to end inclusive)
   const expandUpTop =
     rowsToGrowUp > 0 ? availableRowsBelow * ROW_HEIGHT_PX - blockHeightPx : 0;
-
   const wrapExpandUp = (content: React.ReactNode) =>
     rowsToGrowUp > 0 ? (
       <div
         className="relative w-full min-w-0"
-        style={{
-          top: expandUpTop,
-          height: blockHeightPx,
-        }}
+        style={{ top: expandUpTop, height: blockHeightPx }}
       >
         {content}
       </div>
@@ -492,141 +668,51 @@ function SlotCellContent({
     );
 
   if (posts.length === 1) {
-    if (!posts[0]) return null;
-    const blockInner = (
-      // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
-      <div
-        className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
-          expandUp && isHovered
-            ? `absolute right-0 bottom-0 left-0 ${EXPANDED_BLOCK_WRAPPER_CLASS}`
-            : isHovered
-              ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
-              : "relative z-0"
-        }`}
-        style={{ height: blockHeightPx }}
-        onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-        onMouseLeave={() => setHoveredPostKey(null)}
-        onFocusCapture={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-        onBlurCapture={() => setHoveredPostKey(null)}
-        onTouchStart={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-        onTouchEnd={() => setTimeout(() => setHoveredPostKey(null), 300)}
-      >
-        <PostBlock
-          post={posts[0]}
-          compact={true}
-          user={user}
-          queueTypes={queueTypes}
-          onEdit={onPostEdit}
-          isLongform={
-            isAll ? Boolean(posts[0].title && posts[0].publishedAt) : isLongform
-          }
-          isPast={
-            typeof posts[0].isPast === "boolean" ? posts[0].isPast : false
-          }
-          forceOpaque={isHovered}
-          hideTimeRowPreview={true}
-        />
-      </div>
-    );
-    if (isDayView) {
-      const userTz = user?.timezone ?? "UTC";
-      const emptyColumn = (
-        <DayViewEmptyColumnArea
-          dateKey={dateKey}
-          time={time}
-          slotKey={slotKey}
-          blockHeightPx={blockHeightPx}
-          userTimezone={userTz}
-          activeEmptySlotKey={activeEmptySlotKey}
-          setActiveEmptySlotKey={setActiveEmptySlotKey}
-          onClearSelection={onClearSelection}
-        />
-      );
-      return wrapExpandUp(
-        <div className="flex w-full gap-1">
-          <div className="min-w-0 flex-1 overflow-hidden">
-            {slotColumn === 0 ? (
-              <div className="relative h-full w-full min-w-0 overflow-hidden">
-                {blockInner}
-              </div>
-            ) : (
-              emptyColumn
-            )}
-          </div>
-          <div className="flex min-w-0 flex-1 justify-end overflow-hidden">
-            {slotColumn === 1 ? (
-              <div className="relative h-full w-full min-w-0 overflow-hidden">
-                {blockInner}
-              </div>
-            ) : (
-              emptyColumn
-            )}
-          </div>
-        </div>
-      );
-    }
-    return wrapExpandUp(blockInner);
-  }
-
-  if (posts.length <= 6) {
-    return wrapExpandUp(
-      <div
-        className="relative flex space-x-0.5"
-        style={{ height: slotState.blockHeightPx }}
-      >
-        {posts.map((post, index) => (
-          <MultiPostBlock
-            key={post.id}
-            post={post}
-            dateKey={dateKey}
-            time={time}
-            isDayView={isDayView}
-            postsCount={posts.length}
-            slotExpandRows={expandRows}
-            expandUp={expandUp}
-            alignExpandedRight={index >= posts.length / 2}
-            hoveredPostKey={hoveredPostKey}
-            setHoveredPostKey={setHoveredPostKey}
-            onPostEdit={onPostEdit}
-            user={user}
-            queueTypes={queueTypes}
-            isLongform={isLongform}
-            isAll={isAll}
-          />
-        ))}
-      </div>
+    return renderSinglePostSlotContent(
+      {
+        slotState,
+        time,
+        isDayView,
+        slotColumn,
+        rowIndex,
+        availableRowsBelow,
+        hoveredPostKey,
+        setHoveredPostKey,
+        onPostEdit,
+        user,
+        queueTypes,
+        isLongform,
+        isAll,
+        activeEmptySlotKey,
+        setActiveEmptySlotKey,
+        onClearSelection,
+      },
+      expandUp,
+      wrapExpandUp
     );
   }
 
-  return wrapExpandUp(
-    <div
-      className="relative flex space-x-0.5"
-      style={{ height: slotState.blockHeightPx }}
-    >
-      {posts.slice(0, 5).map((post, index) => (
-        <MultiPostBlock
-          key={post.id}
-          post={post}
-          dateKey={dateKey}
-          time={time}
-          isDayView={isDayView}
-          postsCount={posts.length}
-          slotExpandRows={expandRows}
-          expandUp={expandUp}
-          alignExpandedRight={index >= 3}
-          hoveredPostKey={hoveredPostKey}
-          setHoveredPostKey={setHoveredPostKey}
-          onPostEdit={onPostEdit}
-          user={user}
-          queueTypes={queueTypes}
-          isLongform={isLongform}
-          isAll={isAll}
-        />
-      ))}
-      <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
-        +{posts.length - 5}
-      </div>
-    </div>
+  return renderMultiPostSlotContent(
+    {
+      slotState,
+      time,
+      isDayView,
+      slotColumn,
+      rowIndex,
+      availableRowsBelow,
+      hoveredPostKey,
+      setHoveredPostKey,
+      onPostEdit,
+      user,
+      queueTypes,
+      isLongform,
+      isAll,
+      activeEmptySlotKey,
+      setActiveEmptySlotKey,
+      onClearSelection,
+    },
+    expandUp,
+    wrapExpandUp
   );
 }
 
@@ -690,7 +776,9 @@ function MultiPostBlock({
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
     ? isDayView
-      ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative min-w-0 flex-1`
+      ? expandUp
+        ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute bottom-0 left-0 right-0 w-full`
+        : `${EXPANDED_BLOCK_WRAPPER_CLASS} relative min-w-0 flex-1`
       : expandUp
         ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute bottom-0 left-0 right-0 w-full`
         : `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full`
@@ -721,6 +809,7 @@ function MultiPostBlock({
         multipleInCell={true}
         forceOpaque={multiHovered}
         hideTimeRowPreview={true}
+        slotExpandRows={multiExpandRows}
       />
     </div>
   );
@@ -1131,8 +1220,32 @@ export function WeeklyView({
                   // Row order = stacking order: earlier rows on top so post blocks always paint above rows below.
                   // From 19:30 down: invert order so the row above paints on top of the row below; otherwise the row below captures hover and blocks don't activate.
                   // Do not raise the whole row on hover (would make the row's grid line paint over other day columns); we raise only the hovered cell below.
-                  const rowZIndex =
-                    index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+                  // Exception: when a block in a bottom row is expanded upward, raise this row so the expanded block (and its opaque background) paint on top of grid and rows above.
+                  const expandUp = index >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
+                  const rowHasHoveredExpandedUp =
+                    expandUp &&
+                    weekDays.some((day) => {
+                      const slotState = getSlotState(
+                        day,
+                        time,
+                        postsGrid,
+                        hours,
+                        hoveredPostKey,
+                        dragOverSlot,
+                        isDayView,
+                        user?.timezone ?? "Etc/UTC",
+                        isDayView ? dayViewColumnMap : undefined,
+                        isDayView ? selectedPost : undefined
+                      );
+                      return slotState.posts.some(
+                        (p) =>
+                          hoveredPostKey ===
+                          `${slotState.dateKey}-${time}-${p.id}`
+                      );
+                    });
+                  const rowZIndex = rowHasHoveredExpandedUp
+                    ? CALENDAR_ROW_Z_EXPANDED_UP
+                    : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
                       ? CALENDAR_ROW_Z_BASE -
                         index +
                         BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
