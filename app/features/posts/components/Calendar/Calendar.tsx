@@ -30,7 +30,8 @@ import { MonthlyView } from "./MonthlyView";
 import type { CalendarPost } from "./PostBlock.types";
 import { getPostScheduleInstant } from "./PostBlock.utils";
 import { RescheduleModal } from "./RescheduleModal";
-import { WeeklyView } from "./WeeklyView";
+import { DayView } from "./views/DayView";
+import { WeekView } from "./views/WeekView";
 
 interface RescheduleData {
   post: CalendarPost;
@@ -480,18 +481,27 @@ export function Calendar({
               view === "day" ? "lg:min-w-0" : ""
             }`}
           >
-            {view === "day" || view === "week" ? (
-              <WeeklyView
+            {view === "day" ? (
+              <DayView
                 scheduledPosts={scheduledPosts}
                 pastPosts={pastPosts}
                 currentDate={currentDate}
-                weekDaysOverride={view === "day" ? [currentDate] : undefined}
                 onPostDrop={handlePostDrop}
                 onPostEdit={handlePostClick}
-                selectedPost={view === "day" ? selectedPost : undefined}
-                onClearSelection={
-                  view === "day" ? () => setSelectedPost(null) : undefined
-                }
+                selectedPost={selectedPost}
+                onClearSelection={() => setSelectedPost(null)}
+                user={user}
+                queueTypes={queueTypes}
+                isLongform={isLongform}
+                isAll={isAll}
+              />
+            ) : view === "week" ? (
+              <WeekView
+                scheduledPosts={scheduledPosts}
+                pastPosts={pastPosts}
+                currentDate={currentDate}
+                onPostDrop={handlePostDrop}
+                onPostEdit={handlePostClick}
                 user={user}
                 queueTypes={queueTypes}
                 isLongform={isLongform}

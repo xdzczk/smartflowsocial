@@ -8,13 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   addDays,
   fromDate,
-  fromISOString,
   nowInTimezone,
   parseDateTimeLocal,
   toDate,
@@ -23,9 +21,17 @@ import {
 import type { QueueType, UserData } from "../../types";
 import { CONTENT_MOBILE_BREAKPOINT_PX } from "../constants";
 
+import { parseDropToDateTime } from "./data/parse-drop-to-date-time";
+import { postsToTimeGrid } from "./data/posts-to-time-grid";
+import type { PostsGrid } from "./data/posts-to-time-grid";
+import { getDayViewColumnMap } from "./domain/day-view-column-map";
+import type { SlotState } from "./domain/grid-types";
+import {
+  getSlotState as getSlotStateDomain,
+  ROW_HEIGHT_PX,
+} from "./domain/slot-state";
 import { PostBlock } from "./PostBlock";
 import type { CalendarPost } from "./PostBlock.types";
-import { getPostScheduleInstant } from "./PostBlock.utils";
 
 interface WeeklyViewProps {
   scheduledPosts: CalendarPost[];
@@ -45,11 +51,8 @@ interface WeeklyViewProps {
   isAll?: boolean;
 }
 
-type PostsGrid = Record<string, Record<string, CalendarPost[]>>;
-
 /** Default scroll: show 6:00 at top (Apple Calendar–style). Row height must match time row class (h-[52px]). */
 const DEFAULT_SCROLL_HOUR = 6;
-const ROW_HEIGHT_PX = 52;
 
 /** Full day range: 00:00–23:30 (24 hours × 2 slots). */
 const HOURS_PER_DAY = 24;
@@ -73,99 +76,10 @@ const EXPANDED_BLOCK_WRAPPER_CLASS =
   "z-10 bg-[hsl(var(--calendar-surface-2-bg))]";
 
 /** Reusable overflow classes for day-view expand-up layout (avoid duplicate string literals). */
-const CLASS_OVERFLOW_VISIBLE = "overflow-visible";
+const _CLASS_OVERFLOW_VISIBLE = "overflow-visible";
 const CLASS_OVERFLOW_HIDDEN = "overflow-hidden";
-/** Day view: 1-2 posts → up to 7 rows (max 6 empty below); 3-4 → up to 5 rows (max 4 below); 5+ → up to 3 rows (max 2 below). */
-function getDayViewMaxExpand(postsCount: number): number {
-  if (postsCount <= 0) return 0;
-  if (postsCount <= 2) return 6;
-  if (postsCount <= 4) return 4;
-  return 2;
-}
-/** Week view: 1 post → up to 4 rows (max 3 empty below); 2 posts → up to 3 rows (max 2 below); 3-4 → up to 2 rows (max 1 below). */
-function getWeekViewMaxExpand(postsCount: number): number {
-  if (postsCount <= 0) return 0;
-  if (postsCount === 1) return 3;
-  if (postsCount <= 2) return 2;
-  if (postsCount <= 4) return 1;
-  return 0;
-}
-
-/** Number of empty slots below to fill. Counts consecutive empty slots for the same date. */
-function getExpandDown(
-  dateKey: string,
-  timeSlot: string,
-  postsGrid: PostsGrid,
-  hours: string[],
-  maxEmptySlots: number
-): number {
-  const idx = hours.indexOf(timeSlot);
-  if (idx < 0 || idx >= hours.length - 1) return 0;
-  let count = 0;
-  for (let i = 1; i <= maxEmptySlots && idx + i < hours.length; i++) {
-    const nextSlot = hours[idx + i];
-    if (nextSlot === undefined) break;
-    if ((postsGrid[dateKey]?.[nextSlot]?.length ?? 0) > 0) break;
-    count = i;
-  }
-  return count;
-}
-
-/** Day view: expand down until the next slot that has a post in the same column (up to maxEmptySlots). */
-function getExpandDownDayView(
-  dateKey: string,
-  timeSlot: string,
-  postsGrid: PostsGrid,
-  hours: string[],
-  maxEmptySlots: number,
-  myColumn: 0 | 1,
-  dayViewColumnMap: Record<string, 0 | 1>
-): number {
-  const idx = hours.indexOf(timeSlot);
-  if (idx < 0 || idx >= hours.length - 1) return 0;
-  let count = 0;
-  for (let i = 1; i <= maxEmptySlots && idx + i < hours.length; i++) {
-    const nextSlot = hours[idx + i];
-    if (nextSlot === undefined) break;
-    const slotKeyBelow = `${dateKey}-${nextSlot}`;
-    const postsBelow = postsGrid[dateKey]?.[nextSlot] ?? [];
-    const hasPostInMyColumn =
-      postsBelow.length > 0 &&
-      (dayViewColumnMap[slotKeyBelow] ?? 0) === myColumn;
-    if (hasPostInMyColumn) break;
-    count = i;
-  }
-  return count;
-}
-
-/** True when this slot’s block spans baseRows and the next slot below it (same date) has posts. */
-function hasBlocksUnderneath(
-  dateKey: string,
-  time: string,
-  baseRows: number,
-  postsGrid: PostsGrid,
-  hours: string[]
-): boolean {
-  const idx = hours.indexOf(time);
-  const belowIndex = idx + baseRows;
-  if (idx < 0 || belowIndex >= hours.length) return false;
-  const slotBelow = hours[belowIndex];
-  if (slotBelow === undefined) return false;
-  return (postsGrid[dateKey]?.[slotBelow]?.length ?? 0) > 0;
-}
-
-interface SlotState {
-  dateKey: string;
-  posts: CalendarPost[];
-  slotKey: string;
-  isDragOver: boolean;
-  singlePostKey: string | null;
-  isHovered: boolean;
-  expandRows: number;
-  blockHeightPx: number;
-  /** Week view: true when slot is 3 rows and the next slot below has posts (no expand on hover). */
-  noExpandOnHover: boolean;
-}
+/** Day view: allow vertical overflow (expand up) but clip horizontal so each column stays independent (no block from one column capturing hover in the other). */
+const CLASS_DAY_COLUMN_EXPAND_UP = "overflow-x-hidden overflow-y-visible";
 
 function getSlotState(
   day: Date,
@@ -181,59 +95,14 @@ function getSlotState(
 ): SlotState {
   const dayZoned = fromDate(day, userTimezone);
   const dateKey = `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
-  const posts = postsGrid[dateKey]?.[time] ?? [];
-  const slotKey = `${dateKey}-${time}`;
-  const isDragOver = dragOverSlot === slotKey;
-  const maxExpand = isDayView
-    ? getDayViewMaxExpand(posts.length)
-    : getWeekViewMaxExpand(posts.length);
-  const expandDown =
-    isDayView && dayViewColumnMap && posts.length === 1
-      ? getExpandDownDayView(
-          dateKey,
-          time,
-          postsGrid,
-          hours,
-          maxExpand,
-          dayViewColumnMap[slotKey] ?? 0,
-          dayViewColumnMap
-        )
-      : getExpandDown(dateKey, time, postsGrid, hours, maxExpand);
-  const singlePostKey =
-    posts.length === 1 && posts[0] ? `${dateKey}-${time}-${posts[0].id}` : null;
-  const isHovered =
-    (singlePostKey !== null && hoveredPostKey === singlePostKey) ||
-    (!!selectedPost && posts.length === 1 && posts[0]?.id === selectedPost.id);
-  const baseRows = 1 + expandDown; // Day view: up to 7 rows by default when empty space below (expandDown 0–6)
-  const noExpandOnHover =
-    !isDayView &&
-    baseRows === 3 &&
-    hasBlocksUnderneath(dateKey, time, baseRows, postsGrid, hours);
-  const expandRows = isDayView
-    ? isHovered
-      ? baseRows <= 4
-        ? 5
-        : baseRows
-      : baseRows
-    : isHovered
-      ? noExpandOnHover
-        ? baseRows
-        : baseRows >= 4
-          ? baseRows
-          : Math.min(baseRows + 2, 4)
-      : baseRows;
-  const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
-  return {
-    dateKey,
-    posts,
-    slotKey,
-    isDragOver,
-    singlePostKey,
-    isHovered,
-    expandRows,
-    blockHeightPx,
-    noExpandOnHover,
-  };
+  return getSlotStateDomain(dateKey, time, postsGrid, hours, {
+    hoveredPostKey,
+    dragOverSlot,
+    isDayView,
+    userTimezone,
+    dayViewColumnMap,
+    selectedPost,
+  });
 }
 
 /** Bottom time rows (22:30, 23:00, 23:30): expand blocks upward so they don't go below 23:30. */
@@ -513,7 +382,9 @@ function renderSinglePostSlotContent(
       />
     );
     const overflowClass =
-      expandUp && isHovered ? CLASS_OVERFLOW_VISIBLE : CLASS_OVERFLOW_HIDDEN;
+      expandUp && isHovered
+        ? CLASS_DAY_COLUMN_EXPAND_UP
+        : CLASS_OVERFLOW_HIDDEN;
     return wrapExpandUp(
       <div className="flex w-full gap-1">
         <div className={`min-w-0 flex-1 ${overflowClass}`}>
@@ -655,13 +526,19 @@ function SlotCellContent({
       : 0;
   const expandUpTop =
     rowsToGrowUp > 0 ? availableRowsBelow * ROW_HEIGHT_PX - blockHeightPx : 0;
+  // Clip to allocated rows so block never paints below last row (23:30); same behavior in Day and Week view
   const wrapExpandUp = (content: React.ReactNode) =>
     rowsToGrowUp > 0 ? (
       <div
-        className="relative w-full min-w-0"
-        style={{ top: expandUpTop, height: blockHeightPx }}
+        className="relative w-full min-w-0 overflow-hidden"
+        style={{ height: availableRowsBelow * ROW_HEIGHT_PX }}
       >
-        {content}
+        <div
+          className="relative w-full min-w-0"
+          style={{ top: expandUpTop, height: blockHeightPx }}
+        >
+          {content}
+        </div>
       </div>
     ) : (
       content
@@ -903,87 +780,32 @@ export function WeeklyView({
     return labels;
   }, [userTimeFormat]);
 
-  // Group posts by date and time
-  const postsGrid = useMemo(() => {
-    const grid: PostsGrid = {};
-    const userTimezone = user?.timezone ?? "Etc/UTC";
-
-    // Initialize grid with user timezone date keys
-    weekDays.forEach((day) => {
+  const userTimezone = user?.timezone ?? "Etc/UTC";
+  const weekDaysDateKeys = useMemo(() => {
+    return weekDays.map((day) => {
       const dayZoned = fromDate(day, userTimezone);
-      const year = dayZoned.year;
-      const month = String(dayZoned.month).padStart(2, "0");
-      const dayStr = String(dayZoned.day).padStart(2, "0");
-      const dateKey = `${year}-${month}-${dayStr}`;
-      grid[dateKey] = {};
+      return `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
     });
+  }, [weekDays, userTimezone]);
 
-    // Process scheduled posts (single source of truth: getPostScheduleInstant)
-    scheduledPosts.forEach((post) => {
-      const postIsLongform = Boolean(
-        isAll ? !!post.title && post.publishedAt : isLongform
-      );
-      const ms = getPostScheduleInstant(post, postIsLongform, false);
-      if (ms == null) return;
-      const timeInUserTz = fromDate(new Date(ms), userTimezone);
-      const year = timeInUserTz.year;
-      const month = String(timeInUserTz.month).padStart(2, "0");
-      const dayStr = String(timeInUserTz.day).padStart(2, "0");
-      const dateKey = `${year}-${month}-${dayStr}`;
-      const hour = timeInUserTz.hour;
-      const minutes = timeInUserTz.minute;
-      const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
-
-      if (grid[dateKey]) {
-        grid[dateKey][timeSlot] ??= [];
-        grid[dateKey][timeSlot].push({ ...post, isPast: false });
-      }
-    });
-
-    // Process past (published) posts: always low opacity and no drag, including today's
-    pastPosts.forEach((post) => {
-      const postIsLongform = Boolean(
-        isAll ? !!post.title && post.publishedAt : isLongform
-      );
-      const ms = getPostScheduleInstant(post, postIsLongform, true);
-      if (ms == null) return;
-      const timeInUserTz = fromDate(new Date(ms), userTimezone);
-      const year = timeInUserTz.year;
-      const month = String(timeInUserTz.month).padStart(2, "0");
-      const dayStr = String(timeInUserTz.day).padStart(2, "0");
-      const dateKey = `${year}-${month}-${dayStr}`;
-      const hour = timeInUserTz.hour;
-      const minutes = timeInUserTz.minute;
-      const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
-
-      if (grid[dateKey]) {
-        grid[dateKey][timeSlot] ??= [];
-        grid[dateKey][timeSlot].push({ ...post, isPast: true });
-      }
-    });
-
-    // Sort posts in each slot from earliest to latest
-    const sortBySchedule = (a: CalendarPost, b: CalendarPost) => {
-      const aLongform = Boolean(
-        isAll ? !!a.title && a.publishedAt : isLongform
-      );
-      const bLongform = Boolean(
-        isAll ? !!b.title && b.publishedAt : isLongform
-      );
-      const aMs = getPostScheduleInstant(a, aLongform, Boolean(a.isPast)) ?? 0;
-      const bMs = getPostScheduleInstant(b, bLongform, Boolean(b.isPast)) ?? 0;
-      return aMs - bMs;
-    };
-    Object.keys(grid).forEach((dateKey) => {
-      const daySlots = grid[dateKey];
-      if (!daySlots) return;
-      Object.keys(daySlots).forEach((timeSlot) => {
-        daySlots[timeSlot]?.sort(sortBySchedule);
-      });
-    });
-
-    return grid;
-  }, [scheduledPosts, pastPosts, weekDays, user?.timezone, isLongform, isAll]);
+  // Group posts by date and time (data layer)
+  const postsGrid = useMemo(
+    () =>
+      postsToTimeGrid(scheduledPosts, pastPosts, weekDaysDateKeys, hours, {
+        userTimezone,
+        isLongform,
+        isAll,
+      }),
+    [
+      scheduledPosts,
+      pastPosts,
+      weekDaysDateKeys,
+      hours,
+      userTimezone,
+      isLongform,
+      isAll,
+    ]
+  );
 
   const handleDragOver = (
     e: React.DragEvent<HTMLDivElement>,
@@ -1006,58 +828,12 @@ export function WeeklyView({
     const postData = JSON.parse(
       e.dataTransfer.getData("text/plain")
     ) as CalendarPost;
-    const [hours, minutes] = time.split(":").map(Number);
-    const safeHours = hours ?? 0;
-    const safeMinutes = minutes ?? 0;
-
-    // Create the datetime that represents the intended time in the user's timezone
-    const userTimezone = user?.timezone ?? "Etc/UTC";
-
-    // Create an ISO string that represents the local time in the user's timezone
+    const [h, m] = time.split(":").map(Number);
+    const safeHours = h ?? 0;
+    const safeMinutes = m ?? 0;
     const isoString = `${date}T${safeHours.toString().padStart(2, "0")}:${safeMinutes.toString().padStart(2, "0")}:00`;
-
-    try {
-      // Parse datetime-local string (YYYY-MM-DDTHH:mm) in user's timezone
-      // Then convert to UTC Date for storage
-      const zonedDateTime = parseDateTimeLocal(isoString, userTimezone);
-      const utcZoned = zonedDateTime.withTimeZone("UTC");
-      const newDateTime = toDate(utcZoned);
-
-      onPostDrop(postData, newDateTime);
-    } catch (error) {
-      handleErrorSafely(
-        error,
-        {
-          component: "WeeklyView",
-          action: "handleDrop",
-        },
-        () => {
-          // Fallback: try to parse as UTC
-          try {
-            const zonedDateTime = parseDateTimeLocal(isoString, "UTC");
-            const newDateTime = toDate(zonedDateTime);
-            onPostDrop(postData, newDateTime);
-          } catch {
-            // Last resort: use Temporal for 100% consistency
-            try {
-              const zoned = fromISOString(isoString + "Z", "UTC");
-              onPostDrop(postData, toDate(zoned));
-            } catch {
-              // Fallback - try with Date conversion
-              try {
-                const dateObj = new Date(isoString + "Z");
-                const zoned = fromDate(dateObj, "UTC");
-                onPostDrop(postData, toDate(zoned));
-              } catch {
-                // Ultimate fallback
-                const dateObj = new Date(isoString + "Z");
-                onPostDrop(postData, dateObj);
-              }
-            }
-          }
-        }
-      );
-    }
+    const newDateTime = parseDropToDateTime(isoString, userTimezone);
+    onPostDrop(postData, newDateTime);
   };
 
   const handleDragLeave = () => {
@@ -1066,53 +842,10 @@ export function WeeklyView({
 
   // In day view: assign single-post slots to column 0 (left) or 1 (right), alternating when both columns are free to maximise space
   const dayViewColumnMap = useMemo((): Record<string, 0 | 1> => {
-    const firstDay = weekDays[0];
-    const empty: Record<string, 0 | 1> = {};
-    if (!isDayView || !firstDay) return empty;
-    const userTimezone = user?.timezone ?? "Etc/UTC";
-    const dayZoned = fromDate(firstDay, userTimezone);
-    const dateKey = `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
-    const map: Record<string, 0 | 1> = {};
-    let column0End = 0;
-    let column1End = 0;
-    let nextCol: 0 | 1 = 0;
-    for (let timeIdx = 0; timeIdx < hours.length; timeIdx++) {
-      const time = hours[timeIdx];
-      if (time === undefined) continue;
-      const posts = postsGrid[dateKey]?.[time] ?? [];
-      if (posts.length !== 1) continue;
-      const expandDown = getExpandDown(
-        dateKey,
-        time,
-        postsGrid,
-        hours,
-        getDayViewMaxExpand(1)
-      );
-      const baseRows = 1 + expandDown;
-      const slotKey = `${dateKey}-${time}`;
-      const start = timeIdx;
-      const end = timeIdx + baseRows;
-      const bothFree = start >= column0End && start >= column1End;
-      if (bothFree) {
-        map[slotKey] = nextCol;
-        nextCol = nextCol === 0 ? 1 : 0;
-        if (map[slotKey] === 0) column0End = end;
-        else column1End = end;
-      } else if (start >= column0End) {
-        map[slotKey] = 0;
-        column0End = end;
-      } else if (start >= column1End) {
-        map[slotKey] = 1;
-        column1End = end;
-      } else {
-        const useCol = column0End <= column1End ? 0 : 1;
-        map[slotKey] = useCol;
-        if (useCol === 0) column0End = end;
-        else column1End = end;
-      }
-    }
-    return map;
-  }, [isDayView, weekDays, hours, postsGrid, user?.timezone]);
+    const firstKey = weekDaysDateKeys[0];
+    if (!isDayView || firstKey === undefined) return {};
+    return getDayViewColumnMap(postsGrid, firstKey, hours);
+  }, [isDayView, weekDaysDateKeys, postsGrid, hours]);
 
   // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {

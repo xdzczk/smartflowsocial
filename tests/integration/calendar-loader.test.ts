@@ -35,8 +35,12 @@ vi.mock("~/features/posts/components/Calendar/PostBlock", () => ({
   PostBlock: () => null,
 }));
 
-vi.mock("~/features/posts/components/Calendar/WeeklyView", () => ({
-  WeeklyView: () => null,
+vi.mock("~/features/posts/components/Calendar/views/DayView", () => ({
+  DayView: () => null,
+}));
+
+vi.mock("~/features/posts/components/Calendar/views/WeekView", () => ({
+  WeekView: () => null,
 }));
 
 vi.mock("~/features/posts/components/Calendar/MonthlyView", () => ({
