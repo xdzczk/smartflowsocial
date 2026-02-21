@@ -13,6 +13,7 @@ import {
   getFirstImage,
   getStatusColor,
   getDisplayTime,
+  getQueueColorStyleProps,
 } from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 import { PostStatusIcons } from "./PostStatusIcons";
@@ -222,6 +223,9 @@ export function CompactPostBlock({
   );
   const formattedTime = formatDate(displayTime);
 
+  const { style: queueStyle, unassignedBgClass } =
+    getQueueColorStyleProps(queueColorStyle);
+
   return (
     <div
       draggable={!isPast}
@@ -238,18 +242,8 @@ export function CompactPostBlock({
         queueColorStyle,
         post,
         isLongform
-      )} relative flex h-full flex-col overflow-hidden`}
-      style={
-        queueColorStyle
-          ? {
-              backgroundColor: queueColorStyle.backgroundColor,
-              color: queueColorStyle.color,
-              ...(queueColorStyle.opacity != null
-                ? { opacity: queueColorStyle.opacity }
-                : {}),
-            }
-          : undefined
-      }
+      )} relative flex h-full flex-col overflow-hidden ${unassignedBgClass}`}
+      style={queueColorStyle ? queueStyle : undefined}
       title={getTitle(postPreview, isPast, isLongform, formattedTime)}
     >
       <div className="relative mb-1 flex flex-shrink-0 items-start justify-between">

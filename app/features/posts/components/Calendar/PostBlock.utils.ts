@@ -1,3 +1,5 @@
+import type React from "react";
+
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import {
   fromDate,
@@ -171,12 +173,52 @@ export function getQueueColorStyle(
     };
   }
 
-  // Unassigned (no queue type): same visible background as Next 7 days unassigned blocks (muted-foreground tint)
+  // Unassigned: same greys as Next 7 days — lighter by default (opacity-65 equivalent), darker on hover/focus/touch (opacity-100)
+  const unassignedBgDefault = "hsl(var(--muted-foreground) / 0.36)";
+  const unassignedBgHover = "hsl(var(--muted-foreground) / 0.55)";
   return {
-    backgroundColor: "hsl(var(--muted-foreground) / 0.55)",
+    backgroundColor: unassignedBgDefault,
     color: "hsl(var(--muted-foreground))",
     borderColor: "transparent",
+    isUnassigned: true,
+    hoverBackgroundColor: unassignedBgHover,
     ...(isPast && !forceOpaque ? { opacity: 0.6 } : {}),
+  };
+}
+
+/** Unassigned blocks: class for background that transitions to darker grey on hover/focus/active. */
+export const UNASSIGNED_BG_CLASS =
+  "bg-[var(--calendar-unassigned-bg)] hover:bg-[var(--calendar-unassigned-bg-hover)] focus:bg-[var(--calendar-unassigned-bg-hover)] active:bg-[var(--calendar-unassigned-bg-hover)] transition-colors duration-200";
+
+/**
+ * Style and optional class for applying QueueColorStyle to a block (handles unassigned hover state).
+ */
+export function getQueueColorStyleProps(style: QueueColorStyle | null): {
+  style: React.CSSProperties;
+  unassignedBgClass: string;
+} {
+  if (!style) return { style: {}, unassignedBgClass: "" };
+  const isUnassigned =
+    style.isUnassigned === true && style.hoverBackgroundColor;
+  if (isUnassigned) {
+    const styleObj: React.CSSProperties = {
+      ["--calendar-unassigned-bg" as string]: style.backgroundColor,
+      ["--calendar-unassigned-bg-hover" as string]: style.hoverBackgroundColor,
+      color: style.color,
+      ...(style.opacity != null ? { opacity: style.opacity } : {}),
+    };
+    return {
+      style: styleObj,
+      unassignedBgClass: UNASSIGNED_BG_CLASS,
+    };
+  }
+  return {
+    style: {
+      backgroundColor: style.backgroundColor,
+      color: style.color,
+      ...(style.opacity != null ? { opacity: style.opacity } : {}),
+    },
+    unassignedBgClass: "",
   };
 }
 

@@ -41,6 +41,10 @@ export interface QueueColorStyle {
   color: string;
   borderColor: string;
   opacity?: number;
+  /** When true, block uses CSS vars + hover/focus/active class for background (Next 7 days–style greys). */
+  isUnassigned?: boolean;
+  /** Background color on hover/focus/active (darker grey); only when isUnassigned. */
+  hoverBackgroundColor?: string;
 }
 
 export interface PostBlockProps {

@@ -9,6 +9,7 @@ import {
   getFirstImage,
   getStatusColor,
   getDisplayTime,
+  getQueueColorStyleProps,
 } from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 interface ThumbnailPostBlockProps extends PostBlockBaseProps {
@@ -38,6 +39,8 @@ export function ThumbnailPostBlock({
     isPast ?? false
   );
   const formattedTime = formatDate(displayTime);
+  const { style: queueStyle, unassignedBgClass } =
+    getQueueColorStyleProps(queueColorStyle);
 
   return (
     <div
@@ -53,8 +56,8 @@ export function ThumbnailPostBlock({
         isPast ? "cursor-default" : "cursor-pointer hover:opacity-80"
       } ${
         isDragging ? "opacity-50" : ""
-      } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
-      style={queueColorStyle ?? {}}
+      } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)} ${unassignedBgClass}`}
+      style={queueColorStyle ? queueStyle : undefined}
       title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${formattedTime}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
     >
       {firstImage ? (

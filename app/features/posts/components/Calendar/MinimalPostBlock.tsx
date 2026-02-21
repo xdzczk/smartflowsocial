@@ -13,6 +13,7 @@ import {
   getFirstImage,
   getStatusColor,
   getDisplayTime,
+  getQueueColorStyleProps,
 } from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 interface MinimalPostBlockProps extends PostBlockBaseProps {
@@ -169,6 +170,9 @@ function UltraCompactLayout({
     formattedTime
   );
   const title = getTitleText(postPreview, isLongform, isPast, formattedTime);
+  const { style: queueStyle, unassignedBgClass } = getQueueColorStyleProps(
+    queueColorStyle as QueueColorStyle | null
+  );
 
   return (
     <div
@@ -180,8 +184,8 @@ function UltraCompactLayout({
       tabIndex={0}
       role="button"
       aria-label={ariaLabel}
-      className={`relative overflow-hidden ${className}`}
-      style={queueColorStyle ?? {}}
+      className={`relative overflow-hidden ${className} ${unassignedBgClass}`}
+      style={queueColorStyle ? queueStyle : undefined}
       title={title}
     >
       <div className="relative flex flex-col items-center space-y-0.5">
@@ -270,6 +274,9 @@ function RegularLayout({
         overflow: "hidden",
       }
     : undefined;
+  const { style: queueStyle, unassignedBgClass } = getQueueColorStyleProps(
+    queueColorStyle as QueueColorStyle | null
+  );
 
   return (
     <div
@@ -281,8 +288,8 @@ function RegularLayout({
       tabIndex={0}
       role="button"
       aria-label={ariaLabel}
-      className={`relative overflow-hidden ${className}`}
-      style={queueColorStyle ?? {}}
+      className={`relative overflow-hidden ${className} ${unassignedBgClass}`}
+      style={queueColorStyle ? queueStyle : undefined}
       title={title}
     >
       <div className="relative flex items-center gap-1.5">

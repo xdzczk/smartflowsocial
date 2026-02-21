@@ -1143,16 +1143,23 @@ export function WeeklyView({
 
   return (
     <div className="flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
+      <div
+        className="flex min-h-0 flex-1 flex-col overflow-x-auto"
+        style={{
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
         <div
           className="flex min-h-0 min-h-[40vh] flex-1 flex-col overflow-hidden select-none"
           style={{
-            minWidth:
-              isMobile && !isDayView
-                ? MOBILE_WEEK_GRID_MIN_WIDTH
-                : isMobile
-                  ? undefined
-                  : WEEK_VIEW_MIN_WIDTH,
+            ...(isMobile && !isDayView
+              ? {
+                  width: MOBILE_WEEK_GRID_MIN_WIDTH,
+                  minWidth: MOBILE_WEEK_GRID_MIN_WIDTH,
+                }
+              : {
+                  minWidth: isMobile ? undefined : WEEK_VIEW_MIN_WIDTH,
+                }),
           }}
         >
           {/* Days header */}

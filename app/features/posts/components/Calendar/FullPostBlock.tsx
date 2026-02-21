@@ -9,6 +9,7 @@ import {
   getFirstImage,
   getStatusColor,
   getDisplayTime,
+  getQueueColorStyleProps,
 } from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 import { PostStatusBadges } from "./PostStatusIcons";
@@ -52,6 +53,9 @@ export function FullPostBlock({
     },
   });
 
+  const { style: queueStyle, unassignedBgClass } =
+    getQueueColorStyleProps(queueColorStyle);
+
   return (
     <div
       draggable={!isPast}
@@ -70,8 +74,8 @@ export function FullPostBlock({
           : isPast
             ? ""
             : "hover:shadow-[var(--calendar-surface-4-shadow)]"
-      } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
-      style={queueColorStyle ?? {}}
+      } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)} ${unassignedBgClass}`}
+      style={queueColorStyle ? queueStyle : undefined}
     >
       <div className="relative mb-2 flex items-center justify-between">
         <div className="flex items-center space-x-2">
