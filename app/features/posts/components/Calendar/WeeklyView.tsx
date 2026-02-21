@@ -1,36 +1,31 @@
-import { useNavigate } from "@remix-run/react";
-import { FileText, MessageSquare, Plus } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
-import {
-  addDays,
-  fromDate,
-  nowInTimezone,
-  parseDateTimeLocal,
-  toDate,
-} from "~/lib/temporal";
+import { addDays, fromDate, toDate } from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../types";
 import { CONTENT_MOBILE_BREAKPOINT_PX } from "../constants";
 
+import {
+  buildDropIsoString,
+  formatDropSlotAriaLabel,
+} from "./calendar-helpers";
+import { DaysHeader } from "./components/DaysHeader";
+import { TimeGrid } from "./components/TimeGrid";
+import {
+  DEFAULT_SCROLL_HOUR,
+  HOURS_PER_DAY,
+  MOBILE_WEEK_GRID_MIN_WIDTH,
+  ROW_HEIGHT_PX,
+  WEEK_VIEW_MIN_WIDTH,
+} from "./components/weekly-view-constants";
 import { parseDropToDateTime } from "./data/parse-drop-to-date-time";
 import { postsToTimeGrid } from "./data/posts-to-time-grid";
 import type { PostsGrid } from "./data/posts-to-time-grid";
 import { getDayViewColumnMap } from "./domain/day-view-column-map";
 import type { SlotState } from "./domain/grid-types";
-import {
-  getSlotState as getSlotStateDomain,
-  ROW_HEIGHT_PX,
-} from "./domain/slot-state";
-import { PostBlock } from "./PostBlock";
+import { getSlotState as getSlotStateDomain } from "./domain/slot-state";
 import type { CalendarPost } from "./PostBlock.types";
 
 interface WeeklyViewProps {
@@ -50,36 +45,6 @@ interface WeeklyViewProps {
   isLongform?: boolean;
   isAll?: boolean;
 }
-
-/** Default scroll: show 6:00 at top (Apple Calendar–style). Row height must match time row class (h-[52px]). */
-const DEFAULT_SCROLL_HOUR = 6;
-
-/** Full day range: 00:00–23:30 (24 hours × 2 slots). */
-const HOURS_PER_DAY = 24;
-/** Number of half-hour slots in the time grid (must match hours.length). Used for scroll height. */
-const TOTAL_TIME_SLOTS = HOURS_PER_DAY * 2;
-
-/** Week view: min width so horizontal scroll works on narrow screens (time col 4rem + 7 × 3.5rem). */
-const WEEK_VIEW_MIN_WIDTH = "28.5rem";
-/** Mobile week view: show 3 day columns at once; each column = (100vw - time col 4rem) / 3. */
-const MOBILE_WEEK_DAY_COLUMN_WIDTH = "calc((100vw - 4rem) / 3)";
-const MOBILE_WEEK_GRID_MIN_WIDTH = "calc(4rem + 7 * ((100vw - 4rem) / 3))";
-
-/** Row z-index range (below Dialog z-50) so modals and overlays stay on top of the calendar grid. */
-const _CALENDAR_ROW_Z_HOVERED = 40;
-const CALENDAR_ROW_Z_BASE = 39;
-/** When a bottom-row block is expanded upward, raise its row so it paints above grid and other rows. */
-const CALENDAR_ROW_Z_EXPANDED_UP = 45;
-
-/** Class for expanded post block wrapper so it sits on top with opaque background. */
-const EXPANDED_BLOCK_WRAPPER_CLASS =
-  "z-10 bg-[hsl(var(--calendar-surface-2-bg))]";
-
-/** Reusable overflow classes for day-view expand-up layout (avoid duplicate string literals). */
-const _CLASS_OVERFLOW_VISIBLE = "overflow-visible";
-const CLASS_OVERFLOW_HIDDEN = "overflow-hidden";
-/** Day view: allow vertical overflow (expand up) but clip horizontal so each column stays independent (no block from one column capturing hover in the other). */
-const CLASS_DAY_COLUMN_EXPAND_UP = "overflow-x-hidden overflow-y-visible";
 
 function getSlotState(
   day: Date,
@@ -103,598 +68,6 @@ function getSlotState(
     dayViewColumnMap,
     selectedPost,
   });
-}
-
-/** Bottom time rows (22:30, 23:00, 23:30): expand blocks upward so they don't go below 23:30. */
-const BOTTOM_ROWS_EXPAND_UP_THRESHOLD = 45;
-
-/** First row index (19:30) where we stack "row above on top of row below" so hover works on lower parts of blocks. */
-const BOTTOM_ROWS_STACK_ABOVE_THRESHOLD = 39;
-
-const EMPTY_SLOT_ICON_CLASS = "size-4 shrink-0 opacity-50";
-
-function EmptySlotCreateMenu({
-  dateKey,
-  time,
-  onClose,
-}: {
-  dateKey: string;
-  time: string;
-  onClose: () => void;
-}) {
-  const navigate = useNavigate();
-  const scheduledAt = `${dateKey}T${time}`;
-  const q = (path: string) =>
-    `${path}?scheduledAt=${encodeURIComponent(scheduledAt)}`;
-
-  return (
-    <DropdownMenu
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <DropdownMenuTrigger
-        className="text-muted-foreground hover:text-foreground hover:bg-muted/50 inline-flex size-8 shrink-0 items-center justify-center rounded transition-colors"
-        onClick={(e) => e.stopPropagation()}
-        aria-label="Create in this slot"
-      >
-        <Plus
-          className={EMPTY_SLOT_ICON_CLASS}
-          strokeWidth={2.25}
-          aria-hidden
-        />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="right" sideOffset={4}>
-        <DropdownMenuItem
-          onSelect={() => navigate(q("/dashboard/newpost"))}
-          className="flex items-center gap-2"
-        >
-          <MessageSquare className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
-          New Post
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() => navigate(q("/dashboard/newlongformpost"))}
-          className="flex items-center gap-2"
-        >
-          <FileText className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
-          New Article
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-interface SlotCellContentProps {
-  slotState: SlotState;
-  time: string;
-  isDayView: boolean;
-  /** In day view: 0 = left column, 1 = right column for alternating single-post blocks */
-  slotColumn?: 0 | 1;
-  /** Row index (0–47); when >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD, blocks expand upward on hover. */
-  rowIndex?: number;
-  /** Rows from this slot to end of day (for bottom rows: cap expansion downward and grow upward instead). */
-  availableRowsBelow?: number;
-  hoveredPostKey: string | null;
-  setHoveredPostKey: (key: string | null) => void;
-  onPostEdit: (post: CalendarPost) => void;
-  user?: UserData | null;
-  queueTypes?: QueueType[];
-  isLongform: boolean;
-  isAll: boolean;
-  /** When set, the empty-slot + menu is shown only for this slot (after user click/touch). */
-  activeEmptySlotKey: string | null;
-  setActiveEmptySlotKey: (key: string | null) => void;
-  /** Day view: clear selected post when empty space is clicked. */
-  onClearSelection?: () => void;
-}
-
-function EmptySlotCellContent({
-  dateKey,
-  time,
-  slotKey,
-  userTimezone,
-  activeEmptySlotKey,
-  setActiveEmptySlotKey,
-  onClearSelection,
-}: {
-  dateKey: string;
-  time: string;
-  slotKey: string;
-  userTimezone: string;
-  activeEmptySlotKey: string | null;
-  setActiveEmptySlotKey: (key: string | null) => void;
-  onClearSelection?: () => void;
-}) {
-  const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTimezone);
-  const nowZoned = nowInTimezone(userTimezone);
-  const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
-  const isActive = activeEmptySlotKey === slotKey;
-  const handleActivate = (e: React.MouseEvent) => {
-    if (!isFutureSlot) return;
-    e.stopPropagation();
-    onClearSelection?.();
-    setActiveEmptySlotKey(slotKey);
-  };
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isFutureSlot) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setActiveEmptySlotKey(slotKey);
-    }
-  };
-  return (
-    <button
-      type="button"
-      className={`relative flex h-full w-full min-w-0 items-center justify-center border-0 bg-transparent p-0 ${isFutureSlot ? "cursor-pointer" : "cursor-default"}`}
-      onClick={handleActivate}
-      onKeyDown={handleKeyDown}
-      tabIndex={isFutureSlot ? 0 : -1}
-      aria-label={isFutureSlot ? "Create post in this slot" : undefined}
-      disabled={!isFutureSlot}
-    >
-      {isFutureSlot && isActive ? (
-        <EmptySlotCreateMenu
-          dateKey={dateKey}
-          time={time}
-          onClose={() => setActiveEmptySlotKey(null)}
-        />
-      ) : null}
-    </button>
-  );
-}
-
-function DayViewEmptyColumnArea({
-  dateKey,
-  time,
-  slotKey,
-  blockHeightPx,
-  userTimezone,
-  activeEmptySlotKey,
-  setActiveEmptySlotKey,
-  onClearSelection,
-}: {
-  dateKey: string;
-  time: string;
-  slotKey: string;
-  blockHeightPx: number;
-  userTimezone: string;
-  activeEmptySlotKey: string | null;
-  setActiveEmptySlotKey: (key: string | null) => void;
-  onClearSelection?: () => void;
-}) {
-  const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTimezone);
-  const nowZoned = nowInTimezone(userTimezone);
-  const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
-  const isActive = activeEmptySlotKey === slotKey;
-  const handleActivate = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onClearSelection?.();
-    setActiveEmptySlotKey(slotKey);
-  };
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setActiveEmptySlotKey(slotKey);
-    }
-  };
-  if (!isFutureSlot) return null;
-  return (
-    <div
-      className={`relative flex min-h-0 flex-1 items-center justify-center ${isActive ? "" : "cursor-pointer"}`}
-      style={{ minHeight: blockHeightPx }}
-      onClick={handleActivate}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-label="Create post in this slot"
-    >
-      {isActive ? (
-        <EmptySlotCreateMenu
-          dateKey={dateKey}
-          time={time}
-          onClose={() => setActiveEmptySlotKey(null)}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-/** Renders the single-post slot content (day view two-column or plain block). Reduces SlotCellContent cognitive complexity. */
-function renderSinglePostSlotContent(
-  props: SlotCellContentProps,
-  expandUp: boolean,
-  wrapExpandUp: (content: React.ReactNode) => React.ReactNode
-): React.ReactNode {
-  const {
-    slotState,
-    time,
-    isDayView,
-    slotColumn,
-    setHoveredPostKey,
-    onPostEdit,
-    user,
-    queueTypes,
-    isLongform,
-    isAll,
-    activeEmptySlotKey,
-    setActiveEmptySlotKey,
-    onClearSelection,
-  } = props;
-  const {
-    dateKey,
-    posts,
-    singlePostKey,
-    isHovered,
-    blockHeightPx,
-    expandRows,
-    slotKey,
-  } = slotState;
-  const post = posts[0];
-  if (!post) return null;
-
-  const blockInner = (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
-    <div
-      className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
-        expandUp && isHovered
-          ? `absolute right-0 bottom-0 left-0 ${EXPANDED_BLOCK_WRAPPER_CLASS}`
-          : isHovered
-            ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
-            : "relative z-0"
-      }`}
-      style={{ height: blockHeightPx }}
-      onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-      onMouseLeave={() => setHoveredPostKey(null)}
-      onFocusCapture={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-      onBlurCapture={() => setHoveredPostKey(null)}
-      onTouchStart={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-      onTouchEnd={() => setTimeout(() => setHoveredPostKey(null), 300)}
-    >
-      <PostBlock
-        post={post}
-        compact={true}
-        user={user}
-        queueTypes={queueTypes}
-        onEdit={onPostEdit}
-        isLongform={
-          isAll ? Boolean(post.title && post.publishedAt) : isLongform
-        }
-        isPast={typeof post.isPast === "boolean" ? post.isPast : false}
-        forceOpaque={isHovered}
-        hideTimeRowPreview={true}
-        slotExpandRows={expandRows}
-      />
-    </div>
-  );
-
-  if (isDayView) {
-    const userTz = user?.timezone ?? "UTC";
-    const emptyColumn = (
-      <DayViewEmptyColumnArea
-        dateKey={dateKey}
-        time={time}
-        slotKey={slotKey}
-        blockHeightPx={blockHeightPx}
-        userTimezone={userTz}
-        activeEmptySlotKey={activeEmptySlotKey}
-        setActiveEmptySlotKey={setActiveEmptySlotKey}
-        onClearSelection={onClearSelection}
-      />
-    );
-    const overflowClass =
-      expandUp && isHovered
-        ? CLASS_DAY_COLUMN_EXPAND_UP
-        : CLASS_OVERFLOW_HIDDEN;
-    return wrapExpandUp(
-      <div className="flex w-full gap-1">
-        <div className={`min-w-0 flex-1 ${overflowClass}`}>
-          {slotColumn === 0 ? (
-            <div className={`relative h-full w-full min-w-0 ${overflowClass}`}>
-              {blockInner}
-            </div>
-          ) : (
-            emptyColumn
-          )}
-        </div>
-        <div className={`flex min-w-0 flex-1 justify-end ${overflowClass}`}>
-          {slotColumn === 1 ? (
-            <div className={`relative h-full w-full min-w-0 ${overflowClass}`}>
-              {blockInner}
-            </div>
-          ) : (
-            emptyColumn
-          )}
-        </div>
-      </div>
-    );
-  }
-  return wrapExpandUp(blockInner);
-}
-
-/** Renders multi-post slot row (≤6 posts or 5 + overflow). Reduces SlotCellContent cognitive complexity. */
-function renderMultiPostSlotContent(
-  props: SlotCellContentProps,
-  expandUp: boolean,
-  wrapExpandUp: (content: React.ReactNode) => React.ReactNode
-): React.ReactNode {
-  const {
-    slotState,
-    time,
-    isDayView,
-    hoveredPostKey,
-    setHoveredPostKey,
-    onPostEdit,
-    user,
-    queueTypes,
-    isLongform,
-    isAll,
-  } = props;
-  const { dateKey, posts, expandRows, blockHeightPx } = slotState;
-
-  const multiPostBlockProps = {
-    dateKey,
-    time,
-    isDayView,
-    postsCount: posts.length,
-    slotExpandRows: expandRows,
-    expandUp,
-    hoveredPostKey,
-    setHoveredPostKey,
-    onPostEdit,
-    user,
-    queueTypes,
-    isLongform,
-    isAll,
-  };
-
-  if (posts.length <= 6) {
-    return wrapExpandUp(
-      <div
-        className="relative flex space-x-0.5"
-        style={{ height: blockHeightPx }}
-      >
-        {posts.map((post, index) => (
-          <MultiPostBlock
-            key={post.id}
-            post={post}
-            {...multiPostBlockProps}
-            alignExpandedRight={index >= posts.length / 2}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  return wrapExpandUp(
-    <div
-      className="relative flex space-x-0.5"
-      style={{ height: blockHeightPx }}
-    >
-      {posts.slice(0, 5).map((post, index) => (
-        <MultiPostBlock
-          key={post.id}
-          post={post}
-          {...multiPostBlockProps}
-          alignExpandedRight={index >= 3}
-        />
-      ))}
-      <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
-        +{posts.length - 5}
-      </div>
-    </div>
-  );
-}
-
-function SlotCellContent({
-  slotState,
-  time,
-  isDayView,
-  slotColumn,
-  rowIndex = 0,
-  availableRowsBelow = 0,
-  hoveredPostKey,
-  setHoveredPostKey,
-  onPostEdit,
-  user,
-  queueTypes,
-  isLongform,
-  isAll,
-  activeEmptySlotKey,
-  setActiveEmptySlotKey,
-  onClearSelection,
-}: SlotCellContentProps) {
-  const { dateKey, posts, blockHeightPx, expandRows, slotKey } = slotState;
-
-  if (posts.length === 0) {
-    return (
-      <EmptySlotCellContent
-        dateKey={dateKey}
-        time={time}
-        slotKey={slotKey}
-        userTimezone={user?.timezone ?? "UTC"}
-        activeEmptySlotKey={activeEmptySlotKey}
-        setActiveEmptySlotKey={setActiveEmptySlotKey}
-        onClearSelection={onClearSelection}
-      />
-    );
-  }
-
-  const expandUp = rowIndex >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
-  const rowsToGrowUp =
-    expandUp && availableRowsBelow > 0 && expandRows > availableRowsBelow
-      ? expandRows - availableRowsBelow
-      : 0;
-  const expandUpTop =
-    rowsToGrowUp > 0 ? availableRowsBelow * ROW_HEIGHT_PX - blockHeightPx : 0;
-  // Clip to allocated rows so block never paints below last row (23:30); same behavior in Day and Week view
-  const wrapExpandUp = (content: React.ReactNode) =>
-    rowsToGrowUp > 0 ? (
-      <div
-        className="relative w-full min-w-0 overflow-hidden"
-        style={{ height: availableRowsBelow * ROW_HEIGHT_PX }}
-      >
-        <div
-          className="relative w-full min-w-0"
-          style={{ top: expandUpTop, height: blockHeightPx }}
-        >
-          {content}
-        </div>
-      </div>
-    ) : (
-      content
-    );
-
-  if (posts.length === 1) {
-    return renderSinglePostSlotContent(
-      {
-        slotState,
-        time,
-        isDayView,
-        slotColumn,
-        rowIndex,
-        availableRowsBelow,
-        hoveredPostKey,
-        setHoveredPostKey,
-        onPostEdit,
-        user,
-        queueTypes,
-        isLongform,
-        isAll,
-        activeEmptySlotKey,
-        setActiveEmptySlotKey,
-        onClearSelection,
-      },
-      expandUp,
-      wrapExpandUp
-    );
-  }
-
-  return renderMultiPostSlotContent(
-    {
-      slotState,
-      time,
-      isDayView,
-      slotColumn,
-      rowIndex,
-      availableRowsBelow,
-      hoveredPostKey,
-      setHoveredPostKey,
-      onPostEdit,
-      user,
-      queueTypes,
-      isLongform,
-      isAll,
-      activeEmptySlotKey,
-      setActiveEmptySlotKey,
-      onClearSelection,
-    },
-    expandUp,
-    wrapExpandUp
-  );
-}
-
-/** In Daily view, max expanded rows per multi-post block by number of blocks in the row: 3→5, 4→4, 5+→3. */
-function getDayViewMultiMaxRows(postsCount: number): number {
-  if (postsCount <= 2) return 3;
-  if (postsCount === 3) return 5;
-  if (postsCount === 4) return 4;
-  return 3;
-}
-
-interface MultiPostBlockProps {
-  post: CalendarPost;
-  dateKey: string;
-  time: string;
-  isDayView: boolean;
-  /** Total number of post blocks in this row (for Daily view expansion rules). */
-  postsCount: number;
-  /** Default row height when not hovered (day: 1–7; week: 1–4). */
-  slotExpandRows?: number;
-  /** When true (bottom rows), expanded block anchors to bottom and grows upward. */
-  expandUp?: boolean;
-  alignExpandedRight?: boolean;
-  hoveredPostKey: string | null;
-  setHoveredPostKey: (key: string | null) => void;
-  onPostEdit: (post: CalendarPost) => void;
-  user?: UserData | null;
-  queueTypes?: QueueType[];
-  isLongform: boolean;
-  isAll: boolean;
-}
-
-function MultiPostBlock({
-  post,
-  dateKey,
-  time,
-  isDayView,
-  postsCount,
-  slotExpandRows,
-  expandUp = false,
-  alignExpandedRight: _alignExpandedRight = false,
-  hoveredPostKey,
-  setHoveredPostKey,
-  onPostEdit,
-  user,
-  queueTypes,
-  isLongform,
-  isAll,
-}: MultiPostBlockProps) {
-  const multiPostKey = `${dateKey}-${time}-${post.id}`;
-  const multiHovered = hoveredPostKey === multiPostKey;
-  const multiExpandRows = isDayView
-    ? multiHovered
-      ? getDayViewMultiMaxRows(postsCount)
-      : (slotExpandRows ?? 1)
-    : multiHovered
-      ? (slotExpandRows ?? 0) >= 3
-        ? (slotExpandRows ?? 1)
-        : 4
-      : Math.min(slotExpandRows ?? 1, 4);
-  const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
-  const expandedClass = multiHovered
-    ? isDayView
-      ? expandUp
-        ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute bottom-0 left-0 right-0 w-full`
-        : `${EXPANDED_BLOCK_WRAPPER_CLASS} relative min-w-0 flex-1`
-      : expandUp
-        ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute bottom-0 left-0 right-0 w-full`
-        : `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full`
-    : "relative z-0 min-w-0 flex-1";
-  return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
-    <div
-      className={`transition-[height] duration-200 ease-out ${expandedClass}`}
-      style={{ height: multiHeightPx }}
-      onMouseEnter={() => setHoveredPostKey(multiPostKey)}
-      onMouseLeave={() => setHoveredPostKey(null)}
-      onFocusCapture={() => setHoveredPostKey(multiPostKey)}
-      onBlurCapture={() => setHoveredPostKey(null)}
-      onTouchStart={() => setHoveredPostKey(multiPostKey)}
-      onTouchEnd={() => setTimeout(() => setHoveredPostKey(null), 300)}
-    >
-      <PostBlock
-        post={post}
-        compact={true}
-        minimal={true}
-        user={user}
-        queueTypes={queueTypes}
-        onEdit={onPostEdit}
-        isLongform={
-          isAll ? Boolean(post.title && post.publishedAt) : isLongform
-        }
-        isPast={typeof post.isPast === "boolean" ? post.isPast : false}
-        multipleInCell={true}
-        forceOpaque={multiHovered}
-        hideTimeRowPreview={true}
-        slotExpandRows={multiExpandRows}
-      />
-    </div>
-  );
-}
-
-interface CurrentTimeIndicatorProps {
-  user?: UserData | null;
-  weekDays: Date[];
 }
 
 export function WeeklyView({
@@ -731,9 +104,8 @@ export function WeeklyView({
     }
     const days: Date[] = [];
     const currentZoned = fromDate(currentDate, "UTC");
-    // dayOfWeek: 1 = Monday, 2 = Tuesday, ..., 7 = Sunday
     const dayOfWeek = currentZoned.dayOfWeek;
-    const daysFromMonday = dayOfWeek === 7 ? 6 : dayOfWeek - 1; // Convert Sunday (7) to 6 days back
+    const daysFromMonday = dayOfWeek === 7 ? 6 : dayOfWeek - 1;
     const startOfWeekZoned = addDays(currentZoned, -daysFromMonday);
 
     for (let i = 0; i < 7; i++) {
@@ -743,7 +115,6 @@ export function WeeklyView({
     return days;
   }, [currentDate, weekDaysOverride]);
 
-  // Get user time format preference
   const userTimeFormat =
     user && typeof user === "object" && "timeFormat" in user
       ? user.timeFormat === "24h"
@@ -751,7 +122,6 @@ export function WeeklyView({
         : "12h"
       : "12h";
 
-  // Generate hours - keys are always in 24-hour format for grid lookup (00:00–23:30)
   const hours = useMemo(() => {
     const hoursList: string[] = [];
     for (let h = 0; h < HOURS_PER_DAY; h++) {
@@ -761,7 +131,6 @@ export function WeeklyView({
     return hoursList;
   }, []);
 
-  // Generate display labels based on user's time format preference (00:00–23:30)
   const hourLabels = useMemo(() => {
     const labels: string[] = [];
     if (userTimeFormat === "24h") {
@@ -788,7 +157,6 @@ export function WeeklyView({
     });
   }, [weekDays, userTimezone]);
 
-  // Group posts by date and time (data layer)
   const postsGrid = useMemo(
     () =>
       postsToTimeGrid(scheduledPosts, pastPosts, weekDaysDateKeys, hours, {
@@ -828,10 +196,7 @@ export function WeeklyView({
     const postData = JSON.parse(
       e.dataTransfer.getData("text/plain")
     ) as CalendarPost;
-    const [h, m] = time.split(":").map(Number);
-    const safeHours = h ?? 0;
-    const safeMinutes = m ?? 0;
-    const isoString = `${date}T${safeHours.toString().padStart(2, "0")}:${safeMinutes.toString().padStart(2, "0")}:00`;
+    const isoString = buildDropIsoString(date, time);
     const newDateTime = parseDropToDateTime(isoString, userTimezone);
     onPostDrop(postData, newDateTime);
   };
@@ -840,7 +205,6 @@ export function WeeklyView({
     setDragOverSlot(null);
   };
 
-  // In day view: assign single-post slots to column 0 (left) or 1 (right), alternating when both columns are free to maximise space
   const dayViewColumnMap = useMemo((): Record<string, 0 | 1> => {
     const firstKey = weekDaysDateKeys[0];
     if (!isDayView || firstKey === undefined) return {};
@@ -851,7 +215,7 @@ export function WeeklyView({
   useEffect(() => {
     const el = gridScrollRef.current;
     if (!el || hasSetInitialScrollRef.current) return;
-    const slotIndex = DEFAULT_SCROLL_HOUR * 2; // 30-min slots: 6:00 is index 12
+    const slotIndex = DEFAULT_SCROLL_HOUR * 2;
     const scrollTop = slotIndex * ROW_HEIGHT_PX;
 
     const apply = () => {
@@ -860,14 +224,12 @@ export function WeeklyView({
       hasSetInitialScrollRef.current = true;
     };
 
-    // Wait for layout: ResizeObserver fires when the element gets a non-zero height
     const ro = new ResizeObserver(() => {
       if (el.clientHeight > 0 && !hasSetInitialScrollRef.current) {
         apply();
       }
     });
     ro.observe(el);
-    // Fallback if already laid out (e.g. in tests)
     if (el.clientHeight > 0) {
       requestAnimationFrame(apply);
     }
@@ -895,276 +257,66 @@ export function WeeklyView({
                 }),
           }}
         >
-          {/* Days header */}
-          <div className="border-border/40 flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
-            <div className="w-16 flex-shrink-0" />
-            {weekDays.map((day) => {
-              const userTimezone = user?.timezone ?? "Etc/UTC";
-              const todayZoned = nowInTimezone(userTimezone);
-              const dayZoned = fromDate(day, userTimezone);
-              const isToday =
-                dayZoned.year === todayZoned.year &&
-                dayZoned.month === todayZoned.month &&
-                dayZoned.day === todayZoned.day;
-              const mobileWeekColumnStyle =
-                isMobile && !isDayView
-                  ? {
-                      width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
-                      minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
-                      flex: "0 0 auto" as const,
-                    }
-                  : undefined;
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={`border-border/30 flex items-center justify-center gap-1 border-r px-2 py-1 text-center last:border-r-0 ${
-                    isMobile && !isDayView
-                      ? "min-w-0 shrink-0"
-                      : "min-w-[3.5rem] flex-1"
-                  } ${isToday ? "border-l-primary bg-primary/5 border-l-2" : ""}`}
-                  style={mobileWeekColumnStyle}
-                >
-                  <span className="text-muted-foreground text-xs font-normal">
-                    {day.toLocaleDateString(dateLocale, {
-                      weekday: "short",
-                      timeZone: user?.timezone ?? "Etc/UTC",
-                    })}
-                  </span>
-                  <span
-                    className={`text-sm leading-tight font-semibold ${
-                      isToday ? "text-primary" : "text-foreground"
-                    }`}
-                  >
-                    {day.getDate()}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <DaysHeader
+            weekDays={weekDays}
+            user={user}
+            dateLocale={dateLocale}
+            isMobile={isMobile}
+            isDayView={isDayView}
+          />
 
-          {/* Time grid: wrapper takes remaining height; scroll area is absolute so it has a definite height and can show scrollbar */}
-          <div className="relative min-h-0 flex-1">
-            <div
-              ref={gridScrollRef}
-              className="absolute inset-0 isolate overflow-x-hidden overflow-y-scroll"
-            >
-              <div
-                className="relative flex w-full flex-col flex-nowrap"
-                style={{
-                  height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
-                  minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
-                  transform: "translateZ(0)",
-                }}
-              >
-                {hours.map((time, index) => {
-                  // Row order = stacking order: earlier rows on top so post blocks always paint above rows below.
-                  // From 19:30 down: invert order so the row above paints on top of the row below; otherwise the row below captures hover and blocks don't activate.
-                  // Do not raise the whole row on hover (would make the row's grid line paint over other day columns); we raise only the hovered cell below.
-                  // Exception: when a block in a bottom row is expanded upward, raise this row so the expanded block (and its opaque background) paint on top of grid and rows above.
-                  const expandUp = index >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
-                  const rowHasHoveredExpandedUp =
-                    expandUp &&
-                    weekDays.some((day) => {
-                      const slotState = getSlotState(
-                        day,
-                        time,
-                        postsGrid,
-                        hours,
-                        hoveredPostKey,
-                        dragOverSlot,
-                        isDayView,
-                        user?.timezone ?? "Etc/UTC",
-                        isDayView ? dayViewColumnMap : undefined,
-                        isDayView ? selectedPost : undefined
-                      );
-                      return slotState.posts.some(
-                        (p) =>
-                          hoveredPostKey ===
-                          `${slotState.dateKey}-${time}-${p.id}`
-                      );
-                    });
-                  const rowZIndex = rowHasHoveredExpandedUp
-                    ? CALENDAR_ROW_Z_EXPANDED_UP
-                    : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-                      ? CALENDAR_ROW_Z_BASE -
-                        index +
-                        BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-                      : Math.max(1, CALENDAR_ROW_Z_BASE - index);
-
-                  return (
-                    <div
-                      key={time}
-                      className="relative flex w-full flex-none items-start overflow-visible"
-                      style={{
-                        zIndex: rowZIndex,
-                        flexBasis: ROW_HEIGHT_PX,
-                        height: ROW_HEIGHT_PX,
-                        minHeight: ROW_HEIGHT_PX,
-                      }}
-                    >
-                      {/* Grid line behind content: subtle border at bottom so it never paints over post blocks */}
-                      <div
-                        className="border-border/40 pointer-events-none absolute inset-x-0 bottom-0 z-0 border-b"
-                        aria-hidden
-                      />
-                      {/* Row content above grid line: full width so day columns align with header */}
-                      <div
-                        className="relative z-[1] flex min-h-0 w-full min-w-0 flex-1 items-stretch"
-                        style={{ height: ROW_HEIGHT_PX - 1 }}
-                      >
-                        {/* Time label */}
-                        <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
-                          {hourLabels[index]}
-                        </div>
-
-                        {/* Day columns */}
-                        {weekDays.map((day) => {
-                          const slotState = getSlotState(
-                            day,
-                            time,
-                            postsGrid,
-                            hours,
-                            hoveredPostKey,
-                            dragOverSlot,
-                            isDayView,
-                            user?.timezone ?? "Etc/UTC",
-                            isDayView ? dayViewColumnMap : undefined,
-                            isDayView ? selectedPost : undefined
-                          );
-                          const cellHasHoveredPost = slotState.posts.some(
-                            (p) =>
-                              hoveredPostKey ===
-                              `${slotState.dateKey}-${time}-${p.id}`
-                          );
-                          const cellRaised =
-                            cellHasHoveredPost ||
-                            (isDayView && hoveredSlotKey === slotState.slotKey);
-                          const cellZClass =
-                            cellHasHoveredPost && isDayView
-                              ? "z-[41]"
-                              : cellRaised
-                                ? "z-[40]"
-                                : "";
-                          const mobileWeekCellStyle =
-                            isMobile && !isDayView
-                              ? {
-                                  width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
-                                  minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
-                                  flex: "0 0 auto" as const,
-                                }
-                              : undefined;
-                          return (
-                            <div
-                              key={slotState.slotKey}
-                              role="gridcell"
-                              tabIndex={-1}
-                              className={`border-border/30 relative overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
-                                isMobile && !isDayView
-                                  ? "min-w-0 shrink-0"
-                                  : "min-w-[3.5rem] flex-1"
-                              } ${cellZClass} ${
-                                slotState.isDragOver
-                                  ? "bg-primary/5 border-primary/20"
-                                  : isDayView
-                                    ? ""
-                                    : "dark:hover:bg-muted hover:bg-muted"
-                              }`}
-                              style={mobileWeekCellStyle}
-                              onDragOver={(e) =>
-                                handleDragOver(e, slotState.dateKey, time)
-                              }
-                              onDrop={(e) =>
-                                handleDrop(e, slotState.dateKey, time)
-                              }
-                              onDragLeave={handleDragLeave}
-                              onMouseEnter={
-                                isDayView
-                                  ? () => setHoveredSlotKey(slotState.slotKey)
-                                  : undefined
-                              }
-                              onMouseLeave={
-                                isDayView
-                                  ? () => setHoveredSlotKey(null)
-                                  : undefined
-                              }
-                            >
-                              <SlotCellContent
-                                slotState={slotState}
-                                time={time}
-                                isDayView={isDayView}
-                                slotColumn={
-                                  isDayView
-                                    ? (dayViewColumnMap[slotState.slotKey] ?? 0)
-                                    : undefined
-                                }
-                                rowIndex={index}
-                                availableRowsBelow={hours.length - index}
-                                hoveredPostKey={hoveredPostKey}
-                                setHoveredPostKey={setHoveredPostKey}
-                                onPostEdit={onPostEdit}
-                                user={user}
-                                queueTypes={queueTypes}
-                                isLongform={isLongform}
-                                isAll={isAll}
-                                activeEmptySlotKey={activeEmptySlotKey}
-                                setActiveEmptySlotKey={setActiveEmptySlotKey}
-                                onClearSelection={onClearSelection}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Current time indicator - only show if today is in this week */}
-                <CurrentTimeIndicator user={user} weekDays={weekDays} />
-              </div>
-            </div>
-          </div>
+          <TimeGrid
+            gridScrollRef={gridScrollRef}
+            hours={hours}
+            hourLabels={hourLabels}
+            weekDays={weekDays}
+            getSlotState={(day, time) =>
+              getSlotState(
+                day,
+                time,
+                postsGrid,
+                hours,
+                hoveredPostKey,
+                dragOverSlot,
+                isDayView,
+                user?.timezone ?? "Etc/UTC",
+                isDayView ? dayViewColumnMap : undefined,
+                isDayView ? selectedPost : undefined
+              )
+            }
+            hoveredPostKey={hoveredPostKey}
+            setHoveredPostKey={setHoveredPostKey}
+            dragOverSlot={dragOverSlot}
+            isDayView={isDayView}
+            userTimezone={user?.timezone ?? "Etc/UTC"}
+            dayViewColumnMap={dayViewColumnMap}
+            selectedPost={isDayView ? selectedPost : undefined}
+            hoveredSlotKey={hoveredSlotKey}
+            setHoveredSlotKey={setHoveredSlotKey}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragLeave={handleDragLeave}
+            formatDropSlotAriaLabel={(dateKey, time, userTz, locale) =>
+              formatDropSlotAriaLabel(
+                dateKey,
+                time,
+                userTz,
+                (locale ?? dateLocale) as "en-GB" | "en-US" | "sv"
+              )
+            }
+            dateLocale={dateLocale}
+            onPostEdit={onPostEdit}
+            user={user}
+            queueTypes={queueTypes}
+            isLongform={isLongform}
+            isAll={isAll}
+            activeEmptySlotKey={activeEmptySlotKey}
+            setActiveEmptySlotKey={setActiveEmptySlotKey}
+            onClearSelection={onClearSelection}
+            isMobile={isMobile}
+          />
         </div>
       </div>
-    </div>
-  );
-}
-
-function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
-  const userTimezone = user?.timezone ?? "Etc/UTC";
-  const nowZoned = nowInTimezone(userTimezone);
-  const currentHour = nowZoned.hour;
-  const currentMinutes = nowZoned.minute;
-
-  // Check if today is in the current week view
-  const todayZoned = nowZoned;
-  const isTodayInWeek = weekDays.some((day) => {
-    const dayZoned = fromDate(day, userTimezone);
-    return (
-      dayZoned.year === todayZoned.year &&
-      dayZoned.month === todayZoned.month &&
-      dayZoned.day === todayZoned.day
-    );
-  });
-
-  if (!isTodayInWeek) return null;
-
-  // Find the exact position for current time
-  // Each hour has 2 slots (30-minute intervals), each ROW_HEIGHT_PX tall
-  const hourIndex = currentHour;
-  const minuteProgress = currentMinutes / 60; // 0-1 progress through the hour
-
-  // Calculate position:
-  // - Each hour has 2 slots (00 and 30), so multiply by 2
-  // - Add progress within the current hour
-  const topOffset =
-    hourIndex * 2 * ROW_HEIGHT_PX + minuteProgress * ROW_HEIGHT_PX * 2;
-
-  return (
-    <div
-      className="bg-primary/90 pointer-events-none absolute right-0 left-16 z-[41] h-0.5"
-      style={{ top: `${topOffset}px` }}
-    >
-      <div className="bg-primary absolute -top-1 -left-2 h-2.5 w-2.5 rounded-full" />
     </div>
   );
 }

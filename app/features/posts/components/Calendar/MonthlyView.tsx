@@ -13,6 +13,7 @@ import {
 import type { QueueType, UserData } from "../../types";
 import { CONTENT_MOBILE_BREAKPOINT_PX } from "../constants";
 
+import { buildDropIsoString } from "./calendar-helpers";
 import { DateGrid } from "./components/DateGrid";
 import type { CalendarDay } from "./components/DateGrid";
 import { parseDropToDateTime } from "./data/parse-drop-to-date-time";
@@ -142,7 +143,7 @@ export function MonthlyView({
     ) as CalendarPost;
     const dateZoned = fromDate(date, userTimezone);
     const dateKey = `${dateZoned.year}-${String(dateZoned.month).padStart(2, "0")}-${String(dateZoned.day).padStart(2, "0")}`;
-    const isoString = `${dateKey}T09:00`;
+    const isoString = buildDropIsoString(dateKey, "09:00");
     const newDateTime = parseDropToDateTime(isoString, userTimezone);
     onPostDrop(postData, newDateTime);
   };

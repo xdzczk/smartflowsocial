@@ -93,4 +93,55 @@ describe("Calendar View", () => {
       });
     });
   });
+
+  describe("View switch", () => {
+    beforeEach(() => {
+      cy.visitAndCheck("/dashboard/calendar");
+      // Wait for calendar to render (default is week view)
+      cy.get("[data-testid=calendar-view-week]", { timeout: 10000 }).should(
+        "exist"
+      );
+    });
+
+    it("should switch to Month view when clicking Month", () => {
+      cy.contains("button", "Month").click();
+      cy.get("[data-testid=calendar-view-month]").should("exist");
+    });
+
+    it("should switch to Day view when clicking Day", () => {
+      cy.contains("button", "Day").click();
+      cy.get("[data-testid=calendar-view-day]").should("exist");
+    });
+
+    it("should switch Day -> Week -> Month and show correct view", () => {
+      cy.contains("button", "Day").click();
+      cy.get("[data-testid=calendar-view-day]").should("exist");
+      cy.contains("button", "Week").click();
+      cy.get("[data-testid=calendar-view-week]").should("exist");
+      cy.contains("button", "Month").click();
+      cy.get("[data-testid=calendar-view-month]").should("exist");
+    });
+  });
+
+  describe("Reschedule flow", () => {
+    it("should close reschedule modal on confirm and keep calendar in view without full page reload", () => {
+      cy.visitAndCheck("/dashboard/calendar");
+      cy.get("[data-testid=calendar-view-week]", { timeout: 10000 }).should(
+        "exist"
+      );
+      cy.get('[role="button"][aria-label*="Edit post"]').then(($btns) => {
+        if ($btns.length === 0) {
+          cy.log("No scheduled post to edit; skipping reschedule flow");
+          return;
+        }
+        cy.wrap($btns.first()).click();
+        cy.get("[role=dialog]", { timeout: 5000 }).should("be.visible");
+        cy.contains("button", /Confirm|Save|Reschedule/i).click();
+        cy.get("[role=dialog]", { timeout: 10000 }).should("not.exist");
+        cy.get(
+          "[data-testid=calendar-view-week], [data-testid=calendar-view-day], [data-testid=calendar-view-month]"
+        ).should("exist");
+      });
+    });
+  });
 });

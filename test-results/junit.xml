@@ -1,67 +1,51 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="16" failures="0" errors="0" time="0.023263875">
-    <testsuite name="tests/integration/calendar-loader.test.ts" timestamp="2026-02-21T14:28:51.760Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.01326575">
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should load calendar data for authenticated user" time="0.004631708">
+<testsuites name="vitest tests" tests="22" failures="0" errors="0" time="0.006283042">
+    <testsuite name="tests/unit/calendar-domain.test.ts" timestamp="2026-02-21T16:58:23.750Z" hostname="Ivans-MacBook-Pro.local" tests="20" failures="0" errors="0" skipped="0" time="0.0040795">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 0 for 0 posts" time="0.000656125">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should handle queue type parameter" time="0.001425959">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 6 for 1-2 posts" time="0.000114583">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should filter posts by queue type when specified" time="0.000462375">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 4 for 3-4 posts" time="0.000084875">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should return all posts when queueType is &apos;all&apos;" time="0.000451375">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 2 for 5+ posts" time="0.000070208">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should include schedule intervals from user" time="0.000416167">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 0 posts" time="0.000093125">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should filter queue types to only enabled ones" time="0.000257167">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 3 for 1 post" time="0.00005675">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.003975875">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Authentication required&apos;,
-  code: &apos;AUTHENTICATION_ERROR&apos;,
-  statusCode: 401,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 2 for 2 posts" time="0.000063958">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.000831292">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Database error&apos;,
-  code: &apos;DATABASE_ERROR&apos;,
-  statusCode: 500,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 1 for 3-4 posts" time="0.000067958">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 5+ posts" time="0.000102959">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns 0 when slot is last or not in hours" time="0.000160125">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns count of consecutive empty slots below" time="0.000116583">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns false when slot baseRows below is out of range or has no posts" time="0.0000795">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns true when slot baseRows below has posts" time="0.000042542">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; returns empty map for empty grid" time="0.000375792">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; assigns alternating columns when both columns free for consecutive single-post slots" time="0.000522375">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; skips slots with not exactly one post" time="0.000075875">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns expandRows 1 and correct blockHeightPx for empty slot" time="0.000362292">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns singlePostKey and isHovered when hoveredPostKey matches" time="0.000056958">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns noExpandOnHover true for week view 3-row slot with post below" time="0.000053333">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns isDragOver when dragOverSlot matches slotKey" time="0.00003925">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/calendar-data.test.ts" timestamp="2026-02-21T14:28:51.762Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.007843375">
-        <testcase classname="tests/unit/calendar-data.test.ts" name="Calendar data layer &gt; postsToTimeGrid &gt; initializes all dateKeys with empty slot maps" time="0.001145709">
+    <testsuite name="tests/unit/calendar-week-view-smoke.test.tsx" timestamp="2026-02-21T16:58:23.752Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.002203542">
+        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; exports a function component" time="0.000714834">
         </testcase>
-        <testcase classname="tests/unit/calendar-data.test.ts" name="Calendar data layer &gt; postsToTimeGrid &gt; assigns scheduled post to correct dateKey and timeSlot" time="0.003362625">
-        </testcase>
-        <testcase classname="tests/unit/calendar-data.test.ts" name="Calendar data layer &gt; postsToDateGrid &gt; returns empty object when no posts" time="0.00024725">
-        </testcase>
-        <testcase classname="tests/unit/calendar-data.test.ts" name="Calendar data layer &gt; postsToDateGrid &gt; groups posts by dateKey and sets isPast" time="0.000539292">
-        </testcase>
-        <testcase classname="tests/unit/calendar-data.test.ts" name="Calendar data layer &gt; parseDropToDateTime &gt; parses YYYY-MM-DDTHH:mm in UTC and returns Date" time="0.001059666">
-        </testcase>
-        <testcase classname="tests/unit/calendar-data.test.ts" name="Calendar data layer &gt; parseDropToDateTime &gt; parses date-only with time default" time="0.000572709">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/calendar-week-view-smoke.test.tsx" timestamp="2026-02-21T14:28:51.762Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.00215475">
-        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; exports a function component" time="0.00067275">
-        </testcase>
-        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; accepts required props shape" time="0.000754042">
+        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; accepts required props shape" time="0.000766792">
         </testcase>
     </testsuite>
 </testsuites>

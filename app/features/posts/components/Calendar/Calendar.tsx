@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useCallback, useEffect, useMemo } from "react";
 
@@ -6,6 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { calendarKeys } from "~/features/posts/hooks/useCalendarQuery";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import {
@@ -25,6 +27,8 @@ import type { QueueType, UserData } from "../../types";
 import PostTypeTabs from "../PostTypeTabs";
 import QueueSelectionTabs from "../QueueSelectionTabs";
 
+import { getPostIsLongform, isSameCalendarSlot } from "./calendar-helpers";
+import { CalendarErrorBoundary } from "./CalendarErrorBoundary";
 import { DayViewSidebar, useIsLg } from "./DayViewSidebar";
 import { MonthlyView } from "./MonthlyView";
 import type { CalendarPost } from "./PostBlock.types";
@@ -110,50 +114,32 @@ export function Calendar({
     return toDate(now);
   });
   const [selectedPost, setSelectedPost] = useState<CalendarPost | null>(null);
+  const [calendarLiveMessage, setCalendarLiveMessage] = useState("");
   const isLg = useIsLg();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!calendarLiveMessage) return;
+    const t = setTimeout(() => setCalendarLiveMessage(""), 3000);
+    return () => clearTimeout(t);
+  }, [calendarLiveMessage]);
 
   const handlePostDrop = useCallback(
     (post: CalendarPost, newDateTime: Date) => {
-      // Determine if this specific post is a longform post
-      const postIsLongform = isAll
-        ? Boolean(post.title && post.publishedAt)
-        : isLongform;
+      const postIsLongform = getPostIsLongform(post, isLongform, isAll);
       const wasAutoScheduled = postIsLongform ? false : !post.manual_override;
 
-      // Don't open reschedule modal when dropping on the same slot (all views)
       const postIsPast = typeof post.isPast === "boolean" ? post.isPast : false;
       const currentMs = getPostScheduleInstant(
         post,
         postIsLongform,
         postIsPast
       );
-      if (currentMs != null) {
-        const currentZoned = fromDate(new Date(currentMs), userTimezone);
-        const newZoned = fromDate(newDateTime, userTimezone);
-        const slotMin = (m: number) => (m < 30 ? 0 : 30);
-        const toSlotKey = (
-          y: number,
-          m: number,
-          d: number,
-          h: number,
-          min: number
-        ) =>
-          `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}-${String(h).padStart(2, "0")}:${String(slotMin(min)).padStart(2, "0")}`;
-        const currentKey = toSlotKey(
-          currentZoned.year,
-          currentZoned.month,
-          currentZoned.day,
-          currentZoned.hour,
-          currentZoned.minute
-        );
-        const newKey = toSlotKey(
-          newZoned.year,
-          newZoned.month,
-          newZoned.day,
-          newZoned.hour,
-          newZoned.minute
-        );
-        if (currentKey === newKey) return;
+      if (
+        currentMs != null &&
+        isSameCalendarSlot(currentMs, newDateTime, userTimezone)
+      ) {
+        return;
       }
 
       setRescheduleData({
@@ -165,8 +151,23 @@ export function Calendar({
         isLongform: postIsLongform,
       });
       setShowRescheduleModal(true);
+      setCalendarLiveMessage(
+        `Post moved to ${formatForDisplay(
+          fromDate(newDateTime, userTimezone),
+          userTimezone,
+          {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            hour: "2-digit",
+            minute: "2-digit",
+          },
+          undefined,
+          dateLocale
+        )}`
+      );
     },
-    [isLongform, isAll, userTimezone]
+    [isLongform, isAll, userTimezone, dateLocale]
   );
 
   // Keyboard shortcuts: T = Today, Left/Right = prev/next period (ignore when modal open or focus in input)
@@ -220,10 +221,7 @@ export function Calendar({
 
   const handlePostEdit = useCallback(
     (post: CalendarPost) => {
-      // Determine if this specific post is a longform post
-      const postIsLongform = isAll
-        ? Boolean(post.title && post.publishedAt)
-        : isLongform;
+      const postIsLongform = getPostIsLongform(post, isLongform, isAll);
       const wasAutoScheduled = postIsLongform ? false : !post.manual_override;
       // For longform posts, use publishedAt instead of scheduledFor
       const currentDateTime = postIsLongform
@@ -257,8 +255,23 @@ export function Calendar({
         isLongform: postIsLongform,
       });
       setShowRescheduleModal(true);
+      setCalendarLiveMessage(
+        `Editing post scheduled for ${formatForDisplay(
+          fromDate(currentDateTime, userTimezone),
+          userTimezone,
+          {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            hour: "2-digit",
+            minute: "2-digit",
+          },
+          undefined,
+          dateLocale
+        )}`
+      );
     },
-    [isLongform, isAll]
+    [isLongform, isAll, userTimezone, dateLocale]
   );
 
   const handlePostClick = useCallback(
@@ -281,6 +294,15 @@ export function Calendar({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[hsl(var(--calendar-surface-2-bg))]">
+      {/* Screen reader: announce drop/edit result */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+      >
+        {calendarLiveMessage}
+      </div>
       {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. Calendar controls use text-sm to match content type and queue filter labels. */}
       <div className="border-border/60 flex min-h-14 flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-3 select-none sm:px-3">
         <div className="flex h-fit min-h-0 flex-shrink-0 flex-col justify-center gap-2 md:flex-row md:flex-nowrap md:items-center md:gap-4">
@@ -468,86 +490,89 @@ export function Calendar({
 
       {/* Calendar content: Day view on lg shows main + right sidebar */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div
-          className={`flex min-h-0 flex-1 transition-opacity duration-200 ${
-            view === "day" ? "lg:min-w-0 lg:flex-row" : ""
-          } flex-col`}
-          style={{
-            transitionTimingFunction: "var(--calendar-transition-ease)",
-          }}
-        >
+        <CalendarErrorBoundary>
           <div
-            className={`flex min-h-0 flex-1 flex-col ${
-              view === "day" ? "lg:min-w-0" : ""
-            }`}
+            data-testid={`calendar-view-${view}`}
+            className={`flex min-h-0 flex-1 transition-opacity duration-200 ${
+              view === "day" ? "lg:min-w-0 lg:flex-row" : ""
+            } flex-col`}
+            style={{
+              transitionTimingFunction: "var(--calendar-transition-ease)",
+            }}
           >
-            {view === "day" ? (
-              <DayView
-                scheduledPosts={scheduledPosts}
-                pastPosts={pastPosts}
-                currentDate={currentDate}
-                onPostDrop={handlePostDrop}
-                onPostEdit={handlePostClick}
-                selectedPost={selectedPost}
-                onClearSelection={() => setSelectedPost(null)}
-                user={user}
-                queueTypes={queueTypes}
-                isLongform={isLongform}
-                isAll={isAll}
-              />
-            ) : view === "week" ? (
-              <WeekView
-                scheduledPosts={scheduledPosts}
-                pastPosts={pastPosts}
-                currentDate={currentDate}
-                onPostDrop={handlePostDrop}
-                onPostEdit={handlePostClick}
-                user={user}
-                queueTypes={queueTypes}
-                isLongform={isLongform}
-                isAll={isAll}
-              />
-            ) : (
-              <MonthlyView
-                scheduledPosts={scheduledPosts}
-                pastPosts={pastPosts}
-                currentDate={currentDate}
-                onPostDrop={handlePostDrop}
-                onPostEdit={handlePostEdit}
-                user={user}
-                queueTypes={queueTypes}
-                isLongform={isLongform}
-                isAll={isAll}
-              />
-            )}
-          </div>
-          {view === "day" ? (
-            <div className="hidden flex-shrink-0 lg:flex">
-              <DayViewSidebar
-                selectedPost={selectedPost}
-                onEditPost={handlePostEdit}
-                user={user}
-                queueTypes={queueTypes}
-                isLongform={isLongform}
-                isAll={isAll}
-                userTimezone={userTimezone}
-                userTimeFormat={userTimeFormat}
-              >
-                <MiniCalendarGrid
-                  displayedMonth={miniCalendarMonth}
+            <div
+              className={`flex min-h-0 flex-1 flex-col ${
+                view === "day" ? "lg:min-w-0" : ""
+              }`}
+            >
+              {view === "day" ? (
+                <DayView
+                  scheduledPosts={scheduledPosts}
+                  pastPosts={pastPosts}
                   currentDate={currentDate}
-                  userTimezone={userTimezone}
-                  dateLocale={dateLocale}
-                  onMonthChange={setMiniCalendarMonth}
-                  onSelectDate={(date) => {
-                    setSelectedPost(null);
-                    setCurrentDate(date);
-                  }}
+                  onPostDrop={handlePostDrop}
+                  onPostEdit={handlePostClick}
+                  selectedPost={selectedPost}
+                  onClearSelection={() => setSelectedPost(null)}
+                  user={user}
+                  queueTypes={queueTypes}
+                  isLongform={isLongform}
+                  isAll={isAll}
                 />
-              </DayViewSidebar>
+              ) : view === "week" ? (
+                <WeekView
+                  scheduledPosts={scheduledPosts}
+                  pastPosts={pastPosts}
+                  currentDate={currentDate}
+                  onPostDrop={handlePostDrop}
+                  onPostEdit={handlePostClick}
+                  user={user}
+                  queueTypes={queueTypes}
+                  isLongform={isLongform}
+                  isAll={isAll}
+                />
+              ) : (
+                <MonthlyView
+                  scheduledPosts={scheduledPosts}
+                  pastPosts={pastPosts}
+                  currentDate={currentDate}
+                  onPostDrop={handlePostDrop}
+                  onPostEdit={handlePostEdit}
+                  user={user}
+                  queueTypes={queueTypes}
+                  isLongform={isLongform}
+                  isAll={isAll}
+                />
+              )}
             </div>
-          ) : null}
-        </div>
+            {view === "day" ? (
+              <div className="hidden flex-shrink-0 lg:flex">
+                <DayViewSidebar
+                  selectedPost={selectedPost}
+                  onEditPost={handlePostEdit}
+                  user={user}
+                  queueTypes={queueTypes}
+                  isLongform={isLongform}
+                  isAll={isAll}
+                  userTimezone={userTimezone}
+                  userTimeFormat={userTimeFormat}
+                >
+                  <MiniCalendarGrid
+                    displayedMonth={miniCalendarMonth}
+                    currentDate={currentDate}
+                    userTimezone={userTimezone}
+                    dateLocale={dateLocale}
+                    onMonthChange={setMiniCalendarMonth}
+                    onSelectDate={(date) => {
+                      setSelectedPost(null);
+                      setCurrentDate(date);
+                    }}
+                  />
+                </DayViewSidebar>
+              </div>
+            ) : null}
+          </div>
+        </CalendarErrorBoundary>
       </div>
 
       {/* Reschedule Modal */}
@@ -563,8 +588,7 @@ export function Calendar({
           onConfirm={() => {
             setShowRescheduleModal(false);
             setRescheduleData(null);
-            // Optionally refresh the page or update state
-            window.location.reload();
+            void queryClient.invalidateQueries({ queryKey: calendarKeys.all });
           }}
         />
       ) : null}

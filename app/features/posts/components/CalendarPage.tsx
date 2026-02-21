@@ -19,7 +19,7 @@ export default function CalendarPage() {
     user,
     queueTypes,
     selectedQueueType: _selectedQueueType,
-    isLoading: _isDataLoading,
+    isLoading: isDataLoading,
     totalPostsCount,
     totalRepostsCount,
     totalLongformCount,
@@ -42,6 +42,19 @@ export default function CalendarPage() {
     initialViewParam === "month"
       ? initialViewParam
       : undefined;
+
+  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- useCalendarData returns isLoading from TanStack Query; type narrows when data is present */
+  if (isDataLoading) {
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="border-border/60 bg-muted/30 flex min-h-14 flex-shrink-0 items-center border-b px-2 py-3 sm:px-3" />
+        <div className="bg-muted/20 flex min-h-0 flex-1 animate-pulse flex-col gap-4 p-4">
+          <div className="bg-muted h-8 w-48 rounded" />
+          <div className="bg-muted flex-1 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
