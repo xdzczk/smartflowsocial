@@ -20,22 +20,15 @@ export interface SlotCellProps extends SlotCellContentProps {
   dateLocale: string;
   userTimezone: string;
   isMobile: boolean;
-  isDayView: boolean;
-  dayViewColumnMap: Record<string, 0 | 1>;
-  dayViewBlockFromAboveMap?: Record<string, boolean>;
 }
 
 export function SlotCell({
   slotState,
   time,
-  isDayView,
-  slotColumn: _slotColumn,
   rowIndex,
   availableRowsBelow,
   hoveredPostKey,
   setHoveredPostKey,
-  hoveredPostKeyByColumn,
-  setHoveredPostKeyForColumn,
   onPostEdit,
   user,
   queueTypes,
@@ -44,8 +37,8 @@ export function SlotCell({
   activeEmptySlotKey,
   setActiveEmptySlotKey,
   onClearSelection,
-  hoveredSlotKey,
-  setHoveredSlotKey,
+  hoveredSlotKey: _hoveredSlotKey,
+  setHoveredSlotKey: _setHoveredSlotKey,
   onDragOver,
   onDrop,
   onDragLeave,
@@ -53,29 +46,19 @@ export function SlotCell({
   dateLocale,
   userTimezone,
   isMobile,
-  dayViewColumnMap,
-  dayViewBlockFromAboveMap,
 }: SlotCellProps) {
   const cellHasHoveredPost = slotState.posts.some((p) => {
     const key = `${slotState.dateKey}-${time}-${p.id}`;
-    if (hoveredPostKeyByColumn)
-      return (
-        hoveredPostKeyByColumn[0] === key || hoveredPostKeyByColumn[1] === key
-      );
     return hoveredPostKey === key;
   });
-  const cellRaised =
-    cellHasHoveredPost || (isDayView && hoveredSlotKey === slotState.slotKey);
-  const cellZClass =
-    cellHasHoveredPost && isDayView ? "z-[41]" : cellRaised ? "z-[40]" : "";
-  const mobileWeekCellStyle =
-    isMobile && !isDayView
-      ? {
-          width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
-          minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
-          flex: "0 0 auto" as const,
-        }
-      : undefined;
+  const cellZClass = cellHasHoveredPost ? "z-[40]" : "";
+  const mobileWeekCellStyle = isMobile
+    ? {
+        width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
+        minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
+        flex: "0 0 auto" as const,
+      }
+    : undefined;
 
   return (
     <div
@@ -90,37 +73,24 @@ export function SlotCell({
       )}
       aria-dropeffect="move"
       className={`border-border/30 relative overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
-        isMobile && !isDayView ? "min-w-0 shrink-0" : "min-w-[3.5rem] flex-1"
+        isMobile ? "min-w-0 shrink-0" : "min-w-[3.5rem] flex-1"
       } ${cellZClass} ${
         slotState.isDragOver
           ? "bg-primary/5 border-primary/20"
-          : isDayView
-            ? ""
-            : "dark:hover:bg-muted hover:bg-muted"
+          : "dark:hover:bg-muted hover:bg-muted"
       }`}
       style={mobileWeekCellStyle}
       onDragOver={onDragOver}
       onDrop={onDrop}
       onDragLeave={onDragLeave}
-      onMouseEnter={
-        isDayView ? () => setHoveredSlotKey(slotState.slotKey) : undefined
-      }
-      onMouseLeave={isDayView ? () => setHoveredSlotKey(null) : undefined}
     >
       <SlotCellContent
         slotState={slotState}
         time={time}
-        isDayView={isDayView}
-        slotColumn={
-          isDayView ? (dayViewColumnMap[slotState.slotKey] ?? 0) : undefined
-        }
-        dayViewBlockFromAboveMap={dayViewBlockFromAboveMap}
         rowIndex={rowIndex}
         availableRowsBelow={availableRowsBelow}
         hoveredPostKey={hoveredPostKey}
         setHoveredPostKey={setHoveredPostKey}
-        hoveredPostKeyByColumn={hoveredPostKeyByColumn}
-        setHoveredPostKeyForColumn={setHoveredPostKeyForColumn}
         onPostEdit={onPostEdit}
         user={user}
         queueTypes={queueTypes}

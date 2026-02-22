@@ -25,13 +25,8 @@ export function TimeGrid({
   getSlotState,
   hoveredPostKey,
   setHoveredPostKey,
-  hoveredPostKeyByColumn,
-  setHoveredPostKeyForColumn,
   dragOverSlot,
-  isDayView,
   userTimezone,
-  dayViewColumnMap,
-  dayViewBlockFromAboveMap,
   selectedPost,
   hoveredSlotKey,
   setHoveredSlotKey,
@@ -85,13 +80,8 @@ export function TimeGrid({
                 getSlotState={getSlotState}
                 hoveredPostKey={hoveredPostKey}
                 setHoveredPostKey={setHoveredPostKey}
-                hoveredPostKeyByColumn={hoveredPostKeyByColumn}
-                setHoveredPostKeyForColumn={setHoveredPostKeyForColumn}
                 dragOverSlot={dragOverSlot}
-                isDayView={isDayView}
                 userTimezone={userTimezone}
-                dayViewColumnMap={dayViewColumnMap}
-                dayViewBlockFromAboveMap={dayViewBlockFromAboveMap}
                 selectedPost={selectedPost}
                 hoveredSlotKey={hoveredSlotKey}
                 setHoveredSlotKey={setHoveredSlotKey}

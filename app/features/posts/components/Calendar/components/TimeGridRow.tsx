@@ -20,15 +20,8 @@ export interface TimeGridRowProps {
   getSlotState: (day: Date, time: string) => SlotState;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
-  /** Day view only: per-column hover so both columns can be active. */
-  hoveredPostKeyByColumn?: Record<0 | 1, string | null>;
-  setHoveredPostKeyForColumn?: (column: 0 | 1, key: string | null) => void;
   dragOverSlot: string | null;
-  isDayView: boolean;
   userTimezone: string;
-  dayViewColumnMap: Record<string, 0 | 1>;
-  /** Day view: (dateKey-rowIndex-column) -> true if a block from above extends into that cell (empty area uses pointer-events: none). */
-  dayViewBlockFromAboveMap?: Record<string, boolean>;
   selectedPost?: { id: string } | null;
   hoveredSlotKey: string | null;
   setHoveredSlotKey: (key: string | null) => void;
@@ -73,12 +66,7 @@ export function TimeGridRow({
   userTimezone,
   hoveredPostKey,
   setHoveredPostKey,
-  hoveredPostKeyByColumn,
-  setHoveredPostKeyForColumn,
   dragOverSlot: _dragOverSlot,
-  isDayView,
-  dayViewColumnMap,
-  dayViewBlockFromAboveMap,
   selectedPost: _selectedPost,
   hoveredSlotKey,
   setHoveredSlotKey,
@@ -102,23 +90,14 @@ export function TimeGridRow({
       const slotState = getSlotState(day, time);
       return slotState.posts.some((p) => {
         const key = `${slotState.dateKey}-${time}-${p.id}`;
-        if (hoveredPostKeyByColumn)
-          return (
-            hoveredPostKeyByColumn[0] === key ||
-            hoveredPostKeyByColumn[1] === key
-          );
         return hoveredPostKey === key;
       });
     });
-  // Day view: lower rows get higher z-index so blocks in a row are on top of overflow from rows above (fixes one column blocking the other).
-  // Week view: keep upper rows on top for expand-up and stacking.
   const rowZIndex = rowHasHoveredExpandedUp
     ? CALENDAR_ROW_Z_EXPANDED_UP
-    : isDayView
-      ? Math.min(1 + index, CALENDAR_ROW_Z_EXPANDED_UP - 1)
-      : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-        ? CALENDAR_ROW_Z_BASE - index + BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-        : Math.max(1, CALENDAR_ROW_Z_BASE - index);
+    : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+      ? CALENDAR_ROW_Z_BASE - index + BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+      : Math.max(1, CALENDAR_ROW_Z_BASE - index);
 
   return (
     <div
@@ -149,8 +128,6 @@ export function TimeGridRow({
               availableRowsBelow={hours.length - index}
               hoveredPostKey={hoveredPostKey}
               setHoveredPostKey={setHoveredPostKey}
-              hoveredPostKeyByColumn={hoveredPostKeyByColumn}
-              setHoveredPostKeyForColumn={setHoveredPostKeyForColumn}
               onPostEdit={onPostEdit}
               user={user}
               queueTypes={queueTypes}
@@ -168,9 +145,6 @@ export function TimeGridRow({
               dateLocale={dateLocale}
               userTimezone={userTimezone}
               isMobile={isMobile}
-              isDayView={isDayView}
-              dayViewColumnMap={dayViewColumnMap}
-              dayViewBlockFromAboveMap={dayViewBlockFromAboveMap}
             />
           );
         })}

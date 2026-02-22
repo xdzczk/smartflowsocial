@@ -32,8 +32,8 @@ export const CLASS_OVERFLOW_HIDDEN = "overflow-hidden";
 export const CLASS_DAY_COLUMN_EXPAND_UP =
   "overflow-x-hidden overflow-y-visible";
 
-/** Bottom time rows: expand blocks upward. */
-export const BOTTOM_ROWS_EXPAND_UP_THRESHOLD = 45;
+/** Bottom time rows: expand blocks upward (row index >= this; 40 = 20:00–23:30). */
+export const BOTTOM_ROWS_EXPAND_UP_THRESHOLD = 40;
 /** First row index where we stack row above on top of row below. */
 export const BOTTOM_ROWS_STACK_ABOVE_THRESHOLD = 39;
 

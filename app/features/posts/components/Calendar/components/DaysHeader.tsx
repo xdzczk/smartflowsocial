@@ -13,7 +13,6 @@ export interface DaysHeaderProps {
   user?: UserData | null;
   dateLocale: "en-GB" | "en-US" | "sv";
   isMobile: boolean;
-  isDayView: boolean;
 }
 
 export function DaysHeader({
@@ -21,7 +20,6 @@ export function DaysHeader({
   user,
   dateLocale,
   isMobile,
-  isDayView,
 }: DaysHeaderProps) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
   const todayZoned = nowInTimezone(userTimezone);
@@ -35,21 +33,18 @@ export function DaysHeader({
           dayZoned.year === todayZoned.year &&
           dayZoned.month === todayZoned.month &&
           dayZoned.day === todayZoned.day;
-        const mobileWeekColumnStyle =
-          isMobile && !isDayView
-            ? {
-                width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
-                minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
-                flex: "0 0 auto" as const,
-              }
-            : undefined;
+        const mobileWeekColumnStyle = isMobile
+          ? {
+              width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
+              minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
+              flex: "0 0 auto" as const,
+            }
+          : undefined;
         return (
           <div
             key={day.toISOString()}
             className={`border-border/30 flex items-center justify-center gap-1 border-r px-2 py-1 text-center last:border-r-0 ${
-              isMobile && !isDayView
-                ? "min-w-0 shrink-0"
-                : "min-w-[3.5rem] flex-1"
+              isMobile ? "min-w-0 shrink-0" : "min-w-[3.5rem] flex-1"
             } ${isToday ? "border-l-primary bg-primary/5 border-l-2" : ""}`}
             style={mobileWeekColumnStyle}
           >
