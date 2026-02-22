@@ -22,6 +22,9 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
   hidePlayButton = false,
 }) => {
   const [hasError, setHasError] = React.useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const videoWrapRef = React.useRef<HTMLDivElement>(null);
+  const [shouldPreloadFrame, setShouldPreloadFrame] = React.useState(false);
 
   // Reset error state when src changes
   React.useEffect(() => {
@@ -46,6 +49,29 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
     ];
     return videoExtensions.some((ext) => lower.includes(ext));
   }, [src, forceType]);
+
+  // When video: preload first frame once in view so Calendar previews show (hooks must run unconditionally)
+  React.useEffect(() => {
+    if (!isVideo) return;
+    const el = videoWrapRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting) setShouldPreloadFrame(true);
+      },
+      { rootMargin: "100px", threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isVideo]);
+
+  React.useEffect(() => {
+    if (!shouldPreloadFrame || !videoRef.current) return;
+    const video = videoRef.current;
+    video.preload = "auto";
+    video.load();
+  }, [shouldPreloadFrame]);
 
   // Handle missing src early
   if (!src || typeof src !== "string") {
@@ -114,17 +140,19 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- onClick is optional, role and tabIndex are conditionally set
     <div
+      ref={videoWrapRef}
       className={`relative ${className} ${onClick ? "cursor-pointer hover:opacity-75" : ""}`}
       onClick={onClick}
       onKeyDown={onClick ? handleKeyDown : undefined}
       {...(onClick && { role: "button", tabIndex: 0 })}
     >
-      {}
       <video
+        ref={videoRef}
         src={src}
         className="h-full w-full object-cover"
-        preload="metadata"
+        preload={shouldPreloadFrame ? "auto" : "metadata"}
         muted
+        playsInline
         controls={false}
         disablePictureInPicture
         onError={handleImageError}

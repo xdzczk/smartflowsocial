@@ -205,8 +205,8 @@ export function usePublishedPostsInfiniteQuery() {
       `/dashboard/published${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}${dateParams}`,
     staleTime: 30 * 1000, // 30 seconds
     maxPages: undefined, // No cap – load until server reports no more pages (same as Dashboard Flow)
-    refetchInterval: 15_000, // Live updates when new posts are published
-    refetchIntervalInBackground: true,
+    // Do not use refetchInterval here: it triggers a full refetch which can replace
+    // the accumulated pages with only the first page, so infinite scroll appears broken.
   });
 }
 

@@ -107,11 +107,15 @@ export function TimeGridRow({
         return hoveredPostKey === key;
       });
     });
+  // Day view: lower rows get higher z-index so blocks in a row are on top of overflow from rows above (fixes one column blocking the other).
+  // Week view: keep upper rows on top for expand-up and stacking.
   const rowZIndex = rowHasHoveredExpandedUp
     ? CALENDAR_ROW_Z_EXPANDED_UP
-    : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-      ? CALENDAR_ROW_Z_BASE - index + BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-      : Math.max(1, CALENDAR_ROW_Z_BASE - index);
+    : isDayView
+      ? Math.min(1 + index, CALENDAR_ROW_Z_EXPANDED_UP - 1)
+      : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+        ? CALENDAR_ROW_Z_BASE - index + BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+        : Math.max(1, CALENDAR_ROW_Z_BASE - index);
 
   return (
     <div

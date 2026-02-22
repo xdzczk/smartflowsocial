@@ -367,26 +367,27 @@ function renderMultiPostSlotContent(
   );
 }
 
-export function SlotCellContent({
-  slotState,
-  time,
-  isDayView,
-  slotColumn,
-  rowIndex = 0,
-  availableRowsBelow = 0,
-  hoveredPostKey,
-  setHoveredPostKey,
-  hoveredPostKeyByColumn,
-  setHoveredPostKeyForColumn,
-  onPostEdit,
-  user,
-  queueTypes,
-  isLongform,
-  isAll,
-  activeEmptySlotKey,
-  setActiveEmptySlotKey,
-  onClearSelection,
-}: SlotCellContentProps) {
+export function SlotCellContent(props: SlotCellContentProps) {
+  const {
+    slotState,
+    time,
+    isDayView,
+    slotColumn,
+    rowIndex = 0,
+    availableRowsBelow = 0,
+    hoveredPostKey: _hoveredPostKey,
+    setHoveredPostKey,
+    hoveredPostKeyByColumn: _hoveredPostKeyByColumn,
+    setHoveredPostKeyForColumn,
+    onPostEdit: _onPostEdit,
+    user,
+    queueTypes: _queueTypes,
+    isLongform: _isLongform,
+    isAll: _isAll,
+    activeEmptySlotKey,
+    setActiveEmptySlotKey,
+    onClearSelection,
+  } = props;
   const { dateKey, posts, blockHeightPx, slotKey } = slotState;
 
   const effectiveSetHoveredPostKey =
@@ -410,14 +411,14 @@ export function SlotCellContent({
 
   const expandUp = rowIndex >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
   const allocatedHeightPx = availableRowsBelow * ROW_HEIGHT_PX;
+  // When block would extend past the last row (23:30), grow it upward instead of capping
   const blockExceedsBelow = blockHeightPx > allocatedHeightPx;
-  const shouldWrapBottomRow = expandUp && availableRowsBelow > 0;
+  const shouldGrowUp =
+    availableRowsBelow > 0 && (expandUp || blockExceedsBelow);
   const expandUpTop =
-    shouldWrapBottomRow && blockExceedsBelow
-      ? allocatedHeightPx - blockHeightPx
-      : 0;
+    shouldGrowUp && blockExceedsBelow ? allocatedHeightPx - blockHeightPx : 0;
   const wrapExpandUp = (content: React.ReactNode) =>
-    shouldWrapBottomRow ? (
+    shouldGrowUp ? (
       <div
         className="relative w-full min-w-0 overflow-x-hidden overflow-y-visible"
         style={{ height: allocatedHeightPx }}
@@ -435,50 +436,14 @@ export function SlotCellContent({
 
   if (posts.length === 1) {
     return renderSinglePostSlotContent(
-      {
-        slotState,
-        time,
-        isDayView,
-        slotColumn,
-        rowIndex,
-        availableRowsBelow,
-        hoveredPostKey,
-        setHoveredPostKey: effectiveSetHoveredPostKey,
-        onPostEdit,
-        user,
-        queueTypes,
-        isLongform,
-        isAll,
-        activeEmptySlotKey,
-        setActiveEmptySlotKey,
-        onClearSelection,
-      },
+      { ...props, setHoveredPostKey: effectiveSetHoveredPostKey },
       expandUp,
       wrapExpandUp
     );
   }
 
   return renderMultiPostSlotContent(
-    {
-      slotState,
-      time,
-      isDayView,
-      slotColumn,
-      rowIndex,
-      availableRowsBelow,
-      hoveredPostKey,
-      setHoveredPostKey: effectiveSetHoveredPostKey,
-      hoveredPostKeyByColumn,
-      setHoveredPostKeyForColumn,
-      onPostEdit,
-      user,
-      queueTypes,
-      isLongform,
-      isAll,
-      activeEmptySlotKey,
-      setActiveEmptySlotKey,
-      onClearSelection,
-    },
+    { ...props, setHoveredPostKey: effectiveSetHoveredPostKey },
     expandUp,
     wrapExpandUp
   );
