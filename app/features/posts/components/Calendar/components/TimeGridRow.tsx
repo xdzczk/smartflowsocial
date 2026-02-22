@@ -27,6 +27,8 @@ export interface TimeGridRowProps {
   isDayView: boolean;
   userTimezone: string;
   dayViewColumnMap: Record<string, 0 | 1>;
+  /** Day view: (dateKey-rowIndex-column) -> true if a block from above extends into that cell (empty area uses pointer-events: none). */
+  dayViewBlockFromAboveMap?: Record<string, boolean>;
   selectedPost?: { id: string } | null;
   hoveredSlotKey: string | null;
   setHoveredSlotKey: (key: string | null) => void;
@@ -76,6 +78,7 @@ export function TimeGridRow({
   dragOverSlot: _dragOverSlot,
   isDayView,
   dayViewColumnMap,
+  dayViewBlockFromAboveMap,
   selectedPost: _selectedPost,
   hoveredSlotKey,
   setHoveredSlotKey,
@@ -128,11 +131,6 @@ export function TimeGridRow({
         minHeight: ROW_HEIGHT_PX,
       }}
     >
-      {/* Grid line behind content */}
-      <div
-        className="border-border/40 pointer-events-none absolute inset-x-0 bottom-0 z-0 border-b"
-        aria-hidden
-      />
       <div
         className="relative z-[1] flex min-h-0 w-full min-w-0 flex-1 items-stretch"
         style={{ height: ROW_HEIGHT_PX - 1 }}
@@ -172,6 +170,7 @@ export function TimeGridRow({
               isMobile={isMobile}
               isDayView={isDayView}
               dayViewColumnMap={dayViewColumnMap}
+              dayViewBlockFromAboveMap={dayViewBlockFromAboveMap}
             />
           );
         })}

@@ -130,6 +130,7 @@ export function DayViewEmptyColumnArea({
   activeEmptySlotKey,
   setActiveEmptySlotKey,
   onClearSelection,
+  pointerEventsNone = false,
 }: {
   dateKey: string;
   time: string;
@@ -139,6 +140,8 @@ export function DayViewEmptyColumnArea({
   activeEmptySlotKey: string | null;
   setActiveEmptySlotKey: (key: string | null) => void;
   onClearSelection?: () => void;
+  /** When true, pass pointer events through so the block from above (extending into this row) is clickable. */
+  pointerEventsNone?: boolean;
 }) {
   const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTimezone);
   const nowZoned = nowInTimezone(userTimezone);
@@ -159,7 +162,10 @@ export function DayViewEmptyColumnArea({
   return (
     <div
       className={`relative flex min-h-0 flex-1 items-center justify-center ${isActive ? "" : "cursor-pointer"}`}
-      style={{ minHeight: blockHeightPx }}
+      style={{
+        minHeight: blockHeightPx,
+        ...(pointerEventsNone ? { pointerEvents: "none" as const } : {}),
+      }}
       onClick={handleActivate}
       onKeyDown={handleKeyDown}
       role="button"

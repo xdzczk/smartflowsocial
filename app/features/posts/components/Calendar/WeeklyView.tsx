@@ -14,6 +14,7 @@ import {
 import { DaysHeader } from "./components/DaysHeader";
 import { TimeGrid } from "./components/TimeGrid";
 import {
+  BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
   DEFAULT_SCROLL_HOUR,
   HOURS_PER_DAY,
   MOBILE_WEEK_GRID_MIN_WIDTH,
@@ -224,6 +225,40 @@ export function WeeklyView({
     return getDayViewColumnMap(postsGrid, firstKey, hours);
   }, [isDayView, weekDaysDateKeys, postsGrid, hours]);
 
+  /** Day view: (dateKey, rowIndex, column) -> true if a block from above extends into this row in that column (so empty area should pass pointer events). */
+  const dayViewBlockFromAboveMap = useMemo((): Record<string, boolean> => {
+    if (!isDayView || weekDays.length === 0) return {};
+    const map: Record<string, boolean> = {};
+    const userTz = user?.timezone ?? "Etc/UTC";
+    for (const day of weekDays) {
+      const dayZoned = fromDate(day, userTz);
+      const dateKey = `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
+      for (let rowIndex = 0; rowIndex < hours.length; rowIndex++) {
+        const time = hours[rowIndex];
+        if (time === undefined) continue;
+        const slotState = getSlotState(
+          day,
+          time,
+          postsGrid,
+          hours,
+          null,
+          null,
+          true,
+          userTz,
+          dayViewColumnMap
+        );
+        if (slotState.posts.length !== 1) continue;
+        const slotKey = `${dateKey}-${time}`;
+        const col = dayViewColumnMap[slotKey] ?? 0;
+        const expandRows = slotState.expandRows;
+        for (let r = 0; r < expandRows && rowIndex + r < hours.length; r++) {
+          map[`${dateKey}-${rowIndex + r}-${col}`] = true;
+        }
+      }
+    }
+    return map;
+  }, [isDayView, weekDays, hours, postsGrid, dayViewColumnMap, user?.timezone]);
+
   // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {
     const el = gridScrollRef.current;
@@ -248,6 +283,51 @@ export function WeeklyView({
     }
     return () => ro.disconnect();
   }, []);
+
+  // Week view: when a bottom-row block is hovered and expands upward, scroll so it isn’t cut off
+  const userTz = user?.timezone ?? "Etc/UTC";
+  useEffect(() => {
+    if (isDayView || !hoveredPostKey || !gridScrollRef.current) return;
+    // Parse key: "dateKey-time-postId" (dateKey is YYYY-MM-DD)
+    if (hoveredPostKey.length < 12) return;
+    const dateKey = hoveredPostKey.slice(0, 10);
+    const rest = hoveredPostKey.slice(11);
+    const dashIdx = rest.indexOf("-");
+    if (dashIdx < 0) return;
+    const time = rest.slice(0, dashIdx);
+    const day = weekDays.find((d) => {
+      const z = fromDate(d, userTz);
+      const dk = `${z.year}-${String(z.month).padStart(2, "0")}-${String(z.day).padStart(2, "0")}`;
+      return dk === dateKey;
+    });
+    if (!day) return;
+    const slotState = getSlotState(
+      day,
+      time,
+      postsGrid,
+      hours,
+      hoveredPostKey,
+      dragOverSlot,
+      false,
+      userTz
+    );
+    const rowIndex = hours.indexOf(time);
+    if (rowIndex < BOTTOM_ROWS_EXPAND_UP_THRESHOLD || rowIndex < 0) return;
+    const expandRows = slotState.expandRows;
+    const blockTopPx = Math.max(0, (rowIndex - expandRows + 1) * ROW_HEIGHT_PX);
+    const el = gridScrollRef.current;
+    if (el.scrollTop > blockTopPx) {
+      el.scrollTop = blockTopPx;
+    }
+  }, [
+    isDayView,
+    hoveredPostKey,
+    weekDays,
+    hours,
+    postsGrid,
+    dragOverSlot,
+    userTz,
+  ]);
 
   return (
     <div className="flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
@@ -310,6 +390,7 @@ export function WeeklyView({
             isDayView={isDayView}
             userTimezone={user?.timezone ?? "Etc/UTC"}
             dayViewColumnMap={dayViewColumnMap}
+            dayViewBlockFromAboveMap={dayViewBlockFromAboveMap}
             selectedPost={isDayView ? selectedPost : undefined}
             hoveredSlotKey={hoveredSlotKey}
             setHoveredSlotKey={setHoveredSlotKey}

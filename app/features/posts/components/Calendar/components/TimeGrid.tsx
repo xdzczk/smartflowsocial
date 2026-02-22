@@ -31,6 +31,7 @@ export function TimeGrid({
   isDayView,
   userTimezone,
   dayViewColumnMap,
+  dayViewBlockFromAboveMap,
   selectedPost,
   hoveredSlotKey,
   setHoveredSlotKey,
@@ -63,43 +64,55 @@ export function TimeGrid({
             transform: "translateZ(0)",
           }}
         >
-          {hours.map((time, index) => (
-            <TimeGridRow
-              key={time}
-              time={time}
-              index={index}
-              hourLabel={hourLabels[index] ?? ""}
-              weekDays={weekDays}
-              hours={hours}
-              getSlotState={getSlotState}
-              hoveredPostKey={hoveredPostKey}
-              setHoveredPostKey={setHoveredPostKey}
-              hoveredPostKeyByColumn={hoveredPostKeyByColumn}
-              setHoveredPostKeyForColumn={setHoveredPostKeyForColumn}
-              dragOverSlot={dragOverSlot}
-              isDayView={isDayView}
-              userTimezone={userTimezone}
-              dayViewColumnMap={dayViewColumnMap}
-              selectedPost={selectedPost}
-              hoveredSlotKey={hoveredSlotKey}
-              setHoveredSlotKey={setHoveredSlotKey}
-              onDragOver={onDragOver}
-              onDrop={onDrop}
-              onDragLeave={onDragLeave}
-              formatDropSlotAriaLabel={formatDropSlotAriaLabel}
-              dateLocale={dateLocale}
-              onPostEdit={onPostEdit}
-              user={user}
-              queueTypes={queueTypes}
-              isLongform={isLongform}
-              isAll={isAll}
-              activeEmptySlotKey={activeEmptySlotKey}
-              setActiveEmptySlotKey={setActiveEmptySlotKey}
-              onClearSelection={onClearSelection}
-              isMobile={isMobile}
-            />
-          ))}
-          <CurrentTimeIndicator user={user} weekDays={weekDays} />
+          {/* Grid lines in a single layer behind rows so they don't cut through post blocks */}
+          <div
+            className="pointer-events-none absolute inset-0 z-0"
+            aria-hidden
+            style={{
+              backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${ROW_HEIGHT_PX - 1}px, hsl(var(--border) / 0.4) 0, hsl(var(--border) / 0.4) 1px)`,
+              backgroundSize: `100% ${ROW_HEIGHT_PX}px`,
+            }}
+          />
+          <div className="relative z-[1] flex w-full flex-col flex-nowrap">
+            {hours.map((time, index) => (
+              <TimeGridRow
+                key={time}
+                time={time}
+                index={index}
+                hourLabel={hourLabels[index] ?? ""}
+                weekDays={weekDays}
+                hours={hours}
+                getSlotState={getSlotState}
+                hoveredPostKey={hoveredPostKey}
+                setHoveredPostKey={setHoveredPostKey}
+                hoveredPostKeyByColumn={hoveredPostKeyByColumn}
+                setHoveredPostKeyForColumn={setHoveredPostKeyForColumn}
+                dragOverSlot={dragOverSlot}
+                isDayView={isDayView}
+                userTimezone={userTimezone}
+                dayViewColumnMap={dayViewColumnMap}
+                dayViewBlockFromAboveMap={dayViewBlockFromAboveMap}
+                selectedPost={selectedPost}
+                hoveredSlotKey={hoveredSlotKey}
+                setHoveredSlotKey={setHoveredSlotKey}
+                onDragOver={onDragOver}
+                onDrop={onDrop}
+                onDragLeave={onDragLeave}
+                formatDropSlotAriaLabel={formatDropSlotAriaLabel}
+                dateLocale={dateLocale}
+                onPostEdit={onPostEdit}
+                user={user}
+                queueTypes={queueTypes}
+                isLongform={isLongform}
+                isAll={isAll}
+                activeEmptySlotKey={activeEmptySlotKey}
+                setActiveEmptySlotKey={setActiveEmptySlotKey}
+                onClearSelection={onClearSelection}
+                isMobile={isMobile}
+              />
+            ))}
+            <CurrentTimeIndicator user={user} weekDays={weekDays} />
+          </div>
         </div>
       </div>
     </div>

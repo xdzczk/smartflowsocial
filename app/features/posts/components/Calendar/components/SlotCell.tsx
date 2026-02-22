@@ -22,6 +22,7 @@ export interface SlotCellProps extends SlotCellContentProps {
   isMobile: boolean;
   isDayView: boolean;
   dayViewColumnMap: Record<string, 0 | 1>;
+  dayViewBlockFromAboveMap?: Record<string, boolean>;
 }
 
 export function SlotCell({
@@ -53,6 +54,7 @@ export function SlotCell({
   userTimezone,
   isMobile,
   dayViewColumnMap,
+  dayViewBlockFromAboveMap,
 }: SlotCellProps) {
   const cellHasHoveredPost = slotState.posts.some((p) => {
     const key = `${slotState.dateKey}-${time}-${p.id}`;
@@ -112,6 +114,7 @@ export function SlotCell({
         slotColumn={
           isDayView ? (dayViewColumnMap[slotState.slotKey] ?? 0) : undefined
         }
+        dayViewBlockFromAboveMap={dayViewBlockFromAboveMap}
         rowIndex={rowIndex}
         availableRowsBelow={availableRowsBelow}
         hoveredPostKey={hoveredPostKey}

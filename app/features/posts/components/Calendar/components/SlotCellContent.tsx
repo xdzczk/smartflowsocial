@@ -18,6 +18,8 @@ export interface SlotCellContentProps {
   isDayView: boolean;
   /** In day view: 0 = left column, 1 = right column for alternating single-post blocks */
   slotColumn?: 0 | 1;
+  /** Day view: (dateKey-rowIndex-column) -> true if a block from above extends into that cell. */
+  dayViewBlockFromAboveMap?: Record<string, boolean>;
   /** Row index (0–47); when >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD, blocks expand upward on hover. */
   rowIndex?: number;
   /** Rows from this slot to end of day (for bottom rows: cap expansion downward and grow upward instead). */
@@ -109,6 +111,11 @@ function renderSinglePostSlotContent(
 
   if (isDayView) {
     const userTz = user?.timezone ?? "UTC";
+    const emptyCol = slotColumn === undefined ? 0 : 1 - slotColumn;
+    const hasBlockFromAbove =
+      props.dayViewBlockFromAboveMap?.[
+        `${dateKey}-${props.rowIndex ?? 0}-${emptyCol}`
+      ] ?? false;
     const emptyColumn = (
       <DayViewEmptyColumnArea
         dateKey={dateKey}
@@ -119,6 +126,7 @@ function renderSinglePostSlotContent(
         activeEmptySlotKey={activeEmptySlotKey}
         setActiveEmptySlotKey={setActiveEmptySlotKey}
         onClearSelection={onClearSelection}
+        pointerEventsNone={hasBlockFromAbove}
       />
     );
     const overflowClass =

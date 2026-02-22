@@ -25,7 +25,7 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "../dtos";
-import { getPostStats } from "../stats.server";
+import type { PostStats } from "../stats.server";
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 /**
@@ -41,7 +41,7 @@ export async function getPublishedDashboardData({
   url: URL;
 }) {
   const page = parseInt(url.searchParams.get("page") ?? "1");
-  const limit = 20;
+  const limit = 50;
   const queueType =
     params.queueType ?? url.searchParams.get("queueType") ?? "all";
   const dateFrom = url.searchParams.get("dateFrom") ?? undefined;
@@ -206,23 +206,9 @@ export async function getPublishedDashboardData({
     }
   );
 
-  const eventIds = posts
-    .map((post) => {
-      const signedEvent = post.signedEvent;
-      if (
-        signedEvent &&
-        typeof signedEvent === "object" &&
-        "id" in signedEvent &&
-        typeof signedEvent["id"] === "string"
-      ) {
-        return signedEvent["id"];
-      }
-      return "";
-    })
-    .filter((id) => id !== "");
-
-  // Fetch stats server-side using optimized getPostStats with Redis caching
-  const stats = await getPostStats(eventIds);
+  // Stats are loaded client-side via usePostStatsQuery to avoid blocking the loader
+  // on Primal/Redis (which can timeout and cause 15+ second responses for some pages).
+  const stats: Record<string, PostStats> = {};
 
   // Serialize Date objects to strings for Remix loader response
   // Note: allContent is removed - reconstruct on client from posts/longformPosts
