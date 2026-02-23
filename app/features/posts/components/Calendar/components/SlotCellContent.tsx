@@ -98,6 +98,8 @@ interface MultiPostBlockProps {
   alignExpandedRight?: boolean;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
+  /** When true (conflicting blocks below), cap hover expansion to base height (3 rows). */
+  noExpandOnHover?: boolean;
   onPostEdit: (post: CalendarPost) => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
@@ -114,6 +116,7 @@ function MultiPostBlock({
   alignExpandedRight: _alignExpandedRight = false,
   hoveredPostKey,
   setHoveredPostKey,
+  noExpandOnHover = false,
   onPostEdit,
   user,
   queueTypes,
@@ -123,11 +126,13 @@ function MultiPostBlock({
   const multiPostKey = `${dateKey}-${time}-${post.id}`;
   const multiHovered = hoveredPostKey === multiPostKey;
   const baseRows = slotExpandRows ?? 1;
-  // On hover: expand to 4 rows when there is space (baseRows >= 3); otherwise use base height.
+  // On hover: expand to 4 rows when there is space (baseRows >= 3); up to 3 when conflicting blocks below.
   const multiExpandRows = multiHovered
-    ? baseRows >= 3
-      ? 4
-      : baseRows
+    ? noExpandOnHover
+      ? baseRows
+      : baseRows >= 3
+        ? 4
+        : baseRows
     : Math.min(baseRows, 4);
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
@@ -184,7 +189,8 @@ function renderMultiPostSlotContent(
     isLongform,
     isAll,
   } = props;
-  const { dateKey, posts, expandRows, blockHeightPx } = slotState;
+  const { dateKey, posts, expandRows, blockHeightPx, noExpandOnHover } =
+    slotState;
 
   const multiPostBlockProps = {
     dateKey,
@@ -194,6 +200,7 @@ function renderMultiPostSlotContent(
     expandUp,
     hoveredPostKey,
     setHoveredPostKey,
+    noExpandOnHover,
     onPostEdit,
     user,
     queueTypes,
@@ -255,6 +262,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
     onClearSelection,
   } = props;
   const { dateKey, posts, blockHeightPx, slotKey } = slotState;
+  const hoveredPostKey = props.hoveredPostKey;
 
   if (posts.length === 0) {
     return (
@@ -272,12 +280,20 @@ export function SlotCellContent(props: SlotCellContentProps) {
 
   const expandUp = rowIndex >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
   const allocatedHeightPx = availableRowsBelow * ROW_HEIGHT_PX;
-  // When block would extend past the last row (23:30), grow it upward instead of capping
-  const blockExceedsBelow = blockHeightPx > allocatedHeightPx;
+  // Multi-post in bottom rows: when any block is hovered it can expand to 4 rows; use that height for the wrapper so it doesn't clip
+  const multiPostHovered =
+    posts.length > 1 &&
+    posts.some((p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`);
+  const effectiveBlockHeightPx = multiPostHovered
+    ? Math.max(blockHeightPx, 4 * ROW_HEIGHT_PX - 4)
+    : blockHeightPx;
+  const blockExceedsBelow = effectiveBlockHeightPx > allocatedHeightPx;
   const shouldGrowUp =
     availableRowsBelow > 0 && (expandUp || blockExceedsBelow);
   const expandUpTop =
-    shouldGrowUp && blockExceedsBelow ? allocatedHeightPx - blockHeightPx : 0;
+    shouldGrowUp && blockExceedsBelow
+      ? allocatedHeightPx - effectiveBlockHeightPx
+      : 0;
   const wrapExpandUp = (content: React.ReactNode) =>
     shouldGrowUp ? (
       <div
@@ -286,7 +302,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
       >
         <div
           className="relative w-full min-w-0"
-          style={{ top: expandUpTop, height: blockHeightPx }}
+          style={{ top: expandUpTop, height: effectiveBlockHeightPx }}
         >
           {content}
         </div>

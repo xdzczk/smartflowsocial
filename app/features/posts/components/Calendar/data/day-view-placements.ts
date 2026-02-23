@@ -81,7 +81,29 @@ export function getDayViewColumnPlacements(
     else col1.push(placement);
   }
 
+  capPlacementHeightsByNextInColumn(col0, hours.length);
+  capPlacementHeightsByNextInColumn(col1, hours.length);
   return { col0, col1 };
+}
+
+/** Cap each block's height so it does not extend past the next block in the same column. */
+function capPlacementHeightsByNextInColumn(
+  placements: DayViewPlacement[],
+  totalRows: number
+): void {
+  for (let i = 0; i < placements.length; i++) {
+    const p = placements[i];
+    if (!p) continue;
+    const nextRow =
+      i + 1 < placements.length
+        ? (placements[i + 1] as DayViewPlacement).rowIndex
+        : totalRows;
+    const maxRows = nextRow - p.rowIndex;
+    const maxHeightPx = maxRows * ROW_HEIGHT_PX - 4;
+    if (p.blockHeightPx > maxHeightPx) {
+      p.blockHeightPx = maxHeightPx;
+    }
+  }
 }
 
 /**

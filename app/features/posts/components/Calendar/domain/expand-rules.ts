@@ -41,7 +41,7 @@ export function getExpandDown(
   return count;
 }
 
-/** Day view: expand down until the next slot that has a post in the same column (up to maxEmptySlots). */
+/** Day view: expand down until the next slot that has a single post in the same column (up to maxEmptySlots). Multi-post slots do not block expansion. */
 export function getExpandDownDayView(
   dateKey: string,
   timeSlot: string,
@@ -59,10 +59,10 @@ export function getExpandDownDayView(
     if (nextSlot === undefined) break;
     const slotKeyBelow = `${dateKey}-${nextSlot}`;
     const postsBelow = postsGrid[dateKey]?.[nextSlot] ?? [];
-    const hasPostInMyColumn =
-      postsBelow.length > 0 &&
-      (dayViewColumnMap[slotKeyBelow] ?? 0) === myColumn;
-    if (hasPostInMyColumn) break;
+    const colBelow = dayViewColumnMap[slotKeyBelow];
+    const hasSinglePostInMyColumn =
+      postsBelow.length === 1 && colBelow === myColumn;
+    if (hasSinglePostInMyColumn) break;
     count = i;
   }
   return count;

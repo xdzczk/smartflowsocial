@@ -234,7 +234,7 @@ export function DayViewTwoColumnGrid({
               {placements.col0.map((p) => (
                 <div
                   key={p.slotKey}
-                  className="absolute right-0 left-0 w-full px-0.5"
+                  className="absolute right-0 left-0 z-10 w-full px-0.5"
                   style={{
                     top: p.rowIndex * ROW_HEIGHT_PX,
                   }}
@@ -288,7 +288,7 @@ export function DayViewTwoColumnGrid({
               {placements.col1.map((p) => (
                 <div
                   key={p.slotKey}
-                  className="absolute right-0 left-0 w-full px-0.5"
+                  className="absolute right-0 left-0 z-10 w-full px-0.5"
                   style={{
                     top: p.rowIndex * ROW_HEIGHT_PX,
                   }}

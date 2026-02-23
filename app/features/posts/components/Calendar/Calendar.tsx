@@ -502,7 +502,7 @@ export function Calendar({
           >
             <div
               className={`flex min-h-0 flex-1 flex-col ${
-                view === "day" ? "lg:min-w-0" : ""
+                view === "day" ? "lg:min-w-0" : "min-w-0"
               }`}
             >
               {view === "day" ? (

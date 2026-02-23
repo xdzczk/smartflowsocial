@@ -15,6 +15,52 @@ import { nowInTimezone, parseDateTimeLocal } from "~/lib/temporal";
 
 import { EMPTY_SLOT_ICON_CLASS } from "./weekly-view-constants";
 
+function emptySlotHandleActivate(
+  e: React.MouseEvent,
+  opts: {
+    isFutureSlot: boolean;
+    isActive: boolean;
+    slotKey: string;
+    setActiveEmptySlotKey: (key: string | null) => void;
+    onClearSelection?: () => void;
+  }
+) {
+  const {
+    isFutureSlot,
+    isActive,
+    slotKey,
+    setActiveEmptySlotKey,
+    onClearSelection,
+  } = opts;
+  if (isFutureSlot) {
+    if (isActive && e.target === e.currentTarget) {
+      setActiveEmptySlotKey(null);
+    } else if (!isActive) {
+      e.stopPropagation();
+      onClearSelection?.();
+      setActiveEmptySlotKey(slotKey);
+    }
+  } else {
+    setActiveEmptySlotKey(null);
+  }
+}
+
+function emptySlotHandleKeyDown(
+  e: React.KeyboardEvent,
+  opts: {
+    isFutureSlot: boolean;
+    slotKey: string;
+    setActiveEmptySlotKey: (key: string | null) => void;
+  }
+) {
+  const { isFutureSlot, slotKey, setActiveEmptySlotKey } = opts;
+  if (!isFutureSlot) return;
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    setActiveEmptySlotKey(slotKey);
+  }
+}
+
 export function EmptySlotCreateMenu({
   dateKey,
   time,
@@ -87,28 +133,28 @@ export function EmptySlotCellContent({
   const nowZoned = nowInTimezone(userTimezone);
   const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
   const isActive = activeEmptySlotKey === slotKey;
-  const handleActivate = (e: React.MouseEvent) => {
-    if (!isFutureSlot) return;
-    e.stopPropagation();
-    onClearSelection?.();
-    setActiveEmptySlotKey(slotKey);
-  };
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isFutureSlot) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setActiveEmptySlotKey(slotKey);
-    }
-  };
   return (
     <button
       type="button"
       className={`relative flex h-full w-full min-w-0 items-center justify-center border-0 bg-transparent p-0 ${isFutureSlot ? "cursor-pointer" : "cursor-default"}`}
-      onClick={handleActivate}
-      onKeyDown={handleKeyDown}
+      onClick={(e) =>
+        emptySlotHandleActivate(e, {
+          isFutureSlot,
+          isActive,
+          slotKey,
+          setActiveEmptySlotKey,
+          onClearSelection,
+        })
+      }
+      onKeyDown={(e) =>
+        emptySlotHandleKeyDown(e, {
+          isFutureSlot,
+          slotKey,
+          setActiveEmptySlotKey,
+        })
+      }
       tabIndex={isFutureSlot ? 0 : -1}
       aria-label={isFutureSlot ? "Create post in this slot" : undefined}
-      disabled={!isFutureSlot}
     >
       {isFutureSlot && isActive ? (
         <EmptySlotCreateMenu
@@ -147,32 +193,34 @@ export function DayViewEmptyColumnArea({
   const nowZoned = nowInTimezone(userTimezone);
   const isFutureSlot = slotZoned.epochNanoseconds > nowZoned.epochNanoseconds;
   const isActive = activeEmptySlotKey === slotKey;
-  const handleActivate = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onClearSelection?.();
-    setActiveEmptySlotKey(slotKey);
-  };
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setActiveEmptySlotKey(slotKey);
-    }
-  };
-  if (!isFutureSlot) return null;
   return (
     <div
-      className={`relative flex min-h-0 flex-1 items-center justify-center ${isActive ? "" : "cursor-pointer"}`}
+      className={`relative flex min-h-0 flex-1 items-center justify-center ${isFutureSlot && !isActive ? "cursor-pointer" : ""}`}
       style={{
         minHeight: blockHeightPx,
         ...(pointerEventsNone ? { pointerEvents: "none" as const } : {}),
       }}
-      onClick={handleActivate}
-      onKeyDown={handleKeyDown}
+      onClick={(e) =>
+        emptySlotHandleActivate(e, {
+          isFutureSlot,
+          isActive,
+          slotKey,
+          setActiveEmptySlotKey,
+          onClearSelection,
+        })
+      }
+      onKeyDown={(e) =>
+        emptySlotHandleKeyDown(e, {
+          isFutureSlot,
+          slotKey,
+          setActiveEmptySlotKey,
+        })
+      }
       role="button"
-      tabIndex={0}
-      aria-label="Create post in this slot"
+      tabIndex={isFutureSlot ? 0 : -1}
+      aria-label={isFutureSlot ? "Create post in this slot" : undefined}
     >
-      {isActive ? (
+      {isFutureSlot && isActive ? (
         <EmptySlotCreateMenu
           dateKey={dateKey}
           time={time}

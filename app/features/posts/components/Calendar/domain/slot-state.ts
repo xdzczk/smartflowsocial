@@ -91,10 +91,19 @@ export function getSlotState(
   const baseRows = isDayView
     ? 1 + expandDown
     : computeWeekViewBaseRows(dateKey, time, 1 + expandDown, postsGrid, hours);
+  const rowIndex = hours.indexOf(time);
+  const hasConflictBelow = hasBlocksUnderneath(
+    dateKey,
+    time,
+    baseRows,
+    postsGrid,
+    hours
+  );
+  const hasConflictAbove =
+    rowIndex >= WEEK_VIEW_BOTTOM_ROWS_EXPAND_UP_THRESHOLD &&
+    hasBlocksAbove(dateKey, time, postsGrid, hours);
   const noExpandOnHover =
-    !isDayView &&
-    baseRows === 3 &&
-    hasBlocksUnderneath(dateKey, time, baseRows, postsGrid, hours);
+    !isDayView && baseRows === 3 && (hasConflictBelow || hasConflictAbove);
   const expandRows = isDayView
     ? isHovered
       ? baseRows <= 4
