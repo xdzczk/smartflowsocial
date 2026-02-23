@@ -119,7 +119,7 @@ export function LifecycleHandler() {
 
   useEffect(() => {
     // Clear persisted state if user is not authenticated (e.g., on logout or landing page)
-    if (!userNpub && pathname !== "/login") {
+    if (!userNpub && pathname !== "/" && !pathname.startsWith("/login")) {
       clearPersistedState();
     }
 

@@ -106,7 +106,8 @@ export default function NostrAuthButton() {
   const hasReloadedRef = useRef(false);
   const wasSubmittingRef = useRef(false);
 
-  const isLoginPage = location.pathname.startsWith("/login");
+  const isLoginPage =
+    location.pathname === "/" || location.pathname.startsWith("/login");
 
   // Handle logout redirect - force full page reload to clear all state
   // Must be before early return to comply with Rules of Hooks
@@ -167,7 +168,7 @@ export default function NostrAuthButton() {
           className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
           asChild
         >
-          <Link to="/login">Sign in</Link>
+          <Link to="/">Sign in</Link>
         </Button>
       )}
     </>

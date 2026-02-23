@@ -39,8 +39,8 @@ export function PrefetchManager() {
       return;
     }
 
-    // Don't prefetch if we're on the login page
-    if (location.pathname.startsWith("/login")) {
+    // Don't prefetch if we're on the login page (root or /login)
+    if (location.pathname === "/" || location.pathname.startsWith("/login")) {
       return;
     }
 

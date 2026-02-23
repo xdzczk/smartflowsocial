@@ -480,8 +480,11 @@ async function run() {
   // Very strict limits for authentication endpoints
   app.use("/api/payment-status", strictLimiter);
 
-  // Auth endpoints get the strictest limits
+  // Auth endpoints get the strictest limits (login now at / and legacy /login)
   app.use("/login", authLimiter);
+  app.use("/", (req, res, next) =>
+    req.path === "/" ? authLimiter(req, res, next) : next()
+  );
   app.use("/auth/nostr", authLimiter);
 
   // Rate limiting for post creation endpoints
