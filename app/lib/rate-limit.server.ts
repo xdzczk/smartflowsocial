@@ -131,7 +131,9 @@ export const authLimiter = rateLimit({
       ),
     });
   },
-  skip: (_req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
+  skip: (req: Request) =>
+    isTestEnvironment() ||
+    (req.method === "GET" && (req.path === "/" || req.path === "/login")),
 });
 
 /**
