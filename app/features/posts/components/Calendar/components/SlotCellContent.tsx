@@ -122,11 +122,13 @@ function MultiPostBlock({
 }: MultiPostBlockProps) {
   const multiPostKey = `${dateKey}-${time}-${post.id}`;
   const multiHovered = hoveredPostKey === multiPostKey;
+  const baseRows = slotExpandRows ?? 1;
+  // On hover: expand to 4 rows when there is space (baseRows >= 3); otherwise use base height.
   const multiExpandRows = multiHovered
-    ? (slotExpandRows ?? 0) >= 3
-      ? (slotExpandRows ?? 1)
-      : 4
-    : Math.min(slotExpandRows ?? 1, 4);
+    ? baseRows >= 3
+      ? 4
+      : baseRows
+    : Math.min(baseRows, 4);
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
     ? expandUp

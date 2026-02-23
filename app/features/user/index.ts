@@ -64,6 +64,8 @@ export {
   updateUserTimeFormat,
   getUserDateFormat,
   updateUserDateFormat,
+  getLocaleDefaultsAppliedAt,
+  applyLocaleDefaultsOnce,
   type DateFormatKey,
   getRunwaySettings,
   getUserIdWithRunwayLowNotificationEnabled,

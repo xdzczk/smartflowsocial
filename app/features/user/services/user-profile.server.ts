@@ -86,6 +86,7 @@ const USER_SCALAR_SELECT = {
   isChild: true,
   parentNpub: true,
   pendingParentRequests: true,
+  localeDefaultsAppliedAt: true,
 } as const;
 
 /**

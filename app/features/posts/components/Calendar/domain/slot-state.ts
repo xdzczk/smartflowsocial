@@ -10,12 +10,35 @@ import {
   getExpandDown,
   getExpandDownDayView,
   getWeekViewMaxExpand,
+  hasBlocksAbove,
   hasBlocksUnderneath,
+  WEEK_VIEW_BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
 } from "./expand-rules";
 import type { GetSlotStateOptions, PostsGrid, SlotState } from "./grid-types";
 
 /** Row height in px; used for blockHeightPx. Must match view's ROW_HEIGHT_PX. */
 const ROW_HEIGHT_PX = 52;
+
+function computeWeekViewBaseRows(
+  dateKey: string,
+  time: string,
+  baseRows: number,
+  postsGrid: PostsGrid,
+  hours: string[]
+): number {
+  let rows = baseRows;
+  if (hasBlocksUnderneath(dateKey, time, rows, postsGrid, hours)) {
+    rows = Math.min(rows, 3);
+  }
+  const rowIndex = hours.indexOf(time);
+  if (
+    rowIndex >= WEEK_VIEW_BOTTOM_ROWS_EXPAND_UP_THRESHOLD &&
+    hasBlocksAbove(dateKey, time, postsGrid, hours)
+  ) {
+    rows = Math.min(rows, 3);
+  }
+  return rows;
+}
 
 export function getSlotState(
   dateKey: string,
@@ -65,7 +88,9 @@ export function getSlotState(
     (!!selectedPost &&
       posts.length === 1 &&
       (posts[0] as CalendarPost | undefined)?.id === selectedPost.id);
-  const baseRows = 1 + expandDown;
+  const baseRows = isDayView
+    ? 1 + expandDown
+    : computeWeekViewBaseRows(dateKey, time, 1 + expandDown, postsGrid, hours);
   const noExpandOnHover =
     !isDayView &&
     baseRows === 3 &&

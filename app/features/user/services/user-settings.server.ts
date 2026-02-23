@@ -483,6 +483,39 @@ export function updateUserDateFormat(
   });
 }
 
+/**
+ * Returns when locale defaults were applied for this user, or null if never.
+ * Used to run "apply device locale" only once ever per user.
+ */
+export async function getLocaleDefaultsAppliedAt(
+  userId: string
+): Promise<Date | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { localeDefaultsAppliedAt: true },
+  });
+  return user?.localeDefaultsAppliedAt ?? null;
+}
+
+/**
+ * Applies time/date format from device locale and marks that we've applied once.
+ * Call only when user is still on app defaults and localeDefaultsAppliedAt is null.
+ */
+export function applyLocaleDefaultsOnce(
+  userId: string,
+  timeFormat: "12h" | "24h",
+  dateFormat: DateFormatKey
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      timeFormat,
+      dateFormat,
+      localeDefaultsAppliedAt: new Date(),
+    },
+  });
+}
+
 export type RunwayMode = "last-post" | "first-queue-empty";
 
 /** Days thresholds for KPI color: red when runway ≤ redThresholdDays, orange when ≤ orangeThresholdDays, amber otherwise. */
@@ -633,6 +666,7 @@ export async function updateRunwaySettings(
           isChild: true,
           parentNpub: true,
           pendingParentRequests: true,
+          localeDefaultsAppliedAt: true,
         },
       });
       if (!user) throw err;

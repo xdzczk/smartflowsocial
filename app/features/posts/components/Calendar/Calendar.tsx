@@ -410,8 +410,8 @@ export function Calendar({
               ) : null}
             </div>
 
-            {/* Month label on mobile only: between < Today > and Day/Week/Month switch */}
-            {view === "month" ? (
+            {/* Month label on mobile only: between < Today > and Day/Week/Month switch (Month and Week views) */}
+            {view === "month" || view === "week" ? (
               <h2 className="text-foreground flex min-w-0 flex-1 items-center justify-center truncate text-sm leading-tight font-medium max-md:flex md:hidden">
                 {formatForDisplay(
                   fromDate(currentDate, userTimezone),
@@ -443,8 +443,8 @@ export function Calendar({
               ))}
             </div>
 
-            {/* Month label: only in Month view, after Day/Week/Month controls (desktop); on mobile shown between nav and view toggle */}
-            {view === "month" ? (
+            {/* Month label: in Month and Week view, after Day/Week/Month controls (desktop); on mobile shown between nav and view toggle */}
+            {view === "month" || view === "week" ? (
               <h2 className="text-foreground hidden min-w-0 items-center truncate text-sm leading-tight font-medium md:flex">
                 {formatForDisplay(
                   fromDate(currentDate, userTimezone),
@@ -518,6 +518,7 @@ export function Calendar({
                   queueTypes={queueTypes}
                   isLongform={isLongform}
                   isAll={isAll}
+                  dateLocale={dateLocale}
                 />
               ) : view === "week" ? (
                 <WeekView

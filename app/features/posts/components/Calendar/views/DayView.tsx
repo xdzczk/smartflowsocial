@@ -5,7 +5,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 
-import { fromDate } from "~/lib/temporal";
+import { fromDate, nowInTimezone } from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../../types";
 import { DayViewTwoColumnGrid } from "../components/DayViewTwoColumnGrid";
@@ -35,6 +35,7 @@ export interface DayViewProps {
   queueTypes?: QueueType[];
   isLongform?: boolean;
   isAll?: boolean;
+  dateLocale?: "en-GB" | "en-US" | "sv";
 }
 
 export function DayView({
@@ -49,6 +50,7 @@ export function DayView({
   queueTypes,
   isLongform = false,
   isAll = false,
+  dateLocale = "en-GB",
 }: DayViewProps) {
   const [activeEmptySlotKey, setActiveEmptySlotKey] = useState<string | null>(
     null
@@ -152,10 +154,40 @@ export function DayView({
     return () => ro.disconnect();
   }, []);
 
+  const dayZoned = fromDate(currentDate, userTimezone);
+  const todayZoned = nowInTimezone(userTimezone);
+  const isToday =
+    dayZoned.year === todayZoned.year &&
+    dayZoned.month === todayZoned.month &&
+    dayZoned.day === todayZoned.day;
+
   return (
     <div className="flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
         <div className="flex min-h-0 min-h-[40vh] flex-1 flex-col overflow-hidden select-none">
+          {/* Day strip: same role as week header in Weekly view */}
+          <div className="border-border/40 flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
+            <div className="w-16 flex-shrink-0" />
+            <div
+              className={`border-border/30 flex flex-1 items-center justify-center gap-1 border-r px-2 py-1 text-center ${
+                isToday ? "border-l-primary bg-primary/5 border-l-2" : ""
+              }`}
+            >
+              <span className="text-muted-foreground text-xs font-normal">
+                {currentDate.toLocaleDateString(dateLocale, {
+                  weekday: "short",
+                  timeZone: userTimezone,
+                })}
+              </span>
+              <span
+                className={`text-sm leading-tight font-semibold ${
+                  isToday ? "text-primary" : "text-foreground"
+                }`}
+              >
+                {currentDate.getDate()}
+              </span>
+            </div>
+          </div>
           <DayViewTwoColumnGrid
             dateKey={dateKey}
             currentDate={currentDate}

@@ -44,7 +44,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
   enabled = true,
   staleTime,
   buildUrl,
-  maxPages = 10,
+  maxPages,
   placeholderData,
   refetchInterval,
   refetchIntervalInBackground,

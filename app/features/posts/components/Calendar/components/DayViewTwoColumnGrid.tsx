@@ -129,6 +129,7 @@ export function DayViewTwoColumnGrid({
 }: DayViewTwoColumnGridProps) {
   const [hoveredSlotKey, setHoveredSlotKey] = useState<string | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
+  const [isDragOverGrid, setIsDragOverGrid] = useState(false);
   const userTimezone = user?.timezone ?? "Etc/UTC";
 
   const handleDragOver = useCallback(
@@ -144,6 +145,7 @@ export function DayViewTwoColumnGrid({
     (e: React.DragEvent<HTMLDivElement>, time: string) => {
       e.preventDefault();
       setDragOverSlot(null);
+      setIsDragOverGrid(false);
       const postData = JSON.parse(
         e.dataTransfer.getData("text/plain")
       ) as CalendarPost;
@@ -157,6 +159,24 @@ export function DayViewTwoColumnGrid({
   const handleDragLeave = useCallback(() => {
     setDragOverSlot(null);
   }, []);
+
+  const handleGridDragOver = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDragOverGrid(true);
+    },
+    []
+  );
+
+  const handleGridDragLeave = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      const related = e.relatedTarget as Node | null;
+      if (related === null || !e.currentTarget.contains(related)) {
+        setIsDragOverGrid(false);
+      }
+    },
+    []
+  );
 
   const totalHeightPx = TOTAL_TIME_SLOTS * ROW_HEIGHT_PX;
 
@@ -189,9 +209,12 @@ export function DayViewTwoColumnGrid({
         </div>
 
         {/* Content area: grid lines, columns, multi-post, empty slots, drop layer */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- drag-over/leave for drop layer activation; no keyboard drag */}
         <div
           className="relative min-w-0 flex-1"
           style={{ height: totalHeightPx }}
+          onDragOver={handleGridDragOver}
+          onDragLeave={handleGridDragLeave}
         >
           {/* Grid lines behind content */}
           <div
@@ -365,8 +388,11 @@ export function DayViewTwoColumnGrid({
             </div>
           </div>
 
-          {/* Drop layer: 48 rows */}
-          <div className="absolute inset-0 z-[3]" aria-hidden>
+          {/* Drop layer: 48 rows; only capture pointer events during drag so blocks stay clickable/hoverable */}
+          <div
+            className={`absolute inset-0 z-[3] ${isDragOverGrid ? "pointer-events-auto" : "pointer-events-none"}`}
+            aria-hidden
+          >
             {hours.map((time, rowIndex) => {
               const slotKey = `${dateKey}-${time}`;
               const isDragOver = dragOverSlot === slotKey;

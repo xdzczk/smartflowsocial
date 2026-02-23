@@ -14,6 +14,8 @@ import {
   updateUserDateFormat,
   getUserTimeFormat,
   getUserDateFormat,
+  getLocaleDefaultsAppliedAt,
+  applyLocaleDefaultsOnce,
 } from "~/features/user";
 import {
   updateTimezoneSchema,
@@ -164,6 +166,11 @@ export async function handleGeneralSettingsAction(
         { status: 400 }
       );
     }
+    // Run only once ever per user: if we already applied locale defaults, never overwrite
+    const appliedAt = await getLocaleDefaultsAppliedAt(userId);
+    if (appliedAt != null) {
+      return json({ success: true, skipped: true });
+    }
     const [currentTimeFormat, currentDateFormat] = await Promise.all([
       getUserTimeFormat(userId),
       getUserDateFormat(userId),
@@ -173,8 +180,7 @@ export async function handleGeneralSettingsAction(
     if (!stillOnDefaults) {
       return json({ success: true, skipped: true });
     }
-    await updateUserTimeFormat(userId, timeFormat);
-    await updateUserDateFormat(userId, dateFormat);
+    await applyLocaleDefaultsOnce(userId, timeFormat, dateFormat);
     return json({ success: true });
   }
 

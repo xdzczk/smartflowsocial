@@ -83,3 +83,20 @@ export function hasBlocksUnderneath(
   if (slotBelow === undefined) return false;
   return (postsGrid[dateKey]?.[slotBelow]?.length ?? 0) > 0;
 }
+
+/** True when the slot immediately above this one (same date) has posts. */
+export function hasBlocksAbove(
+  dateKey: string,
+  time: string,
+  postsGrid: PostsGrid,
+  hours: string[]
+): boolean {
+  const idx = hours.indexOf(time);
+  if (idx <= 0) return false;
+  const slotAbove = hours[idx - 1];
+  if (slotAbove === undefined) return false;
+  return (postsGrid[dateKey]?.[slotAbove]?.length ?? 0) > 0;
+}
+
+/** Week view: row index at and above which blocks expand upward (22:30 = index 45). */
+export const WEEK_VIEW_BOTTOM_ROWS_EXPAND_UP_THRESHOLD = 45;

@@ -258,7 +258,7 @@ export function WeeklyView({
         }}
       >
         <div
-          className="flex min-h-0 min-h-[40vh] flex-1 flex-col overflow-hidden select-none"
+          className={`flex min-h-[40vh] flex-1 flex-col overflow-hidden select-none ${isMobile ? "shrink-0 self-start" : ""}`}
           style={{
             ...(isMobile
               ? {

@@ -39,6 +39,8 @@ model User {
   timeFormat                 String?        @default("24h") // "12h" or "24h"
   // Date format preference for display (dd/mm, mm/dd, or yyyy-mm-dd)
   dateFormat                 String?        @default("ddmmyyyy") // "ddmmyyyy" | "mmddyyyy" | "yyyymmdd"
+  // Set when we applied device locale for time/date once (so we never overwrite again)
+  localeDefaultsAppliedAt    DateTime?
   // Runway KPI: which queues count and mode (last-post vs first-queue-empty)
   runwaySettings             Json?
   // Child/parent self-relation via npub

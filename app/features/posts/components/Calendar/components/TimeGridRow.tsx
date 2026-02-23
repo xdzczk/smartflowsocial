@@ -93,11 +93,13 @@ export function TimeGridRow({
         return hoveredPostKey === key;
       });
     });
+  // Rows 0..44: upper row on top so blocks expanding downward stay above the next row.
+  // Rows 45+: stack-above zone for expand-up; these rows sit below row 44 so expanded content is visible.
   const rowZIndex = rowHasHoveredExpandedUp
     ? CALENDAR_ROW_Z_EXPANDED_UP
     : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-      ? CALENDAR_ROW_Z_BASE - index + BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-      : Math.max(1, CALENDAR_ROW_Z_BASE - index);
+      ? BOTTOM_ROWS_STACK_ABOVE_THRESHOLD - 1 - index
+      : BOTTOM_ROWS_STACK_ABOVE_THRESHOLD - 1 - index + CALENDAR_ROW_Z_BASE;
 
   return (
     <div

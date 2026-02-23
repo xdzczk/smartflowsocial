@@ -32,9 +32,9 @@ export const CLASS_OVERFLOW_HIDDEN = "overflow-hidden";
 export const CLASS_DAY_COLUMN_EXPAND_UP =
   "overflow-x-hidden overflow-y-visible";
 
-/** Bottom time rows: expand blocks upward (row index >= this; 40 = 20:00–23:30). */
-export const BOTTOM_ROWS_EXPAND_UP_THRESHOLD = 40;
-/** First row index where we stack row above on top of row below. */
-export const BOTTOM_ROWS_STACK_ABOVE_THRESHOLD = 39;
+/** Bottom time rows: expand blocks upward (row index >= this; 45 = 22:30–23:30). */
+export const BOTTOM_ROWS_EXPAND_UP_THRESHOLD = 45;
+/** First row index where we stack row above on top of row below (same as expand-up zone). */
+export const BOTTOM_ROWS_STACK_ABOVE_THRESHOLD = 45;
 
 export const EMPTY_SLOT_ICON_CLASS = "size-4 shrink-0 opacity-50";
