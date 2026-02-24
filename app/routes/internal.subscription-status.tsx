@@ -29,7 +29,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const url = new URL(request.url);
-  const pubkeyHex = url.searchParams.get("pubkey");
+  const pubkeyParam =
+    url.searchParams.get("pubkey") ?? request.headers.get("x-pubkey") ?? "";
+  const pubkeyHex = pubkeyParam.trim().toLowerCase();
   if (!pubkeyHex || pubkeyHex.length < 32) {
     return json({ active: false });
   }
