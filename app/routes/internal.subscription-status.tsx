@@ -3,6 +3,10 @@
  * Blossom calls GET /internal/subscription-status?pubkey=<hex> with header
  * x-internal-secret to decide if a pubkey is allowed to upload (403 when inactive).
  * No session/cookies; server-to-server only.
+ *
+ * Access to our own Blossom server is gated by subscription: active is true only
+ * when the user has an active subscription within the current billing period
+ * (or lifetime access).
  */
 
 import type { LoaderFunctionArgs } from "@remix-run/node";
