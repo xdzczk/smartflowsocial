@@ -15,6 +15,7 @@ import { json } from "@remix-run/node";
 import { isSubscriptionActiveForGating } from "~/features/payments";
 import { getUserByNpub } from "~/features/user";
 import { env } from "~/lib/env.server";
+import { logInfo } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 const BLOSSOM_INTERNAL_SECRET = env.BLOSSOM_INTERNAL_SECRET?.trim() ?? "";
@@ -33,19 +34,41 @@ export async function loader({ request }: LoaderFunctionArgs) {
     url.searchParams.get("pubkey") ?? request.headers.get("x-pubkey") ?? "";
   const pubkeyHex = pubkeyParam.trim().toLowerCase();
   if (!pubkeyHex || pubkeyHex.length < 32) {
+    logInfo("Blossom subscription-status: invalid or missing pubkey", {
+      pubkeyLength: pubkeyHex.length,
+    });
     return json({ active: false });
   }
 
   const npub = nostrAdapter.encodeNpub(pubkeyHex);
   if (!npub) {
+    logInfo("Blossom subscription-status: failed to encode pubkey to npub", {
+      pubkeyLength: pubkeyHex.length,
+    });
     return json({ active: false });
   }
 
   const user = await getUserByNpub(npub);
-  if (!user?.isEnabled) {
+  if (!user) {
+    logInfo("Blossom subscription-status: no user found for pubkey", {
+      pubkeyLength: pubkeyHex.length,
+    });
+    return json({ active: false });
+  }
+  if (!user.isEnabled) {
+    logInfo("Blossom subscription-status: user disabled", {
+      userId: user.id,
+      pubkeyLength: pubkeyHex.length,
+    });
     return json({ active: false });
   }
 
   const active = await isSubscriptionActiveForGating(user.id);
+  if (!active) {
+    logInfo("Blossom subscription-status: subscription not active for gating", {
+      userId: user.id,
+      pubkeyLength: pubkeyHex.length,
+    });
+  }
   return json({ active });
 }
