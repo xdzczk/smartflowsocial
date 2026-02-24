@@ -8,7 +8,7 @@ export const PLAN_FEATURES = {
     drafts: false,
     calendar: false,
     bulkScheduling: false,
-    longformPosts: false,
+    longformPosts: true, // Free users can create long-form posts
     templates: false,
     recyclables: false,
     scheduled: true, // Free users can access scheduled posts

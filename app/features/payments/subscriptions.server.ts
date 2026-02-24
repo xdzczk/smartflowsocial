@@ -31,12 +31,16 @@ async function ensureFreeAndGetSubscriptionData(
 /**
  * Ensure user has at least a free subscription and access to the feature.
  * Redirects to /plans when the user does not have access (e.g. expired subscription = free plan).
+ * "Dashboard" access is never gated—we always return data so expired users can land on dashboard.
  */
 export async function requireFeatureAccess(
   userId: string,
   feature: FeatureName
 ): Promise<SubscriptionData> {
   const data = await ensureFreeAndGetSubscriptionData(userId);
+  if (feature === "dashboard") {
+    return data;
+  }
   if (!hasFeatureAccess(data.currentSubscription, feature)) {
     throw redirect("/plans");
   }
