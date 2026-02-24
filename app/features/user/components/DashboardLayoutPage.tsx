@@ -11,6 +11,10 @@ import type { ReactNode } from "react";
 
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
+import {
+  getUserPlanType,
+  isSubscriptionPeriodExpired,
+} from "~/features/payments";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
@@ -48,11 +52,16 @@ export function DashboardLayoutPage(): ReactNode {
   const location = useLocation();
   const { currentSubscription, pendingParentUsers } =
     useLoaderData<typeof dashboardLoader>();
-  const isFreePlan = currentSubscription?.planId === "free";
+  const planType = getUserPlanType(currentSubscription ?? null);
+  const isFreePlan = planType === "free";
   const isDashboardIndex = isDashboardIndexPath(location.pathname);
   const isCalendar = isCalendarPath(location.pathname);
-  const isSubscriptionExpired =
-    currentSubscription && currentSubscription.status !== "ACTIVE";
+  const statusInactive =
+    currentSubscription != null && currentSubscription.status !== "ACTIVE";
+  const periodExpired = isSubscriptionPeriodExpired(
+    currentSubscription ?? null
+  );
+  const isSubscriptionExpired = statusInactive ? true : periodExpired;
   const navigation = useNavigation();
   const navAction =
     (navigation.formData?.get("_action") as string) || undefined;

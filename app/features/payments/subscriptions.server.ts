@@ -9,6 +9,7 @@ import {
 export { ensureUserHasFreePlan } from "~/models/payment.server";
 
 import type { FeatureName, SubscriptionData } from "./types";
+import { hasFeatureAccess } from "./types";
 
 /** Redirect when user account is disabled (never to /plans). */
 const LANDING = "/";
@@ -28,15 +29,18 @@ async function ensureFreeAndGetSubscriptionData(
 }
 
 /**
- * Ensure user has at least a free subscription, then return subscription data.
- * Never redirects to /plans; missing or inactive subscription is handled by
- * ensuring free plan. Callers use returned data to show banners (e.g. free plan, expired paid).
+ * Ensure user has at least a free subscription and access to the feature.
+ * Redirects to /plans when the user does not have access (e.g. expired subscription = free plan).
  */
 export async function requireFeatureAccess(
   userId: string,
-  _feature: FeatureName
+  feature: FeatureName
 ): Promise<SubscriptionData> {
-  return ensureFreeAndGetSubscriptionData(userId);
+  const data = await ensureFreeAndGetSubscriptionData(userId);
+  if (!hasFeatureAccess(data.currentSubscription, feature)) {
+    throw redirect("/plans");
+  }
+  return data;
 }
 
 /**
@@ -87,10 +91,15 @@ export async function getSubscriptionData(
         ? {
             planId: currentSubscription.planId,
             status: currentSubscription.status,
+            currentPeriodEnd: currentSubscription.currentPeriodEnd ?? undefined,
             Plan: currentSubscription.Plan
               ? {
                   name: currentSubscription.Plan.name,
                   id: currentSubscription.Plan.id,
+                  enableLifetimeAccess: currentSubscription.Plan
+                    .enableLifetimeAccess
+                    ? true
+                    : undefined,
                 }
               : undefined,
           }

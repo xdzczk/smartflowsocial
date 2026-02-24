@@ -94,9 +94,12 @@ export type FeatureName = keyof typeof PLAN_FEATURES.free;
 export interface UserSubscription {
   planId: string;
   status: string;
+  /** Date or ISO string (after Remix loader JSON serialization) */
+  currentPeriodEnd?: Date | string | null;
   Plan?: {
     name: string;
     id: string;
+    enableLifetimeAccess?: boolean;
   };
 }
 
@@ -109,12 +112,44 @@ export interface SubscriptionData {
 }
 
 /**
- * Get the current user's plan type from their subscription
+ * Returns true if the subscription is within its paid period (or lifetime).
+ * Used so expired paid plans are treated as free for feature access.
+ */
+function isSubscriptionWithinPeriod(subscription: UserSubscription): boolean {
+  if (subscription.Plan?.enableLifetimeAccess) {
+    return true;
+  }
+  const periodEnd = subscription.currentPeriodEnd;
+  if (periodEnd == null || periodEnd === "") {
+    return true;
+  }
+  return new Date(periodEnd) >= new Date();
+}
+
+/**
+ * Returns true when the subscription is ACTIVE but the billing period has ended.
+ * Used for UI (e.g. "expired" banner) and for isSubscriptionExpired in dashboard.
+ */
+export function isSubscriptionPeriodExpired(
+  subscription: UserSubscription | null
+): boolean {
+  if (subscription?.status !== "ACTIVE") {
+    return false;
+  }
+  return !isSubscriptionWithinPeriod(subscription);
+}
+
+/**
+ * Get the current user's plan type from their subscription.
+ * When the billing period has ended, returns "free" so premium features are gated.
  */
 export function getUserPlanType(
   subscription: UserSubscription | null
 ): PlanType {
   if (subscription?.status !== "ACTIVE") {
+    return "free";
+  }
+  if (!isSubscriptionWithinPeriod(subscription)) {
     return "free";
   }
 

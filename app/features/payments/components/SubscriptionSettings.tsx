@@ -55,10 +55,34 @@ interface SubscriptionSettingsProps {
   paymentHistory: PaymentHistory[];
 }
 
+/**
+ * Display status for the UI: show EXPIRED when the billing period has ended
+ * even if the DB still has status ACTIVE.
+ */
+function getDisplaySubscriptionStatus(subscription: Subscription): string {
+  if (subscription.status !== "ACTIVE") {
+    return subscription.status;
+  }
+  if (subscription.plan?.enableLifetimeAccess) {
+    return "ACTIVE";
+  }
+  const periodEnd =
+    subscription.currentPeriodEnd ?? subscription.nextPaymentDue;
+  if (!periodEnd) {
+    return "ACTIVE";
+  }
+  if (new Date(periodEnd) < new Date()) {
+    return "EXPIRED";
+  }
+  return "ACTIVE";
+}
+
 function getStatusColor(status: string) {
   switch (status.toUpperCase()) {
     case "ACTIVE":
       return "text-success bg-success/20 dark:text-success dark:bg-success/20/20";
+    case "EXPIRED":
+      return "text-destructive bg-destructive/10 dark:text-destructive dark:bg-destructive/20/20";
     case "CANCELED":
       return "text-destructive bg-destructive/10 dark:text-destructive dark:bg-destructive/20/20";
     case "PAST_DUE":
@@ -197,10 +221,10 @@ export function SubscriptionSettings({
                     <div className="mt-1 flex items-center gap-2">
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(
-                          subscription.status
+                          getDisplaySubscriptionStatus(subscription)
                         )}`}
                       >
-                        {subscription.status}
+                        {getDisplaySubscriptionStatus(subscription)}
                       </span>
                       {subscription.plan?.enableLifetimeAccess ? (
                         <span className="bg-muted text-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
@@ -275,11 +299,38 @@ export function SubscriptionSettings({
               </div>
             ) : null}
 
-            {/* Cancel at period end - only for paid, non-lifetime, active plans */}
+            {/* Access expired notice - when period has ended */}
             {subscription.plan?.price &&
             Number(subscription.plan.price) > 0 &&
             !subscription.plan.enableLifetimeAccess &&
-            !subscription.cancelAtPeriodEnd ? (
+            getDisplaySubscriptionStatus(subscription) === "EXPIRED" ? (
+              <div className="dark:border-border dark:bg-muted rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="dark:text-foreground h-5 w-5 text-amber-600" />
+                  <p className="dark:text-foreground text-sm font-medium text-amber-800">
+                    Your access to {subscription.plan.name} expired on{" "}
+                    {formatSubscriptionDate(
+                      subscription.currentPeriodEnd ??
+                        subscription.nextPaymentDue
+                    )}
+                    . Renew or choose a plan to restore access.
+                  </p>
+                </div>
+                <Link
+                  to="/plans"
+                  className="text-primary mt-2 inline-block text-sm font-medium hover:underline"
+                >
+                  View plans
+                </Link>
+              </div>
+            ) : null}
+
+            {/* Cancel at period end - only for paid, non-lifetime, active plans with period not yet ended */}
+            {subscription.plan?.price &&
+            Number(subscription.plan.price) > 0 &&
+            !subscription.plan.enableLifetimeAccess &&
+            !subscription.cancelAtPeriodEnd &&
+            getDisplaySubscriptionStatus(subscription) === "ACTIVE" ? (
               <div className="border-border space-y-4 rounded-lg border p-4">
                 <div>
                   <p className="text-muted-foreground mb-2 text-sm">

@@ -27,7 +27,12 @@ export type {
 // Plan Features & Access Control
 // ============================================================================
 
-export { PLAN_FEATURES, getUserPlanType, hasFeatureAccess } from "./types";
+export {
+  PLAN_FEATURES,
+  getUserPlanType,
+  hasFeatureAccess,
+  isSubscriptionPeriodExpired,
+} from "./types";
 
 // ============================================================================
 // Subscription Management
