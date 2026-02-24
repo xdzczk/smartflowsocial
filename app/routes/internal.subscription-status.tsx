@@ -40,15 +40,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return json({ active: false });
   }
 
-  const npub = nostrAdapter.encodeNpub(pubkeyHex);
-  if (!npub) {
-    logInfo("Blossom subscription-status: failed to encode pubkey to npub", {
-      pubkeyLength: pubkeyHex.length,
-    });
-    return json({ active: false });
+  // User.npub is stored as hex (from login flow), so look up by hex first; fallback to bech32 npub
+  let user = await getUserByNpub(pubkeyHex);
+  if (!user) {
+    const npub = nostrAdapter.encodeNpub(pubkeyHex);
+    if (npub) user = await getUserByNpub(npub);
   }
-
-  const user = await getUserByNpub(npub);
   if (!user) {
     logInfo("Blossom subscription-status: no user found for pubkey", {
       pubkeyLength: pubkeyHex.length,
