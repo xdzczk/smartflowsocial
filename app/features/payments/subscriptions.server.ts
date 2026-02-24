@@ -97,3 +97,24 @@ export async function getSubscriptionData(
         : null,
   };
 }
+
+/**
+ * Returns true if the user has an active subscription that is within the current
+ * billing period (or has lifetime access). Used by Blossom subscription gating
+ * so expired paid plans are treated as inactive even if status is still ACTIVE.
+ */
+export async function isSubscriptionActiveForGating(
+  userId: string
+): Promise<boolean> {
+  const subscription = await getUserSubscription(userId);
+  if (!subscription || subscription.status !== "ACTIVE") {
+    return false;
+  }
+  if (subscription.Plan?.enableLifetimeAccess) {
+    return true;
+  }
+  if (!subscription.currentPeriodEnd) {
+    return true;
+  }
+  return new Date(subscription.currentPeriodEnd) >= new Date();
+}

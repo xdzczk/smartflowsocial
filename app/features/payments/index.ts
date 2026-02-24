@@ -39,6 +39,7 @@ export {
   requireAnySubscription,
   requireActiveSubscription,
   getSubscriptionData,
+  isSubscriptionActiveForGating,
 } from "./subscriptions.server";
 
 export { isNewUserWithoutSubscription } from "./types";

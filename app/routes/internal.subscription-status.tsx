@@ -8,7 +8,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
-import { getSubscriptionData } from "~/features/payments";
+import { isSubscriptionActiveForGating } from "~/features/payments";
 import { getUserByNpub } from "~/features/user";
 import { env } from "~/lib/env.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
@@ -40,7 +40,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return json({ active: false });
   }
 
-  const data = await getSubscriptionData(user.id);
-  const active = data.currentSubscription?.status === "ACTIVE";
-  return json({ active: !!active });
+  const active = await isSubscriptionActiveForGating(user.id);
+  return json({ active });
 }
