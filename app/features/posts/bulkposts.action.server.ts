@@ -47,7 +47,7 @@ interface UploadResult {
     extension: string;
     sha256?: string;
     mimeType?: string;
-    provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
+    provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS";
   };
   error?: string;
 }

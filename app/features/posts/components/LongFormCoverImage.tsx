@@ -42,7 +42,7 @@ export function LongFormCoverImage({
               }`}
             >
               {uploadProvider.includes("BLOSSOM")
-                ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : "Blosstr"}`
+                ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : uploadProvider === "BLOSSOM_SFS" ? "SmartFlow Blossom" : "Blosstr"}`
                 : "☁️ S3"}
             </span>
           </div>

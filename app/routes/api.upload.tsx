@@ -42,12 +42,16 @@ export const action = withCSRFProtection(
 
       // If user's upload provider is Blossom, they should use /api/upload-blossom (client sends JSON, not multipart)
       const { provider } = await loadUploadProviderSettings(userId);
-      if (provider === "BLOSSOM_PRIMAL" || provider === "BLOSSOM_BLOSSTR") {
+      if (
+        provider === "BLOSSOM_PRIMAL" ||
+        provider === "BLOSSOM_BLOSSTR" ||
+        provider === "BLOSSOM_SFS"
+      ) {
         const { createErrorResponse } =
           await import("~/lib/error-handler.server");
         const [errorResponse] = createErrorResponse(
           new Error(
-            "Upload provider is set to Primal Blossom. Use Blossom upload (refresh the page if bulk upload still calls S3)."
+            "Upload provider is set to Blossom. Use Blossom upload (refresh the page if bulk upload still calls S3)."
           )
         );
         return json(errorResponse, { status: 400 });

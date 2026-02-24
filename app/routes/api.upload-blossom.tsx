@@ -2,6 +2,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
+import { createMedia } from "~/features/upload";
 import { loadUploadProviderSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, AuthorizationError } from "~/lib/errors";
@@ -97,6 +98,18 @@ export const action = withCSRFProtection(
       const mimeType = mimeTypeTag?.[1]
         ? mimeTypeTag[1]
         : "application/octet-stream";
+
+      // Register media metadata for BLOSSOM_SFS (SmartFlow owns metadata)
+      if (uploadProvider === "BLOSSOM_SFS") {
+        await createMedia({
+          userId,
+          url: fileUrl,
+          sha256,
+          size: Number.isNaN(fileSize) ? null : fileSize,
+          mimeType,
+          provider: uploadProvider,
+        });
+      }
 
       // Return success response with processed data
       // This matches the S3 upload response format for compatibility

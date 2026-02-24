@@ -132,6 +132,35 @@ export function UploadProviderSettings({
                 </div>
               </div>
             </div>
+
+            <div className="flex items-start space-x-3">
+              <input
+                id="blossom-sfs"
+                name="uploadProvider"
+                type="radio"
+                value="BLOSSOM_SFS"
+                defaultChecked={uploadProvider === "BLOSSOM_SFS"}
+                className="border-border accent-checkbox focus:ring-ring mt-1 h-4 w-4"
+                style={{ accentColor: primaryAccentColor }}
+              />
+              <div className="flex-1">
+                <label
+                  htmlFor="blossom-sfs"
+                  className="text-foreground block text-sm font-medium"
+                >
+                  SmartFlow Blossom (NOSTR)
+                </label>
+
+                <div className="mt-2 flex items-center space-x-2 text-xs">
+                  <span className="bg-muted text-foreground rounded-full px-2 py-1">
+                    blossom-api.smartflow.social / blossom.smartflow.social
+                  </span>
+                  <span className="bg-muted text-foreground rounded-full px-2 py-1">
+                    🔒 Subscription required
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mt-6 flex justify-end">

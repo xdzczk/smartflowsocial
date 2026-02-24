@@ -1,4 +1,4 @@
-import { useLoaderData, useSearchParams } from "@remix-run/react";
+import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
 
 import { DateFormatSettings } from "~/components/settings/DateFormatSettings";
 import { NotificationSettings } from "~/components/settings/NotificationSettings";
@@ -503,6 +503,14 @@ export default function SettingsPage() {
               enableMirrorBlossom={enableMirrorBlossomValue}
               mirrorUploadUrls={mirrorUploadUrlsList}
             />
+            <div className="text-sm">
+              <Link
+                to="/dashboard/settings/media"
+                className="text-primary hover:underline"
+              >
+                Manage Blossom media (list, usage, delete records)
+              </Link>
+            </div>
           </div>
         </TabsContent>
 

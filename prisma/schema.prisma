@@ -63,6 +63,7 @@ model User {
   draftVersions      DraftVersion[]
   draftGroups        DraftGroup[]
   draftGroupVersions DraftGroupVersion[]
+  media              Media[]
 
   @@index([parentNpub])
 }
@@ -424,6 +425,7 @@ enum UploadProvider {
   S3
   BLOSSOM_PRIMAL
   BLOSSOM_BLOSSTR
+  BLOSSOM_SFS
 }
 
 enum PaymentStatus {
@@ -622,4 +624,21 @@ model PushSubscription {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// Media metadata for Blossom (and other) uploads; SmartFlow owns metadata, Blossom owns storage
+model Media {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String
+  sha256    String?
+  size      Int?
+  mimeType  String?
+  provider  String   // e.g. BLOSSOM_SFS
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([provider])
+  @@index([createdAt])
 }

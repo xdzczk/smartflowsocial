@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 
 import { logClientError } from "~/lib/error-handler.client";
 interface UploadProvider {
-  provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
+  provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS";
   isUsingBlossom: boolean;
   enableMirrorBlossom?: boolean;
   mirrorUploadUrls?: string[];
@@ -60,6 +60,14 @@ export function useBlossomAwareUpload() {
           mirrorUploadUrls,
         };
       }
+      if (provider === "BLOSSOM_SFS") {
+        return {
+          provider: "BLOSSOM_SFS",
+          isUsingBlossom: true,
+          enableMirrorBlossom,
+          mirrorUploadUrls,
+        };
+      }
       return {
         provider: "S3",
         isUsingBlossom: false,
@@ -84,7 +92,7 @@ export function useBlossomAwareUpload() {
   };
 
   const createBlossomAuthHeaders = async (
-    provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR"
+    provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS"
   ) => {
     // @ts-ignore - Dynamic imports work in client-side Remix bundles
     const { getWindowNostrLikeSigner } =
@@ -99,7 +107,9 @@ export function useBlossomAwareUpload() {
     const _uploadUrl =
       provider === "BLOSSOM_PRIMAL"
         ? "https://blossom.primal.net/upload"
-        : "https://blosstr.com/upload";
+        : provider === "BLOSSOM_SFS"
+          ? "https://blossom-api.smartflow.social/upload"
+          : "https://blosstr.com/upload";
 
     // Note: Authentication should be handled by the upload service directly
     throw new Error(
@@ -124,7 +134,11 @@ export function useBlossomAwareUpload() {
         if (providerInfo.isUsingBlossom) {
           setUploadProgress(30);
           const providerName =
-            providerInfo.provider === "BLOSSOM_PRIMAL" ? "Primal" : "Blosstr";
+            providerInfo.provider === "BLOSSOM_PRIMAL"
+              ? "Primal"
+              : providerInfo.provider === "BLOSSOM_SFS"
+                ? "SmartFlow Blossom"
+                : "Blosstr";
 
           // Log mirror configuration if enabled
           if (
@@ -142,7 +156,10 @@ export function useBlossomAwareUpload() {
           );
           try {
             headers = await createBlossomAuthHeaders(
-              providerInfo.provider as "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR"
+              providerInfo.provider as
+                | "BLOSSOM_PRIMAL"
+                | "BLOSSOM_BLOSSTR"
+                | "BLOSSOM_SFS"
             );
             toast.success("Upload authorized!", { id: "blossom-auth" });
             setUploadProgress(60);

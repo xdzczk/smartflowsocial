@@ -275,7 +275,12 @@ export const uploadImagesPreviewSchema = z.object({
                 sha256: z.string().optional(),
                 mimeType: z.string().optional(),
                 provider: z
-                  .enum(["S3", "BLOSSOM_PRIMAL", "BLOSSOM_BLOSSTR"])
+                  .enum([
+                    "S3",
+                    "BLOSSOM_PRIMAL",
+                    "BLOSSOM_BLOSSTR",
+                    "BLOSSOM_SFS",
+                  ])
                   .optional(),
               })
               .optional(),

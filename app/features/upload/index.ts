@@ -52,6 +52,19 @@ export { uploadFile, uploadMultipleFiles } from "./upload.client";
 export { useBlossomAwareUpload } from "./useBlossomAwareUpload";
 
 // ============================================================================
+// Media metadata (Blossom uploads)
+// ============================================================================
+
+export {
+  createMedia,
+  listMediaForUser,
+  getMediaAggregateForUser,
+  findMediaByIdForUser,
+  deleteMediaById,
+  type CreateMediaParams,
+} from "./services/media.server";
+
+// ============================================================================
 // Components (Public API)
 // ============================================================================
 

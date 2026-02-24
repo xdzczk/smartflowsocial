@@ -428,6 +428,21 @@ Optional allowlist of source IPs that can access Prometheus endpoints.
 
 ---
 
+### BLOSSOM_INTERNAL_SECRET
+
+Optional secret for the internal subscription-status endpoint used by a Blossom server (vibe-cdn).
+When set, Blossom can call `GET /internal/subscription-status?pubkey=<hex>` with header
+`x-internal-secret` to check if a user is allowed to upload; inactive users receive 403 from
+Blossom. Set the same value as `SFS_INTERNAL_SECRET` on the Blossom server.
+
+**Example:**
+
+```env
+BLOSSOM_INTERNAL_SECRET=your-shared-secret-with-blossom-server
+```
+
+---
+
 ## Storage Configuration
 
 ### AWS S3

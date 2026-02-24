@@ -1,0 +1,46 @@
+/**
+ * Internal subscription-status endpoint for Blossom server (vibe-cdn).
+ * Blossom calls GET /internal/subscription-status?pubkey=<hex> with header
+ * x-internal-secret to decide if a pubkey is allowed to upload (403 when inactive).
+ * No session/cookies; server-to-server only.
+ */
+
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
+
+import { getSubscriptionData } from "~/features/payments";
+import { getUserByNpub } from "~/features/user";
+import { env } from "~/lib/env.server";
+import { nostrAdapter } from "~/lib/nostr-adapter.server";
+
+const BLOSSOM_INTERNAL_SECRET = env.BLOSSOM_INTERNAL_SECRET?.trim() ?? "";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const secret = request.headers.get("x-internal-secret") ?? "";
+  if (!BLOSSOM_INTERNAL_SECRET || secret !== BLOSSOM_INTERNAL_SECRET) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const url = new URL(request.url);
+  const pubkeyHex = url.searchParams.get("pubkey");
+  if (!pubkeyHex || pubkeyHex.length < 32) {
+    return json({ active: false });
+  }
+
+  const npub = nostrAdapter.encodeNpub(pubkeyHex);
+  if (!npub) {
+    return json({ active: false });
+  }
+
+  const user = await getUserByNpub(npub);
+  if (!user?.isEnabled) {
+    return json({ active: false });
+  }
+
+  const data = await getSubscriptionData(user.id);
+  const active = data.currentSubscription?.status === "ACTIVE";
+  return json({ active: !!active });
+}

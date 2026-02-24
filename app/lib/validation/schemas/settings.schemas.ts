@@ -115,6 +115,7 @@ export const uploadProviderSchema = z.enum([
   "S3",
   "BLOSSOM_PRIMAL",
   "BLOSSOM_BLOSSTR",
+  "BLOSSOM_SFS",
 ]);
 
 export const updateUploadProviderSchema = z.object({

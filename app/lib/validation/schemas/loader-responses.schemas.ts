@@ -68,7 +68,12 @@ export const userSchema = z.object({
     .optional(),
   userRelays: z.array(z.string()),
   giveawayBlackListed: z.array(z.string()),
-  uploadProvider: z.enum(["S3", "BLOSSOM_PRIMAL", "BLOSSOM_BLOSSTR"]),
+  uploadProvider: z.enum([
+    "S3",
+    "BLOSSOM_PRIMAL",
+    "BLOSSOM_BLOSSTR",
+    "BLOSSOM_SFS",
+  ]),
   scheduleInterval: z.array(z.union([z.string(), z.number()])),
   pendingParentRequests: z.array(z.string()),
   pendingChildRequests: z.array(z.string()).optional(),

@@ -54,7 +54,7 @@ export function LongFormContentEditor({
                 <span>Images upload via:</span>
                 <span className="bg-muted text-foreground rounded px-2 py-1 text-xs font-medium">
                   {uploadProvider.includes("BLOSSOM")
-                    ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : "Blosstr"}`
+                    ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : uploadProvider === "BLOSSOM_SFS" ? "SmartFlow Blossom" : "Blosstr"}`
                     : "☁️ S3"}
                 </span>
               </div>

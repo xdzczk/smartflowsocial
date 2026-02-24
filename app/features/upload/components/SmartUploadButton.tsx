@@ -16,7 +16,7 @@ interface SmartUploadButtonProps {
 }
 
 interface UploadProvider {
-  provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
+  provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS";
   isUsingBlossom: boolean;
 }
 
@@ -46,6 +46,9 @@ export function SmartUploadButton({
       }
       if (data.provider === "BLOSSOM_BLOSSTR") {
         return { provider: "BLOSSOM_BLOSSTR", isUsingBlossom: true };
+      }
+      if (data.provider === "BLOSSOM_SFS") {
+        return { provider: "BLOSSOM_SFS", isUsingBlossom: true };
       }
       return { provider: "S3", isUsingBlossom: false };
     } catch (error) {
@@ -82,7 +85,7 @@ export function SmartUploadButton({
   const uploadToBlossom = useCallback(
     async (
       _file: File,
-      _provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR"
+      _provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS"
     ): Promise<string> => {
       try {
         // @ts-ignore - Dynamic imports work in client-side Remix bundles
@@ -135,7 +138,8 @@ export function SmartUploadButton({
         if (providerInfo.isUsingBlossom) {
           if (
             providerInfo.provider === "BLOSSOM_PRIMAL" ||
-            providerInfo.provider === "BLOSSOM_BLOSSTR"
+            providerInfo.provider === "BLOSSOM_BLOSSTR" ||
+            providerInfo.provider === "BLOSSOM_SFS"
           ) {
             fileUrl = await uploadToBlossom(file, providerInfo.provider);
           } else {

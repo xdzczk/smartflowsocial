@@ -21,7 +21,7 @@ interface UploadResult {
     extension: string;
     sha256?: string;
     mimeType?: string;
-    provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
+    provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS";
   };
   error?: string;
 }
@@ -43,6 +43,7 @@ export async function uploadFile(file: File): Promise<UploadResult> {
     if (
       uploadProvider === "BLOSSOM_PRIMAL" ||
       uploadProvider === "BLOSSOM_BLOSSTR" ||
+      uploadProvider === "BLOSSOM_SFS" ||
       uploadProvider === "BLOSSOM"
     ) {
       return await uploadFileToBlossom(
@@ -108,6 +109,7 @@ async function uploadFileToS3(file: File): Promise<UploadResult> {
     const isBlossom =
       data.provider === "BLOSSOM_PRIMAL" ||
       data.provider === "BLOSSOM_BLOSSTR" ||
+      data.provider === "BLOSSOM_SFS" ||
       data.provider === "BLOSSOM";
     if (isBlossom) {
       return await uploadFileToBlossom(
@@ -227,6 +229,8 @@ async function createBlossomUploader(
   let primaryServerUrl: string;
   if (provider === "BLOSSOM_BLOSSTR") {
     primaryServerUrl = "https://blosstr.com";
+  } else if (provider === "BLOSSOM_SFS") {
+    primaryServerUrl = "https://blossom-api.smartflow.social";
   } else {
     // Default to Primal for BLOSSOM_PRIMAL or legacy BLOSSOM
     primaryServerUrl = "https://blossom.primal.net";
@@ -330,15 +334,20 @@ async function uploadFileToBlossom(
 
     const result = (await response.json()) as {
       success?: boolean;
-      file?: { url: string };
+      file?: { url: string; provider?: string };
       error?: string;
-      data?: { file?: { url: string } };
+      data?: { file?: { url: string; provider?: string } };
     };
 
     // Server returns { success: true, data: { file: {...} } }
     const fileData = result.data?.file ?? result.file;
     const totalTime = Date.now() - fileUploadStart;
     if (result.success && fileData) {
+      const blobProvider =
+        fileData.provider === "BLOSSOM_SFS" ||
+        fileData.provider === "BLOSSOM_BLOSSTR"
+          ? fileData.provider
+          : "BLOSSOM_PRIMAL";
       devLog(
         `[Blossom Upload] File ${file.name} completed successfully in ${totalTime}ms total (Blossom: ${blossomUploadTime}ms, Server: ${serverCallTime}ms)`
       );
@@ -349,7 +358,7 @@ async function uploadFileToBlossom(
           size: file.size,
           name: file.name,
           extension: file.name.split(".").pop() ?? "",
-          provider: "BLOSSOM_PRIMAL" as const,
+          provider: blobProvider,
         },
       };
     } else {
@@ -393,6 +402,7 @@ export async function uploadMultipleFiles(
   const isBlossom =
     data.provider === "BLOSSOM_PRIMAL" ||
     data.provider === "BLOSSOM_BLOSSTR" ||
+    data.provider === "BLOSSOM_SFS" ||
     data.provider === "BLOSSOM";
 
   if (isBlossom) {
