@@ -4,6 +4,7 @@
  */
 
 import { requireUser } from "~/features/auth/session.server";
+import { isSubscriptionPeriodExpired } from "~/features/payments/types";
 import { getAllPlans, getUserSubscription } from "~/models/payment.server";
 
 /**
@@ -77,6 +78,23 @@ export async function loadPlansData(request: Request) {
     };
   });
 
+  const isExpired =
+    currentSubscription != null
+      ? isSubscriptionPeriodExpired({
+          planId: currentSubscription.planId ?? "",
+          status: currentSubscription.status as string,
+          currentPeriodEnd: currentSubscription.currentPeriodEnd,
+          Plan: currentSubscription.Plan
+            ? {
+                name: currentSubscription.Plan.name,
+                id: currentSubscription.Plan.id,
+                enableLifetimeAccess:
+                  currentSubscription.Plan.enableLifetimeAccess,
+              }
+            : undefined,
+        })
+      : false;
+
   return {
     plans,
     user: user ? { id: user.id, isEnabled: user.isEnabled } : null,
@@ -85,6 +103,7 @@ export async function loadPlansData(request: Request) {
           planId: currentSubscription.planId,
           status: currentSubscription.status,
           plan: currentSubscription.Plan?.name,
+          isExpired,
         }
       : null,
   };

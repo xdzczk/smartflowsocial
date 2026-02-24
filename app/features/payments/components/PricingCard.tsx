@@ -16,6 +16,8 @@ interface Plan {
 interface PricingCardProps {
   plan: Plan;
   isCurrentPlan: boolean;
+  /** When true, user's current plan is expired; show Renew instead of Continue with Current Plan */
+  isCurrentPlanExpired: boolean;
   isLoading: boolean;
   selectedPlan: string | null;
   onPlanSelect: (
@@ -27,6 +29,7 @@ interface PricingCardProps {
 export function PricingCard({
   plan,
   isCurrentPlan,
+  isCurrentPlanExpired,
   isLoading,
   selectedPlan,
   onPlanSelect,
@@ -58,7 +61,7 @@ export function PricingCard({
         <p className="text-muted-foreground text-sm">{plan.description}</p>
       </div>
 
-      {isCurrentPlan ? (
+      {isCurrentPlan && !isCurrentPlanExpired ? (
         <Link
           to="/dashboard"
           className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center rounded-lg px-4 py-3 font-medium transition-colors"
@@ -85,7 +88,13 @@ export function PricingCard({
                 Processing...
               </div>
             ) : (
-              <>{plan.price === 0 ? "Get Started" : "Choose Plan"}</>
+              <>
+                {isCurrentPlan && isCurrentPlanExpired
+                  ? "Renew"
+                  : plan.price === 0
+                    ? "Get Started"
+                    : "Choose Plan"}
+              </>
             )}
           </button>
         </Form>

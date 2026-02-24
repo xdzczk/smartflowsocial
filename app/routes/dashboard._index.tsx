@@ -7,7 +7,7 @@ import { useLocation, useNavigation } from "@remix-run/react";
 
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import { requireUserId } from "~/features/auth";
-import { requireFeatureAccess } from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import {
   getContentStatistics,
   getQueueCountsForDashboard,
@@ -52,8 +52,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
 
-    // Check if user has access to the dashboard feature
-    await requireFeatureAccess(userId, "dashboard");
+    // Allow any logged-in user with a subscription record (including free/expired); no redirect to /plans
+    await requireAnySubscription(userId);
 
     const url = new URL(request.url);
     const queueType =

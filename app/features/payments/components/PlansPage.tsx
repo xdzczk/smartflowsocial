@@ -161,6 +161,7 @@ export function PlansPage(): ReactNode {
                 key={plan.id}
                 plan={plan}
                 isCurrentPlan={currentSubscription?.planId === plan.id}
+                isCurrentPlanExpired={currentSubscription?.isExpired ?? false}
                 isLoading={isLoading}
                 selectedPlan={selectedPlan}
                 onPlanSelect={handlePlanSelection}
