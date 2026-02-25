@@ -38,9 +38,10 @@ export async function createMediaIfMissing(data: CreateMediaParams) {
     select: { id: true },
   });
   if (existing) {
-    return existing;
+    return { id: existing.id, created: false };
   }
-  return createMedia(data);
+  const created = await createMedia(data);
+  return { id: created.id, created: true };
 }
 
 export async function listMediaForUser(

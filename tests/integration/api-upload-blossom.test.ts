@@ -10,9 +10,14 @@ vi.mock("~/features/user", () => ({
 
 vi.mock("~/features/upload", () => ({
   createMediaIfMissing: vi.fn(),
+  recordBlossomCompatUsage: vi.fn(),
 }));
 
 import { requireUserId } from "~/features/auth";
+import {
+  createMediaIfMissing,
+  recordBlossomCompatUsage,
+} from "~/features/upload";
 import { loadUploadProviderSettings } from "~/features/user";
 import { action, loader } from "~/routes/api.upload-blossom";
 
@@ -23,6 +28,13 @@ describe("API: Upload Blossom", () => {
     (loadUploadProviderSettings as ReturnType<typeof vi.fn>).mockResolvedValue({
       provider: "BLOSSOM_SFS",
     });
+    (createMediaIfMissing as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "media-1",
+      created: true,
+    });
+    (recordBlossomCompatUsage as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined
+    );
   });
 
   it("returns normalized file payload for valid blossom tags", async () => {
@@ -108,6 +120,36 @@ describe("API: Upload Blossom", () => {
     expect(responseObj.status).toBe(400);
     expect(data.success).toBe(false);
     expect(data.error).toBeDefined();
+  });
+
+  it("persists metadata for non-SFS Blossom providers", async () => {
+    (loadUploadProviderSettings as ReturnType<typeof vi.fn>).mockResolvedValue({
+      provider: "BLOSSOM_PRIMAL",
+    });
+    const request = new Request("http://localhost:3000/api/upload-blossom", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fileName: "cover.jpg",
+        tags: [
+          ["url", "https://blossom.primal.net/media/cover.jpg"],
+          ["x", "abc123"],
+          ["size", "1024"],
+          ["m", "image/jpeg"],
+        ],
+      }),
+    });
+
+    const response = await action({ request, params: {}, context: {} });
+    const responseObj =
+      response instanceof Response
+        ? response
+        : new Response(JSON.stringify(response));
+    expect(responseObj.status).toBe(200);
+    expect(createMediaIfMissing).toHaveBeenCalled();
+    expect(recordBlossomCompatUsage).toHaveBeenCalled();
   });
 
   it("loader returns endpoint description", async () => {

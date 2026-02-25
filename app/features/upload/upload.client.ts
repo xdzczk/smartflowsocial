@@ -29,6 +29,24 @@ function isBlossomProvider(provider: string | undefined): boolean {
   );
 }
 
+interface ProviderUploadPolicy {
+  provider: string;
+  lane: "authoritative_tokenized" | "compat_blossom";
+}
+
+function getProviderUploadPolicy(provider: string): ProviderUploadPolicy {
+  if (provider === "BLOSSOM_SFS") {
+    return {
+      provider,
+      lane: "authoritative_tokenized",
+    };
+  }
+  return {
+    provider,
+    lane: "compat_blossom",
+  };
+}
+
 interface UploadResult {
   success: boolean;
   file?: {
@@ -331,7 +349,8 @@ async function uploadFileToBlossom(
   mirrorUploadUrls: string[] = [],
   uploader?: BlossomUploaderInstance
 ): Promise<UploadResult> {
-  if (provider === "BLOSSOM_SFS") {
+  const policy = getProviderUploadPolicy(provider);
+  if (policy.lane === "authoritative_tokenized") {
     return uploadFileToSfsToken(file);
   }
   const fileUploadStart = Date.now();
@@ -1032,9 +1051,10 @@ export async function uploadMultipleFiles(
   const data = await getUploadProvider();
   const isBlossom = isBlossomProvider(data.provider);
   const provider = data.provider ?? "BLOSSOM_PRIMAL";
+  const providerPolicy = getProviderUploadPolicy(provider);
 
   if (isBlossom) {
-    if (provider === "BLOSSOM_SFS") {
+    if (providerPolicy.lane === "authoritative_tokenized") {
       return uploadSfsBulkFiles(
         files,
         {

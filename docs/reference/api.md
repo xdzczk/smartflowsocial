@@ -184,6 +184,13 @@ Upload files to Blossom storage.
 - Content-Type: `multipart/form-data`
 - Body: File data and Blossom authentication
 
+SmartFlow accepts metadata from two lanes:
+
+- **Authoritative SFS lane**: tokenized uploads committed via `/internal/blossom/commit-batch` are
+  quota/accounting source of truth.
+- **Compatibility lane**: simple Blossom-auth uploads/mirror metadata are accepted for media
+  metadata persistence but treated as non-authoritative for reservation/usage accounting.
+
 **Response:**
 
 ```json
@@ -197,6 +204,8 @@ Upload files to Blossom storage.
 #### POST `/api/blossom/tokens`
 
 Issue bulk upload tokens for SmartFlow Blossom v2. Requires user session.
+
+This endpoint is the authoritative upload admission path for SFS quota-safe uploads.
 
 **Request:**
 

@@ -268,7 +268,10 @@ export async function issueBlossomBulkTokens(
 
   const [storedAgg, reservedAgg, usage] = await Promise.all([
     prisma.media.aggregate({
-      where: { userId, provider: "BLOSSOM_SFS" },
+      where: {
+        userId,
+        provider: { startsWith: "BLOSSOM" },
+      },
       _sum: { size: true },
     }),
     prisma.blossomReservationItem.aggregate({
@@ -545,4 +548,31 @@ export async function getActiveReservedBytesForPubkey(
     _sum: { size: true },
   });
   return BigInt(aggregate._sum.size ?? 0);
+}
+
+export async function recordBlossomCompatUsage(
+  userId: string,
+  size: number,
+  date = new Date()
+): Promise<void> {
+  if (!Number.isFinite(size) || size <= 0) return;
+  const periodStartUtc = getMonthStartUtc(date);
+  await prisma.blossomUploadUsagePeriod.upsert({
+    where: {
+      userId_periodStartUtc: {
+        userId,
+        periodStartUtc,
+      },
+    },
+    create: {
+      userId,
+      periodStartUtc,
+      uploadedBytes: BigInt(Math.trunc(size)),
+      uploadedFiles: 1,
+    },
+    update: {
+      uploadedBytes: { increment: BigInt(Math.trunc(size)) },
+      uploadedFiles: { increment: 1 },
+    },
+  });
 }

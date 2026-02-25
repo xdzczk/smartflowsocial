@@ -71,6 +71,7 @@ export {
   commitBlossomBatch,
   expireBlossomReservations,
   getActiveReservedBytesForPubkey,
+  recordBlossomCompatUsage,
   type BulkTokenIssueResult,
   type CommitBatchResult,
   type CommitItem,

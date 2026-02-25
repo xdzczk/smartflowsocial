@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.122152583">
-    <testsuite name="tests/integration/api-upload-blossom.test.ts" timestamp="2026-02-25T07:57:37.316Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.077192375">
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns normalized file payload for valid blossom tags" time="0.072406167">
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.077735125">
+    <testsuite name="tests/integration/api-upload-blossom.test.ts" timestamp="2026-02-25T12:47:41.772Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.077735125">
+        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns normalized file payload for valid blossom tags" time="0.071727334">
             <system-out>
 ✅ Environment variables validated
 
             </system-out>
         </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; rejects when user provider is not blossom" time="0.00296475">
+        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; rejects when user provider is not blossom" time="0.00299775">
             <system-err>
 
 ❌ Error: {
@@ -22,7 +22,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns validation error when required tags are missing" time="0.000909666">
+        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns validation error when required tags are missing" time="0.000969834">
             <system-err>
 
 ❌ Error: {
@@ -37,13 +37,9 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; loader returns endpoint description" time="0.000196084">
+        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; persists metadata for non-SFS Blossom providers" time="0.000677875">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/upload.client.scheduler.test.ts" timestamp="2026-02-25T07:57:37.317Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.044960208">
-        <testcase classname="tests/unit/upload.client.scheduler.test.ts" name="upload.client scheduler &gt; caps concurrency when adaptive mode is disabled" time="0.044033875">
-        </testcase>
-        <testcase classname="tests/unit/upload.client.scheduler.test.ts" name="upload.client scheduler &gt; retries rate-limited responses with retry-after delay" time="0.000162166">
+        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; loader returns endpoint description" time="0.000246584">
         </testcase>
     </testsuite>
 </testsuites>

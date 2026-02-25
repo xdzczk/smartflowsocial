@@ -2,7 +2,10 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import { createMediaIfMissing } from "~/features/upload";
+import {
+  createMediaIfMissing,
+  recordBlossomCompatUsage,
+} from "~/features/upload";
 import { loadUploadProviderSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, AuthorizationError } from "~/lib/errors";
@@ -96,7 +99,7 @@ async function persistMirrorMetadata(
         ? mirrorObj["provider"]
         : "BLOSSOM_MIRROR";
 
-    await createMediaIfMissing({
+    const persisted = await createMediaIfMissing({
       userId,
       url: mirrorUrl,
       sha256: mirrorSha256,
@@ -104,6 +107,14 @@ async function persistMirrorMetadata(
       mimeType: mirrorMimeType,
       provider: mirrorProvider,
     });
+    if (
+      persisted.created &&
+      mirrorProvider !== "BLOSSOM_SFS" &&
+      !Number.isNaN(mirrorSize) &&
+      mirrorSize > 0
+    ) {
+      await recordBlossomCompatUsage(userId, mirrorSize);
+    }
   }
 }
 
@@ -158,18 +169,24 @@ export const action = withCSRFProtection(
       const fileSize = parsedTags.size;
       const mimeType = parsedTags.mimeType;
 
-      // Register media metadata for BLOSSOM_SFS (SmartFlow owns metadata).
-      // Use idempotent insert because commit-batch is authoritative and can race
-      // with this compatibility callback path.
-      if (uploadProvider === "BLOSSOM_SFS") {
-        await createMediaIfMissing({
-          userId,
-          url: fileUrl,
-          sha256,
-          size: Number.isNaN(fileSize) ? null : fileSize,
-          mimeType,
-          provider: uploadProvider,
-        });
+      // Persist media metadata for both lanes:
+      // - BLOSSOM_SFS remains authoritative via commit-batch.
+      // - Other Blossom providers are treated as compatibility metadata.
+      const persisted = await createMediaIfMissing({
+        userId,
+        url: fileUrl,
+        sha256,
+        size: Number.isNaN(fileSize) ? null : fileSize,
+        mimeType,
+        provider: uploadProvider,
+      });
+      if (
+        persisted.created &&
+        uploadProvider !== "BLOSSOM_SFS" &&
+        !Number.isNaN(fileSize) &&
+        fileSize > 0
+      ) {
+        await recordBlossomCompatUsage(userId, fileSize);
       }
 
       await persistMirrorMetadata(userId, data.mirrors, parsedTags);
