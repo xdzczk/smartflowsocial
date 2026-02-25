@@ -1,45 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.077735125">
-    <testsuite name="tests/integration/api-upload-blossom.test.ts" timestamp="2026-02-25T12:47:41.772Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.077735125">
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns normalized file payload for valid blossom tags" time="0.071727334">
-            <system-out>
-✅ Environment variables validated
-
-            </system-out>
+<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.002494458">
+    <testsuite name="tests/unit/upload-owned-bytes.test.ts" timestamp="2026-02-25T13:35:32.865Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.002494458">
+        <testcase classname="tests/unit/upload-owned-bytes.test.ts" name="getCanonicalOwnedBytesForUser &gt; queries canonical owned storage providers only" time="0.001717166">
         </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; rejects when user provider is not blossom" time="0.00299775">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Blossom uploads not enabled for this user&apos;,
-  code: &apos;AUTHORIZATION_ERROR&apos;,
-  statusCode: 403,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns validation error when required tags are missing" time="0.000969834">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Invalid Blossom upload data - missing required tags (url, x/ox, size)&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; persists metadata for non-SFS Blossom providers" time="0.000677875">
-        </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; loader returns endpoint description" time="0.000246584">
+        <testcase classname="tests/unit/upload-owned-bytes.test.ts" name="getCanonicalOwnedBytesForUser &gt; returns zero when aggregate has no size" time="0.000127167">
         </testcase>
     </testsuite>
 </testsuites>

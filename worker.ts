@@ -23,7 +23,10 @@ import {
 
 // Import outbox worker
 import { startOutboxWorker } from "./app/infra/outbox/outbox-worker.server";
-import { expireBlossomReservations } from "./app/features/upload";
+import {
+  expireBlossomReservations,
+  getBlossomReservationDriftStats,
+} from "./app/features/upload";
 
 // Import centralized environment validation
 // This validates env vars at module load time and exports typed config
@@ -54,7 +57,14 @@ const blossomReservationCleanupIntervalMs = 60_000;
 const blossomReservationCleanupInterval = setInterval(() => {
   void (async () => {
     try {
-      await expireBlossomReservations();
+      const expired = await expireBlossomReservations();
+      const drift = await getBlossomReservationDriftStats();
+      logInfo("Blossom reservation maintenance", {
+        ...expired,
+        reservedCount: drift.reservedCount,
+        activeBatchCount: drift.activeBatchCount,
+        oldestReservedCreatedAt: drift.oldestReservedCreatedAt?.toISOString(),
+      });
     } catch {
       // Best-effort; reservation cleanup should never crash the worker.
     }

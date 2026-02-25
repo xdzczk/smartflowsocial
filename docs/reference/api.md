@@ -263,6 +263,33 @@ Internal server-to-server endpoint used by Blossom to commit successful uploads.
 
 ---
 
+#### GET `/internal/blossom/policy`
+
+Internal server-to-server policy endpoint used by SFS compatibility lane pre-checks. Requires
+`x-internal-secret` matching `BLOSSOM_INTERNAL_SECRET`.
+
+**Query:**
+
+- `pubkey` (hex)
+
+**Response:**
+
+```json
+{
+  "active": true,
+  "planId": "pro",
+  "allowCompatUpload": true,
+  "reason": "allowed"
+}
+```
+
+Compatibility hardening policy:
+
+- free/inactive/missing users return `allowCompatUpload: false`
+- SFS treats lookup failures as fail-closed (`service_unavailable`)
+
+---
+
 #### POST `/api/upload-editorjs-image`
 
 Upload images from the EditorJS rich text editor.

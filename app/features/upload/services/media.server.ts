@@ -64,6 +64,19 @@ export async function getMediaAggregateForUser(userId: string) {
   });
 }
 
+export async function getCanonicalOwnedBytesForUser(
+  userId: string
+): Promise<bigint> {
+  const aggregate = await prisma.media.aggregate({
+    where: {
+      userId,
+      OR: [{ provider: "S3" }, { provider: { startsWith: "BLOSSOM" } }],
+    },
+    _sum: { size: true },
+  });
+  return BigInt(aggregate._sum.size ?? 0);
+}
+
 export async function findMediaByIdForUser(mediaId: string, userId: string) {
   return prisma.media.findFirst({
     where: { id: mediaId, userId },

@@ -5,6 +5,8 @@ import { env } from "~/lib/env.server";
 import { prisma } from "~/lib/prisma.server";
 import { getUserSubscription } from "~/models/payment.server";
 
+import { getCanonicalOwnedBytesForUser } from "./media.server";
+
 const DEFAULT_BLOSSOM_UPLOAD_URL =
   "https://blossom-api.smartflow.social/upload";
 const TOKEN_TTL_SECONDS = 180;
@@ -266,14 +268,8 @@ export async function issueBlossomBulkTokens(
     .filter((entry) => !entry.validation.error)
     .sort((a, b) => a.file.size - b.file.size);
 
-  const [storedAgg, reservedAgg, usage] = await Promise.all([
-    prisma.media.aggregate({
-      where: {
-        userId,
-        provider: { startsWith: "BLOSSOM" },
-      },
-      _sum: { size: true },
-    }),
+  const [storedOwnedBytes, reservedAgg, usage] = await Promise.all([
+    getCanonicalOwnedBytesForUser(userId),
     prisma.blossomReservationItem.aggregate({
       where: {
         pubkey,
@@ -292,8 +288,7 @@ export async function issueBlossomBulkTokens(
     }),
   ]);
 
-  let currentStorage =
-    BigInt(storedAgg._sum.size ?? 0) + BigInt(reservedAgg._sum.size ?? 0);
+  let currentStorage = storedOwnedBytes + BigInt(reservedAgg._sum.size ?? 0);
   let currentUpload = usage?.uploadedBytes ?? BigInt(0);
 
   const batchId = randomUUID();
@@ -548,6 +543,40 @@ export async function getActiveReservedBytesForPubkey(
     _sum: { size: true },
   });
   return BigInt(aggregate._sum.size ?? 0);
+}
+
+export async function getBlossomReservationDriftStats(): Promise<{
+  reservedCount: number;
+  activeBatchCount: number;
+  oldestReservedCreatedAt: Date | null;
+}> {
+  const [reservedCount, activeBatchCount, oldestReserved] = await Promise.all([
+    prisma.blossomReservationItem.count({
+      where: {
+        status: "RESERVED",
+        expiresAt: { gt: new Date() },
+      },
+    }),
+    prisma.blossomReservationBatch.count({
+      where: {
+        status: "ACTIVE",
+        expiresAt: { gt: new Date() },
+      },
+    }),
+    prisma.blossomReservationItem.findFirst({
+      where: {
+        status: "RESERVED",
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true },
+    }),
+  ]);
+  return {
+    reservedCount,
+    activeBatchCount,
+    oldestReservedCreatedAt: oldestReserved?.createdAt ?? null,
+  };
 }
 
 export async function recordBlossomCompatUsage(
