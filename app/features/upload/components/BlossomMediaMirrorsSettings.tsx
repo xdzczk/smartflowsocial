@@ -1,5 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
+import { useEffect } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
 
@@ -15,6 +16,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import { clearUploadProviderCache } from "~/lib/query";
 import { updateBlossomMirrorsClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
 import {
@@ -109,6 +111,13 @@ export function BlossomMediaMirrorsSettings({
   const hasValidationErrors = watchedMirrorUrls.some(
     (url) => url.trim() && !validateUrl(url.trim())
   );
+
+  useEffect(() => {
+    if (fetcher.state !== "idle") return;
+    if (fetcher.data?.success) {
+      clearUploadProviderCache();
+    }
+  }, [fetcher.state, fetcher.data]);
 
   return (
     <Card>

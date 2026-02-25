@@ -1,4 +1,5 @@
-import { Form, useNavigation } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
+import { useEffect } from "react";
 
 import {
   Card,
@@ -7,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { clearUploadProviderCache } from "~/lib/query";
 
 interface UploadProviderSettingsProps {
   uploadProvider: string;
@@ -15,10 +17,17 @@ interface UploadProviderSettingsProps {
 export function UploadProviderSettings({
   uploadProvider,
 }: UploadProviderSettingsProps) {
-  const navigation = useNavigation();
+  const fetcher = useFetcher<{ success?: boolean }>();
   const isSubmitting =
-    navigation.state === "submitting" &&
-    navigation.formData?.get("_action") === "update_upload_provider";
+    fetcher.state === "submitting" &&
+    fetcher.formData?.get("_action") === "update_upload_provider";
+
+  useEffect(() => {
+    if (fetcher.state !== "idle") return;
+    if (fetcher.data?.success) {
+      clearUploadProviderCache();
+    }
+  }, [fetcher.state, fetcher.data]);
 
   const primaryAccentColor = "hsl(var(--primary))";
 
@@ -31,7 +40,7 @@ export function UploadProviderSettings({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form method="post">
+        <fetcher.Form method="post">
           <input type="hidden" name="_action" value="update_upload_provider" />
 
           <div className="space-y-4">
@@ -172,7 +181,7 @@ export function UploadProviderSettings({
               {isSubmitting ? "Updating..." : "Update Provider"}
             </button>
           </div>
-        </Form>
+        </fetcher.Form>
       </CardContent>
     </Card>
   );

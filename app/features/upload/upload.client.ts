@@ -12,6 +12,15 @@ function devLog(..._args: unknown[]): void {}
  */
 function devWarn(..._args: unknown[]): void {}
 
+function isBlossomProvider(provider: string | undefined): boolean {
+  return (
+    provider === "BLOSSOM_PRIMAL" ||
+    provider === "BLOSSOM_BLOSSTR" ||
+    provider === "BLOSSOM_SFS" ||
+    provider === "BLOSSOM"
+  );
+}
+
 interface UploadResult {
   success: boolean;
   file?: {
@@ -40,12 +49,7 @@ export async function uploadFile(file: File): Promise<UploadResult> {
     const enableMirrorBlossom = data.enableMirrorBlossom;
     const mirrorUploadUrls = data.mirrorUploadUrls;
 
-    if (
-      uploadProvider === "BLOSSOM_PRIMAL" ||
-      uploadProvider === "BLOSSOM_BLOSSTR" ||
-      uploadProvider === "BLOSSOM_SFS" ||
-      uploadProvider === "BLOSSOM"
-    ) {
+    if (isBlossomProvider(uploadProvider)) {
       return await uploadFileToBlossom(
         file,
         uploadProvider,
@@ -98,19 +102,15 @@ async function uploadFileToS3(file: File): Promise<UploadResult> {
       ? result.error
       : (result.error?.message ?? "");
   if (
-    response.status === 400 &&
+    (response.status === 400 || response.status === 403) &&
     (errorMessage.includes("Blossom") ||
       errorMessage.includes("upload-blossom"))
   ) {
     const { getUploadProvider, clearUploadProviderCache } =
       await import("~/lib/query");
     clearUploadProviderCache();
-    const data = await getUploadProvider();
-    const isBlossom =
-      data.provider === "BLOSSOM_PRIMAL" ||
-      data.provider === "BLOSSOM_BLOSSTR" ||
-      data.provider === "BLOSSOM_SFS" ||
-      data.provider === "BLOSSOM";
+    const data = await getUploadProvider({ forceRefresh: true });
+    const isBlossom = isBlossomProvider(data.provider);
     if (isBlossom) {
       return await uploadFileToBlossom(
         file,
@@ -339,6 +339,23 @@ async function uploadFileToBlossom(
       data?: { file?: { url: string; provider?: string } };
     };
 
+    // If provider switched to S3 but stale client still attempted Blossom, refresh and retry via S3.
+    const blossomErrorMessage = result.error ?? "";
+    if (
+      (response.status === 400 || response.status === 403) &&
+      (blossomErrorMessage.includes("not enabled") ||
+        blossomErrorMessage.includes("S3") ||
+        blossomErrorMessage.includes("/api/upload"))
+    ) {
+      const { getUploadProvider, clearUploadProviderCache } =
+        await import("~/lib/query");
+      clearUploadProviderCache();
+      const refreshedProvider = await getUploadProvider({ forceRefresh: true });
+      if (!isBlossomProvider(refreshedProvider.provider)) {
+        return await uploadFileToS3(file);
+      }
+    }
+
     // Server returns { success: true, data: { file: {...} } }
     const fileData = result.data?.file ?? result.file;
     const totalTime = Date.now() - fileUploadStart;
@@ -399,11 +416,7 @@ export async function uploadMultipleFiles(
   // Check upload provider first
   const { getUploadProvider } = await import("~/lib/query");
   const data = await getUploadProvider();
-  const isBlossom =
-    data.provider === "BLOSSOM_PRIMAL" ||
-    data.provider === "BLOSSOM_BLOSSTR" ||
-    data.provider === "BLOSSOM_SFS" ||
-    data.provider === "BLOSSOM";
+  const isBlossom = isBlossomProvider(data.provider);
 
   if (isBlossom) {
     // Blossom: Upload all files concurrently with shared uploader instance
@@ -520,6 +533,24 @@ export async function uploadEditorJSImage(
   file: File
 ): Promise<{ success: number; file?: { url: string } }> {
   try {
+    const { getUploadProvider } = await import("~/lib/query");
+    const data = await getUploadProvider();
+    const isBlossom = isBlossomProvider(data.provider);
+
+    // Blossom path: upload directly from client and return EditorJS-compatible shape.
+    if (isBlossom) {
+      const uploadResult = await uploadFile(file);
+      if (uploadResult.success && uploadResult.file?.url) {
+        return {
+          success: 1,
+          file: {
+            url: uploadResult.file.url,
+          },
+        };
+      }
+      return { success: 0 };
+    }
+
     const formData = new FormData();
     formData.append("image", file);
 

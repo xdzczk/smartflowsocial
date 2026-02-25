@@ -71,7 +71,12 @@ interface UploadProviderData {
 let _uploadProviderCache: UploadProviderData | null = null;
 let _uploadProviderPromise: Promise<UploadProviderData> | null = null;
 
-export async function getUploadProvider(): Promise<UploadProviderData> {
+export async function getUploadProvider(options?: {
+  forceRefresh?: boolean;
+}): Promise<UploadProviderData> {
+  if (options?.forceRefresh) {
+    clearUploadProviderCache();
+  }
   if (_uploadProviderCache) {
     return _uploadProviderCache;
   }
@@ -100,6 +105,7 @@ export async function getUploadProvider(): Promise<UploadProviderData> {
  */
 export function clearUploadProviderCache(): void {
   _uploadProviderCache = null;
+  _uploadProviderPromise = null;
 }
 
 /**

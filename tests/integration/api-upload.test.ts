@@ -6,8 +6,25 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
-vi.mock("~/features/auth/session.server", () => ({
+vi.mock("~/features/auth", () => ({
   requireUserId: vi.fn(),
+}));
+
+vi.mock("~/features/user", () => ({
+  loadUploadProviderSettings: vi.fn(),
+}));
+
+vi.mock("~/lib/env.server", () => ({
+  env: {
+    DATABASE_URL: "postgresql://user:pass@localhost:5432/testdb",
+    SESSION_SECRET: "12345678901234567890123456789012",
+    NOSTR_PUBLISHER_URL: "https://publisher.example.com",
+    REDIS_URL: "redis://localhost:6379",
+    STORAGE_REGION: "us-east-1",
+    STORAGE_BUCKET: "test-bucket",
+    STORAGE_ACCESS_KEY: "test-access-key",
+    STORAGE_SECRET: "test-secret",
+  },
 }));
 
 vi.mock("~/features/upload/s3.server", () => ({
@@ -36,13 +53,17 @@ vi.mock("@remix-run/node", async () => {
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
+import { loadUploadProviderSettings } from "~/features/user";
 import { action, loader } from "~/routes/api.upload";
 
 describe("API: Upload", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
+    (loadUploadProviderSettings as ReturnType<typeof vi.fn>).mockResolvedValue({
+      provider: "S3",
+    });
   });
 
   describe("Action Handler", () => {

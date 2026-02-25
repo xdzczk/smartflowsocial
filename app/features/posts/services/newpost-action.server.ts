@@ -6,15 +6,14 @@
 
 import {
   json,
-  unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
-import { createUploadHandler } from "~/features/upload/s3.server";
 import { getUserById } from "~/features/user";
 import { extractCorrelationId } from "~/lib/correlation-context.server";
+import { logWarning } from "~/lib/error-logger.server";
 import {
   newPostActionSchema,
   validateFormDataOrRespond,
@@ -48,13 +47,11 @@ export async function handleNewPostAction(
 
   // Check content type before parsing
   const contentType = request.headers.get("Content-Type") ?? "";
+  const isMultipart = contentType.includes("multipart/form-data");
 
   let formData: FormData;
-  if (contentType.includes("multipart/form-data")) {
-    const uploadHandler = composeUploadHandlers(
-      createUploadHandler(userId),
-      createMemoryUploadHandler()
-    );
+  if (isMultipart) {
+    const uploadHandler = createMemoryUploadHandler();
     formData = await parseMultipartFormData(request, uploadHandler);
   } else {
     formData = await request.formData();
@@ -86,6 +83,25 @@ export async function handleNewPostAction(
   // Check for upload preview actions first (they don't need full validation)
   const _actionValue = formData.get("_action");
   const _action = _actionValue ? String(_actionValue) : "";
+
+  const hasBinaryFile = Array.from(formData.values()).some(
+    (value) => value instanceof File
+  );
+  if (isMultipart && hasBinaryFile) {
+    logWarning("Deprecated multipart media upload attempt on newpost route", {
+      userId,
+      action: _action || "unknown",
+      route: "/dashboard/newpost",
+    });
+    return json(
+      {
+        success: false,
+        error:
+          "Direct multipart media upload is deprecated. Upload media client-side via Blossom first, then submit URLs.",
+      },
+      { status: 410 }
+    );
+  }
 
   if (
     _action === "upload-images-preview" ||

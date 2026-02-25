@@ -18,12 +18,72 @@ import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
 
 const CONTENT_TYPE_MULTIPART_FORM_DATA = "multipart/form-data";
+const CONTENT_TYPE_APPLICATION_JSON = "application/json";
+const HTTPS_PREFIX = "https://";
+const EDITORJS_DEFAULT_NAME = "asset-image";
+const EDITORJS_MAX_PART_SIZE = 10 * 1024 * 1024; // 10MB max
 
 type AssertFunction = (
   condition: boolean,
   message: string,
   context?: Record<string, unknown>
 ) => asserts condition;
+
+function createEditorJsUrlResponse(url: string) {
+  return json({
+    success: 1,
+    file: {
+      url,
+      size: 0,
+      name: EDITORJS_DEFAULT_NAME,
+      extension: "jpg",
+    },
+  });
+}
+
+async function handleBlossomEditorJsRequest(
+  request: Request,
+  contentType: string,
+  assert: AssertFunction
+): Promise<Response> {
+  if (contentType.includes(CONTENT_TYPE_APPLICATION_JSON)) {
+    const payload = (await request.json()) as { imageUrl?: unknown };
+    const imageUrl =
+      typeof payload.imageUrl === "string" ? payload.imageUrl : "";
+    assert(
+      imageUrl.startsWith(HTTPS_PREFIX),
+      "Blossom EditorJS payload must include a valid image URL",
+      { imageUrlType: typeof payload.imageUrl }
+    );
+    return createEditorJsUrlResponse(imageUrl);
+  }
+
+  if (!contentType.includes(CONTENT_TYPE_MULTIPART_FORM_DATA)) {
+    throw new ValidationError(
+      "Request must be multipart/form-data or JSON when using Blossom for EditorJS uploads",
+      { contentType }
+    );
+  }
+
+  const uploadHandler = composeUploadHandlers(
+    createMemoryUploadHandler({
+      maxPartSize: EDITORJS_MAX_PART_SIZE,
+    })
+  );
+  const formData = await parseMultipartFormData(request, uploadHandler);
+  const imageValue = formData.get("image") ?? formData.get("imageFile");
+  assert(imageValue !== null, "No image file provided", {
+    formDataKeys: Array.from(formData.keys()),
+  });
+
+  if (typeof imageValue === "string" && imageValue.startsWith(HTTPS_PREFIX)) {
+    return createEditorJsUrlResponse(imageValue);
+  }
+
+  throw new ValidationError(
+    "Blossom EditorJS uploads must be uploaded client-side first and submitted as an HTTPS URL."
+  );
+}
 
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
@@ -37,18 +97,16 @@ export const action = withCSRFProtection(
       // Check user's upload provider preference
       const { provider } = await loadUploadProviderSettings(userId);
       const uploadProvider = provider;
+      const isBlossomProvider = uploadProvider.includes("BLOSSOM");
 
-      // If user prefers blossom, handle it differently
-      if (uploadProvider.includes("BLOSSOM")) {
-        throw new ValidationError(
-          "EditorJS uploads with Blossom are not supported. Please upload images directly into your content."
-        );
+      // Blossom path: accept pre-uploaded URL payload to keep EditorJS contract.
+      // Binary file uploads to Blossom are handled on the client.
+      const contentType = request.headers.get("content-type") ?? "";
+      if (isBlossomProvider) {
+        return handleBlossomEditorJsRequest(request, contentType, assert);
       }
 
-      // Continue with S3 upload for EditorJS
-
-      // Check content type
-      const contentType = request.headers.get("content-type") ?? "";
+      // S3 path for EditorJS (legacy compatibility)
       assert(
         contentType.includes(CONTENT_TYPE_MULTIPART_FORM_DATA),
         "Request must be multipart/form-data",
@@ -59,7 +117,7 @@ export const action = withCSRFProtection(
       try {
         const uploadHandler = composeUploadHandlers(
           createMemoryUploadHandler({
-            maxPartSize: 10 * 1024 * 1024, // 10MB max
+            maxPartSize: EDITORJS_MAX_PART_SIZE,
           })
         );
         formData = await parseMultipartFormData(request, uploadHandler);
@@ -155,16 +213,8 @@ export const action = withCSRFProtection(
       }
 
       // Handle string URL (if it's already a URL)
-      if (typeof imageFile === "string" && imageFile.startsWith("https://")) {
-        return json({
-          success: 1,
-          file: {
-            url: imageFile,
-            size: 0,
-            name: "asset-image",
-            extension: "jpg",
-          },
-        });
+      if (typeof imageFile === "string" && imageFile.startsWith(HTTPS_PREFIX)) {
+        return createEditorJsUrlResponse(imageFile);
       }
 
       // Check if it's a File object

@@ -1,4 +1,5 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { Outlet, useLocation } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
 import type { ProfileData as _ProfileData } from "~/features/nostr/types";
@@ -84,4 +85,14 @@ export const action = withCSRFProtection(
     }
   }
 );
-export default SettingsPage;
+export default function DashboardSettingsRoute() {
+  const location = useLocation();
+
+  // Child routes under /dashboard/settings/* (e.g. /dashboard/settings/media)
+  // must render through Outlet; otherwise navigation appears to do nothing.
+  if (location.pathname.startsWith("/dashboard/settings/")) {
+    return <Outlet />;
+  }
+
+  return <SettingsPage />;
+}

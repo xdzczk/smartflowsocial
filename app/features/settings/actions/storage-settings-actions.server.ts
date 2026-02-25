@@ -29,7 +29,11 @@ export async function handleStorageSettingsAction(
       return result.response;
     }
     await updateUserUploadProvider(userId, result.data.uploadProvider);
-    return json({ success: true });
+    return json({
+      success: true,
+      uploadProvider: result.data.uploadProvider,
+      invalidateUploadProviderCache: true,
+    });
   }
 
   if (action === "update_blossom_mirrors") {
@@ -45,7 +49,10 @@ export async function handleStorageSettingsAction(
       result.data.enableMirrorBlossom
     );
     await updateUserMirrorUploadUrls(userId, result.data.mirrorUrls);
-    return json({ success: true });
+    return json({
+      success: true,
+      invalidateUploadProviderCache: true,
+    });
   }
 
   return null;

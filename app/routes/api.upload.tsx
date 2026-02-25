@@ -11,6 +11,7 @@ import { createUploadHandler } from "~/features/upload/s3.server";
 import { loadUploadProviderSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { env } from "~/lib/env.server";
+import { logWarning } from "~/lib/error-logger.server";
 import { ExternalServiceError } from "~/lib/errors";
 
 const CONTENT_TYPE_MULTIPART_FORM_DATA = "multipart/form-data";
@@ -68,6 +69,12 @@ export const action = withCSRFProtection(
         );
         return json(errorResponse, { status: 503 });
       }
+
+      logWarning("Deprecated S3 upload endpoint used", {
+        userId,
+        route: "/api/upload",
+        uploadProvider: provider,
+      });
 
       // Validate content type
       const contentType = request.headers.get("content-type") ?? "";

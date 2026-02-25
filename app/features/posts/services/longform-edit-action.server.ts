@@ -6,16 +6,12 @@
 import {
   json,
   redirect,
-  unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
-import {
-  createUploadHandler,
-  uploadBufferToS3,
-} from "~/features/upload/s3.server";
+import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import {
   getUserById,
   getHashTagPresetById,
@@ -26,7 +22,7 @@ import {
   extractCorrelationId,
   getCorrelationId,
 } from "~/lib/correlation-context.server";
-import { logError } from "~/lib/error-logger.server";
+import { logError, logWarning } from "~/lib/error-logger.server";
 import {
   sanitizeMarkdown,
   generateSummary,
@@ -147,6 +143,11 @@ async function handleImageUpload(
     imageFile.constructor.name === "File"
   ) {
     try {
+      logWarning("Using temporary longform-edit S3 cover-image fallback", {
+        userId,
+        action: "longform-edit.upload-image",
+        fileName: imageFile.name,
+      });
       // Process the file upload using shared S3 function
       const file = imageFile;
       const arrayBuffer = await file.arrayBuffer();
@@ -554,10 +555,7 @@ export async function handleLongFormEditAction(
   let formData: FormData;
 
   if (contentType.includes("multipart/form-data")) {
-    const uploadHandler = composeUploadHandlers(
-      createUploadHandler(userId),
-      createMemoryUploadHandler()
-    );
+    const uploadHandler = createMemoryUploadHandler();
     formData = await parseMultipartFormData(request, uploadHandler);
   } else {
     formData = await request.formData();
