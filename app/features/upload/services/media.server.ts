@@ -29,6 +29,20 @@ export async function createMedia(data: CreateMediaParams) {
   });
 }
 
+export async function createMediaIfMissing(data: CreateMediaParams) {
+  const existing = await prisma.media.findFirst({
+    where: {
+      userId: data.userId,
+      url: data.url,
+    },
+    select: { id: true },
+  });
+  if (existing) {
+    return existing;
+  }
+  return createMedia(data);
+}
+
 export async function listMediaForUser(
   userId: string,
   options: { skip: number; take: number }

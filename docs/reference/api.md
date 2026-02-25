@@ -194,6 +194,66 @@ Upload files to Blossom storage.
 
 ---
 
+#### POST `/api/blossom/tokens`
+
+Issue bulk upload tokens for SmartFlow Blossom v2. Requires user session.
+
+**Request:**
+
+```json
+{
+  "files": [
+    {
+      "sha256": "hex_sha256",
+      "size": 12345,
+      "type": "image/png",
+      "filename": "example.png"
+    }
+  ]
+}
+```
+
+**Response (partial success allowed):**
+
+```json
+{
+  "uploadUrl": "https://blossom-api.smartflow.social/upload",
+  "batchId": "uuid",
+  "expiresIn": 900,
+  "results": [
+    { "sha256": "hex_sha256", "size": 12345, "token": "jwt", "expiresIn": 180 },
+    { "sha256": "hex_sha256_b", "size": 99999, "error": "quota_exceeded" }
+  ]
+}
+```
+
+---
+
+#### POST `/internal/blossom/commit-batch`
+
+Internal server-to-server endpoint used by Blossom to commit successful uploads. Requires
+`x-internal-secret` matching `BLOSSOM_INTERNAL_SECRET`.
+
+**Request:**
+
+```json
+{
+  "batchId": "uuid",
+  "items": [
+    {
+      "jti": "uuid",
+      "pubkey": "hex_pubkey",
+      "sha256": "hex_sha256",
+      "size": 12345,
+      "type": "image/png",
+      "url": "https://blossom-api.smartflow.social/sha-or-key"
+    }
+  ]
+}
+```
+
+---
+
 #### POST `/api/upload-editorjs-image`
 
 Upload images from the EditorJS rich text editor.

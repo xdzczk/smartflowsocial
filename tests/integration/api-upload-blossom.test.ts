@@ -9,7 +9,7 @@ vi.mock("~/features/user", () => ({
 }));
 
 vi.mock("~/features/upload", () => ({
-  createMedia: vi.fn(),
+  createMediaIfMissing: vi.fn(),
 }));
 
 import { requireUserId } from "~/features/auth";

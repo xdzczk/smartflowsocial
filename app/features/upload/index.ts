@@ -57,6 +57,7 @@ export { useBlossomAwareUpload } from "./useBlossomAwareUpload";
 
 export {
   createMedia,
+  createMediaIfMissing,
   listMediaForUser,
   getMediaAggregateForUser,
   findMediaByIdForUser,
@@ -64,6 +65,16 @@ export {
   deleteRemoteBlossomObject,
   type CreateMediaParams,
 } from "./services/media.server";
+
+export {
+  issueBlossomBulkTokens,
+  commitBlossomBatch,
+  expireBlossomReservations,
+  getActiveReservedBytesForPubkey,
+  type BulkTokenIssueResult,
+  type CommitBatchResult,
+  type CommitItem,
+} from "./services/blossom-v2.server";
 
 // ============================================================================
 // Components (Public API)

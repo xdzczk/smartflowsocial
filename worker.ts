@@ -23,6 +23,7 @@ import {
 
 // Import outbox worker
 import { startOutboxWorker } from "./app/infra/outbox/outbox-worker.server";
+import { expireBlossomReservations } from "./app/features/upload";
 
 // Import centralized environment validation
 // This validates env vars at module load time and exports typed config
@@ -48,6 +49,17 @@ const relayMetricsInterval = setInterval(() => {
     // Best-effort: never crash the worker because metrics export failed.
   }
 }, relayMetricsIntervalMs);
+
+const blossomReservationCleanupIntervalMs = 60_000;
+const blossomReservationCleanupInterval = setInterval(() => {
+  void (async () => {
+    try {
+      await expireBlossomReservations();
+    } catch {
+      // Best-effort; reservation cleanup should never crash the worker.
+    }
+  })();
+}, blossomReservationCleanupIntervalMs);
 
 logInfo("BullMQ worker started");
 logInfo("Workers initialized", {
@@ -169,6 +181,7 @@ process.on("SIGTERM", () => {
     clearInterval(outboxWorkerInterval);
   }
   clearInterval(relayMetricsInterval);
+  clearInterval(blossomReservationCleanupInterval);
   workerMetricsServer.close();
   void scheduledPostsWorker.close();
   void postCheckerWorker.close();
@@ -181,6 +194,7 @@ process.on("SIGINT", () => {
     clearInterval(outboxWorkerInterval);
   }
   clearInterval(relayMetricsInterval);
+  clearInterval(blossomReservationCleanupInterval);
   workerMetricsServer.close();
   void scheduledPostsWorker.close();
   void postCheckerWorker.close();

@@ -62,6 +62,7 @@ interface EnvConfig {
   // Blossom (vibe-cdn) internal API: secret for subscription-status gating
   BLOSSOM_INTERNAL_SECRET?: string;
   BLOSSOM_SFS_API_URL?: string;
+  BLOSSOM_UPLOAD_TOKEN_SECRET?: string;
 }
 
 interface ValidationError {
@@ -172,6 +173,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "ENFORCE_NOSTR_SESSION_PUBKEY",
     "BLOSSOM_INTERNAL_SECRET",
     "BLOSSOM_SFS_API_URL",
+    "BLOSSOM_UPLOAD_TOKEN_SECRET",
   ];
 
   optionalVars.forEach((key) => {

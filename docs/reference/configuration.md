@@ -457,6 +457,22 @@ BLOSSOM_SFS_API_URL=https://blossom-api.smartflow.social
 
 ---
 
+### BLOSSOM_UPLOAD_TOKEN_SECRET
+
+Optional secret used to sign Blossom v2 upload tokens issued by `POST /api/blossom/tokens`. If
+omitted, SmartFlow falls back to `BLOSSOM_INTERNAL_SECRET` for signing.
+
+Set this to the same value as `SFS_UPLOAD_TOKEN_SECRET` (or fallback `SFS_INTERNAL_SECRET`) on the
+Blossom gateway so token verification succeeds.
+
+**Example:**
+
+```env
+BLOSSOM_UPLOAD_TOKEN_SECRET=your-upload-token-signing-secret
+```
+
+---
+
 ## Storage Configuration
 
 ### AWS S3

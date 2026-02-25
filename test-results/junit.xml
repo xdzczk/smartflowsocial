@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="15" failures="0" errors="0" time="0.190099334">
-    <testsuite name="tests/integration/api-upload-blossom.test.ts" timestamp="2026-02-25T05:49:03.231Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.088049">
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns normalized file payload for valid blossom tags" time="0.081781125">
+<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.122152583">
+    <testsuite name="tests/integration/api-upload-blossom.test.ts" timestamp="2026-02-25T07:57:37.316Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.077192375">
+        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns normalized file payload for valid blossom tags" time="0.072406167">
             <system-out>
 ✅ Environment variables validated
 
             </system-out>
         </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; rejects when user provider is not blossom" time="0.003982292">
+        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; rejects when user provider is not blossom" time="0.00296475">
             <system-err>
 
 ❌ Error: {
@@ -22,7 +22,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns validation error when required tags are missing" time="0.00105925">
+        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; returns validation error when required tags are missing" time="0.000909666">
             <system-err>
 
 ❌ Error: {
@@ -37,127 +37,13 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; loader returns endpoint description" time="0.000226209">
+        <testcase classname="tests/integration/api-upload-blossom.test.ts" name="API: Upload Blossom &gt; loader returns endpoint description" time="0.000196084">
         </testcase>
     </testsuite>
-    <testsuite name="tests/integration/api-upload-editorjs-image.test.ts" timestamp="2026-02-25T05:49:03.232Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.088238667">
-        <testcase classname="tests/integration/api-upload-editorjs-image.test.ts" name="API: Upload EditorJS Image &gt; accepts Blossom JSON payload with pre-uploaded URL" time="0.082006667">
-            <system-out>
-✅ Environment variables validated
-
-            </system-out>
+    <testsuite name="tests/unit/upload.client.scheduler.test.ts" timestamp="2026-02-25T07:57:37.317Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.044960208">
+        <testcase classname="tests/unit/upload.client.scheduler.test.ts" name="upload.client scheduler &gt; caps concurrency when adaptive mode is disabled" time="0.044033875">
         </testcase>
-        <testcase classname="tests/integration/api-upload-editorjs-image.test.ts" name="API: Upload EditorJS Image &gt; rejects Blossom multipart file bodies (must be pre-uploaded URL)" time="0.004152291">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Blossom EditorJS uploads must be uploaded client-side first and submitted as an HTTPS URL.&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-upload-editorjs-image.test.ts" name="API: Upload EditorJS Image &gt; keeps S3 multipart flow for non-blossom provider" time="0.000881125">
-        </testcase>
-        <testcase classname="tests/integration/api-upload-editorjs-image.test.ts" name="API: Upload EditorJS Image &gt; loader returns endpoint description" time="0.000230584">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/integration/api-upload.test.ts" timestamp="2026-02-25T05:49:03.233Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.013811667">
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Successful Requests &gt; should upload file and return URL" time="0.006271459">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should require authentication" time="0.003596292">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Authentication required&apos;,
-  code: &apos;AUTHENTICATION_ERROR&apos;,
-  statusCode: 401,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should return validation error for non-multipart content type" time="0.000821041">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-
-❌ Error: {
-  message: &apos;Request must be multipart/form-data&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should handle multipart parsing errors" time="0.000726">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-
-❌ Error: {
-  message: &apos;Failed to parse multipart form data&apos;,
-  code: &apos;EXTERNAL_SERVICE_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should return validation error when no file provided" time="0.000668541">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-
-❌ Error: {
-  message: &apos;No file provided&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should return validation error when file upload fails (no URL)" time="0.000647458">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-
-❌ Error: {
-  message: &apos;File upload failed - no URL returned&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Loader Handler &gt; should return API description" time="0.000241459">
+        <testcase classname="tests/unit/upload.client.scheduler.test.ts" name="upload.client scheduler &gt; retries rate-limited responses with retry-after delay" time="0.000162166">
         </testcase>
     </testsuite>
 </testsuites>

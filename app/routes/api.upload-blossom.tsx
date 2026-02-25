@@ -2,7 +2,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import { createMedia } from "~/features/upload";
+import { createMediaIfMissing } from "~/features/upload";
 import { loadUploadProviderSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, AuthorizationError } from "~/lib/errors";
@@ -12,6 +12,100 @@ type AssertFunction = (
   message: string,
   context?: Record<string, unknown>
 ) => asserts condition;
+
+interface ParsedUploadTags {
+  url: string;
+  sha256: string;
+  size: number;
+  mimeType: string;
+}
+
+function normalizeTags(payload: unknown): string[][] {
+  const candidate = payload as { tags?: unknown };
+  if (Array.isArray(candidate.tags)) return candidate.tags as string[][];
+  if (Array.isArray(payload)) return payload as string[][];
+  return [];
+}
+
+function parseUploadTags(
+  tags: string[][],
+  assert: AssertFunction
+): ParsedUploadTags {
+  const urlTag = tags.find(
+    (tag: string[]) => Array.isArray(tag) && tag[0] === "url"
+  );
+  const hashTag = tags.find(
+    (tag: string[]) => Array.isArray(tag) && (tag[0] === "x" || tag[0] === "ox")
+  );
+  const sizeTag = tags.find(
+    (tag: string[]) => Array.isArray(tag) && tag[0] === "size"
+  );
+  const mimeTypeTag = tags.find(
+    (tag: string[]) => Array.isArray(tag) && tag[0] === "m"
+  );
+
+  assert(
+    !!(urlTag && hashTag && sizeTag && urlTag[1] && hashTag[1] && sizeTag[1]),
+    "Invalid Blossom upload data - missing required tags (url, x/ox, size)",
+    {
+      hasUrlTag: !!urlTag,
+      hasHashTag: !!hashTag,
+      hasSizeTag: !!sizeTag,
+      tagsCount: tags.length,
+    }
+  );
+
+  const size = parseInt(sizeTag[1], 10);
+  return {
+    url: urlTag[1],
+    sha256: hashTag[1],
+    size,
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Ternary preserves empty strings; ?? would incorrectly treat "" as falsy
+    mimeType: mimeTypeTag?.[1] ? mimeTypeTag[1] : "application/octet-stream",
+  };
+}
+
+async function persistMirrorMetadata(
+  userId: string,
+  mirrors: unknown,
+  fallback: ParsedUploadTags
+): Promise<void> {
+  const mirrorEntries = Array.isArray(mirrors) ? mirrors : [];
+  for (const mirrorEntry of mirrorEntries) {
+    if (!mirrorEntry || typeof mirrorEntry !== "object") continue;
+    const mirrorObj = mirrorEntry as Record<string, unknown>;
+    if (mirrorObj["success"] !== true) continue;
+    const mirrorUrl =
+      typeof mirrorObj["url"] === "string" ? mirrorObj["url"] : "";
+    if (!mirrorUrl) continue;
+    const mirrorSha256 =
+      typeof mirrorObj["sha256"] === "string"
+        ? mirrorObj["sha256"]
+        : fallback.sha256;
+    const mirrorMimeType =
+      typeof mirrorObj["type"] === "string"
+        ? mirrorObj["type"]
+        : fallback.mimeType;
+    const mirrorSizeRaw = mirrorObj["size"];
+    const mirrorSize =
+      typeof mirrorSizeRaw === "number" && Number.isFinite(mirrorSizeRaw)
+        ? mirrorSizeRaw
+        : fallback.size;
+    const mirrorProvider =
+      typeof mirrorObj["provider"] === "string"
+        ? mirrorObj["provider"]
+        : "BLOSSOM_MIRROR";
+
+    await createMediaIfMissing({
+      userId,
+      url: mirrorUrl,
+      sha256: mirrorSha256,
+      size: Number.isNaN(mirrorSize) ? null : mirrorSize,
+      mimeType: mirrorMimeType,
+      provider: mirrorProvider,
+    });
+  }
+}
 
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
@@ -37,19 +131,20 @@ export const action = withCSRFProtection(
       }
 
       // Parse the incoming data from client-side Blossom upload
-      let data: { tags?: unknown; fileName?: string };
+      let data: { tags?: unknown; fileName?: string; mirrors?: unknown };
       try {
-        data = (await request.json()) as { tags?: unknown; fileName?: string };
+        data = (await request.json()) as {
+          tags?: unknown;
+          fileName?: string;
+          mirrors?: unknown;
+        };
       } catch (error) {
         throw new ValidationError("Invalid JSON in request body", {
           originalError: error instanceof Error ? error.message : String(error),
         });
       }
 
-      // The BlossomUploader returns the tags array directly, not wrapped in an object
-      const tags = (
-        Array.isArray(data.tags) ? data.tags : Array.isArray(data) ? data : []
-      ) as string[][];
+      const tags = normalizeTags(data);
 
       assert(
         Array.isArray(tags) && tags.length > 0,
@@ -57,51 +152,17 @@ export const action = withCSRFProtection(
         { tagsType: typeof tags, isArray: Array.isArray(tags) }
       );
 
-      // Extract relevant information from the Blossom tags
-      // Expected format: [['url', 'https://...'], ['x', 'hash'], ['size', '123'], ['m', 'image/jpeg']]
-      const urlTag = tags.find(
-        (tag: string[]) => Array.isArray(tag) && tag[0] === "url"
-      );
-      const hashTag = tags.find(
-        (tag: string[]) =>
-          Array.isArray(tag) && (tag[0] === "x" || tag[0] === "ox")
-      );
-      const sizeTag = tags.find(
-        (tag: string[]) => Array.isArray(tag) && tag[0] === "size"
-      );
-      const mimeTypeTag = tags.find(
-        (tag: string[]) => Array.isArray(tag) && tag[0] === "m"
-      );
+      const parsedTags = parseUploadTags(tags, assert);
+      const fileUrl = parsedTags.url;
+      const sha256 = parsedTags.sha256;
+      const fileSize = parsedTags.size;
+      const mimeType = parsedTags.mimeType;
 
-      assert(
-        !!(
-          urlTag &&
-          hashTag &&
-          sizeTag &&
-          urlTag[1] &&
-          hashTag[1] &&
-          sizeTag[1]
-        ),
-        "Invalid Blossom upload data - missing required tags (url, x/ox, size)",
-        {
-          hasUrlTag: !!urlTag,
-          hasHashTag: !!hashTag,
-          hasSizeTag: !!sizeTag,
-          tagsCount: tags.length,
-        }
-      );
-
-      const fileUrl = urlTag[1];
-      const sha256 = hashTag[1];
-      const fileSize = parseInt(sizeTag[1], 10);
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Ternary preserves empty strings; ?? would incorrectly treat "" as falsy
-      const mimeType = mimeTypeTag?.[1]
-        ? mimeTypeTag[1]
-        : "application/octet-stream";
-
-      // Register media metadata for BLOSSOM_SFS (SmartFlow owns metadata)
+      // Register media metadata for BLOSSOM_SFS (SmartFlow owns metadata).
+      // Use idempotent insert because commit-batch is authoritative and can race
+      // with this compatibility callback path.
       if (uploadProvider === "BLOSSOM_SFS") {
-        await createMedia({
+        await createMediaIfMissing({
           userId,
           url: fileUrl,
           sha256,
@@ -110,6 +171,8 @@ export const action = withCSRFProtection(
           provider: uploadProvider,
         });
       }
+
+      await persistMirrorMetadata(userId, data.mirrors, parsedTags);
 
       // Return success response with processed data
       // This matches the S3 upload response format for compatibility
