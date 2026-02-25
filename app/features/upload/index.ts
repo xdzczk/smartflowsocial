@@ -61,6 +61,7 @@ export {
   getMediaAggregateForUser,
   findMediaByIdForUser,
   deleteMediaById,
+  deleteRemoteBlossomObject,
   type CreateMediaParams,
 } from "./services/media.server";
 

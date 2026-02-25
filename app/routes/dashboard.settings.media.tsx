@@ -1,6 +1,12 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, Link, useLoaderData, useNavigation } from "@remix-run/react";
+import {
+  Form,
+  Link,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "@remix-run/react";
 
 import {
   Card,
@@ -16,6 +22,7 @@ import {
 } from "~/features/payments";
 import {
   deleteMediaById,
+  deleteRemoteBlossomObject,
   findMediaByIdForUser,
   getMediaAggregateForUser,
   listMediaForUser,
@@ -23,6 +30,9 @@ import {
 import { withCSRFProtection } from "~/lib/csrf";
 
 const PAGE_SIZE = 50;
+interface ActionData {
+  error?: string;
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -55,6 +65,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     const userId = await requireUserId(request);
+    await requireAnySubscription(userId);
+    await requireFeatureAccess(userId, "settings");
     const formData = await request.formData();
     const actionType = formData.get("_action");
 
@@ -66,6 +78,20 @@ export const action = withCSRFProtection(
       const media = await findMediaByIdForUser(mediaId, userId);
       if (!media) {
         return json({ error: "Media not found" }, { status: 404 });
+      }
+
+      if (media.provider === "BLOSSOM_SFS") {
+        try {
+          await deleteRemoteBlossomObject(media.url);
+        } catch {
+          return json(
+            {
+              error:
+                "Could not delete file from Blossom storage. Record was not removed.",
+            },
+            { status: 502 }
+          );
+        }
       }
       await deleteMediaById(mediaId);
       return redirect("/dashboard/settings/media");
@@ -86,6 +112,7 @@ function formatBytes(bytes: number): string {
 export default function SettingsMediaPage() {
   const { items, totalCount, totalSize, page, totalPages } =
     useLoaderData<typeof loader>();
+  const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const isDeleting =
     navigation.state === "submitting" &&
@@ -134,51 +161,76 @@ export default function SettingsMediaPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Media list</CardTitle>
+          <CardTitle>Media gallery</CardTitle>
           <CardDescription>
-            Recent uploads (BLOSSOM_SFS). Delete removes the record only.
+            Recent uploads from SmartFlow Blossom. Delete removes both the app
+            record and the remote object.
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {actionData?.error ? (
+            <p className="text-destructive mb-4 text-sm">{actionData.error}</p>
+          ) : null}
           {items.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               No media recorded yet. Upload with SmartFlow Blossom to see items
               here.
             </p>
           ) : (
-            <div className="space-y-2">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="py-2 pr-4 text-left">URL</th>
-                      <th className="py-2 pr-4 text-left">Size</th>
-                      <th className="py-2 pr-4 text-left">Date</th>
-                      <th className="py-2 pr-4 text-left">Provider</th>
-                      <th className="w-20" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((m) => (
-                      <tr key={m.id} className="border-border/50 border-b">
-                        <td className="py-2 pr-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                {items.map((m) => {
+                  const isImage = (m.mimeType ?? "").startsWith("image/");
+                  const isVideo = (m.mimeType ?? "").startsWith("video/");
+                  return (
+                    <div
+                      key={m.id}
+                      className="border-border bg-card overflow-hidden rounded-md border"
+                    >
+                      <a
+                        href={m.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-muted block aspect-square"
+                      >
+                        {isImage ? (
+                          <img
+                            src={m.url}
+                            alt={m.sha256 ?? "media"}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : isVideo ? (
+                          <video
+                            src={m.url}
+                            className="h-full w-full object-cover"
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+                            Open media
+                          </div>
+                        )}
+                      </a>
+                      <div className="space-y-2 p-3 text-xs">
+                        <div className="text-muted-foreground">
+                          {m.size != null ? formatBytes(m.size) : "—"} •{" "}
+                          {new Date(m.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className="text-muted-foreground truncate">
+                          {m.mimeType ?? m.provider}
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
                           <a
                             href={m.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary block max-w-[200px] truncate hover:underline"
+                            className="text-primary truncate hover:underline"
                           >
-                            {m.url}
+                            View
                           </a>
-                        </td>
-                        <td className="py-2 pr-4">
-                          {m.size != null ? formatBytes(m.size) : "—"}
-                        </td>
-                        <td className="py-2 pr-4">
-                          {new Date(m.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="py-2 pr-4">{m.provider}</td>
-                        <td className="py-2">
                           <Form method="post">
                             <input
                               type="hidden"
@@ -189,16 +241,16 @@ export default function SettingsMediaPage() {
                             <button
                               type="submit"
                               disabled={isDeleting}
-                              className="text-destructive text-xs hover:underline disabled:opacity-50"
+                              className="text-destructive hover:underline disabled:opacity-50"
                             >
                               Delete
                             </button>
                           </Form>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               {totalPages > 1 ? (
                 <div className="flex items-center justify-between pt-4">

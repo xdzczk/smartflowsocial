@@ -443,6 +443,20 @@ BLOSSOM_INTERNAL_SECRET=your-shared-secret-with-blossom-server
 
 ---
 
+### BLOSSOM_SFS_API_URL
+
+Optional base URL for SmartFlow Blossom API operations performed by the app server (for example,
+deleting remote files from R2 when deleting media records in Settings). Defaults to
+`https://blossom-api.smartflow.social`.
+
+**Example:**
+
+```env
+BLOSSOM_SFS_API_URL=https://blossom-api.smartflow.social
+```
+
+---
+
 ## Storage Configuration
 
 ### AWS S3
