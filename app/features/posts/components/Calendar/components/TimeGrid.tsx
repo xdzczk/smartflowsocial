@@ -17,7 +17,6 @@ export interface TimeGridProps extends Omit<
   hourLabels: string[];
   weekDays: Date[];
   getSlotState: (day: Date, time: string) => SlotState;
-  scrollLeft?: number;
 }
 
 export function TimeGrid({
@@ -46,34 +45,9 @@ export function TimeGrid({
   setActiveEmptySlotKey,
   onClearSelection,
   isMobile,
-  scrollLeft = 0,
 }: TimeGridProps) {
   return (
     <div className="relative min-h-0 w-full flex-none">
-      {isMobile ? (
-        <div
-          className="border-border/30 pointer-events-none absolute top-0 left-0 z-[280] w-16"
-          style={{ transform: `translateX(${scrollLeft}px)` }}
-        >
-          <div
-            className="bg-[hsl(var(--calendar-surface-2-bg))]"
-            style={{
-              height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
-              minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
-            }}
-          >
-            {hourLabels.map((label, index) => (
-              <div
-                key={hours[index] ?? `mobile-rail-${label}-${index}`}
-                className="text-muted-foreground/85 border-border/30 flex w-16 items-start justify-end border-r pr-2 text-right text-xs leading-none"
-                style={{ height: ROW_HEIGHT_PX - 1 }}
-              >
-                {label}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
       <div
         className={`relative flex w-full flex-col flex-nowrap ${isMobile ? "pl-16" : ""}`}
         style={{
