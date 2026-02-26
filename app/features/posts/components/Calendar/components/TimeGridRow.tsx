@@ -129,7 +129,7 @@ export function TimeGridRow({
         className="relative flex min-h-0 w-full min-w-0 flex-1 items-stretch"
         style={{ height: ROW_HEIGHT_PX - 1, zIndex: TIME_GRID_ROW_CONTENT_Z }}
       >
-        <div className="text-muted-foreground/85 border-border/30 sticky left-0 z-[30] w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] pr-2 text-right text-xs leading-none">
+        <div className="text-muted-foreground/85 border-border/30 sticky left-0 z-[260] w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] pr-2 text-right text-xs leading-none">
           {hourLabel}
         </div>
         {weekDays.map((day) => {

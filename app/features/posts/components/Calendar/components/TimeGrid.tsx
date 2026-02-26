@@ -53,7 +53,6 @@ export function TimeGrid({
         style={{
           height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
           minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
-          transform: "translateZ(0)",
         }}
       >
         {/* Grid lines in a single layer behind rows so they don't cut through post blocks */}

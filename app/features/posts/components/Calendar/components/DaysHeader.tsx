@@ -27,9 +27,9 @@ export function DaysHeader({
   return (
     <div
       data-calendar-days-header="true"
-      className="border-border/40 sticky top-0 z-[220] flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]"
+      className="border-border/40 sticky top-0 z-[260] flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]"
     >
-      <div className="border-border/40 sticky left-0 z-[230] w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]" />
+      <div className="border-border/40 sticky left-0 z-[270] w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]" />
       {weekDays.map((day) => {
         const dayZoned = fromDate(day, userTimezone);
         const isToday =
