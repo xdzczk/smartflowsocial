@@ -5,6 +5,7 @@
 import { json, redirect } from "@remix-run/node";
 
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import { assertMediaUrlsReady } from "~/features/upload/services/media-readiness.server";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
@@ -159,6 +160,7 @@ export async function handleThreadAction(
       content = resolved.content;
       fileUrl = resolved.fileUrl;
     }
+    await assertMediaUrlsReady(fileUrl);
 
     const contentWithHashtags = applyHashtags(content, hashTagPresetTags, true);
 

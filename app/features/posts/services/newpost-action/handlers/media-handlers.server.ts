@@ -6,6 +6,7 @@
 import { redirect } from "@remix-run/node";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import { assertMediaUrlsReady } from "~/features/upload/services/media-readiness.server";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
@@ -186,6 +187,7 @@ export async function handlePostImages({
 
   // Parse fileUrl JSON string to array for video detection
   const fileUrlArray = fileUrl ? (JSON.parse(fileUrl) as string[]) : [];
+  await assertMediaUrlsReady(fileUrlArray);
   const isVideo = isVideoFile(fileUrlArray);
 
   // Use CreatePostUseCase for post creation (handles queue type resolution internally)
@@ -268,6 +270,7 @@ export async function handleScheduleImages({
 
   // Parse fileUrl JSON string to array for video detection
   const fileUrlArray = fileUrl ? (JSON.parse(fileUrl) as string[]) : [];
+  await assertMediaUrlsReady(fileUrlArray);
   const isVideo = isVideoFile(fileUrlArray);
 
   const repostSchedules = parseRepostSchedulesFromForm(formData);
@@ -320,6 +323,7 @@ export async function handleDraftImages({
 
   // Parse fileUrl JSON string to array for video detection
   const fileUrlArray = fileUrl ? (JSON.parse(fileUrl) as string[]) : [];
+  await assertMediaUrlsReady(fileUrlArray);
 
   // Infer media type from URL extension for drafts
   let postType: "IMAGE" | "VIDEO" = "IMAGE"; // default

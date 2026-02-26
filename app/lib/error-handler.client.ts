@@ -15,6 +15,10 @@ import {
 import { captureException } from "./sentry.client";
 export type ClientErrorLevel = "error" | "warning" | "info";
 
+const UNEXPECTED_ERROR_MESSAGE = "An unexpected error occurred";
+const MEDIA_NOT_READY_MESSAGE =
+  "Media is still processing. Please retry in a moment.";
+
 export interface ClientErrorContext {
   component?: string;
   action?: string;
@@ -144,7 +148,7 @@ export function handleApiError(
     return response.error.message || "An error occurred";
   }
 
-  return "An unexpected error occurred";
+  return UNEXPECTED_ERROR_MESSAGE;
 }
 
 /**
@@ -266,6 +270,84 @@ export function getErrorMessage(error: unknown): string {
   }
 
   return "An unexpected error occurred";
+}
+
+function extractCodeAndMessage(error: unknown): {
+  code?: string;
+  message?: string;
+} {
+  if (typeof error === "string") {
+    return { message: error };
+  }
+
+  if (error instanceof Error) {
+    return { message: error.message };
+  }
+
+  if (!error || typeof error !== "object") {
+    return {};
+  }
+
+  const obj = error as Record<string, unknown>;
+  if ("error" in obj && obj["error"] && typeof obj["error"] === "object") {
+    const nested = obj["error"] as Record<string, unknown>;
+    return {
+      code: typeof nested["code"] === "string" ? nested["code"] : undefined,
+      message:
+        typeof nested["message"] === "string" ? nested["message"] : undefined,
+    };
+  }
+
+  return {
+    code: typeof obj["code"] === "string" ? obj["code"] : undefined,
+    message: typeof obj["message"] === "string" ? obj["message"] : undefined,
+  };
+}
+
+export function getClientDisplayErrorMessage(
+  error: unknown,
+  fallback = UNEXPECTED_ERROR_MESSAGE
+): string {
+  const { code, message } = extractCodeAndMessage(error);
+  const normalizedCode = (code ?? "").toUpperCase();
+  const normalizedMessage = (message ?? "").toLowerCase();
+
+  if (
+    normalizedCode === "MEDIA_NOT_READY" ||
+    normalizedMessage.includes("media_not_ready")
+  ) {
+    return MEDIA_NOT_READY_MESSAGE;
+  }
+
+  if (typeof message === "string" && message.trim() !== "") {
+    return message;
+  }
+
+  return fallback;
+}
+
+export function showErrorToastFromUnknown(
+  error: unknown,
+  options?: {
+    duration?: number;
+    position?:
+      | "top-left"
+      | "top-center"
+      | "top-right"
+      | "bottom-left"
+      | "bottom-center"
+      | "bottom-right";
+    fallback?: string;
+  }
+): void {
+  const message = getClientDisplayErrorMessage(
+    error,
+    options?.fallback ?? UNEXPECTED_ERROR_MESSAGE
+  );
+  toast.error(message, {
+    duration: options?.duration ?? 5000,
+    position: options?.position ?? "top-right",
+  });
 }
 
 /**

@@ -58,6 +58,7 @@ interface EnvConfig {
   // NOTE: These are optional and are parsed as booleans by feature-flags.server.ts
   NOSTR_AUTH_V2_ENABLED?: string; // Enable /auth/nostr/challenge + /auth/nostr/verify
   ENFORCE_NOSTR_SESSION_PUBKEY?: string; // Enforce session pubkey === signed event pubkey
+  MEDIA_PIPELINE_V2_ENABLED?: string; // Enable unified media intents/commit pipeline
 
   // Blossom (vibe-cdn) internal API: secret for subscription-status gating
   BLOSSOM_INTERNAL_SECRET?: string;
@@ -171,6 +172,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "METRICS_ALLOWED_IPS",
     "NOSTR_AUTH_V2_ENABLED",
     "ENFORCE_NOSTR_SESSION_PUBKEY",
+    "MEDIA_PIPELINE_V2_ENABLED",
     "BLOSSOM_INTERNAL_SECRET",
     "BLOSSOM_SFS_API_URL",
     "BLOSSOM_UPLOAD_TOKEN_SECRET",

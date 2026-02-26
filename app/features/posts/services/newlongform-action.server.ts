@@ -12,6 +12,7 @@ import {
 
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
+import { assertMediaUrlsReady } from "~/features/upload/services/media-readiness.server";
 import {
   getUserById,
   getQueueTypes,
@@ -418,6 +419,7 @@ async function handlePublish(
       { status: 400 }
     );
   }
+  await assertMediaUrlsReady([image]);
 
   if (!signedEvent || !nostrEvent) {
     return json(
@@ -585,6 +587,7 @@ async function handleScheduleLongform(
       { status: 400 }
     );
   }
+  await assertMediaUrlsReady([image]);
 
   if (!signedEvent || !nostrEvent) {
     return json(

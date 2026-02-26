@@ -48,9 +48,8 @@ export function useCoverImageUpload({
         // Check if user has Blossom provider selected
         if (uploadProvider?.includes("BLOSSOM")) {
           // Use client-side upload for Blossom
-          const { uploadFile } =
-            await import("~/features/upload/upload.client");
-          const uploadResult = await uploadFile(processedFile);
+          const { upload } = await import("~/features/upload/media.client");
+          const uploadResult = await upload(processedFile);
 
           if (uploadResult.success && uploadResult.file) {
             setImage(uploadResult.file.url);

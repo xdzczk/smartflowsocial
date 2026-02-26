@@ -5,6 +5,10 @@ import { isVideoFile } from "~/lib/helpers";
 
 const MAX_PREVIEWS = 4;
 
+function toPosterUrl(url: string): string {
+  return url.replace(/\/original$/, "/poster");
+}
+
 export interface MediaPreviewCollageProps {
   /** Up to 4 URLs; layouts are count-based (1 full, 2 configurable, 3 one-big-two-small, 4 grid). */
   urls: string[];
@@ -60,7 +64,7 @@ export function MediaPreviewCollage({
           }`}
         >
           <MediaThumbnail
-            src={url}
+            src={isVideoFile(url) ? toPosterUrl(url) : url}
             alt=""
             className={thumbnailClassName}
             forceType={isVideoFile(url) ? "video" : "image"}

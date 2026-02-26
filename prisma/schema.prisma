@@ -64,6 +64,7 @@ model User {
   draftGroups        DraftGroup[]
   draftGroupVersions DraftGroupVersion[]
   media              Media[]
+  mediaAssets        MediaAsset[]
   blossomReservationBatches BlossomReservationBatch[]
   blossomUploadUsagePeriods BlossomUploadUsagePeriod[]
 
@@ -643,6 +644,62 @@ model Media {
   @@index([userId])
   @@index([provider])
   @@index([createdAt])
+}
+
+enum MediaAssetStatus {
+  uploaded
+  processing
+  ready
+  failed
+}
+
+enum MediaVariantStatus {
+  pending
+  ready
+  failed
+}
+
+model MediaAsset {
+  id              String           @id @default(cuid())
+  userId          String
+  sha256          String?
+  sourceMimeType  String
+  sourceBytes     Int
+  sourceProvider  String
+  status          MediaAssetStatus @default(uploaded)
+  errorReason     String?
+  lastProcessedAt DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variants        MediaVariant[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([sha256])
+  @@unique([userId, sha256])
+}
+
+model MediaVariant {
+  id          String             @id @default(cuid())
+  assetId     String
+  variantKind String
+  mimeType    String
+  bytes       Int
+  width       Int?
+  height      Int?
+  durationMs  Int?
+  url         String
+  provider    String
+  isPrimary   Boolean            @default(false)
+  status      MediaVariantStatus @default(pending)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  asset       MediaAsset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, variantKind])
+  @@index([provider, status])
+  @@unique([assetId, variantKind, provider, url])
 }
 
 enum ReservationStatus {

@@ -44,6 +44,10 @@ export { resizeImage as resizeImageClient } from "./image-resize";
 // ============================================================================
 
 export { uploadFile, uploadMultipleFiles } from "./upload.client";
+export {
+  upload as uploadMedia,
+  uploadMany as uploadMediaMany,
+} from "./media.client";
 
 // ============================================================================
 // Blossom-aware Upload Hook
@@ -78,6 +82,20 @@ export {
   type CommitBatchResult,
   type CommitItem,
 } from "./services/blossom-v2.server";
+
+export {
+  createMediaIngestIntent,
+  commitMediaIngest,
+  type MediaIntentFile,
+  type MediaIntentResponse,
+  type MediaCommitItem,
+  type MediaCommitResponse,
+} from "./services/media-ingest.server";
+
+export {
+  resolveMediaVariantUrl,
+  getMediaAssetStatus,
+} from "./services/media-delivery.server";
 
 // ============================================================================
 // Components (Public API)

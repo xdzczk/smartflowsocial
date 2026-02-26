@@ -1,9 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.002494458">
-    <testsuite name="tests/unit/upload-owned-bytes.test.ts" timestamp="2026-02-25T13:35:32.865Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.002494458">
-        <testcase classname="tests/unit/upload-owned-bytes.test.ts" name="getCanonicalOwnedBytesForUser &gt; queries canonical owned storage providers only" time="0.001717166">
+<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.042513958">
+    <testsuite name="tests/integration/api-media-commit.test.ts" timestamp="2026-02-26T10:10:33.140Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.021117375">
+        <testcase classname="tests/integration/api-media-commit.test.ts" name="API: Media Commit &gt; returns commit payload for valid request" time="0.019744584">
+            <system-out>
+✅ Environment variables validated
+
+ℹ️  Info: media_commit_completed { userId: &apos;user-1&apos;, itemCount: 1, committedCount: 1 }
+
+            </system-out>
         </testcase>
-        <testcase classname="tests/unit/upload-owned-bytes.test.ts" name="getCanonicalOwnedBytesForUser &gt; returns zero when aggregate has no size" time="0.000127167">
+        <testcase classname="tests/integration/api-media-commit.test.ts" name="API: Media Commit &gt; returns 400 for invalid payload" time="0.000388875">
+        </testcase>
+        <testcase classname="tests/integration/api-media-commit.test.ts" name="API: Media Commit &gt; loader returns endpoint description" time="0.000245208">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/api-media-intents.test.ts" timestamp="2026-02-26T10:10:33.141Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.021396583">
+        <testcase classname="tests/integration/api-media-intents.test.ts" name="API: Media Intents &gt; returns intent payload for valid request" time="0.019878375">
+            <system-out>
+✅ Environment variables validated
+
+ℹ️  Info: media_intent_created { userId: &apos;user-1&apos;, fileCount: 1, provider: &apos;S3&apos; }
+
+            </system-out>
+        </testcase>
+        <testcase classname="tests/integration/api-media-intents.test.ts" name="API: Media Intents &gt; returns 400 for invalid payload" time="0.000375584">
+        </testcase>
+        <testcase classname="tests/integration/api-media-intents.test.ts" name="API: Media Intents &gt; loader returns endpoint description" time="0.000347">
         </testcase>
     </testsuite>
 </testsuites>

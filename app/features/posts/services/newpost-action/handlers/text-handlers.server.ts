@@ -6,6 +6,7 @@
 import { redirect } from "@remix-run/node";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import { assertMediaUrlsReady } from "~/features/upload/services/media-readiness.server";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
@@ -188,6 +189,7 @@ export async function handleDraftText({
     content = resolved.content;
     fileUrl = resolved.fileUrl;
   }
+  await assertMediaUrlsReady(fileUrl);
 
   // Apply hashtags
   const contentWithHashtags = applyHashtags(
@@ -248,6 +250,7 @@ export async function handlePostOrScheduleText({
     content = resolved.content;
     fileUrl = resolved.fileUrl;
   }
+  await assertMediaUrlsReady(fileUrl);
 
   const signedEventStr = signedEventValue ? String(signedEventValue) : "";
   const nostrEventStr = nostrEventValue ? String(nostrEventValue) : "";

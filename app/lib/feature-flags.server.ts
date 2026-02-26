@@ -31,4 +31,9 @@ export const featureFlags = {
     env.ENFORCE_NOSTR_SESSION_PUBKEY,
     true
   ),
+
+  /**
+   * Enables unified media ingest pipeline (`/api/media/intents` + `/api/media/commit`).
+   */
+  mediaPipelineV2Enabled: parseBooleanEnv(env.MEDIA_PIPELINE_V2_ENABLED, true),
 } as const;

@@ -16,7 +16,8 @@ import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
 import type { SignedEvent } from "~/features/nostr/types";
-import { uploadMultipleFiles } from "~/features/upload/upload.client";
+import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
+import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -523,10 +524,10 @@ export function UnifiedComposer({
 
   React.useEffect(() => {
     if (fetcher.state === "idle") {
-      const data = fetcher.data as { error?: string } | undefined;
+      const data = fetcher.data as { error?: unknown } | undefined;
       if (publishSubmitInFlight && data?.error) {
         setLastPublishFailed(true);
-        setSigningError(data.error);
+        setSigningError(getClientDisplayErrorMessage(data.error));
       }
       setPublishSubmitInFlight(false);
     }

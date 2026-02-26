@@ -3,7 +3,7 @@
  * Extracted from EditPostModal for better separation of concerns
  */
 
-import { uploadMultipleFiles } from "~/features/upload/upload.client";
+import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { nowSeconds } from "~/lib/temporal";
 
@@ -54,6 +54,26 @@ async function uploadNewFiles(
     .map((result) => result.file!.url);
   allImageUrls.push(...newUrls);
   return allImageUrls;
+}
+
+async function ensureMediaUrlsReady(urls: string[]): Promise<void> {
+  const stableUrls = urls.filter((url) => /^\/media\/[^/]+\/[^/]+$/.test(url));
+  if (stableUrls.length === 0) return;
+  const checks = await Promise.all(
+    stableUrls.map(async (url) => {
+      const response = await fetch(url, {
+        method: "GET",
+        redirect: "manual",
+      });
+      return { url, status: response.status };
+    })
+  );
+  const notReady = checks.filter((entry) => entry.status === 409);
+  if (notReady.length > 0) {
+    throw new Error(
+      "Some media are still processing. Please retry in a moment."
+    );
+  }
 }
 
 function buildLongformEventTags(
@@ -139,6 +159,7 @@ export async function prepareEditPostSubmission({
   user,
 }: EditPostSubmitParams) {
   const allImageUrls = await uploadNewFiles(newFiles, existingImages);
+  await ensureMediaUrlsReady(allImageUrls);
 
   let eventContent = "";
   let eventTags: string[][] = [];

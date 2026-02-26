@@ -9,7 +9,7 @@ import {
 } from "react";
 
 import { type ToastMessage } from "~/components/types";
-import { uploadMultipleFiles } from "~/features/upload/upload.client";
+import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import type { User } from "~/features/user";
 import { logClientError } from "~/lib/error-handler.client";
 import { safeConsoleInfo } from "~/lib/safe-console.client";

@@ -5,7 +5,12 @@ import { toast } from "react-hot-toast";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Checkbox } from "~/components/ui/checkbox";
-import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
+import {
+  handleErrorSafely,
+  logClientError,
+  getClientDisplayErrorMessage,
+  showErrorToastFromUnknown,
+} from "~/lib/error-handler.client";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -103,9 +108,9 @@ async function runScheduleRepostQuoteIfNeeded(
       component: "EditPostModal",
       action: "alsoScheduleRepostQuote",
     });
-    toast.error(
-      err instanceof Error ? err.message : "Failed to schedule repost/quote"
-    );
+    showErrorToastFromUnknown(err, {
+      fallback: "Failed to schedule repost/quote",
+    });
   }
 }
 
@@ -300,7 +305,7 @@ export function EditPostModal({
     if (data && "error" in data && typeof data.error === "string") {
       // Defer to avoid cascading renders
       setTimeout(() => {
-        setSigningError(data.error as string);
+        setSigningError(getClientDisplayErrorMessage(data.error));
       }, 0);
     }
   }, [fetcher.data, onConfirm]);
@@ -313,7 +318,7 @@ export function EditPostModal({
       toast.success("Repost/quote scheduled successfully!");
     }
     if (scheduleRepostQuoteFetcher.data?.error) {
-      toast.error(String(scheduleRepostQuoteFetcher.data.error));
+      showErrorToastFromUnknown(scheduleRepostQuoteFetcher.data.error);
     }
   }, [scheduleRepostQuoteFetcher.state, scheduleRepostQuoteFetcher.data]);
 

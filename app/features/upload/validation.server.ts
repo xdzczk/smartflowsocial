@@ -32,14 +32,18 @@ export const ALLOWED_MIME_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
-  // Add video if needed in the future:
-  // "video/mp4",
+  "video/mp4",
+  "video/webm",
+  "video/ogg",
+  "video/quicktime",
 ] as const;
 
 /**
- * Maximum file size in bytes (10MB)
+ * Legacy max size alias (absolute cap, 100MB).
  */
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_FILE_SIZE = 100 * 1024 * 1024;
+export const MAX_IMAGE_FILE_SIZE = 10 * 1024 * 1024;
+export const MAX_VIDEO_FILE_SIZE = 100 * 1024 * 1024;
 
 /**
  * Upload validation result
@@ -63,7 +67,7 @@ export async function validateUpload(
   filename: string,
   contentType?: string
 ): Promise<UploadValidationResult> {
-  // Check size first (fastest check)
+  // Check absolute size cap first
   if (buffer.length > MAX_FILE_SIZE) {
     return {
       valid: false,
@@ -101,6 +105,16 @@ export async function validateUpload(
     return {
       valid: false,
       error: `File type ${detectedMimeType} is not allowed. Allowed types: ${ALLOWED_MIME_TYPES.join(", ")}`,
+      detectedMimeType,
+    };
+  }
+
+  const isVideo = detectedMimeType.startsWith("video/");
+  const typeLimit = isVideo ? MAX_VIDEO_FILE_SIZE : MAX_IMAGE_FILE_SIZE;
+  if (buffer.length > typeLimit) {
+    return {
+      valid: false,
+      error: `File size exceeds ${typeLimit / 1024 / 1024}MB limit`,
       detectedMimeType,
     };
   }

@@ -11,6 +11,9 @@
 /**
  * Base error class for all application errors
  */
+const MEDIA_NOT_READY_MESSAGE =
+  "Media is still processing. Please retry in a moment.";
+
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly code: string;
@@ -145,6 +148,18 @@ export class ConflictError extends AppError {
     context?: Record<string, unknown>
   ) {
     super(message, 409, "CONFLICT_ERROR", true, context);
+  }
+}
+
+/**
+ * Media readiness errors (409)
+ */
+export class MediaNotReadyError extends AppError {
+  constructor(
+    message = MEDIA_NOT_READY_MESSAGE,
+    context?: Record<string, unknown>
+  ) {
+    super(message, 409, "MEDIA_NOT_READY", true, context);
   }
 }
 
@@ -325,8 +340,19 @@ export function getActionErrorMessage(data: unknown): string | undefined {
   const err = obj["error"];
   if (typeof err === "string") return err;
   if (err != null && typeof err === "object" && "message" in err) {
-    const msg = (err as { message: unknown }).message;
-    return typeof msg === "string" ? msg : undefined;
+    const errorObj = err as { message?: unknown; code?: unknown };
+    const code = typeof errorObj.code === "string" ? errorObj.code : "";
+    if (code.toUpperCase() === "MEDIA_NOT_READY") {
+      return MEDIA_NOT_READY_MESSAGE;
+    }
+    const msg = errorObj.message;
+    if (typeof msg === "string") {
+      if (msg.toLowerCase().includes("media_not_ready")) {
+        return MEDIA_NOT_READY_MESSAGE;
+      }
+      return msg;
+    }
+    return undefined;
   }
   return undefined;
 }
@@ -340,6 +366,7 @@ export const ErrorCodes = {
   AUTHORIZATION_ERROR: "AUTHORIZATION_ERROR",
   NOT_FOUND_ERROR: "NOT_FOUND_ERROR",
   CONFLICT_ERROR: "CONFLICT_ERROR",
+  MEDIA_NOT_READY: "MEDIA_NOT_READY",
   RATE_LIMIT_ERROR: "RATE_LIMIT_ERROR",
   EXTERNAL_SERVICE_ERROR: "EXTERNAL_SERVICE_ERROR",
   DATABASE_ERROR: "DATABASE_ERROR",

@@ -10,6 +10,8 @@ import {
   validateUpload,
   ALLOWED_MIME_TYPES,
   MAX_FILE_SIZE,
+  MAX_IMAGE_FILE_SIZE,
+  MAX_VIDEO_FILE_SIZE,
 } from "~/features/upload/validation.server";
 
 // Helper to create a valid JPEG buffer (minimal valid JPEG)
@@ -195,13 +197,16 @@ describe("File Upload Security: File Size Limits", () => {
 describe("File Upload Security: Constants", () => {
   it("should have MAX_FILE_SIZE defined", () => {
     expect(MAX_FILE_SIZE).toBeGreaterThan(0);
-    expect(MAX_FILE_SIZE).toBe(10 * 1024 * 1024); // 10MB
+    expect(MAX_FILE_SIZE).toBe(100 * 1024 * 1024); // 100MB absolute cap
+    expect(MAX_IMAGE_FILE_SIZE).toBe(10 * 1024 * 1024);
+    expect(MAX_VIDEO_FILE_SIZE).toBe(100 * 1024 * 1024);
   });
 
   it("should have ALLOWED_MIME_TYPES defined", () => {
     expect(ALLOWED_MIME_TYPES.length).toBeGreaterThan(0);
     expect(ALLOWED_MIME_TYPES).toContain("image/jpeg");
     expect(ALLOWED_MIME_TYPES).toContain("image/png");
+    expect(ALLOWED_MIME_TYPES).toContain("video/mp4");
   });
 
   it("should only allow image MIME types", () => {

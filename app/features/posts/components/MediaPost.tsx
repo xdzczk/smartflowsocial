@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Checkbox } from "~/components/ui/checkbox";
-import { uploadMultipleFiles } from "~/features/upload/upload.client";
+import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { getMinScheduleTimestampMs, parseDateTimeLocal } from "~/lib/temporal";
