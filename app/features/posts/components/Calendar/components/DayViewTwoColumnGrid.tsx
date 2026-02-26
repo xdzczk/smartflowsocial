@@ -3,7 +3,7 @@
  * Renders single-post blocks in two columns (absolute) and multi-post slots as rows with 2–6 equal cells.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { RefObject } from "react";
 
 import type { QueueType, UserData } from "../../../types";
@@ -56,6 +56,7 @@ function BlockInColumn({
   isHovered,
   onHoverChange,
   onPostEdit,
+  setActiveEmptySlotKey,
   user,
   queueTypes,
   isLongform,
@@ -65,6 +66,7 @@ function BlockInColumn({
   isHovered: boolean;
   onHoverChange: (hovered: boolean) => void;
   onPostEdit: (post: CalendarPost) => void;
+  setActiveEmptySlotKey: (key: string | null) => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform?: boolean;
@@ -97,7 +99,10 @@ function BlockInColumn({
         compact
         user={user}
         queueTypes={queueTypes}
-        onEdit={onPostEdit}
+        onEdit={(editedPost) => {
+          setActiveEmptySlotKey(null);
+          onPostEdit(editedPost);
+        }}
         isLongform={
           isAll
             ? Boolean(placement.post.title && placement.post.publishedAt)
@@ -139,6 +144,17 @@ export function DayViewTwoColumnGrid({
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [isDragOverGrid, setIsDragOverGrid] = useState(false);
   const userTimezone = user?.timezone ?? "Etc/UTC";
+  const occupiedRowSet = useMemo(() => {
+    const occupied = new Set<number>();
+    const mark = (startRow: number, blockHeightPx: number) => {
+      const rows = Math.max(1, Math.ceil((blockHeightPx + 4) / ROW_HEIGHT_PX));
+      for (let i = 0; i < rows; i++) occupied.add(startRow + i);
+    };
+    placements.col0.forEach((p) => mark(p.rowIndex, p.blockHeightPx));
+    placements.col1.forEach((p) => mark(p.rowIndex, p.blockHeightPx));
+    multiPostRows.forEach((row) => mark(row.rowIndex, row.blockHeightPx));
+    return occupied;
+  }, [placements, multiPostRows]);
 
   const handleDragOver = useCallback(
     (e: React.DragEvent<HTMLDivElement>, time: string) => {
@@ -262,6 +278,7 @@ export function DayViewTwoColumnGrid({
                       setHoveredSlotKey(hovered ? p.slotKey : null)
                     }
                     onPostEdit={onPostEdit}
+                    setActiveEmptySlotKey={setActiveEmptySlotKey}
                     user={user}
                     queueTypes={queueTypes}
                     isLongform={isLongform}
@@ -317,6 +334,7 @@ export function DayViewTwoColumnGrid({
                       setHoveredSlotKey(hovered ? p.slotKey : null)
                     }
                     onPostEdit={onPostEdit}
+                    setActiveEmptySlotKey={setActiveEmptySlotKey}
                     user={user}
                     queueTypes={queueTypes}
                     isLongform={isLongform}
@@ -370,20 +388,42 @@ export function DayViewTwoColumnGrid({
                   }}
                   onMouseLeave={() => setHoveredMultiPostKey(null)}
                 >
-                  {row.posts.map((post, index) => {
+                  {row.posts.map((post) => {
                     const key = `${row.time}-${post.id}`;
                     const isHovered = hoveredMultiPostKey === key;
-                    const totalCells =
-                      row.posts.length + (row.overflowCount > 0 ? 1 : 0);
-                    const fullWidthForHovered = `calc(${totalCells * 100}% + ${(totalCells - 1) * 0.125}rem)`;
-                    const expandStyle = isHovered
-                      ? {
-                          ...(index >= row.posts.length / 2
-                            ? { right: 0 }
-                            : { left: 0 }),
-                          width: fullWidthForHovered,
-                        }
-                      : {};
+                    const baseRows = Math.max(
+                      1,
+                      Math.ceil((row.blockHeightPx + 4) / ROW_HEIGHT_PX)
+                    );
+                    const hoverRows = baseRows <= 4 ? 5 : baseRows;
+                    const hoverHeightPx = hoverRows * ROW_HEIGHT_PX - 4;
+                    const extraRows = Math.max(0, hoverRows - baseRows);
+                    const hasConflictBelow = Array.from(
+                      { length: extraRows },
+                      (_unused, i) => row.rowIndex + baseRows + i
+                    ).some((r) => occupiedRowSet.has(r));
+                    const freeRowsAbove = (() => {
+                      let free = 0;
+                      for (let r = row.rowIndex - 1; r >= 0; r--) {
+                        if (occupiedRowSet.has(r)) break;
+                        free++;
+                      }
+                      return free;
+                    })();
+                    const shiftRows =
+                      isHovered && hasConflictBelow
+                        ? Math.min(extraRows, freeRowsAbove)
+                        : 0;
+                    const blockHeightPx = isHovered
+                      ? hoverHeightPx
+                      : row.blockHeightPx;
+                    const expandStyle = {
+                      height: blockHeightPx,
+                      transform:
+                        shiftRows > 0
+                          ? `translateY(-${shiftRows * ROW_HEIGHT_PX}px)`
+                          : undefined,
+                    };
 
                     return (
                       // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus/touch wrapper controlling expansion state; interactive PostBlock lives inside
@@ -391,10 +431,10 @@ export function DayViewTwoColumnGrid({
                         key={post.id}
                         className={`min-w-0 overflow-hidden rounded-[var(--calendar-radius-md)] ${
                           isHovered
-                            ? "absolute top-0 z-10 bg-[hsl(var(--calendar-surface-2-bg))]"
+                            ? "relative z-10 bg-[hsl(var(--calendar-surface-2-bg))]"
                             : "relative flex-1"
                         }`}
-                        style={{ ...expandStyle, height: row.blockHeightPx }}
+                        style={expandStyle}
                         onMouseEnter={() => setHoveredMultiPostKey(key)}
                         onFocusCapture={() => setHoveredMultiPostKey(key)}
                         onBlurCapture={() => setHoveredMultiPostKey(null)}
@@ -409,7 +449,10 @@ export function DayViewTwoColumnGrid({
                           multipleInCell
                           user={user}
                           queueTypes={queueTypes}
-                          onEdit={onPostEdit}
+                          onEdit={(editedPost) => {
+                            setActiveEmptySlotKey(null);
+                            onPostEdit(editedPost);
+                          }}
                           isLongform={
                             isAll
                               ? Boolean(post.title && post.publishedAt)
@@ -422,9 +465,13 @@ export function DayViewTwoColumnGrid({
                           }
                           hideTimeRowPreview
                           forceOpaque={isHovered}
-                          slotExpandRows={Math.ceil(
-                            (row.blockHeightPx + 4) / ROW_HEIGHT_PX
-                          )}
+                          slotExpandRows={
+                            isHovered
+                              ? hoverRows
+                              : Math.ceil(
+                                  (row.blockHeightPx + 4) / ROW_HEIGHT_PX
+                                )
+                          }
                         />
                       </div>
                     );

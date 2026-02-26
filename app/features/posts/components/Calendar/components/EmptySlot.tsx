@@ -41,6 +41,7 @@ function emptySlotHandleActivate(
       setActiveEmptySlotKey(slotKey);
     }
   } else {
+    onClearSelection?.();
     setActiveEmptySlotKey(null);
   }
 }

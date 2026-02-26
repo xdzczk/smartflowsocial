@@ -40,6 +40,7 @@ function renderSinglePostSlotContent(
     slotState,
     setHoveredPostKey,
     onPostEdit,
+    setActiveEmptySlotKey,
     user,
     queueTypes,
     isLongform,
@@ -54,8 +55,8 @@ function renderSinglePostSlotContent(
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
       className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
-        expandUp && isHovered
-          ? `absolute right-0 bottom-0 left-0 ${EXPANDED_BLOCK_WRAPPER_CLASS}`
+        expandUp
+          ? `absolute right-0 bottom-0 left-0 ${isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "z-0"}`
           : isHovered
             ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
             : "relative z-0"
@@ -73,7 +74,10 @@ function renderSinglePostSlotContent(
         compact={true}
         user={user}
         queueTypes={queueTypes}
-        onEdit={onPostEdit}
+        onEdit={(editedPost) => {
+          setActiveEmptySlotKey(null);
+          onPostEdit(editedPost);
+        }}
         isLongform={
           isAll ? Boolean(post.title && post.publishedAt) : isLongform
         }
@@ -98,6 +102,7 @@ interface MultiPostBlockProps {
   /** When true (conflicting blocks around), cap hover expansion at 3 rows. */
   noExpandOnHover?: boolean;
   onPostEdit: (post: CalendarPost) => void;
+  setActiveEmptySlotKey: (key: string | null) => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform: boolean;
@@ -123,6 +128,7 @@ function MultiPostBlock({
   setHoveredPostKey,
   noExpandOnHover = false,
   onPostEdit,
+  setActiveEmptySlotKey,
   user,
   queueTypes,
   isLongform,
@@ -139,16 +145,14 @@ function MultiPostBlock({
   );
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
-    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute right-0 bottom-0 left-0 z-10 min-w-0`
+    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative z-10 min-w-0 flex-1`
     : "relative z-0 min-w-0 flex-1";
-  const expandedStyle = multiHovered ? undefined : {};
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
       className={`transition-[height] duration-200 ease-out ${expandedClass}`}
-      style={{ height: multiHeightPx, ...expandedStyle }}
+      style={{ height: multiHeightPx }}
       onMouseEnter={() => setHoveredPostKey(multiPostKey)}
-      onMouseLeave={() => setHoveredPostKey(null)}
       onFocusCapture={() => setHoveredPostKey(multiPostKey)}
       onBlurCapture={() => setHoveredPostKey(null)}
       onTouchStart={() => setHoveredPostKey(multiPostKey)}
@@ -160,7 +164,10 @@ function MultiPostBlock({
         minimal={true}
         user={user}
         queueTypes={queueTypes}
-        onEdit={onPostEdit}
+        onEdit={(editedPost) => {
+          setActiveEmptySlotKey(null);
+          onPostEdit(editedPost);
+        }}
         isLongform={
           isAll ? Boolean(post.title && post.publishedAt) : isLongform
         }
@@ -210,6 +217,7 @@ function renderMultiPostSlotContent(
     setHoveredPostKey,
     noExpandOnHover,
     onPostEdit,
+    setActiveEmptySlotKey: props.setActiveEmptySlotKey,
     user,
     queueTypes,
     isLongform,
@@ -218,9 +226,11 @@ function renderMultiPostSlotContent(
 
   if (posts.length <= 6) {
     return wrapExpandUp(
+      // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Row-level leave clears hover once pointer exits whole multi-post group
       <div
         className="relative flex space-x-0.5"
         style={{ height: rowHeightPx }}
+        onMouseLeave={() => setHoveredPostKey(null)}
       >
         {posts.map((post) => (
           <MultiPostBlock key={post.id} post={post} {...multiPostBlockProps} />
@@ -230,7 +240,12 @@ function renderMultiPostSlotContent(
   }
 
   return wrapExpandUp(
-    <div className="relative flex space-x-0.5" style={{ height: rowHeightPx }}>
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Row-level leave clears hover once pointer exits whole multi-post group
+    <div
+      className="relative flex space-x-0.5"
+      style={{ height: rowHeightPx }}
+      onMouseLeave={() => setHoveredPostKey(null)}
+    >
       {posts.slice(0, 5).map((post) => (
         <MultiPostBlock key={post.id} post={post} {...multiPostBlockProps} />
       ))}
@@ -303,11 +318,11 @@ export function SlotCellContent(props: SlotCellContentProps) {
     Math.ceil((effectiveBlockHeightPx + 4) / ROW_HEIGHT_PX)
   );
   const conflictShiftActive = posts.length === 1 ? isHovered : multiPostHovered;
-  // Prefer downward growth. Only shift up when conflict is immediate below
+  // Prefer downward growth. Shift up only when there is a conflict below
   // and there are no conflicts above within the same effective span.
   const shouldShiftUpForConflict =
     conflictShiftActive &&
-    firstConflictOffsetBelow === 1 &&
+    firstConflictOffsetBelow !== null &&
     firstConflictOffsetAbove === null;
   const shiftRowsForConflict = shouldShiftUpForConflict
     ? Math.max(0, expandRowsEffective - firstConflictOffsetBelow)
