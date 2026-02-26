@@ -17,6 +17,7 @@ export interface TimeGridProps extends Omit<
   hourLabels: string[];
   weekDays: Date[];
   getSlotState: (day: Date, time: string) => SlotState;
+  scrollLeft?: number;
 }
 
 export function TimeGrid({
@@ -45,11 +46,15 @@ export function TimeGrid({
   setActiveEmptySlotKey,
   onClearSelection,
   isMobile,
+  scrollLeft = 0,
 }: TimeGridProps) {
   return (
     <div className="relative min-h-0 w-full flex-none">
       {isMobile ? (
-        <div className="border-border/30 pointer-events-none sticky left-0 z-[280] h-0 w-16">
+        <div
+          className="border-border/30 pointer-events-none absolute top-0 left-0 z-[280] w-16"
+          style={{ transform: `translateX(${scrollLeft}px)` }}
+        >
           <div
             className="bg-[hsl(var(--calendar-surface-2-bg))]"
             style={{

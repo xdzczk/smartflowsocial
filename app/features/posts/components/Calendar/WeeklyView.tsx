@@ -74,6 +74,7 @@ export function WeeklyView({
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
   const [hoveredSlotKey, setHoveredSlotKey] = useState<string | null>(null);
+  const [gridScrollLeft, setGridScrollLeft] = useState(0);
   const [activeEmptySlotKey, setActiveEmptySlotKey] = useState<string | null>(
     null
   );
@@ -268,6 +269,7 @@ export function WeeklyView({
           touchAction: "pan-x pan-y",
           overscrollBehaviorX: "contain",
         }}
+        onScroll={(e) => setGridScrollLeft(e.currentTarget.scrollLeft)}
         onMouseLeave={() => setHoveredPostKey(null)}
       >
         <div
@@ -331,6 +333,7 @@ export function WeeklyView({
             activeEmptySlotKey={activeEmptySlotKey}
             setActiveEmptySlotKey={setActiveEmptySlotKey}
             isMobile={isMobile}
+            scrollLeft={gridScrollLeft}
           />
         </div>
       </div>
