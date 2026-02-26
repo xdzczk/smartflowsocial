@@ -14,6 +14,7 @@ export interface DaysHeaderProps {
   dateLocale: "en-GB" | "en-US" | "sv";
   isMobile: boolean;
   showTimeSpacer?: boolean;
+  stickyTop?: boolean;
 }
 
 export function DaysHeader({
@@ -22,6 +23,7 @@ export function DaysHeader({
   dateLocale,
   isMobile,
   showTimeSpacer = true,
+  stickyTop = true,
 }: DaysHeaderProps) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
   const todayZoned = nowInTimezone(userTimezone);
@@ -29,7 +31,9 @@ export function DaysHeader({
   return (
     <div
       data-calendar-days-header="true"
-      className="border-border/40 sticky top-0 z-[260] flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]"
+      className={`border-border/40 z-[260] flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))] ${
+        stickyTop ? "sticky top-0" : ""
+      }`}
     >
       {showTimeSpacer ? (
         <div className="border-border/40 sticky left-0 z-[270] w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]" />
