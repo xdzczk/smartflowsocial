@@ -54,11 +54,7 @@ function renderSinglePostSlotContent(
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
       className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
-        expandUp && isHovered
-          ? `absolute right-0 bottom-0 left-0 ${EXPANDED_BLOCK_WRAPPER_CLASS}`
-          : isHovered
-            ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
-            : "relative z-0"
+        isHovered ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative` : "relative z-0"
       }`}
       style={{ height: blockHeightPx }}
       onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
@@ -94,7 +90,6 @@ interface MultiPostBlockProps {
   time: string;
   postsCount: number;
   slotExpandRows?: number;
-  expandUp?: boolean;
   alignExpandedRight?: boolean;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
@@ -122,7 +117,6 @@ function MultiPostBlock({
   dateKey,
   time,
   slotExpandRows,
-  expandUp = false,
   alignExpandedRight: _alignExpandedRight = false,
   hoveredPostKey,
   setHoveredPostKey,
@@ -144,9 +138,7 @@ function MultiPostBlock({
   );
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
-    ? expandUp
-      ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute bottom-0 left-0 right-0 w-full`
-      : `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute inset-0 w-full`
+    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative z-10 min-w-0 flex-1`
     : "relative z-0 min-w-0 flex-1";
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
@@ -183,7 +175,6 @@ function MultiPostBlock({
 /** Renders multi-post slot row (≤6 posts or 5 + overflow). */
 function renderMultiPostSlotContent(
   props: SlotCellContentProps,
-  expandUp: boolean,
   wrapExpandUp: (content: React.ReactNode) => React.ReactNode
 ): React.ReactNode {
   const {
@@ -205,7 +196,6 @@ function renderMultiPostSlotContent(
     time,
     postsCount: posts.length,
     slotExpandRows: expandRows,
-    expandUp,
     hoveredPostKey,
     setHoveredPostKey,
     noExpandOnHover,
@@ -335,5 +325,5 @@ export function SlotCellContent(props: SlotCellContentProps) {
     return renderSinglePostSlotContent(props, expandUp, wrapExpandUp);
   }
 
-  return renderMultiPostSlotContent(props, expandUp, wrapExpandUp);
+  return renderMultiPostSlotContent(props, wrapExpandUp);
 }

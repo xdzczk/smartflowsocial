@@ -1,53 +1,55 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="23" failures="0" errors="0" time="0.006075708">
-    <testsuite name="tests/unit/calendar-domain.test.ts" timestamp="2026-02-26T10:39:36.487Z" hostname="Ivans-MacBook-Pro.local" tests="21" failures="0" errors="0" skipped="0" time="0.004098125">
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 0 for 0 posts" time="0.000709042">
+<testsuites name="vitest tests" tests="24" failures="0" errors="0" time="0.006164958">
+    <testsuite name="tests/unit/calendar-domain.test.ts" timestamp="2026-02-26T10:55:12.109Z" hostname="Ivans-MacBook-Pro.local" tests="22" failures="0" errors="0" skipped="0" time="0.004161583">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 0 for 0 posts" time="0.000678375">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 6 for 1-2 posts" time="0.000117667">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 6 for 1-2 posts" time="0.00011375">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 4 for 3-4 posts" time="0.000087542">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 4 for 3-4 posts" time="0.000091167">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 2 for 5+ posts" time="0.000077709">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 2 for 5+ posts" time="0.00007575">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 0 posts" time="0.000092666">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 0 posts" time="0.000093584">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 3 for 1 post" time="0.000059459">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 3 for 1 post" time="0.000054">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 2 for 2 posts" time="0.000047833">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 2 for 2 posts" time="0.000044417">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 1 for 3-4 posts" time="0.000059042">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 1 for 3-4 posts" time="0.000058125">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 5+ posts" time="0.000051458">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 5+ posts" time="0.000047125">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns 0 when slot is last or not in hours" time="0.000111167">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns 0 when slot is last or not in hours" time="0.000104167">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns count of consecutive empty slots below" time="0.000102667">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns count of consecutive empty slots below" time="0.00009025">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns false when slot baseRows below is out of range or has no posts" time="0.00007925">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns false when slot baseRows below is out of range or has no posts" time="0.000071958">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns true when slot baseRows below has posts" time="0.000041166">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns true when slot baseRows below has posts" time="0.000041125">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; returns empty map for empty grid" time="0.000348458">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; returns empty map for empty grid" time="0.000369166">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; assigns alternating columns when both columns free for consecutive single-post slots" time="0.000504875">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; assigns alternating columns when both columns free for consecutive single-post slots" time="0.000494333">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; skips slots with not exactly one post" time="0.00007525">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; skips slots with not exactly one post" time="0.000082166">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns expandRows 1 and correct blockHeightPx for empty slot" time="0.000396667">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns expandRows 1 and correct blockHeightPx for empty slot" time="0.000460084">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns singlePostKey and isHovered when hoveredPostKey matches" time="0.000064042">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns singlePostKey and isHovered when hoveredPostKey matches" time="0.000067833">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns noExpandOnHover true for week view 3-row slot with post below" time="0.000057708">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns noExpandOnHover true for week view 3-row slot with post below" time="0.000064708">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; caps hovered single-post week slot at 3 rows when 4th row conflicts below" time="0.00006725">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; caps hovered single-post week slot at 3 rows when 4th row conflicts below" time="0.000068">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns isDragOver when dragOverSlot matches slotKey" time="0.000042625">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; caps hovered single-post week slot at 3 rows when one conflicting slot exists 2 rows below" time="0.000071875">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns isDragOver when dragOverSlot matches slotKey" time="0.000044167">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/calendar-week-view-smoke.test.tsx" timestamp="2026-02-26T10:39:36.489Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001977583">
-        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; exports a function component" time="0.000630666">
+    <testsuite name="tests/unit/calendar-week-view-smoke.test.tsx" timestamp="2026-02-26T10:55:12.112Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.002003375">
+        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; exports a function component" time="0.000641666">
         </testcase>
-        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; accepts required props shape" time="0.0007115">
+        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; accepts required props shape" time="0.000718584">
         </testcase>
     </testsuite>
 </testsuites>

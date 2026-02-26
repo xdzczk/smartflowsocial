@@ -114,14 +114,12 @@ function computeWeekNoExpandOnHover(
   isDayView: boolean
 ): boolean {
   if (isDayView) return false;
-  // For week-view hover growth, 4 rows is the max target; conflicts at that boundary cap growth to 3.
-  const hasConflictBelow = hasBlocksUnderneath(
-    dateKey,
-    time,
-    3,
-    postsGrid,
-    hours
-  );
+  // Any occupied slot in the next 3 rows should cap week-view hover growth to 3 rows.
+  const hasConflictBelow = [1, 2, 3].some((offset) => {
+    const belowSlot = hours[rowIndex + offset];
+    if (belowSlot === undefined) return false;
+    return (postsGrid[dateKey]?.[belowSlot]?.length ?? 0) > 0;
+  });
   const hasConflictAbove =
     rowIndex >= WEEK_VIEW_BOTTOM_ROWS_EXPAND_UP_THRESHOLD &&
     hasBlocksAbove(dateKey, time, postsGrid, hours);
