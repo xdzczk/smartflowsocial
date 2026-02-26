@@ -321,7 +321,7 @@ export function WeeklyView({
         <div
           ref={gridScrollRef}
           className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
-          style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+          style={{ WebkitOverflowScrolling: "touch" }}
           onMouseLeave={() => setHoveredPostKey(null)}
         >
           <div className="flex min-h-[40vh] min-w-0 flex-none select-none">
@@ -342,7 +342,10 @@ export function WeeklyView({
             </div>
             <div
               className="min-w-0 flex-1 overflow-x-auto overflow-y-visible"
-              style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x" }}
+              style={{
+                WebkitOverflowScrolling: "touch",
+                overscrollBehaviorX: "contain",
+              }}
             >
               <div
                 className="min-h-[40vh] min-w-0"
