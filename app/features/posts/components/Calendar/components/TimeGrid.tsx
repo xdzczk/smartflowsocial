@@ -49,7 +49,7 @@ export function TimeGrid({
   return (
     <div className="relative min-h-0 w-full flex-none">
       <div
-        className={`relative flex w-full flex-col flex-nowrap ${isMobile ? "pl-16" : ""}`}
+        className="relative flex w-full flex-col flex-nowrap"
         style={{
           height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
           minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,

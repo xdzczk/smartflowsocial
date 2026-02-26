@@ -13,6 +13,7 @@ export interface DaysHeaderProps {
   user?: UserData | null;
   dateLocale: "en-GB" | "en-US" | "sv";
   isMobile: boolean;
+  showTimeSpacer?: boolean;
 }
 
 export function DaysHeader({
@@ -20,6 +21,7 @@ export function DaysHeader({
   user,
   dateLocale,
   isMobile,
+  showTimeSpacer = true,
 }: DaysHeaderProps) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
   const todayZoned = nowInTimezone(userTimezone);
@@ -29,7 +31,9 @@ export function DaysHeader({
       data-calendar-days-header="true"
       className="border-border/40 sticky top-0 z-[260] flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]"
     >
-      <div className="border-border/40 sticky left-0 z-[270] w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]" />
+      {showTimeSpacer ? (
+        <div className="border-border/40 sticky left-0 z-[270] w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]" />
+      ) : null}
       {weekDays.map((day) => {
         const dayZoned = fromDate(day, userTimezone);
         const isToday =

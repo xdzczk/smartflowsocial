@@ -17,7 +17,6 @@ import {
   BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
   DEFAULT_SCROLL_HOUR,
   HOURS_PER_DAY,
-  MOBILE_WEEK_GRID_MIN_WIDTH,
   ROW_HEIGHT_PX,
   WEEK_VIEW_MIN_WIDTH,
 } from "./components/weekly-view-constants";
@@ -74,7 +73,6 @@ export function WeeklyView({
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
   const [hoveredSlotKey, setHoveredSlotKey] = useState<string | null>(null);
-  const [gridScrollTop, setGridScrollTop] = useState(0);
   const [daysHeaderHeight, setDaysHeaderHeight] = useState(0);
   const [activeEmptySlotKey, setActiveEmptySlotKey] = useState<string | null>(
     null
@@ -271,32 +269,106 @@ export function WeeklyView({
     }
   }, [hoveredPostKey, weekDays, hours, postsGrid, dragOverSlot, userTz]);
 
-  return (
-    <div className="relative flex h-0 min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {isMobile ? (
-        <div className="pointer-events-none absolute top-0 left-0 z-[290] w-16">
-          <div
-            className="border-border/40 border-r bg-[hsl(var(--calendar-surface-2-bg))]"
-            style={{ height: daysHeaderHeight }}
-          />
-          <div
-            className="border-border/30 bg-[hsl(var(--calendar-surface-2-bg))]"
-            style={{
-              transform: `translateY(${daysHeaderHeight - gridScrollTop}px)`,
-            }}
-          >
-            {hourLabels.map((label, index) => (
+  const commonTimeGridProps = {
+    hours,
+    hourLabels,
+    weekDays,
+    getSlotState: (day: Date, time: string) =>
+      getSlotState(
+        day,
+        time,
+        postsGrid,
+        hours,
+        hoveredPostKey,
+        dragOverSlot,
+        user?.timezone ?? "Etc/UTC"
+      ),
+    hoveredPostKey,
+    setHoveredPostKey,
+    dragOverSlot,
+    userTimezone: user?.timezone ?? "Etc/UTC",
+    hoveredSlotKey,
+    setHoveredSlotKey,
+    onDragOver: handleDragOver,
+    onDrop: handleDrop,
+    onDragLeave: handleDragLeave,
+    formatDropSlotAriaLabel: (
+      dateKey: string,
+      time: string,
+      userTz: string,
+      locale?: string
+    ) =>
+      formatDropSlotAriaLabel(
+        dateKey,
+        time,
+        userTz,
+        (locale ?? dateLocale) as "en-GB" | "en-US" | "sv"
+      ),
+    dateLocale,
+    onPostEdit,
+    user,
+    queueTypes,
+    isLongform,
+    isAll,
+    activeEmptySlotKey,
+    setActiveEmptySlotKey,
+  };
+
+  if (isMobile) {
+    return (
+      <div className="flex h-0 min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
+        <div
+          ref={gridScrollRef}
+          className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
+          style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+          onMouseLeave={() => setHoveredPostKey(null)}
+        >
+          <div className="flex min-h-[40vh] min-w-0 flex-none select-none">
+            <div className="w-16 shrink-0">
               <div
-                key={hours[index] ?? `mobile-time-rail-${label}-${index}`}
-                className="text-muted-foreground/85 border-border/30 flex w-16 items-start justify-end border-r pr-2 text-right text-xs leading-none"
-                style={{ height: ROW_HEIGHT_PX - 1 }}
+                className="border-border/40 sticky top-0 z-[270] border-r bg-[hsl(var(--calendar-surface-2-bg))]"
+                style={{ height: daysHeaderHeight }}
+              />
+              {hourLabels.map((label, index) => (
+                <div
+                  key={hours[index] ?? `mobile-time-rail-${label}-${index}`}
+                  className="text-muted-foreground/85 border-border/30 flex w-16 items-start justify-end border-r pr-2 text-right text-xs leading-none"
+                  style={{ height: ROW_HEIGHT_PX - 1 }}
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+            <div
+              className="min-w-0 flex-1 overflow-x-auto overflow-y-visible"
+              style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x" }}
+            >
+              <div
+                className="min-h-[40vh] min-w-0"
+                style={{
+                  width: "calc(7 * ((100vw - 4rem) / 3))",
+                  minWidth: "calc(7 * ((100vw - 4rem) / 3))",
+                }}
               >
-                {label}
+                <DaysHeader
+                  weekDays={weekDays}
+                  user={user}
+                  dateLocale={dateLocale}
+                  isMobile={true}
+                  showTimeSpacer={false}
+                />
+                <TimeGrid {...commonTimeGridProps} isMobile={true} />
               </div>
-            ))}
+            </div>
           </div>
         </div>
-      ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-0 min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
       <div
         ref={gridScrollRef}
@@ -306,73 +378,19 @@ export function WeeklyView({
           touchAction: "pan-x pan-y",
           overscrollBehaviorX: "contain",
         }}
-        onScroll={(e) => {
-          setGridScrollTop(e.currentTarget.scrollTop);
-        }}
         onMouseLeave={() => setHoveredPostKey(null)}
       >
         <div
-          className={`flex min-h-[40vh] min-w-0 flex-none flex-col select-none ${isMobile ? "shrink-0 self-start" : ""}`}
-          style={{
-            ...(isMobile
-              ? {
-                  width: MOBILE_WEEK_GRID_MIN_WIDTH,
-                  minWidth: MOBILE_WEEK_GRID_MIN_WIDTH,
-                }
-              : {
-                  minWidth: WEEK_VIEW_MIN_WIDTH,
-                }),
-          }}
+          className="flex min-h-[40vh] min-w-0 flex-none flex-col select-none"
+          style={{ minWidth: WEEK_VIEW_MIN_WIDTH }}
         >
           <DaysHeader
             weekDays={weekDays}
             user={user}
             dateLocale={dateLocale}
-            isMobile={isMobile}
+            isMobile={false}
           />
-
-          <TimeGrid
-            hours={hours}
-            hourLabels={hourLabels}
-            weekDays={weekDays}
-            getSlotState={(day, time) =>
-              getSlotState(
-                day,
-                time,
-                postsGrid,
-                hours,
-                hoveredPostKey,
-                dragOverSlot,
-                user?.timezone ?? "Etc/UTC"
-              )
-            }
-            hoveredPostKey={hoveredPostKey}
-            setHoveredPostKey={setHoveredPostKey}
-            dragOverSlot={dragOverSlot}
-            userTimezone={user?.timezone ?? "Etc/UTC"}
-            hoveredSlotKey={hoveredSlotKey}
-            setHoveredSlotKey={setHoveredSlotKey}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onDragLeave={handleDragLeave}
-            formatDropSlotAriaLabel={(dateKey, time, userTz, locale) =>
-              formatDropSlotAriaLabel(
-                dateKey,
-                time,
-                userTz,
-                (locale ?? dateLocale) as "en-GB" | "en-US" | "sv"
-              )
-            }
-            dateLocale={dateLocale}
-            onPostEdit={onPostEdit}
-            user={user}
-            queueTypes={queueTypes}
-            isLongform={isLongform}
-            isAll={isAll}
-            activeEmptySlotKey={activeEmptySlotKey}
-            setActiveEmptySlotKey={setActiveEmptySlotKey}
-            isMobile={isMobile}
-          />
+          <TimeGrid {...commonTimeGridProps} isMobile={false} />
         </div>
       </div>
     </div>
