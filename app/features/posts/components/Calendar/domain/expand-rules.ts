@@ -41,7 +41,7 @@ export function getExpandDown(
   return count;
 }
 
-/** Day view: expand down until the next slot that has a single post in the same column (up to maxEmptySlots). Multi-post slots do not block expansion. */
+/** Day view: expand down until a conflicting slot appears (same-column single post or any multi-post row). */
 export function getExpandDownDayView(
   dateKey: string,
   timeSlot: string,
@@ -62,7 +62,8 @@ export function getExpandDownDayView(
     const colBelow = dayViewColumnMap[slotKeyBelow];
     const hasSinglePostInMyColumn =
       postsBelow.length === 1 && colBelow === myColumn;
-    if (hasSinglePostInMyColumn) break;
+    const hasMultiPostConflict = postsBelow.length >= 2;
+    if (hasSinglePostInMyColumn || hasMultiPostConflict) break;
     count = i;
   }
   return count;

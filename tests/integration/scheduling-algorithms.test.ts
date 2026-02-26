@@ -581,6 +581,35 @@ describe("Scheduling Algorithms", () => {
       expect(result.getUTCHours()).toBe(19);
       expect(result.getUTCMinutes()).toBe(45);
     });
+
+    it("should ignore duplicate weekly slot entries", async () => {
+      const lastPostTime = createDateAtTime(2024, 1, 15, 12, 0); // Monday 12:00 UTC
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        lastPostTime
+      );
+
+      const queueType = createWeeklySlotsQueueType(
+        [
+          { dayOfWeek: 4, time: "19:45" },
+          { dayOfWeek: 4, time: "19:45" }, // duplicate config row
+          { dayOfWeek: 1, time: "09:00" },
+        ],
+        { id: "queue-1", name: "posts" }
+      );
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        userTimezone: "UTC",
+        baseTime: BASE_TIME,
+      });
+
+      // Without dedupe this could repeatedly return the same slot for successive posts.
+      // With dedupe the next slot after Monday 12:00 is Thursday 19:45.
+      expect(result.getUTCDay()).toBe(4);
+      expect(result.getUTCHours()).toBe(19);
+      expect(result.getUTCMinutes()).toBe(45);
+    });
   });
 
   describe("Edge Cases", () => {

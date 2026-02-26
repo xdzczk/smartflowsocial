@@ -133,6 +133,9 @@ export function DayViewTwoColumnGrid({
   isAll = false,
 }: DayViewTwoColumnGridProps) {
   const [hoveredSlotKey, setHoveredSlotKey] = useState<string | null>(null);
+  const [hoveredMultiPostKey, setHoveredMultiPostKey] = useState<string | null>(
+    null
+  );
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [isDragOverGrid, setIsDragOverGrid] = useState(false);
   const userTimezone = user?.timezone ?? "Etc/UTC";
@@ -357,43 +360,77 @@ export function DayViewTwoColumnGrid({
           >
             <div className="absolute inset-0">
               {multiPostRows.map((row) => (
+                // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover-exit region for grouped row interactions
                 <div
                   key={`${row.rowIndex}-${row.time}`}
                   className="pointer-events-auto absolute right-0 left-0 flex gap-0.5 px-0.5"
                   style={{
                     top: row.rowIndex * ROW_HEIGHT_PX,
-                    height: ROW_HEIGHT_PX,
-                    display: "grid",
-                    gridTemplateColumns: `repeat(${row.posts.length + (row.overflowCount > 0 ? 1 : 0)}, 1fr)`,
+                    height: row.blockHeightPx,
                   }}
+                  onMouseLeave={() => setHoveredMultiPostKey(null)}
                 >
-                  {row.posts.map((post) => (
-                    <div
-                      key={post.id}
-                      className="min-w-0 overflow-hidden rounded-[var(--calendar-radius-md)]"
-                    >
-                      <PostBlock
-                        post={post}
-                        compact
-                        multipleInCell
-                        user={user}
-                        queueTypes={queueTypes}
-                        onEdit={onPostEdit}
-                        isLongform={
-                          isAll
-                            ? Boolean(post.title && post.publishedAt)
-                            : isLongform
+                  {row.posts.map((post, index) => {
+                    const key = `${row.time}-${post.id}`;
+                    const isHovered = hoveredMultiPostKey === key;
+                    const totalCells =
+                      row.posts.length + (row.overflowCount > 0 ? 1 : 0);
+                    const fullWidthForHovered = `calc(${totalCells * 100}% + ${(totalCells - 1) * 0.125}rem)`;
+                    const expandStyle = isHovered
+                      ? {
+                          ...(index >= row.posts.length / 2
+                            ? { right: 0 }
+                            : { left: 0 }),
+                          width: fullWidthForHovered,
                         }
-                        isPast={
-                          typeof post.isPast === "boolean" ? post.isPast : false
+                      : {};
+
+                    return (
+                      // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus/touch wrapper controlling expansion state; interactive PostBlock lives inside
+                      <div
+                        key={post.id}
+                        className={`min-w-0 overflow-hidden rounded-[var(--calendar-radius-md)] ${
+                          isHovered
+                            ? "absolute top-0 z-10 bg-[hsl(var(--calendar-surface-2-bg))]"
+                            : "relative flex-1"
+                        }`}
+                        style={{ ...expandStyle, height: row.blockHeightPx }}
+                        onMouseEnter={() => setHoveredMultiPostKey(key)}
+                        onFocusCapture={() => setHoveredMultiPostKey(key)}
+                        onBlurCapture={() => setHoveredMultiPostKey(null)}
+                        onTouchStart={() => setHoveredMultiPostKey(key)}
+                        onTouchEnd={() =>
+                          setTimeout(() => setHoveredMultiPostKey(null), 300)
                         }
-                        hideTimeRowPreview
-                        slotExpandRows={1}
-                      />
-                    </div>
-                  ))}
+                      >
+                        <PostBlock
+                          post={post}
+                          compact
+                          multipleInCell
+                          user={user}
+                          queueTypes={queueTypes}
+                          onEdit={onPostEdit}
+                          isLongform={
+                            isAll
+                              ? Boolean(post.title && post.publishedAt)
+                              : isLongform
+                          }
+                          isPast={
+                            typeof post.isPast === "boolean"
+                              ? post.isPast
+                              : false
+                          }
+                          hideTimeRowPreview
+                          forceOpaque={isHovered}
+                          slotExpandRows={Math.ceil(
+                            (row.blockHeightPx + 4) / ROW_HEIGHT_PX
+                          )}
+                        />
+                      </div>
+                    );
+                  })}
                   {row.overflowCount > 0 ? (
-                    <div className="bg-muted text-muted-foreground flex items-center justify-center rounded text-xs">
+                    <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
                       +{row.overflowCount}
                     </div>
                   ) : null}

@@ -8,6 +8,7 @@ import { getDayViewColumnMap } from "~/features/posts/components/Calendar/domain
 import {
   getDayViewMaxExpand,
   getExpandDown,
+  getExpandDownDayView,
   getWeekViewMaxExpand,
   hasBlocksUnderneath,
 } from "~/features/posts/components/Calendar/domain/expand-rules";
@@ -81,6 +82,31 @@ describe("Calendar domain", () => {
       expect(getExpandDown("2025-02-17", "09:00", grid, hours, 6)).toBe(3); // 09:30, 10:00, 10:30 empty; 11:00 has post
       expect(getExpandDown("2025-02-17", "09:00", grid, hours, 2)).toBe(2); // capped at maxEmptySlots 2
       expect(getExpandDown("2025-02-17", "09:30", grid, hours, 3)).toBe(2); // 10:00, 10:30 empty then 11:00 has post
+    });
+  });
+
+  describe("getExpandDownDayView", () => {
+    it("stops expansion when a multi-post slot exists below", () => {
+      const grid: PostsGrid = {
+        "2025-02-17": {
+          "09:00": [minimalPost("1")],
+          "09:30": [],
+          "10:00": [minimalPost("2"), minimalPost("3")],
+        },
+      };
+      const hours = ["09:00", "09:30", "10:00"];
+      const columnMap: Record<string, 0 | 1> = { "2025-02-17-09:00": 0 };
+      expect(
+        getExpandDownDayView(
+          "2025-02-17",
+          "09:00",
+          grid,
+          hours,
+          6,
+          0,
+          columnMap
+        )
+      ).toBe(1);
     });
   });
 

@@ -54,7 +54,11 @@ function renderSinglePostSlotContent(
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
       className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
-        isHovered ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative` : "relative z-0"
+        expandUp && isHovered
+          ? `absolute right-0 bottom-0 left-0 ${EXPANDED_BLOCK_WRAPPER_CLASS}`
+          : isHovered
+            ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
+            : "relative z-0"
       }`}
       style={{ height: blockHeightPx }}
       onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
@@ -116,8 +120,9 @@ function MultiPostBlock({
   post,
   dateKey,
   time,
+  postsCount,
   slotExpandRows,
-  alignExpandedRight: _alignExpandedRight = false,
+  alignExpandedRight = false,
   hoveredPostKey,
   setHoveredPostKey,
   noExpandOnHover = false,
@@ -138,15 +143,22 @@ function MultiPostBlock({
   );
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
-    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative z-10 min-w-0 flex-1`
+    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute top-0 z-10 min-w-0`
     : "relative z-0 min-w-0 flex-1";
+  // Tailwind `space-x-0.5` = 0.125rem horizontal gap between sibling blocks.
+  const fullWidthForHovered = `calc(${postsCount * 100}% + ${(postsCount - 1) * 0.125}rem)`;
+  const expandedStyle = multiHovered
+    ? {
+        ...(alignExpandedRight ? { right: 0 } : { left: 0 }),
+        width: fullWidthForHovered,
+      }
+    : {};
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
       className={`transition-[height] duration-200 ease-out ${expandedClass}`}
-      style={{ height: multiHeightPx }}
+      style={{ height: multiHeightPx, ...expandedStyle }}
       onMouseEnter={() => setHoveredPostKey(multiPostKey)}
-      onMouseLeave={() => setHoveredPostKey(null)}
       onFocusCapture={() => setHoveredPostKey(multiPostKey)}
       onBlurCapture={() => setHoveredPostKey(null)}
       onTouchStart={() => setHoveredPostKey(multiPostKey)}
@@ -208,9 +220,11 @@ function renderMultiPostSlotContent(
 
   if (posts.length <= 6) {
     return wrapExpandUp(
+      // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Row-level hover leave handler to clear multi-post hover state for wrappers inside
       <div
         className="relative flex space-x-0.5"
         style={{ height: blockHeightPx }}
+        onMouseLeave={() => setHoveredPostKey(null)}
       >
         {posts.map((post, index) => (
           <MultiPostBlock
@@ -225,9 +239,11 @@ function renderMultiPostSlotContent(
   }
 
   return wrapExpandUp(
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Row-level hover leave handler to clear multi-post hover state for wrappers inside
     <div
       className="relative flex space-x-0.5"
       style={{ height: blockHeightPx }}
+      onMouseLeave={() => setHoveredPostKey(null)}
     >
       {posts.slice(0, 5).map((post, index) => (
         <MultiPostBlock

@@ -16,6 +16,10 @@ vi.mock("~/features/user", () => ({
   hashTagPresetExistsForUser: vi.fn(),
 }));
 
+vi.mock("~/features/user/services/user-cache.server", () => ({
+  invalidateQueueTypesCache: vi.fn(),
+}));
+
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
 import { handleQueueTypeAction } from "~/features/settings/actions/queue-types-actions.server";
@@ -236,6 +240,53 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         })
       );
       expect(jsonResult).toEqual({ success: true });
+    });
+
+    it("should normalize and dedupe weekly slots before saving", async () => {
+      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-weekly",
+        name: "Weekly Queue",
+        colorToken: "slate",
+        description: null,
+        scheduleType: "WEEKLY_SLOTS",
+        scheduleConfig: {
+          weeklySlots: [
+            { dayOfWeek: 1, time: "09:00" },
+            { dayOfWeek: 4, time: "19:45" },
+          ],
+        },
+        isEnabled: true,
+        userId: TEST_USER_ID,
+        hashTagPreset: null,
+      });
+
+      const formData = createFormData({
+        _action: "create_queue_type",
+        name: "Weekly Queue",
+        scheduleType: "WEEKLY_SLOTS",
+        weeklySlots: JSON.stringify([
+          { dayOfWeek: 4, time: "19:45" },
+          { dayOfWeek: 4, time: "19:45" }, // duplicate
+          { dayOfWeek: 1, time: "9:00" }, // non-normalized hour
+        ]),
+        colorToken: "slate",
+        hashTagPresetId: "none",
+      });
+
+      await handleQueueTypeAction(TEST_USER_ID, "create_queue_type", formData);
+
+      expect(updateQueueType).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        expect.objectContaining({
+          scheduleType: "WEEKLY_SLOTS",
+          scheduleConfig: {
+            weeklySlots: [
+              { dayOfWeek: 1, time: "09:00" },
+              { dayOfWeek: 4, time: "19:45" },
+            ],
+          },
+        })
+      );
     });
   });
 

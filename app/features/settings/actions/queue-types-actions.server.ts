@@ -110,6 +110,57 @@ async function validateHashtagPreset(
   return null;
 }
 
+function normalizeWeeklySlotTime(time: string): string | null {
+  const parts = String(time).trim().split(":");
+  if (parts.length !== 2) {
+    return null;
+  }
+  const hours = Number(parts[0]);
+  const minutes = Number(parts[1]);
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function normalizeAndDedupeWeeklySlots(
+  weeklySlots: Array<{ dayOfWeek: number; time: string }> | undefined
+): Array<{ dayOfWeek: number; time: string }> {
+  if (!weeklySlots || weeklySlots.length === 0) {
+    return [];
+  }
+
+  const unique = new Map<string, { dayOfWeek: number; time: string }>();
+  for (const slot of weeklySlots) {
+    const dayOfWeek = Number(slot.dayOfWeek);
+    if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+      continue;
+    }
+    const normalizedTime = normalizeWeeklySlotTime(slot.time);
+    if (!normalizedTime) {
+      continue;
+    }
+    const key = `${dayOfWeek}-${normalizedTime}`;
+    if (!unique.has(key)) {
+      unique.set(key, { dayOfWeek, time: normalizedTime });
+    }
+  }
+
+  return [...unique.values()].sort((a, b) => {
+    if (a.dayOfWeek !== b.dayOfWeek) {
+      return a.dayOfWeek - b.dayOfWeek;
+    }
+    return a.time.localeCompare(b.time);
+  });
+}
+
 function buildScheduleConfig(data: {
   scheduleType: "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS";
   useGlobalInterval?: boolean;
@@ -128,7 +179,7 @@ function buildScheduleConfig(data: {
       : { intervalHours: data.intervalHours };
   }
   if (data.scheduleType === "WEEKLY_SLOTS") {
-    return { weeklySlots: data.weeklySlots! };
+    return { weeklySlots: normalizeAndDedupeWeeklySlots(data.weeklySlots) };
   }
   return { slots: data.slots! };
 }

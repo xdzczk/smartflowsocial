@@ -5,6 +5,7 @@
 
 import {
   getDayViewMaxExpand,
+  getExpandDown,
   getExpandDownDayView,
 } from "../domain/expand-rules";
 import { ROW_HEIGHT_PX } from "../domain/slot-state";
@@ -29,6 +30,7 @@ export interface MultiPostRow {
   rowIndex: number;
   time: string;
   posts: CalendarPost[];
+  blockHeightPx: number;
   /** When > 0, show "+N" in UI. */
   overflowCount: number;
 }
@@ -107,7 +109,7 @@ function capPlacementHeightsByNextInColumn(
 }
 
 /**
- * Time slots with 2+ posts: one row per slot, posts capped at 6 for display.
+ * Time slots with 2+ posts: row height uses day-view expand rules when free rows exist below.
  */
 export function getMultiPostRows(
   dateKey: string,
@@ -120,9 +122,25 @@ export function getMultiPostRows(
     if (time === undefined) continue;
     const posts = postsGrid[dateKey]?.[time] ?? [];
     if (posts.length < 2) continue;
+    const maxExpand = getDayViewMaxExpand(posts.length);
+    const expandDown = getExpandDown(
+      dateKey,
+      time,
+      postsGrid,
+      hours,
+      maxExpand
+    );
+    const baseRows = 1 + expandDown;
+    const blockHeightPx = baseRows * ROW_HEIGHT_PX - 4;
     const displayPosts = posts.slice(0, 6);
     const overflowCount = Math.max(0, posts.length - 6);
-    rows.push({ rowIndex, time, posts: displayPosts, overflowCount });
+    rows.push({
+      rowIndex,
+      time,
+      posts: displayPosts,
+      blockHeightPx,
+      overflowCount,
+    });
   }
   return rows;
 }

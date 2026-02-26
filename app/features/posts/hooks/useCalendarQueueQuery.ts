@@ -9,7 +9,8 @@ import {
   useParams,
   useSearchParams,
 } from "@remix-run/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
@@ -44,8 +45,10 @@ export const calendarQueueKeys = {
 export function useCalendarQueueQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const queueType =
     params["queueType"] ?? searchParams.get("queueType") ?? "all";
+  const queryKey = calendarQueueKeys.list(queueType);
 
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
@@ -56,8 +59,14 @@ export function useCalendarQueueQuery() {
     calendarQueueLoaderDataSchema
   );
 
+  // Keep TanStack cache in sync when Remix loader data changes after actions.
+  useEffect(() => {
+    if (!validatedLoaderData) return;
+    queryClient.setQueryData(queryKey, validatedLoaderData);
+  }, [queryClient, queryKey, validatedLoaderData]);
+
   return useQuery({
-    queryKey: calendarQueueKeys.list(queueType),
+    queryKey,
     queryFn: async () => {
       // Use fetcher to refetch data
       const url =
@@ -93,7 +102,7 @@ export function useCalendarQueueQuery() {
         checkFetcher();
       });
     },
-    initialData: validatedLoaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds
     refetchOnMount: false,
   });

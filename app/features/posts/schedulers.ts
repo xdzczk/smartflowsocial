@@ -507,9 +507,20 @@ function parseWeeklySlots(
   weeklySlots: Array<{ dayOfWeek: number; time: string }>,
   userId: string
 ): ParsedWeeklySlot[] {
-  return weeklySlots
+  const parsed = weeklySlots
     .map((entry) => parseWeeklySlot(entry, userId))
     .filter((slot): slot is ParsedWeeklySlot => slot !== null);
+
+  // Guard against duplicate entries in stored config (same day + time),
+  // which would otherwise produce duplicate scheduling candidates.
+  const uniqueByDayAndTime = new Map<string, ParsedWeeklySlot>();
+  for (const slot of parsed) {
+    const key = `${slot.dayOfWeek}-${slot.hours}:${slot.minutes}`;
+    if (!uniqueByDayAndTime.has(key)) {
+      uniqueByDayAndTime.set(key, slot);
+    }
+  }
+  return [...uniqueByDayAndTime.values()];
 }
 
 /**
