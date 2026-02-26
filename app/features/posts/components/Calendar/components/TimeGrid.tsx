@@ -58,9 +58,7 @@ export function TimeGrid({
         className="absolute inset-0 isolate overflow-y-scroll"
         style={{
           WebkitOverflowScrolling: "touch",
-          // Allow both axes so horizontal swipes can scroll the week container.
-          touchAction: "pan-x pan-y",
-          overflowX: "visible",
+          overflowX: "hidden",
         }}
         onMouseLeave={() => setHoveredPostKey(null)}
       >

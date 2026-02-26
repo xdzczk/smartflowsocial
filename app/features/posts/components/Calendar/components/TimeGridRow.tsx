@@ -84,16 +84,22 @@ export function TimeGridRow({
   onClearSelection,
   isMobile,
 }: TimeGridRowProps) {
-  const expandUp = index >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
-  const rowHasHoveredExpandedUp =
-    expandUp &&
-    weekDays.some((day) => {
-      const slotState = getSlotState(day, time);
-      return slotState.posts.some((p) => {
-        const key = `${slotState.dateKey}-${time}-${p.id}`;
-        return hoveredPostKey === key;
-      });
+  const rowHasHoveredExpandedUp = weekDays.some((day) => {
+    const slotState = getSlotState(day, time);
+    const hoveredInCell = slotState.posts.some((p) => {
+      const key = `${slotState.dateKey}-${time}-${p.id}`;
+      return hoveredPostKey === key;
     });
+    if (!hoveredInCell) return false;
+
+    // Bottom rows always expand up on hover; outside bottom rows we only treat
+    // it as expand-up when hover conflict logic shifts the block upward.
+    const isBottomRowExpandUp = index >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
+    const isConflictShiftExpandUp =
+      slotState.firstConflictOffsetBelow === 1 &&
+      slotState.firstConflictOffsetAbove === null;
+    return isBottomRowExpandUp || isConflictShiftExpandUp;
+  });
   // Rows 0..44: upper row on top so blocks expanding downward stay above the next row.
   // Rows 45+: stack-above zone for expand-up; these rows sit below row 44 so expanded content is visible.
   const rowZIndex = rowHasHoveredExpandedUp

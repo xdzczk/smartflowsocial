@@ -62,6 +62,7 @@ function renderSinglePostSlotContent(
       }`}
       style={{ height: blockHeightPx }}
       onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
+      onMouseLeave={() => setHoveredPostKey(null)}
       onFocusCapture={() => singlePostKey && setHoveredPostKey(singlePostKey)}
       onBlurCapture={() => setHoveredPostKey(null)}
       onTouchStart={() => singlePostKey && setHoveredPostKey(singlePostKey)}
@@ -147,6 +148,7 @@ function MultiPostBlock({
       className={`transition-[height] duration-200 ease-out ${expandedClass}`}
       style={{ height: multiHeightPx, ...expandedStyle }}
       onMouseEnter={() => setHoveredPostKey(multiPostKey)}
+      onMouseLeave={() => setHoveredPostKey(null)}
       onFocusCapture={() => setHoveredPostKey(multiPostKey)}
       onBlurCapture={() => setHoveredPostKey(null)}
       onTouchStart={() => setHoveredPostKey(multiPostKey)}
@@ -190,6 +192,15 @@ function renderMultiPostSlotContent(
   } = props;
   const { dateKey, posts, expandRows, blockHeightPx, noExpandOnHover } =
     slotState;
+  const multiPostHovered = posts.some(
+    (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
+  );
+  const multiPostHoveredHeightPx =
+    getMultiPostExpandRows(expandRows, true, noExpandOnHover) * ROW_HEIGHT_PX -
+    4;
+  const rowHeightPx = multiPostHovered
+    ? Math.max(blockHeightPx, multiPostHoveredHeightPx)
+    : blockHeightPx;
 
   const multiPostBlockProps = {
     dateKey,
@@ -209,7 +220,7 @@ function renderMultiPostSlotContent(
     return wrapExpandUp(
       <div
         className="relative flex space-x-0.5"
-        style={{ height: blockHeightPx }}
+        style={{ height: rowHeightPx }}
       >
         {posts.map((post) => (
           <MultiPostBlock key={post.id} post={post} {...multiPostBlockProps} />
@@ -219,10 +230,7 @@ function renderMultiPostSlotContent(
   }
 
   return wrapExpandUp(
-    <div
-      className="relative flex space-x-0.5"
-      style={{ height: blockHeightPx }}
-    >
+    <div className="relative flex space-x-0.5" style={{ height: rowHeightPx }}>
       {posts.slice(0, 5).map((post) => (
         <MultiPostBlock key={post.id} post={post} {...multiPostBlockProps} />
       ))}
@@ -257,6 +265,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
     expandRows,
     noExpandOnHover,
     firstConflictOffsetBelow,
+    firstConflictOffsetAbove,
   } = slotState;
   const hoveredPostKey = props.hoveredPostKey;
 
@@ -294,10 +303,15 @@ export function SlotCellContent(props: SlotCellContentProps) {
     Math.ceil((effectiveBlockHeightPx + 4) / ROW_HEIGHT_PX)
   );
   const conflictShiftActive = posts.length === 1 ? isHovered : multiPostHovered;
-  const shiftRowsForConflict =
-    conflictShiftActive && firstConflictOffsetBelow !== null
-      ? Math.max(0, expandRowsEffective - firstConflictOffsetBelow)
-      : 0;
+  // Prefer downward growth. Only shift up when conflict is immediate below
+  // and there are no conflicts above within the same effective span.
+  const shouldShiftUpForConflict =
+    conflictShiftActive &&
+    firstConflictOffsetBelow === 1 &&
+    firstConflictOffsetAbove === null;
+  const shiftRowsForConflict = shouldShiftUpForConflict
+    ? Math.max(0, expandRowsEffective - firstConflictOffsetBelow)
+    : 0;
   const shiftRowsUp = Math.min(rowIndex, shiftRowsForConflict);
   const shouldGrowUp =
     availableRowsBelow > 0 &&

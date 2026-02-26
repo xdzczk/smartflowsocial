@@ -166,6 +166,25 @@ function getFirstConflictOffsetBelow(
   return null;
 }
 
+function getFirstConflictOffsetAbove(
+  dateKey: string,
+  time: string,
+  postsGrid: PostsGrid,
+  hours: string[],
+  maxOffset: number
+): number | null {
+  const rowIndex = hours.indexOf(time);
+  if (rowIndex <= 0 || maxOffset <= 0) return null;
+  for (let offset = 1; offset <= maxOffset; offset++) {
+    const aboveTime = hours[rowIndex - offset];
+    if (aboveTime === undefined) break;
+    if ((postsGrid[dateKey]?.[aboveTime]?.length ?? 0) > 0) {
+      return offset;
+    }
+  }
+  return null;
+}
+
 export function getSlotState(
   dateKey: string,
   time: string,
@@ -236,6 +255,13 @@ export function getSlotState(
     hours,
     Math.max(0, expandRows - 1)
   );
+  const firstConflictOffsetAbove = getFirstConflictOffsetAbove(
+    dateKey,
+    time,
+    postsGrid,
+    hours,
+    Math.max(0, expandRows - 1)
+  );
   const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
   return {
     dateKey,
@@ -248,6 +274,7 @@ export function getSlotState(
     blockHeightPx,
     noExpandOnHover,
     firstConflictOffsetBelow,
+    firstConflictOffsetAbove,
   };
 }
 

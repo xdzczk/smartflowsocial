@@ -35,10 +35,10 @@ export const TIME_GRID_ROW_CONTENT_Z = 1;
 
 /** Day view layer stack inside grid content area. */
 export const DAY_VIEW_GRID_LINES_Z = 0;
-/** Single-post blocks should render above multi-post rows (day-view expand rules). */
+/** Multi-post rows should be interactive above single-post layer. */
 export const DAY_VIEW_SINGLE_POSTS_Z = 2;
-export const DAY_VIEW_MULTI_POSTS_Z = 1;
-export const DAY_VIEW_DROP_LAYER_Z = 3;
+export const DAY_VIEW_MULTI_POSTS_Z = 3;
+export const DAY_VIEW_DROP_LAYER_Z = 4;
 export const DAY_VIEW_POST_BLOCK_CONTAINER_Z = 10;
 
 /** Class for expanded post block wrapper: fully opaque and on top so grid/content behind don't show through. */

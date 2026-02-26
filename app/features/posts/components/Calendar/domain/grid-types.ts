@@ -20,6 +20,8 @@ export interface SlotState {
   noExpandOnHover: boolean;
   /** Nearest occupied row below within current expand span (1 = immediate next row), null when no conflict. */
   firstConflictOffsetBelow: number | null;
+  /** Nearest occupied row above within current expand span (1 = immediate previous row), null when no conflict. */
+  firstConflictOffsetAbove: number | null;
 }
 
 export interface GetSlotStateOptions {
