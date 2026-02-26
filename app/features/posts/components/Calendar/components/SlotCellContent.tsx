@@ -145,12 +145,12 @@ function MultiPostBlock({
   );
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
-    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative z-10 min-w-0 flex-1`
+    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute right-0 bottom-0 left-0 z-20 min-w-0`
     : "relative z-0 min-w-0 flex-1";
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
-      className={`transition-[height] duration-200 ease-out ${expandedClass}`}
+      className={`transition-[height,opacity] duration-200 ease-out ${expandedClass}`}
       style={{ height: multiHeightPx }}
       onMouseEnter={() => setHoveredPostKey(multiPostKey)}
       onFocusCapture={() => setHoveredPostKey(multiPostKey)}

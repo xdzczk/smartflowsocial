@@ -25,7 +25,10 @@ export function DaysHeader({
   const todayZoned = nowInTimezone(userTimezone);
 
   return (
-    <div className="border-border/40 flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
+    <div
+      data-calendar-days-header="true"
+      className="border-border/40 sticky top-0 z-[220] flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]"
+    >
       <div className="w-16 flex-shrink-0" />
       {weekDays.map((day) => {
         const dayZoned = fromDate(day, userTimezone);

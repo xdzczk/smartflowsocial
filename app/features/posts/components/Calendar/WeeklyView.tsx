@@ -80,6 +80,13 @@ export function WeeklyView({
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const hasSetInitialScrollRef = useRef(false);
 
+  const getDaysHeaderHeight = (container: HTMLDivElement): number => {
+    const header = container.querySelector<HTMLElement>(
+      '[data-calendar-days-header="true"]'
+    );
+    return header?.offsetHeight ?? 0;
+  };
+
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
 
   const weekDays = useMemo(() => {
@@ -191,7 +198,7 @@ export function WeeklyView({
     const el = gridScrollRef.current;
     if (!el || hasSetInitialScrollRef.current) return;
     const slotIndex = DEFAULT_SCROLL_HOUR * 2;
-    const scrollTop = slotIndex * ROW_HEIGHT_PX;
+    const scrollTop = getDaysHeaderHeight(el) + slotIndex * ROW_HEIGHT_PX;
 
     const apply = () => {
       if (hasSetInitialScrollRef.current || !gridScrollRef.current) return;
@@ -242,8 +249,9 @@ export function WeeklyView({
     const expandRows = slotState.expandRows;
     const blockTopPx = Math.max(0, (rowIndex - expandRows + 1) * ROW_HEIGHT_PX);
     const el = gridScrollRef.current;
+    const headerHeight = getDaysHeaderHeight(el);
     // Small margin so expanded block isn’t flush with top
-    const scrollTarget = Math.max(0, blockTopPx - ROW_HEIGHT_PX);
+    const scrollTarget = Math.max(0, headerHeight + blockTopPx - ROW_HEIGHT_PX);
     if (el.scrollTop > scrollTarget) {
       el.scrollTop = scrollTarget;
     }
@@ -251,11 +259,14 @@ export function WeeklyView({
 
   return (
     <div className="flex h-0 min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
       <div
-        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-auto overflow-y-hidden"
+        ref={gridScrollRef}
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto"
         style={{
           WebkitOverflowScrolling: "touch",
         }}
+        onMouseLeave={() => setHoveredPostKey(null)}
       >
         <div
           className={`flex min-h-[40vh] flex-1 flex-col overflow-hidden select-none ${isMobile ? "shrink-0 self-start" : ""}`}
@@ -278,7 +289,6 @@ export function WeeklyView({
           />
 
           <TimeGrid
-            gridScrollRef={gridScrollRef}
             hours={hours}
             hourLabels={hourLabels}
             weekDays={weekDays}

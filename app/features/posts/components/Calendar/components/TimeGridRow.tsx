@@ -88,6 +88,7 @@ export function TimeGridRow({
   const rowHasExpandedUpContent = weekDays.some((day) => {
     const slotState = getSlotState(day, time);
     if (slotState.posts.length === 0) return false;
+    if (index >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD) return true;
 
     // Any block that exceeds remaining rows at end-of-day is expanding upward.
     if (slotState.expandRows > availableRowsBelow) return true;
@@ -98,14 +99,11 @@ export function TimeGridRow({
     });
     if (!hoveredInCell) return false;
 
-    // Bottom rows always expand up on hover; outside bottom rows we only treat
-    // it as expand-up when hover conflict logic shifts the block upward.
-    const isBottomRowExpandUp =
-      index >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD && slotState.isHovered;
-    const isConflictShiftExpandUp =
+    // Outside bottom rows we only treat it as expand-up when hover conflict logic shifts upward.
+    return (
       slotState.firstConflictOffsetBelow !== null &&
-      slotState.firstConflictOffsetAbove === null;
-    return isBottomRowExpandUp || isConflictShiftExpandUp;
+      slotState.firstConflictOffsetAbove === null
+    );
   });
   // Rows 0..44: upper row on top so blocks expanding downward stay above the next row.
   // Rows 45+: stack-above zone for expand-up; these rows sit below row 44 so expanded content is visible.
