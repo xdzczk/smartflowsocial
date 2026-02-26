@@ -489,7 +489,7 @@ export function Calendar({
       </div>
 
       {/* Calendar content: Day view on lg shows main + right sidebar */}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-x-visible overflow-y-hidden">
         <CalendarErrorBoundary>
           <div
             data-testid={`calendar-view-${view}`}

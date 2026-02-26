@@ -66,8 +66,6 @@ function renderSinglePostSlotContent(
       onMouseLeave={() => setHoveredPostKey(null)}
       onFocusCapture={() => singlePostKey && setHoveredPostKey(singlePostKey)}
       onBlurCapture={() => setHoveredPostKey(null)}
-      onTouchStart={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-      onTouchEnd={() => setTimeout(() => setHoveredPostKey(null), 300)}
     >
       <PostBlock
         post={post}
@@ -180,8 +178,6 @@ function MultiPostBlock({
       onMouseEnter={() => setHoveredPostKey(multiPostKey)}
       onFocusCapture={() => setHoveredPostKey(multiPostKey)}
       onBlurCapture={() => setHoveredPostKey(null)}
-      onTouchStart={() => setHoveredPostKey(multiPostKey)}
-      onTouchEnd={() => setTimeout(() => setHoveredPostKey(null), 300)}
     >
       <PostBlock
         post={post}
