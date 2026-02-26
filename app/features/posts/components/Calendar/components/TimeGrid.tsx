@@ -52,6 +52,7 @@ export function TimeGrid({
 }: TimeGridProps) {
   return (
     <div className="relative min-h-0 flex-1">
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Non-interactive scroll container clears hover state on pointer exit */}
       <div
         ref={gridScrollRef}
         className="absolute inset-0 isolate overflow-y-scroll"
@@ -61,6 +62,7 @@ export function TimeGrid({
           touchAction: "pan-x pan-y",
           overflowX: "visible",
         }}
+        onMouseLeave={() => setHoveredPostKey(null)}
       >
         <div
           className="relative flex w-full flex-col flex-nowrap"

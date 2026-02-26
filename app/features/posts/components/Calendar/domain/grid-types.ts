@@ -18,6 +18,8 @@ export interface SlotState {
   blockHeightPx: number;
   /** Week view: true when surrounding rows conflict; hover growth should be capped. */
   noExpandOnHover: boolean;
+  /** Nearest occupied row below within current expand span (1 = immediate next row), null when no conflict. */
+  firstConflictOffsetBelow: number | null;
 }
 
 export interface GetSlotStateOptions {

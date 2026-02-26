@@ -23,11 +23,11 @@ export const MOBILE_WEEK_GRID_MIN_WIDTH =
 /** Row z-index (below Dialog z-50). */
 export const CALENDAR_ROW_Z_BASE = 39;
 /** Hovered bottom-row expand-up content must render above all regular row layers. */
-export const CALENDAR_ROW_Z_EXPANDED_UP = 89;
+export const CALENDAR_ROW_Z_EXPANDED_UP = 200;
 /** Hovered slot cell wrapper should sit above base row layers. */
 export const CALENDAR_HOVERED_CELL_Z = 40;
 /** Current-time indicator must render above all row layers. */
-export const CURRENT_TIME_INDICATOR_Z = 90;
+export const CURRENT_TIME_INDICATOR_Z = 210;
 /** Week/day time-grid shared layers. */
 export const TIME_GRID_LINES_Z = 0;
 export const TIME_GRID_ROWS_LAYER_Z = 1;

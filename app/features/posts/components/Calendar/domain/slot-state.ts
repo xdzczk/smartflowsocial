@@ -147,6 +147,25 @@ function computeExpandRows(
   return baseRows >= 4 ? baseRows : Math.min(baseRows + 2, 4);
 }
 
+function getFirstConflictOffsetBelow(
+  dateKey: string,
+  time: string,
+  postsGrid: PostsGrid,
+  hours: string[],
+  maxOffset: number
+): number | null {
+  const rowIndex = hours.indexOf(time);
+  if (rowIndex < 0 || maxOffset <= 0) return null;
+  for (let offset = 1; offset <= maxOffset; offset++) {
+    const belowTime = hours[rowIndex + offset];
+    if (belowTime === undefined) break;
+    if ((postsGrid[dateKey]?.[belowTime]?.length ?? 0) > 0) {
+      return offset;
+    }
+  }
+  return null;
+}
+
 export function getSlotState(
   dateKey: string,
   time: string,
@@ -210,6 +229,13 @@ export function getSlotState(
     posts.length,
     noExpandOnHover
   );
+  const firstConflictOffsetBelow = getFirstConflictOffsetBelow(
+    dateKey,
+    time,
+    postsGrid,
+    hours,
+    Math.max(0, expandRows - 1)
+  );
   const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
   return {
     dateKey,
@@ -221,6 +247,7 @@ export function getSlotState(
     expandRows,
     blockHeightPx,
     noExpandOnHover,
+    firstConflictOffsetBelow,
   };
 }
 

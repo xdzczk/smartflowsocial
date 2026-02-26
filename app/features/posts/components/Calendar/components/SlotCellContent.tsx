@@ -62,7 +62,6 @@ function renderSinglePostSlotContent(
       }`}
       style={{ height: blockHeightPx }}
       onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-      onMouseLeave={() => setHoveredPostKey(null)}
       onFocusCapture={() => singlePostKey && setHoveredPostKey(singlePostKey)}
       onBlurCapture={() => setHoveredPostKey(null)}
       onTouchStart={() => singlePostKey && setHoveredPostKey(singlePostKey)}
@@ -92,9 +91,7 @@ interface MultiPostBlockProps {
   post: CalendarPost;
   dateKey: string;
   time: string;
-  postsCount: number;
   slotExpandRows?: number;
-  alignExpandedRight?: boolean;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
   /** When true (conflicting blocks around), cap hover expansion at 3 rows. */
@@ -120,9 +117,7 @@ function MultiPostBlock({
   post,
   dateKey,
   time,
-  postsCount,
   slotExpandRows,
-  alignExpandedRight = false,
   hoveredPostKey,
   setHoveredPostKey,
   noExpandOnHover = false,
@@ -143,16 +138,9 @@ function MultiPostBlock({
   );
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
-    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute top-0 z-10 min-w-0`
+    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute right-0 bottom-0 left-0 z-10 min-w-0`
     : "relative z-0 min-w-0 flex-1";
-  // Tailwind `space-x-0.5` = 0.125rem horizontal gap between sibling blocks.
-  const fullWidthForHovered = `calc(${postsCount * 100}% + ${(postsCount - 1) * 0.125}rem)`;
-  const expandedStyle = multiHovered
-    ? {
-        ...(alignExpandedRight ? { right: 0 } : { left: 0 }),
-        width: fullWidthForHovered,
-      }
-    : {};
+  const expandedStyle = multiHovered ? undefined : {};
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
@@ -206,7 +194,6 @@ function renderMultiPostSlotContent(
   const multiPostBlockProps = {
     dateKey,
     time,
-    postsCount: posts.length,
     slotExpandRows: expandRows,
     hoveredPostKey,
     setHoveredPostKey,
@@ -220,38 +207,24 @@ function renderMultiPostSlotContent(
 
   if (posts.length <= 6) {
     return wrapExpandUp(
-      // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Row-level hover leave handler to clear multi-post hover state for wrappers inside
       <div
         className="relative flex space-x-0.5"
         style={{ height: blockHeightPx }}
-        onMouseLeave={() => setHoveredPostKey(null)}
       >
-        {posts.map((post, index) => (
-          <MultiPostBlock
-            key={post.id}
-            post={post}
-            {...multiPostBlockProps}
-            alignExpandedRight={index >= posts.length / 2}
-          />
+        {posts.map((post) => (
+          <MultiPostBlock key={post.id} post={post} {...multiPostBlockProps} />
         ))}
       </div>
     );
   }
 
   return wrapExpandUp(
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Row-level hover leave handler to clear multi-post hover state for wrappers inside
     <div
       className="relative flex space-x-0.5"
       style={{ height: blockHeightPx }}
-      onMouseLeave={() => setHoveredPostKey(null)}
     >
-      {posts.slice(0, 5).map((post, index) => (
-        <MultiPostBlock
-          key={post.id}
-          post={post}
-          {...multiPostBlockProps}
-          alignExpandedRight={index >= 3}
-        />
+      {posts.slice(0, 5).map((post) => (
+        <MultiPostBlock key={post.id} post={post} {...multiPostBlockProps} />
       ))}
       <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
         +{posts.length - 5}
@@ -279,9 +252,11 @@ export function SlotCellContent(props: SlotCellContentProps) {
     dateKey,
     posts,
     blockHeightPx,
+    isHovered,
     slotKey,
     expandRows,
     noExpandOnHover,
+    firstConflictOffsetBelow,
   } = slotState;
   const hoveredPostKey = props.hoveredPostKey;
 
@@ -314,12 +289,23 @@ export function SlotCellContent(props: SlotCellContentProps) {
       )
     : blockHeightPx;
   const blockExceedsBelow = effectiveBlockHeightPx > allocatedHeightPx;
+  const expandRowsEffective = Math.max(
+    1,
+    Math.ceil((effectiveBlockHeightPx + 4) / ROW_HEIGHT_PX)
+  );
+  const conflictShiftActive = posts.length === 1 ? isHovered : multiPostHovered;
+  const shiftRowsForConflict =
+    conflictShiftActive && firstConflictOffsetBelow !== null
+      ? Math.max(0, expandRowsEffective - firstConflictOffsetBelow)
+      : 0;
+  const shiftRowsUp = Math.min(rowIndex, shiftRowsForConflict);
   const shouldGrowUp =
-    availableRowsBelow > 0 && (expandUp || blockExceedsBelow);
+    availableRowsBelow > 0 &&
+    (expandUp || blockExceedsBelow || shiftRowsUp > 0);
   const expandUpTop =
     shouldGrowUp && blockExceedsBelow
       ? allocatedHeightPx - effectiveBlockHeightPx
-      : 0;
+      : -shiftRowsUp * ROW_HEIGHT_PX;
   const wrapExpandUp = (content: React.ReactNode) =>
     shouldGrowUp ? (
       <div
