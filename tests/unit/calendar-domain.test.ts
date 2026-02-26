@@ -197,6 +197,25 @@ describe("Calendar domain", () => {
       expect(state.noExpandOnHover).toBe(true);
     });
 
+    it("caps hovered single-post week slot at 3 rows when 4th row conflicts below", () => {
+      const grid: PostsGrid = {
+        "2025-02-17": {
+          "09:00": [minimalPost("1")],
+          "09:30": [],
+          "10:00": [],
+          "10:30": [minimalPost("2")],
+        },
+      };
+      const state = getSlotState("2025-02-17", "09:00", grid, hours, {
+        ...baseOptions,
+        hoveredPostKey: "2025-02-17-09:00-1",
+        isDayView: false,
+      });
+      expect(state.isHovered).toBe(true);
+      expect(state.expandRows).toBe(3);
+      expect(state.noExpandOnHover).toBe(true);
+    });
+
     it("returns isDragOver when dragOverSlot matches slotKey", () => {
       const grid: PostsGrid = { "2025-02-17": { "09:00": [minimalPost("1")] } };
       const state = getSlotState("2025-02-17", "09:00", grid, hours, {

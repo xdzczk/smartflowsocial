@@ -9,6 +9,7 @@ import {
   CALENDAR_ROW_Z_BASE,
   CALENDAR_ROW_Z_EXPANDED_UP,
   ROW_HEIGHT_PX,
+  TIME_GRID_ROW_CONTENT_Z,
 } from "./weekly-view-constants";
 
 export interface TimeGridRowProps {
@@ -113,8 +114,8 @@ export function TimeGridRow({
       }}
     >
       <div
-        className="relative z-[1] flex min-h-0 w-full min-w-0 flex-1 items-stretch"
-        style={{ height: ROW_HEIGHT_PX - 1 }}
+        className="relative flex min-h-0 w-full min-w-0 flex-1 items-stretch"
+        style={{ height: ROW_HEIGHT_PX - 1, zIndex: TIME_GRID_ROW_CONTENT_Z }}
       >
         <div className="text-muted-foreground/85 w-16 flex-shrink-0 pr-2 text-right text-xs leading-none">
           {hourLabel}

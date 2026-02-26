@@ -22,7 +22,24 @@ export const MOBILE_WEEK_GRID_MIN_WIDTH =
 
 /** Row z-index (below Dialog z-50). */
 export const CALENDAR_ROW_Z_BASE = 39;
-export const CALENDAR_ROW_Z_EXPANDED_UP = 45;
+/** Hovered bottom-row expand-up content must render above all regular row layers. */
+export const CALENDAR_ROW_Z_EXPANDED_UP = 89;
+/** Hovered slot cell wrapper should sit above base row layers. */
+export const CALENDAR_HOVERED_CELL_Z = 40;
+/** Current-time indicator must render above all row layers. */
+export const CURRENT_TIME_INDICATOR_Z = 90;
+/** Week/day time-grid shared layers. */
+export const TIME_GRID_LINES_Z = 0;
+export const TIME_GRID_ROWS_LAYER_Z = 1;
+export const TIME_GRID_ROW_CONTENT_Z = 1;
+
+/** Day view layer stack inside grid content area. */
+export const DAY_VIEW_GRID_LINES_Z = 0;
+/** Single-post blocks should render above multi-post rows (day-view expand rules). */
+export const DAY_VIEW_SINGLE_POSTS_Z = 2;
+export const DAY_VIEW_MULTI_POSTS_Z = 1;
+export const DAY_VIEW_DROP_LAYER_Z = 3;
+export const DAY_VIEW_POST_BLOCK_CONTAINER_Z = 10;
 
 /** Class for expanded post block wrapper: fully opaque and on top so grid/content behind don't show through. */
 export const EXPANDED_BLOCK_WRAPPER_CLASS =

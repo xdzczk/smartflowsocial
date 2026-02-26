@@ -98,13 +98,23 @@ interface MultiPostBlockProps {
   alignExpandedRight?: boolean;
   hoveredPostKey: string | null;
   setHoveredPostKey: (key: string | null) => void;
-  /** When true (conflicting blocks below), cap hover expansion to base height (3 rows). */
+  /** When true (conflicting blocks around), cap hover expansion at 3 rows. */
   noExpandOnHover?: boolean;
   onPostEdit: (post: CalendarPost) => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform: boolean;
   isAll: boolean;
+}
+
+function getMultiPostExpandRows(
+  baseRows: number,
+  isHovered: boolean,
+  noExpandOnHover: boolean
+): number {
+  if (!isHovered) return Math.min(baseRows, 4);
+  const targetRows = noExpandOnHover ? 3 : 4;
+  return Math.max(baseRows, targetRows);
 }
 
 function MultiPostBlock({
@@ -126,14 +136,12 @@ function MultiPostBlock({
   const multiPostKey = `${dateKey}-${time}-${post.id}`;
   const multiHovered = hoveredPostKey === multiPostKey;
   const baseRows = slotExpandRows ?? 1;
-  // On hover: expand to 4 rows when there is space (baseRows >= 3); up to 3 when conflicting blocks below.
-  const multiExpandRows = multiHovered
-    ? noExpandOnHover
-      ? baseRows
-      : baseRows >= 3
-        ? 4
-        : baseRows
-    : Math.min(baseRows, 4);
+  // On hover: expand to 4 rows when there is room, or cap at 3 when conflicting rows exist.
+  const multiExpandRows = getMultiPostExpandRows(
+    baseRows,
+    multiHovered,
+    noExpandOnHover
+  );
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
     ? expandUp
@@ -261,7 +269,14 @@ export function SlotCellContent(props: SlotCellContentProps) {
     setActiveEmptySlotKey,
     onClearSelection,
   } = props;
-  const { dateKey, posts, blockHeightPx, slotKey } = slotState;
+  const {
+    dateKey,
+    posts,
+    blockHeightPx,
+    slotKey,
+    expandRows,
+    noExpandOnHover,
+  } = slotState;
   const hoveredPostKey = props.hoveredPostKey;
 
   if (posts.length === 0) {
@@ -285,7 +300,12 @@ export function SlotCellContent(props: SlotCellContentProps) {
     posts.length > 1 &&
     posts.some((p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`);
   const effectiveBlockHeightPx = multiPostHovered
-    ? Math.max(blockHeightPx, 4 * ROW_HEIGHT_PX - 4)
+    ? Math.max(
+        blockHeightPx,
+        getMultiPostExpandRows(expandRows, true, noExpandOnHover) *
+          ROW_HEIGHT_PX -
+          4
+      )
     : blockHeightPx;
   const blockExceedsBelow = effectiveBlockHeightPx > allocatedHeightPx;
   const shouldGrowUp =

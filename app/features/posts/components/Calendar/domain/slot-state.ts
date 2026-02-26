@@ -40,6 +40,115 @@ function computeWeekViewBaseRows(
   return rows;
 }
 
+function getSinglePostKey(
+  dateKey: string,
+  time: string,
+  posts: CalendarPost[]
+): string | null {
+  return posts.length === 1 && posts[0]
+    ? `${dateKey}-${time}-${posts[0].id}`
+    : null;
+}
+
+function computeExpandDownForSlot(
+  dateKey: string,
+  time: string,
+  postsGrid: PostsGrid,
+  hours: string[],
+  maxExpand: number,
+  isDayView: boolean,
+  postsCount: number,
+  dayViewColumnMap?: Record<string, 0 | 1>
+): number {
+  const slotKey = `${dateKey}-${time}`;
+  if (isDayView && dayViewColumnMap && postsCount === 1) {
+    return getExpandDownDayView(
+      dateKey,
+      time,
+      postsGrid,
+      hours,
+      maxExpand,
+      dayViewColumnMap[slotKey] ?? 0,
+      dayViewColumnMap
+    );
+  }
+  return getExpandDown(dateKey, time, postsGrid, hours, maxExpand);
+}
+
+function computeEffectiveHoveredKey(
+  isDayView: boolean,
+  hoveredPostKey: string | null,
+  hoveredPostKeyByColumn: GetSlotStateOptions["hoveredPostKeyByColumn"],
+  dayViewColumnMap: GetSlotStateOptions["dayViewColumnMap"],
+  slotKey: string,
+  singlePostKey: string | null
+): string | null {
+  if (
+    !isDayView ||
+    !hoveredPostKeyByColumn ||
+    !dayViewColumnMap ||
+    singlePostKey === null
+  ) {
+    return hoveredPostKey;
+  }
+  return hoveredPostKeyByColumn[dayViewColumnMap[slotKey] ?? 0] ?? null;
+}
+
+function isSinglePostSelected(
+  posts: CalendarPost[],
+  selectedPost: GetSlotStateOptions["selectedPost"]
+): boolean {
+  return (
+    !!selectedPost &&
+    posts.length === 1 &&
+    (posts[0] as CalendarPost | undefined)?.id === selectedPost.id
+  );
+}
+
+function computeWeekNoExpandOnHover(
+  dateKey: string,
+  time: string,
+  rowIndex: number,
+  postsGrid: PostsGrid,
+  hours: string[],
+  isDayView: boolean
+): boolean {
+  if (isDayView) return false;
+  // For week-view hover growth, 4 rows is the max target; conflicts at that boundary cap growth to 3.
+  const hasConflictBelow = hasBlocksUnderneath(
+    dateKey,
+    time,
+    3,
+    postsGrid,
+    hours
+  );
+  const hasConflictAbove =
+    rowIndex >= WEEK_VIEW_BOTTOM_ROWS_EXPAND_UP_THRESHOLD &&
+    hasBlocksAbove(dateKey, time, postsGrid, hours);
+  // Week view: any collision above/below should cap hover growth.
+  return hasConflictBelow || hasConflictAbove;
+}
+
+function computeExpandRows(
+  isDayView: boolean,
+  isHovered: boolean,
+  baseRows: number,
+  postsCount: number,
+  noExpandOnHover: boolean
+): number {
+  if (isDayView) {
+    if (!isHovered) return baseRows;
+    return baseRows <= 4 ? 5 : baseRows;
+  }
+
+  if (!isHovered) return baseRows;
+  if (postsCount === 1) {
+    return Math.max(baseRows, noExpandOnHover ? 3 : Math.min(baseRows + 2, 4));
+  }
+  if (noExpandOnHover) return baseRows;
+  return baseRows >= 4 ? baseRows : Math.min(baseRows + 2, 4);
+}
+
 export function getSlotState(
   dateKey: string,
   time: string,
@@ -62,61 +171,47 @@ export function getSlotState(
   const maxExpand = isDayView
     ? getDayViewMaxExpand(posts.length)
     : getWeekViewMaxExpand(posts.length);
-  const expandDown =
-    isDayView && dayViewColumnMap && posts.length === 1
-      ? getExpandDownDayView(
-          dateKey,
-          time,
-          postsGrid,
-          hours,
-          maxExpand,
-          dayViewColumnMap[slotKey] ?? 0,
-          dayViewColumnMap
-        )
-      : getExpandDown(dateKey, time, postsGrid, hours, maxExpand);
-  const singlePostKey =
-    posts.length === 1 && posts[0] ? `${dateKey}-${time}-${posts[0].id}` : null;
-  const effectiveHoveredKey =
-    isDayView &&
-    hoveredPostKeyByColumn &&
-    dayViewColumnMap &&
-    singlePostKey !== null
-      ? (hoveredPostKeyByColumn[dayViewColumnMap[slotKey] ?? 0] ?? null)
-      : hoveredPostKey;
+  const expandDown = computeExpandDownForSlot(
+    dateKey,
+    time,
+    postsGrid,
+    hours,
+    maxExpand,
+    isDayView,
+    posts.length,
+    dayViewColumnMap
+  );
+  const singlePostKey = getSinglePostKey(dateKey, time, posts);
+  const effectiveHoveredKey = computeEffectiveHoveredKey(
+    isDayView,
+    hoveredPostKey,
+    hoveredPostKeyByColumn,
+    dayViewColumnMap,
+    slotKey,
+    singlePostKey
+  );
   const isHovered =
     (singlePostKey !== null && effectiveHoveredKey === singlePostKey) ||
-    (!!selectedPost &&
-      posts.length === 1 &&
-      (posts[0] as CalendarPost | undefined)?.id === selectedPost.id);
+    isSinglePostSelected(posts, selectedPost);
   const baseRows = isDayView
     ? 1 + expandDown
     : computeWeekViewBaseRows(dateKey, time, 1 + expandDown, postsGrid, hours);
   const rowIndex = hours.indexOf(time);
-  const hasConflictBelow = hasBlocksUnderneath(
+  const noExpandOnHover = computeWeekNoExpandOnHover(
     dateKey,
     time,
-    baseRows,
+    rowIndex,
     postsGrid,
-    hours
+    hours,
+    isDayView
   );
-  const hasConflictAbove =
-    rowIndex >= WEEK_VIEW_BOTTOM_ROWS_EXPAND_UP_THRESHOLD &&
-    hasBlocksAbove(dateKey, time, postsGrid, hours);
-  const noExpandOnHover =
-    !isDayView && baseRows === 3 && (hasConflictBelow || hasConflictAbove);
-  const expandRows = isDayView
-    ? isHovered
-      ? baseRows <= 4
-        ? 5
-        : baseRows
-      : baseRows
-    : isHovered
-      ? noExpandOnHover
-        ? baseRows
-        : baseRows >= 4
-          ? baseRows
-          : Math.min(baseRows + 2, 4)
-      : baseRows;
+  const expandRows = computeExpandRows(
+    isDayView,
+    isHovered,
+    baseRows,
+    posts.length,
+    noExpandOnHover
+  );
   const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
   return {
     dateKey,

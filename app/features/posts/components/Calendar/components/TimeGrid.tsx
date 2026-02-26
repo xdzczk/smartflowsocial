@@ -4,7 +4,12 @@ import type { SlotState } from "../domain/grid-types";
 
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { TimeGridRow, type TimeGridRowProps } from "./TimeGridRow";
-import { ROW_HEIGHT_PX, TOTAL_TIME_SLOTS } from "./weekly-view-constants";
+import {
+  ROW_HEIGHT_PX,
+  TIME_GRID_LINES_Z,
+  TIME_GRID_ROWS_LAYER_Z,
+  TOTAL_TIME_SLOTS,
+} from "./weekly-view-constants";
 
 export interface TimeGridProps extends Omit<
   TimeGridRowProps,
@@ -49,7 +54,11 @@ export function TimeGrid({
     <div className="relative min-h-0 flex-1">
       <div
         ref={gridScrollRef}
-        className="absolute inset-0 isolate overflow-x-hidden overflow-y-scroll"
+        className="absolute inset-0 isolate overflow-y-scroll"
+        style={{
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-y",
+        }}
       >
         <div
           className="relative flex w-full flex-col flex-nowrap"
@@ -61,14 +70,18 @@ export function TimeGrid({
         >
           {/* Grid lines in a single layer behind rows so they don't cut through post blocks */}
           <div
-            className="pointer-events-none absolute inset-0 z-0"
+            className="pointer-events-none absolute inset-0"
             aria-hidden
             style={{
+              zIndex: TIME_GRID_LINES_Z,
               backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${ROW_HEIGHT_PX - 1}px, hsl(var(--border) / 0.4) 0, hsl(var(--border) / 0.4) 1px)`,
               backgroundSize: `100% ${ROW_HEIGHT_PX}px`,
             }}
           />
-          <div className="relative z-[1] flex w-full flex-col flex-nowrap">
+          <div
+            className="relative flex w-full flex-col flex-nowrap"
+            style={{ zIndex: TIME_GRID_ROWS_LAYER_Z }}
+          >
             {hours.map((time, index) => (
               <TimeGridRow
                 key={time}

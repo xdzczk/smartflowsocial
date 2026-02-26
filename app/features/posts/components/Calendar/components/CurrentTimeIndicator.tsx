@@ -5,7 +5,11 @@
 import { fromDate, nowInTimezone } from "~/lib/temporal";
 
 import type { UserData } from "../../../types";
-import { ROW_HEIGHT_PX } from "../domain/slot-state";
+
+import {
+  CURRENT_TIME_INDICATOR_Z,
+  ROW_HEIGHT_PX,
+} from "./weekly-view-constants";
 
 export interface CurrentTimeIndicatorProps {
   user?: UserData | null;
@@ -38,8 +42,8 @@ export function CurrentTimeIndicator({
 
   return (
     <div
-      className="bg-primary/90 pointer-events-none absolute right-0 left-16 z-[41] h-0.5"
-      style={{ top: `${topOffset}px` }}
+      className="bg-primary/90 pointer-events-none absolute right-0 left-16 h-0.5"
+      style={{ top: `${topOffset}px`, zIndex: CURRENT_TIME_INDICATOR_Z }}
     >
       <div className="bg-primary absolute -top-1 -left-2 h-2.5 w-2.5 rounded-full" />
     </div>

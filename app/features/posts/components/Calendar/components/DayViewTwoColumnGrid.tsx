@@ -20,6 +20,11 @@ import type { CalendarPost } from "../PostBlock.types";
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { DayViewEmptyColumnArea } from "./EmptySlot";
 import {
+  DAY_VIEW_DROP_LAYER_Z,
+  DAY_VIEW_GRID_LINES_Z,
+  DAY_VIEW_MULTI_POSTS_Z,
+  DAY_VIEW_POST_BLOCK_CONTAINER_Z,
+  DAY_VIEW_SINGLE_POSTS_Z,
   EXPANDED_BLOCK_WRAPPER_CLASS,
   ROW_HEIGHT_PX,
   TOTAL_TIME_SLOTS,
@@ -218,25 +223,30 @@ export function DayViewTwoColumnGrid({
         >
           {/* Grid lines behind content */}
           <div
-            className="pointer-events-none absolute inset-0 z-0"
+            className="pointer-events-none absolute inset-0"
             aria-hidden
             style={{
               left: 0,
               right: 0,
+              zIndex: DAY_VIEW_GRID_LINES_Z,
               backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${ROW_HEIGHT_PX - 1}px, hsl(var(--border) / 0.4) 0, hsl(var(--border) / 0.4) 1px)`,
               backgroundSize: `100% ${ROW_HEIGHT_PX}px`,
             }}
           />
 
           {/* Two column containers - Layer 1 single-post blocks */}
-          <div className="absolute inset-0 z-[1] flex">
+          <div
+            className="absolute inset-0 flex"
+            style={{ zIndex: DAY_VIEW_SINGLE_POSTS_Z }}
+          >
             <div className="relative min-w-0 flex-1">
               {placements.col0.map((p) => (
                 <div
                   key={p.slotKey}
-                  className="absolute right-0 left-0 z-10 w-full px-0.5"
+                  className="absolute right-0 left-0 w-full px-0.5"
                   style={{
                     top: p.rowIndex * ROW_HEIGHT_PX,
+                    zIndex: DAY_VIEW_POST_BLOCK_CONTAINER_Z,
                   }}
                 >
                   <BlockInColumn
@@ -288,9 +298,10 @@ export function DayViewTwoColumnGrid({
               {placements.col1.map((p) => (
                 <div
                   key={p.slotKey}
-                  className="absolute right-0 left-0 z-10 w-full px-0.5"
+                  className="absolute right-0 left-0 w-full px-0.5"
                   style={{
                     top: p.rowIndex * ROW_HEIGHT_PX,
+                    zIndex: DAY_VIEW_POST_BLOCK_CONTAINER_Z,
                   }}
                 >
                   <BlockInColumn
@@ -340,12 +351,15 @@ export function DayViewTwoColumnGrid({
           </div>
 
           {/* Layer 2: multi-post rows */}
-          <div className="pointer-events-none absolute inset-0 z-[2]">
-            <div className="pointer-events-auto absolute inset-0">
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ zIndex: DAY_VIEW_MULTI_POSTS_Z }}
+          >
+            <div className="absolute inset-0">
               {multiPostRows.map((row) => (
                 <div
                   key={`${row.rowIndex}-${row.time}`}
-                  className="absolute right-0 left-0 flex gap-0.5 px-0.5"
+                  className="pointer-events-auto absolute right-0 left-0 flex gap-0.5 px-0.5"
                   style={{
                     top: row.rowIndex * ROW_HEIGHT_PX,
                     height: ROW_HEIGHT_PX,
@@ -390,7 +404,8 @@ export function DayViewTwoColumnGrid({
 
           {/* Drop layer: 48 rows; only capture pointer events during drag so blocks stay clickable/hoverable */}
           <div
-            className={`absolute inset-0 z-[3] ${isDragOverGrid ? "pointer-events-auto" : "pointer-events-none"}`}
+            className={`absolute inset-0 ${isDragOverGrid ? "pointer-events-auto" : "pointer-events-none"}`}
+            style={{ zIndex: DAY_VIEW_DROP_LAYER_Z }}
             aria-hidden
           >
             {hours.map((time, rowIndex) => {

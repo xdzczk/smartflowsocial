@@ -16,7 +16,7 @@ export interface SlotState {
   isHovered: boolean;
   expandRows: number;
   blockHeightPx: number;
-  /** Week view: true when slot is 3 rows and the next slot below has posts (no expand on hover). */
+  /** Week view: true when surrounding rows conflict; hover growth should be capped. */
   noExpandOnHover: boolean;
 }
 

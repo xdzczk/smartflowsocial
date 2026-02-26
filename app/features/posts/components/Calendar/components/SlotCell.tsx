@@ -1,7 +1,10 @@
 import type { SlotState } from "../domain/grid-types";
 
 import { SlotCellContent, type SlotCellContentProps } from "./SlotCellContent";
-import { MOBILE_WEEK_DAY_COLUMN_WIDTH } from "./weekly-view-constants";
+import {
+  CALENDAR_HOVERED_CELL_Z,
+  MOBILE_WEEK_DAY_COLUMN_WIDTH,
+} from "./weekly-view-constants";
 
 export interface SlotCellProps extends SlotCellContentProps {
   slotState: SlotState;
@@ -51,7 +54,6 @@ export function SlotCell({
     const key = `${slotState.dateKey}-${time}-${p.id}`;
     return hoveredPostKey === key;
   });
-  const cellZClass = cellHasHoveredPost ? "z-[40]" : "";
   const mobileWeekCellStyle = isMobile
     ? {
         width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
@@ -59,6 +61,10 @@ export function SlotCell({
         flex: "0 0 auto" as const,
       }
     : undefined;
+  const cellStyle = {
+    ...(mobileWeekCellStyle ?? {}),
+    ...(cellHasHoveredPost ? { zIndex: CALENDAR_HOVERED_CELL_Z } : {}),
+  };
 
   return (
     <div
@@ -74,12 +80,12 @@ export function SlotCell({
       aria-dropeffect="move"
       className={`border-border/30 relative overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
         isMobile ? "min-w-0 shrink-0" : "min-w-[3.5rem] flex-1"
-      } ${cellZClass} ${
+      } ${
         slotState.isDragOver
           ? "bg-primary/5 border-primary/20"
           : "dark:hover:bg-muted hover:bg-muted"
       }`}
-      style={mobileWeekCellStyle}
+      style={cellStyle}
       onDragOver={onDragOver}
       onDrop={onDrop}
       onDragLeave={onDragLeave}
