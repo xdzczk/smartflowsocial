@@ -94,6 +94,7 @@ function renderSinglePostSlotContent(
 
 interface MultiPostBlockProps {
   post: CalendarPost;
+  postOccurrence: number;
   dateKey: string;
   time: string;
   slotExpandRows?: number;
@@ -119,8 +120,27 @@ function getMultiPostExpandRows(
   return Math.max(baseRows, targetRows);
 }
 
+function getMultiPostHoverKey(
+  dateKey: string,
+  time: string,
+  postId: string,
+  postOccurrence: number
+): string {
+  return `${dateKey}-${time}-${postId}#${postOccurrence}`;
+}
+
+function getPostOccurrences(posts: CalendarPost[]): number[] {
+  const seen = new Map<string, number>();
+  return posts.map((post) => {
+    const postOccurrence = seen.get(post.id) ?? 0;
+    seen.set(post.id, postOccurrence + 1);
+    return postOccurrence;
+  });
+}
+
 function MultiPostBlock({
   post,
+  postOccurrence,
   dateKey,
   time,
   slotExpandRows,
@@ -134,7 +154,12 @@ function MultiPostBlock({
   isLongform,
   isAll,
 }: MultiPostBlockProps) {
-  const multiPostKey = `${dateKey}-${time}-${post.id}`;
+  const multiPostKey = getMultiPostHoverKey(
+    dateKey,
+    time,
+    post.id,
+    postOccurrence
+  );
   const multiHovered = hoveredPostKey === multiPostKey;
   const baseRows = slotExpandRows ?? 1;
   // On hover: expand to 4 rows when there is room, or cap at 3 when conflicting rows exist.
@@ -199,8 +224,11 @@ function renderMultiPostSlotContent(
   } = props;
   const { dateKey, posts, expandRows, blockHeightPx, noExpandOnHover } =
     slotState;
+  const postOccurrences = getPostOccurrences(posts);
   const multiPostHovered = posts.some(
-    (p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`
+    (p, index) =>
+      hoveredPostKey ===
+      getMultiPostHoverKey(dateKey, time, p.id, postOccurrences[index] ?? 0)
   );
   const multiPostHoveredHeightPx =
     getMultiPostExpandRows(expandRows, true, noExpandOnHover) * ROW_HEIGHT_PX -
@@ -232,8 +260,13 @@ function renderMultiPostSlotContent(
         style={{ height: rowHeightPx }}
         onMouseLeave={() => setHoveredPostKey(null)}
       >
-        {posts.map((post) => (
-          <MultiPostBlock key={post.id} post={post} {...multiPostBlockProps} />
+        {posts.map((post, index) => (
+          <MultiPostBlock
+            key={`${post.id}#${postOccurrences[index] ?? 0}`}
+            post={post}
+            postOccurrence={postOccurrences[index] ?? 0}
+            {...multiPostBlockProps}
+          />
         ))}
       </div>
     );
@@ -246,8 +279,13 @@ function renderMultiPostSlotContent(
       style={{ height: rowHeightPx }}
       onMouseLeave={() => setHoveredPostKey(null)}
     >
-      {posts.slice(0, 5).map((post) => (
-        <MultiPostBlock key={post.id} post={post} {...multiPostBlockProps} />
+      {posts.slice(0, 5).map((post, index) => (
+        <MultiPostBlock
+          key={`${post.id}#${postOccurrences[index] ?? 0}`}
+          post={post}
+          postOccurrence={postOccurrences[index] ?? 0}
+          {...multiPostBlockProps}
+        />
       ))}
       <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
         +{posts.length - 5}
@@ -283,6 +321,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
     firstConflictOffsetAbove,
   } = slotState;
   const hoveredPostKey = props.hoveredPostKey;
+  const slotPostOccurrences = getPostOccurrences(posts);
 
   if (posts.length === 0) {
     return (
@@ -303,7 +342,16 @@ export function SlotCellContent(props: SlotCellContentProps) {
   // Multi-post in bottom rows: when any block is hovered it can expand to 4 rows; use that height for the wrapper so it doesn't clip
   const multiPostHovered =
     posts.length > 1 &&
-    posts.some((p) => hoveredPostKey === `${dateKey}-${time}-${p.id}`);
+    posts.some(
+      (p, index) =>
+        hoveredPostKey ===
+        getMultiPostHoverKey(
+          dateKey,
+          time,
+          p.id,
+          slotPostOccurrences[index] ?? 0
+        )
+    );
   const effectiveBlockHeightPx = multiPostHovered
     ? Math.max(
         blockHeightPx,

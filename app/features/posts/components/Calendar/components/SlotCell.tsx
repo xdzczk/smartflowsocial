@@ -50,10 +50,8 @@ export function SlotCell({
   userTimezone,
   isMobile,
 }: SlotCellProps) {
-  const cellHasHoveredPost = slotState.posts.some((p) => {
-    const key = `${slotState.dateKey}-${time}-${p.id}`;
-    return hoveredPostKey === key;
-  });
+  const cellHasHoveredPost =
+    hoveredPostKey?.startsWith(`${slotState.dateKey}-${time}-`) ?? false;
   const mobileWeekCellStyle = isMobile
     ? {
         width: MOBILE_WEEK_DAY_COLUMN_WIDTH,

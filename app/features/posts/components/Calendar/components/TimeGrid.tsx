@@ -47,7 +47,7 @@ export function TimeGrid({
   isMobile,
 }: TimeGridProps) {
   return (
-    <div className="relative min-h-0 flex-1">
+    <div className="relative min-h-0 w-full flex-none">
       <div
         className="relative flex w-full flex-col flex-nowrap"
         style={{

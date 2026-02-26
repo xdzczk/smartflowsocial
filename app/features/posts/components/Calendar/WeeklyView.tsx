@@ -269,7 +269,7 @@ export function WeeklyView({
         onMouseLeave={() => setHoveredPostKey(null)}
       >
         <div
-          className={`flex min-h-[40vh] flex-1 flex-col overflow-hidden select-none ${isMobile ? "shrink-0 self-start" : ""}`}
+          className={`flex min-h-[40vh] min-w-0 flex-none flex-col select-none ${isMobile ? "shrink-0 self-start" : ""}`}
           style={{
             ...(isMobile
               ? {
