@@ -5,7 +5,7 @@
 
 import { useLoaderData, useParams, useSearchParams } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import { calendarLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
@@ -45,14 +45,14 @@ export function useCalendarQuery() {
   const queryClient = useQueryClient();
   const queueType =
     params["queueType"] ?? searchParams.get("queueType") ?? "all";
-  const queryKey = calendarKeys.list(queueType);
+  const queryKey = useMemo(() => calendarKeys.list(queueType), [queueType]);
 
   const loaderDataRaw = useLoaderData();
 
   // Validate initial loader data
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    calendarLoaderDataSchema
+  const validatedLoaderData = useMemo(
+    () => safeValidateLoaderResponse(loaderDataRaw, calendarLoaderDataSchema),
+    [loaderDataRaw]
   );
 
   // Keep TanStack cache in sync when Remix loader data changes after actions.
