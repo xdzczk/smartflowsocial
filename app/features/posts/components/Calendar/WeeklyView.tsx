@@ -74,7 +74,6 @@ export function WeeklyView({
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
   const [hoveredSlotKey, setHoveredSlotKey] = useState<string | null>(null);
-  const [gridScrollLeft, setGridScrollLeft] = useState(0);
   const [gridScrollTop, setGridScrollTop] = useState(0);
   const [daysHeaderHeight, setDaysHeaderHeight] = useState(0);
   const [activeEmptySlotKey, setActiveEmptySlotKey] = useState<string | null>(
@@ -273,7 +272,31 @@ export function WeeklyView({
   }, [hoveredPostKey, weekDays, hours, postsGrid, dragOverSlot, userTz]);
 
   return (
-    <div className="flex h-0 min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex h-0 min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {isMobile ? (
+        <div className="pointer-events-none absolute top-0 left-0 z-[290] w-16">
+          <div
+            className="border-border/40 border-r bg-[hsl(var(--calendar-surface-2-bg))]"
+            style={{ height: daysHeaderHeight }}
+          />
+          <div
+            className="border-border/30 bg-[hsl(var(--calendar-surface-2-bg))]"
+            style={{
+              transform: `translateY(${daysHeaderHeight - gridScrollTop}px)`,
+            }}
+          >
+            {hourLabels.map((label, index) => (
+              <div
+                key={hours[index] ?? `mobile-time-rail-${label}-${index}`}
+                className="text-muted-foreground/85 border-border/30 flex w-16 items-start justify-end border-r pr-2 text-right text-xs leading-none"
+                style={{ height: ROW_HEIGHT_PX - 1 }}
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
       <div
         ref={gridScrollRef}
@@ -284,38 +307,10 @@ export function WeeklyView({
           overscrollBehaviorX: "contain",
         }}
         onScroll={(e) => {
-          setGridScrollLeft(e.currentTarget.scrollLeft);
           setGridScrollTop(e.currentTarget.scrollTop);
         }}
         onMouseLeave={() => setHoveredPostKey(null)}
       >
-        {isMobile ? (
-          <div className="pointer-events-none absolute top-0 left-0 z-[290] w-16">
-            <div
-              className="border-border/40 border-r bg-[hsl(var(--calendar-surface-2-bg))]"
-              style={{
-                transform: `translateX(${gridScrollLeft}px)`,
-                height: daysHeaderHeight,
-              }}
-            />
-            <div
-              className="border-border/30 bg-[hsl(var(--calendar-surface-2-bg))]"
-              style={{
-                transform: `translateX(${gridScrollLeft}px) translateY(${daysHeaderHeight - gridScrollTop}px)`,
-              }}
-            >
-              {hourLabels.map((label, index) => (
-                <div
-                  key={hours[index] ?? `mobile-time-rail-${label}-${index}`}
-                  className="text-muted-foreground/85 border-border/30 flex w-16 items-start justify-end border-r pr-2 text-right text-xs leading-none"
-                  style={{ height: ROW_HEIGHT_PX - 1 }}
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
         <div
           className={`flex min-h-[40vh] min-w-0 flex-none flex-col select-none ${isMobile ? "shrink-0 self-start" : ""}`}
           style={{
