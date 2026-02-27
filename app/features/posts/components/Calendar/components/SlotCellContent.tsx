@@ -64,7 +64,7 @@ function renderSinglePostSlotContent(
           : isHovered
             ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
             : "relative z-0"
-      } ${singleOverlayPayload && singleHovered ? "opacity-0" : ""}`}
+      }`}
       style={{ height: blockHeightPx }}
       onMouseEnter={() => {
         if (!singlePostKey) return;
@@ -158,6 +158,28 @@ function getSinglePostExpandRows(
   return Math.max(baseRows, noExpandOnHover ? 3 : Math.min(baseRows + 2, 4));
 }
 
+function chooseBestHoverRows(
+  cappedRows: number,
+  uncappedRows: number,
+  rowIndex: number,
+  availableRowsBelow: number,
+  firstConflictOffsetBelow: number | null,
+  firstConflictOffsetAbove: number | null
+): number {
+  const canFitDownward =
+    availableRowsBelow >= uncappedRows &&
+    (firstConflictOffsetBelow === null ||
+      firstConflictOffsetBelow >= uncappedRows);
+  if (canFitDownward) return uncappedRows;
+
+  const hasEnoughSpaceAbove = rowIndex + 1 >= uncappedRows;
+  const hasNoConflictAbove =
+    firstConflictOffsetAbove === null ||
+    firstConflictOffsetAbove >= uncappedRows;
+  const canFitUpward = hasEnoughSpaceAbove && hasNoConflictAbove;
+  return canFitUpward ? uncappedRows : cappedRows;
+}
+
 interface HoverLayoutMetrics {
   topPx: number;
   heightPx: number;
@@ -246,9 +268,7 @@ function MultiPostBlock({
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
-      className={`transition-[height,opacity] duration-200 ease-out ${expandedClass} ${
-        overlayPayload && multiHovered ? "opacity-0" : ""
-      }`}
+      className={`transition-[height,opacity] duration-200 ease-out ${expandedClass}`}
       style={{ height: multiHeightPx }}
       onMouseEnter={() => {
         setHoveredPostKey(multiPostKey);
@@ -300,7 +320,8 @@ function MultiPostBlock({
 function renderMultiPostSlotContent(
   props: SlotCellContentProps,
   wrapExpandUp: (content: React.ReactNode) => React.ReactNode,
-  overlayTopPx: number
+  overlayTopPx: number,
+  overlayRows: number
 ): React.ReactNode {
   const {
     slotState,
@@ -336,7 +357,6 @@ function renderMultiPostSlotContent(
     isLongform,
     isAll,
   };
-  const overlayRows = getMultiPostExpandRows(expandRows, true, noExpandOnHover);
   const overlayPayloadByIndex = posts.map((post, index) => {
     return {
       key: getMultiPostHoverKey(
@@ -473,13 +493,39 @@ export function SlotCellContent(props: SlotCellContentProps) {
     true,
     noExpandOnHover
   );
-  const singleTargetHeightPx = singleTargetRows * ROW_HEIGHT_PX - 4;
+  const singleUncappedTargetRows = getSinglePostExpandRows(
+    expandRows,
+    true,
+    false
+  );
+  const singleEffectiveTargetRows = chooseBestHoverRows(
+    singleTargetRows,
+    singleUncappedTargetRows,
+    rowIndex,
+    availableRowsBelow,
+    firstConflictOffsetBelow,
+    firstConflictOffsetAbove
+  );
+  const singleTargetHeightPx = singleEffectiveTargetRows * ROW_HEIGHT_PX - 4;
   const multiTargetRows = getMultiPostExpandRows(
     expandRows,
     true,
     noExpandOnHover
   );
-  const multiTargetHeightPx = multiTargetRows * ROW_HEIGHT_PX - 4;
+  const multiUncappedTargetRows = getMultiPostExpandRows(
+    expandRows,
+    true,
+    false
+  );
+  const multiEffectiveTargetRows = chooseBestHoverRows(
+    multiTargetRows,
+    multiUncappedTargetRows,
+    rowIndex,
+    availableRowsBelow,
+    firstConflictOffsetBelow,
+    firstConflictOffsetAbove
+  );
+  const multiTargetHeightPx = multiEffectiveTargetRows * ROW_HEIGHT_PX - 4;
   const baseBlockHeightPx = blockHeightPx;
   const baseBlockExceedsBelow = baseBlockHeightPx > allocatedHeightPx;
   const shouldGrowUp = availableRowsBelow > 0 && baseBlockExceedsBelow;
@@ -510,7 +556,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
           columnIndex: props.columnIndex ?? 0,
           topPx: singleHoverLayout.topPx,
           heightPx: singleTargetHeightPx,
-          expandedRows: singleTargetRows,
+          expandedRows: singleEffectiveTargetRows,
           isLongform: _isAll
             ? Boolean(singlePost.title && singlePost.publishedAt)
             : props.isLongform,
@@ -548,6 +594,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
   return renderMultiPostSlotContent(
     props,
     wrapExpandUp,
-    multiHoverLayout.topPx
+    multiHoverLayout.topPx,
+    multiEffectiveTargetRows
   );
 }

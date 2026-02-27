@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import type { HoverOverlayPayload, SlotState } from "../domain/grid-types";
 import { PostBlock } from "../PostBlock";
 
@@ -52,6 +54,7 @@ export function TimeGrid({
   onClearSelection,
   isMobile,
 }: TimeGridProps) {
+  const [isDraggingPostBlock, setIsDraggingPostBlock] = useState(false);
   const dayCount = Math.max(1, weekDays.length);
   const overlayLeft = hoverOverlayPayload
     ? isMobile
@@ -71,6 +74,14 @@ export function TimeGrid({
         style={{
           height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
           minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
+        }}
+        onDragStartCapture={() => {
+          setIsDraggingPostBlock(true);
+          setHoverOverlayPayload(null);
+          setHoveredPostKey(null);
+        }}
+        onDragEndCapture={() => {
+          setIsDraggingPostBlock(false);
         }}
       >
         {/* Grid lines in a single layer behind rows so they don't cut through post blocks */}
@@ -126,15 +137,24 @@ export function TimeGrid({
             isMobile={isMobile}
           />
         </div>
-        {hoverOverlayPayload ? (
+        {hoverOverlayPayload && !isDraggingPostBlock ? (
           <div className="pointer-events-none absolute inset-0 z-[500]">
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Overlay hover retention area for expanded post preview */}
             <div
-              className={`absolute ${EXPANDED_BLOCK_WRAPPER_CLASS}`}
+              className={`pointer-events-auto absolute ${EXPANDED_BLOCK_WRAPPER_CLASS}`}
               style={{
                 top: hoverOverlayPayload.topPx,
                 left: overlayLeft,
                 width: overlayWidth,
                 height: hoverOverlayPayload.heightPx,
+              }}
+              onMouseEnter={() => {
+                setHoveredPostKey(hoverOverlayPayload.key);
+                setHoverOverlayPayload(hoverOverlayPayload);
+              }}
+              onMouseLeave={() => {
+                setHoveredPostKey(null);
+                setHoverOverlayPayload(null);
               }}
             >
               <PostBlock

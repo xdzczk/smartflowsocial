@@ -14,6 +14,7 @@ import type {
   MultiPostRow,
 } from "../data/day-view-placements";
 import { parseDropToDateTime } from "../data/parse-drop-to-date-time";
+import type { DayHoverOverlayPayload } from "../domain/grid-types";
 import { PostBlock } from "../PostBlock";
 import type { CalendarPost } from "../PostBlock.types";
 
@@ -51,10 +52,52 @@ export interface DayViewTwoColumnGridProps {
   isAll?: boolean;
 }
 
+interface DayHoverLayout {
+  targetRows: number;
+  hoverRows: number;
+  hoverHeightPx: number;
+  topPx: number;
+}
+
+function getDayHoverTargetRows(baseRows: number): number {
+  return baseRows <= 4 ? 5 : baseRows;
+}
+
+function getDayHoverLayoutMetrics(
+  rowIndex: number,
+  baseRows: number,
+  occupiedRowSet: Set<number>,
+  totalRows: number
+): DayHoverLayout {
+  const hoverRows = getDayHoverTargetRows(baseRows);
+  const extraRows = Math.max(0, hoverRows - baseRows);
+  const hasConflictBelow = Array.from({ length: extraRows }, (_unused, i) => {
+    const targetRow = rowIndex + baseRows + i;
+    if (targetRow >= totalRows) return true;
+    return occupiedRowSet.has(targetRow);
+  }).some(Boolean);
+  const freeRowsAbove = (() => {
+    let free = 0;
+    for (let r = rowIndex - 1; r >= 0; r--) {
+      if (occupiedRowSet.has(r)) break;
+      free++;
+    }
+    return free;
+  })();
+  const shiftRows = hasConflictBelow ? Math.min(extraRows, freeRowsAbove) : 0;
+  return {
+    targetRows: hoverRows,
+    hoverRows,
+    hoverHeightPx: hoverRows * ROW_HEIGHT_PX - 4,
+    topPx: rowIndex * ROW_HEIGHT_PX - shiftRows * ROW_HEIGHT_PX,
+  };
+}
+
 function BlockInColumn({
   placement,
   isHovered,
-  onHoverChange,
+  hoverOverlayPayload,
+  onHoverOverlayChange,
   onPostEdit,
   setActiveEmptySlotKey,
   user,
@@ -64,7 +107,8 @@ function BlockInColumn({
 }: {
   placement: DayViewPlacement;
   isHovered: boolean;
-  onHoverChange: (hovered: boolean) => void;
+  hoverOverlayPayload: DayHoverOverlayPayload | null;
+  onHoverOverlayChange: (payload: DayHoverOverlayPayload | null) => void;
   onPostEdit: (post: CalendarPost) => void;
   setActiveEmptySlotKey: (key: string | null) => void;
   user?: UserData | null;
@@ -76,9 +120,6 @@ function BlockInColumn({
     1,
     Math.ceil((placement.blockHeightPx + 4) / ROW_HEIGHT_PX)
   );
-  const expandedHeightPx =
-    baseRows <= 4 ? 5 * ROW_HEIGHT_PX - 4 : placement.blockHeightPx;
-  const heightPx = isHovered ? expandedHeightPx : placement.blockHeightPx;
   const isPast =
     typeof placement.post.isPast === "boolean" ? placement.post.isPast : false;
 
@@ -88,11 +129,11 @@ function BlockInColumn({
       className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
         isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "relative z-0"
       }`}
-      style={{ height: heightPx }}
-      onMouseEnter={() => onHoverChange(true)}
-      onMouseLeave={() => onHoverChange(false)}
-      onFocus={() => onHoverChange(true)}
-      onBlur={() => onHoverChange(false)}
+      style={{ height: placement.blockHeightPx }}
+      onMouseEnter={() => onHoverOverlayChange(hoverOverlayPayload)}
+      onMouseLeave={() => onHoverOverlayChange(null)}
+      onFocus={() => onHoverOverlayChange(hoverOverlayPayload)}
+      onBlur={() => onHoverOverlayChange(null)}
     >
       <PostBlock
         post={placement.post}
@@ -111,7 +152,7 @@ function BlockInColumn({
         isPast={isPast}
         forceOpaque={isHovered}
         hideTimeRowPreview
-        slotExpandRows={Math.ceil((heightPx + 4) / ROW_HEIGHT_PX)}
+        slotExpandRows={baseRows}
       />
     </div>
   );
@@ -141,6 +182,9 @@ export function DayViewTwoColumnGrid({
   const [hoveredMultiPostKey, setHoveredMultiPostKey] = useState<string | null>(
     null
   );
+  const [dayHoverOverlayPayload, setDayHoverOverlayPayload] =
+    useState<DayHoverOverlayPayload | null>(null);
+  const [isDraggingPostBlock, setIsDraggingPostBlock] = useState(false);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [isDragOverGrid, setIsDragOverGrid] = useState(false);
   const userTimezone = user?.timezone ?? "Etc/UTC";
@@ -239,6 +283,20 @@ export function DayViewTwoColumnGrid({
           style={{ height: totalHeightPx }}
           onDragOver={handleGridDragOver}
           onDragLeave={handleGridDragLeave}
+          onDragStartCapture={() => {
+            setIsDraggingPostBlock(true);
+            setHoveredSlotKey(null);
+            setHoveredMultiPostKey(null);
+            setDayHoverOverlayPayload(null);
+          }}
+          onDragEndCapture={() => {
+            setIsDraggingPostBlock(false);
+          }}
+          onMouseLeave={() => {
+            setHoveredSlotKey(null);
+            setHoveredMultiPostKey(null);
+            setDayHoverOverlayPayload(null);
+          }}
         >
           {/* Grid lines behind content */}
           <div
@@ -259,33 +317,68 @@ export function DayViewTwoColumnGrid({
             style={{ zIndex: DAY_VIEW_SINGLE_POSTS_Z }}
           >
             <div className="relative min-w-0 flex-1">
-              {placements.col0.map((p) => (
-                <div
-                  key={p.slotKey}
-                  className="absolute right-0 left-0 w-full px-0.5"
-                  style={{
-                    top: p.rowIndex * ROW_HEIGHT_PX,
-                    zIndex: DAY_VIEW_POST_BLOCK_CONTAINER_Z,
-                  }}
-                >
-                  <BlockInColumn
-                    placement={p}
-                    isHovered={
-                      hoveredSlotKey === p.slotKey ||
-                      (!!selectedPost && selectedPost.id === p.post.id)
-                    }
-                    onHoverChange={(hovered) =>
-                      setHoveredSlotKey(hovered ? p.slotKey : null)
-                    }
-                    onPostEdit={onPostEdit}
-                    setActiveEmptySlotKey={setActiveEmptySlotKey}
-                    user={user}
-                    queueTypes={queueTypes}
-                    isLongform={isLongform}
-                    isAll={isAll}
-                  />
-                </div>
-              ))}
+              {placements.col0.map((p) => {
+                const baseRows = Math.max(
+                  1,
+                  Math.ceil((p.blockHeightPx + 4) / ROW_HEIGHT_PX)
+                );
+                const hoverLayout = getDayHoverLayoutMetrics(
+                  p.rowIndex,
+                  baseRows,
+                  occupiedRowSet,
+                  TOTAL_TIME_SLOTS
+                );
+                const overlayPayload: DayHoverOverlayPayload = {
+                  key: p.slotKey,
+                  source: "single",
+                  post: p.post,
+                  time: p.time,
+                  rowIndex: p.rowIndex,
+                  columnIndex: 0,
+                  leftCss: "0%",
+                  widthCss: "50%",
+                  topPx: hoverLayout.topPx,
+                  heightPx: hoverLayout.hoverHeightPx,
+                  expandedRows: hoverLayout.hoverRows,
+                  isLongform: isAll
+                    ? Boolean(p.post.title && p.post.publishedAt)
+                    : isLongform,
+                  isPast:
+                    typeof p.post.isPast === "boolean" ? p.post.isPast : false,
+                };
+
+                return (
+                  <div
+                    key={p.slotKey}
+                    className="absolute right-0 left-0 w-full px-0.5"
+                    style={{
+                      top: p.rowIndex * ROW_HEIGHT_PX,
+                      zIndex: DAY_VIEW_POST_BLOCK_CONTAINER_Z,
+                    }}
+                  >
+                    <BlockInColumn
+                      placement={p}
+                      isHovered={
+                        hoveredSlotKey === p.slotKey ||
+                        (!!selectedPost && selectedPost.id === p.post.id)
+                      }
+                      hoverOverlayPayload={overlayPayload}
+                      onHoverOverlayChange={(payload) => {
+                        const isActive = payload !== null;
+                        setHoveredSlotKey(isActive ? p.slotKey : null);
+                        setHoveredMultiPostKey(null);
+                        setDayHoverOverlayPayload(payload);
+                      }}
+                      onPostEdit={onPostEdit}
+                      setActiveEmptySlotKey={setActiveEmptySlotKey}
+                      user={user}
+                      queueTypes={queueTypes}
+                      isLongform={isLongform}
+                      isAll={isAll}
+                    />
+                  </div>
+                );
+              })}
               {/* Empty slots col0 */}
               {Array.from(emptySlotRowIndices.col0).map((rowIndex) => {
                 const time = hours[rowIndex];
@@ -315,33 +408,68 @@ export function DayViewTwoColumnGrid({
               })}
             </div>
             <div className="relative min-w-0 flex-1">
-              {placements.col1.map((p) => (
-                <div
-                  key={p.slotKey}
-                  className="absolute right-0 left-0 w-full px-0.5"
-                  style={{
-                    top: p.rowIndex * ROW_HEIGHT_PX,
-                    zIndex: DAY_VIEW_POST_BLOCK_CONTAINER_Z,
-                  }}
-                >
-                  <BlockInColumn
-                    placement={p}
-                    isHovered={
-                      hoveredSlotKey === p.slotKey ||
-                      (!!selectedPost && selectedPost.id === p.post.id)
-                    }
-                    onHoverChange={(hovered) =>
-                      setHoveredSlotKey(hovered ? p.slotKey : null)
-                    }
-                    onPostEdit={onPostEdit}
-                    setActiveEmptySlotKey={setActiveEmptySlotKey}
-                    user={user}
-                    queueTypes={queueTypes}
-                    isLongform={isLongform}
-                    isAll={isAll}
-                  />
-                </div>
-              ))}
+              {placements.col1.map((p) => {
+                const baseRows = Math.max(
+                  1,
+                  Math.ceil((p.blockHeightPx + 4) / ROW_HEIGHT_PX)
+                );
+                const hoverLayout = getDayHoverLayoutMetrics(
+                  p.rowIndex,
+                  baseRows,
+                  occupiedRowSet,
+                  TOTAL_TIME_SLOTS
+                );
+                const overlayPayload: DayHoverOverlayPayload = {
+                  key: p.slotKey,
+                  source: "single",
+                  post: p.post,
+                  time: p.time,
+                  rowIndex: p.rowIndex,
+                  columnIndex: 1,
+                  leftCss: "50%",
+                  widthCss: "50%",
+                  topPx: hoverLayout.topPx,
+                  heightPx: hoverLayout.hoverHeightPx,
+                  expandedRows: hoverLayout.hoverRows,
+                  isLongform: isAll
+                    ? Boolean(p.post.title && p.post.publishedAt)
+                    : isLongform,
+                  isPast:
+                    typeof p.post.isPast === "boolean" ? p.post.isPast : false,
+                };
+
+                return (
+                  <div
+                    key={p.slotKey}
+                    className="absolute right-0 left-0 w-full px-0.5"
+                    style={{
+                      top: p.rowIndex * ROW_HEIGHT_PX,
+                      zIndex: DAY_VIEW_POST_BLOCK_CONTAINER_Z,
+                    }}
+                  >
+                    <BlockInColumn
+                      placement={p}
+                      isHovered={
+                        hoveredSlotKey === p.slotKey ||
+                        (!!selectedPost && selectedPost.id === p.post.id)
+                      }
+                      hoverOverlayPayload={overlayPayload}
+                      onHoverOverlayChange={(payload) => {
+                        const isActive = payload !== null;
+                        setHoveredSlotKey(isActive ? p.slotKey : null);
+                        setHoveredMultiPostKey(null);
+                        setDayHoverOverlayPayload(payload);
+                      }}
+                      onPostEdit={onPostEdit}
+                      setActiveEmptySlotKey={setActiveEmptySlotKey}
+                      user={user}
+                      queueTypes={queueTypes}
+                      isLongform={isLongform}
+                      isAll={isAll}
+                    />
+                  </div>
+                );
+              })}
               {Array.from(emptySlotRowIndices.col1).map((rowIndex) => {
                 const time = hours[rowIndex];
                 if (!time) return null;
@@ -386,43 +514,41 @@ export function DayViewTwoColumnGrid({
                     top: row.rowIndex * ROW_HEIGHT_PX,
                     height: row.blockHeightPx,
                   }}
-                  onMouseLeave={() => setHoveredMultiPostKey(null)}
+                  onMouseLeave={() => {
+                    setHoveredMultiPostKey(null);
+                    setDayHoverOverlayPayload(null);
+                  }}
                 >
-                  {row.posts.map((post) => {
-                    const key = `${row.time}-${post.id}`;
+                  {row.posts.map((post, postIndex) => {
+                    const key = `${row.time}-${post.id}-${postIndex}`;
                     const isHovered = hoveredMultiPostKey === key;
                     const baseRows = Math.max(
                       1,
                       Math.ceil((row.blockHeightPx + 4) / ROW_HEIGHT_PX)
                     );
-                    const hoverRows = baseRows <= 4 ? 5 : baseRows;
-                    const hoverHeightPx = hoverRows * ROW_HEIGHT_PX - 4;
-                    const extraRows = Math.max(0, hoverRows - baseRows);
-                    const hasConflictBelow = Array.from(
-                      { length: extraRows },
-                      (_unused, i) => row.rowIndex + baseRows + i
-                    ).some((r) => occupiedRowSet.has(r));
-                    const freeRowsAbove = (() => {
-                      let free = 0;
-                      for (let r = row.rowIndex - 1; r >= 0; r--) {
-                        if (occupiedRowSet.has(r)) break;
-                        free++;
-                      }
-                      return free;
-                    })();
-                    const shiftRows =
-                      isHovered && hasConflictBelow
-                        ? Math.min(extraRows, freeRowsAbove)
-                        : 0;
-                    const blockHeightPx = isHovered
-                      ? hoverHeightPx
-                      : row.blockHeightPx;
-                    const expandStyle = {
-                      height: blockHeightPx,
-                      transform:
-                        shiftRows > 0
-                          ? `translateY(-${shiftRows * ROW_HEIGHT_PX}px)`
-                          : undefined,
+                    const hoverLayout = getDayHoverLayoutMetrics(
+                      row.rowIndex,
+                      baseRows,
+                      occupiedRowSet,
+                      TOTAL_TIME_SLOTS
+                    );
+                    const overlayPayload: DayHoverOverlayPayload = {
+                      key,
+                      source: "multi",
+                      post,
+                      time: row.time,
+                      rowIndex: row.rowIndex,
+                      columnIndex: postIndex,
+                      leftCss: `${(postIndex * 100) / row.posts.length}%`,
+                      widthCss: `${100 / row.posts.length}%`,
+                      topPx: hoverLayout.topPx,
+                      heightPx: hoverLayout.hoverHeightPx,
+                      expandedRows: hoverLayout.hoverRows,
+                      isLongform: isAll
+                        ? Boolean(post.title && post.publishedAt)
+                        : isLongform,
+                      isPast:
+                        typeof post.isPast === "boolean" ? post.isPast : false,
                     };
 
                     return (
@@ -434,14 +560,32 @@ export function DayViewTwoColumnGrid({
                             ? "relative z-10 bg-[hsl(var(--calendar-surface-2-bg))]"
                             : "relative flex-1"
                         }`}
-                        style={expandStyle}
-                        onMouseEnter={() => setHoveredMultiPostKey(key)}
-                        onFocusCapture={() => setHoveredMultiPostKey(key)}
-                        onBlurCapture={() => setHoveredMultiPostKey(null)}
-                        onTouchStart={() => setHoveredMultiPostKey(key)}
-                        onTouchEnd={() =>
-                          setTimeout(() => setHoveredMultiPostKey(null), 300)
-                        }
+                        style={{ height: row.blockHeightPx }}
+                        onMouseEnter={() => {
+                          setHoveredSlotKey(null);
+                          setHoveredMultiPostKey(key);
+                          setDayHoverOverlayPayload(overlayPayload);
+                        }}
+                        onFocusCapture={() => {
+                          setHoveredSlotKey(null);
+                          setHoveredMultiPostKey(key);
+                          setDayHoverOverlayPayload(overlayPayload);
+                        }}
+                        onBlurCapture={() => {
+                          setHoveredMultiPostKey(null);
+                          setDayHoverOverlayPayload(null);
+                        }}
+                        onTouchStart={() => {
+                          setHoveredSlotKey(null);
+                          setHoveredMultiPostKey(key);
+                          setDayHoverOverlayPayload(overlayPayload);
+                        }}
+                        onTouchEnd={() => {
+                          setTimeout(() => {
+                            setHoveredMultiPostKey(null);
+                            setDayHoverOverlayPayload(null);
+                          }, 300);
+                        }}
                       >
                         <PostBlock
                           post={post}
@@ -465,13 +609,7 @@ export function DayViewTwoColumnGrid({
                           }
                           hideTimeRowPreview
                           forceOpaque={isHovered}
-                          slotExpandRows={
-                            isHovered
-                              ? hoverRows
-                              : Math.ceil(
-                                  (row.blockHeightPx + 4) / ROW_HEIGHT_PX
-                                )
-                          }
+                          slotExpandRows={baseRows}
                         />
                       </div>
                     );
@@ -485,6 +623,52 @@ export function DayViewTwoColumnGrid({
               ))}
             </div>
           </div>
+
+          {dayHoverOverlayPayload && !isDraggingPostBlock ? (
+            <div className="pointer-events-none absolute inset-0 z-[40]">
+              {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Overlay hover retention area for expanded post preview */}
+              <div
+                className={`pointer-events-auto absolute px-0.5 ${EXPANDED_BLOCK_WRAPPER_CLASS}`}
+                style={{
+                  top: dayHoverOverlayPayload.topPx,
+                  left: dayHoverOverlayPayload.leftCss,
+                  width: dayHoverOverlayPayload.widthCss,
+                  height: dayHoverOverlayPayload.heightPx,
+                }}
+                onMouseEnter={() => {
+                  if (dayHoverOverlayPayload.source === "single") {
+                    setHoveredSlotKey(dayHoverOverlayPayload.key);
+                    setHoveredMultiPostKey(null);
+                  } else {
+                    setHoveredSlotKey(null);
+                    setHoveredMultiPostKey(dayHoverOverlayPayload.key);
+                  }
+                }}
+                onMouseLeave={() => {
+                  setHoveredSlotKey(null);
+                  setHoveredMultiPostKey(null);
+                  setDayHoverOverlayPayload(null);
+                }}
+              >
+                <PostBlock
+                  post={dayHoverOverlayPayload.post}
+                  compact
+                  multipleInCell={dayHoverOverlayPayload.source === "multi"}
+                  user={user}
+                  queueTypes={queueTypes}
+                  onEdit={(editedPost) => {
+                    setActiveEmptySlotKey(null);
+                    onPostEdit(editedPost);
+                  }}
+                  isLongform={dayHoverOverlayPayload.isLongform}
+                  isPast={dayHoverOverlayPayload.isPast}
+                  forceOpaque
+                  hideTimeRowPreview
+                  slotExpandRows={dayHoverOverlayPayload.expandedRows}
+                />
+              </div>
+            </div>
+          ) : null}
 
           {/* Drop layer: 48 rows; only capture pointer events during drag so blocks stay clickable/hoverable */}
           <div

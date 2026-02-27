@@ -38,6 +38,22 @@ export interface HoverOverlayPayload {
   isPast: boolean;
 }
 
+export interface DayHoverOverlayPayload {
+  key: string;
+  source: "single" | "multi";
+  post: CalendarPost;
+  time: string;
+  rowIndex: number;
+  columnIndex: number;
+  leftCss: string;
+  widthCss: string;
+  topPx: number;
+  heightPx: number;
+  expandedRows: number;
+  isLongform: boolean;
+  isPast: boolean;
+}
+
 export interface GetSlotStateOptions {
   hoveredPostKey: string | null;
   /** Day view only: hover state per column so both columns can have an active block. */
