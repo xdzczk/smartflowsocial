@@ -63,7 +63,7 @@ function renderSinglePostSlotContent(
           : isHovered
             ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
             : "relative z-0"
-      } ${singleOverlayPayload ? "opacity-0" : ""}`}
+      } ${singleOverlayPayload && isHovered ? "opacity-0" : ""}`}
       style={{ height: blockHeightPx }}
       onMouseEnter={() => {
         if (!singlePostKey) return;
@@ -201,7 +201,7 @@ function MultiPostBlock({
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
       className={`transition-[height,opacity] duration-200 ease-out ${expandedClass} ${
-        overlayPayload ? "opacity-0" : ""
+        overlayPayload && multiHovered ? "opacity-0" : ""
       }`}
       style={{ height: multiHeightPx }}
       onMouseEnter={() => {
@@ -271,11 +271,6 @@ function renderMultiPostSlotContent(
   const { dateKey, posts, expandRows, blockHeightPx, noExpandOnHover } =
     slotState;
   const postOccurrences = getPostOccurrences(posts);
-  const hoveredMultiPostIndex = posts.findIndex(
-    (p, index) =>
-      hoveredPostKey ===
-      getMultiPostHoverKey(dateKey, time, p.id, postOccurrences[index] ?? 0)
-  );
   const multiPostHoveredHeightPx =
     getMultiPostExpandRows(expandRows, true, noExpandOnHover) * ROW_HEIGHT_PX -
     4;
@@ -297,8 +292,6 @@ function renderMultiPostSlotContent(
   };
   const overlayRows = getMultiPostExpandRows(expandRows, true, noExpandOnHover);
   const overlayPayloadByIndex = posts.map((post, index) => {
-    const isActive = hoveredMultiPostIndex === index;
-    if (!isActive) return null;
     return {
       key: getMultiPostHoverKey(
         dateKey,
@@ -462,10 +455,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
     rowIndex * ROW_HEIGHT_PX + (shouldGrowUp ? expandUpTop : 0);
   const singlePost = posts[0];
   const singleOverlayPayload =
-    posts.length === 1 &&
-    isHovered &&
-    singlePost &&
-    slotState.singlePostKey !== null
+    posts.length === 1 && singlePost && slotState.singlePostKey !== null
       ? ({
           key: slotState.singlePostKey,
           post: singlePost,
