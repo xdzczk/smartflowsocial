@@ -91,11 +91,13 @@ export function TimeGridRow({
     // Any block that exceeds remaining rows at end-of-day is expanding upward.
     if (slotState.expandRows > availableRowsBelow) return true;
 
-    const hoveredInCell =
-      hoveredPostKey?.startsWith(`${slotState.dateKey}-${time}-`) ?? false;
-    if (hoveredInCell) return true;
-
-    return false;
+    // Keep row elevated whenever this slot can require upward overlap on hover.
+    // This avoids flicker/clipping from transient hover state transitions.
+    const canNeedUpwardHoverOverlap = availableRowsBelow < 4;
+    const canConflictShiftUp =
+      slotState.firstConflictOffsetBelow !== null &&
+      slotState.firstConflictOffsetAbove === null;
+    return canNeedUpwardHoverOverlap || canConflictShiftUp;
   });
   // Rows 0..44: upper row on top so blocks expanding downward stay above the next row.
   // Rows 45+: stack-above zone for expand-up; these rows sit below row 44 so expanded content is visible.
