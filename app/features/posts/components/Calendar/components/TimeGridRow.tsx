@@ -107,10 +107,10 @@ export function TimeGridRow({
     20 +
     (index - BOTTOM_ROWS_STACK_ABOVE_THRESHOLD);
   const rowZIndex =
-    index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-      ? bottomRowsZIndex
-      : hoveredInThisTimeRow || rowHasExpandedUpContent
-        ? CALENDAR_ROW_Z_EXPANDED_UP
+    hoveredInThisTimeRow || rowHasExpandedUpContent
+      ? CALENDAR_ROW_Z_EXPANDED_UP + 50
+      : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+        ? bottomRowsZIndex
         : BOTTOM_ROWS_STACK_ABOVE_THRESHOLD - 1 - index + CALENDAR_ROW_Z_BASE;
 
   return (
@@ -125,7 +125,7 @@ export function TimeGridRow({
       }}
     >
       <div
-        className="relative flex min-h-0 w-full min-w-0 flex-1 items-stretch"
+        className="relative flex min-h-0 w-full min-w-0 flex-1 items-stretch overflow-visible"
         style={{ height: ROW_HEIGHT_PX - 1, zIndex: TIME_GRID_ROW_CONTENT_Z }}
       >
         <div

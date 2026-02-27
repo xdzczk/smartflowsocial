@@ -66,7 +66,7 @@ export function TimeGrid({
           }}
         />
         <div
-          className="relative flex w-full flex-col flex-nowrap"
+          className="relative flex w-full flex-col flex-nowrap overflow-visible"
           style={{ zIndex: TIME_GRID_ROWS_LAYER_Z }}
         >
           {hours.map((time, index) => (
