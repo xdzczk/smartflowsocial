@@ -248,19 +248,22 @@ export function getSlotState(
     posts.length,
     noExpandOnHover
   );
+  // Scan at least 3 rows so hover expansion (up to 4 rows) has reliable
+  // conflict-above/below signals even when base expandRows is small.
+  const conflictScanRows = Math.max(3, Math.max(0, expandRows - 1));
   const firstConflictOffsetBelow = getFirstConflictOffsetBelow(
     dateKey,
     time,
     postsGrid,
     hours,
-    Math.max(0, expandRows - 1)
+    conflictScanRows
   );
   const firstConflictOffsetAbove = getFirstConflictOffsetAbove(
     dateKey,
     time,
     postsGrid,
     hours,
-    Math.max(0, expandRows - 1)
+    conflictScanRows
   );
   const blockHeightPx = expandRows * ROW_HEIGHT_PX - 4;
   return {
