@@ -21,6 +21,9 @@ import type { CalendarPost } from "../PostBlock.types";
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { DayViewEmptyColumnArea } from "./EmptySlot";
 import {
+  CALENDAR_BLOCK_BASE_Z,
+  CALENDAR_BLOCK_EXPANDED_Z,
+  CALENDAR_HOVER_OVERLAY_Z,
   DAY_VIEW_DROP_LAYER_Z,
   DAY_VIEW_GRID_LINES_Z,
   DAY_VIEW_MULTI_POSTS_Z,
@@ -127,9 +130,12 @@ function BlockInColumn({
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- hover expand; focus/blur already mirror mouse for keyboard
     <div
       className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
-        isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "relative z-0"
+        isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "relative"
       }`}
-      style={{ height: placement.blockHeightPx }}
+      style={{
+        height: placement.blockHeightPx,
+        zIndex: isHovered ? CALENDAR_BLOCK_EXPANDED_Z : CALENDAR_BLOCK_BASE_Z,
+      }}
       onMouseEnter={() => onHoverOverlayChange(hoverOverlayPayload)}
       onMouseLeave={() => onHoverOverlayChange(null)}
       onFocus={() => onHoverOverlayChange(hoverOverlayPayload)}
@@ -184,7 +190,6 @@ export function DayViewTwoColumnGrid({
   );
   const [dayHoverOverlayPayload, setDayHoverOverlayPayload] =
     useState<DayHoverOverlayPayload | null>(null);
-  const [isDraggingPostBlock, setIsDraggingPostBlock] = useState(false);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [isDragOverGrid, setIsDragOverGrid] = useState(false);
   const userTimezone = user?.timezone ?? "Etc/UTC";
@@ -228,25 +233,25 @@ export function DayViewTwoColumnGrid({
     setDragOverSlot(null);
   }, []);
 
-  const handleGridDragOver = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setIsDragOverGrid(true);
-    },
-    []
-  );
-
-  const handleGridDragLeave = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      const related = e.relatedTarget as Node | null;
-      if (related === null || !e.currentTarget.contains(related)) {
-        setIsDragOverGrid(false);
-      }
-    },
-    []
-  );
-
   const totalHeightPx = TOTAL_TIME_SLOTS * ROW_HEIGHT_PX;
+
+  const getDropTimeFromPointer = (
+    clientX: number,
+    clientY: number
+  ): string | null => {
+    const gridEl = document
+      .elementFromPoint(clientX, clientY)
+      ?.closest('[data-calendar-day-grid="true"]') as HTMLDivElement | null;
+    if (!gridEl) return null;
+    const rect = gridEl.getBoundingClientRect();
+    const localY = clientY - rect.top;
+    if (localY < 0 || localY >= rect.height) return null;
+    const rowIndex = Math.max(
+      0,
+      Math.min(hours.length - 1, Math.floor(localY / ROW_HEIGHT_PX))
+    );
+    return hours[rowIndex] ?? null;
+  };
 
   return (
     <div
@@ -279,18 +284,34 @@ export function DayViewTwoColumnGrid({
         {/* Content area: grid lines, columns, multi-post, empty slots, drop layer */}
         {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- drag-over/leave for drop layer activation; no keyboard drag */}
         <div
+          data-calendar-day-grid="true"
           className="relative min-w-0 flex-1"
           style={{ height: totalHeightPx }}
-          onDragOver={handleGridDragOver}
-          onDragLeave={handleGridDragLeave}
-          onDragStartCapture={() => {
-            setIsDraggingPostBlock(true);
-            setHoveredSlotKey(null);
-            setHoveredMultiPostKey(null);
-            setDayHoverOverlayPayload(null);
+          onDragOverCapture={(e) => {
+            const time = getDropTimeFromPointer(e.clientX, e.clientY);
+            if (!time) {
+              setDragOverSlot(null);
+              return;
+            }
+            handleDragOver(e, time);
+            setIsDragOverGrid(true);
           }}
-          onDragEndCapture={() => {
-            setIsDraggingPostBlock(false);
+          onDropCapture={(e) => {
+            const time = getDropTimeFromPointer(e.clientX, e.clientY);
+            if (!time) return;
+            handleDrop(e, time);
+          }}
+          onDragLeave={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const outside =
+              e.clientX < rect.left ||
+              e.clientX > rect.right ||
+              e.clientY < rect.top ||
+              e.clientY > rect.bottom;
+            if (outside) {
+              setDragOverSlot(null);
+              setIsDragOverGrid(false);
+            }
           }}
           onMouseLeave={() => {
             setHoveredSlotKey(null);
@@ -557,10 +578,15 @@ export function DayViewTwoColumnGrid({
                         key={post.id}
                         className={`min-w-0 overflow-hidden rounded-[var(--calendar-radius-md)] ${
                           isHovered
-                            ? "relative z-10 bg-[hsl(var(--calendar-surface-2-bg))]"
+                            ? "relative bg-[hsl(var(--calendar-surface-2-bg))]"
                             : "relative flex-1"
                         }`}
-                        style={{ height: row.blockHeightPx }}
+                        style={{
+                          height: row.blockHeightPx,
+                          zIndex: isHovered
+                            ? CALENDAR_BLOCK_EXPANDED_Z
+                            : CALENDAR_BLOCK_BASE_Z,
+                        }}
                         onMouseEnter={() => {
                           setHoveredSlotKey(null);
                           setHoveredMultiPostKey(key);
@@ -624,8 +650,11 @@ export function DayViewTwoColumnGrid({
             </div>
           </div>
 
-          {dayHoverOverlayPayload && !isDraggingPostBlock ? (
-            <div className="pointer-events-none absolute inset-0 z-[40]">
+          {dayHoverOverlayPayload ? (
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ zIndex: CALENDAR_HOVER_OVERLAY_Z }}
+            >
               {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Overlay hover retention area for expanded post preview */}
               <div
                 className={`pointer-events-auto absolute px-0.5 ${EXPANDED_BLOCK_WRAPPER_CLASS}`}

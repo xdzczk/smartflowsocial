@@ -15,6 +15,7 @@ import { DaysHeader } from "./components/DaysHeader";
 import { TimeGrid } from "./components/TimeGrid";
 import {
   BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
+  CALENDAR_MOBILE_HEADER_Z,
   DEFAULT_SCROLL_HOUR,
   HOURS_PER_DAY,
   ROW_HEIGHT_PX,
@@ -350,7 +351,10 @@ export function WeeklyView({
             setHoverOverlayPayload(null);
           }}
         >
-          <div className="border-border/40 sticky top-0 z-[280] flex min-w-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
+          <div
+            className="border-border/40 sticky top-0 flex min-w-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]"
+            style={{ zIndex: CALENDAR_MOBILE_HEADER_Z }}
+          >
             <div className="border-border/40 w-16 shrink-0 border-r" />
             {}
             <div

@@ -6,7 +6,11 @@ import { fromDate, nowInTimezone } from "~/lib/temporal";
 
 import type { UserData } from "../../../types";
 
-import { MOBILE_WEEK_DAY_COLUMN_WIDTH } from "./weekly-view-constants";
+import {
+  CALENDAR_DAYS_HEADER_TIME_SPACER_Z,
+  CALENDAR_DAYS_HEADER_Z,
+  MOBILE_WEEK_DAY_COLUMN_WIDTH,
+} from "./weekly-view-constants";
 
 export interface DaysHeaderProps {
   weekDays: Date[];
@@ -31,12 +35,16 @@ export function DaysHeader({
   return (
     <div
       data-calendar-days-header="true"
-      className={`border-border/40 z-[260] flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))] ${
+      className={`border-border/40 flex flex-shrink-0 border-b bg-[hsl(var(--calendar-surface-2-bg))] ${
         stickyTop ? "sticky top-0" : ""
       }`}
+      style={{ zIndex: CALENDAR_DAYS_HEADER_Z }}
     >
       {showTimeSpacer ? (
-        <div className="border-border/40 sticky left-0 z-[270] w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]" />
+        <div
+          className="border-border/40 sticky left-0 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]"
+          style={{ zIndex: CALENDAR_DAYS_HEADER_TIME_SPACER_Z }}
+        />
       ) : null}
       {weekDays.map((day) => {
         const dayZoned = fromDate(day, userTimezone);

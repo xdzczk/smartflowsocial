@@ -5,6 +5,9 @@ import type { CalendarPost } from "../PostBlock.types";
 
 import { EmptySlotCellContent } from "./EmptySlot";
 import {
+  CALENDAR_BLOCK_BASE_Z,
+  CALENDAR_BLOCK_EXPANDED_Z,
+  CALENDAR_BLOCK_MULTI_HOVER_Z,
   EXPANDED_BLOCK_WRAPPER_CLASS,
   ROW_HEIGHT_PX,
 } from "./weekly-view-constants";
@@ -60,12 +63,15 @@ function renderSinglePostSlotContent(
     <div
       className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
         shouldGrowUp
-          ? `absolute right-0 bottom-0 left-0 ${isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "z-0"}`
+          ? `absolute right-0 bottom-0 left-0 ${isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : ""}`
           : isHovered
             ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
-            : "relative z-0"
+            : "relative"
       }`}
-      style={{ height: blockHeightPx }}
+      style={{
+        height: blockHeightPx,
+        zIndex: isHovered ? CALENDAR_BLOCK_EXPANDED_Z : CALENDAR_BLOCK_BASE_Z,
+      }}
       onMouseEnter={() => {
         if (!singlePostKey) return;
         setHoveredPostKey(singlePostKey);
@@ -263,13 +269,18 @@ function MultiPostBlock({
   const multiExpandRows = baseRows;
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
-    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative z-20 min-w-0 flex-1`
-    : "relative z-0 min-w-0 flex-1";
+    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative min-w-0 flex-1`
+    : "relative min-w-0 flex-1";
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
       className={`transition-[height,opacity] duration-200 ease-out ${expandedClass}`}
-      style={{ height: multiHeightPx }}
+      style={{
+        height: multiHeightPx,
+        zIndex: multiHovered
+          ? CALENDAR_BLOCK_MULTI_HOVER_Z
+          : CALENDAR_BLOCK_BASE_Z,
+      }}
       onMouseEnter={() => {
         setHoveredPostKey(multiPostKey);
         onHoverOverlayChange?.(overlayPayload);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { fromDate } from "~/lib/temporal";
 
 import type { HoverOverlayPayload, SlotState } from "../domain/grid-types";
 import { PostBlock } from "../PostBlock";
@@ -6,6 +6,7 @@ import { PostBlock } from "../PostBlock";
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { TimeGridRow, type TimeGridRowProps } from "./TimeGridRow";
 import {
+  CALENDAR_HOVER_OVERLAY_Z,
   EXPANDED_BLOCK_WRAPPER_CLASS,
   ROW_HEIGHT_PX,
   TIME_GRID_LINES_Z,
@@ -54,7 +55,6 @@ export function TimeGrid({
   onClearSelection,
   isMobile,
 }: TimeGridProps) {
-  const [isDraggingPostBlock, setIsDraggingPostBlock] = useState(false);
   const dayCount = Math.max(1, weekDays.length);
   const overlayLeft = hoverOverlayPayload
     ? isMobile
@@ -67,21 +67,71 @@ export function TimeGrid({
       : `calc((100% - 4rem) / ${dayCount})`
     : undefined;
 
+  const getDropSlotFromPointer = (clientX: number, clientY: number) => {
+    const gridEl = document
+      .elementFromPoint(clientX, clientY)
+      ?.closest('[data-calendar-week-grid="true"]') as HTMLDivElement | null;
+    if (!gridEl) return null;
+    const rect = gridEl.getBoundingClientRect();
+    const localY = clientY - rect.top;
+    if (localY < 0 || localY >= rect.height) return null;
+    const rowIndex = Math.max(
+      0,
+      Math.min(hours.length - 1, Math.floor(localY / ROW_HEIGHT_PX))
+    );
+    const time = hours[rowIndex];
+    if (!time) return null;
+
+    const timeRailWidth = isMobile ? 0 : 64;
+    const contentWidth = rect.width - timeRailWidth;
+    if (contentWidth <= 0) return null;
+    const localX = clientX - rect.left - timeRailWidth;
+    if (localX < 0 || localX >= contentWidth) return null;
+    const columnWidth = contentWidth / dayCount;
+    const columnIndex = Math.max(
+      0,
+      Math.min(dayCount - 1, Math.floor(localX / columnWidth))
+    );
+    const day = weekDays[columnIndex];
+    if (!day) return null;
+    const dayZoned = fromDate(day, userTimezone);
+    const dateKey = `${dayZoned.year}-${String(dayZoned.month).padStart(2, "0")}-${String(dayZoned.day).padStart(2, "0")}`;
+    return { dateKey, time };
+  };
+
   return (
-    <div className="relative min-h-0 w-full flex-none">
+    <div
+      className="relative min-h-0 w-full flex-none"
+      data-calendar-week-grid="true"
+    >
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Root drag surface maps pointer coordinates to calendar slots */}
       <div
         className="relative flex w-full flex-col flex-nowrap"
         style={{
           height: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
           minHeight: `${TOTAL_TIME_SLOTS * ROW_HEIGHT_PX}px`,
         }}
-        onDragStartCapture={() => {
-          setIsDraggingPostBlock(true);
-          setHoverOverlayPayload(null);
-          setHoveredPostKey(null);
+        onDragOverCapture={(e) => {
+          const slot = getDropSlotFromPointer(e.clientX, e.clientY);
+          if (!slot) {
+            onDragLeave();
+            return;
+          }
+          onDragOver(e, slot.dateKey, slot.time);
         }}
-        onDragEndCapture={() => {
-          setIsDraggingPostBlock(false);
+        onDropCapture={(e) => {
+          const slot = getDropSlotFromPointer(e.clientX, e.clientY);
+          if (!slot) return;
+          onDrop(e, slot.dateKey, slot.time);
+        }}
+        onDragLeave={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const outside =
+            e.clientX < rect.left ||
+            e.clientX > rect.right ||
+            e.clientY < rect.top ||
+            e.clientY > rect.bottom;
+          if (outside) onDragLeave();
         }}
       >
         {/* Grid lines in a single layer behind rows so they don't cut through post blocks */}
@@ -137,8 +187,11 @@ export function TimeGrid({
             isMobile={isMobile}
           />
         </div>
-        {hoverOverlayPayload && !isDraggingPostBlock ? (
-          <div className="pointer-events-none absolute inset-0 z-[500]">
+        {hoverOverlayPayload ? (
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ zIndex: CALENDAR_HOVER_OVERLAY_Z }}
+          >
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Overlay hover retention area for expanded post preview */}
             <div
               className={`pointer-events-auto absolute ${EXPANDED_BLOCK_WRAPPER_CLASS}`}

@@ -7,6 +7,7 @@ import {
   BOTTOM_ROWS_STACK_ABOVE_THRESHOLD,
   CALENDAR_ROW_Z_BASE,
   CALENDAR_ROW_Z_EXPANDED_UP,
+  CALENDAR_TIME_RAIL_STICKY_Z,
   ROW_HEIGHT_PX,
   TIME_GRID_ROW_CONTENT_Z,
 } from "./weekly-view-constants";
@@ -115,8 +116,9 @@ export function TimeGridRow({
           className={`text-muted-foreground/85 border-border/30 w-16 flex-shrink-0 border-r pr-2 text-right text-xs leading-none ${
             isMobile
               ? "hidden"
-              : "sticky left-0 z-[260] bg-[hsl(var(--calendar-surface-2-bg))]"
+              : "sticky left-0 bg-[hsl(var(--calendar-surface-2-bg))]"
           }`}
+          style={isMobile ? undefined : { zIndex: CALENDAR_TIME_RAIL_STICKY_Z }}
         >
           {hourLabel}
         </div>

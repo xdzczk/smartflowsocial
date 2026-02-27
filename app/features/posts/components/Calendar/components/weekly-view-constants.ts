@@ -20,14 +20,30 @@ export const MOBILE_WEEK_DAY_COLUMN_WIDTH = "calc((100vw - 4rem) / 3)";
 export const MOBILE_WEEK_GRID_MIN_WIDTH =
   "calc(4rem + 7 * ((100vw - 4rem) / 3))";
 
-/** Row z-index (below Dialog z-50). */
-export const CALENDAR_ROW_Z_BASE = 39;
+/**
+ * Calendar layering invariant:
+ * Keep all Calendar z-index values below app modal/popover baseline z-50.
+ */
+
+/** Row z-index baseline (kept low so row stacking stays below indicator/modals). */
+export const CALENDAR_ROW_Z_BASE = 0;
 /** Hovered bottom-row expand-up content must render above all regular row layers. */
-export const CALENDAR_ROW_Z_EXPANDED_UP = 200;
+export const CALENDAR_ROW_Z_EXPANDED_UP = 40;
 /** Hovered slot cell wrapper should sit above base row layers. */
-export const CALENDAR_HOVERED_CELL_Z = 40;
+export const CALENDAR_HOVERED_CELL_Z = 20;
 /** Current-time indicator must render above all row layers. */
-export const CURRENT_TIME_INDICATOR_Z = 210;
+export const CURRENT_TIME_INDICATOR_Z = 45;
+/** Shared overlay layer for expanded hover blocks in Week/Day views. */
+export const CALENDAR_HOVER_OVERLAY_Z = 40;
+/** Sticky layers for weekly headers/rails. */
+export const CALENDAR_DAYS_HEADER_Z = 20;
+export const CALENDAR_DAYS_HEADER_TIME_SPACER_Z = 21;
+export const CALENDAR_TIME_RAIL_STICKY_Z = 22;
+export const CALENDAR_MOBILE_HEADER_Z = 23;
+/** Post block wrapper z-levels inside local cell contexts. */
+export const CALENDAR_BLOCK_BASE_Z = 0;
+export const CALENDAR_BLOCK_EXPANDED_Z = 10;
+export const CALENDAR_BLOCK_MULTI_HOVER_Z = 20;
 /** Week/day time-grid shared layers. */
 export const TIME_GRID_LINES_Z = 0;
 export const TIME_GRID_ROWS_LAYER_Z = 1;
@@ -43,7 +59,7 @@ export const DAY_VIEW_POST_BLOCK_CONTAINER_Z = 10;
 
 /** Class for expanded post block wrapper: fully opaque and on top so grid/content behind don't show through. */
 export const EXPANDED_BLOCK_WRAPPER_CLASS =
-  "z-10 opacity-100 bg-[hsl(var(--calendar-surface-2-bg))] rounded-[var(--calendar-radius-md)] shadow-sm";
+  "opacity-100 bg-[hsl(var(--calendar-surface-2-bg))] rounded-[var(--calendar-radius-md)] shadow-sm";
 
 export const CLASS_OVERFLOW_HIDDEN = "overflow-hidden";
 export const CLASS_DAY_COLUMN_EXPAND_UP =
