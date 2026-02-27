@@ -95,11 +95,14 @@ export function TimeGridRow({
       hoveredPostKey?.startsWith(`${slotState.dateKey}-${time}-`) ?? false;
     if (!hoveredInCell) return false;
 
-    // Outside bottom rows we only treat it as expand-up when hover conflict logic shifts upward.
-    return (
+    // Hover-expanded blocks can reach up to 4 rows in week view. If fewer rows remain
+    // below, the block must grow upward; elevate this row so upper rows don't cover it.
+    const hoverNeedsUpwardGrowth = availableRowsBelow < 4;
+    // Outside bottom rows we also elevate when conflict logic shifts expansion upward.
+    const isConflictShiftExpandUp =
       slotState.firstConflictOffsetBelow !== null &&
-      slotState.firstConflictOffsetAbove === null
-    );
+      slotState.firstConflictOffsetAbove === null;
+    return hoverNeedsUpwardGrowth || isConflictShiftExpandUp;
   });
   // Rows 0..44: upper row on top so blocks expanding downward stay above the next row.
   // Rows 45+: stack-above zone for expand-up; these rows sit below row 44 so expanded content is visible.
