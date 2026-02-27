@@ -10,6 +10,7 @@ import { CONTENT_MOBILE_BREAKPOINT_PX } from "../constants";
 import {
   buildDropIsoString,
   formatDropSlotAriaLabel,
+  isCalendarDropSlotInPast,
 } from "./calendar-helpers";
 import { DaysHeader } from "./components/DaysHeader";
 import { TimeGrid } from "./components/TimeGrid";
@@ -174,6 +175,10 @@ export function WeeklyView({
     date: string,
     time: string
   ) => {
+    if (isCalendarDropSlotInPast(date, time, userTimezone)) {
+      setDragOverSlot(null);
+      return;
+    }
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setDragOverSlot(`${date}-${time}`);
@@ -184,6 +189,11 @@ export function WeeklyView({
     date: string,
     time: string
   ) => {
+    if (isCalendarDropSlotInPast(date, time, userTimezone)) {
+      e.preventDefault();
+      setDragOverSlot(null);
+      return;
+    }
     e.preventDefault();
     setDragOverSlot(null);
 

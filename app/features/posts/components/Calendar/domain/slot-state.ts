@@ -11,7 +11,6 @@ import {
   getExpandDownDayView,
   getWeekViewMaxExpand,
   hasBlocksAbove,
-  hasBlocksUnderneath,
   WEEK_VIEW_BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
 } from "./expand-rules";
 import type { GetSlotStateOptions, PostsGrid, SlotState } from "./grid-types";
@@ -27,9 +26,6 @@ function computeWeekViewBaseRows(
   hours: string[]
 ): number {
   let rows = baseRows;
-  if (hasBlocksUnderneath(dateKey, time, rows, postsGrid, hours)) {
-    rows = Math.min(rows, 3);
-  }
   const rowIndex = hours.indexOf(time);
   if (
     rowIndex >= WEEK_VIEW_BOTTOM_ROWS_EXPAND_UP_THRESHOLD &&
@@ -141,7 +137,7 @@ function computeExpandRows(
 
   if (!isHovered) return baseRows;
   if (postsCount === 1) {
-    return Math.max(baseRows, noExpandOnHover ? 3 : Math.min(baseRows + 2, 4));
+    return Math.max(baseRows, noExpandOnHover ? 3 : 4);
   }
   if (noExpandOnHover) return baseRows;
   return baseRows >= 4 ? baseRows : Math.min(baseRows + 2, 4);

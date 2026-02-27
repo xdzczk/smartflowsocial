@@ -25,6 +25,7 @@ export interface DateGridProps {
     dayInfo: CalendarDay
   ) => ReactNode;
   onDrop?: (e: React.DragEvent<HTMLDivElement>, date: Date) => void;
+  canDropDate?: (date: Date) => boolean;
   weekdayLabels?: string[];
   userTimezone: string;
   /** Optional: cell wrapper class (e.g. mobile padding). */
@@ -46,6 +47,7 @@ export function DateGrid({
   postsByDate,
   getCellContent,
   onDrop,
+  canDropDate,
   weekdayLabels = DEFAULT_WEEKDAY_LABELS,
   userTimezone,
   cellClassName,
@@ -86,6 +88,7 @@ export function DateGrid({
               onDragOver={
                 onDrop
                   ? (e) => {
+                      if (canDropDate && !canDropDate(dayInfo.date)) return;
                       e.preventDefault();
                     }
                   : undefined
@@ -93,6 +96,7 @@ export function DateGrid({
               onDrop={
                 onDrop
                   ? (e) => {
+                      if (canDropDate && !canDropDate(dayInfo.date)) return;
                       e.preventDefault();
                       onDrop(e, dayInfo.date);
                     }

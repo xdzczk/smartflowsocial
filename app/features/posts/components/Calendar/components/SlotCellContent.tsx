@@ -161,7 +161,7 @@ function getSinglePostExpandRows(
   noExpandOnHover: boolean
 ): number {
   if (!isHovered) return baseRows;
-  return Math.max(baseRows, noExpandOnHover ? 3 : Math.min(baseRows + 2, 4));
+  return Math.max(baseRows, noExpandOnHover ? 3 : 4);
 }
 
 function chooseBestHoverRows(

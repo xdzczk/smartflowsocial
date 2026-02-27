@@ -13,7 +13,10 @@ import {
 import type { QueueType, UserData } from "../../types";
 import { CONTENT_MOBILE_BREAKPOINT_PX } from "../constants";
 
-import { buildDropIsoString } from "./calendar-helpers";
+import {
+  buildDropIsoString,
+  isCalendarDropSlotInPast,
+} from "./calendar-helpers";
 import { DateGrid } from "./components/DateGrid";
 import type { CalendarDay } from "./components/DateGrid";
 import { parseDropToDateTime } from "./data/parse-drop-to-date-time";
@@ -137,12 +140,16 @@ export function MonthlyView({
   );
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, date: Date) => {
+    const dateZoned = fromDate(date, userTimezone);
+    const dateKey = `${dateZoned.year}-${String(dateZoned.month).padStart(2, "0")}-${String(dateZoned.day).padStart(2, "0")}`;
+    if (isCalendarDropSlotInPast(dateKey, "09:00", userTimezone)) {
+      e.preventDefault();
+      return;
+    }
     e.preventDefault();
     const postData = JSON.parse(
       e.dataTransfer.getData("text/plain")
     ) as CalendarPost;
-    const dateZoned = fromDate(date, userTimezone);
-    const dateKey = `${dateZoned.year}-${String(dateZoned.month).padStart(2, "0")}-${String(dateZoned.day).padStart(2, "0")}`;
     const isoString = buildDropIsoString(dateKey, "09:00");
     const newDateTime = parseDropToDateTime(isoString, userTimezone);
     onPostDrop(postData, newDateTime);
@@ -281,6 +288,11 @@ export function MonthlyView({
       postsByDate={postsByDate}
       getCellContent={getCellContent}
       onDrop={handleDrop}
+      canDropDate={(date) => {
+        const dateZoned = fromDate(date, userTimezone);
+        const dateKey = `${dateZoned.year}-${String(dateZoned.month).padStart(2, "0")}-${String(dateZoned.day).padStart(2, "0")}`;
+        return !isCalendarDropSlotInPast(dateKey, "09:00", userTimezone);
+      }}
       weekdayLabels={["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]}
       userTimezone={userTimezone}
       cellClassName={cellClassName}

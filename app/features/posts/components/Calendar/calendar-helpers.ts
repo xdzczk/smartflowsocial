@@ -2,7 +2,12 @@
  * Shared helpers for Calendar: post longform detection, same-slot comparison, drop datetime string, a11y labels.
  */
 
-import { formatForDisplay, fromDate, parseDateTimeLocal } from "~/lib/temporal";
+import {
+  formatForDisplay,
+  fromDate,
+  nowInTimezone,
+  parseDateTimeLocal,
+} from "~/lib/temporal";
 
 import type { CalendarPost } from "./PostBlock.types";
 
@@ -46,6 +51,20 @@ export function isSameCalendarSlot(
 /** Build datetime-local string for drop (YYYY-MM-DDTHH:mm). Used by Week/Day and Month views. */
 export function buildDropIsoString(dateKey: string, time: string): string {
   return `${dateKey}T${time}`;
+}
+
+/** True when a drop slot (date + time) is in the past for userTimezone. */
+export function isCalendarDropSlotInPast(
+  dateKey: string,
+  time: string,
+  userTimezone: string
+): boolean {
+  const slot = parseDateTimeLocal(
+    buildDropIsoString(dateKey, time),
+    userTimezone
+  );
+  const now = nowInTimezone(userTimezone);
+  return slot.epochNanoseconds <= now.epochNanoseconds;
 }
 
 /** Format a slot for aria-label on drop targets (e.g. "Drop slot: Tuesday, 17 February, 2:00 PM"). */

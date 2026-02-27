@@ -7,7 +7,10 @@ import { useCallback, useMemo, useState } from "react";
 import type { RefObject } from "react";
 
 import type { QueueType, UserData } from "../../../types";
-import { buildDropIsoString } from "../calendar-helpers";
+import {
+  buildDropIsoString,
+  isCalendarDropSlotInPast,
+} from "../calendar-helpers";
 import type {
   DayViewColumnPlacements,
   DayViewPlacement,
@@ -207,15 +210,25 @@ export function DayViewTwoColumnGrid({
 
   const handleDragOver = useCallback(
     (e: React.DragEvent<HTMLDivElement>, time: string) => {
+      if (isCalendarDropSlotInPast(dateKey, time, userTimezone)) {
+        setDragOverSlot(null);
+        return;
+      }
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       setDragOverSlot(`${dateKey}-${time}`);
     },
-    [dateKey]
+    [dateKey, userTimezone]
   );
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>, time: string) => {
+      if (isCalendarDropSlotInPast(dateKey, time, userTimezone)) {
+        e.preventDefault();
+        setDragOverSlot(null);
+        setIsDragOverGrid(false);
+        return;
+      }
       e.preventDefault();
       setDragOverSlot(null);
       setIsDragOverGrid(false);

@@ -34,7 +34,7 @@ export const CALENDAR_HOVERED_CELL_Z = 20;
 /** Current-time indicator must render above all row layers. */
 export const CURRENT_TIME_INDICATOR_Z = 45;
 /** Shared overlay layer for expanded hover blocks in Week/Day views. */
-export const CALENDAR_HOVER_OVERLAY_Z = 40;
+export const CALENDAR_HOVER_OVERLAY_Z = 46;
 /** Sticky layers for weekly headers/rails. */
 export const CALENDAR_DAYS_HEADER_Z = 20;
 export const CALENDAR_DAYS_HEADER_TIME_SPACER_Z = 21;
@@ -59,7 +59,7 @@ export const DAY_VIEW_POST_BLOCK_CONTAINER_Z = 10;
 
 /** Class for expanded post block wrapper: fully opaque and on top so grid/content behind don't show through. */
 export const EXPANDED_BLOCK_WRAPPER_CLASS =
-  "opacity-100 bg-[hsl(var(--calendar-surface-2-bg))] rounded-[var(--calendar-radius-md)] shadow-sm";
+  "opacity-100 overflow-hidden bg-[hsl(var(--calendar-surface-2-bg))] rounded-[var(--calendar-radius-md)] shadow-sm";
 
 export const CLASS_OVERFLOW_HIDDEN = "overflow-hidden";
 export const CLASS_DAY_COLUMN_EXPAND_UP =
