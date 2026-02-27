@@ -5,7 +5,6 @@ import type { CalendarPost } from "../PostBlock.types";
 
 import { EmptySlotCellContent } from "./EmptySlot";
 import {
-  BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
   EXPANDED_BLOCK_WRAPPER_CLASS,
   ROW_HEIGHT_PX,
 } from "./weekly-view-constants";
@@ -33,7 +32,7 @@ export interface SlotCellContentProps {
 /** Renders the single-post slot content (day view two-column or plain block). */
 function renderSinglePostSlotContent(
   props: SlotCellContentProps,
-  expandUp: boolean,
+  shouldGrowUp: boolean,
   wrapExpandUp: (content: React.ReactNode) => React.ReactNode
 ): React.ReactNode {
   const {
@@ -55,7 +54,7 @@ function renderSinglePostSlotContent(
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
       className={`w-full min-w-0 transition-[height] duration-200 ease-out ${
-        expandUp
+        shouldGrowUp
           ? `absolute right-0 bottom-0 left-0 ${isHovered ? EXPANDED_BLOCK_WRAPPER_CLASS : "z-0"}`
           : isHovered
             ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
@@ -369,7 +368,6 @@ export function SlotCellContent(props: SlotCellContentProps) {
     );
   }
 
-  const expandUp = rowIndex >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD;
   const allocatedHeightPx = availableRowsBelow * ROW_HEIGHT_PX;
   // Multi-post in bottom rows: when any block is hovered it can expand to 4 rows; use that height for the wrapper so it doesn't clip
   const multiPostHovered =
@@ -409,8 +407,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
     : 0;
   const shiftRowsUp = Math.min(rowIndex, shiftRowsForConflict);
   const shouldGrowUp =
-    availableRowsBelow > 0 &&
-    (expandUp || blockExceedsBelow || shiftRowsUp > 0);
+    availableRowsBelow > 0 && (blockExceedsBelow || shiftRowsUp > 0);
   const expandUpTop =
     shouldGrowUp && blockExceedsBelow
       ? allocatedHeightPx - effectiveBlockHeightPx
@@ -433,7 +430,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
     );
 
   if (posts.length === 1) {
-    return renderSinglePostSlotContent(props, expandUp, wrapExpandUp);
+    return renderSinglePostSlotContent(props, shouldGrowUp, wrapExpandUp);
   }
 
   return renderMultiPostSlotContent(props, wrapExpandUp);
