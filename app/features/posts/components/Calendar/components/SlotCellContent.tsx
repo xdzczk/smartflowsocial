@@ -158,6 +158,42 @@ function getSinglePostExpandRows(
   return Math.max(baseRows, noExpandOnHover ? 3 : Math.min(baseRows + 2, 4));
 }
 
+interface HoverLayoutMetrics {
+  topPx: number;
+  heightPx: number;
+}
+
+function getHoverLayoutMetrics(
+  rowIndex: number,
+  availableRowsBelow: number,
+  blockHeightPx: number,
+  firstConflictOffsetBelow: number | null,
+  firstConflictOffsetAbove: number | null
+): HoverLayoutMetrics {
+  const allocatedHeightPx = availableRowsBelow * ROW_HEIGHT_PX;
+  const expandRowsEffective = Math.max(
+    1,
+    Math.ceil((blockHeightPx + 4) / ROW_HEIGHT_PX)
+  );
+  const shouldShiftUpForConflict =
+    firstConflictOffsetBelow !== null && firstConflictOffsetAbove === null;
+  const shiftRowsForConflict = shouldShiftUpForConflict
+    ? Math.max(0, expandRowsEffective - firstConflictOffsetBelow)
+    : 0;
+  const shiftRowsUp = Math.min(rowIndex, shiftRowsForConflict);
+  const blockExceedsBelow = blockHeightPx > allocatedHeightPx;
+  const shouldGrowUp =
+    availableRowsBelow > 0 && (blockExceedsBelow || shiftRowsUp > 0);
+  const expandUpTop =
+    shouldGrowUp && blockExceedsBelow
+      ? allocatedHeightPx - blockHeightPx
+      : -shiftRowsUp * ROW_HEIGHT_PX;
+  return {
+    topPx: rowIndex * ROW_HEIGHT_PX + (shouldGrowUp ? expandUpTop : 0),
+    heightPx: blockHeightPx,
+  };
+}
+
 function getMultiPostHoverKey(
   dateKey: string,
   time: string,
@@ -393,7 +429,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
     dateKey,
     posts,
     blockHeightPx,
-    isHovered,
+    isHovered: _isHovered,
     slotKey,
     expandRows,
     noExpandOnHover,
@@ -420,8 +456,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
   }
 
   const allocatedHeightPx = availableRowsBelow * ROW_HEIGHT_PX;
-  // Multi-post in bottom rows: when any block is hovered it can expand to 4 rows; use that height for the wrapper so it doesn't clip
-  const multiPostHovered =
+  const _multiPostHovered =
     posts.length > 1 &&
     posts.some(
       (p, index) =>
@@ -435,44 +470,34 @@ export function SlotCellContent(props: SlotCellContentProps) {
     );
   const singleTargetRows = getSinglePostExpandRows(
     expandRows,
-    singleHovered,
+    true,
     noExpandOnHover
   );
   const singleTargetHeightPx = singleTargetRows * ROW_HEIGHT_PX - 4;
-  const effectiveBlockHeightPx = multiPostHovered
-    ? Math.max(
-        blockHeightPx,
-        getMultiPostExpandRows(expandRows, true, noExpandOnHover) *
-          ROW_HEIGHT_PX -
-          4
-      )
-    : singleHovered
-      ? Math.max(blockHeightPx, singleTargetHeightPx)
-      : blockHeightPx;
-  const blockExceedsBelow = effectiveBlockHeightPx > allocatedHeightPx;
-  const expandRowsEffective = Math.max(
-    1,
-    Math.ceil((effectiveBlockHeightPx + 4) / ROW_HEIGHT_PX)
+  const multiTargetRows = getMultiPostExpandRows(
+    expandRows,
+    true,
+    noExpandOnHover
   );
-  const conflictShiftActive = posts.length === 1 ? isHovered : multiPostHovered;
-  // Prefer downward growth. Shift up only when there is a conflict below
-  // and there are no conflicts above within the same effective span.
-  const shouldShiftUpForConflict =
-    conflictShiftActive &&
-    firstConflictOffsetBelow !== null &&
-    firstConflictOffsetAbove === null;
-  const shiftRowsForConflict = shouldShiftUpForConflict
-    ? Math.max(0, expandRowsEffective - firstConflictOffsetBelow)
-    : 0;
-  const shiftRowsUp = Math.min(rowIndex, shiftRowsForConflict);
-  const shouldGrowUp =
-    availableRowsBelow > 0 && (blockExceedsBelow || shiftRowsUp > 0);
-  const expandUpTop =
-    shouldGrowUp && blockExceedsBelow
-      ? allocatedHeightPx - effectiveBlockHeightPx
-      : -shiftRowsUp * ROW_HEIGHT_PX;
-  const overlayTopPx =
-    rowIndex * ROW_HEIGHT_PX + (shouldGrowUp ? expandUpTop : 0);
+  const multiTargetHeightPx = multiTargetRows * ROW_HEIGHT_PX - 4;
+  const baseBlockHeightPx = blockHeightPx;
+  const baseBlockExceedsBelow = baseBlockHeightPx > allocatedHeightPx;
+  const shouldGrowUp = availableRowsBelow > 0 && baseBlockExceedsBelow;
+  const expandUpTop = shouldGrowUp ? allocatedHeightPx - baseBlockHeightPx : 0;
+  const singleHoverLayout = getHoverLayoutMetrics(
+    rowIndex,
+    availableRowsBelow,
+    singleTargetHeightPx,
+    firstConflictOffsetBelow,
+    firstConflictOffsetAbove
+  );
+  const multiHoverLayout = getHoverLayoutMetrics(
+    rowIndex,
+    availableRowsBelow,
+    multiTargetHeightPx,
+    firstConflictOffsetBelow,
+    firstConflictOffsetAbove
+  );
   const singlePost = posts[0];
   const singleOverlayPayload =
     posts.length === 1 && singlePost && slotState.singlePostKey !== null
@@ -483,7 +508,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
           time,
           rowIndex,
           columnIndex: props.columnIndex ?? 0,
-          topPx: overlayTopPx,
+          topPx: singleHoverLayout.topPx,
           heightPx: singleTargetHeightPx,
           expandedRows: singleTargetRows,
           isLongform: _isAll
@@ -501,7 +526,7 @@ export function SlotCellContent(props: SlotCellContentProps) {
       >
         <div
           className="relative w-full min-w-0"
-          style={{ top: expandUpTop, height: effectiveBlockHeightPx }}
+          style={{ top: expandUpTop, height: baseBlockHeightPx }}
         >
           {content}
         </div>
@@ -520,5 +545,9 @@ export function SlotCellContent(props: SlotCellContentProps) {
     );
   }
 
-  return renderMultiPostSlotContent(props, wrapExpandUp, overlayTopPx);
+  return renderMultiPostSlotContent(
+    props,
+    wrapExpandUp,
+    multiHoverLayout.topPx
+  );
 }
