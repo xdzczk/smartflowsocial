@@ -250,7 +250,7 @@ function renderMultiPostSlotContent(
   const hoveredOverlay =
     multiPostHovered && hoveredPost ? (
       <div
-        className={`pointer-events-none absolute right-0 bottom-0 left-0 z-30 ${EXPANDED_BLOCK_WRAPPER_CLASS}`}
+        className={`pointer-events-none absolute top-0 right-0 left-0 z-30 ${EXPANDED_BLOCK_WRAPPER_CLASS}`}
         style={{ height: multiPostHoveredHeightPx }}
       >
         <PostBlock
