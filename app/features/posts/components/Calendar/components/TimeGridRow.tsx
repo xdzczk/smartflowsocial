@@ -84,6 +84,7 @@ export function TimeGridRow({
   isMobile,
 }: TimeGridRowProps) {
   const availableRowsBelow = hours.length - index;
+  const hoveredInThisTimeRow = hoveredPostKey?.includes(`-${time}-`) ?? false;
   const rowHasExpandedUpContent = weekDays.some((day) => {
     const slotState = getSlotState(day, time);
     if (slotState.posts.length === 0) return false;
@@ -108,7 +109,7 @@ export function TimeGridRow({
   const rowZIndex =
     index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
       ? bottomRowsZIndex
-      : rowHasExpandedUpContent
+      : hoveredInThisTimeRow || rowHasExpandedUpContent
         ? CALENDAR_ROW_Z_EXPANDED_UP
         : BOTTOM_ROWS_STACK_ABOVE_THRESHOLD - 1 - index + CALENDAR_ROW_Z_BASE;
 
