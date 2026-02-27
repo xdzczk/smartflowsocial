@@ -39,6 +39,8 @@ export function SlotCell({
   isAll,
   activeEmptySlotKey,
   setActiveEmptySlotKey,
+  columnIndex,
+  onHoverOverlayChange,
   onClearSelection,
   hoveredSlotKey: _hoveredSlotKey,
   setHoveredSlotKey: _setHoveredSlotKey,
@@ -102,6 +104,8 @@ export function SlotCell({
         isAll={isAll}
         activeEmptySlotKey={activeEmptySlotKey}
         setActiveEmptySlotKey={setActiveEmptySlotKey}
+        columnIndex={columnIndex}
+        onHoverOverlayChange={onHoverOverlayChange}
         onClearSelection={onClearSelection}
       />
     </div>

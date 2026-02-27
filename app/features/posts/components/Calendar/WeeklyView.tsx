@@ -23,7 +23,7 @@ import {
 import { parseDropToDateTime } from "./data/parse-drop-to-date-time";
 import { postsToTimeGrid } from "./data/posts-to-time-grid";
 import type { PostsGrid } from "./data/posts-to-time-grid";
-import type { SlotState } from "./domain/grid-types";
+import type { SlotState, HoverOverlayPayload } from "./domain/grid-types";
 import { getSlotState as getSlotStateDomain } from "./domain/slot-state";
 import type { CalendarPost } from "./PostBlock.types";
 
@@ -73,6 +73,8 @@ export function WeeklyView({
   const { dateLocale } = useFormattedDate();
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
+  const [hoverOverlayPayload, setHoverOverlayPayload] =
+    useState<HoverOverlayPayload | null>(null);
   const [hoveredSlotKey, setHoveredSlotKey] = useState<string | null>(null);
   const [activeEmptySlotKey, setActiveEmptySlotKey] = useState<string | null>(
     null
@@ -303,6 +305,8 @@ export function WeeklyView({
     isAll,
     activeEmptySlotKey,
     setActiveEmptySlotKey,
+    hoverOverlayPayload,
+    setHoverOverlayPayload,
   };
 
   if (isMobile) {
@@ -341,7 +345,10 @@ export function WeeklyView({
           ref={gridScrollRef}
           className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
           style={{ WebkitOverflowScrolling: "touch" }}
-          onMouseLeave={() => setHoveredPostKey(null)}
+          onMouseLeave={() => {
+            setHoveredPostKey(null);
+            setHoverOverlayPayload(null);
+          }}
         >
           <div className="border-border/40 sticky top-0 z-[280] flex min-w-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]">
             <div className="border-border/40 w-16 shrink-0 border-r" />
@@ -422,7 +429,10 @@ export function WeeklyView({
           touchAction: "pan-x pan-y",
           overscrollBehaviorX: "contain",
         }}
-        onMouseLeave={() => setHoveredPostKey(null)}
+        onMouseLeave={() => {
+          setHoveredPostKey(null);
+          setHoverOverlayPayload(null);
+        }}
       >
         <div
           className="flex min-h-[40vh] min-w-0 flex-none flex-col select-none"

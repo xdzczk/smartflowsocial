@@ -24,6 +24,20 @@ export interface SlotState {
   firstConflictOffsetAbove: number | null;
 }
 
+export interface HoverOverlayPayload {
+  key: string;
+  post: CalendarPost;
+  dateKey: string;
+  time: string;
+  rowIndex: number;
+  columnIndex: number;
+  topPx: number;
+  heightPx: number;
+  expandedRows: number;
+  isLongform: boolean;
+  isPast: boolean;
+}
+
 export interface GetSlotStateOptions {
   hoveredPostKey: string | null;
   /** Day view only: hover state per column so both columns can have an active block. */

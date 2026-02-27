@@ -1,5 +1,5 @@
 import type { QueueType, UserData } from "../../../types";
-import type { SlotState } from "../domain/grid-types";
+import type { HoverOverlayPayload, SlotState } from "../domain/grid-types";
 import { PostBlock } from "../PostBlock";
 import type { CalendarPost } from "../PostBlock.types";
 
@@ -26,6 +26,8 @@ export interface SlotCellContentProps {
   /** When set, the empty-slot + menu is shown only for this slot (after user click/touch). */
   activeEmptySlotKey: string | null;
   setActiveEmptySlotKey: (key: string | null) => void;
+  columnIndex?: number;
+  onHoverOverlayChange?: (payload: HoverOverlayPayload | null) => void;
   onClearSelection?: () => void;
 }
 
@@ -33,13 +35,15 @@ export interface SlotCellContentProps {
 function renderSinglePostSlotContent(
   props: SlotCellContentProps,
   shouldGrowUp: boolean,
-  wrapExpandUp: (content: React.ReactNode) => React.ReactNode
+  wrapExpandUp: (content: React.ReactNode) => React.ReactNode,
+  singleOverlayPayload: HoverOverlayPayload | null
 ): React.ReactNode {
   const {
     slotState,
     setHoveredPostKey,
     onPostEdit,
     setActiveEmptySlotKey,
+    onHoverOverlayChange,
     user,
     queueTypes,
     isLongform,
@@ -59,14 +63,37 @@ function renderSinglePostSlotContent(
           : isHovered
             ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
             : "relative z-0"
-      }`}
+      } ${singleOverlayPayload ? "opacity-0" : ""}`}
       style={{ height: blockHeightPx }}
-      onMouseEnter={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-      onMouseLeave={() => setHoveredPostKey(null)}
-      onFocusCapture={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-      onBlurCapture={() => setHoveredPostKey(null)}
-      onTouchStart={() => singlePostKey && setHoveredPostKey(singlePostKey)}
-      onTouchEnd={() => setTimeout(() => setHoveredPostKey(null), 300)}
+      onMouseEnter={() => {
+        if (!singlePostKey) return;
+        setHoveredPostKey(singlePostKey);
+        onHoverOverlayChange?.(singleOverlayPayload);
+      }}
+      onMouseLeave={() => {
+        setHoveredPostKey(null);
+        onHoverOverlayChange?.(null);
+      }}
+      onFocusCapture={() => {
+        if (!singlePostKey) return;
+        setHoveredPostKey(singlePostKey);
+        onHoverOverlayChange?.(singleOverlayPayload);
+      }}
+      onBlurCapture={() => {
+        setHoveredPostKey(null);
+        onHoverOverlayChange?.(null);
+      }}
+      onTouchStart={() => {
+        if (!singlePostKey) return;
+        setHoveredPostKey(singlePostKey);
+        onHoverOverlayChange?.(singleOverlayPayload);
+      }}
+      onTouchEnd={() =>
+        setTimeout(() => {
+          setHoveredPostKey(null);
+          onHoverOverlayChange?.(null);
+        }, 300)
+      }
     >
       <PostBlock
         post={post}
@@ -107,6 +134,8 @@ interface MultiPostBlockProps {
   queueTypes?: QueueType[];
   isLongform: boolean;
   isAll: boolean;
+  overlayPayload: HoverOverlayPayload | null;
+  onHoverOverlayChange?: (payload: HoverOverlayPayload | null) => void;
 }
 
 function getMultiPostExpandRows(
@@ -148,6 +177,8 @@ function MultiPostBlock({
   noExpandOnHover: _noExpandOnHover = false,
   onPostEdit,
   setActiveEmptySlotKey,
+  overlayPayload,
+  onHoverOverlayChange,
   user,
   queueTypes,
   isLongform,
@@ -169,13 +200,32 @@ function MultiPostBlock({
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
     <div
-      className={`transition-[height,opacity] duration-200 ease-out ${expandedClass}`}
+      className={`transition-[height,opacity] duration-200 ease-out ${expandedClass} ${
+        overlayPayload ? "opacity-0" : ""
+      }`}
       style={{ height: multiHeightPx }}
-      onMouseEnter={() => setHoveredPostKey(multiPostKey)}
-      onFocusCapture={() => setHoveredPostKey(multiPostKey)}
-      onBlurCapture={() => setHoveredPostKey(null)}
-      onTouchStart={() => setHoveredPostKey(multiPostKey)}
-      onTouchEnd={() => setTimeout(() => setHoveredPostKey(null), 300)}
+      onMouseEnter={() => {
+        setHoveredPostKey(multiPostKey);
+        onHoverOverlayChange?.(overlayPayload);
+      }}
+      onFocusCapture={() => {
+        setHoveredPostKey(multiPostKey);
+        onHoverOverlayChange?.(overlayPayload);
+      }}
+      onBlurCapture={() => {
+        setHoveredPostKey(null);
+        onHoverOverlayChange?.(null);
+      }}
+      onTouchStart={() => {
+        setHoveredPostKey(multiPostKey);
+        onHoverOverlayChange?.(overlayPayload);
+      }}
+      onTouchEnd={() =>
+        setTimeout(() => {
+          setHoveredPostKey(null);
+          onHoverOverlayChange?.(null);
+        }, 300)
+      }
     >
       <PostBlock
         post={post}
@@ -203,13 +253,15 @@ function MultiPostBlock({
 /** Renders multi-post slot row (≤6 posts or 5 + overflow). */
 function renderMultiPostSlotContent(
   props: SlotCellContentProps,
-  wrapExpandUp: (content: React.ReactNode) => React.ReactNode
+  wrapExpandUp: (content: React.ReactNode) => React.ReactNode,
+  overlayTopPx: number
 ): React.ReactNode {
   const {
     slotState,
     time,
     hoveredPostKey,
     setHoveredPostKey,
+    onHoverOverlayChange,
     onPostEdit,
     user,
     queueTypes,
@@ -224,9 +276,6 @@ function renderMultiPostSlotContent(
       hoveredPostKey ===
       getMultiPostHoverKey(dateKey, time, p.id, postOccurrences[index] ?? 0)
   );
-  const multiPostHovered = hoveredMultiPostIndex >= 0;
-  const hoveredPost =
-    hoveredMultiPostIndex >= 0 ? posts[hoveredMultiPostIndex] : null;
   const multiPostHoveredHeightPx =
     getMultiPostExpandRows(expandRows, true, noExpandOnHover) * ROW_HEIGHT_PX -
     4;
@@ -246,40 +295,29 @@ function renderMultiPostSlotContent(
     isLongform,
     isAll,
   };
-
-  const hoveredOverlay =
-    multiPostHovered && hoveredPost ? (
-      <div
-        className={`pointer-events-none absolute top-0 right-0 left-0 z-30 ${EXPANDED_BLOCK_WRAPPER_CLASS}`}
-        style={{ height: multiPostHoveredHeightPx }}
-      >
-        <PostBlock
-          post={hoveredPost}
-          compact={true}
-          user={user}
-          queueTypes={queueTypes}
-          onEdit={(editedPost) => {
-            props.setActiveEmptySlotKey(null);
-            onPostEdit(editedPost);
-          }}
-          isLongform={
-            isAll
-              ? Boolean(hoveredPost.title && hoveredPost.publishedAt)
-              : isLongform
-          }
-          isPast={
-            typeof hoveredPost.isPast === "boolean" ? hoveredPost.isPast : false
-          }
-          forceOpaque={true}
-          hideTimeRowPreview={true}
-          slotExpandRows={getMultiPostExpandRows(
-            expandRows,
-            true,
-            noExpandOnHover
-          )}
-        />
-      </div>
-    ) : null;
+  const overlayRows = getMultiPostExpandRows(expandRows, true, noExpandOnHover);
+  const overlayPayloadByIndex = posts.map((post, index) => {
+    const isActive = hoveredMultiPostIndex === index;
+    if (!isActive) return null;
+    return {
+      key: getMultiPostHoverKey(
+        dateKey,
+        time,
+        post.id,
+        postOccurrences[index] ?? 0
+      ),
+      post,
+      dateKey,
+      time,
+      rowIndex: props.rowIndex ?? 0,
+      columnIndex: props.columnIndex ?? 0,
+      topPx: overlayTopPx,
+      heightPx: multiPostHoveredHeightPx,
+      expandedRows: overlayRows,
+      isLongform: isAll ? Boolean(post.title && post.publishedAt) : isLongform,
+      isPast: typeof post.isPast === "boolean" ? post.isPast : false,
+    } satisfies HoverOverlayPayload;
+  });
 
   if (posts.length <= 6) {
     return wrapExpandUp(
@@ -287,17 +325,21 @@ function renderMultiPostSlotContent(
       <div
         className="relative flex space-x-0.5"
         style={{ height: rowHeightPx }}
-        onMouseLeave={() => setHoveredPostKey(null)}
+        onMouseLeave={() => {
+          setHoveredPostKey(null);
+          onHoverOverlayChange?.(null);
+        }}
       >
         {posts.map((post, index) => (
           <MultiPostBlock
             key={`${post.id}#${postOccurrences[index] ?? 0}`}
             post={post}
             postOccurrence={postOccurrences[index] ?? 0}
+            overlayPayload={overlayPayloadByIndex[index] ?? null}
+            onHoverOverlayChange={onHoverOverlayChange}
             {...multiPostBlockProps}
           />
         ))}
-        {hoveredOverlay}
       </div>
     );
   }
@@ -307,20 +349,24 @@ function renderMultiPostSlotContent(
     <div
       className="relative flex space-x-0.5"
       style={{ height: rowHeightPx }}
-      onMouseLeave={() => setHoveredPostKey(null)}
+      onMouseLeave={() => {
+        setHoveredPostKey(null);
+        onHoverOverlayChange?.(null);
+      }}
     >
       {posts.slice(0, 5).map((post, index) => (
         <MultiPostBlock
           key={`${post.id}#${postOccurrences[index] ?? 0}`}
           post={post}
           postOccurrence={postOccurrences[index] ?? 0}
+          overlayPayload={overlayPayloadByIndex[index] ?? null}
+          onHoverOverlayChange={onHoverOverlayChange}
           {...multiPostBlockProps}
         />
       ))}
       <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
         +{posts.length - 5}
       </div>
-      {hoveredOverlay}
     </div>
   );
 }
@@ -412,6 +458,31 @@ export function SlotCellContent(props: SlotCellContentProps) {
     shouldGrowUp && blockExceedsBelow
       ? allocatedHeightPx - effectiveBlockHeightPx
       : -shiftRowsUp * ROW_HEIGHT_PX;
+  const overlayTopPx =
+    rowIndex * ROW_HEIGHT_PX + (shouldGrowUp ? expandUpTop : 0);
+  const singlePost = posts[0];
+  const singleOverlayPayload =
+    posts.length === 1 &&
+    isHovered &&
+    singlePost &&
+    slotState.singlePostKey !== null
+      ? ({
+          key: slotState.singlePostKey,
+          post: singlePost,
+          dateKey,
+          time,
+          rowIndex,
+          columnIndex: props.columnIndex ?? 0,
+          topPx: overlayTopPx,
+          heightPx: blockHeightPx,
+          expandedRows: expandRows,
+          isLongform: _isAll
+            ? Boolean(singlePost.title && singlePost.publishedAt)
+            : props.isLongform,
+          isPast:
+            typeof singlePost.isPast === "boolean" ? singlePost.isPast : false,
+        } satisfies HoverOverlayPayload)
+      : null;
   const wrapExpandUp = (content: React.ReactNode) =>
     shouldGrowUp ? (
       <div
@@ -430,8 +501,13 @@ export function SlotCellContent(props: SlotCellContentProps) {
     );
 
   if (posts.length === 1) {
-    return renderSinglePostSlotContent(props, shouldGrowUp, wrapExpandUp);
+    return renderSinglePostSlotContent(
+      props,
+      shouldGrowUp,
+      wrapExpandUp,
+      singleOverlayPayload
+    );
   }
 
-  return renderMultiPostSlotContent(props, wrapExpandUp);
+  return renderMultiPostSlotContent(props, wrapExpandUp, overlayTopPx);
 }

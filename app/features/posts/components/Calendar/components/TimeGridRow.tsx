@@ -1,5 +1,5 @@
 import type { QueueType, UserData } from "../../../types";
-import type { SlotState } from "../domain/grid-types";
+import type { HoverOverlayPayload, SlotState } from "../domain/grid-types";
 import type { CalendarPost } from "../PostBlock.types";
 
 import { SlotCell } from "./SlotCell";
@@ -50,6 +50,7 @@ export interface TimeGridRowProps {
   isAll: boolean;
   activeEmptySlotKey: string | null;
   setActiveEmptySlotKey: (key: string | null) => void;
+  onHoverOverlayChange?: (payload: HoverOverlayPayload | null) => void;
   onClearSelection?: () => void;
   isMobile: boolean;
 }
@@ -80,27 +81,10 @@ export function TimeGridRow({
   isAll,
   activeEmptySlotKey,
   setActiveEmptySlotKey,
+  onHoverOverlayChange,
   onClearSelection,
   isMobile,
 }: TimeGridRowProps) {
-  const availableRowsBelow = hours.length - index;
-  const hoveredInThisTimeRow = hoveredPostKey?.includes(`-${time}-`) ?? false;
-  const HOVERED_TIME_ROW_Z = 10_000;
-  const rowHasExpandedUpContent = weekDays.some((day) => {
-    const slotState = getSlotState(day, time);
-    if (slotState.posts.length === 0) return false;
-
-    // Any block that exceeds remaining rows at end-of-day is expanding upward.
-    if (slotState.expandRows > availableRowsBelow) return true;
-
-    // Keep row elevated whenever this slot can require upward overlap on hover.
-    // This avoids flicker/clipping from transient hover state transitions.
-    const canNeedUpwardHoverOverlap = availableRowsBelow < 4;
-    const canConflictShiftUp =
-      slotState.firstConflictOffsetBelow !== null &&
-      slotState.firstConflictOffsetAbove === null;
-    return canNeedUpwardHoverOverlap || canConflictShiftUp;
-  });
   // Rows 0..44: upper row on top so blocks expanding downward stay above the next row.
   // Rows 45+: stack-above zone for expand-up; these rows sit below row 44 so expanded content is visible.
   const bottomRowsZIndex =
@@ -108,11 +92,9 @@ export function TimeGridRow({
     20 +
     (index - BOTTOM_ROWS_STACK_ABOVE_THRESHOLD);
   const rowZIndex =
-    hoveredInThisTimeRow || rowHasExpandedUpContent
-      ? HOVERED_TIME_ROW_Z
-      : index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-        ? bottomRowsZIndex
-        : BOTTOM_ROWS_STACK_ABOVE_THRESHOLD - 1 - index + CALENDAR_ROW_Z_BASE;
+    index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
+      ? bottomRowsZIndex
+      : BOTTOM_ROWS_STACK_ABOVE_THRESHOLD - 1 - index + CALENDAR_ROW_Z_BASE;
 
   return (
     <div
@@ -138,7 +120,7 @@ export function TimeGridRow({
         >
           {hourLabel}
         </div>
-        {weekDays.map((day) => {
+        {weekDays.map((day, dayIndex) => {
           const slotState = getSlotState(day, time);
           return (
             <SlotCell
@@ -156,6 +138,8 @@ export function TimeGridRow({
               isAll={isAll}
               activeEmptySlotKey={activeEmptySlotKey}
               setActiveEmptySlotKey={setActiveEmptySlotKey}
+              columnIndex={dayIndex}
+              onHoverOverlayChange={onHoverOverlayChange}
               onClearSelection={onClearSelection}
               hoveredSlotKey={hoveredSlotKey}
               setHoveredSlotKey={setHoveredSlotKey}
