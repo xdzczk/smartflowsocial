@@ -146,7 +146,7 @@ function MultiPostBlock({
   slotExpandRows,
   hoveredPostKey,
   setHoveredPostKey,
-  noExpandOnHover = false,
+  noExpandOnHover: _noExpandOnHover = false,
   onPostEdit,
   setActiveEmptySlotKey,
   user,
@@ -162,15 +162,10 @@ function MultiPostBlock({
   );
   const multiHovered = hoveredPostKey === multiPostKey;
   const baseRows = slotExpandRows ?? 1;
-  // On hover: expand to 4 rows when there is room, or cap at 3 when conflicting rows exist.
-  const multiExpandRows = getMultiPostExpandRows(
-    baseRows,
-    multiHovered,
-    noExpandOnHover
-  );
+  const multiExpandRows = baseRows;
   const multiHeightPx = multiExpandRows * ROW_HEIGHT_PX - 4;
   const expandedClass = multiHovered
-    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} absolute right-0 bottom-0 left-0 z-20 min-w-0`
+    ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative z-20 min-w-0 flex-1`
     : "relative z-0 min-w-0 flex-1";
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
@@ -225,17 +220,18 @@ function renderMultiPostSlotContent(
   const { dateKey, posts, expandRows, blockHeightPx, noExpandOnHover } =
     slotState;
   const postOccurrences = getPostOccurrences(posts);
-  const multiPostHovered = posts.some(
+  const hoveredMultiPostIndex = posts.findIndex(
     (p, index) =>
       hoveredPostKey ===
       getMultiPostHoverKey(dateKey, time, p.id, postOccurrences[index] ?? 0)
   );
+  const multiPostHovered = hoveredMultiPostIndex >= 0;
+  const hoveredPost =
+    hoveredMultiPostIndex >= 0 ? posts[hoveredMultiPostIndex] : null;
   const multiPostHoveredHeightPx =
     getMultiPostExpandRows(expandRows, true, noExpandOnHover) * ROW_HEIGHT_PX -
     4;
-  const rowHeightPx = multiPostHovered
-    ? Math.max(blockHeightPx, multiPostHoveredHeightPx)
-    : blockHeightPx;
+  const rowHeightPx = blockHeightPx;
 
   const multiPostBlockProps = {
     dateKey,
@@ -251,6 +247,40 @@ function renderMultiPostSlotContent(
     isLongform,
     isAll,
   };
+
+  const hoveredOverlay =
+    multiPostHovered && hoveredPost ? (
+      <div
+        className={`pointer-events-none absolute right-0 bottom-0 left-0 z-30 ${EXPANDED_BLOCK_WRAPPER_CLASS}`}
+        style={{ height: multiPostHoveredHeightPx }}
+      >
+        <PostBlock
+          post={hoveredPost}
+          compact={true}
+          user={user}
+          queueTypes={queueTypes}
+          onEdit={(editedPost) => {
+            props.setActiveEmptySlotKey(null);
+            onPostEdit(editedPost);
+          }}
+          isLongform={
+            isAll
+              ? Boolean(hoveredPost.title && hoveredPost.publishedAt)
+              : isLongform
+          }
+          isPast={
+            typeof hoveredPost.isPast === "boolean" ? hoveredPost.isPast : false
+          }
+          forceOpaque={true}
+          hideTimeRowPreview={true}
+          slotExpandRows={getMultiPostExpandRows(
+            expandRows,
+            true,
+            noExpandOnHover
+          )}
+        />
+      </div>
+    ) : null;
 
   if (posts.length <= 6) {
     return wrapExpandUp(
@@ -268,6 +298,7 @@ function renderMultiPostSlotContent(
             {...multiPostBlockProps}
           />
         ))}
+        {hoveredOverlay}
       </div>
     );
   }
@@ -290,6 +321,7 @@ function renderMultiPostSlotContent(
       <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
         +{posts.length - 5}
       </div>
+      {hoveredOverlay}
     </div>
   );
 }

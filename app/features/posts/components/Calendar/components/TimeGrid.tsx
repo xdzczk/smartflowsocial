@@ -101,7 +101,11 @@ export function TimeGrid({
               isMobile={isMobile}
             />
           ))}
-          <CurrentTimeIndicator user={user} weekDays={weekDays} />
+          <CurrentTimeIndicator
+            user={user}
+            weekDays={weekDays}
+            isMobile={isMobile}
+          />
         </div>
       </div>
     </div>
