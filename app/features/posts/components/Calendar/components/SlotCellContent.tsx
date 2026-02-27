@@ -36,7 +36,8 @@ function renderSinglePostSlotContent(
   props: SlotCellContentProps,
   shouldGrowUp: boolean,
   wrapExpandUp: (content: React.ReactNode) => React.ReactNode,
-  singleOverlayPayload: HoverOverlayPayload | null
+  singleOverlayPayload: HoverOverlayPayload | null,
+  singleHovered: boolean
 ): React.ReactNode {
   const {
     slotState,
@@ -63,7 +64,7 @@ function renderSinglePostSlotContent(
           : isHovered
             ? `${EXPANDED_BLOCK_WRAPPER_CLASS} relative`
             : "relative z-0"
-      } ${singleOverlayPayload && isHovered ? "opacity-0" : ""}`}
+      } ${singleOverlayPayload && singleHovered ? "opacity-0" : ""}`}
       style={{ height: blockHeightPx }}
       onMouseEnter={() => {
         if (!singlePostKey) return;
@@ -108,7 +109,7 @@ function renderSinglePostSlotContent(
           isAll ? Boolean(post.title && post.publishedAt) : isLongform
         }
         isPast={typeof post.isPast === "boolean" ? post.isPast : false}
-        forceOpaque={isHovered}
+        forceOpaque={singleHovered || isHovered}
         hideTimeRowPreview={true}
         slotExpandRows={expandRows}
       />
@@ -146,6 +147,15 @@ function getMultiPostExpandRows(
   if (!isHovered) return Math.min(baseRows, 4);
   const targetRows = noExpandOnHover ? 3 : 4;
   return Math.max(baseRows, targetRows);
+}
+
+function getSinglePostExpandRows(
+  baseRows: number,
+  isHovered: boolean,
+  noExpandOnHover: boolean
+): number {
+  if (!isHovered) return baseRows;
+  return Math.max(baseRows, noExpandOnHover ? 3 : Math.min(baseRows + 2, 4));
 }
 
 function getMultiPostHoverKey(
@@ -391,6 +401,8 @@ export function SlotCellContent(props: SlotCellContentProps) {
     firstConflictOffsetAbove,
   } = slotState;
   const hoveredPostKey = props.hoveredPostKey;
+  const singleHovered =
+    posts.length === 1 && slotState.singlePostKey === hoveredPostKey;
   const slotPostOccurrences = getPostOccurrences(posts);
 
   if (posts.length === 0) {
@@ -421,6 +433,12 @@ export function SlotCellContent(props: SlotCellContentProps) {
           slotPostOccurrences[index] ?? 0
         )
     );
+  const singleTargetRows = getSinglePostExpandRows(
+    expandRows,
+    singleHovered,
+    noExpandOnHover
+  );
+  const singleTargetHeightPx = singleTargetRows * ROW_HEIGHT_PX - 4;
   const effectiveBlockHeightPx = multiPostHovered
     ? Math.max(
         blockHeightPx,
@@ -428,7 +446,9 @@ export function SlotCellContent(props: SlotCellContentProps) {
           ROW_HEIGHT_PX -
           4
       )
-    : blockHeightPx;
+    : singleHovered
+      ? Math.max(blockHeightPx, singleTargetHeightPx)
+      : blockHeightPx;
   const blockExceedsBelow = effectiveBlockHeightPx > allocatedHeightPx;
   const expandRowsEffective = Math.max(
     1,
@@ -464,8 +484,8 @@ export function SlotCellContent(props: SlotCellContentProps) {
           rowIndex,
           columnIndex: props.columnIndex ?? 0,
           topPx: overlayTopPx,
-          heightPx: blockHeightPx,
-          expandedRows: expandRows,
+          heightPx: singleTargetHeightPx,
+          expandedRows: singleTargetRows,
           isLongform: _isAll
             ? Boolean(singlePost.title && singlePost.publishedAt)
             : props.isLongform,
@@ -495,7 +515,8 @@ export function SlotCellContent(props: SlotCellContentProps) {
       props,
       shouldGrowUp,
       wrapExpandUp,
-      singleOverlayPayload
+      singleOverlayPayload,
+      singleHovered
     );
   }
 

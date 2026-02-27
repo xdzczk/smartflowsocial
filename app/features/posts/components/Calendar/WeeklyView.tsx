@@ -272,7 +272,7 @@ export function WeeklyView({
         time,
         postsGrid,
         hours,
-        hoveredPostKey,
+        null,
         dragOverSlot,
         user?.timezone ?? "Etc/UTC"
       ),
