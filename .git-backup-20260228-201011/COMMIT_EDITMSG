@@ -1,0 +1,6 @@
+Refactor media URL handling to support optional CDN configuration
+
+- Remove the buildStableMediaUrl function and simplify URL construction in commitUploads.
+- Introduce buildPublicS3Url function to generate stable URLs based on the configured CDN or S3 settings.
+- Update environment configuration to include STORAGE_CDN_URL for optional CDN usage.
+- Enhance documentation to reflect the new STORAGE_CDN_URL configuration.

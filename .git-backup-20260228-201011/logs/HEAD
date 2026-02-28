@@ -1,0 +1,2 @@
+c7e2b288c2afb9fe2d9821edb3c5551577f36245 90c0ef2cf4675f5b2ca308085c015fc3e3e6310c Ivan <ivmitko@icloud.com> 1772297635 +0200	commit: git fix
+90c0ef2cf4675f5b2ca308085c015fc3e3e6310c a908f1c0697b1430089621f06d40963f36e0b6ee Ivan <ivmitko@icloud.com> 1772302125 +0200	commit: Refactor media URL handling to support optional CDN configuration
