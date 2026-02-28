@@ -1,0 +1,4 @@
+Refactor media upload URL handling to use finalUrl instead of stableUrl
+
+- Update commitUploads function to return finalUrl based on provider type.
+- Modify upload and uploadMany functions to assign finalUrl to result.file.url, ensuring consistent URL handling for media uploads.

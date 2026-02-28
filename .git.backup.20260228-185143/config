@@ -1,0 +1,18 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+	ignorecase = true
+	precomposeunicode = true
+	hooksPath = .husky/_
+[remote "origin"]
+	url = https://github.com/xdzczk/vibe-smatrflowsocial.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+[alias]
+	save = !git add . && git commit -m
+	up = !git push
+	sync = !git add . && git commit -m \"Update\" && git push
