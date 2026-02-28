@@ -98,7 +98,7 @@ function MonthlyPostTile({
     queueTypes,
     postIsLongform,
     postIsPast,
-    false
+    true
   );
   const { style: tileStyle, unassignedBgClass } =
     getQueueColorStyleProps(queueColorStyle);
@@ -109,6 +109,9 @@ function MonthlyPostTile({
     ? "border-0"
     : "border border-current border-opacity-20";
   const cursorClass = postIsPast ? "cursor-default" : "cursor-pointer";
+  const interactionClass = postIsPast
+    ? "opacity-70 hover:opacity-100 focus-visible:opacity-100"
+    : "opacity-100 hover:-translate-y-px hover:shadow-[var(--calendar-surface-4-shadow)]";
 
   return (
     <button
@@ -117,7 +120,7 @@ function MonthlyPostTile({
         e.stopPropagation();
         onPostEdit(post);
       }}
-      className={`focus:ring-ring flex h-full w-full min-w-0 items-center justify-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color] focus:ring-2 focus:outline-none ${statusClass} ${borderClass} ${unassignedBgClass} ${cursorClass} ${
+      className={`focus:ring-ring flex h-full w-full min-w-0 items-center justify-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color,transform,box-shadow] focus:ring-2 focus:outline-none ${statusClass} ${borderClass} ${unassignedBgClass} ${cursorClass} ${interactionClass} ${
         isMobile ? "p-0.5" : "p-1"
       }`}
       title={
@@ -186,14 +189,21 @@ export function MonthlyView({
   const [dragOverDateKey, setDragOverDateKey] = useState<string | null>(null);
 
   const calendarDays = useMemo((): CalendarDay[] => {
-    const currentZoned = fromDate(currentDate, "UTC");
+    const currentZoned = fromDate(currentDate, userTimezone);
     const year = currentZoned.year;
     const month = currentZoned.month;
-    const firstDayZoned = createZonedDateTime(year, month, 1, 0, 0, "UTC");
+    const firstDayZoned = createZonedDateTime(
+      year,
+      month,
+      1,
+      0,
+      0,
+      userTimezone
+    );
     const dayOfWeek = firstDayZoned.dayOfWeek;
     const daysFromMonday = dayOfWeek === 7 ? 6 : dayOfWeek - 1;
     const startDateZoned = addDays(firstDayZoned, -daysFromMonday);
-    const todayZoned = nowInTimezone("UTC");
+    const todayZoned = nowInTimezone(userTimezone);
     const days: CalendarDay[] = [];
     for (let i = 0; i < 42; i++) {
       const dateZoned = addDays(startDateZoned, i);
@@ -208,7 +218,7 @@ export function MonthlyView({
       });
     }
     return days;
-  }, [currentDate]);
+  }, [currentDate, userTimezone]);
 
   const postsByDate = useMemo(
     (): PostsByDate =>
@@ -279,7 +289,7 @@ export function MonthlyView({
                 : "text-muted-foreground"
           }`}
         >
-          {dayInfo.date.getDate()}
+          {fromDate(dayInfo.date, userTimezone).day}
         </div>
         <div
           className={`grid min-h-0 min-w-0 flex-1 grid-cols-2 grid-rows-3 overflow-hidden ${
