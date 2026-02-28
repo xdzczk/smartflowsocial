@@ -1,51 +1,129 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="23" failures="0" errors="0" time="0.004189959">
-    <testsuite name="tests/unit/calendar-domain.test.ts" timestamp="2026-02-26T12:32:35.593Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.004189959">
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 0 for 0 posts" time="0.000676667">
+<testsuites name="vitest tests" tests="14" failures="1" errors="0" time="0.103338625">
+    <testsuite name="tests/integration/api-media-commit.test.ts" timestamp="2026-02-28T17:40:46.175Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.00417575">
+        <testcase classname="tests/integration/api-media-commit.test.ts" name="API: Media Commit &gt; returns commit payload for valid request" time="0.002984916">
+            <system-out>
+ℹ️  Info: media_commit_completed { userId: &apos;user-1&apos;, itemCount: 1, committedCount: 1 }
+
+            </system-out>
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 6 for 1-2 posts" time="0.000112333">
+        <testcase classname="tests/integration/api-media-commit.test.ts" name="API: Media Commit &gt; returns 400 for invalid payload" time="0.00035025">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 4 for 3-4 posts" time="0.000087125">
+        <testcase classname="tests/integration/api-media-commit.test.ts" name="API: Media Commit &gt; loader returns endpoint description" time="0.000192333">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 2 for 5+ posts" time="0.000073208">
+    </testsuite>
+    <testsuite name="tests/integration/api-upload-editorjs-image.test.ts" timestamp="2026-02-28T17:40:46.177Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="1" errors="0" skipped="0" time="0.083539917">
+        <testcase classname="tests/integration/api-upload-editorjs-image.test.ts" name="API: Upload EditorJS Image &gt; accepts Blossom JSON payload with pre-uploaded URL" time="0.079628042">
+            <system-out>
+✅ Environment variables validated
+
+            </system-out>
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 0 posts" time="0.000092041">
+        <testcase classname="tests/integration/api-upload-editorjs-image.test.ts" name="API: Upload EditorJS Image &gt; rejects Blossom multipart file bodies (must be pre-uploaded URL)" time="0.002176583">
+            <failure message="Blossom EditorJS uploads must be uploaded client-side first and submitted as an HTTPS URL." type="ValidationError">
+ValidationError: Blossom EditorJS uploads must be uploaded client-side first and submitted as an HTTPS URL.
+ ❯ handleBlossomEditorJsRequest app/routes/api.upload-editorjs-image.tsx:83:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: &apos;VALIDATION_ERROR&apos;, statusCode: 400, timestamp: &apos;2026-02-28T17:40:44.450Z&apos; }
+            </failure>
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 3 for 1 post" time="0.000061416">
+        <testcase classname="tests/integration/api-upload-editorjs-image.test.ts" name="API: Upload EditorJS Image &gt; keeps S3 multipart flow for non-blossom provider" time="0.000779333">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 2 for 2 posts" time="0.00005">
+        <testcase classname="tests/integration/api-upload-editorjs-image.test.ts" name="API: Upload EditorJS Image &gt; loader returns endpoint description" time="0.000187709">
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 1 for 3-4 posts" time="0.000057667">
+    </testsuite>
+    <testsuite name="tests/integration/api-upload.test.ts" timestamp="2026-02-28T17:40:46.178Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.015622958">
+        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Successful Requests &gt; should upload file and return URL" time="0.006555042">
+            <system-err>
+⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 5+ posts" time="0.000047959">
+        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should require authentication" time="0.004537916">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Authentication required&apos;,
+  code: &apos;AUTHENTICATION_ERROR&apos;,
+  statusCode: 401,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns 0 when slot is last or not in hours" time="0.000102625">
+        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should return validation error for non-multipart content type" time="0.000853708">
+            <system-err>
+⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
+
+
+❌ Error: {
+  message: &apos;Request must be multipart/form-data&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns count of consecutive empty slots below" time="0.000095791">
+        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should handle multipart parsing errors" time="0.000726291">
+            <system-err>
+⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
+
+
+❌ Error: {
+  message: &apos;Failed to parse multipart form data&apos;,
+  code: &apos;EXTERNAL_SERVICE_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDownDayView &gt; stops expansion when a multi-post slot exists below" time="0.000082375">
+        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should return validation error when no file provided" time="0.000999208">
+            <system-err>
+⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
+
+
+❌ Error: {
+  message: &apos;No file provided&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns false when slot baseRows below is out of range or has no posts" time="0.000067208">
+        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should return validation error when file upload fails (no URL)" time="0.000754042">
+            <system-err>
+⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
+
+
+❌ Error: {
+  message: &apos;File upload failed - no URL returned&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns true when slot baseRows below has posts" time="0.000038375">
-        </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; returns empty map for empty grid" time="0.000349959">
-        </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; assigns alternating columns when both columns free for consecutive single-post slots" time="0.000477875">
-        </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; skips slots with not exactly one post" time="0.000066792">
-        </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns expandRows 1 and correct blockHeightPx for empty slot" time="0.000486708">
-        </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns singlePostKey and isHovered when hoveredPostKey matches" time="0.000061541">
-        </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns noExpandOnHover true for week view 3-row slot with post below" time="0.000058417">
-        </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; caps hovered single-post week slot at 3 rows when 4th row conflicts below" time="0.000068209">
-        </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; caps hovered single-post week slot at 3 rows when one conflicting slot exists 2 rows below" time="0.000062666">
-        </testcase>
-        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns isDragOver when dragOverSlot matches slotKey" time="0.000041084">
+        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Loader Handler &gt; should return API description" time="0.000358292">
         </testcase>
     </testsuite>
 </testsuites>

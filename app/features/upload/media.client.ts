@@ -21,16 +21,6 @@ interface IntentResponse {
   intentId: string;
 }
 
-function buildStableMediaUrl(assetId: string): string {
-  const path = `/media/${assetId}/original`;
-  if (typeof window === "undefined") return path;
-  try {
-    return new URL(path, window.location.origin).toString();
-  } catch {
-    return path;
-  }
-}
-
 async function createIntent(files: File[]): Promise<IntentResponse | null> {
   try {
     const response = await fetch("/api/media/intents", {
@@ -96,8 +86,7 @@ async function commitUploads(
     .map((entry, idx) => {
       const item = items[idx];
       if (!item || !entry.assetId) return null;
-      const finalUrl =
-        item.provider === "S3" ? buildStableMediaUrl(entry.assetId) : item.url;
+      const finalUrl = item.url;
       return {
         resultIndex: item.resultIndex,
         finalUrl,

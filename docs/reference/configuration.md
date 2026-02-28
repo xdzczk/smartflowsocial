@@ -187,6 +187,21 @@ Storage bucket name.
 STORAGE_BUCKET=my-smartflow-bucket
 ```
 
+#### STORAGE_CDN_URL
+
+Optional public CDN/domain base used for generated S3 media URLs. When set, uploaded file URLs are
+returned as `${STORAGE_CDN_URL}/{object-key}` instead of the raw `*.s3.*.amazonaws.com` host.
+
+```env
+STORAGE_CDN_URL=https://cdn.smartflow.social
+```
+
+Notes:
+
+- Do not include a trailing slash (it is tolerated, but normalized).
+- This domain must publicly serve the same bucket/object keys.
+- Use HTTPS for Nostr/media client compatibility.
+
 **See [Storage Configuration](#storage-configuration) for provider-specific setup.**
 
 ---
@@ -482,6 +497,7 @@ STORAGE_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
 STORAGE_SECRET=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 STORAGE_REGION=us-east-1
 STORAGE_BUCKET=my-smartflow-bucket
+STORAGE_CDN_URL=https://cdn.smartflow.social
 ```
 
 **Setup:**

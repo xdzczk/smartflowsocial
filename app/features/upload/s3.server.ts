@@ -21,6 +21,14 @@ const S3_CACHE_CONTROL = "public, max-age=31536000";
 
 type UploadStream = AsyncIterable<Uint8Array>;
 
+function buildPublicS3Url(key: string): string {
+  const cdnBase = env.STORAGE_CDN_URL?.trim();
+  if (cdnBase) {
+    return `${cdnBase.replace(/\/+$/, "")}/${key}`;
+  }
+  return `https://${String(env.STORAGE_BUCKET ?? "")}.s3.${String(env.STORAGE_REGION ?? "")}.amazonaws.com/${key}`;
+}
+
 const uploadStreamToS3 = async (
   stream: UploadStream,
   key: string,
@@ -60,8 +68,8 @@ const uploadStreamToS3 = async (
   try {
     const command = new PutObjectCommand(params);
     await s3Client.send(command);
-    // Construct the URL manually since v3 doesn't return Location
-    return `https://${String(env.STORAGE_BUCKET ?? "")}.s3.${String(env.STORAGE_REGION ?? "")}.amazonaws.com/${key}`;
+    // Construct a stable direct URL (prefer CDN domain when configured).
+    return buildPublicS3Url(key);
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       key,
@@ -156,10 +164,8 @@ export async function uploadBufferToS3(
 
     await s3Client.send(command);
 
-    // Return the full URL
-    const bucket = env.STORAGE_BUCKET ?? "";
-    const region = env.STORAGE_REGION ?? "";
-    return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+    // Return a stable direct URL (prefer CDN domain when configured).
+    return buildPublicS3Url(key);
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
@@ -220,10 +226,8 @@ export async function uploadEditorJSImage(
 
     await s3Client.send(command);
 
-    // Return the full URL
-    const bucket = env.STORAGE_BUCKET ?? "";
-    const region = env.STORAGE_REGION ?? "";
-    return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+    // Return a stable direct URL (prefer CDN domain when configured).
+    return buildPublicS3Url(key);
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,

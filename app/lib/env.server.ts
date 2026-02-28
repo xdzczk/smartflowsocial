@@ -27,6 +27,7 @@ interface EnvConfig {
   STORAGE_SECRET?: string;
   STORAGE_REGION?: string;
   STORAGE_BUCKET?: string;
+  STORAGE_CDN_URL?: string;
 
   // Optional
   PRIMAL_CACHING_URL?: string;
@@ -176,6 +177,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "BLOSSOM_INTERNAL_SECRET",
     "BLOSSOM_SFS_API_URL",
     "BLOSSOM_UPLOAD_TOKEN_SECRET",
+    "STORAGE_CDN_URL",
   ];
 
   optionalVars.forEach((key) => {
