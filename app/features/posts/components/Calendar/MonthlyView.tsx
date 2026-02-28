@@ -25,7 +25,12 @@ import { parseDropToDateTime } from "./data/parse-drop-to-date-time";
 import { postsToDateGrid } from "./data/posts-to-date-grid";
 import type { PostsByDate } from "./data/posts-to-date-grid";
 import type { CalendarPost } from "./PostBlock.types";
-import { getDisplayTime, getFirstImage } from "./PostBlock.utils";
+import {
+  getDisplayTime,
+  getFirstImage,
+  getQueueColorStyle,
+  getQueueColorStyleProps,
+} from "./PostBlock.utils";
 
 interface MonthlyViewProps {
   scheduledPosts: CalendarPost[];
@@ -65,6 +70,7 @@ interface MonthlyPostTileProps {
   formatDate: ReturnType<typeof useFormattedDate>["formatDate"];
   postIsLongform: boolean;
   postIsPast: boolean;
+  queueTypes?: QueueType[];
   onPostEdit: (post: CalendarPost) => void;
   isMobile: boolean;
 }
@@ -75,6 +81,7 @@ function MonthlyPostTile({
   formatDate,
   postIsLongform,
   postIsPast,
+  queueTypes,
   onPostEdit,
   isMobile,
 }: MonthlyPostTileProps) {
@@ -84,6 +91,18 @@ function MonthlyPostTile({
     dateFormatOptions: { hour: "2-digit", minute: "2-digit" },
   });
   const mediaUrl = getFirstImage(post, postIsLongform);
+  const queueColorStyle = getQueueColorStyle(
+    post,
+    queueTypes,
+    postIsLongform,
+    postIsPast,
+    true
+  );
+  const { style: tileStyle, unassignedBgClass } =
+    getQueueColorStyleProps(queueColorStyle);
+  const fallbackBgClass = queueColorStyle
+    ? ""
+    : "bg-muted/35 hover:bg-muted/55";
   const opacityClass = postIsPast
     ? "opacity-70 hover:opacity-100 focus-visible:opacity-100"
     : "opacity-100";
@@ -95,41 +114,48 @@ function MonthlyPostTile({
         e.stopPropagation();
         onPostEdit(post);
       }}
-      className={`focus:ring-ring bg-muted/35 hover:bg-muted/55 flex h-full w-full min-w-0 items-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color] focus:ring-2 focus:outline-none ${opacityClass} ${
-        isMobile ? "justify-center p-0.5" : "gap-1.5"
+      className={`focus:ring-ring flex h-full w-full min-w-0 items-center justify-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color] focus:ring-2 focus:outline-none ${fallbackBgClass} ${unassignedBgClass} ${opacityClass} ${
+        isMobile ? "p-0.5" : "p-1"
       }`}
       title={
         isMobile ? "Open post details" : `${timeString} — Open post details`
       }
+      style={queueColorStyle ? tileStyle : undefined}
     >
-      {!isMobile ? (
-        <span className="text-primary flex-shrink-0 text-[11px] font-semibold tabular-nums">
-          {timeString}
-        </span>
-      ) : null}
       <div
-        className={`bg-muted relative overflow-hidden rounded-[var(--calendar-radius-sm)] ${
-          isMobile ? "h-full w-full" : "h-5 w-5 flex-shrink-0"
+        className={`flex w-full items-center justify-center ${
+          isMobile ? "" : "gap-1.5"
         }`}
       >
-        {mediaUrl ? (
-          <MediaThumbnail
-            src={mediaUrl}
-            alt=""
-            className="h-full w-full object-cover"
-            forceType={isVideoFile(mediaUrl) ? "video" : "image"}
-            hidePlayButton={true}
-            fallback={
-              <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
-                {isVideoFile(mediaUrl) ? "VIDEO" : "IMG"}
-              </div>
-            }
-          />
-        ) : (
-          <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
-            IMG
-          </div>
-        )}
+        {!isMobile ? (
+          <span className="text-primary flex-shrink-0 text-[11px] font-semibold tabular-nums">
+            {timeString}
+          </span>
+        ) : null}
+        <div
+          className={`bg-muted relative overflow-hidden rounded-[var(--calendar-radius-sm)] ${
+            isMobile ? "h-6 w-6" : "h-5 w-5 flex-shrink-0"
+          }`}
+        >
+          {mediaUrl ? (
+            <MediaThumbnail
+              src={mediaUrl}
+              alt=""
+              className="h-full w-full object-cover"
+              forceType={isVideoFile(mediaUrl) ? "video" : "image"}
+              hidePlayButton={true}
+              fallback={
+                <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+                  {isVideoFile(mediaUrl) ? "VIDEO" : "IMG"}
+                </div>
+              }
+            />
+          ) : (
+            <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+              IMG
+            </div>
+          )}
+        </div>
       </div>
     </button>
   );
@@ -143,7 +169,7 @@ export function MonthlyView({
   onPostEdit,
   onOpenDay,
   user,
-  queueTypes: _queueTypes,
+  queueTypes,
   isLongform = false,
   isAll = false,
 }: MonthlyViewProps) {
@@ -299,6 +325,7 @@ export function MonthlyView({
                         formatDate={formatDate}
                         postIsLongform={postIsLongform}
                         postIsPast={postIsPast}
+                        queueTypes={queueTypes}
                         onPostEdit={onPostEdit}
                         isMobile={isMobile}
                       />
