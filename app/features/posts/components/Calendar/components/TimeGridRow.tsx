@@ -4,9 +4,6 @@ import type { CalendarPost } from "../PostBlock.types";
 
 import { SlotCell } from "./SlotCell";
 import {
-  BOTTOM_ROWS_STACK_ABOVE_THRESHOLD,
-  CALENDAR_ROW_Z_BASE,
-  CALENDAR_ROW_Z_EXPANDED_UP,
   CALENDAR_TIME_RAIL_STICKY_Z,
   ROW_HEIGHT_PX,
   TIME_GRID_ROW_CONTENT_Z,
@@ -86,16 +83,8 @@ export function TimeGridRow({
   onClearSelection,
   isMobile,
 }: TimeGridRowProps) {
-  // Rows 0..44: upper row on top so blocks expanding downward stay above the next row.
-  // Rows 45+: stack-above zone for expand-up; these rows sit below row 44 so expanded content is visible.
-  const bottomRowsZIndex =
-    CALENDAR_ROW_Z_EXPANDED_UP -
-    20 +
-    (index - BOTTOM_ROWS_STACK_ABOVE_THRESHOLD);
-  const rowZIndex =
-    index >= BOTTOM_ROWS_STACK_ABOVE_THRESHOLD
-      ? bottomRowsZIndex
-      : BOTTOM_ROWS_STACK_ABOVE_THRESHOLD - 1 - index + CALENDAR_ROW_Z_BASE;
+  // Keep a monotonic stack: upper rows always render above lower rows.
+  const rowZIndex = hours.length - index;
 
   return (
     <div

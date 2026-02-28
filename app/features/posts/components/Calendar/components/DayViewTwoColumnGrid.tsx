@@ -196,16 +196,38 @@ export function DayViewTwoColumnGrid({
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [isDragOverGrid, setIsDragOverGrid] = useState(false);
   const userTimezone = user?.timezone ?? "Etc/UTC";
-  const occupiedRowSet = useMemo(() => {
-    const occupied = new Set<number>();
-    const mark = (startRow: number, blockHeightPx: number) => {
+  const occupiedRows = useMemo(() => {
+    const col0 = new Set<number>();
+    const col1 = new Set<number>();
+    const multi = new Set<number>();
+    const all = new Set<number>();
+    const mark = (
+      target: Set<number>,
+      startRow: number,
+      blockHeightPx: number
+    ) => {
       const rows = Math.max(1, Math.ceil((blockHeightPx + 4) / ROW_HEIGHT_PX));
-      for (let i = 0; i < rows; i++) occupied.add(startRow + i);
+      for (let i = 0; i < rows; i++) target.add(startRow + i);
     };
-    placements.col0.forEach((p) => mark(p.rowIndex, p.blockHeightPx));
-    placements.col1.forEach((p) => mark(p.rowIndex, p.blockHeightPx));
-    multiPostRows.forEach((row) => mark(row.rowIndex, row.blockHeightPx));
-    return occupied;
+    placements.col0.forEach((p) => {
+      mark(col0, p.rowIndex, p.blockHeightPx);
+      mark(all, p.rowIndex, p.blockHeightPx);
+    });
+    placements.col1.forEach((p) => {
+      mark(col1, p.rowIndex, p.blockHeightPx);
+      mark(all, p.rowIndex, p.blockHeightPx);
+    });
+    multiPostRows.forEach((row) => {
+      mark(multi, row.rowIndex, row.blockHeightPx);
+      mark(all, row.rowIndex, row.blockHeightPx);
+    });
+    return {
+      // Single-post lanes should only consider own column + full-width multi rows.
+      col0WithMulti: new Set<number>([...col0, ...multi]),
+      col1WithMulti: new Set<number>([...col1, ...multi]),
+      // Multi-post row spans both columns, so keep global occupancy.
+      all,
+    };
   }, [placements, multiPostRows]);
 
   const handleDragOver = useCallback(
@@ -359,7 +381,7 @@ export function DayViewTwoColumnGrid({
                 const hoverLayout = getDayHoverLayoutMetrics(
                   p.rowIndex,
                   baseRows,
-                  occupiedRowSet,
+                  occupiedRows.col0WithMulti,
                   TOTAL_TIME_SLOTS
                 );
                 const overlayPayload: DayHoverOverlayPayload = {
@@ -450,7 +472,7 @@ export function DayViewTwoColumnGrid({
                 const hoverLayout = getDayHoverLayoutMetrics(
                   p.rowIndex,
                   baseRows,
-                  occupiedRowSet,
+                  occupiedRows.col1WithMulti,
                   TOTAL_TIME_SLOTS
                 );
                 const overlayPayload: DayHoverOverlayPayload = {
@@ -563,7 +585,7 @@ export function DayViewTwoColumnGrid({
                     const hoverLayout = getDayHoverLayoutMetrics(
                       row.rowIndex,
                       baseRows,
-                      occupiedRowSet,
+                      occupiedRows.all,
                       TOTAL_TIME_SLOTS
                     );
                     const overlayPayload: DayHoverOverlayPayload = {
@@ -589,10 +611,10 @@ export function DayViewTwoColumnGrid({
                       // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus/touch wrapper controlling expansion state; interactive PostBlock lives inside
                       <div
                         key={post.id}
-                        className={`min-w-0 overflow-hidden rounded-[var(--calendar-radius-md)] ${
+                        className={`relative min-w-0 flex-1 overflow-hidden rounded-[var(--calendar-radius-md)] ${
                           isHovered
-                            ? "relative bg-[hsl(var(--calendar-surface-2-bg))]"
-                            : "relative flex-1"
+                            ? "bg-[hsl(var(--calendar-surface-2-bg))]"
+                            : ""
                         }`}
                         style={{
                           height: row.blockHeightPx,

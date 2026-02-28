@@ -349,9 +349,7 @@ function renderMultiPostSlotContent(
   const { dateKey, posts, expandRows, blockHeightPx, noExpandOnHover } =
     slotState;
   const postOccurrences = getPostOccurrences(posts);
-  const multiPostHoveredHeightPx =
-    getMultiPostExpandRows(expandRows, true, noExpandOnHover) * ROW_HEIGHT_PX -
-    4;
+  const multiHoverHeightPx = overlayRows * ROW_HEIGHT_PX - 4;
   const rowHeightPx = blockHeightPx;
 
   const multiPostBlockProps = {
@@ -382,7 +380,7 @@ function renderMultiPostSlotContent(
       rowIndex: props.rowIndex ?? 0,
       columnIndex: props.columnIndex ?? 0,
       topPx: overlayTopPx,
-      heightPx: multiPostHoveredHeightPx,
+      heightPx: multiHoverHeightPx,
       expandedRows: overlayRows,
       isLongform: isAll ? Boolean(post.title && post.publishedAt) : isLongform,
       isPast: typeof post.isPast === "boolean" ? post.isPast : false,
