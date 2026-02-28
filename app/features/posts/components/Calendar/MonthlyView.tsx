@@ -30,7 +30,9 @@ import {
   getFirstImage,
   getQueueColorStyle,
   getQueueColorStyleProps,
+  getStatusColor,
 } from "./PostBlock.utils";
+import { PostIcon } from "./PostIcon";
 
 interface MonthlyViewProps {
   scheduledPosts: CalendarPost[];
@@ -96,16 +98,17 @@ function MonthlyPostTile({
     queueTypes,
     postIsLongform,
     postIsPast,
-    true
+    false
   );
   const { style: tileStyle, unassignedBgClass } =
     getQueueColorStyleProps(queueColorStyle);
-  const fallbackBgClass = queueColorStyle
+  const statusClass = queueColorStyle
     ? ""
-    : "bg-muted/35 hover:bg-muted/55";
-  const opacityClass = postIsPast
-    ? "opacity-70 hover:opacity-100 focus-visible:opacity-100"
-    : "opacity-100";
+    : getStatusColor(post, postIsLongform, postIsPast);
+  const borderClass = queueColorStyle
+    ? "border-0"
+    : "border border-current border-opacity-20";
+  const cursorClass = postIsPast ? "cursor-default" : "cursor-pointer";
 
   return (
     <button
@@ -114,7 +117,7 @@ function MonthlyPostTile({
         e.stopPropagation();
         onPostEdit(post);
       }}
-      className={`focus:ring-ring flex h-full w-full min-w-0 items-center justify-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color] focus:ring-2 focus:outline-none ${fallbackBgClass} ${unassignedBgClass} ${opacityClass} ${
+      className={`focus:ring-ring flex h-full w-full min-w-0 items-center justify-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color] focus:ring-2 focus:outline-none ${statusClass} ${borderClass} ${unassignedBgClass} ${cursorClass} ${
         isMobile ? "p-0.5" : "p-1"
       }`}
       title={
@@ -128,7 +131,7 @@ function MonthlyPostTile({
         }`}
       >
         {!isMobile ? (
-          <span className="text-primary flex-shrink-0 text-[11px] font-semibold tabular-nums">
+          <span className="flex-shrink-0 text-[11px] font-medium tabular-nums">
             {timeString}
           </span>
         ) : null}
@@ -151,8 +154,12 @@ function MonthlyPostTile({
               }
             />
           ) : (
-            <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
-              IMG
+            <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center">
+              <PostIcon
+                post={post}
+                isLongform={postIsLongform}
+                className="h-3 w-3"
+              />
             </div>
           )}
         </div>
