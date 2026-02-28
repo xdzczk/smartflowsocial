@@ -54,7 +54,7 @@ async function createIntent(files: File[]): Promise<IntentResponse | null> {
 async function commitUploads(
   results: LegacyUploadResult[],
   originalFiles: File[]
-): Promise<Array<{ resultIndex: number; stableUrl: string }>> {
+): Promise<Array<{ resultIndex: number; finalUrl: string }>> {
   const items = results
     .map((result, index) => {
       if (!result.success || !result.file) return null;
@@ -96,13 +96,15 @@ async function commitUploads(
     .map((entry, idx) => {
       const item = items[idx];
       if (!item || !entry.assetId) return null;
+      const finalUrl =
+        item.provider === "S3" ? buildStableMediaUrl(entry.assetId) : item.url;
       return {
         resultIndex: item.resultIndex,
-        stableUrl: buildStableMediaUrl(entry.assetId),
+        finalUrl,
       };
     })
     .filter(
-      (entry): entry is { resultIndex: number; stableUrl: string } => !!entry
+      (entry): entry is { resultIndex: number; finalUrl: string } => !!entry
     );
 }
 
@@ -110,9 +112,9 @@ export async function upload(file: File): Promise<LegacyUploadResult> {
   await createIntent([file]);
   const result = await uploadFileLegacy(file);
   const committed = await commitUploads([result], [file]);
-  const stableUrl = committed[0]?.stableUrl;
-  if (stableUrl && result.success && result.file) {
-    result.file.url = stableUrl;
+  const finalUrl = committed[0]?.finalUrl;
+  if (finalUrl && result.success && result.file) {
+    result.file.url = finalUrl;
   }
   return result;
 }
@@ -127,7 +129,7 @@ export async function uploadMany(
   for (const entry of committed) {
     const result = results[entry.resultIndex];
     if (result?.success && result.file) {
-      result.file.url = entry.stableUrl;
+      result.file.url = entry.finalUrl;
     }
   }
   return results;
