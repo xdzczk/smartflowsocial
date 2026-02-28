@@ -1,5 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
+import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { isVideoFile } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
@@ -22,9 +24,8 @@ import type { CalendarDay } from "./components/DateGrid";
 import { parseDropToDateTime } from "./data/parse-drop-to-date-time";
 import { postsToDateGrid } from "./data/posts-to-date-grid";
 import type { PostsByDate } from "./data/posts-to-date-grid";
-import { PostBlock } from "./PostBlock";
 import type { CalendarPost } from "./PostBlock.types";
-import { getDisplayTime } from "./PostBlock.utils";
+import { getDisplayTime, getFirstImage } from "./PostBlock.utils";
 
 interface MonthlyViewProps {
   scheduledPosts: CalendarPost[];
@@ -32,62 +33,107 @@ interface MonthlyViewProps {
   currentDate: Date;
   onPostDrop: (post: CalendarPost, newDateTime: Date) => void;
   onPostEdit: (post: CalendarPost) => void;
+  onOpenDay?: (date: Date) => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform?: boolean;
   isAll?: boolean;
 }
 
-/** Slot placement in the 2×3 grid: row (0–2), col (0–1), colSpan (1 or 2). */
+/** Slot placement in a fixed 2×3 grid: row (0–2), col (0–1), colSpan is always 1. */
 interface SlotPlacement {
   row: number;
   col: number;
   colSpan: number;
 }
 
-const MONTHLY_CELL_LAYOUTS: Array<Array<SlotPlacement | null>> = [
-  [],
-  [{ row: 0, col: 0, colSpan: 2 }],
-  [
-    { row: 0, col: 0, colSpan: 2 },
-    { row: 1, col: 0, colSpan: 2 },
-  ],
-  [
-    { row: 0, col: 0, colSpan: 2 },
-    { row: 1, col: 0, colSpan: 2 },
-    { row: 2, col: 0, colSpan: 2 },
-  ],
-  [
-    { row: 0, col: 0, colSpan: 1 },
-    { row: 0, col: 1, colSpan: 1 },
-    { row: 1, col: 0, colSpan: 1 },
-    { row: 1, col: 1, colSpan: 1 },
-  ],
-  [
-    { row: 0, col: 0, colSpan: 1 },
-    { row: 0, col: 1, colSpan: 1 },
-    { row: 1, col: 0, colSpan: 1 },
-    { row: 1, col: 1, colSpan: 1 },
-    { row: 2, col: 0, colSpan: 2 },
-  ],
-  [
-    { row: 0, col: 0, colSpan: 1 },
-    { row: 0, col: 1, colSpan: 1 },
-    { row: 1, col: 0, colSpan: 1 },
-    { row: 1, col: 1, colSpan: 1 },
-    { row: 2, col: 0, colSpan: 1 },
-    { row: 2, col: 1, colSpan: 1 },
-  ],
+const MONTHLY_CELL_LAYOUT: SlotPlacement[] = [
+  { row: 0, col: 0, colSpan: 1 },
+  { row: 0, col: 1, colSpan: 1 },
+  { row: 1, col: 0, colSpan: 1 },
+  { row: 1, col: 1, colSpan: 1 },
+  { row: 2, col: 0, colSpan: 1 },
+  { row: 2, col: 1, colSpan: 1 },
 ];
-
-function getMonthlyCellLayout(count: number): Array<SlotPlacement | null> {
-  if (count <= 0) return MONTHLY_CELL_LAYOUTS[0] ?? [];
-  if (count <= 6) return MONTHLY_CELL_LAYOUTS[count] ?? [];
-  return MONTHLY_CELL_LAYOUTS[6] ?? [];
-}
 
 const MAX_POSTS_PER_DAY = 6;
 const MORE_SLOT_INDEX = 5;
+
+interface MonthlyPostTileProps {
+  post: CalendarPost;
+  userTimezone: string;
+  formatDate: ReturnType<typeof useFormattedDate>["formatDate"];
+  postIsLongform: boolean;
+  postIsPast: boolean;
+  onPostEdit: (post: CalendarPost) => void;
+  isMobile: boolean;
+}
+
+function MonthlyPostTile({
+  post,
+  userTimezone,
+  formatDate,
+  postIsLongform,
+  postIsPast,
+  onPostEdit,
+  isMobile,
+}: MonthlyPostTileProps) {
+  const displayTime = getDisplayTime(post, postIsLongform, postIsPast);
+  const timeString = formatDate(displayTime, {
+    timezone: userTimezone,
+    dateFormatOptions: { hour: "2-digit", minute: "2-digit" },
+  });
+  const mediaUrl = getFirstImage(post, postIsLongform);
+  const opacityClass = postIsPast
+    ? "opacity-70 hover:opacity-100 focus-visible:opacity-100"
+    : "opacity-100";
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onPostEdit(post);
+      }}
+      className={`focus:ring-ring bg-muted/35 hover:bg-muted/55 flex h-full w-full min-w-0 items-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color] focus:ring-2 focus:outline-none ${opacityClass} ${
+        isMobile ? "justify-center p-0.5" : "gap-1.5"
+      }`}
+      title={
+        isMobile ? "Open post details" : `${timeString} — Open post details`
+      }
+    >
+      {!isMobile ? (
+        <span className="text-primary flex-shrink-0 text-[11px] font-semibold tabular-nums">
+          {timeString}
+        </span>
+      ) : null}
+      <div
+        className={`bg-muted relative overflow-hidden rounded-[var(--calendar-radius-sm)] ${
+          isMobile ? "h-full w-full" : "h-5 w-5 flex-shrink-0"
+        }`}
+      >
+        {mediaUrl ? (
+          <MediaThumbnail
+            src={mediaUrl}
+            alt=""
+            className="h-full w-full object-cover"
+            forceType={isVideoFile(mediaUrl) ? "video" : "image"}
+            hidePlayButton={true}
+            fallback={
+              <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+                {isVideoFile(mediaUrl) ? "VIDEO" : "IMG"}
+              </div>
+            }
+          />
+        ) : (
+          <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+            IMG
+          </div>
+        )}
+      </div>
+    </button>
+  );
+}
 
 export function MonthlyView({
   scheduledPosts,
@@ -95,14 +141,16 @@ export function MonthlyView({
   currentDate,
   onPostDrop,
   onPostEdit,
+  onOpenDay,
   user,
-  queueTypes,
+  queueTypes: _queueTypes,
   isLongform = false,
   isAll = false,
 }: MonthlyViewProps) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
   const { formatDate } = useFormattedDate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
+  const [dragOverDateKey, setDragOverDateKey] = useState<string | null>(null);
 
   const calendarDays = useMemo((): CalendarDay[] => {
     const currentZoned = fromDate(currentDate, "UTC");
@@ -142,6 +190,7 @@ export function MonthlyView({
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, date: Date) => {
     const dateZoned = fromDate(date, userTimezone);
     const dateKey = `${dateZoned.year}-${String(dateZoned.month).padStart(2, "0")}-${String(dateZoned.day).padStart(2, "0")}`;
+    setDragOverDateKey(null);
     if (isCalendarDropSlotInPast(dateKey, "09:00", userTimezone)) {
       e.preventDefault();
       return;
@@ -150,6 +199,21 @@ export function MonthlyView({
     const postData = JSON.parse(
       e.dataTransfer.getData("text/plain")
     ) as CalendarPost;
+    const postIsLongform = isAll
+      ? Boolean(postData.title && postData.publishedAt)
+      : isLongform;
+    const postIsPast =
+      typeof postData.isPast === "boolean" ? postData.isPast : false;
+    const postDisplayTime = getDisplayTime(
+      postData,
+      postIsLongform,
+      postIsPast
+    );
+    const postDateZoned = fromDate(postDisplayTime, userTimezone);
+    const postDateKey = `${postDateZoned.year}-${String(postDateZoned.month).padStart(2, "0")}-${String(postDateZoned.day).padStart(2, "0")}`;
+    if (postDateKey === dateKey) {
+      return;
+    }
     const isoString = buildDropIsoString(dateKey, "09:00");
     const newDateTime = parseDropToDateTime(isoString, userTimezone);
     onPostDrop(postData, newDateTime);
@@ -167,8 +231,7 @@ export function MonthlyView({
     const remainingCount = hasOverflow
       ? Math.max(0, posts.length - MORE_SLOT_INDEX)
       : 0;
-    const layoutCount = hasOverflow ? 7 : postsToShow.length;
-    const layout = getMonthlyCellLayout(layoutCount);
+    const layout = MONTHLY_CELL_LAYOUT;
 
     return (
       <>
@@ -191,7 +254,6 @@ export function MonthlyView({
           }`}
         >
           {layout.map((placement, slotIndex) => {
-            if (!placement) return null;
             const { row, col, colSpan } = placement;
             const isMoreLabel = hasOverflow && slotIndex === MORE_SLOT_INDEX;
             const post = !isMoreLabel ? postsToShow[slotIndex] : undefined;
@@ -229,39 +291,17 @@ export function MonthlyView({
                       : isLongform;
                     const postIsPast =
                       typeof post.isPast === "boolean" ? post.isPast : false;
-                    const displayTime = getDisplayTime(
-                      post,
-                      postIsLongform,
-                      postIsPast
-                    );
-                    const useHourOnly = isMobile && colSpan === 1;
-                    const timeString = formatDate(displayTime, {
-                      timezone: userTimezone,
-                      dateFormatOptions: useHourOnly
-                        ? { hour: "2-digit" }
-                        : { hour: "2-digit", minute: "2-digit" },
-                    });
-                    const block = (
-                      <PostBlock
+                    return (
+                      <MonthlyPostTile
                         key={post.id}
                         post={post}
-                        compact={true}
-                        minimal={true}
-                        user={user}
-                        queueTypes={queueTypes}
-                        onEdit={onPostEdit}
-                        isLongform={postIsLongform}
-                        isPast={postIsPast}
-                        timeLabel={timeString}
-                        slotExpandRows={2}
+                        userTimezone={userTimezone}
+                        formatDate={formatDate}
+                        postIsLongform={postIsLongform}
+                        postIsPast={postIsPast}
+                        onPostEdit={onPostEdit}
+                        isMobile={isMobile}
                       />
-                    );
-                    return isMobile ? (
-                      <div className="h-full min-h-0 text-[10px] [&_.text-xs]:!text-[10px]">
-                        {block}
-                      </div>
-                    ) : (
-                      block
                     );
                   })()
                 ) : null}
@@ -274,12 +314,17 @@ export function MonthlyView({
   };
 
   const cellClassName = (dayInfo: CalendarDay) =>
-    `border-border/40 flex min-h-[120px] flex-col border-r border-b last:border-r-0 ${
+    `border-border/40 flex min-h-[120px] flex-col border-r border-b last:border-r-0 transition-colors ${
       isMobile ? "px-1 py-1" : "px-2 py-1.5"
     } ${
       dayInfo.isCurrentMonth
         ? "bg-[hsl(var(--calendar-surface-2-bg))]"
         : "bg-secondary/20"
+    } ${
+      dragOverDateKey ===
+      `${fromDate(dayInfo.date, userTimezone).year}-${String(fromDate(dayInfo.date, userTimezone).month).padStart(2, "0")}-${String(fromDate(dayInfo.date, userTimezone).day).padStart(2, "0")}`
+        ? "bg-primary/5 ring-primary/40 ring-1"
+        : ""
     } ${dayInfo.isToday ? "ring-primary ring-1" : ""}`;
 
   return (
@@ -288,6 +333,15 @@ export function MonthlyView({
       postsByDate={postsByDate}
       getCellContent={getCellContent}
       onDrop={handleDrop}
+      onCellClick={onOpenDay}
+      onCellDragOver={(date) => {
+        const zoned = fromDate(date, userTimezone);
+        const key = `${zoned.year}-${String(zoned.month).padStart(2, "0")}-${String(zoned.day).padStart(2, "0")}`;
+        setDragOverDateKey(key);
+      }}
+      onCellDragLeave={() => {
+        setDragOverDateKey(null);
+      }}
       canDropDate={(date) => {
         const dateZoned = fromDate(date, userTimezone);
         const dateKey = `${dateZoned.year}-${String(dateZoned.month).padStart(2, "0")}-${String(dateZoned.day).padStart(2, "0")}`;

@@ -24,6 +24,8 @@ import {
 } from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../types";
+import LongFormDetailsModal from "../LongFormDetailsModal";
+import PostDetailsModal from "../PostDetailsModal";
 import PostTypeTabs from "../PostTypeTabs";
 import QueueSelectionTabs from "../QueueSelectionTabs";
 
@@ -70,6 +72,17 @@ interface CalendarProps {
 
 const VIEW_VALUES = ["day", "week", "month"] as const;
 
+function getCalendarPostModalType(
+  post: CalendarPost
+): "published" | "scheduled" {
+  if (post.isPast || post.isPosted) return "published";
+  const publishedAtMs = post.publishedAt
+    ? new Date(post.publishedAt).getTime()
+    : 0;
+  if (publishedAtMs > 0 && publishedAtMs <= Date.now()) return "published";
+  return "scheduled";
+}
+
 function parseInitialDate(
   initialDate: string | null | undefined,
   userTimezone: string
@@ -114,6 +127,9 @@ export function Calendar({
     return toDate(now);
   });
   const [selectedPost, setSelectedPost] = useState<CalendarPost | null>(null);
+  const [detailModalPost, setDetailModalPost] = useState<CalendarPost | null>(
+    null
+  );
   const [calendarLiveMessage, setCalendarLiveMessage] = useState("");
   const isLg = useIsLg();
   const queryClient = useQueryClient();
@@ -170,10 +186,20 @@ export function Calendar({
     [isLongform, isAll, userTimezone, dateLocale]
   );
 
+  const isDetailModalOpen = detailModalPost !== null;
+  const detailModalPostIsLongform =
+    detailModalPost !== null
+      ? getPostIsLongform(detailModalPost, isLongform, isAll)
+      : false;
+  const detailModalType =
+    detailModalPost !== null
+      ? getCalendarPostModalType(detailModalPost)
+      : "scheduled";
+
   // Keyboard shortcuts: T = Today, Left/Right = prev/next period (ignore when modal open or focus in input)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (showRescheduleModal) return;
+      if (showRescheduleModal || isDetailModalOpen) return;
       const target = document.activeElement;
       if (
         target &&
@@ -217,7 +243,7 @@ export function Calendar({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showRescheduleModal, currentDate, view, userTimezone]);
+  }, [showRescheduleModal, isDetailModalOpen, currentDate, view, userTimezone]);
 
   const handlePostEdit = useCallback(
     (post: CalendarPost) => {
@@ -279,10 +305,10 @@ export function Calendar({
       if (view === "day" && isLg) {
         setSelectedPost(post);
       } else {
-        handlePostEdit(post);
+        setDetailModalPost(post);
       }
     },
-    [view, isLg, handlePostEdit]
+    [view, isLg]
   );
 
   const userTimeFormat =
@@ -538,7 +564,13 @@ export function Calendar({
                   pastPosts={pastPosts}
                   currentDate={currentDate}
                   onPostDrop={handlePostDrop}
-                  onPostEdit={handlePostEdit}
+                  onPostEdit={handlePostClick}
+                  onOpenDay={(date) => {
+                    setSelectedPost(null);
+                    setDetailModalPost(null);
+                    setCurrentDate(date);
+                    setView("day");
+                  }}
                   user={user}
                   queueTypes={queueTypes}
                   isLongform={isLongform}
@@ -591,6 +623,42 @@ export function Calendar({
             setRescheduleData(null);
             void queryClient.refetchQueries({ queryKey: calendarKeys.all });
           }}
+        />
+      ) : null}
+
+      {/* Details modal opened by clicking calendar blocks */}
+      {detailModalPost && !detailModalPostIsLongform ? (
+        <PostDetailsModal
+          post={
+            detailModalPost as Parameters<typeof PostDetailsModal>[0]["post"]
+          }
+          onClose={() => setDetailModalPost(null)}
+          onReschedule={(post) => {
+            setDetailModalPost(null);
+            handlePostEdit(post as CalendarPost);
+          }}
+          showSignedEvent={true}
+          type={detailModalType}
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
+        />
+      ) : null}
+      {detailModalPost && detailModalPostIsLongform ? (
+        <LongFormDetailsModal
+          post={
+            detailModalPost as unknown as Parameters<
+              typeof LongFormDetailsModal
+            >[0]["post"]
+          }
+          onClose={() => setDetailModalPost(null)}
+          onReschedule={(post) => {
+            setDetailModalPost(null);
+            handlePostEdit(post as unknown as CalendarPost);
+          }}
+          type={detailModalType}
+          showSignedEvent={true}
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
         />
       ) : null}
     </div>

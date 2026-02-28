@@ -50,9 +50,8 @@ function getPostTypeLabel(
 
 function getStatusLabel(post: CalendarPost): string {
   if (post.isPast) return "Past";
-  if (post.signedEvent) return "Published";
   if (post.isPosted) return "Posted";
-  if (post.isScheduled) return "Scheduled";
+  if (post.isScheduled || post.signedEvent) return "Scheduled";
   return "Draft";
 }
 

@@ -26,6 +26,9 @@ export interface DateGridProps {
   ) => ReactNode;
   onDrop?: (e: React.DragEvent<HTMLDivElement>, date: Date) => void;
   canDropDate?: (date: Date) => boolean;
+  onCellClick?: (date: Date) => void;
+  onCellDragOver?: (date: Date) => void;
+  onCellDragLeave?: (date: Date) => void;
   weekdayLabels?: string[];
   userTimezone: string;
   /** Optional: cell wrapper class (e.g. mobile padding). */
@@ -48,6 +51,9 @@ export function DateGrid({
   getCellContent,
   onDrop,
   canDropDate,
+  onCellClick,
+  onCellDragOver,
+  onCellDragLeave,
   weekdayLabels = DEFAULT_WEEKDAY_LABELS,
   userTimezone,
   cellClassName,
@@ -83,13 +89,21 @@ export function DateGrid({
             <div
               key={dayInfo.date.toISOString()}
               role="gridcell"
-              tabIndex={-1}
+              tabIndex={onCellClick ? 0 : -1}
               className={cellClass}
               onDragOver={
                 onDrop
                   ? (e) => {
                       if (canDropDate && !canDropDate(dayInfo.date)) return;
                       e.preventDefault();
+                      onCellDragOver?.(dayInfo.date);
+                    }
+                  : undefined
+              }
+              onDragLeave={
+                onDrop
+                  ? () => {
+                      onCellDragLeave?.(dayInfo.date);
                     }
                   : undefined
               }
@@ -99,6 +113,19 @@ export function DateGrid({
                       if (canDropDate && !canDropDate(dayInfo.date)) return;
                       e.preventDefault();
                       onDrop(e, dayInfo.date);
+                    }
+                  : undefined
+              }
+              onClick={
+                onCellClick ? () => onCellClick(dayInfo.date) : undefined
+              }
+              onKeyDown={
+                onCellClick
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onCellClick(dayInfo.date);
+                      }
                     }
                   : undefined
               }
