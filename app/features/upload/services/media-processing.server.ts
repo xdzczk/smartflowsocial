@@ -99,6 +99,13 @@ export async function processMediaAsset(assetId: string): Promise<void> {
     );
   }
 
+  if (original.status !== "ready") {
+    await prisma.mediaVariant.update({
+      where: { id: original.id },
+      data: { status: "ready" },
+    });
+  }
+
   await prisma.mediaAsset.update({
     where: { id: assetId },
     data: {

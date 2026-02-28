@@ -7,8 +7,7 @@ import { getUserSubscription } from "~/models/payment.server";
 
 import { getCanonicalOwnedBytesForUser } from "./media.server";
 
-const DEFAULT_BLOSSOM_UPLOAD_URL =
-  "https://blossom-api.smartflow.social/upload";
+const DEFAULT_BLOSSOM_API_URL = "https://blossom-api.smartflow.social";
 const TOKEN_TTL_SECONDS = 180;
 const BATCH_TTL_SECONDS = 900;
 const MAX_BATCH_SIZE = 500;
@@ -108,6 +107,15 @@ export interface CommitBatchResult {
     status: "processed" | "duplicate" | "failed";
     reason?: string;
   }>;
+}
+
+function resolveBlossomUploadBaseUrl(): string {
+  const configured = env.BLOSSOM_SFS_API_URL?.trim();
+  const rawBase =
+    configured && configured.length > 0 ? configured : DEFAULT_BLOSSOM_API_URL;
+  const trimmed = rawBase.replace(/\/+$/, "");
+  // Accept either ".../upload" or API root in env and normalize to API root.
+  return trimmed.replace(/\/upload$/i, "");
 }
 
 function getTokenSecret(): string {
@@ -376,7 +384,7 @@ export async function issueBlossomBulkTokens(
   }
 
   return {
-    uploadUrl: `${(env.BLOSSOM_SFS_API_URL ?? DEFAULT_BLOSSOM_UPLOAD_URL).replace(/\/$/, "")}/upload`,
+    uploadUrl: `${resolveBlossomUploadBaseUrl()}/upload`,
     batchId,
     expiresIn: BATCH_TTL_SECONDS,
     maxParallelUploadsHint: policy.maxParallelUploadsHint,

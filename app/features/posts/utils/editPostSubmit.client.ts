@@ -57,7 +57,11 @@ async function uploadNewFiles(
 }
 
 async function ensureMediaUrlsReady(urls: string[]): Promise<void> {
-  const stableUrls = urls.filter((url) => /^\/media\/[^/]+\/[^/]+$/.test(url));
+  const stableUrls = urls.filter((url) =>
+    /^(?:\/media\/[^/]+\/[^/]+|https?:\/\/[^/]+\/media\/[^/]+\/[^/]+)$/.test(
+      url
+    )
+  );
   if (stableUrls.length === 0) return;
   const checks = await Promise.all(
     stableUrls.map(async (url) => {

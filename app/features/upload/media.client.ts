@@ -21,6 +21,16 @@ interface IntentResponse {
   intentId: string;
 }
 
+function buildStableMediaUrl(assetId: string): string {
+  const path = `/media/${assetId}/original`;
+  if (typeof window === "undefined") return path;
+  try {
+    return new URL(path, window.location.origin).toString();
+  } catch {
+    return path;
+  }
+}
+
 async function createIntent(files: File[]): Promise<IntentResponse | null> {
   try {
     const response = await fetch("/api/media/intents", {
@@ -88,7 +98,7 @@ async function commitUploads(
       if (!item || !entry.assetId) return null;
       return {
         resultIndex: item.resultIndex,
-        stableUrl: `/media/${entry.assetId}/original`,
+        stableUrl: buildStableMediaUrl(entry.assetId),
       };
     })
     .filter(

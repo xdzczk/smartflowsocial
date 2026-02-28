@@ -1,10 +1,21 @@
 import { MediaNotReadyError } from "~/lib/errors";
 import { prisma } from "~/lib/prisma.server";
 
-const MEDIA_URL_REGEX = /^\/media\/([^/]+)\/([^/]+)$/;
+const MEDIA_PATH_REGEX = /^\/media\/([^/]+)\/([^/]+)$/;
 
 function extractAssetIdFromMediaUrl(url: string): string | null {
-  const match = MEDIA_URL_REGEX.exec(url);
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  const candidatePath = trimmed.startsWith("/")
+    ? trimmed
+    : (() => {
+        try {
+          return new URL(trimmed).pathname;
+        } catch {
+          return "";
+        }
+      })();
+  const match = MEDIA_PATH_REGEX.exec(candidatePath);
   return match?.[1] ?? null;
 }
 
