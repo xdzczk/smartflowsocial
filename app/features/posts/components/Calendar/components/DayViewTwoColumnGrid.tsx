@@ -65,6 +65,11 @@ interface DayHoverLayout {
   topPx: number;
 }
 
+function isMovingIntoDayHoverOverlay(nextTarget: EventTarget | null): boolean {
+  if (!(nextTarget instanceof HTMLElement)) return false;
+  return nextTarget.closest('[data-day-hover-overlay="true"]') !== null;
+}
+
 function getDayHoverTargetRows(baseRows: number): number {
   return baseRows <= 4 ? 5 : baseRows;
 }
@@ -140,7 +145,10 @@ function BlockInColumn({
         zIndex: isHovered ? CALENDAR_BLOCK_EXPANDED_Z : CALENDAR_BLOCK_BASE_Z,
       }}
       onMouseEnter={() => onHoverOverlayChange(hoverOverlayPayload)}
-      onMouseLeave={() => onHoverOverlayChange(null)}
+      onMouseLeave={(e) => {
+        if (isMovingIntoDayHoverOverlay(e.relatedTarget)) return;
+        onHoverOverlayChange(null);
+      }}
       onFocus={() => onHoverOverlayChange(hoverOverlayPayload)}
       onBlur={() => onHoverOverlayChange(null)}
     >
@@ -570,7 +578,8 @@ export function DayViewTwoColumnGrid({
                     top: row.rowIndex * ROW_HEIGHT_PX,
                     height: row.blockHeightPx,
                   }}
-                  onMouseLeave={() => {
+                  onMouseLeave={(e) => {
+                    if (isMovingIntoDayHoverOverlay(e.relatedTarget)) return;
                     setHoveredMultiPostKey(null);
                     setDayHoverOverlayPayload(null);
                   }}
@@ -693,6 +702,7 @@ export function DayViewTwoColumnGrid({
               {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Overlay hover retention area for expanded post preview */}
               <div
                 className={`pointer-events-auto absolute px-0.5 ${EXPANDED_BLOCK_WRAPPER_CLASS}`}
+                data-day-hover-overlay="true"
                 style={{
                   top: dayHoverOverlayPayload.topPx,
                   left: dayHoverOverlayPayload.leftCss,
@@ -700,6 +710,7 @@ export function DayViewTwoColumnGrid({
                   height: dayHoverOverlayPayload.heightPx,
                 }}
                 onMouseEnter={() => {
+                  setDayHoverOverlayPayload(dayHoverOverlayPayload);
                   if (dayHoverOverlayPayload.source === "single") {
                     setHoveredSlotKey(dayHoverOverlayPayload.key);
                     setHoveredMultiPostKey(null);
@@ -707,6 +718,12 @@ export function DayViewTwoColumnGrid({
                     setHoveredSlotKey(null);
                     setHoveredMultiPostKey(dayHoverOverlayPayload.key);
                   }
+                }}
+                onMouseDown={(e) => {
+                  // Ensure single click selects even if pointer lands on overlay wrapper.
+                  if (e.target !== e.currentTarget) return;
+                  setActiveEmptySlotKey(null);
+                  onPostEdit(dayHoverOverlayPayload.post);
                 }}
                 onMouseLeave={() => {
                   setHoveredSlotKey(null);

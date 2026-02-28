@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 
 import {
   INLINE_ICON_STROKE,
@@ -9,14 +9,30 @@ import type { CalendarPost } from "./PostBlock.types";
 interface PostStatusIconsProps {
   post: CalendarPost;
   isLongform: boolean;
+  isPast?: boolean;
 }
 
-export function PostStatusIcons({ post }: PostStatusIconsProps) {
+export function PostStatusIcons({
+  post,
+  isPast = false,
+}: PostStatusIconsProps) {
+  const showPublishedIcon = isPast || Boolean(post.isPosted);
+  const showScheduledIcon =
+    !showPublishedIcon &&
+    (Boolean(post.isScheduled) || Boolean(post.signedEvent));
+
   return (
     <div className="flex items-center space-x-1">
-      {post.signedEvent && Boolean(post.signedEvent) ? (
+      {showPublishedIcon ? (
         <Check
           className={`text-success ${SMALL_ICON_SIZE_CLASS}`}
+          strokeWidth={INLINE_ICON_STROKE}
+          aria-hidden
+        />
+      ) : null}
+      {showScheduledIcon ? (
+        <Clock
+          className={`text-muted-foreground ${SMALL_ICON_SIZE_CLASS}`}
           strokeWidth={INLINE_ICON_STROKE}
           aria-hidden
         />

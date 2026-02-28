@@ -262,7 +262,11 @@ export function CompactPostBlock({
           <span className="font-medium">{timeString}</span>
         </div>
 
-        <PostStatusIcons post={post} isLongform={isLongform ?? false} />
+        <PostStatusIcons
+          post={post}
+          isLongform={isLongform ?? false}
+          isPast={isPast ?? false}
+        />
       </div>
 
       <div className="min-h-0 flex-1 overflow-hidden">
