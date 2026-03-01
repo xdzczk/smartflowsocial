@@ -4,7 +4,7 @@
  */
 
 import {
-  getUserUploadProvider,
+  getResolvedUploadProviderSettings,
   getUserEnableMirrorBlossom,
   getUserMirrorUploadUrls,
 } from "~/features/user";
@@ -14,24 +14,25 @@ import { DatabaseError } from "~/lib/errors";
  * Load user upload provider settings
  */
 export async function loadUploadProviderSettings(userId: string) {
-  let provider, enableMirrorBlossom, mirrorUploadUrls;
-
   try {
-    [provider, enableMirrorBlossom, mirrorUploadUrls] = await Promise.all([
-      getUserUploadProvider(userId),
-      getUserEnableMirrorBlossom(userId),
-      getUserMirrorUploadUrls(userId),
-    ]);
+    const [providerSettings, enableMirrorBlossom, mirrorUploadUrls] =
+      await Promise.all([
+        getResolvedUploadProviderSettings(userId),
+        getUserEnableMirrorBlossom(userId),
+        getUserMirrorUploadUrls(userId),
+      ]);
+    const { provider, customBlossomUrl } = providerSettings;
+
+    return {
+      provider,
+      customBlossomUrl,
+      enableMirrorBlossom,
+      mirrorUploadUrls,
+    };
   } catch (error) {
     throw new DatabaseError("Failed to get upload provider settings", {
       userId,
       originalError: error instanceof Error ? error.message : String(error),
     });
   }
-
-  return {
-    provider,
-    enableMirrorBlossom,
-    mirrorUploadUrls,
-  };
 }

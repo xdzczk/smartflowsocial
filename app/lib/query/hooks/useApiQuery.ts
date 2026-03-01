@@ -49,6 +49,7 @@ export function useApiQuery<TData = unknown>(
 export function useUploadProvider() {
   return useApiQuery<{
     provider?: string;
+    customBlossomUrl?: string | null;
     enableMirrorBlossom?: boolean;
     mirrorUploadUrls?: string[];
   }>("/api/user-upload-provider", {
@@ -59,6 +60,7 @@ export function useUploadProvider() {
 
 interface UploadProviderData {
   provider?: string;
+  customBlossomUrl?: string | null;
   enableMirrorBlossom?: boolean;
   mirrorUploadUrls?: string[];
 }

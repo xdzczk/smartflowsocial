@@ -2,17 +2,20 @@
  * Integration tests for post command operations
  * Tests app/models/post.commands.server.ts
  */
-
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Prisma
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
+    $transaction: vi.fn(),
     post: {
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
       findUnique: vi.fn(),
+    },
+    outboxEvent: {
+      create: vi.fn(),
     },
   },
 }));
@@ -30,6 +33,19 @@ import {
 describe("Post Commands", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env["ENABLE_NOSTR_DELETE_EVENTS"];
+
+    (prisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mocked Prisma transaction returns callback promise
+      (callback: (tx: typeof prisma) => Promise<unknown>) => {
+        const tx: typeof prisma = {
+          ...prisma,
+          post: prisma.post,
+          outboxEvent: prisma.outboxEvent,
+        };
+        return callback(tx);
+      }
+    );
   });
 
   describe("createPost", () => {
@@ -435,9 +451,24 @@ describe("Post Commands", () => {
 
   describe("deletePost", () => {
     it("should delete a post", async () => {
-      const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID };
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        nostrEventId: "nostr-event-1",
+        signedEvent: {
+          id: "nostr-event-1",
+          pubkey: "pubkey-1",
+        },
+        nostrEvent: null,
+      };
       (prisma.post.delete as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
+      );
+      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost
+      );
+      (prisma.outboxEvent.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        {}
       );
 
       const result = await deletePost({
@@ -451,7 +482,59 @@ describe("Post Commands", () => {
           userId: TEST_USER_ID,
         },
       });
+      expect(prisma.outboxEvent.create).toHaveBeenCalledTimes(1);
+      expect(prisma.outboxEvent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          data: expect.objectContaining({
+            eventType: "POST_DELETED",
+            aggregateId: TEST_POST_ID,
+          }),
+        })
+      );
       expect(result).toEqual(mockPost);
+    });
+
+    it("should emit POST_DELETE_REQUESTED when feature flag is enabled", async () => {
+      process.env["ENABLE_NOSTR_DELETE_EVENTS"] = "true";
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        nostrEventId: "nostr-event-1",
+        signedEvent: {
+          id: "nostr-event-1",
+          pubkey: "pubkey-1",
+        },
+        nostrEvent: null,
+      };
+      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost
+      );
+      (prisma.post.delete as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost
+      );
+      (prisma.outboxEvent.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        {}
+      );
+
+      await deletePost({ id: TEST_POST_ID, userId: TEST_USER_ID });
+
+      expect(prisma.outboxEvent.create).toHaveBeenCalledTimes(2);
+      expect(prisma.outboxEvent.create).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          data: expect.objectContaining({
+            eventType: "POST_DELETE_REQUESTED",
+            aggregateId: TEST_POST_ID,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+            payload: expect.objectContaining({
+              originalEventId: "nostr-event-1",
+              originalEventPubkey: "pubkey-1",
+            }),
+          }),
+        })
+      );
     });
   });
 });

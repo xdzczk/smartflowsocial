@@ -41,7 +41,7 @@ describe("User Data Validation", () => {
         timezone: "America/New_York",
         userRelays: ["relay1", "relay2"],
         giveawayBlackListed: [],
-        uploadProvider: "S3",
+        uploadProvider: "BLOSSOM_PRIMAL",
         scheduleInterval: [4, 8],
         pendingParentRequests: [],
       };
@@ -60,6 +60,25 @@ describe("User Data Validation", () => {
       }
     });
 
+    it("should accept BLOSSOM_CUSTOM as upload provider", () => {
+      const validUser = {
+        id: "user-1",
+        npub: "npub1test",
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-02T00:00:00Z",
+        isEnabled: true,
+        timezone: "America/New_York",
+        userRelays: ["relay1", "relay2"],
+        giveawayBlackListed: [],
+        uploadProvider: "BLOSSOM_CUSTOM",
+        scheduleInterval: [4, 8],
+        pendingParentRequests: [],
+      };
+
+      const result = validateUserData(validUser);
+      expect(result).not.toBeNull();
+    });
+
     it("should convert scheduleInterval from strings to numbers", () => {
       const user = {
         id: "user-1",
@@ -70,7 +89,7 @@ describe("User Data Validation", () => {
         timezone: null,
         userRelays: [],
         giveawayBlackListed: [],
-        uploadProvider: "S3",
+        uploadProvider: "BLOSSOM_PRIMAL",
         scheduleInterval: ["4", "8", "invalid"],
         pendingParentRequests: [],
       };
@@ -93,7 +112,7 @@ describe("User Data Validation", () => {
         timezone: null,
         userRelays: [],
         giveawayBlackListed: [],
-        uploadProvider: "S3",
+        uploadProvider: "BLOSSOM_PRIMAL",
         scheduleInterval: [4, 8],
         pendingParentRequests: [],
       };
@@ -116,7 +135,7 @@ describe("User Data Validation", () => {
         timezone: null,
         userRelays: [],
         giveawayBlackListed: [],
-        uploadProvider: "S3",
+        uploadProvider: "BLOSSOM_PRIMAL",
         scheduleInterval: [],
         pendingParentRequests: [],
       };
@@ -139,7 +158,7 @@ describe("User Data Validation", () => {
         timezone: null,
         userRelays: [],
         giveawayBlackListed: [],
-        uploadProvider: "S3",
+        uploadProvider: "BLOSSOM_PRIMAL",
         scheduleInterval: [],
         pendingParentRequests: [],
       };
@@ -162,7 +181,7 @@ describe("User Data Validation", () => {
         timezone: null,
         userRelays: [],
         giveawayBlackListed: [],
-        uploadProvider: "S3",
+        uploadProvider: "BLOSSOM_PRIMAL",
         scheduleInterval: [],
         pendingParentRequests: [],
       };

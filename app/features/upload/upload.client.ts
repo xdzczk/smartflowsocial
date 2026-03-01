@@ -25,6 +25,7 @@ function isBlossomProvider(provider: string | undefined): boolean {
     provider === "BLOSSOM_PRIMAL" ||
     provider === "BLOSSOM_BLOSSTR" ||
     provider === "BLOSSOM_SFS" ||
+    provider === "BLOSSOM_CUSTOM" ||
     provider === "BLOSSOM"
   );
 }
@@ -56,7 +57,12 @@ interface UploadResult {
     extension: string;
     sha256?: string;
     mimeType?: string;
-    provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS";
+    provider:
+      | "S3"
+      | "BLOSSOM_PRIMAL"
+      | "BLOSSOM_BLOSSTR"
+      | "BLOSSOM_SFS"
+      | "BLOSSOM_CUSTOM";
     mirrors?: MirrorUploadResult[];
   };
   error?: string;
@@ -109,6 +115,7 @@ export async function uploadFile(file: File): Promise<UploadResult> {
     const { getUploadProvider } = await import("~/lib/query");
     const data = await getUploadProvider();
     const uploadProvider = data.provider;
+    const customBlossomUrl = data.customBlossomUrl;
     const enableMirrorBlossom = data.enableMirrorBlossom;
     const mirrorUploadUrls = data.mirrorUploadUrls;
 
@@ -116,6 +123,7 @@ export async function uploadFile(file: File): Promise<UploadResult> {
       return await uploadFileToBlossom(
         file,
         uploadProvider,
+        customBlossomUrl,
         enableMirrorBlossom,
         mirrorUploadUrls
       );
@@ -178,6 +186,7 @@ async function uploadFileToS3(file: File): Promise<UploadResult> {
       return await uploadFileToBlossom(
         file,
         data.provider ?? "BLOSSOM_PRIMAL",
+        data.customBlossomUrl ?? null,
         data.enableMirrorBlossom ?? false,
         data.mirrorUploadUrls ?? []
       );
@@ -245,6 +254,7 @@ interface BlossomUploaderInstance {
  */
 async function createBlossomUploader(
   provider: string,
+  customBlossomUrl: string | null,
   enableMirrorBlossom: boolean,
   mirrorUploadUrls: string[],
   options?: { overrideServers?: string[] }
@@ -295,6 +305,12 @@ async function createBlossomUploader(
     primaryServerUrl = "https://blosstr.com";
   } else if (provider === "BLOSSOM_SFS") {
     primaryServerUrl = "https://blossom-api.smartflow.social";
+  } else if (provider === "BLOSSOM_CUSTOM" && customBlossomUrl) {
+    primaryServerUrl = customBlossomUrl;
+  } else if (provider === "BLOSSOM_CUSTOM") {
+    throw new Error(
+      "Custom Blossom provider is selected but no custom URL is configured."
+    );
   }
 
   const servers =
@@ -345,6 +361,7 @@ async function createBlossomUploader(
 async function uploadFileToBlossom(
   file: File,
   provider = "BLOSSOM_PRIMAL",
+  customBlossomUrl: string | null = null,
   enableMirrorBlossom = false,
   mirrorUploadUrls: string[] = [],
   uploader?: BlossomUploaderInstance
@@ -363,6 +380,7 @@ async function uploadFileToBlossom(
       // Create a new uploader for single file uploads
       const uploaderResult = await createBlossomUploader(
         provider,
+        customBlossomUrl,
         enableMirrorBlossom,
         mirrorUploadUrls
       );
@@ -431,7 +449,8 @@ async function uploadFileToBlossom(
     if (result.success && fileData) {
       const blobProvider =
         fileData.provider === "BLOSSOM_SFS" ||
-        fileData.provider === "BLOSSOM_BLOSSTR"
+        fileData.provider === "BLOSSOM_BLOSSTR" ||
+        fileData.provider === "BLOSSOM_CUSTOM"
           ? fileData.provider
           : "BLOSSOM_PRIMAL";
       devLog(
@@ -963,6 +982,7 @@ async function uploadSfsBulkFiles(
       uniqueMirrorUrls.map(async (mirrorUrl) => {
         const uploaderResult = await createBlossomUploader(
           "BLOSSOM_PRIMAL",
+          null,
           false,
           [],
           { overrideServers: [mirrorUrl] }
@@ -1051,6 +1071,7 @@ export async function uploadMultipleFiles(
   const data = await getUploadProvider();
   const isBlossom = isBlossomProvider(data.provider);
   const provider = data.provider ?? "BLOSSOM_PRIMAL";
+  const customBlossomUrl = data.customBlossomUrl ?? null;
   const providerPolicy = getProviderUploadPolicy(provider);
 
   if (isBlossom) {
@@ -1072,6 +1093,7 @@ export async function uploadMultipleFiles(
     // This avoids recreating the uploader and re-testing network latency for each file
     const uploaderResult = await createBlossomUploader(
       provider,
+      customBlossomUrl,
       data.enableMirrorBlossom ?? false,
       data.mirrorUploadUrls ?? []
     );
@@ -1089,6 +1111,7 @@ export async function uploadMultipleFiles(
         uploadFileToBlossom(
           file,
           provider,
+          customBlossomUrl,
           data.enableMirrorBlossom ?? false,
           data.mirrorUploadUrls ?? [],
           sharedUploader

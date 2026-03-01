@@ -43,7 +43,7 @@ export class UserFactory {
       timezone: "America/New_York",
       userRelays: ["wss://relay.bullishbounty.com", "wss://relay.snort.social"],
       giveawayBlackListed: [],
-      uploadProvider: "S3",
+      uploadProvider: "BLOSSOM_PRIMAL",
       showHashTagsinPosts: false,
       scheduleInterval: ["0.25", "0.5", "1", "2", "4", "12", "24"],
       nostrProfile: null,
@@ -151,7 +151,7 @@ export class UserFactory {
       timezone: this.options.timezone ?? null,
       userRelays: this.options.userRelays ?? [],
       giveawayBlackListed: this.options.giveawayBlackListed ?? [],
-      uploadProvider: this.options.uploadProvider ?? "S3",
+      uploadProvider: this.options.uploadProvider ?? "BLOSSOM_PRIMAL",
       showHashTagsinPosts: this.options.showHashTagsinPosts ?? false,
       scheduleInterval: this.options.scheduleInterval ?? [],
       nostrProfile: (this.options.nostrProfile ??

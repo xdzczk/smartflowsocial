@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Toast from "~/components/ui/Toast";
 import { usePostResultFromUrl } from "~/features/posts/hooks/usePostResultFromUrl";
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
+import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import type {
   PostData,
   CombinedContent,
@@ -138,6 +139,7 @@ function sortPosts(
 
 /* eslint-disable sonarjs/cognitive-complexity -- Page orchestrator: tabs, queue filters, table/list content, modals */
 export default function PublishedPostsPage() {
+  const refreshPostViews = useRefreshPostViews();
   // Use infinite query for data fetching with infinite scroll
   const {
     posts,
@@ -524,6 +526,7 @@ export default function PublishedPostsPage() {
         <PostDetailsModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
+          onDeleted={refreshPostViews}
           type="published"
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}
@@ -535,6 +538,7 @@ export default function PublishedPostsPage() {
         <LongFormDetailsModal
           post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
+          onDeleted={refreshPostViews}
           type="published"
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}

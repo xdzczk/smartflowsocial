@@ -280,6 +280,7 @@ export const uploadImagesPreviewSchema = z.object({
                     "BLOSSOM_PRIMAL",
                     "BLOSSOM_BLOSSTR",
                     "BLOSSOM_SFS",
+                    "BLOSSOM_CUSTOM",
                   ])
                   .optional(),
               })

@@ -1,6 +1,7 @@
 import type { User, UploadProvider } from "@prisma/client";
 
 import type { MutedListData } from "~/features/engagement/types";
+import { isSubscriptionActiveForGating } from "~/features/payments/subscriptions.server";
 import { prisma } from "~/lib/prisma.server";
 
 /**
@@ -153,30 +154,135 @@ export function updateUserUploadProvider(
   });
 }
 
+function resolveFallbackBlossomProvider(isPaidActive: boolean): UploadProvider {
+  return isPaidActive ? "BLOSSOM_SFS" : "BLOSSOM_PRIMAL";
+}
+
+function normalizeLegacyUploadProvider(
+  provider: string | null | undefined
+): UploadProvider | "BLOSSOM" | null {
+  if (!provider) {
+    return null;
+  }
+
+  const providerStr = String(provider);
+  if (providerStr === "BLOSSOM") {
+    return "BLOSSOM";
+  }
+  if (
+    providerStr === "S3" ||
+    providerStr === "BLOSSOM_PRIMAL" ||
+    providerStr === "BLOSSOM_BLOSSTR" ||
+    providerStr === "BLOSSOM_SFS" ||
+    providerStr === "BLOSSOM_CUSTOM"
+  ) {
+    return providerStr;
+  }
+  return null;
+}
+
+export function resolveUploadProviderWithTierDefaults(params: {
+  persistedProvider: string | null | undefined;
+  isPaidActive: boolean;
+}): UploadProvider {
+  const normalized = normalizeLegacyUploadProvider(params.persistedProvider);
+
+  // Preserve explicit Blossom choices.
+  if (
+    normalized === "BLOSSOM_PRIMAL" ||
+    normalized === "BLOSSOM_BLOSSTR" ||
+    normalized === "BLOSSOM_SFS" ||
+    normalized === "BLOSSOM_CUSTOM"
+  ) {
+    return normalized;
+  }
+
+  // Legacy plain "BLOSSOM" maps to Primal.
+  if (normalized === "BLOSSOM") {
+    return "BLOSSOM_PRIMAL";
+  }
+
+  // Legacy/implicit S3 (or missing) resolves by tier defaults.
+  return resolveFallbackBlossomProvider(params.isPaidActive);
+}
+
 /**
  * Gets user's upload provider
- * Handles legacy BLOSSOM value by converting to BLOSSOM_PRIMAL
+ * Resolves legacy and tier defaults:
+ * - explicit Blossom choice wins
+ * - legacy BLOSSOM => BLOSSOM_PRIMAL
+ * - S3/missing => tier default (free => BLOSSOM_PRIMAL, paid => BLOSSOM_SFS)
  */
 export async function getUserUploadProvider(
   userId: string
 ): Promise<UploadProvider> {
+  const settings = await getResolvedUploadProviderSettings(userId);
+  return settings.provider;
+}
+
+export async function getUserCustomBlossomUrl(
+  userId: string
+): Promise<string | null> {
   const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      uploadProvider: true,
+    where: { id: userId },
+    select: { customBlossomUrl: true },
+  });
+  return user?.customBlossomUrl ?? null;
+}
+
+export function updateUserCustomBlossomUrl(
+  userId: string,
+  customBlossomUrl: string | null
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { customBlossomUrl },
+  });
+}
+
+export async function updateUserUploadProviderSettings(
+  userId: string,
+  uploadProvider: UploadProvider,
+  customBlossomUrl: string | null
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      uploadProvider,
+      customBlossomUrl:
+        uploadProvider === "BLOSSOM_CUSTOM" ? customBlossomUrl : null,
     },
   });
+}
 
-  // Handle legacy BLOSSOM value by converting to BLOSSOM_PRIMAL
-  const provider = user?.uploadProvider ?? "S3";
-  // Check for legacy string value (not in enum) - compare as string
-  const providerStr = String(provider);
-  if (providerStr === "BLOSSOM") {
-    return "BLOSSOM_PRIMAL";
-  }
-  return provider;
+export async function getResolvedUploadProviderSettings(
+  userId: string
+): Promise<{
+  provider: UploadProvider;
+  customBlossomUrl: string | null;
+}> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      uploadProvider: true,
+      customBlossomUrl: true,
+    },
+  });
+  const isPaidActive = await isSubscriptionActiveForGating(userId);
+  const resolvedProvider = resolveUploadProviderWithTierDefaults({
+    persistedProvider: user?.uploadProvider ?? null,
+    isPaidActive,
+  });
+  const customBlossomUrl = user?.customBlossomUrl ?? null;
+  const provider =
+    resolvedProvider === "BLOSSOM_CUSTOM" && !customBlossomUrl
+      ? resolveFallbackBlossomProvider(isPaidActive)
+      : resolvedProvider;
+
+  return {
+    provider,
+    customBlossomUrl,
+  };
 }
 
 /**
@@ -648,6 +754,7 @@ export async function updateRunwaySettings(
           userRelays: true,
           giveawayBlackListed: true,
           uploadProvider: true,
+          customBlossomUrl: true,
           showHashTagsinPosts: true,
           scheduleInterval: true,
           nostrProfile: true,

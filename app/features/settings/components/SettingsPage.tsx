@@ -291,6 +291,7 @@ export default function SettingsPage() {
     scheduleIntervals?: unknown;
     queueTypes?: unknown;
     uploadProvider?: unknown;
+    customBlossomUrl?: unknown;
     enableMirrorBlossom?: unknown;
     mirrorUploadUrls?: unknown;
     hashTagPresets?: unknown;
@@ -325,6 +326,7 @@ export default function SettingsPage() {
     scheduleIntervals,
     queueTypes: queueTypesRaw,
     uploadProvider,
+    customBlossomUrl,
     enableMirrorBlossom,
     mirrorUploadUrls,
     hashTagPresets: hashTagPresetsRaw,
@@ -377,6 +379,7 @@ export default function SettingsPage() {
   const giveawayBlacklistList = asStringArray(giveawayBlacklist);
   const scheduleIntervalsList = asStringArray(scheduleIntervals);
   const uploadProviderValue = asStringOrUndefined(uploadProvider) ?? "";
+  const customBlossomUrlValue = asStringOrNull(customBlossomUrl);
   const enableMirrorBlossomValue = asBoolean(enableMirrorBlossom);
   const mirrorUploadUrlsList = asStringArray(mirrorUploadUrls);
   const nwcEnabledValue = asBoolean(nwcEnabled);
@@ -498,7 +501,10 @@ export default function SettingsPage() {
 
         <TabsContent value="storage" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <UploadProviderSettings uploadProvider={uploadProviderValue} />
+            <UploadProviderSettings
+              uploadProvider={uploadProviderValue}
+              customBlossomUrl={customBlossomUrlValue}
+            />
             <BlossomMediaMirrorsSettings
               enableMirrorBlossom={enableMirrorBlossomValue}
               mirrorUploadUrls={mirrorUploadUrlsList}

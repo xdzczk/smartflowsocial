@@ -13,7 +13,10 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { cancelPostJob as cancelScheduledPost } from "~/infra/queue";
+import {
+  cancelPostJob as cancelScheduledPost,
+  cancelLongFormPostJob as cancelScheduledLongFormPost,
+} from "~/infra/queue";
 import { logError } from "~/lib/error-logger.server";
 import { fromUnixTimestamp, toDate, toPrismaDate } from "~/lib/temporal";
 import {
@@ -265,11 +268,13 @@ function parseFileUrl(
 // ============================================================================
 
 async function handleDelete(postId: string, userId: string) {
+  await cancelScheduledPost(postId);
   await deletePost({ id: postId, userId });
   return json({ success: true });
 }
 
 async function handleDeleteLongForm(postId: string, userId: string) {
+  await cancelScheduledLongFormPost(postId);
   await deleteLongFormPost({ id: postId, userId });
   return json({ success: true });
 }
@@ -277,6 +282,9 @@ async function handleDeleteLongForm(postId: string, userId: string) {
 async function handleBulkDelete(formData: FormData, userId: string) {
   const postIdsValue = formData.get("postIds");
   const postIds = parsePostIds(postIdsValue);
+  await Promise.all(
+    postIds.map(async (id: string) => await cancelScheduledPost(id))
+  );
   await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
   return json({ success: true });
 }
@@ -284,6 +292,9 @@ async function handleBulkDelete(formData: FormData, userId: string) {
 async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
   const postIdsValue = formData.get("postIds");
   const postIds = parsePostIds(postIdsValue);
+  await Promise.all(
+    postIds.map(async (id: string) => await cancelScheduledLongFormPost(id))
+  );
   await Promise.all(
     postIds.map((id: string) => deleteLongFormPost({ id, userId }))
   );
@@ -293,6 +304,15 @@ async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
 async function handleBulkDeleteMixed(formData: FormData, userId: string) {
   const itemDataValue = formData.get("itemData");
   const itemData = parseItemData(itemDataValue);
+  await Promise.all(
+    itemData.map(async (item: { id: string; type: string }) => {
+      if (item.type === "post") {
+        await cancelScheduledPost(item.id);
+        return;
+      }
+      await cancelScheduledLongFormPost(item.id);
+    })
+  );
   const promises = itemData.map((item: { id: string; type: string }) => {
     if (item.type === "post") {
       return deletePost({ id: item.id, userId });

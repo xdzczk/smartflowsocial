@@ -17,6 +17,9 @@ export type OutboxEventType =
   | "LONGFORM_SCHEDULED"
   | "POST_CANCELLED"
   | "LONGFORM_CANCELLED"
+  // Nostr relay side-effects
+  | "POST_DELETE_REQUESTED"
+  | "LONGFORM_DELETE_REQUESTED"
   // Read model events
   | "POST_CREATED"
   | "POST_UPDATED"
@@ -45,6 +48,38 @@ export interface LongFormPostScheduledPayload {
   correlationId?: string; // For request tracking
 }
 
+export interface PostDeleteRequestedPayload {
+  postId: string;
+  userId: string;
+  originalEventId: string;
+  originalEventPubkey: string;
+  reason?: string;
+  schemaVersion: string;
+  correlationId?: string;
+}
+
+export interface LongFormDeleteRequestedPayload {
+  postId: string;
+  userId: string;
+  aCoordinate: string;
+  originalEventId?: string;
+  originalEventPubkey: string;
+  reason?: string;
+  schemaVersion: string;
+  correlationId?: string;
+}
+
+export type OutboxPayload =
+  | PostScheduledPayload
+  | LongFormPostScheduledPayload
+  | PostDeleteRequestedPayload
+  | LongFormDeleteRequestedPayload
+  | {
+      postId: string;
+      userId: string;
+      correlationId?: string;
+    };
+
 export interface OutboxProcessingLock {
   lockId: string;
   expiresAt: Date;
@@ -60,7 +95,7 @@ export async function createOutboxEvent(
   eventType: OutboxEventType,
   aggregateId: string,
   aggregateType: "Post" | "LongFormPost",
-  payload: PostScheduledPayload | LongFormPostScheduledPayload,
+  payload: OutboxPayload,
   scheduledFor?: Date,
   idempotencyKey?: string,
   correlationId?: string
@@ -86,7 +121,7 @@ export async function createOutboxEventInTransaction(
   eventType: OutboxEventType,
   aggregateId: string,
   aggregateType: "Post" | "LongFormPost",
-  payload: PostScheduledPayload | LongFormPostScheduledPayload,
+  payload: OutboxPayload,
   scheduledFor?: Date,
   idempotencyKey?: string,
   correlationId?: string

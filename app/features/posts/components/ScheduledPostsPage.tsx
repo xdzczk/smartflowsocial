@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
 import { usePostResultFromUrl } from "~/features/posts/hooks/usePostResultFromUrl";
+import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { BulkPost, PostFetcher } from "~/features/posts/types";
 import {
@@ -53,6 +54,7 @@ import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
 /* eslint-disable sonarjs/cognitive-complexity -- Page orchestrator: tabs, queue filters, table/list content, modals */
 export default function ScheduledPostsPage() {
+  const refreshPostViews = useRefreshPostViews();
   // Use infinite query for data fetching with infinite scroll
   const {
     posts,
@@ -506,6 +508,7 @@ export default function ScheduledPostsPage() {
         <PostDetailsModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
+          onDeleted={refreshPostViews}
           showSignedEvent={true}
           type="scheduled"
           userTimezone={userTimezone}
@@ -528,6 +531,7 @@ export default function ScheduledPostsPage() {
         <LongFormDetailsModal
           post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
+          onDeleted={refreshPostViews}
           type="scheduled"
           showSignedEvent={true}
           userTimezone={userTimezone}

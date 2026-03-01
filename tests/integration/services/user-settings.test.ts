@@ -30,7 +30,10 @@ import {
   updateScheduleInterval,
   getScheduleInterval,
   updateUserUploadProvider,
+  updateUserUploadProviderSettings,
   getUserUploadProvider,
+  getResolvedUploadProviderSettings,
+  resolveUploadProviderWithTierDefaults,
   getUserEnableMirrorBlossom,
   updateUserEnableMirrorBlossom,
   getUserMirrorUploadUrls,
@@ -219,39 +222,154 @@ describe("User Settings", () => {
 
   describe("Upload Provider", () => {
     it("should update upload provider", async () => {
-      const mockUser = { id: TEST_USER_ID, uploadProvider: "S3" };
+      const mockUser = { id: TEST_USER_ID, uploadProvider: "BLOSSOM_PRIMAL" };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockUser
       );
 
-      const result = await updateUserUploadProvider(TEST_USER_ID, "S3");
+      const result = await updateUserUploadProvider(
+        TEST_USER_ID,
+        "BLOSSOM_PRIMAL"
+      );
 
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: TEST_USER_ID },
-        data: { uploadProvider: "S3" },
+        data: { uploadProvider: "BLOSSOM_PRIMAL" },
       });
       expect(result).toEqual(mockUser);
     });
 
-    it("should get upload provider", async () => {
+    it("should resolve S3 to Primal for free users", async () => {
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
         uploadProvider: "S3",
+        customBlossomUrl: null,
       });
+      (
+        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       const result = await getUserUploadProvider(TEST_USER_ID);
 
-      // UploadProvider enum returns "S3" (uppercase), not "s3"
-      expect(result).toBe("S3");
+      expect(result).toBe("BLOSSOM_PRIMAL");
     });
 
-    it("should return S3 as default if upload provider not set", async () => {
+    it("should resolve S3 to SFS for active paid users", async () => {
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        uploadProvider: null,
+        uploadProvider: "S3",
+        customBlossomUrl: null,
+      });
+      (
+        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
+        planId: "premium",
+        status: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 60_000),
+        Plan: { enableLifetimeAccess: false },
       });
 
       const result = await getUserUploadProvider(TEST_USER_ID);
 
-      expect(result).toBe("S3");
+      expect(result).toBe("BLOSSOM_SFS");
+    });
+
+    it("should preserve explicit custom provider when custom URL exists", async () => {
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        uploadProvider: "BLOSSOM_CUSTOM",
+        customBlossomUrl: "https://custom-blossom.example.com",
+      });
+      (
+        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
+
+      const result = await getResolvedUploadProviderSettings(TEST_USER_ID);
+
+      expect(result).toEqual({
+        provider: "BLOSSOM_CUSTOM",
+        customBlossomUrl: "https://custom-blossom.example.com",
+      });
+    });
+
+    it("should fallback when custom provider has missing URL", async () => {
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        uploadProvider: "BLOSSOM_CUSTOM",
+        customBlossomUrl: null,
+      });
+      (
+        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
+
+      const result = await getResolvedUploadProviderSettings(TEST_USER_ID);
+
+      expect(result).toEqual({
+        provider: "BLOSSOM_PRIMAL",
+        customBlossomUrl: null,
+      });
+    });
+
+    it("should persist provider + custom URL atomically", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        uploadProvider: "BLOSSOM_CUSTOM",
+        customBlossomUrl: "https://custom-blossom.example.com",
+      };
+      (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockUser
+      );
+
+      const result = await updateUserUploadProviderSettings(
+        TEST_USER_ID,
+        "BLOSSOM_CUSTOM",
+        "https://custom-blossom.example.com"
+      );
+
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: TEST_USER_ID },
+        data: {
+          uploadProvider: "BLOSSOM_CUSTOM",
+          customBlossomUrl: "https://custom-blossom.example.com",
+        },
+      });
+      expect(result).toEqual(mockUser);
+    });
+
+    it("should clear custom URL when provider is not custom", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        uploadProvider: "BLOSSOM_PRIMAL",
+        customBlossomUrl: null,
+      };
+      (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockUser
+      );
+
+      await updateUserUploadProviderSettings(
+        TEST_USER_ID,
+        "BLOSSOM_PRIMAL",
+        "https://custom-blossom.example.com"
+      );
+
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: TEST_USER_ID },
+        data: {
+          uploadProvider: "BLOSSOM_PRIMAL",
+          customBlossomUrl: null,
+        },
+      });
+    });
+
+    it("should resolve provider by tier defaults helper", () => {
+      expect(
+        resolveUploadProviderWithTierDefaults({
+          persistedProvider: "S3",
+          isPaidActive: false,
+        })
+      ).toBe("BLOSSOM_PRIMAL");
+      expect(
+        resolveUploadProviderWithTierDefaults({
+          persistedProvider: "S3",
+          isPaidActive: true,
+        })
+      ).toBe("BLOSSOM_SFS");
     });
   });
 

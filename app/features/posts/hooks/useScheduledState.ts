@@ -9,6 +9,7 @@ import { isRepostPost } from "../utils/content-helpers";
 
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
+import { useRefreshPostViews } from "./useRefreshPostViews";
 import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 // Union type for posts that can be edited/rescheduled
 type EditablePost = PostData | LongFormPostData;
@@ -202,6 +203,7 @@ export function useScheduledState({
   };
 
   const queryClient = useQueryClient();
+  const refreshAllPostViews = useRefreshPostViews();
 
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
@@ -338,7 +340,7 @@ export function useScheduledState({
   };
 
   const handleModalSuccess = () => {
-    window.location.reload();
+    refreshAllPostViews();
   };
 
   return {

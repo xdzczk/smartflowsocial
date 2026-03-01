@@ -25,11 +25,22 @@ import type { LongFormPost, User, Prisma } from "@prisma/client";
 import type { SignedEvent } from "~/features/nostr/types";
 import { calculateLongFormStatus } from "~/features/posts/server";
 import { LongFormPostStateMachine } from "~/features/posts/state-machine/longform-post-state-machine.server";
-import { logError } from "~/lib/error-logger.server";
+import { logError, logInfo } from "~/lib/error-logger.server";
 import { generatePublishAttemptId } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
 
 export type { LongFormPost } from "@prisma/client";
+
+const DELETE_EVENT_SCHEMA_VERSION = "1.0";
+const DEFAULT_DELETE_REASON = "Deleted via SmartFlow";
+
+function isNostrDeleteEventsEnabled(): boolean {
+  const raw = process.env["ENABLE_NOSTR_DELETE_EVENTS"];
+  if (!raw) return false;
+  return ["1", "true", "yes", "y", "on", "enabled"].includes(
+    raw.trim().toLowerCase()
+  );
+}
 
 /**
  * Type guard to check if a value is a SignedEvent
@@ -74,6 +85,53 @@ function toSignedEvent(
     return null;
   }
   return isSignedEvent(value) ? value : null;
+}
+
+function extractLongFormDeleteReference(post: {
+  signedEvent: Prisma.JsonValue | null;
+  nostrEvent: Prisma.JsonValue | null;
+  nostrEventId: string | null;
+}): {
+  originalEventPubkey: string;
+  originalEventId?: string;
+  aCoordinate: string;
+} | null {
+  const signed = toSignedEvent(post.signedEvent);
+  const rawNostr =
+    post.nostrEvent && typeof post.nostrEvent === "object"
+      ? (post.nostrEvent as { id?: unknown; pubkey?: unknown; tags?: unknown })
+      : null;
+  const pubkey =
+    signed?.pubkey ??
+    (rawNostr && typeof rawNostr.pubkey === "string" ? rawNostr.pubkey : null);
+  if (!pubkey) return null;
+
+  const tags = Array.isArray(signed?.tags)
+    ? signed.tags
+    : Array.isArray(rawNostr?.tags)
+      ? (rawNostr.tags as unknown[])
+      : [];
+  const dTagEntry = tags.find(
+    (tag): tag is string[] =>
+      Array.isArray(tag) &&
+      tag.length >= 2 &&
+      tag[0] === "d" &&
+      typeof tag[1] === "string" &&
+      tag[1].trim().length > 0
+  );
+  if (!dTagEntry?.[1]) return null;
+
+  const originalEventId =
+    signed?.id ??
+    (rawNostr && typeof rawNostr.id === "string" ? rawNostr.id : null) ??
+    post.nostrEventId ??
+    undefined;
+
+  return {
+    originalEventPubkey: pubkey,
+    originalEventId,
+    aCoordinate: `30023:${pubkey}:${dTagEntry[1]}`,
+  };
 }
 
 /**
@@ -436,9 +494,11 @@ export async function getUserLongFormPosts({
 export async function deleteLongFormPost({
   id,
   userId,
+  correlationId,
 }: {
   id: LongFormPost["id"];
   userId: LongFormPost["userId"];
+  correlationId?: string;
 }): Promise<LongFormPost | null> {
   // Check if post exists before attempting to delete
   const existingPost = await prisma.longFormPost.findUnique({
@@ -453,9 +513,71 @@ export async function deleteLongFormPost({
     return null;
   }
 
-  return prisma.longFormPost.delete({
-    where: { id, userId },
-  });
+  const deleteRef = extractLongFormDeleteReference(existingPost);
+
+  try {
+    const deleted = await prisma.$transaction(async (tx) => {
+      const row = await tx.longFormPost.delete({
+        where: { id, userId },
+      });
+
+      // @ts-ignore - Dynamic imports work at runtime in CommonJS
+      const { createOutboxEventInTransaction } =
+        await import("~/infra/outbox/outbox.server");
+
+      await createOutboxEventInTransaction(
+        tx as Prisma.TransactionClient,
+        "LONGFORM_DELETED",
+        row.id,
+        "LongFormPost",
+        { postId: row.id, userId: row.userId },
+        undefined,
+        undefined,
+        correlationId
+      );
+
+      if (isNostrDeleteEventsEnabled() && deleteRef) {
+        await createOutboxEventInTransaction(
+          tx as Prisma.TransactionClient,
+          "LONGFORM_DELETE_REQUESTED",
+          row.id,
+          "LongFormPost",
+          {
+            postId: row.id,
+            userId: row.userId,
+            originalEventId: deleteRef.originalEventId,
+            originalEventPubkey: deleteRef.originalEventPubkey,
+            aCoordinate: deleteRef.aCoordinate,
+            reason: DEFAULT_DELETE_REASON,
+            schemaVersion: DELETE_EVENT_SCHEMA_VERSION,
+            correlationId,
+          },
+          undefined,
+          undefined,
+          correlationId
+        );
+      }
+
+      return row;
+    });
+
+    if (isNostrDeleteEventsEnabled() && !deleteRef) {
+      logInfo(
+        "Skipping LONGFORM_DELETE_REQUESTED outbox event: missing metadata",
+        { postId: deleted.id, userId: deleted.userId, correlationId }
+      );
+    }
+
+    return deleted;
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Failed to delete longform post and emit outbox events",
+      postId: id,
+      userId,
+      correlationId,
+    });
+    throw error;
+  }
 }
 
 export async function publishLongFormPost({

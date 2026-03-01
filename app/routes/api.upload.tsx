@@ -46,7 +46,8 @@ export const action = withCSRFProtection(
       if (
         provider === "BLOSSOM_PRIMAL" ||
         provider === "BLOSSOM_BLOSSTR" ||
-        provider === "BLOSSOM_SFS"
+        provider === "BLOSSOM_SFS" ||
+        provider === "BLOSSOM_CUSTOM"
       ) {
         const { createErrorResponse } =
           await import("~/lib/error-handler.server");

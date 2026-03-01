@@ -46,6 +46,30 @@ vi.mock("~/infra/outbox/read-model-worker.server", () => ({
   updateReadModels: vi.fn(),
 }));
 
+vi.mock("~/features/nostr/delete-event.server", () => ({
+  buildPostKind5DeleteDraft: vi.fn(),
+  buildLongFormKind5DeleteDraft: vi.fn(),
+}));
+
+vi.mock("~/features/relays/relay-resolution.server", () => ({
+  resolveExecutionRelays: vi.fn(),
+}));
+
+vi.mock("~/features/relays/publish-relay-acks.server", () => ({
+  persistPublishRelayAcks: vi.fn(),
+}));
+
+vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
+  getNostrPublisher: vi.fn(),
+}));
+
+vi.mock("~/lib/nostr-adapter.server", () => ({
+  nostrAdapter: {
+    getPublicKey: vi.fn(),
+    finalizeEvent: vi.fn(),
+  },
+}));
+
 vi.mock("~/lib/error-logger.server", () => ({
   logInfo: vi.fn(),
   logError: vi.fn(),
@@ -62,6 +86,12 @@ vi.mock("~/lib/metrics/performance-metrics.server", () => ({
   recordOutboxProcessingDuration: vi.fn(),
 }));
 
+import {
+  buildPostKind5DeleteDraft,
+  buildLongFormKind5DeleteDraft,
+} from "~/features/nostr/delete-event.server";
+import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { processOutboxEvents } from "~/infra/outbox/outbox-worker.server";
 import {
   getUnprocessedOutboxEvents,
@@ -71,6 +101,7 @@ import {
   deadLetterOutboxEvent,
   getOutboxBacklogCounts,
 } from "~/infra/outbox/outbox.server";
+import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import { queueClient } from "~/infra/queue/queue-client.server";
 import { processPayloadWithVersion } from "~/infra/queue/version-handler.server";
 import {
@@ -78,6 +109,7 @@ import {
   recordOutboxEventRetried,
   recordOutboxEventDeadLettered,
 } from "~/lib/metrics/business-metrics.server";
+import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 const ANY_DATE = expect.any(Date) as unknown as Date;
 const ANY_STRING = expect.any(String) as unknown as string;
@@ -87,6 +119,7 @@ const stringContaining = (value: string): string =>
 describe("Outbox Worker", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env["NOSTR_NSEC"] = "nsec-test";
     (claimOutboxEvent as ReturnType<typeof vi.fn>).mockResolvedValue({
       lockId: "lock-1",
       expiresAt: new Date(Date.now() + 30000),
@@ -100,6 +133,49 @@ describe("Outbox Worker", () => {
       pending: 0,
       ready: 0,
       deadLettered: 0,
+    });
+    (buildPostKind5DeleteDraft as ReturnType<typeof vi.fn>).mockReturnValue({
+      expectedPubkey: "pubkey-1",
+      unsignedEvent: {
+        kind: 5,
+        content: "Deleted via SmartFlow",
+        created_at: 1234567890,
+        tags: [["e", "event-1"]],
+      },
+    });
+    (buildLongFormKind5DeleteDraft as ReturnType<typeof vi.fn>).mockReturnValue(
+      {
+        expectedPubkey: "pubkey-1",
+        unsignedEvent: {
+          kind: 5,
+          content: "Deleted via SmartFlow",
+          created_at: 1234567890,
+          tags: [["a", "30023:pub:d"]],
+        },
+      }
+    );
+    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue([
+      "wss://relay.example.com",
+    ]);
+    (persistPublishRelayAcks as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined
+    );
+    (nostrAdapter.getPublicKey as ReturnType<typeof vi.fn>).mockReturnValue(
+      "pubkey-1"
+    );
+    (nostrAdapter.finalizeEvent as ReturnType<typeof vi.fn>).mockReturnValue({
+      id: "delete-event-1",
+      pubkey: "pubkey-1",
+      created_at: 1234567890,
+      kind: 5,
+      tags: [["e", "event-1"]],
+      content: "Deleted via SmartFlow",
+      sig: "sig-1",
+    });
+    (getNostrPublisher as ReturnType<typeof vi.fn>).mockReturnValue({
+      publish: vi.fn().mockResolvedValue({
+        results: [{ relay: "wss://relay.example.com", ok: true }],
+      }),
     });
   });
 
@@ -280,6 +356,91 @@ describe("Outbox Worker", () => {
         "longform-1"
       );
       expect(markOutboxEventSucceeded).toHaveBeenCalled();
+    });
+
+    it("should process POST_DELETE_REQUESTED event successfully", async () => {
+      const mockEvent = {
+        id: "event-delete-1",
+        eventType: "POST_DELETE_REQUESTED" as const,
+        aggregateId: "post-1",
+        aggregateType: "Post",
+        payload: {
+          postId: "post-1",
+          userId: "user-1",
+          originalEventId: "nostr-event-1",
+          originalEventPubkey: "pubkey-1",
+          schemaVersion: "1.0",
+        },
+        scheduledFor: null,
+        correlationId: "corr-delete-1",
+        createdAt: new Date(),
+        processedAt: null,
+        processingError: null,
+        attempts: 0,
+      };
+      (
+        getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
+      ).mockResolvedValue([mockEvent]);
+
+      const result = await processOutboxEvents();
+
+      expect(result.processed).toBe(1);
+      expect(result.errors).toBe(0);
+      expect(buildPostKind5DeleteDraft).toHaveBeenCalled();
+      expect(resolveExecutionRelays).toHaveBeenCalledWith("user-1");
+      const publisher = (getNostrPublisher as ReturnType<typeof vi.fn>).mock
+        .results[0]?.value as { publish: ReturnType<typeof vi.fn> };
+      expect(publisher.publish).toHaveBeenCalled();
+      expect(persistPublishRelayAcks).toHaveBeenCalledWith(
+        expect.objectContaining({
+          publishAttemptId: "delete:post-1:nostr-event-1",
+          userId: "user-1",
+          eventId: "delete-event-1",
+        })
+      );
+      expect(markOutboxEventSucceeded).toHaveBeenCalledWith(
+        expect.objectContaining({ eventId: "event-delete-1", lockId: "lock-1" })
+      );
+    });
+
+    it("should dead-letter non-retryable delete signer mismatch", async () => {
+      (nostrAdapter.getPublicKey as ReturnType<typeof vi.fn>).mockReturnValue(
+        "different-pubkey"
+      );
+      const mockEvent = {
+        id: "event-delete-2",
+        eventType: "POST_DELETE_REQUESTED" as const,
+        aggregateId: "post-2",
+        aggregateType: "Post",
+        payload: {
+          postId: "post-2",
+          userId: "user-1",
+          originalEventId: "nostr-event-2",
+          originalEventPubkey: "pubkey-1",
+          schemaVersion: "1.0",
+        },
+        scheduledFor: null,
+        correlationId: null,
+        createdAt: new Date(),
+        processedAt: null,
+        processingError: null,
+        attempts: 0,
+      };
+      (
+        getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
+      ).mockResolvedValue([mockEvent]);
+
+      const result = await processOutboxEvents();
+
+      expect(result.processed).toBe(0);
+      expect(result.errors).toBe(1);
+      expect(deadLetterOutboxEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ eventId: "event-delete-2", lockId: "lock-1" })
+      );
+      expect(recordOutboxEventDeadLettered).toHaveBeenCalledWith(
+        "POST_DELETE_REQUESTED",
+        "non_retryable"
+      );
     });
 
     it("should update read models for read model events", async () => {

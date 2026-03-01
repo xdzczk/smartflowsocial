@@ -495,6 +495,7 @@ export default function DashboardIndexPage() {
         <PostDetailsModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
+          onDeleted={() => revalidator.revalidate()}
           onEdit={(p) => {
             setSelectedPost(null);
             _handleEditPost(p as PostData);
@@ -514,6 +515,7 @@ export default function DashboardIndexPage() {
         <LongFormDetailsModal
           post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
+          onDeleted={() => revalidator.revalidate()}
           onEdit={(p) => {
             setSelectedLongFormPost(null);
             _handleEditPost(p as LongFormPostData);

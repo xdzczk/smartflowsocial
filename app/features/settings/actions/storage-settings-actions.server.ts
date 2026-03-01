@@ -4,8 +4,10 @@
 
 import { json } from "@remix-run/node";
 
+import { isSubscriptionActiveForGating } from "~/features/payments/subscriptions.server";
 import {
-  updateUserUploadProvider,
+  resolveUploadProviderWithTierDefaults,
+  updateUserUploadProviderSettings,
   updateUserEnableMirrorBlossom,
   updateUserMirrorUploadUrls,
 } from "~/features/user";
@@ -28,10 +30,23 @@ export async function handleStorageSettingsAction(
     if (!result.success) {
       return result.response;
     }
-    await updateUserUploadProvider(userId, result.data.uploadProvider);
+    const isPaidActive = await isSubscriptionActiveForGating(userId);
+    const resolvedProvider = resolveUploadProviderWithTierDefaults({
+      persistedProvider: result.data.uploadProvider,
+      isPaidActive,
+    });
+    await updateUserUploadProviderSettings(
+      userId,
+      resolvedProvider,
+      result.data.customBlossomUrl
+    );
     return json({
       success: true,
-      uploadProvider: result.data.uploadProvider,
+      uploadProvider: resolvedProvider,
+      customBlossomUrl:
+        resolvedProvider === "BLOSSOM_CUSTOM"
+          ? result.data.customBlossomUrl
+          : null,
       invalidateUploadProviderCache: true,
     });
   }

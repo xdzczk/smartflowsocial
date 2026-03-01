@@ -16,6 +16,7 @@ model User {
   userRelays                 String[]       @default(["wss://relay.bullishbounty.com", "wss://relay.snort.social", "wss://relay.primal.net", "wss://relay.damus.io", "wss://relay.nostr.band"])
   giveawayBlackListed        String[]       @default([])
   uploadProvider             UploadProvider @default(S3)
+  customBlossomUrl           String?
   showHashTagsinPosts        Boolean        @default(false)
   scheduleInterval           String[]       @default(["0.25", "0.5", "1", "2", "4", "12", "24"])
   nostrProfile               Json?
@@ -429,6 +430,7 @@ enum UploadProvider {
   BLOSSOM_PRIMAL
   BLOSSOM_BLOSSTR
   BLOSSOM_SFS
+  BLOSSOM_CUSTOM
 }
 
 enum PaymentStatus {

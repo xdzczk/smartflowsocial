@@ -10,6 +10,7 @@ import {
 } from "~/lib/temporal";
 import type { UserData } from "~/lib/validation/user-data";
 
+import { useRefreshPostViews } from "./hooks/useRefreshPostViews";
 import type {
   BulkPost,
   CombinedContent,
@@ -77,6 +78,7 @@ export function usePublishedPosts({
   onOpenBulkComposer,
 }: UsePublishedPostsProps) {
   const _revalidator = useRevalidator();
+  const refreshAllPostViews = useRefreshPostViews();
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
@@ -288,6 +290,20 @@ export function usePublishedPosts({
       setSelectedPosts(new Set());
     }
   }, [bulkDeleteFetcher.data]);
+
+  useEffect(() => {
+    const isSuccess =
+      bulkDeleteFetcher.state === "idle" && bulkDeleteFetcher.data?.success;
+    if (!isSuccess) return;
+    refreshAllPostViews();
+  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, refreshAllPostViews]);
+
+  useEffect(() => {
+    const isSuccess =
+      deleteFetcher.state === "idle" && deleteFetcher.data?.success;
+    if (!isSuccess) return;
+    refreshAllPostViews();
+  }, [deleteFetcher.state, deleteFetcher.data, refreshAllPostViews]);
 
   useEffect(() => {
     if (repostFetcher.data?.repostData) {

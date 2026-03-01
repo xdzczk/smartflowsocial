@@ -5,6 +5,7 @@
 
 import { json } from "@remix-run/node";
 
+import { cancelPostJob, cancelLongFormPostJob } from "~/infra/queue";
 import {
   scheduledActionSchema,
   validateFormDataOrRespond,
@@ -61,12 +62,14 @@ export async function handleScheduledAction(
   }
 
   if (_action === "delete") {
+    await cancelPostJob(result.data.postId);
     const deletedPost = await deletePost({ id: result.data.postId, userId });
     // Return success even if post was already deleted (idempotent operation)
     return { success: true, deleted: deletedPost !== null };
   }
 
   if (_action === "deleteLongForm") {
+    await cancelLongFormPostJob(result.data.postId);
     const deletedPost = await deleteLongFormPost({
       id: result.data.postId,
       userId,
@@ -76,6 +79,9 @@ export async function handleScheduledAction(
   }
 
   if (_action === "bulkDelete") {
+    await Promise.all(
+      result.data.postIds.map(async (id: string) => await cancelPostJob(id))
+    );
     const results = await Promise.all(
       result.data.postIds.map((id: string) => deletePost({ id, userId }))
     );
@@ -84,6 +90,11 @@ export async function handleScheduledAction(
   }
 
   if (_action === "bulkDeleteLongForm") {
+    await Promise.all(
+      result.data.postIds.map(
+        async (id: string) => await cancelLongFormPostJob(id)
+      )
+    );
     const results = await Promise.all(
       result.data.postIds.map((id: string) =>
         deleteLongFormPost({ id, userId })
@@ -94,6 +105,15 @@ export async function handleScheduledAction(
   }
 
   // TypeScript guarantees this is "bulkDeleteMixed" after previous checks
+  await Promise.all(
+    result.data.itemData.map(async (item) => {
+      if (item.type === "post") {
+        await cancelPostJob(item.id);
+        return;
+      }
+      await cancelLongFormPostJob(item.id);
+    })
+  );
   const promises = result.data.itemData.map((item) => {
     if (item.type === "post") {
       return deletePost({ id: item.id, userId });

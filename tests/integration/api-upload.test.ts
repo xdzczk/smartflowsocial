@@ -109,6 +109,36 @@ describe("API: Upload", () => {
     });
 
     describe("Error Handling", () => {
+      it("should block S3 endpoint for custom Blossom provider", async () => {
+        (
+          loadUploadProviderSettings as ReturnType<typeof vi.fn>
+        ).mockResolvedValue({
+          provider: "BLOSSOM_CUSTOM",
+        });
+
+        const request = new Request("http://localhost:3000/api/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        const response = await action({ request, params: {}, context: {} });
+        const responseObj =
+          response instanceof Response
+            ? response
+            : new Response(JSON.stringify(response));
+        const dataRaw: unknown = await responseObj.json();
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { error?: unknown; success?: unknown })
+            : {};
+
+        expect(responseObj.status).toBe(400);
+        const errorText = JSON.stringify(data);
+        expect(errorText.includes("Blossom")).toBe(true);
+      });
+
       it("should require authentication", async () => {
         (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
           new Error("Authentication required")

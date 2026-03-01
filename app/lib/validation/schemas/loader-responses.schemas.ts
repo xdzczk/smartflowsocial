@@ -73,6 +73,7 @@ export const userSchema = z.object({
     "BLOSSOM_PRIMAL",
     "BLOSSOM_BLOSSTR",
     "BLOSSOM_SFS",
+    "BLOSSOM_CUSTOM",
   ]),
   scheduleInterval: z.array(z.union([z.string(), z.number()])),
   pendingParentRequests: z.array(z.string()),

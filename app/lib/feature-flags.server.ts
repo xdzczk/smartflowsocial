@@ -36,4 +36,12 @@ export const featureFlags = {
    * Enables unified media ingest pipeline (`/api/media/intents` + `/api/media/commit`).
    */
   mediaPipelineV2Enabled: parseBooleanEnv(env.MEDIA_PIPELINE_V2_ENABLED, true),
+
+  /**
+   * Enables outbox-driven Nostr delete requests (kind:5).
+   */
+  nostrDeleteEventsEnabled: parseBooleanEnv(
+    env.ENABLE_NOSTR_DELETE_EVENTS,
+    false
+  ),
 } as const;

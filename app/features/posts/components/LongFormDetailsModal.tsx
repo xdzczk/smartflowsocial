@@ -300,6 +300,7 @@ interface LongFormDetailsModalProps {
   showSignedEvent?: boolean;
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
+  onDeleted?: (postId: string) => void;
 }
 
 export default function LongFormDetailsModal({
@@ -311,6 +312,7 @@ export default function LongFormDetailsModal({
   showSignedEvent = false,
   userTimezone = "UTC",
   userTimeFormat = "12h",
+  onDeleted,
 }: LongFormDetailsModalProps) {
   const { dateLocale } = useFormattedDate();
   const [showEventData, setShowEventData] = useState(false);
@@ -328,6 +330,7 @@ export default function LongFormDetailsModal({
       (submittedPostId === post.id ||
         String(submittedPostId) === String(post.id));
     if (isOurDelete) {
+      onDeleted?.(post.id);
       onClose();
     }
   }, [
@@ -335,6 +338,7 @@ export default function LongFormDetailsModal({
     deleteFetcher.data,
     deleteFetcher.formData,
     post.id,
+    onDeleted,
     onClose,
   ]);
 

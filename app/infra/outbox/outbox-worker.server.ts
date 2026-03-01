@@ -6,6 +6,13 @@
  */
 
 import {
+  buildLongFormKind5DeleteDraft,
+  buildPostKind5DeleteDraft,
+} from "~/features/nostr/delete-event.server";
+import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
+import {
   processPayloadWithVersion,
   CURRENT_VERSION,
   getPayloadVersion,
@@ -24,6 +31,7 @@ import {
   setOutboxBacklog,
 } from "~/lib/metrics/business-metrics.server";
 import { recordOutboxProcessingDuration } from "~/lib/metrics/performance-metrics.server";
+import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { buildObsContext } from "~/lib/observability-context.server";
 import { recordJobMetrics, recordJobStarted } from "~/lib/queue-metrics.server";
 
@@ -43,6 +51,8 @@ import {
   getOutboxBacklogCounts,
   type PostScheduledPayload,
   type LongFormPostScheduledPayload,
+  type PostDeleteRequestedPayload,
+  type LongFormDeleteRequestedPayload,
   type OutboxEventType,
 } from "./outbox.server";
 import { updateReadModels } from "./read-model-worker.server";
@@ -74,220 +84,501 @@ function isDefinitelyNonRetryableOutboxError(error: Error): boolean {
     msg.includes("unknown event type") ||
     msg.includes("failed to process payload version") ||
     msg.includes("payload version") ||
-    msg.includes("schema version")
+    msg.includes("schema version") ||
+    msg.includes("invalid delete payload") ||
+    msg.includes("nostr_nsec") ||
+    msg.includes("delete signer pubkey mismatch")
   );
+}
+
+function parsePostDeleteRequestedPayload(
+  payload: unknown
+): PostDeleteRequestedPayload {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Invalid delete payload: expected object");
+  }
+
+  const data = payload as {
+    postId?: unknown;
+    userId?: unknown;
+    originalEventId?: unknown;
+    originalEventPubkey?: unknown;
+    reason?: unknown;
+    schemaVersion?: unknown;
+    correlationId?: unknown;
+  };
+
+  if (
+    typeof data.postId !== "string" ||
+    typeof data.userId !== "string" ||
+    typeof data.originalEventId !== "string" ||
+    typeof data.originalEventPubkey !== "string" ||
+    typeof data.schemaVersion !== "string"
+  ) {
+    throw new Error("Invalid delete payload: missing required fields");
+  }
+
+  return {
+    postId: data.postId,
+    userId: data.userId,
+    originalEventId: data.originalEventId,
+    originalEventPubkey: data.originalEventPubkey,
+    reason: typeof data.reason === "string" ? data.reason : undefined,
+    schemaVersion: data.schemaVersion,
+    correlationId:
+      typeof data.correlationId === "string" ? data.correlationId : undefined,
+  };
+}
+
+function parseLongFormDeleteRequestedPayload(
+  payload: unknown
+): LongFormDeleteRequestedPayload {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Invalid delete payload: expected object");
+  }
+
+  const data = payload as {
+    postId?: unknown;
+    userId?: unknown;
+    aCoordinate?: unknown;
+    originalEventId?: unknown;
+    originalEventPubkey?: unknown;
+    reason?: unknown;
+    schemaVersion?: unknown;
+    correlationId?: unknown;
+  };
+
+  if (
+    typeof data.postId !== "string" ||
+    typeof data.userId !== "string" ||
+    typeof data.aCoordinate !== "string" ||
+    typeof data.originalEventPubkey !== "string" ||
+    typeof data.schemaVersion !== "string"
+  ) {
+    throw new Error("Invalid delete payload: missing required fields");
+  }
+
+  return {
+    postId: data.postId,
+    userId: data.userId,
+    aCoordinate: data.aCoordinate,
+    originalEventId:
+      typeof data.originalEventId === "string"
+        ? data.originalEventId
+        : undefined,
+    originalEventPubkey: data.originalEventPubkey,
+    reason: typeof data.reason === "string" ? data.reason : undefined,
+    schemaVersion: data.schemaVersion,
+    correlationId:
+      typeof data.correlationId === "string" ? data.correlationId : undefined,
+  };
+}
+
+interface ProcessableOutboxEvent {
+  id: string;
+  eventType: OutboxEventType;
+  aggregateId: string;
+  payload: unknown;
+  createdAt: Date;
+  scheduledFor: Date | null;
+  correlationId?: string | null;
+}
+
+function getCorrelationId(event: ProcessableOutboxEvent): string | undefined {
+  return event.correlationId ?? undefined;
+}
+
+function getVersionedPayload<
+  T extends PostScheduledPayload | LongFormPostScheduledPayload,
+>(
+  event: ProcessableOutboxEvent
+): {
+  payload: T;
+  version: string | undefined;
+} {
+  const versionResult = processPayloadWithVersion<T>(event.payload, {
+    eventId: event.id,
+    aggregateId: event.aggregateId,
+  });
+
+  if (!versionResult.success || !versionResult.payload) {
+    throw new Error(versionResult.error ?? "Failed to process payload version");
+  }
+
+  return {
+    payload: versionResult.payload,
+    version: versionResult.version,
+  };
+}
+
+function logPayloadMigration(params: {
+  event: ProcessableOutboxEvent;
+  postId: string;
+  correlationId: string | undefined;
+  version: string | undefined;
+}): void {
+  if (!params.version || params.version === CURRENT_VERSION) {
+    return;
+  }
+
+  logInfo(
+    "Processed payload with version migration",
+    buildObsContext({
+      postId: params.postId,
+      outboxEventId: params.event.id,
+      correlationId: params.correlationId,
+      eventType: params.event.eventType,
+    })
+  );
+  logInfo("Outbox payload schema migration details", {
+    postId: params.postId,
+    eventId: params.event.id,
+    originalVersion: getPayloadVersion(params.event.payload),
+    migratedVersion: params.version,
+  });
+}
+
+async function enqueueScheduledEvent(params: {
+  queueName:
+    | typeof QUEUE_SCHEDULED_POSTS
+    | typeof QUEUE_SCHEDULED_LONGFORM_POSTS;
+  jobName: typeof JOB_PUBLISH_POST | typeof JOB_PUBLISH_LONGFORM_POST;
+  event: ProcessableOutboxEvent;
+  postId: string;
+  userId: string;
+  signedEvent: PostJobData["signedEvent"];
+  scheduledFor: number;
+  correlationId: string | undefined;
+  duplicateLogMessage: string;
+  successLogMessage: string;
+  defaultErrorMessage: string;
+  schemaVersion: string | undefined;
+}): Promise<void> {
+  const result = await queueClient.enqueue<PostJobData | LongFormPostJobData>(
+    params.queueName,
+    params.jobName,
+    {
+      postId: params.postId,
+      userId: params.userId,
+      signedEvent: params.signedEvent,
+      correlationId: params.correlationId,
+    },
+    {
+      scheduledFor: params.scheduledFor,
+      jobId: params.postId,
+    }
+  );
+
+  if (!result.success) {
+    const errorMessage = result.error ?? params.defaultErrorMessage;
+    if (isDuplicateJobIdError(errorMessage)) {
+      logInfo(
+        params.duplicateLogMessage,
+        buildObsContext({
+          postId: params.postId,
+          outboxEventId: params.event.id,
+          correlationId: params.correlationId,
+          eventType: params.event.eventType,
+          queueName: params.queueName,
+          jobId: params.postId,
+        })
+      );
+      return;
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  logInfo(params.successLogMessage, {
+    ...buildObsContext({
+      postId: params.postId,
+      outboxEventId: params.event.id,
+      correlationId: params.correlationId,
+      eventType: params.event.eventType,
+      queueName: params.queueName,
+      jobId: params.postId,
+    }),
+    schemaVersion: params.schemaVersion,
+  });
+}
+
+async function handlePostScheduled(
+  event: ProcessableOutboxEvent
+): Promise<void> {
+  const correlationId = getCorrelationId(event);
+  const { payload, version } = getVersionedPayload<PostScheduledPayload>(event);
+
+  logPayloadMigration({
+    event,
+    postId: payload.postId,
+    correlationId: payload.correlationId ?? correlationId,
+    version,
+  });
+
+  await enqueueScheduledEvent({
+    queueName: QUEUE_SCHEDULED_POSTS,
+    jobName: JOB_PUBLISH_POST,
+    event,
+    postId: payload.postId,
+    userId: payload.userId,
+    signedEvent: payload.signedEvent,
+    scheduledFor: payload.scheduledFor,
+    correlationId: payload.correlationId ?? correlationId,
+    duplicateLogMessage:
+      "Post job already enqueued; treating outbox as idempotent",
+    successLogMessage: "Enqueued post job from outbox",
+    defaultErrorMessage: "Failed to enqueue post job",
+    schemaVersion: version,
+  });
+}
+
+async function handleLongFormScheduled(
+  event: ProcessableOutboxEvent
+): Promise<void> {
+  const correlationId = getCorrelationId(event);
+  const { payload, version } =
+    getVersionedPayload<LongFormPostScheduledPayload>(event);
+
+  logPayloadMigration({
+    event,
+    postId: payload.postId,
+    correlationId: payload.correlationId ?? correlationId,
+    version,
+  });
+
+  await enqueueScheduledEvent({
+    queueName: QUEUE_SCHEDULED_LONGFORM_POSTS,
+    jobName: JOB_PUBLISH_LONGFORM_POST,
+    event,
+    postId: payload.postId,
+    userId: payload.userId,
+    signedEvent: payload.signedEvent,
+    scheduledFor: payload.scheduledFor,
+    correlationId: payload.correlationId ?? correlationId,
+    duplicateLogMessage:
+      "Longform job already enqueued; treating outbox as idempotent",
+    successLogMessage: "Enqueued longform post job from outbox",
+    defaultErrorMessage: "Failed to enqueue longform post job",
+    schemaVersion: version,
+  });
+}
+
+async function handleCancelledEvent(
+  event: ProcessableOutboxEvent
+): Promise<void> {
+  const correlationId = getCorrelationId(event);
+  const queueName =
+    event.eventType === "POST_CANCELLED"
+      ? QUEUE_SCHEDULED_POSTS
+      : QUEUE_SCHEDULED_LONGFORM_POSTS;
+  const cancelled = await queueClient.cancelByData(
+    queueName,
+    "postId",
+    event.aggregateId
+  );
+
+  if (!cancelled) {
+    return;
+  }
+
+  logInfo(
+    "Cancelled job from outbox",
+    buildObsContext({
+      postId: event.aggregateId,
+      outboxEventId: event.id,
+      correlationId,
+      eventType: event.eventType,
+    })
+  );
+}
+
+function getDeleteSignerSecret(): string {
+  const signerSecret = process.env["NOSTR_NSEC"]?.trim();
+  if (!signerSecret) {
+    throw new Error("NOSTR_NSEC not configured for delete event signing");
+  }
+  return signerSecret;
+}
+
+async function handlePostDeleteRequested(
+  event: ProcessableOutboxEvent
+): Promise<void> {
+  const correlationId = getCorrelationId(event);
+  const payload = parsePostDeleteRequestedPayload(event.payload);
+  const signerSecret = getDeleteSignerSecret();
+
+  const draft = buildPostKind5DeleteDraft(
+    payload,
+    Math.floor(event.createdAt.getTime() / 1000)
+  );
+  if (!draft) {
+    throw new Error("Invalid delete payload: could not build kind5 draft");
+  }
+
+  const signerPubkey = nostrAdapter.getPublicKey(signerSecret);
+  if (signerPubkey !== draft.expectedPubkey) {
+    throw new Error("Delete signer pubkey mismatch");
+  }
+
+  const signedDeleteEvent = nostrAdapter.finalizeEvent(
+    draft.unsignedEvent,
+    signerSecret
+  );
+  const relays = await resolveExecutionRelays(payload.userId);
+
+  logInfo("Publishing post delete request to relays", {
+    ...buildObsContext({
+      postId: payload.postId,
+      userId: payload.userId,
+      correlationId: payload.correlationId ?? correlationId,
+      outboxEventId: event.id,
+      eventType: event.eventType,
+    }),
+    targetEventId: payload.originalEventId,
+    relayCount: relays.length,
+  });
+
+  const publishResult = await getNostrPublisher().publish(
+    signedDeleteEvent,
+    relays,
+    payload.correlationId ?? correlationId
+  );
+
+  try {
+    await persistPublishRelayAcks({
+      publishAttemptId: `delete:${payload.postId}:${payload.originalEventId}`,
+      userId: payload.userId,
+      eventId: signedDeleteEvent.id,
+      results: publishResult.results,
+    });
+  } catch (ackError) {
+    logError(
+      ackError instanceof Error ? ackError : new Error(String(ackError)),
+      {
+        ...buildObsContext({
+          postId: payload.postId,
+          userId: payload.userId,
+          correlationId: payload.correlationId ?? correlationId,
+          outboxEventId: event.id,
+          eventType: event.eventType,
+        }),
+        message: "Failed to persist post delete relay ACKs",
+      }
+    );
+  }
+
+  logInfo("Published post delete request to relays", {
+    ...buildObsContext({
+      postId: payload.postId,
+      userId: payload.userId,
+      correlationId: payload.correlationId ?? correlationId,
+      outboxEventId: event.id,
+      eventType: event.eventType,
+    }),
+    deleteEventId: signedDeleteEvent.id,
+  });
+}
+
+async function handleLongFormDeleteRequested(
+  event: ProcessableOutboxEvent
+): Promise<void> {
+  const correlationId = getCorrelationId(event);
+  const payload = parseLongFormDeleteRequestedPayload(event.payload);
+  const signerSecret = getDeleteSignerSecret();
+
+  const draft = buildLongFormKind5DeleteDraft(
+    payload,
+    Math.floor(event.createdAt.getTime() / 1000)
+  );
+  if (!draft) {
+    throw new Error("Invalid delete payload: could not build kind5 draft");
+  }
+
+  const signerPubkey = nostrAdapter.getPublicKey(signerSecret);
+  if (signerPubkey !== draft.expectedPubkey) {
+    throw new Error("Delete signer pubkey mismatch");
+  }
+
+  const signedDeleteEvent = nostrAdapter.finalizeEvent(
+    draft.unsignedEvent,
+    signerSecret
+  );
+  const relays = await resolveExecutionRelays(payload.userId);
+
+  logInfo("Publishing longform delete request to relays", {
+    ...buildObsContext({
+      postId: payload.postId,
+      userId: payload.userId,
+      correlationId: payload.correlationId ?? correlationId,
+      outboxEventId: event.id,
+      eventType: event.eventType,
+    }),
+    aCoordinate: payload.aCoordinate,
+    relayCount: relays.length,
+  });
+
+  const publishResult = await getNostrPublisher().publish(
+    signedDeleteEvent,
+    relays,
+    payload.correlationId ?? correlationId
+  );
+
+  try {
+    await persistPublishRelayAcks({
+      publishAttemptId: `delete:${payload.postId}:${payload.aCoordinate}`,
+      userId: payload.userId,
+      eventId: signedDeleteEvent.id,
+      results: publishResult.results,
+    });
+  } catch (ackError) {
+    logError(
+      ackError instanceof Error ? ackError : new Error(String(ackError)),
+      {
+        ...buildObsContext({
+          postId: payload.postId,
+          userId: payload.userId,
+          correlationId: payload.correlationId ?? correlationId,
+          outboxEventId: event.id,
+          eventType: event.eventType,
+        }),
+        message: "Failed to persist longform delete relay ACKs",
+      }
+    );
+  }
+
+  logInfo("Published longform delete request to relays", {
+    ...buildObsContext({
+      postId: payload.postId,
+      userId: payload.userId,
+      correlationId: payload.correlationId ?? correlationId,
+      outboxEventId: event.id,
+      eventType: event.eventType,
+    }),
+    deleteEventId: signedDeleteEvent.id,
+  });
 }
 
 /**
  * Process a single outbox event
  */
-async function processEvent(event: {
-  id: string;
-  eventType: OutboxEventType;
-  aggregateId: string;
-  payload: unknown;
-  scheduledFor: Date | null;
-  correlationId?: string | null;
-}) {
-  const correlationId = event.correlationId ?? undefined;
-
+async function processEvent(event: ProcessableOutboxEvent) {
   switch (event.eventType) {
-    case "POST_SCHEDULED": {
-      // Process payload with version handling
-      const versionResult = processPayloadWithVersion<PostScheduledPayload>(
-        event.payload,
-        {
-          eventId: event.id,
-          aggregateId: event.aggregateId,
-        }
-      );
-
-      if (!versionResult.success || !versionResult.payload) {
-        throw new Error(
-          versionResult.error ?? "Failed to process payload version"
-        );
-      }
-
-      const payload = versionResult.payload;
-      const scheduledFor = payload.scheduledFor;
-
-      // Log version if different from current
-      if (versionResult.version && versionResult.version !== CURRENT_VERSION) {
-        logInfo(
-          "Processed payload with version migration",
-          buildObsContext({
-            postId: payload.postId,
-            outboxEventId: event.id,
-            correlationId: payload.correlationId ?? correlationId,
-            eventType: event.eventType,
-          })
-        );
-        logInfo("Outbox payload schema migration details", {
-          postId: payload.postId,
-          eventId: event.id,
-          originalVersion: getPayloadVersion(event.payload),
-          migratedVersion: versionResult.version,
-        });
-      }
-
-      const result = await queueClient.enqueue<PostJobData>(
-        QUEUE_SCHEDULED_POSTS,
-        JOB_PUBLISH_POST,
-        {
-          postId: payload.postId,
-          userId: payload.userId,
-          signedEvent: payload.signedEvent,
-          correlationId: payload.correlationId ?? correlationId, // Preserve correlation ID
-        },
-        {
-          scheduledFor,
-          jobId: payload.postId, // Deterministic jobId for cancellation
-        }
-      );
-
-      if (!result.success) {
-        const errorMessage = result.error ?? "Failed to enqueue post job";
-        if (isDuplicateJobIdError(errorMessage)) {
-          // Treat deterministic jobId collisions as idempotent success.
-          logInfo(
-            "Post job already enqueued; treating outbox as idempotent",
-            buildObsContext({
-              postId: payload.postId,
-              outboxEventId: event.id,
-              correlationId: payload.correlationId ?? correlationId,
-              eventType: event.eventType,
-              queueName: QUEUE_SCHEDULED_POSTS,
-              jobId: payload.postId,
-            })
-          );
-          break;
-        }
-        throw new Error(errorMessage);
-      }
-
-      logInfo("Enqueued post job from outbox", {
-        ...buildObsContext({
-          postId: payload.postId,
-          outboxEventId: event.id,
-          correlationId: payload.correlationId ?? correlationId,
-          eventType: event.eventType,
-          queueName: QUEUE_SCHEDULED_POSTS,
-          jobId: payload.postId,
-        }),
-        schemaVersion: versionResult.version,
-      });
+    case "POST_SCHEDULED":
+      await handlePostScheduled(event);
       break;
-    }
-
-    case "LONGFORM_SCHEDULED": {
-      // Process payload with version handling
-      const versionResult =
-        processPayloadWithVersion<LongFormPostScheduledPayload>(event.payload, {
-          eventId: event.id,
-          aggregateId: event.aggregateId,
-        });
-
-      if (!versionResult.success || !versionResult.payload) {
-        throw new Error(
-          versionResult.error ?? "Failed to process payload version"
-        );
-      }
-
-      const payload = versionResult.payload;
-      const scheduledFor = payload.scheduledFor;
-
-      // Log version if different from current
-      if (versionResult.version && versionResult.version !== CURRENT_VERSION) {
-        logInfo(
-          "Processed payload with version migration",
-          buildObsContext({
-            postId: payload.postId,
-            outboxEventId: event.id,
-            correlationId: payload.correlationId ?? correlationId,
-            eventType: event.eventType,
-          })
-        );
-        logInfo("Outbox payload schema migration details", {
-          postId: payload.postId,
-          eventId: event.id,
-          originalVersion: getPayloadVersion(event.payload),
-          migratedVersion: versionResult.version,
-        });
-      }
-
-      const result = await queueClient.enqueue<LongFormPostJobData>(
-        QUEUE_SCHEDULED_LONGFORM_POSTS,
-        JOB_PUBLISH_LONGFORM_POST,
-        {
-          postId: payload.postId,
-          userId: payload.userId,
-          signedEvent: payload.signedEvent,
-          correlationId: payload.correlationId ?? correlationId, // Preserve correlation ID
-        },
-        {
-          scheduledFor,
-          jobId: payload.postId,
-        }
-      );
-
-      if (!result.success) {
-        const errorMessage =
-          result.error ?? "Failed to enqueue longform post job";
-        if (isDuplicateJobIdError(errorMessage)) {
-          logInfo(
-            "Longform job already enqueued; treating outbox as idempotent",
-            buildObsContext({
-              postId: payload.postId,
-              outboxEventId: event.id,
-              correlationId: payload.correlationId ?? correlationId,
-              eventType: event.eventType,
-              queueName: QUEUE_SCHEDULED_LONGFORM_POSTS,
-              jobId: payload.postId,
-            })
-          );
-          break;
-        }
-        throw new Error(errorMessage);
-      }
-
-      logInfo("Enqueued longform post job from outbox", {
-        ...buildObsContext({
-          postId: payload.postId,
-          outboxEventId: event.id,
-          correlationId: payload.correlationId ?? correlationId,
-          eventType: event.eventType,
-          queueName: QUEUE_SCHEDULED_LONGFORM_POSTS,
-          jobId: payload.postId,
-        }),
-        schemaVersion: versionResult.version,
-      });
+    case "LONGFORM_SCHEDULED":
+      await handleLongFormScheduled(event);
       break;
-    }
-
     case "POST_CANCELLED":
-    case "LONGFORM_CANCELLED": {
-      // Cancel job in BullMQ
-      const cancelled = await queueClient.cancelByData(
-        event.eventType === "POST_CANCELLED"
-          ? QUEUE_SCHEDULED_POSTS
-          : QUEUE_SCHEDULED_LONGFORM_POSTS,
-        "postId",
-        event.aggregateId
-      );
-
-      if (cancelled) {
-        logInfo(
-          "Cancelled job from outbox",
-          buildObsContext({
-            postId: event.aggregateId,
-            outboxEventId: event.id,
-            correlationId,
-            eventType: event.eventType,
-          })
-        );
-      }
+    case "LONGFORM_CANCELLED":
+      await handleCancelledEvent(event);
       break;
-    }
+    case "POST_DELETE_REQUESTED":
+      await handlePostDeleteRequested(event);
+      break;
+    case "LONGFORM_DELETE_REQUESTED":
+      await handleLongFormDeleteRequested(event);
+      break;
 
     // Read model events - no queue action needed, handled by read model worker
     case "POST_CREATED":
@@ -338,6 +629,7 @@ export async function processOutboxEvents(): Promise<{
         eventType: event.eventType as OutboxEventType,
         aggregateId: event.aggregateId,
         payload: event.payload,
+        createdAt: event.createdAt,
         scheduledFor: event.scheduledFor,
         correlationId: event.correlationId ?? undefined,
       });

@@ -63,6 +63,7 @@ const USER_SCALAR_SELECT = {
   userRelays: true,
   giveawayBlackListed: true,
   uploadProvider: true,
+  customBlossomUrl: true,
   showHashTagsinPosts: true,
   scheduleInterval: true,
   nostrProfile: true,

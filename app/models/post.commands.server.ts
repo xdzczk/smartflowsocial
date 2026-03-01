@@ -9,11 +9,62 @@ import { Prisma, type Post } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import type { PostScheduledPayload } from "~/infra/outbox/outbox.server";
-import { logError } from "~/lib/error-logger.server";
+import { logError, logInfo } from "~/lib/error-logger.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
 
 import type { CreatePostData } from "./post.types";
+
+const DELETE_EVENT_SCHEMA_VERSION = "1.0";
+const DEFAULT_DELETE_REASON = "Deleted via SmartFlow";
+
+function isNostrDeleteEventsEnabled(): boolean {
+  const raw = process.env["ENABLE_NOSTR_DELETE_EVENTS"];
+  if (!raw) return false;
+  return ["1", "true", "yes", "y", "on", "enabled"].includes(
+    raw.trim().toLowerCase()
+  );
+}
+
+function extractEventReference(
+  signedEvent: unknown,
+  nostrEvent: unknown,
+  nostrEventId: string | null
+): { eventId: string; pubkey: string } | null {
+  const fromSigned =
+    signedEvent && typeof signedEvent === "object"
+      ? (signedEvent as { id?: unknown; pubkey?: unknown })
+      : null;
+  if (
+    fromSigned &&
+    typeof fromSigned.id === "string" &&
+    typeof fromSigned.pubkey === "string"
+  ) {
+    return { eventId: fromSigned.id, pubkey: fromSigned.pubkey };
+  }
+
+  const fromNostrEvent =
+    nostrEvent && typeof nostrEvent === "object"
+      ? (nostrEvent as { id?: unknown; pubkey?: unknown })
+      : null;
+  if (
+    fromNostrEvent &&
+    typeof fromNostrEvent.id === "string" &&
+    typeof fromNostrEvent.pubkey === "string"
+  ) {
+    return { eventId: fromNostrEvent.id, pubkey: fromNostrEvent.pubkey };
+  }
+
+  if (
+    nostrEventId &&
+    fromNostrEvent &&
+    typeof fromNostrEvent.pubkey === "string"
+  ) {
+    return { eventId: nostrEventId, pubkey: fromNostrEvent.pubkey };
+  }
+
+  return null;
+}
 
 /**
  * Convert scheduledFor (string or Date) to DateTime
@@ -317,37 +368,79 @@ export async function deletePost({
     return null;
   }
 
-  const post = await prisma.post.delete({
-    where: {
-      id,
-      userId,
-    },
-  });
+  const deleteRef = extractEventReference(
+    existingPost.signedEvent,
+    existingPost.nostrEvent,
+    existingPost.nostrEventId
+  );
 
-  // Emit POST_DELETED event for read model cleanup
-  // @ts-ignore - Dynamic imports work at runtime in CommonJS
-  const { createOutboxEvent } = await import("~/infra/outbox/outbox.server");
-  void createOutboxEvent(
-    "POST_DELETED",
-    post.id,
-    "Post",
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
-    { postId: post.id, userId: post.userId } as PostScheduledPayload,
-    undefined,
-    undefined,
-    correlationId
-    // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
-  ).catch((error) => {
-    // Log but don't throw - read model updates shouldn't block writes
+  try {
+    const post = await prisma.$transaction(async (tx) => {
+      const deleted = await tx.post.delete({
+        where: {
+          id,
+          userId,
+        },
+      });
+
+      // @ts-ignore - Dynamic imports work at runtime in CommonJS
+      const { createOutboxEventInTransaction } =
+        await import("~/infra/outbox/outbox.server");
+
+      await createOutboxEventInTransaction(
+        tx as Prisma.TransactionClient,
+        "POST_DELETED",
+        deleted.id,
+        "Post",
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
+        { postId: deleted.id, userId: deleted.userId } as PostScheduledPayload,
+        undefined,
+        undefined,
+        correlationId
+      );
+
+      if (isNostrDeleteEventsEnabled() && deleteRef) {
+        await createOutboxEventInTransaction(
+          tx as Prisma.TransactionClient,
+          "POST_DELETE_REQUESTED",
+          deleted.id,
+          "Post",
+          {
+            postId: deleted.id,
+            userId: deleted.userId,
+            originalEventId: deleteRef.eventId,
+            originalEventPubkey: deleteRef.pubkey,
+            reason: DEFAULT_DELETE_REASON,
+            schemaVersion: DELETE_EVENT_SCHEMA_VERSION,
+            correlationId,
+          },
+          undefined,
+          undefined,
+          correlationId
+        );
+      }
+
+      return deleted;
+    });
+
+    if (isNostrDeleteEventsEnabled() && !deleteRef) {
+      logInfo("Skipping POST_DELETE_REQUESTED outbox event: missing metadata", {
+        postId: post.id,
+        userId: post.userId,
+        correlationId,
+      });
+    }
+
+    return post;
+  } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
-      message: "Failed to emit POST_DELETED event",
-      postId: post.id,
-      userId: post.userId,
+      message: "Failed to delete post and emit outbox events",
+      postId: id,
+      userId,
       correlationId,
     });
-  });
-
-  return post;
+    throw error;
+  }
 }
 
 export function reschedulePost({

@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { calendarKeys } from "~/features/posts/hooks/useCalendarQuery";
+import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import {
@@ -133,6 +134,7 @@ export function Calendar({
   const [calendarLiveMessage, setCalendarLiveMessage] = useState("");
   const isLg = useIsLg();
   const queryClient = useQueryClient();
+  const refreshPostViews = useRefreshPostViews();
 
   useEffect(() => {
     if (!calendarLiveMessage) return;
@@ -633,6 +635,7 @@ export function Calendar({
             detailModalPost as Parameters<typeof PostDetailsModal>[0]["post"]
           }
           onClose={() => setDetailModalPost(null)}
+          onDeleted={refreshPostViews}
           onReschedule={(post) => {
             setDetailModalPost(null);
             handlePostEdit(post as CalendarPost);
@@ -651,6 +654,7 @@ export function Calendar({
             >[0]["post"]
           }
           onClose={() => setDetailModalPost(null)}
+          onDeleted={refreshPostViews}
           onReschedule={(post) => {
             setDetailModalPost(null);
             handlePostEdit(post as unknown as CalendarPost);

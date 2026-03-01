@@ -27,10 +27,10 @@ import {
   getUserMutedList,
   getUserNWC,
   getUserPushNotificationPreferences,
+  getResolvedUploadProviderSettings,
   getUserTimeFormat,
   getUserDateFormat,
   getUserTimezone,
-  getUserUploadProvider,
   getQueueTypes,
 } from "~/features/user";
 import {
@@ -77,6 +77,7 @@ export interface SettingsLoaderData {
   scheduleIntervals: string[];
   queueTypes: QueueType[];
   uploadProvider: string;
+  customBlossomUrl: string | null;
   enableMirrorBlossom: boolean;
   mirrorUploadUrls: string[];
   hashTagPresets: HashTagPreset[];
@@ -165,7 +166,7 @@ export async function loadSettingsData(
     showHashTagsInPosts,
     scheduleIntervals,
     queueTypes,
-    uploadProvider,
+    uploadProviderSettings,
     enableMirrorBlossom,
     mirrorUploadUrls,
     hashTagPresets,
@@ -184,7 +185,7 @@ export async function loadSettingsData(
     getShowHashTagsInPosts(userId),
     getScheduleInterval(userId),
     getQueueTypes(userId),
-    getUserUploadProvider(userId),
+    getResolvedUploadProviderSettings(userId),
     getUserEnableMirrorBlossom(userId),
     getUserMirrorUploadUrls(userId),
     getHashTagPresetsCached(userId),
@@ -199,6 +200,8 @@ export async function loadSettingsData(
 
   const relays = relayIntent.writeRelays;
   const managedRelays = effectiveWriteRelays.managed;
+  const uploadProvider = uploadProviderSettings.provider;
+  const customBlossomUrl = uploadProviderSettings.customBlossomUrl;
 
   // Latest ACK per relay (best-effort). Include managed relay URL even if disabled.
   const ackRelayUrls = Array.from(
@@ -305,6 +308,7 @@ export async function loadSettingsData(
       userId: qt.userId,
     })),
     uploadProvider,
+    customBlossomUrl,
     enableMirrorBlossom,
     mirrorUploadUrls,
     hashTagPresets: hashTagPresets as unknown as typeof hashTagPresets,

@@ -686,9 +686,26 @@ async function runScheduledPostJob(input: {
   });
 
   if (!existingPost) {
-    throw new Error(
-      `Post ${postId} not found for user ${userId}. If this is a repost, the row may not be visible yet on this node (replication lag); the job will retry.`
-    );
+    // Scheduled posts can be deleted by the user before the queued job runs.
+    // Treat this as a benign, idempotent skip to avoid dead-letter noise.
+    logInfo("Scheduled post not found when processing job, skipping", {
+      ...buildObsContext({
+        postId,
+        userId,
+        correlationId,
+        queueName,
+        jobId: String(job.id ?? "unknown"),
+        attemptsMade: job.attemptsMade + 1,
+      }),
+    });
+    recordJobSkipped(queueName, "post_not_found");
+    addBreadcrumb({
+      message: "scheduled_post_job_skipped_post_not_found",
+      category: "worker",
+      level: "info",
+      data: { queue: queueName, postId, userId, correlationId },
+    });
+    return { success: true, postId, skipped: true };
   }
 
   const isAlreadyPosted = existingPost.currentState === "PUBLISHED";

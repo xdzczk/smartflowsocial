@@ -11,7 +11,8 @@ type UploadProviderName =
   | "S3"
   | "BLOSSOM_PRIMAL"
   | "BLOSSOM_BLOSSTR"
-  | "BLOSSOM_SFS";
+  | "BLOSSOM_SFS"
+  | "BLOSSOM_CUSTOM";
 
 type IngestLane = "server_upload" | "direct_client_upload";
 
@@ -61,7 +62,8 @@ function normalizeProvider(provider: string): UploadProviderName {
   if (
     provider === "BLOSSOM_PRIMAL" ||
     provider === "BLOSSOM_BLOSSTR" ||
-    provider === "BLOSSOM_SFS"
+    provider === "BLOSSOM_SFS" ||
+    provider === "BLOSSOM_CUSTOM"
   ) {
     return provider;
   }

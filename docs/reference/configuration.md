@@ -488,6 +488,26 @@ BLOSSOM_UPLOAD_TOKEN_SECRET=your-upload-token-signing-secret
 
 ---
 
+### ENABLE_NOSTR_DELETE_EVENTS
+
+Feature flag for asynchronous Nostr deletion requests (`kind:5`) when users delete published
+posts/longform content.
+
+When enabled, local delete still completes immediately, and relay delete requests are emitted
+through the outbox worker in best-effort mode.
+
+```env
+ENABLE_NOSTR_DELETE_EVENTS=false
+```
+
+Recommended rollout:
+
+1. Start with `false` in production.
+2. Enable in staging and monitor outbox dead-letter / relay ACK outcomes.
+3. Enable in production once relay error rates are acceptable.
+
+---
+
 ## Storage Configuration
 
 ### AWS S3

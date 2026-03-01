@@ -419,6 +419,7 @@ interface PostDetailsModalProps {
   type?: "draft" | "published" | "scheduled";
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
+  onDeleted?: (postId: string) => void;
 }
 
 export default function PostDetailsModal({
@@ -432,6 +433,7 @@ export default function PostDetailsModal({
   type = "published",
   userTimezone,
   userTimeFormat = "12h",
+  onDeleted,
 }: PostDetailsModalProps) {
   const deleteFetcher = useFetcher();
   const [isMediaOpen, setIsMediaOpen] = useState(false);
@@ -450,6 +452,7 @@ export default function PostDetailsModal({
       (submittedPostId === post.id ||
         String(submittedPostId) === String(post.id));
     if (isOurDelete) {
+      onDeleted?.(post.id);
       onClose();
     }
   }, [
@@ -457,6 +460,7 @@ export default function PostDetailsModal({
     deleteFetcher.data,
     deleteFetcher.formData,
     post.id,
+    onDeleted,
     onClose,
   ]);
 

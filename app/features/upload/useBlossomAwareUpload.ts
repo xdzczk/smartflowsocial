@@ -4,8 +4,14 @@ import { toast } from "react-hot-toast";
 
 import { logClientError } from "~/lib/error-handler.client";
 interface UploadProvider {
-  provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS";
+  provider:
+    | "S3"
+    | "BLOSSOM_PRIMAL"
+    | "BLOSSOM_BLOSSTR"
+    | "BLOSSOM_SFS"
+    | "BLOSSOM_CUSTOM";
   isUsingBlossom: boolean;
+  customBlossomUrl?: string | null;
   enableMirrorBlossom?: boolean;
   mirrorUploadUrls?: string[];
 }
@@ -33,12 +39,14 @@ export function useBlossomAwareUpload() {
       if (!response.ok) throw new Error("Failed to check provider");
       const data = (await response.json()) as {
         provider?: string;
+        customBlossomUrl?: string | null;
         enableMirrorBlossom?: boolean;
         mirrorUploadUrls?: string[];
       };
 
       const {
         provider,
+        customBlossomUrl,
         enableMirrorBlossom = false,
         mirrorUploadUrls = [],
       } = data;
@@ -64,13 +72,24 @@ export function useBlossomAwareUpload() {
         return {
           provider: "BLOSSOM_SFS",
           isUsingBlossom: true,
+          customBlossomUrl,
+          enableMirrorBlossom,
+          mirrorUploadUrls,
+        };
+      }
+      if (provider === "BLOSSOM_CUSTOM") {
+        return {
+          provider: "BLOSSOM_CUSTOM",
+          isUsingBlossom: true,
+          customBlossomUrl,
           enableMirrorBlossom,
           mirrorUploadUrls,
         };
       }
       return {
-        provider: "S3",
-        isUsingBlossom: false,
+        provider: "BLOSSOM_PRIMAL",
+        isUsingBlossom: true,
+        customBlossomUrl: null,
         enableMirrorBlossom: false,
         mirrorUploadUrls: [],
       };
@@ -83,8 +102,9 @@ export function useBlossomAwareUpload() {
         }
       );
       return {
-        provider: "S3",
-        isUsingBlossom: false,
+        provider: "BLOSSOM_PRIMAL",
+        isUsingBlossom: true,
+        customBlossomUrl: null,
         enableMirrorBlossom: false,
         mirrorUploadUrls: [],
       };
@@ -92,7 +112,11 @@ export function useBlossomAwareUpload() {
   };
 
   const createBlossomAuthHeaders = async (
-    provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS"
+    provider:
+      | "BLOSSOM_PRIMAL"
+      | "BLOSSOM_BLOSSTR"
+      | "BLOSSOM_SFS"
+      | "BLOSSOM_CUSTOM"
   ) => {
     // @ts-ignore - Dynamic imports work in client-side Remix bundles
     const { getWindowNostrLikeSigner } =
@@ -109,7 +133,9 @@ export function useBlossomAwareUpload() {
         ? "https://blossom.primal.net/upload"
         : provider === "BLOSSOM_SFS"
           ? "https://blossom-api.smartflow.social/upload"
-          : "https://blosstr.com/upload";
+          : provider === "BLOSSOM_BLOSSTR"
+            ? "https://blosstr.com/upload"
+            : "https://blossom.primal.net/upload";
 
     // Note: Authentication should be handled by the upload service directly
     throw new Error(
@@ -160,6 +186,7 @@ export function useBlossomAwareUpload() {
                 | "BLOSSOM_PRIMAL"
                 | "BLOSSOM_BLOSSTR"
                 | "BLOSSOM_SFS"
+                | "BLOSSOM_CUSTOM"
             );
             toast.success("Upload authorized!", { id: "blossom-auth" });
             setUploadProgress(60);

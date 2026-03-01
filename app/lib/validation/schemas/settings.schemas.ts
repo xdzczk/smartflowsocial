@@ -20,6 +20,10 @@ const ERROR_SCHEDULE_INTERVAL_ALLOWED =
   "Schedule interval must be 0.25 (15 min), 0.5 (30 min), or a whole number of hours";
 const ERROR_MIRROR_URLS_HTTPS = "All mirror URLs must start with https://";
 const ERROR_INVALID_URL_FORMAT = "Invalid URL format";
+const ERROR_CUSTOM_BLOSSOM_URL_REQUIRED =
+  "Custom Blossom URL is required when Custom Blossom is selected";
+const ERROR_CUSTOM_BLOSSOM_URL_HTTPS =
+  "Custom Blossom URL must start with https://";
 
 // Form value constants
 const FORM_VALUE_ON = "on";
@@ -116,11 +120,52 @@ export const uploadProviderSchema = z.enum([
   "BLOSSOM_PRIMAL",
   "BLOSSOM_BLOSSTR",
   "BLOSSOM_SFS",
+  "BLOSSOM_CUSTOM",
 ]);
 
-export const updateUploadProviderSchema = z.object({
-  uploadProvider: uploadProviderSchema,
-});
+export const updateUploadProviderSchema = z
+  .object({
+    uploadProvider: uploadProviderSchema,
+    customBlossomUrl: z
+      .string()
+      .optional()
+      .transform((val) => {
+        const trimmed = (val ?? "").trim();
+        if (!trimmed) return null;
+        return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+      }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.uploadProvider !== "BLOSSOM_CUSTOM") {
+      return;
+    }
+
+    if (!data.customBlossomUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["customBlossomUrl"],
+        message: ERROR_CUSTOM_BLOSSOM_URL_REQUIRED,
+      });
+      return;
+    }
+    if (!data.customBlossomUrl.startsWith("https://")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["customBlossomUrl"],
+        message: ERROR_CUSTOM_BLOSSOM_URL_HTTPS,
+      });
+      return;
+    }
+    try {
+      new URL(data.customBlossomUrl);
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["customBlossomUrl"],
+        message: ERROR_INVALID_URL_FORMAT,
+      });
+    }
+  });
 
 export const updateBlossomMirrorsSchema = z.object({
   enableMirrorBlossom: z

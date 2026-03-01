@@ -4,7 +4,6 @@
  * Tests the database operations in app/models/longformpost.server.ts
  * Uses mocked Prisma to test business logic without requiring a real database.
  */
-
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import {
@@ -20,6 +19,7 @@ import {
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {
+    $transaction: vi.fn(),
     longFormPost: {
       create: vi.fn(),
       delete: vi.fn(),
@@ -31,6 +31,9 @@ const { mockPrisma } = vi.hoisted(() => {
     },
     queueType: {
       findFirst: vi.fn(),
+    },
+    outboxEvent: {
+      create: vi.fn(),
     },
   };
   return { mockPrisma };
@@ -47,6 +50,19 @@ describe("LongFormPost Model Functions", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env["ENABLE_NOSTR_DELETE_EVENTS"];
+
+    (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mocked Prisma transaction returns callback promise
+      (callback: (tx: typeof mockPrisma) => Promise<unknown>) => {
+        const tx: typeof mockPrisma = {
+          ...mockPrisma,
+          longFormPost: mockPrisma.longFormPost,
+          outboxEvent: mockPrisma.outboxEvent,
+        };
+        return callback(tx);
+      }
+    );
   });
 
   describe("createLongFormPost", () => {
@@ -163,11 +179,28 @@ describe("LongFormPost Model Functions", () => {
         id: TEST_LONGFORM_ID,
         userId: TEST_USER_ID,
         title: "Test Article",
+        nostrEventId: "nostr-event-123",
+        signedEvent: {
+          id: "nostr-event-123",
+          pubkey: "pubkey-1",
+          created_at: 1234567890,
+          kind: 30023,
+          tags: [["d", "article-d-tag"]],
+          content: "content",
+          sig: "sig-1",
+        },
+        nostrEvent: null,
       };
 
       (
+        mockPrisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockLongFormPost);
+      (
         mockPrisma.longFormPost.delete as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockLongFormPost);
+      (
+        mockPrisma.outboxEvent.create as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({});
 
       const result = await deleteLongFormPost({
         id: TEST_LONGFORM_ID,
@@ -182,7 +215,70 @@ describe("LongFormPost Model Functions", () => {
           userId: TEST_USER_ID,
         },
       });
+      expect(
+        mockPrisma.outboxEvent.create as ReturnType<typeof vi.fn>
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          data: expect.objectContaining({
+            eventType: "LONGFORM_DELETED",
+            aggregateId: TEST_LONGFORM_ID,
+          }),
+        })
+      );
       expect(result).toEqual(mockLongFormPost);
+    });
+
+    it("should emit LONGFORM_DELETE_REQUESTED when feature flag is enabled", async () => {
+      process.env["ENABLE_NOSTR_DELETE_EVENTS"] = "true";
+      const mockLongFormPost = {
+        id: TEST_LONGFORM_ID,
+        userId: TEST_USER_ID,
+        title: "Test Article",
+        nostrEventId: "nostr-event-123",
+        signedEvent: {
+          id: "nostr-event-123",
+          pubkey: "pubkey-1",
+          created_at: 1234567890,
+          kind: 30023,
+          tags: [["d", "article-d-tag"]],
+          content: "content",
+          sig: "sig-1",
+        },
+        nostrEvent: null,
+      };
+      (
+        mockPrisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockLongFormPost);
+      (
+        mockPrisma.longFormPost.delete as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockLongFormPost);
+      (
+        mockPrisma.outboxEvent.create as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({});
+
+      await deleteLongFormPost({ id: TEST_LONGFORM_ID, userId: TEST_USER_ID });
+
+      expect(
+        mockPrisma.outboxEvent.create as ReturnType<typeof vi.fn>
+      ).toHaveBeenCalledTimes(2);
+      expect(
+        mockPrisma.outboxEvent.create as ReturnType<typeof vi.fn>
+      ).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          data: expect.objectContaining({
+            eventType: "LONGFORM_DELETE_REQUESTED",
+            aggregateId: TEST_LONGFORM_ID,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+            payload: expect.objectContaining({
+              aCoordinate: "30023:pubkey-1:article-d-tag",
+              originalEventPubkey: "pubkey-1",
+            }),
+          }),
+        })
+      );
     });
   });
 
@@ -293,8 +389,10 @@ describe("LongFormPost Model Functions", () => {
         orderBy: {
           updatedAt: "desc",
         },
+        skip: 0,
+        take: 20,
       });
-      expect(result).toEqual(mockPosts);
+      expect(result.posts).toEqual(mockPosts);
     });
   });
 
@@ -326,6 +424,9 @@ describe("LongFormPost Model Functions", () => {
         where: {
           userId: TEST_USER_ID,
           currentState: "PUBLISHED",
+        },
+        include: {
+          queueType: true,
         },
         orderBy: {
           publishedAt: "desc",
@@ -377,8 +478,10 @@ describe("LongFormPost Model Functions", () => {
         orderBy: {
           scheduledAtUtc: "asc",
         },
+        skip: 0,
+        take: 20,
       });
-      expect(result).toEqual(mockPosts);
+      expect(result.posts).toEqual(mockPosts);
     });
   });
 

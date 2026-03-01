@@ -11,7 +11,12 @@ interface CommitItemPayload {
   url: string;
   size: number;
   mimeType: string;
-  provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS";
+  provider:
+    | "S3"
+    | "BLOSSOM_PRIMAL"
+    | "BLOSSOM_BLOSSTR"
+    | "BLOSSOM_SFS"
+    | "BLOSSOM_CUSTOM";
   sha256?: string;
 }
 

@@ -12,7 +12,12 @@ interface LegacyUploadResult {
     extension: string;
     sha256?: string;
     mimeType?: string;
-    provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS";
+    provider:
+      | "S3"
+      | "BLOSSOM_PRIMAL"
+      | "BLOSSOM_BLOSSTR"
+      | "BLOSSOM_SFS"
+      | "BLOSSOM_CUSTOM";
   };
   error?: string;
 }
