@@ -28,6 +28,7 @@ import {
   getExpectedPubkeyHexForGuard,
   getNip07Readiness,
 } from "~/lib/nip07-readiness.client";
+import { attemptPrimarySignerFailover } from "~/lib/primary-signer-failover.client";
 import { emitRemoteSignerTimeoutEvent } from "~/lib/remote-signer-reconnect.client";
 
 import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
@@ -42,6 +43,20 @@ const ACTIVE_SIGNER_SIGN_TIMEOUT_MS = 30_000;
 // Track retry counts for progressive timeouts
 let connectionRetryCount = 0;
 let signRetryCount = 0;
+
+function isConnectionLikeError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : String(error).toLowerCase();
+  return (
+    message.includes("subscription closed") ||
+    message.includes("websocket") ||
+    message.includes("closed") ||
+    message.includes("connection") ||
+    message.includes("timeout")
+  );
+}
 
 /**
  * Reset retry counts (call after successful operation)
@@ -267,8 +282,8 @@ async function signEventWithRetryLogic(
     typeof signerManager.getActiveSignerConfig === "function"
       ? signerManager.getActiveSignerConfig()
       : null;
+  const expectedHex = getExpectedPubkeyHexForGuard();
   if (config?.type === "nip07") {
-    const expectedHex = getExpectedPubkeyHexForGuard();
     if (expectedHex) {
       await checkNip07Readiness(expectedHex);
     }
@@ -281,10 +296,39 @@ async function signEventWithRetryLogic(
   }
 
   let retries = 0;
+  let triedPrimaryFailover = false;
 
   while (retries < maxRetries) {
-    const configured = await trySignWithConfiguredSigner(nostrEvent);
+    let configured: SignedEvent | null = null;
+    try {
+      configured = await trySignWithConfiguredSigner(nostrEvent);
+    } catch (error) {
+      if (!triedPrimaryFailover && isConnectionLikeError(error)) {
+        const recovered = await attemptPrimarySignerFailover({
+          expectedPubkey: expectedHex,
+          labelFallback: "Primary Home Signer",
+        });
+        triedPrimaryFailover = true;
+        if (recovered.recovered) {
+          toast.success("Recovered signer connection via primary home signer.");
+          continue;
+        }
+      }
+      throw error;
+    }
     if (configured) return configured;
+
+    if (!triedPrimaryFailover) {
+      const recovered = await attemptPrimarySignerFailover({
+        expectedPubkey: expectedHex,
+        labelFallback: "Primary Home Signer",
+      });
+      triedPrimaryFailover = true;
+      if (recovered.recovered) {
+        toast.success("Recovered signer connection via primary home signer.");
+        continue;
+      }
+    }
 
     // @ts-ignore - window.nostr is injected by browser extensions at runtime
     if (typeof window !== "undefined" && window.nostr) {

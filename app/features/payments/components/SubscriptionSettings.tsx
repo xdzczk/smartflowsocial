@@ -193,14 +193,17 @@ export function SubscriptionSettings({
 
       {subscription ? (
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
+          <TabsList className="grid h-auto w-full grid-cols-1 gap-1 sm:grid-cols-2">
+            <TabsTrigger
+              value="overview"
+              className="flex h-auto min-h-9 items-center gap-2 px-2 py-1.5 text-center leading-tight whitespace-normal"
+            >
               <Crown className={INLINE_ICON_SIZE_CLASS} />
               Overview
             </TabsTrigger>
             <TabsTrigger
               value="payment-history"
-              className="flex items-center gap-2"
+              className="flex h-auto min-h-9 items-center gap-2 px-2 py-1.5 text-center leading-tight whitespace-normal"
             >
               <History className={INLINE_ICON_SIZE_CLASS} />
               Payment History
@@ -210,10 +213,10 @@ export function SubscriptionSettings({
           <TabsContent value="overview" className="mt-6 space-y-6">
             {/* Current Plan */}
             <div className="bg-muted/30 rounded-lg border p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
                   <Crown className="h-5 w-5 text-yellow-500" />
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-medium">Current Plan</h3>
                     <p className="text-2xl font-bold">
                       {subscription.plan?.name ?? "Unknown Plan"}
@@ -234,7 +237,7 @@ export function SubscriptionSettings({
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <p className="text-lg font-semibold">
                     {subscription.plan?.price
                       ? `$${subscription.plan.price}`
@@ -427,7 +430,7 @@ export function SubscriptionSettings({
                 <div className="space-y-3">
                   {paymentHistory.map((payment) => (
                     <div key={payment.id} className="rounded-lg border p-4">
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex-1">
                           <div className="mb-1 flex items-center gap-2">
                             <Receipt className="text-success h-4 w-4" />
@@ -442,7 +445,7 @@ export function SubscriptionSettings({
                           </p>
 
                           {/* Payment Hash */}
-                          <div className="mb-2 flex items-center gap-2">
+                          <div className="mb-2 flex flex-wrap items-center gap-2">
                             <p className="text-muted-foreground font-mono text-xs">
                               Hash: {payment.paymentHash.slice(0, 16)}...
                               {payment.paymentHash.slice(-8)}
@@ -475,7 +478,7 @@ export function SubscriptionSettings({
                             </div>
                           ) : null}
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <p className="text-success font-semibold">
                             {formatSubscriptionCurrency(payment.amountUsd)}
                           </p>

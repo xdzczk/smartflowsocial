@@ -1,7 +1,12 @@
+import { Prisma } from "@prisma/client";
 import type { User, UploadProvider } from "@prisma/client";
 
 import type { MutedListData } from "~/features/engagement/types";
 import { isSubscriptionActiveForGating } from "~/features/payments/subscriptions.server";
+import {
+  isPrimarySignerProfile,
+  type PrimarySignerProfile,
+} from "~/lib/primary-signer-profile";
 import { prisma } from "~/lib/prisma.server";
 
 /**
@@ -558,6 +563,99 @@ export function updateUserTimeFormat(
 }
 
 export type DateFormatKey = "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
+const COLUMN_MISSING_ERROR_FRAGMENT = "does not exist";
+
+/**
+ * Gets account-level primary NIP-46 signer profile metadata.
+ * Returns null when no profile exists or when DB column is not migrated yet.
+ */
+export async function getUserPrimarySignerProfile(
+  userId: string
+): Promise<PrimarySignerProfile | null> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { primarySignerProfile: true },
+    });
+    const raw = user?.primarySignerProfile;
+    return isPrimarySignerProfile(raw) ? raw : null;
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err ? err.code : null;
+    if (
+      code === "P2022" ||
+      (err instanceof Error &&
+        err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
+    ) {
+      return null;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Upserts account-level primary NIP-46 signer profile metadata.
+ * No per-device secrets are stored server-side.
+ */
+export async function updateUserPrimarySignerProfile(
+  userId: string,
+  profile: PrimarySignerProfile
+): Promise<User> {
+  try {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: {
+        primarySignerProfile: profile,
+      },
+    });
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err ? err.code : null;
+    if (
+      code === "P2022" ||
+      (err instanceof Error &&
+        err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
+    ) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      if (!user) throw err;
+      return user;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Clears account-level primary NIP-46 signer profile metadata.
+ */
+export async function clearUserPrimarySignerProfile(
+  userId: string
+): Promise<User> {
+  try {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: {
+        primarySignerProfile: Prisma.JsonNull,
+      },
+    });
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err ? err.code : null;
+    if (
+      code === "P2022" ||
+      (err instanceof Error &&
+        err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
+    ) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      if (!user) throw err;
+      return user;
+    }
+    throw err;
+  }
+}
 
 /**
  * Gets user's date format preference
@@ -703,7 +801,8 @@ export async function getRunwaySettings(
       err && typeof err === "object" && "code" in err ? err.code : null;
     if (
       code === "P2022" ||
-      (err instanceof Error && err.message.includes("does not exist"))
+      (err instanceof Error &&
+        err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
     ) {
       return { ...DEFAULT_RUNWAY_SETTINGS };
     }
@@ -740,7 +839,8 @@ export async function updateRunwaySettings(
       err && typeof err === "object" && "code" in err ? err.code : null;
     if (
       code === "P2022" ||
-      (err instanceof Error && err.message.includes("does not exist"))
+      (err instanceof Error &&
+        err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
     ) {
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -774,12 +874,14 @@ export async function updateRunwaySettings(
           parentNpub: true,
           pendingParentRequests: true,
           localeDefaultsAppliedAt: true,
+          primarySignerProfile: true,
         },
       });
       if (!user) throw err;
       const result: User = {
         ...user,
         runwaySettings: null,
+        primarySignerProfile: null,
         pushNotifyRunwayLow: false,
         pushNotifyIncludePreview: true,
         runwayNotifyBelowDays: null,

@@ -23,6 +23,7 @@ import {
 } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
+  OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
   REMOTE_SIGNER_TIMEOUT_EVENT,
   type RemoteSignerTimeoutEventDetail,
 } from "~/lib/remote-signer-reconnect.client";
@@ -141,11 +142,22 @@ export function RemoteSignerReconnectController(
       const custom = ev as CustomEvent<RemoteSignerTimeoutEventDetail>;
       showReconnectToast(custom.detail);
     };
+    const openHandler = () => {
+      openDialog();
+    };
     window.addEventListener(REMOTE_SIGNER_TIMEOUT_EVENT, handler);
+    window.addEventListener(
+      OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
+      openHandler
+    );
     return () => {
       window.removeEventListener(REMOTE_SIGNER_TIMEOUT_EVENT, handler);
+      window.removeEventListener(
+        OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
+        openHandler
+      );
     };
-  }, [showReconnectToast]);
+  }, [openDialog, showReconnectToast]);
 
   const handleOpenChange = (open: boolean) => {
     setDialogOpen(open);

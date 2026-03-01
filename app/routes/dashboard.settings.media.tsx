@@ -119,10 +119,10 @@ export default function SettingsMediaPage() {
     navigation.formData?.get("_action") === "delete_media";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Media</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Media</h1>
           <p className="text-muted-foreground text-sm">
             Blossom media metadata (SmartFlow Blossom uploads). Delete here
             removes the record; the file may still exist on the Blossom server.
@@ -253,7 +253,7 @@ export default function SettingsMediaPage() {
                 })}
               </div>
               {totalPages > 1 ? (
-                <div className="flex items-center justify-between pt-4">
+                <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <Link
                     to={`/dashboard/settings/media?page=${page - 1}`}
                     className={

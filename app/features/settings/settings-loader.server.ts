@@ -27,6 +27,7 @@ import {
   getUserMutedList,
   getUserNWC,
   getUserPushNotificationPreferences,
+  getUserPrimarySignerProfile,
   getResolvedUploadProviderSettings,
   getUserTimeFormat,
   getUserDateFormat,
@@ -37,6 +38,10 @@ import {
   getRelayIntentCached,
   getHashTagPresetsCached,
 } from "~/features/user/services/user-cache.server";
+import {
+  type PrimarySignerProfile,
+  isPrimarySignerProfile,
+} from "~/lib/primary-signer-profile";
 import { prisma } from "~/lib/prisma.server";
 import {
   getAllPlans,
@@ -138,6 +143,7 @@ export interface SettingsLoaderData {
   runwayNotifyBelowDays: number | null;
   timeFormat: "12h" | "24h";
   dateFormat: "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
+  primarySignerProfile: PrimarySignerProfile | null;
 }
 
 /**
@@ -177,6 +183,7 @@ export async function loadSettingsData(
     pushNotificationPreferences,
     timeFormat,
     dateFormat,
+    primarySignerProfile,
   ] = await Promise.all([
     getUserTimezone(userId),
     getRelayIntentCached(userId),
@@ -196,6 +203,7 @@ export async function loadSettingsData(
     getUserPushNotificationPreferences(userId),
     getUserTimeFormat(userId),
     getUserDateFormat(userId),
+    getUserPrimarySignerProfile(userId),
   ]);
 
   const relays = relayIntent.writeRelays;
@@ -371,5 +379,8 @@ export async function loadSettingsData(
     runwayNotifyBelowDays: pushNotificationPreferences.runwayNotifyBelowDays,
     timeFormat,
     dateFormat,
+    primarySignerProfile: isPrimarySignerProfile(primarySignerProfile)
+      ? primarySignerProfile
+      : null,
   };
 }

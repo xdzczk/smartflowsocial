@@ -54,6 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       mutedList: { npubs: [], lastSynced: new Date().toISOString() },
       filterMuted: false,
       hidePostsFromLowTrustUsers: false,
+      primarySignerProfile: null,
     });
   }
 }

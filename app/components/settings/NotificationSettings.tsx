@@ -455,8 +455,8 @@ export function NotificationSettings({
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 space-y-0.5">
                 <Label htmlFor="push-enabled">Enable Push Notifications</Label>
                 <p className="text-muted-foreground text-xs">
                   {pushConfiguredOnServer === false
@@ -490,8 +490,8 @@ export function NotificationSettings({
             {isSubscribed ? (
               <>
                 <Separator className="my-4" />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-0.5">
                     <Label htmlFor="notify-success">
                       Notify on Publish Success
                     </Label>
@@ -506,8 +506,8 @@ export function NotificationSettings({
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-0.5">
                     <Label htmlFor="notify-failure">
                       Notify on Publish Failure
                     </Label>
@@ -523,8 +523,8 @@ export function NotificationSettings({
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-0.5">
                     <Label htmlFor="notify-include-preview">
                       Include post preview in notifications
                     </Label>
@@ -540,8 +540,8 @@ export function NotificationSettings({
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-0.5">
                     <Label htmlFor="notify-runway-low">
                       Notify when Queue Runway is Low
                     </Label>
@@ -557,8 +557,8 @@ export function NotificationSettings({
                 </div>
 
                 {pushNotifyRunwayLow ? (
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="space-y-0.5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <div className="min-w-0 space-y-0.5">
                       <Label htmlFor="runway-notify-below-days">
                         Notify when runway is below (days)
                       </Label>

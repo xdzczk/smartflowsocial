@@ -21,7 +21,10 @@ import {
   SIGNER_CONFIG_HYDRATED_EVENT,
 } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-import { setCurrentUserNpub } from "~/lib/remote-signer-sessions.client";
+import {
+  getActiveSession,
+  setCurrentUserNpub,
+} from "~/lib/remote-signer-sessions.client";
 import { triggerForegroundSync } from "~/lib/sync-manager.client";
 
 /** Minimum ms between revalidates when app becomes visible (reduces PFP flicker on mobile PWA). */
@@ -103,12 +106,19 @@ export function LifecycleHandler() {
   }, [localeDefaultsFetcher.state, localeDefaultsFetcher.data]);
 
   // When user is logged in but sessionStorage has no signer config (e.g. new tab),
-  // default to NIP-07 so extension-only users aren't blocked. We do not restore
-  // from localStorage so users who never used remote signer don't see "Disconnected".
+  // restore from active remote-signer session first; otherwise default to NIP-07.
   useEffect(() => {
     if (!user?.npub || typeof window === "undefined") return;
     if (getActiveSignerConfig() != null) return;
-    setActiveSignerConfig({ type: "nip07" });
+
+    const activeRemoteSession = getActiveSession();
+    if (activeRemoteSession?.config.type === "nip46") {
+      setActiveSignerConfig(activeRemoteSession.config);
+    } else {
+      // Keep extension-only users unblocked when no remote signer session exists.
+      setActiveSignerConfig({ type: "nip07" });
+    }
+
     window.dispatchEvent(new CustomEvent(SIGNER_CONFIG_HYDRATED_EVENT));
   }, [user?.npub]);
 

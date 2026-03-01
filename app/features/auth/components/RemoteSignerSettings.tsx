@@ -1,5 +1,7 @@
+import { useFetcher } from "@remix-run/react";
 import { Search, Plus, RefreshCw, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -11,6 +13,11 @@ import {
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Separator } from "~/components/ui/separator";
+import { testPrimarySignerProfileConnection } from "~/lib/primary-signer-failover.client";
+import {
+  type PrimarySignerProfile,
+  isPrimarySignerProfile,
+} from "~/lib/primary-signer-profile";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { testConnection } from "~/lib/remote-signer-health.client";
 import { REMOTE_SIGNER_TIMEOUT_EVENT } from "~/lib/remote-signer-reconnect.client";
@@ -29,7 +36,16 @@ import { RemoteSignerReconnectDialog } from "./RemoteSignerReconnectController";
 import { SessionCard } from "./SessionCard";
 import { SessionDetailsDialog } from "./SessionDetailsDialog";
 
-export function RemoteSignerSettings() {
+interface RemoteSignerSettingsProps {
+  primarySignerProfile?: PrimarySignerProfile | null;
+}
+
+export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
+  const primarySignerFetcher = useFetcher<{
+    success?: boolean;
+    error?: string;
+    primarySignerProfile?: unknown;
+  }>();
   const user = useOptionalUser();
   const expectedPubkey = user?.npub ?? null;
 
@@ -42,6 +58,39 @@ export function RemoteSignerSettings() {
   );
   const [reconnectDialogOpen, setReconnectDialogOpen] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [isTestingPrimarySigner, setIsTestingPrimarySigner] = useState(false);
+  const [primarySignerProfile, setPrimarySignerProfile] =
+    useState<PrimarySignerProfile | null>(props.primarySignerProfile ?? null);
+
+  useEffect(() => {
+    setPrimarySignerProfile(props.primarySignerProfile ?? null);
+  }, [props.primarySignerProfile]);
+
+  useEffect(() => {
+    if (primarySignerFetcher.state !== "idle") {
+      return;
+    }
+    const payload = primarySignerFetcher.data;
+    if (!payload) {
+      return;
+    }
+    if (payload.error) {
+      toast.error(payload.error);
+      return;
+    }
+    if (!payload.success) {
+      return;
+    }
+    const profile = isPrimarySignerProfile(payload.primarySignerProfile)
+      ? payload.primarySignerProfile
+      : null;
+    setPrimarySignerProfile(profile);
+    toast.success(
+      profile
+        ? "Primary signer profile saved."
+        : "Primary signer profile cleared."
+    );
+  }, [primarySignerFetcher.data, primarySignerFetcher.state]);
 
   const loadSessions = useCallback(() => {
     const allSessions = getAllSessions();
@@ -220,6 +269,73 @@ export function RemoteSignerSettings() {
     ? (sessions.find((s) => s.id === selectedSessionId) ?? null)
     : null;
 
+  const activeSessionSupportsPrimarySave =
+    activeSession?.config.type === "nip46" ? activeSession : null;
+
+  const handleSaveActiveSessionAsPrimary = useCallback(() => {
+    if (!activeSessionSupportsPrimarySave) {
+      return;
+    }
+    if (activeSessionSupportsPrimarySave.config.type !== "nip46") {
+      return;
+    }
+    const formData = new FormData();
+    formData.set("_action", "update_primary_signer_profile");
+    formData.set("method", activeSessionSupportsPrimarySave.config.method);
+    formData.set("label", activeSessionSupportsPrimarySave.label);
+    if (activeSessionSupportsPrimarySave.metadata.pubkey) {
+      formData.set(
+        "expectedPubkey",
+        activeSessionSupportsPrimarySave.metadata.pubkey
+      );
+    }
+    if (activeSessionSupportsPrimarySave.config.method === "bunker_input") {
+      formData.set(
+        "bunkerInput",
+        activeSessionSupportsPrimarySave.config.bunkerInput
+      );
+    } else {
+      formData.set("uri", activeSessionSupportsPrimarySave.config.uri);
+      formData.set(
+        "relays",
+        activeSessionSupportsPrimarySave.config.relays.join("\n")
+      );
+    }
+    primarySignerFetcher.submit(formData, {
+      method: "post",
+      action: "/dashboard/settings",
+    });
+  }, [activeSessionSupportsPrimarySave, primarySignerFetcher]);
+
+  const handleClearPrimaryProfile = useCallback(() => {
+    const formData = new FormData();
+    formData.set("_action", "clear_primary_signer_profile");
+    primarySignerFetcher.submit(formData, {
+      method: "post",
+      action: "/dashboard/settings",
+    });
+  }, [primarySignerFetcher]);
+
+  const handleTestPrimaryProfile = useCallback(async () => {
+    if (!primarySignerProfile) {
+      return;
+    }
+    setIsTestingPrimarySigner(true);
+    try {
+      const result = await testPrimarySignerProfileConnection(
+        primarySignerProfile,
+        expectedPubkey
+      );
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Primary signer profile is reachable and ready.");
+    } finally {
+      setIsTestingPrimarySigner(false);
+    }
+  }, [expectedPubkey, primarySignerProfile]);
+
   return (
     <>
       <Card>
@@ -231,7 +347,7 @@ export function RemoteSignerSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
               <Input
@@ -253,7 +369,10 @@ export function RemoteSignerSettings() {
                 </Button>
               ) : null}
             </div>
-            <Button onClick={() => setReconnectDialogOpen(true)}>
+            <Button
+              onClick={() => setReconnectDialogOpen(true)}
+              className="w-full sm:w-auto"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Session
             </Button>
@@ -288,15 +407,15 @@ export function RemoteSignerSettings() {
                 <div className="mb-4">
                   <h3 className="mb-2 text-lg font-semibold">Active Session</h3>
                   <div className="bg-muted/30 rounded-md border p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div>
+                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
                         <div className="font-medium">{activeSession.label}</div>
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-muted-foreground text-sm break-words">
                           {activeSession.metadata.signerAppName ??
                             "Unknown Signer"}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
                           variant="outline"
@@ -334,6 +453,81 @@ export function RemoteSignerSettings() {
               </div>
             </>
           ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Primary Home Signer</CardTitle>
+          <CardDescription>
+            Save one account-level NIP-46 signer profile as fallback so any
+            device can recover from stale local sessions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-muted/30 rounded-md border p-4">
+            {primarySignerProfile ? (
+              <div className="space-y-2">
+                <div className="font-medium">
+                  {primarySignerProfile.label ?? "Primary signer configured"}
+                </div>
+                <div className="text-muted-foreground text-sm">
+                  Method:{" "}
+                  {primarySignerProfile.method === "bunker_input"
+                    ? "Bunker input"
+                    : "nostrconnect URI"}
+                </div>
+                {primarySignerProfile.method === "nostrconnect_uri" ? (
+                  <div className="text-muted-foreground text-sm">
+                    Relays: {primarySignerProfile.relays.length}
+                  </div>
+                ) : null}
+                <div className="text-muted-foreground text-xs">
+                  Last updated:{" "}
+                  {new Date(primarySignerProfile.updatedAt).toLocaleString()}
+                </div>
+              </div>
+            ) : (
+              <div className="text-muted-foreground text-sm">
+                No account-level primary signer is configured yet.
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={handleSaveActiveSessionAsPrimary}
+              disabled={
+                !activeSessionSupportsPrimarySave ||
+                primarySignerFetcher.state !== "idle"
+              }
+            >
+              Use active session as primary
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void handleTestPrimaryProfile();
+              }}
+              disabled={
+                !primarySignerProfile ||
+                isTestingPrimarySigner ||
+                primarySignerFetcher.state !== "idle"
+              }
+            >
+              {isTestingPrimarySigner ? "Testing..." : "Test primary signer"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleClearPrimaryProfile}
+              disabled={
+                !primarySignerProfile || primarySignerFetcher.state !== "idle"
+              }
+            >
+              Clear primary signer
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

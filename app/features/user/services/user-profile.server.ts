@@ -48,7 +48,11 @@ export async function getUserById(
     return null;
   }
 
-  const result: UserWithHashTagPresets = { ...user, runwaySettings: null };
+  const result: UserWithHashTagPresets = {
+    ...user,
+    runwaySettings: null,
+    primarySignerProfile: null,
+  };
   return result;
 }
 
@@ -88,6 +92,7 @@ const USER_SCALAR_SELECT = {
   parentNpub: true,
   pendingParentRequests: true,
   localeDefaultsAppliedAt: true,
+  primarySignerProfile: true,
 } as const;
 
 /**
@@ -100,7 +105,11 @@ export async function getUserByNpub(npub: string): Promise<User | null> {
     select: USER_SCALAR_SELECT,
   });
   if (!user) return null;
-  const result: User = { ...user, runwaySettings: null };
+  const result: User = {
+    ...user,
+    runwaySettings: null,
+    primarySignerProfile: null,
+  };
   return result;
 }
 

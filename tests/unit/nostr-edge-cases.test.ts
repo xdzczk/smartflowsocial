@@ -15,16 +15,28 @@ const mockWindowNostr = {
 vi.mock("~/lib/error-handler.client", () => ({
   logClientError: vi.fn(),
 }));
+vi.mock("react-hot-toast", () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
 
 // Setup window.nostr mock
 beforeEach(() => {
   global.window = {
     nostr: mockWindowNostr,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+    setTimeout,
+    clearTimeout,
   } as unknown as Window & typeof globalThis;
 });
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.resetModules();
   // @ts-expect-error - Clean up
   delete global.window;
 });
@@ -40,6 +52,11 @@ describe("Nostr Edge Cases", () => {
       let callCount = 0;
 
       global.window = {
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        setTimeout,
+        clearTimeout,
         get nostr() {
           callCount++;
           if (callCount < 3) {
@@ -73,6 +90,11 @@ describe("Nostr Edge Cases", () => {
     it("should throw error after max retries", async () => {
       global.window = {
         nostr: undefined,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        setTimeout,
+        clearTimeout,
       } as unknown as Window & typeof globalThis;
 
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
@@ -185,6 +207,90 @@ describe("Nostr Edge Cases", () => {
       const result = await signEventFn(eventData);
 
       expect(result.nostrEvent.tags).toEqual([]);
+    });
+
+    it("should recover via primary signer fallback on remote connection failure", async () => {
+      vi.resetModules();
+      const mockConfiguredSign = vi.fn().mockResolvedValue({
+        id: "event-remote",
+        pubkey: "pubkey-remote",
+        sig: "sig-remote",
+      });
+      const getActiveSigner = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("websocket closed"))
+        .mockResolvedValue({
+          type: "nip46",
+          signEvent: mockConfiguredSign,
+        });
+
+      const mockPrimaryFailover = vi.fn().mockResolvedValue({
+        recovered: true,
+      });
+
+      vi.doMock("~/lib/nostr-signer-manager.client", () => ({
+        getActiveSignerConfig: () => ({
+          type: "nip46",
+          method: "bunker_input",
+          bunkerInput: "bunker://example",
+          clientSecretKeyHex: "aa",
+        }),
+        getActiveSigner,
+      }));
+      vi.doMock("~/lib/primary-signer-failover.client", () => ({
+        attemptPrimarySignerFailover: mockPrimaryFailover,
+      }));
+
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const result = await nostrAdapter.signEvent({
+        content: "test fallback",
+        created_at: Math.floor(Date.now() / 1000),
+        kind: 1,
+        tags: [],
+      });
+
+      expect(mockPrimaryFailover).toHaveBeenCalled();
+      expect(result.signedEvent.id).toBe("event-remote");
+      expect(mockConfiguredSign).toHaveBeenCalled();
+    });
+
+    it("should still throw extension error when fallback is unavailable", async () => {
+      vi.resetModules();
+
+      global.window = {
+        nostr: undefined,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        setTimeout,
+        clearTimeout,
+      } as unknown as Window & typeof globalThis;
+
+      const mockPrimaryFailover = vi.fn().mockResolvedValue({
+        recovered: false,
+      });
+
+      vi.doMock("~/lib/nostr-signer-manager.client", () => ({
+        getActiveSignerConfig: () => null,
+        getActiveSigner: vi.fn().mockResolvedValue(null),
+      }));
+      vi.doMock("~/lib/primary-signer-failover.client", () => ({
+        attemptPrimarySignerFailover: mockPrimaryFailover,
+      }));
+
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      await expect(
+        nostrAdapter.signEvent({
+          content: "test no fallback",
+          created_at: Math.floor(Date.now() / 1000),
+          kind: 1,
+          tags: [],
+        })
+      ).rejects.toThrow("Nostr extension not found after retries");
+      expect(mockPrimaryFailover).toHaveBeenCalledTimes(1);
+
+      // Ensure the promise chain fully settles before the test exits.
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
   });
 

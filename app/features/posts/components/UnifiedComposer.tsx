@@ -25,6 +25,7 @@ import {
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { SIGNER_CONFIG_HYDRATED_EVENT } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { emitOpenRemoteSignerReconnectDialogEvent } from "~/lib/remote-signer-reconnect.client";
 import {
   getNowForDateTimeLocal,
   nowMillis,
@@ -1086,6 +1087,12 @@ export function UnifiedComposer({
   };
 
   const disabled = fetcher.state !== "idle" || isSigning;
+  const canShowReconnectSignerAction =
+    signerLabel === "NIP-46 (Bunker)" &&
+    !!signingError &&
+    /remote signer|websocket|subscription closed|connection|timeout|timed out|signer app/i.test(
+      signingError
+    );
   const primarySubmitRef = useRef<HTMLButtonElement>(null);
   const draftSubmitRef = useRef<HTMLButtonElement>(null);
   const hasScheduleTimeForSubmit = !!(
@@ -1183,6 +1190,18 @@ export function UnifiedComposer({
             >
               Try again
             </Button>
+            {canShowReconnectSignerAction ? (
+              <Button
+                type="button"
+                size="sm"
+                className="shrink-0"
+                onClick={() => {
+                  emitOpenRemoteSignerReconnectDialogEvent();
+                }}
+              >
+                Reconnect signer
+              </Button>
+            ) : null}
           </Alert>
         ) : null}
         <div className="my-8">

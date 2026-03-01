@@ -24,6 +24,12 @@ const ERROR_CUSTOM_BLOSSOM_URL_REQUIRED =
   "Custom Blossom URL is required when Custom Blossom is selected";
 const ERROR_CUSTOM_BLOSSOM_URL_HTTPS =
   "Custom Blossom URL must start with https://";
+const ERROR_BUNKER_INPUT_REQUIRED =
+  "Bunker input is required for bunker primary signer";
+const ERROR_NOSTRCONNECT_URI_REQUIRED =
+  "nostrconnect URI is required for URI primary signer";
+const ERROR_PRIMARY_RELAYS_REQUIRED =
+  "At least one relay is required for URI primary signer";
 
 // Form value constants
 const FORM_VALUE_ON = "on";
@@ -202,6 +208,73 @@ export const updateBlossomMirrorsSchema = z.object({
         .min(0)
     ),
 });
+
+/**
+ * Primary signer profile schema (account-level fallback profile).
+ * Stores only non-secret metadata server-side.
+ */
+export const updatePrimarySignerProfileSchema = z
+  .object({
+    method: z.enum(["bunker_input", "nostrconnect_uri"]),
+    label: z
+      .string()
+      .optional()
+      .transform((value) => {
+        const trimmed = value?.trim() ?? "";
+        return trimmed ? trimmed : null;
+      }),
+    expectedPubkey: z
+      .string()
+      .optional()
+      .transform((value) => {
+        const trimmed = value?.trim() ?? "";
+        return trimmed ? trimmed : null;
+      }),
+    bunkerInput: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim() ?? ""),
+    uri: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim() ?? ""),
+    relays: z
+      .string()
+      .optional()
+      .transform((value) =>
+        (value ?? "")
+          .split("\n")
+          .map((relay) => relay.trim())
+          .filter((relay) => relay.length > 0)
+      ),
+  })
+  .superRefine((data, ctx) => {
+    if (data.method === "bunker_input") {
+      if (!data.bunkerInput) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["bunkerInput"],
+          message: ERROR_BUNKER_INPUT_REQUIRED,
+        });
+      }
+      return;
+    }
+
+    if (!data.uri) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["uri"],
+        message: ERROR_NOSTRCONNECT_URI_REQUIRED,
+      });
+    }
+    if (data.relays.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["relays"],
+        message: ERROR_PRIMARY_RELAYS_REQUIRED,
+      });
+    }
+  });
 
 /**
  * Queue type schemas

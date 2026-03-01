@@ -44,6 +44,8 @@ model User {
   localeDefaultsAppliedAt    DateTime?
   // Runway KPI: which queues count and mode (last-post vs first-queue-empty)
   runwaySettings             Json?
+  // Account-level preferred NIP-46 signer profile (non-secret metadata only)
+  primarySignerProfile       Json?
   // Child/parent self-relation via npub
   isChild                    Boolean        @default(false)
   parentNpub                 String?

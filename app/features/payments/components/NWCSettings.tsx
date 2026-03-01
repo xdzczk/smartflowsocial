@@ -95,8 +95,8 @@ export function NWCSettings({
           }}
           className="space-y-4"
         >
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 space-y-0.5">
               <Label htmlFor="nwc-enabled">Enable NWC</Label>
               <p className="text-muted-foreground text-sm">
                 Allow automated lightning payments through your wallet
@@ -118,8 +118,8 @@ export function NWCSettings({
                 <div className="space-y-2">
                   <Label>Current NWC Connection</Label>
                   <div className="bg-muted space-y-2 rounded-md p-3">
-                    <div className="flex items-center justify-between">
-                      <p className="font-mono text-sm break-all">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="min-w-0 font-mono text-sm break-all">
                         {maskedNwcString}
                       </p>
                       <Button
@@ -140,7 +140,7 @@ export function NWCSettings({
                       </p>
                     ) : null}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
                       type="button"
                       variant="outline"

@@ -1116,6 +1116,16 @@ export default function BulkPostsPage() {
             setBulkSuccessQueueSummary(null);
             navigate("/dashboard/scheduled");
           }}
+          onGoToDashboard={() => {
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
+            setBulkPostCount(null);
+            setBulkSuccessLastAt(null);
+            setBulkSuccessQueueSummary(null);
+            navigate("/dashboard");
+          }}
         />
       ) : null}
     </div>

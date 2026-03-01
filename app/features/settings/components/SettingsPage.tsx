@@ -27,6 +27,10 @@ import {
 } from "~/features/upload";
 import { AccountsSettings } from "~/features/user";
 import {
+  isPrimarySignerProfile,
+  type PrimarySignerProfile,
+} from "~/lib/primary-signer-profile";
+import {
   validateAccounts,
   validateAvailablePlans,
   validatePaymentHistory,
@@ -205,6 +209,12 @@ interface RelayAck {
   receivedAt: string | null;
 }
 
+function parsePrimarySignerProfile(
+  value: unknown
+): PrimarySignerProfile | null {
+  return isPrimarySignerProfile(value) ? value : null;
+}
+
 function asBoolean(value: unknown, fallback = false): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
@@ -272,11 +282,12 @@ function getTabsGridColsClass(input: {
   isChild: boolean;
   hasAccountsAccess: boolean;
 }): string {
-  // Matches previous behavior:
-  // - 6 cols only when user can access accounts and isn't a child.
+  // Mobile-first:
+  // - 2 columns on very small screens, 3 on small screens
+  // - preserve previous 5/6-column behavior on large screens
   return input.isChild || !input.hasAccountsAccess
-    ? "grid-cols-5"
-    : "grid-cols-6";
+    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+    : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6";
 }
 
 export default function SettingsPage() {
@@ -315,6 +326,7 @@ export default function SettingsPage() {
     runwayNotifyBelowDays?: unknown;
     timeFormat?: unknown;
     dateFormat?: unknown;
+    primarySignerProfile?: unknown;
   };
 
   const {
@@ -350,6 +362,7 @@ export default function SettingsPage() {
     runwayNotifyBelowDays,
     timeFormat: timeFormatRaw,
     dateFormat: dateFormatRaw,
+    primarySignerProfile: primarySignerProfileRaw,
   } = data;
 
   const queueTypes = parseQueueTypes(queueTypesRaw);
@@ -387,27 +400,62 @@ export default function SettingsPage() {
   const nwcLastUsedValue = toIsoStringOrNull(nwcLastUsed);
   const filterMutedValue = asBoolean(filterMuted);
   const hidePostsFromLowTrustUsersValue = asBoolean(hidePostsFromLowTrustUsers);
+  const primarySignerProfile = parsePrimarySignerProfile(
+    primarySignerProfileRaw
+  );
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+    <div className="container mx-auto p-4 sm:p-6">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          Settings
+        </h1>
         <p className="text-muted-foreground mt-2">
           Manage your account preferences and posting configurations
         </p>
       </div>
 
       <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className={`grid w-full ${tabsGridColsClass}`}>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
+        <TabsList className={`grid h-auto w-full gap-1 ${tabsGridColsClass}`}>
+          <TabsTrigger
+            value="general"
+            className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
+          >
+            General
+          </TabsTrigger>
+          <TabsTrigger
+            value="content"
+            className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
+          >
+            Content
+          </TabsTrigger>
           {hasAccountsAccessBool ? (
-            <TabsTrigger value="accounts">Accounts</TabsTrigger>
+            <TabsTrigger
+              value="accounts"
+              className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
+            >
+              Accounts
+            </TabsTrigger>
           ) : null}
-          <TabsTrigger value="network">Network</TabsTrigger>
-          <TabsTrigger value="storage">Storage</TabsTrigger>
+          <TabsTrigger
+            value="network"
+            className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
+          >
+            Network
+          </TabsTrigger>
+          <TabsTrigger
+            value="storage"
+            className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
+          >
+            Storage
+          </TabsTrigger>
           {!isChildBool ? (
-            <TabsTrigger value="subscription">Subscription</TabsTrigger>
+            <TabsTrigger
+              value="subscription"
+              className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
+            >
+              Subscription
+            </TabsTrigger>
           ) : null}
         </TabsList>
 
@@ -453,7 +501,7 @@ export default function SettingsPage() {
                   : null
               }
             />
-            <RemoteSignerSettings />
+            <RemoteSignerSettings primarySignerProfile={primarySignerProfile} />
           </div>
         </TabsContent>
 

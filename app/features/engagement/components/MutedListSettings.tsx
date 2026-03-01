@@ -124,7 +124,7 @@ export function MutedListSettings({
       <CardContent className="space-y-4">
         {/* Muted List Info */}
         <div className="space-y-2 rounded-lg border p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-medium">Muted Users</p>
               <p className="text-2xl font-bold">{mutedCount}</p>
@@ -158,8 +158,8 @@ export function MutedListSettings({
         ) : null}
 
         {/* Filter Toggle */}
-        <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
-          <div className="flex-1 space-y-1">
+        <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+          <div className="min-w-0 flex-1 space-y-1">
             <Label htmlFor="filter-muted" className="text-base">
               Enable Muted Filtering
             </Label>
@@ -185,8 +185,8 @@ export function MutedListSettings({
         ) : null}
 
         {/* Hide Low Trust Users Toggle */}
-        <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
-          <div className="flex-1 space-y-1">
+        <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+          <div className="min-w-0 flex-1 space-y-1">
             <Label htmlFor="hide-low-trust" className="text-base">
               Hide Posts from Low Trust Users
             </Label>

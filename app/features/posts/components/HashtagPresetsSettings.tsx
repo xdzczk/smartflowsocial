@@ -141,7 +141,7 @@ export function HashtagPresetsSettings({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Hash className="h-5 w-5" />
@@ -157,7 +157,7 @@ export function HashtagPresetsSettings({
             onOpenChange={setIsCreateDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 New Preset
               </Button>
@@ -267,7 +267,7 @@ export function HashtagPresetsSettings({
             {presets.map((preset) => (
               <div
                 key={preset.id}
-                className="hover:bg-muted flex items-start justify-between rounded-lg border p-4 transition-colors"
+                className="hover:bg-muted flex flex-col gap-3 rounded-lg border p-4 transition-colors sm:flex-row sm:items-start sm:justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex items-center gap-2">
@@ -300,7 +300,7 @@ export function HashtagPresetsSettings({
                   </div>
                 </div>
 
-                <div className="ml-4 flex items-center gap-1">
+                <div className="flex items-center gap-1 sm:ml-4 sm:self-start">
                   <Button
                     size="sm"
                     variant="ghost"

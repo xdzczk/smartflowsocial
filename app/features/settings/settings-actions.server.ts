@@ -13,6 +13,7 @@ import { handleGeneralSettingsAction } from "./actions/general-settings-actions.
 import { handleHashtagPresetAction } from "./actions/hashtag-presets-actions.server";
 import { handleNWCAction } from "./actions/nwc-actions.server";
 import { handleQueueTypeAction } from "./actions/queue-types-actions.server";
+import { handleSignerSettingsAction } from "./actions/signer-settings-actions.server";
 import { handleStorageSettingsAction } from "./actions/storage-settings-actions.server";
 import { handleSubscriptionAction } from "./actions/subscription-actions.server";
 /**
@@ -32,6 +33,7 @@ export async function handleSettingsAction(userId: string, formData: FormData) {
     handleGeneralSettingsAction,
     handleQueueTypeAction,
     handleStorageSettingsAction,
+    handleSignerSettingsAction,
     handleNWCAction,
     handleAccountsAction,
     handleSubscriptionAction,
