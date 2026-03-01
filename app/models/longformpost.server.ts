@@ -42,6 +42,26 @@ function isNostrDeleteEventsEnabled(): boolean {
   );
 }
 
+function isOutboxEventTypeConstraintError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  if (error.message.includes("OutboxEvent_eventType_check")) {
+    return true;
+  }
+  const errWithCause = error as Error & {
+    cause?: { originalCode?: string; message?: string };
+  };
+  const cause = errWithCause.cause;
+  if (!cause) {
+    return false;
+  }
+  return (
+    cause.originalCode === "23514" &&
+    String(cause.message ?? "").includes("OutboxEvent_eventType_check")
+  );
+}
+
 /**
  * Type guard to check if a value is a SignedEvent
  */
@@ -536,36 +556,49 @@ export async function deleteLongFormPost({
         correlationId
       );
 
-      if (isNostrDeleteEventsEnabled() && deleteRef) {
-        await createOutboxEventInTransaction(
-          tx as Prisma.TransactionClient,
-          "LONGFORM_DELETE_REQUESTED",
-          row.id,
-          "LongFormPost",
-          {
-            postId: row.id,
-            userId: row.userId,
-            originalEventId: deleteRef.originalEventId,
-            originalEventPubkey: deleteRef.originalEventPubkey,
-            aCoordinate: deleteRef.aCoordinate,
-            reason: DEFAULT_DELETE_REASON,
-            schemaVersion: DELETE_EVENT_SCHEMA_VERSION,
-            correlationId,
-          },
-          undefined,
-          undefined,
-          correlationId
-        );
-      }
-
       return row;
     });
 
-    if (isNostrDeleteEventsEnabled() && !deleteRef) {
-      logInfo(
-        "Skipping LONGFORM_DELETE_REQUESTED outbox event: missing metadata",
-        { postId: deleted.id, userId: deleted.userId, correlationId }
-      );
+    if (isNostrDeleteEventsEnabled()) {
+      if (!deleteRef) {
+        logInfo(
+          "Skipping LONGFORM_DELETE_REQUESTED outbox event: missing metadata",
+          { postId: deleted.id, userId: deleted.userId, correlationId }
+        );
+      } else {
+        try {
+          // @ts-ignore - Dynamic imports work at runtime in CommonJS
+          const { createOutboxEvent } =
+            await import("~/infra/outbox/outbox.server");
+          await createOutboxEvent(
+            "LONGFORM_DELETE_REQUESTED",
+            deleted.id,
+            "LongFormPost",
+            {
+              postId: deleted.id,
+              userId: deleted.userId,
+              originalEventId: deleteRef.originalEventId,
+              originalEventPubkey: deleteRef.originalEventPubkey,
+              aCoordinate: deleteRef.aCoordinate,
+              reason: DEFAULT_DELETE_REASON,
+              schemaVersion: DELETE_EVENT_SCHEMA_VERSION,
+              correlationId,
+            },
+            undefined,
+            undefined,
+            correlationId
+          );
+        } catch (error) {
+          if (isOutboxEventTypeConstraintError(error)) {
+            logInfo(
+              "Skipping LONGFORM_DELETE_REQUESTED outbox event: DB constraint not yet updated",
+              { postId: deleted.id, userId: deleted.userId, correlationId }
+            );
+          } else {
+            throw error;
+          }
+        }
+      }
     }
 
     return deleted;

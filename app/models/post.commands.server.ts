@@ -26,6 +26,26 @@ function isNostrDeleteEventsEnabled(): boolean {
   );
 }
 
+function isOutboxEventTypeConstraintError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  if (error.message.includes("OutboxEvent_eventType_check")) {
+    return true;
+  }
+  const errWithCause = error as Error & {
+    cause?: { originalCode?: string; message?: string };
+  };
+  const cause = errWithCause.cause;
+  if (!cause) {
+    return false;
+  }
+  return (
+    cause.originalCode === "23514" &&
+    String(cause.message ?? "").includes("OutboxEvent_eventType_check")
+  );
+}
+
 function extractEventReference(
   signedEvent: unknown,
   nostrEvent: unknown,
@@ -399,36 +419,56 @@ export async function deletePost({
         correlationId
       );
 
-      if (isNostrDeleteEventsEnabled() && deleteRef) {
-        await createOutboxEventInTransaction(
-          tx as Prisma.TransactionClient,
-          "POST_DELETE_REQUESTED",
-          deleted.id,
-          "Post",
-          {
-            postId: deleted.id,
-            userId: deleted.userId,
-            originalEventId: deleteRef.eventId,
-            originalEventPubkey: deleteRef.pubkey,
-            reason: DEFAULT_DELETE_REASON,
-            schemaVersion: DELETE_EVENT_SCHEMA_VERSION,
-            correlationId,
-          },
-          undefined,
-          undefined,
-          correlationId
-        );
-      }
-
       return deleted;
     });
 
-    if (isNostrDeleteEventsEnabled() && !deleteRef) {
-      logInfo("Skipping POST_DELETE_REQUESTED outbox event: missing metadata", {
-        postId: post.id,
-        userId: post.userId,
-        correlationId,
-      });
+    if (isNostrDeleteEventsEnabled()) {
+      if (!deleteRef) {
+        logInfo(
+          "Skipping POST_DELETE_REQUESTED outbox event: missing metadata",
+          {
+            postId: post.id,
+            userId: post.userId,
+            correlationId,
+          }
+        );
+      } else {
+        try {
+          // @ts-ignore - Dynamic imports work at runtime in CommonJS
+          const { createOutboxEvent } =
+            await import("~/infra/outbox/outbox.server");
+          await createOutboxEvent(
+            "POST_DELETE_REQUESTED",
+            post.id,
+            "Post",
+            {
+              postId: post.id,
+              userId: post.userId,
+              originalEventId: deleteRef.eventId,
+              originalEventPubkey: deleteRef.pubkey,
+              reason: DEFAULT_DELETE_REASON,
+              schemaVersion: DELETE_EVENT_SCHEMA_VERSION,
+              correlationId,
+            },
+            undefined,
+            undefined,
+            correlationId
+          );
+        } catch (error) {
+          if (isOutboxEventTypeConstraintError(error)) {
+            logInfo(
+              "Skipping POST_DELETE_REQUESTED outbox event: DB constraint not yet updated",
+              {
+                postId: post.id,
+                userId: post.userId,
+                correlationId,
+              }
+            );
+          } else {
+            throw error;
+          }
+        }
+      }
     }
 
     return post;

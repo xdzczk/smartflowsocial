@@ -1,207 +1,55 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="53" failures="0" errors="0" time="0.036467874">
-    <testsuite name="tests/integration/api-upload.test.ts" timestamp="2026-03-01T06:39:55.963Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.023056583">
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Successful Requests &gt; should upload file and return URL" time="0.015051875">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-            </system-err>
+<testsuites name="vitest tests" tests="24" failures="0" errors="0" time="0.017587125">
+    <testsuite name="tests/integration/longformpost-model.test.ts" timestamp="2026-03-01T07:36:47.836Z" hostname="Ivans-MacBook-Pro.local" tests="10" failures="0" errors="0" skipped="0" time="0.00647175">
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; createLongFormPost &gt; should create a longform post with all fields" time="0.002400833">
         </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should block S3 endpoint for custom Blossom provider" time="0.003732125">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Upload provider is set to Blossom. Use Blossom upload (refresh the page if bulk upload still calls S3).&apos;,
-  code: &apos;INTERNAL_ERROR&apos;,
-  statusCode: 500,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; createLongFormPost &gt; should handle draft longform posts" time="0.00028825">
         </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should require authentication" time="0.000712333">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Authentication required&apos;,
-  code: &apos;AUTHENTICATION_ERROR&apos;,
-  statusCode: 401,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; createLongFormPost &gt; should handle scheduled longform posts" time="0.000794333">
         </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should return validation error for non-multipart content type" time="0.000653291">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-
-❌ Error: {
-  message: &apos;Request must be multipart/form-data&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; deleteLongFormPost &gt; should delete a longform post by id and userId" time="0.000611709">
         </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should handle multipart parsing errors" time="0.000668916">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-
-❌ Error: {
-  message: &apos;Failed to parse multipart form data&apos;,
-  code: &apos;EXTERNAL_SERVICE_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; deleteLongFormPost &gt; should emit LONGFORM_DELETE_REQUESTED when feature flag is enabled" time="0.000296917">
         </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should return validation error when no file provided" time="0.000585666">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-
-❌ Error: {
-  message: &apos;No file provided&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; updateLongFormPost &gt; should update a longform post with new data" time="0.000406167">
         </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Action Handler &gt; Error Handling &gt; should return validation error when file upload fails (no URL)" time="0.000558625">
-            <system-err>
-⚠️  Warning: Deprecated S3 upload endpoint used { userId: &apos;user-123&apos;, route: &apos;/api/upload&apos;, uploadProvider: &apos;S3&apos; }
-
-
-❌ Error: {
-  message: &apos;File upload failed - no URL returned&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; getLongFormPost &gt; should get a longform post by id" time="0.000165458">
         </testcase>
-        <testcase classname="tests/integration/api-upload.test.ts" name="API: Upload &gt; Loader Handler &gt; should return API description" time="0.000262167">
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; getDraftLongFormPosts &gt; should get draft longform posts for a user" time="0.000209542">
+        </testcase>
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; getPublishedLongFormPosts &gt; should get published longform posts with pagination" time="0.000259042">
+        </testcase>
+        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; getScheduledLongFormPosts &gt; should get scheduled longform posts for a user" time="0.00023">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/upload-provider-settings-schema.test.ts" timestamp="2026-03-01T06:39:55.965Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.002895">
-        <testcase classname="tests/unit/upload-provider-settings-schema.test.ts" name="updateUploadProviderSchema &gt; requires custom URL when BLOSSOM_CUSTOM is selected" time="0.001718417">
+    <testsuite name="tests/integration/models/post-commands.test.ts" timestamp="2026-03-01T07:36:47.837Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.011115375">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; createPost &gt; should create a post with all fields" time="0.002643875">
         </testcase>
-        <testcase classname="tests/unit/upload-provider-settings-schema.test.ts" name="updateUploadProviderSchema &gt; rejects non-https custom URL" time="0.000154875">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; createPost &gt; should create a post with queue type connection" time="0.000316042">
         </testcase>
-        <testcase classname="tests/unit/upload-provider-settings-schema.test.ts" name="updateUploadProviderSchema &gt; accepts and normalizes custom URL" time="0.000120833">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; createPost &gt; should create a post with hashtag preset connection" time="0.000224875">
         </testcase>
-        <testcase classname="tests/unit/upload-provider-settings-schema.test.ts" name="updateUploadProviderSchema &gt; allows non-custom provider without URL" time="0.000099208">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; createPost &gt; should handle scheduled post with scheduledFor" time="0.000262875">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/validation-user-data.test.ts" timestamp="2026-03-01T06:39:55.965Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.004773791">
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should return null for null input" time="0.000741333">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; reschedulePost &gt; should reschedule post with new time" time="0.000632166">
         </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should return null for undefined input" time="0.000098208">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; reschedulePost &gt; should update signed events when provided" time="0.000245917">
         </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should return null for non-object input" time="0.000526542">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; reschedulePost &gt; should connect queue type when queueTypeId is provided" time="0.000165666">
         </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should return null for invalid user structure" time="0.00112975">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; reschedulePost &gt; should disconnect queue type when queueTypeId is null" time="0.000148">
         </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should return validated UserData for valid input" time="0.000751459">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; updatePost &gt; should update post with partial data" time="0.004316208">
         </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should accept BLOSSOM_CUSTOM as upload provider" time="0.000156167">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; updatePost &gt; should handle queue type connection" time="0.000245292">
         </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should convert scheduleInterval from strings to numbers" time="0.000124292">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; updatePost &gt; should handle queue type disconnection" time="0.000195334">
         </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should handle scheduleInterval with numbers" time="0.000100375">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; updatePost &gt; should handle hashtag preset connection" time="0.000139042">
         </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should handle null timezone" time="0.000110334">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; deletePost &gt; should delete a post" time="0.0003755">
         </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should handle empty scheduleInterval" time="0.000120667">
-        </testcase>
-        <testcase classname="tests/unit/validation-user-data.test.ts" name="User Data Validation &gt; validateUserData &gt; should handle missing optional fields" time="0.000096334">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/integration/services/user-settings.test.ts" timestamp="2026-03-01T06:39:55.967Z" hostname="Ivans-MacBook-Pro.local" tests="30" failures="0" errors="0" skipped="0" time="0.0057425">
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Timezone &gt; should update user timezone" time="0.001715209">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Timezone &gt; should get user timezone" time="0.000190417">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Timezone &gt; should return null if timezone not set" time="0.000130709">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Relays &gt; should update user relays" time="0.000253">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Relays &gt; should get user relays without subscription" time="0.000125042">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Relays &gt; should not inject managed relays into persisted user relays" time="0.000092">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Giveaway Blacklist &gt; should update giveaway blacklist" time="0.000191834">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Giveaway Blacklist &gt; should get giveaway blacklist" time="0.000102291">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Giveaway Blacklist &gt; should return empty array if blacklist not set" time="0.000077958">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Schedule Interval &gt; should update schedule interval" time="0.000183792">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Schedule Interval &gt; should get schedule interval" time="0.000080041">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Schedule Interval &gt; should return empty array if schedule interval not set" time="0.000054667">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Upload Provider &gt; should update upload provider" time="0.000125209">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Upload Provider &gt; should resolve S3 to Primal for free users" time="0.000158042">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Upload Provider &gt; should resolve S3 to SFS for active paid users" time="0.000074041">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Upload Provider &gt; should preserve explicit custom provider when custom URL exists" time="0.000072333">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Upload Provider &gt; should fallback when custom provider has missing URL" time="0.000054916">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Upload Provider &gt; should persist provider + custom URL atomically" time="0.000122917">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Upload Provider &gt; should clear custom URL when provider is not custom" time="0.000092583">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Upload Provider &gt; should resolve provider by tier defaults helper" time="0.000076708">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Mirror Blossom &gt; should get mirror blossom enabled status" time="0.000056833">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Mirror Blossom &gt; should update mirror blossom enabled status" time="0.000098708">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Mirror Upload URLs &gt; should get mirror upload URLs" time="0.000062084">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Mirror Upload URLs &gt; should update mirror upload URLs" time="0.0001005">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Muted List &gt; should get muted list" time="0.000086709">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Muted List &gt; should update muted list" time="0.000115334">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Filter Muted &gt; should get filter muted setting" time="0.000054125">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Filter Muted &gt; should update filter muted setting" time="0.000093167">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Hide Posts From Low Trust Users &gt; should get hide posts from low trust users setting" time="0.000057833">
-        </testcase>
-        <testcase classname="tests/integration/services/user-settings.test.ts" name="User Settings &gt; Hide Posts From Low Trust Users &gt; should update hide posts from low trust users setting" time="0.000089083">
+        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; deletePost &gt; should emit POST_DELETE_REQUESTED when feature flag is enabled" time="0.000187">
         </testcase>
     </testsuite>
 </testsuites>
