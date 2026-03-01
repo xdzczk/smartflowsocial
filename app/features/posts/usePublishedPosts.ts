@@ -1,5 +1,6 @@
 import { useFetcher, useRevalidator, useSearchParams } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useCallback } from "react";
 
 import type { ToastMessage } from "~/components/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -10,6 +11,7 @@ import {
 } from "~/lib/temporal";
 import type { UserData } from "~/lib/validation/user-data";
 
+import { publishedPostsKeys } from "./hooks/usePublishedPostsQuery";
 import { useRefreshPostViews } from "./hooks/useRefreshPostViews";
 import type {
   BulkPost,
@@ -58,6 +60,63 @@ interface FetcherErrorResponse {
   message?: string;
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function filterRowsById(rows: unknown, deletedIds: Set<string>): unknown {
+  if (!Array.isArray(rows)) {
+    return rows;
+  }
+  return rows.filter((row) => {
+    if (!isObject(row)) return true;
+    const id = row["id"];
+    return typeof id !== "string" || !deletedIds.has(id);
+  });
+}
+
+function prunePublishedPageData(
+  page: unknown,
+  deletedIds: Set<string>
+): unknown {
+  if (!isObject(page)) {
+    return page;
+  }
+  return {
+    ...page,
+    posts: filterRowsById(page["posts"], deletedIds),
+    longformPosts: filterRowsById(page["longformPosts"], deletedIds),
+    allContent: filterRowsById(page["allContent"], deletedIds),
+  };
+}
+
+function parseBulkDeleteIds(formData: FormData): string[] {
+  const action = formData.get("_action");
+  const raw = formData.get("postIds");
+  const rawMixed = formData.get("itemData");
+
+  if (action === ACTION_BULK_DELETE_MIXED && typeof rawMixed === "string") {
+    try {
+      const mixed = JSON.parse(rawMixed) as Array<{ id?: unknown }>;
+      return mixed
+        .map((item) => (typeof item.id === "string" ? item.id : null))
+        .filter((id): id is string => id !== null);
+    } catch {
+      return [];
+    }
+  }
+
+  if (typeof raw !== "string") {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown[];
+    return parsed.filter((id): id is string => typeof id === "string");
+  } catch {
+    return [];
+  }
+}
+
 export type BulkComposerPayload =
   | { mode: "recycle"; initialPosts: BulkPost[] }
   | { mode: "repost"; scheduledRepostData: unknown[] }
@@ -78,6 +137,7 @@ export function usePublishedPosts({
   onOpenBulkComposer,
 }: UsePublishedPostsProps) {
   const _revalidator = useRevalidator();
+  const queryClient = useQueryClient();
   const refreshAllPostViews = useRefreshPostViews();
   const [searchParams] = useSearchParams();
 
@@ -134,6 +194,31 @@ export function usePublishedPosts({
       longformQuotePostData?: QuotePostData[];
     } & FetcherErrorResponse
   >();
+
+  const optimisticallyRemovePublishedItems = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      const deletedIds = new Set(ids);
+      queryClient.setQueriesData(
+        { queryKey: publishedPostsKeys.all },
+        (old) => {
+          if (!isObject(old)) {
+            return old;
+          }
+          if (Array.isArray(old["pages"])) {
+            return {
+              ...old,
+              pages: (old["pages"] as unknown[]).map((page) =>
+                prunePublishedPageData(page, deletedIds)
+              ),
+            };
+          }
+          return prunePublishedPageData(old, deletedIds);
+        }
+      );
+    },
+    [queryClient]
+  );
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({
@@ -287,9 +372,17 @@ export function usePublishedPosts({
 
   useEffect(() => {
     if (bulkDeleteFetcher.data?.success) {
+      const formData = bulkDeleteFetcher.formData;
+      if (formData) {
+        optimisticallyRemovePublishedItems(parseBulkDeleteIds(formData));
+      }
       setSelectedPosts(new Set());
     }
-  }, [bulkDeleteFetcher.data]);
+  }, [
+    bulkDeleteFetcher.data,
+    bulkDeleteFetcher.formData,
+    optimisticallyRemovePublishedItems,
+  ]);
 
   useEffect(() => {
     const isSuccess =
@@ -302,8 +395,19 @@ export function usePublishedPosts({
     const isSuccess =
       deleteFetcher.state === "idle" && deleteFetcher.data?.success;
     if (!isSuccess) return;
+    const formData = deleteFetcher.formData as FormData | undefined;
+    const deletedPostId = formData?.get("postId");
+    if (typeof deletedPostId === "string" && deletedPostId.length > 0) {
+      optimisticallyRemovePublishedItems([deletedPostId]);
+    }
     refreshAllPostViews();
-  }, [deleteFetcher.state, deleteFetcher.data, refreshAllPostViews]);
+  }, [
+    deleteFetcher.state,
+    deleteFetcher.data,
+    deleteFetcher.formData,
+    optimisticallyRemovePublishedItems,
+    refreshAllPostViews,
+  ]);
 
   useEffect(() => {
     if (repostFetcher.data?.repostData) {
@@ -691,5 +795,6 @@ export function usePublishedPosts({
     handleBulkRepost,
     handleBulkScheduledRepost,
     handleBulkQuote,
+    optimisticallyRemovePublishedItems,
   };
 }

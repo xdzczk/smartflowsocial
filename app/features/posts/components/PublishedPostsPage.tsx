@@ -310,6 +310,7 @@ export default function PublishedPostsPage() {
     handleBulkRepost,
     handleBulkScheduledRepost,
     handleBulkQuote,
+    optimisticallyRemovePublishedItems,
   } = usePublishedPosts({
     user,
     allContent,
@@ -526,7 +527,10 @@ export default function PublishedPostsPage() {
         <PostDetailsModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
-          onDeleted={refreshPostViews}
+          onDeleted={(postId) => {
+            optimisticallyRemovePublishedItems([postId]);
+            refreshPostViews();
+          }}
           type="published"
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}
@@ -538,7 +542,10 @@ export default function PublishedPostsPage() {
         <LongFormDetailsModal
           post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
-          onDeleted={refreshPostViews}
+          onDeleted={(postId) => {
+            optimisticallyRemovePublishedItems([postId]);
+            refreshPostViews();
+          }}
           type="published"
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}
