@@ -1739,6 +1739,10 @@ export default function NostrLoginPanel() {
       ) : null}
 
       {(() => {
+        const isInitializingUnknown =
+          state === "signer_initializing" &&
+          !signer &&
+          activeSignerFlow == null;
         const isInitializingNip07 =
           state === "signer_initializing" &&
           !signer &&
@@ -1756,7 +1760,7 @@ export default function NostrLoginPanel() {
         if (isInitializingNip07) {
           return (
             <div
-              className="border-border bg-card animate-in fade-in-0 min-h-[164px] space-y-3 rounded-lg border p-6 shadow-lg duration-150 motion-reduce:animate-none dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
+              className="border-border bg-card min-h-[164px] space-y-3 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
               role="status"
               aria-live="polite"
               aria-busy="true"
@@ -1774,10 +1778,28 @@ export default function NostrLoginPanel() {
           );
         }
 
+        if (isInitializingUnknown) {
+          return (
+            <div
+              className="border-border bg-card min-h-[164px] space-y-3 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <div className="flex items-center gap-3">
+                <Loader2 className="text-primary h-5 w-5 animate-spin" />
+                <div className="text-foreground text-base font-semibold">
+                  Preparing sign in…
+                </div>
+              </div>
+            </div>
+          );
+        }
+
         if (!isInitializingNip46) return null;
 
         return (
-          <div className="border-border bg-card animate-in fade-in-0 space-y-4 rounded-lg border p-6 shadow-lg duration-150 motion-reduce:animate-none dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
+          <div className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
             <div className="space-y-2">
               <div className="text-foreground text-base font-bold">
                 Remote signer
@@ -1931,7 +1953,7 @@ export default function NostrLoginPanel() {
 
       {state === "awaiting_profile_selection" ? (
         <div
-          className="border-border bg-card animate-in fade-in-0 space-y-4 rounded-lg border p-6 shadow-lg duration-150 motion-reduce:animate-none dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
+          className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
           role="status"
           aria-live="polite"
           aria-busy="true"
@@ -2083,7 +2105,7 @@ export default function NostrLoginPanel() {
 
       {pubkey &&
       (state === "requesting_signature" || state === "verifying_signature") ? (
-        <div className="border-border bg-card animate-in fade-in-0 min-h-[164px] space-y-4 rounded-lg border p-6 shadow-lg duration-150 motion-reduce:animate-none dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
+        <div className="border-border bg-card min-h-[164px] space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
           <div className="flex min-h-6 w-full items-center gap-1 text-base">
             <span className="shrink-0">Signing in as</span>
             <span
@@ -2118,6 +2140,23 @@ export default function NostrLoginPanel() {
             Waiting for your extension to sign the login request. If it
             doesn&apos;t respond, try canceling and checking your extension
             settings.
+          </div>
+        </div>
+      ) : null}
+
+      {!pubkey &&
+      (state === "requesting_signature" || state === "verifying_signature") ? (
+        <div
+          className="border-border bg-card min-h-[164px] space-y-3 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="flex items-center gap-3">
+            <Loader2 className="text-primary h-5 w-5 animate-spin" />
+            <div className="text-foreground text-base font-semibold">
+              Finalizing sign in…
+            </div>
           </div>
         </div>
       ) : null}
