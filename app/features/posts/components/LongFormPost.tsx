@@ -82,6 +82,8 @@ interface LongFormPostProps {
   initialTemplateName?: string | null;
   /** Prefill schedule (datetime-local format YYYY-MM-DDTHH:mm) when opening from calendar slot. */
   initialScheduledFor?: string | null;
+  /** When true, skip restoring local browser draft and clear any cached snapshot. */
+  skipLocalDraftRestore?: boolean;
 }
 
 export default function LongFormPost({
@@ -104,6 +106,7 @@ export default function LongFormPost({
   editTemplateContext = null,
   initialTemplateName = null,
   initialScheduledFor = null,
+  skipLocalDraftRestore = false,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
   const [templateName, setTemplateName] = useState(
@@ -218,7 +221,7 @@ export default function LongFormPost({
     customTags: string;
     queueType: string;
     savedAt: number;
-  }>(longformDraftKey, !!initialData, 2000);
+  }>(longformDraftKey, !!initialData || skipLocalDraftRestore, 2000);
   const lastLongformSnapshotRef = useRef<{
     title: string;
     summary: string;
@@ -230,7 +233,12 @@ export default function LongFormPost({
 
   const appliedLongformRestoredRef = useRef(false);
   useEffect(() => {
-    if (!longformRestored || initialData || appliedLongformRestoredRef.current)
+    if (
+      !longformRestored ||
+      initialData ||
+      skipLocalDraftRestore ||
+      appliedLongformRestoredRef.current
+    )
       return;
     appliedLongformRestoredRef.current = true;
     form.reset({
@@ -252,6 +260,7 @@ export default function LongFormPost({
   }, [
     longformRestored,
     initialData,
+    skipLocalDraftRestore,
     form,
     editorReady,
     editor,
@@ -280,7 +289,7 @@ export default function LongFormPost({
   }, [initialData, editorReady, editor, form, loadInitialData]);
 
   useEffect(() => {
-    if (initialData) return;
+    if (initialData || skipLocalDraftRestore) return;
     const snapshot = {
       /* eslint-disable @typescript-eslint/no-unnecessary-condition -- form state can be undefined */
       title: title ?? "",
@@ -295,6 +304,7 @@ export default function LongFormPost({
     saveLongformSnapshot(snapshot);
   }, [
     initialData,
+    skipLocalDraftRestore,
     title,
     summary,
     content,
@@ -306,7 +316,7 @@ export default function LongFormPost({
 
   // Flush localStorage on unmount and when page is hidden; use current state at flush time so last keystroke is not lost
   useEffect(() => {
-    if (initialData) return;
+    if (initialData || skipLocalDraftRestore) return;
     const flush = () => {
       /* eslint-disable @typescript-eslint/no-unnecessary-condition -- snapshot fields must be string for JSON; form.watch() can be undefined */
       const snap = {
@@ -328,6 +338,7 @@ export default function LongFormPost({
     };
   }, [
     initialData,
+    skipLocalDraftRestore,
     flushLongformSnapshot,
     title,
     summary,
@@ -338,10 +349,19 @@ export default function LongFormPost({
   ]);
 
   useEffect(() => {
-    if (fetcher.state === "submitting" && !initialData) {
+    if (
+      fetcher.state === "submitting" &&
+      !initialData &&
+      !skipLocalDraftRestore
+    ) {
       clearLongformSnapshot();
     }
-  }, [fetcher.state, initialData, clearLongformSnapshot]);
+  }, [
+    fetcher.state,
+    initialData,
+    skipLocalDraftRestore,
+    clearLongformSnapshot,
+  ]);
 
   // Sync scheduling hook with form (form is source of truth for submit; we push hook -> form)
   const formQueueTypeJustSetRef = useRef(false);

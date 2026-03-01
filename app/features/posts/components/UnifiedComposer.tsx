@@ -252,6 +252,8 @@ export interface UnifiedComposerProps {
   } | null;
   /** Prefill schedule (datetime-local format YYYY-MM-DDTHH:mm) when opening from calendar slot. */
   initialScheduledFor?: string | null;
+  /** When true, skip restoring local browser draft and clear any cached snapshot. */
+  skipLocalDraftRestore?: boolean;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -267,6 +269,7 @@ export function UnifiedComposer({
   initialDraftId = null,
   initialDraft = null,
   initialScheduledFor = null,
+  skipLocalDraftRestore = false,
   mode = "default",
   editTemplateContext = null,
   initialTemplateName = null,
@@ -385,7 +388,10 @@ export function UnifiedComposer({
     saveSnapshot: saveLocalSnapshot,
     flushSnapshot: flushLocalSnapshot,
     clearSnapshot: clearLocalSnapshot,
-  } = useComposerLocalDraft("composer-newpost-draft", !!initialDraftId);
+  } = useComposerLocalDraft(
+    "composer-newpost-draft",
+    !!initialDraftId || skipLocalDraftRestore
+  );
 
   const lastLocalSnapshotRef = useRef<Omit<
     ComposerLocalSnapshot,
@@ -394,7 +400,12 @@ export function UnifiedComposer({
 
   const appliedLocalRestoredRef = useRef(false);
   React.useEffect(() => {
-    if (!localRestored || initialDraftId || appliedLocalRestoredRef.current)
+    if (
+      !localRestored ||
+      initialDraftId ||
+      skipLocalDraftRestore ||
+      appliedLocalRestoredRef.current
+    )
       return;
     appliedLocalRestoredRef.current = true;
     form.reset({
@@ -415,7 +426,13 @@ export function UnifiedComposer({
       }))
     );
     setSelectedQueue(localRestored.queueType);
-  }, [localRestored, initialDraftId, form, setSelectedQueue]);
+  }, [
+    localRestored,
+    initialDraftId,
+    skipLocalDraftRestore,
+    form,
+    setSelectedQueue,
+  ]);
 
   React.useEffect(() => {
     form.setValue("queueType", selectedQueue);
@@ -449,7 +466,7 @@ export function UnifiedComposer({
 
   // Persist to localStorage when not editing a server draft
   React.useEffect(() => {
-    if (initialDraftId) return;
+    if (initialDraftId || skipLocalDraftRestore) return;
     const snapshot: Omit<ComposerLocalSnapshot, "savedAt"> = {
       content: content ?? "", // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- form state can be undefined
       queueType: selectedQueue,
@@ -466,6 +483,7 @@ export function UnifiedComposer({
     saveLocalSnapshot(snapshot);
   }, [
     initialDraftId,
+    skipLocalDraftRestore,
     content,
     selectedQueue,
     queueTypeId,
@@ -478,7 +496,7 @@ export function UnifiedComposer({
 
   // Flush localStorage on unmount and when page is hidden so content is not lost when navigating away
   React.useEffect(() => {
-    if (initialDraftId) return;
+    if (initialDraftId || skipLocalDraftRestore) return;
     const flush = () => {
       const snap = lastLocalSnapshotRef.current;
       if (snap) flushLocalSnapshot(snap);
@@ -489,7 +507,7 @@ export function UnifiedComposer({
       document.removeEventListener("visibilitychange", onHide);
       flush();
     };
-  }, [initialDraftId, flushLocalSnapshot]);
+  }, [initialDraftId, skipLocalDraftRestore, flushLocalSnapshot]);
 
   const hasContent = isThreadMode
     ? threadSegments.some(

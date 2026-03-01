@@ -162,6 +162,8 @@ export default function NewPostPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const scheduledAt = searchParams.get("scheduledAt");
+  const publishResultToken =
+    searchParams.get("published") ?? searchParams.get("scheduled");
   const navigate = useNavigate();
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
@@ -282,6 +284,15 @@ export default function NewPostPage() {
     }
   }, [searchParams, modalPostId, showPublishModal, setSearchParams]);
 
+  useEffect(() => {
+    if (!publishResultToken) return;
+    try {
+      localStorage.removeItem("composer-newpost-draft");
+    } catch {
+      // ignore
+    }
+  }, [publishResultToken]);
+
   return (
     <div className="p-6">
       <NewPostHeader
@@ -334,6 +345,7 @@ export default function NewPostPage() {
       ) : null}
 
       <UnifiedComposer
+        key={`newpost-composer-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
         queueTypes={typedQueueTypes}
         hashTagPresets={typedHashTagPresets}
         onQueueTypeChange={handleQueueTypeChange}
@@ -349,6 +361,7 @@ export default function NewPostPage() {
         initialDraft={initialDraft}
         initialDraftId={initialDraftId}
         initialScheduledFor={scheduledAt ?? undefined}
+        skipLocalDraftRestore={Boolean(publishResultToken)}
       />
 
       {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (

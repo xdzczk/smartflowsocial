@@ -250,6 +250,8 @@ export default function NewLongFormPostPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const scheduledAt = searchParams.get("scheduledAt");
+  const publishResultToken =
+    searchParams.get("published") ?? searchParams.get("scheduled");
   const navigate = useNavigate();
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
@@ -324,6 +326,15 @@ export default function NewLongFormPostPage() {
     }
   }, [searchParams, modalPostId, showPublishModal, setSearchParams]);
 
+  useEffect(() => {
+    if (!publishResultToken) return;
+    try {
+      localStorage.removeItem("longform-draft-new");
+    } catch {
+      // ignore
+    }
+  }, [publishResultToken]);
+
   return (
     <div className="p-6">
       <NewLongFormHeader displayedHashtags={displayedHashtags} />
@@ -373,6 +384,7 @@ export default function NewLongFormPostPage() {
 
       <Form method="post" encType="multipart/form-data">
         <LongFormPost
+          key={`newlongform-composer-${publishResultToken ?? "default"}`}
           initialData={initialTemplateData}
           initialScheduledFor={scheduledAt ?? undefined}
           queueTypes={queueTypes}
@@ -394,6 +406,7 @@ export default function NewLongFormPostPage() {
           selectedHashtagPresetId={selectedHashtagPresetId}
           selectedHashtags={selectedHashtags}
           onHashtagPresetChange={handleHashtagPresetSelect}
+          skipLocalDraftRestore={Boolean(publishResultToken)}
         />
       </Form>
 

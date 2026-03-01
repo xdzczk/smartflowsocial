@@ -24,12 +24,9 @@ import {
   setActiveSignerConfig,
   type ActiveSignerConfig,
 } from "~/lib/nostr-signer-manager.client";
+import { attemptPrimarySignerFailover } from "~/lib/primary-signer-failover.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-import {
-  OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
-  REMOTE_SIGNER_TIMEOUT_EVENT,
-  type RemoteSignerTimeoutEventDetail,
-} from "~/lib/remote-signer-reconnect.client";
+import { OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT } from "~/lib/remote-signer-reconnect.client";
 import {
   createSession,
   detectSignerAppName,
@@ -99,83 +96,26 @@ export function RemoteSignerReconnectController(
 
   const [dialogOpen, setDialogOpen] = useState(props?.open ?? false);
 
-  // Throttle toasts to avoid spam during rapid retries.
-  const lastToastAtRef = useRef(0);
-  const toastIdRef = useRef<string | null>(null);
-
   const openDialog = useCallback(() => {
     setDialogOpen(true);
   }, []);
 
-  const showReconnectToast = useCallback(
-    (detail?: RemoteSignerTimeoutEventDetail) => {
-      const now = Date.now();
-      if (now - lastToastAtRef.current < 5_000) return;
-      lastToastAtRef.current = now;
-
-      if (toastIdRef.current) {
-        toast.dismiss(toastIdRef.current);
-        toastIdRef.current = null;
-      }
-
-      toastIdRef.current = toast.custom(
-        (t) => (
-          <div className="dark:bg-card w-[360px] rounded-lg border bg-white p-3 shadow-lg">
-            <div className="dark:text-foreground text-foreground text-sm font-medium">
-              Remote signer isn’t responding
-            </div>
-            <div className="dark:text-foreground text-foreground mt-1 text-sm">
-              {detail?.message ??
-                "Open your signer app to approve, or reconnect the session."}
-            </div>
-            <div className="mt-3 flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => toast.dismiss(t.id)}
-              >
-                Dismiss
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  openDialog();
-                }}
-              >
-                Reconnect
-              </Button>
-            </div>
-          </div>
-        ),
-        { duration: 15_000, position: "top-right" }
-      );
-    },
-    [openDialog]
-  );
-
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const handler = (ev: Event) => {
-      const custom = ev as CustomEvent<RemoteSignerTimeoutEventDetail>;
-      showReconnectToast(custom.detail);
-    };
     const openHandler = () => {
       openDialog();
     };
-    window.addEventListener(REMOTE_SIGNER_TIMEOUT_EVENT, handler);
     window.addEventListener(
       OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
       openHandler
     );
     return () => {
-      window.removeEventListener(REMOTE_SIGNER_TIMEOUT_EVENT, handler);
       window.removeEventListener(
         OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
         openHandler
       );
     };
-  }, [openDialog, showReconnectToast]);
+  }, [openDialog]);
 
   const handleOpenChange = (open: boolean) => {
     setDialogOpen(open);
@@ -377,6 +317,21 @@ export function RemoteSignerReconnectDialog(props: {
       onReconnectSuccess?.(session.id);
       onOpenChange(false);
     } catch {
+      const fallback = await attemptPrimarySignerFailover({
+        expectedPubkey: expectedPubkeyHex,
+        labelFallback: "Primary Home Signer",
+      });
+      if (fallback.recovered) {
+        setState("connected");
+        toast.success("Remote signer reconnected.");
+        const recoveredSession = getActiveSession();
+        if (recoveredSession) {
+          onReconnectSuccess?.(recoveredSession.id);
+        }
+        onOpenChange(false);
+        return;
+      }
+
       setState("idle");
       setError(
         "Could not reconnect with existing session. If the session is still in your signer app, switch to it, reactivate the session, then return here — we’ll retry automatically. Or generate a new connection string below."
