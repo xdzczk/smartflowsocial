@@ -465,7 +465,16 @@ export async function deletePost({
               }
             );
           } else {
-            throw error;
+            logError(
+              error instanceof Error ? error : new Error(String(error)),
+              {
+                message:
+                  "Failed to enqueue POST_DELETE_REQUESTED outbox event (post already deleted)",
+                postId: post.id,
+                userId: post.userId,
+                correlationId,
+              }
+            );
           }
         }
       }
