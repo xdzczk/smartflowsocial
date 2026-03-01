@@ -1,3 +1,4 @@
+import { convertHexToNpub, convertToHex } from "~/lib/nostr-conversion";
 import type { ActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
 
 export type ConnectionStatus = "active" | "disconnected" | "stale" | "inactive";
@@ -45,12 +46,47 @@ const MAX_HISTORY_ENTRIES = 100;
  */
 let currentUserNpub: string | null = null;
 
+function normalizeUserIdentifier(userIdentifier: string | null): string | null {
+  if (!userIdentifier) {
+    return null;
+  }
+
+  const trimmed = userIdentifier.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (/^[0-9a-fA-F]{64}$/.test(trimmed)) {
+    return convertHexToNpub(trimmed);
+  }
+
+  return trimmed;
+}
+
+function getAlternateUserIdentifiers(userIdentifier: string): string[] {
+  const alternatives: string[] = [];
+
+  if (userIdentifier.startsWith("npub")) {
+    const hex = convertToHex(userIdentifier);
+    if (hex) {
+      alternatives.push(hex);
+    }
+  } else if (/^[0-9a-fA-F]{64}$/.test(userIdentifier)) {
+    const npub = convertHexToNpub(userIdentifier);
+    if (npub !== userIdentifier) {
+      alternatives.push(npub);
+    }
+  }
+
+  return alternatives;
+}
+
 /**
  * Set the current user's npub so session storage is read/written for that profile.
  * Call with the logged-in user's npub; call with null on logout or when no user.
  */
 export function setCurrentUserNpub(npub: string | null): void {
-  currentUserNpub = npub;
+  currentUserNpub = normalizeUserIdentifier(npub);
 }
 
 function getStorageKey(): string {
@@ -73,6 +109,26 @@ function getStorage(): RemoteSignerSessionsStorage {
     const key = getStorageKey();
     const stored = localStorage.getItem(key);
     if (!stored) {
+      // Backward compatibility: if profile identifier format changed
+      // (hex <-> npub), read from the old key and migrate.
+      if (currentUserNpub) {
+        for (const alternate of getAlternateUserIdentifiers(currentUserNpub)) {
+          const alternateKey = `${STORAGE_KEY_PREFIX}_${alternate}`;
+          const alternateStored = localStorage.getItem(alternateKey);
+          if (!alternateStored) {
+            continue;
+          }
+          try {
+            const parsed = JSON.parse(
+              alternateStored
+            ) as RemoteSignerSessionsStorage;
+            localStorage.setItem(key, JSON.stringify(parsed));
+            return parsed;
+          } catch {
+            // Ignore invalid legacy data and continue fallback lookup.
+          }
+        }
+      }
       return { sessions: [], activeSessionId: null, version: 1 };
     }
     return JSON.parse(stored) as RemoteSignerSessionsStorage;

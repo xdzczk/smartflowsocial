@@ -215,6 +215,34 @@ export async function claimOutboxEvent(input: {
   return { lockId, expiresAt };
 }
 
+/**
+ * Extend an existing outbox processing lock.
+ * Returns the refreshed lock details when successful, otherwise null.
+ */
+export async function extendOutboxEventLock(input: {
+  eventId: string;
+  lockId: string;
+  ttlMs?: number;
+  now?: Date;
+}): Promise<OutboxProcessingLock | null> {
+  const now = input.now ?? new Date();
+  const ttlMs = input.ttlMs ?? DEFAULT_OUTBOX_LOCK_TTL_MS;
+  const expiresAt = new Date(now.getTime() + ttlMs);
+  const updated = await prisma.outboxEvent.updateMany({
+    where: {
+      id: input.eventId,
+      processingLockId: input.lockId,
+      processedAt: null,
+      deadLetteredAt: null,
+    },
+    data: {
+      processingLockExpiresAt: expiresAt,
+    },
+  });
+  if (updated.count !== 1) return null;
+  return { lockId: input.lockId, expiresAt };
+}
+
 export async function markOutboxEventSucceeded(input: {
   eventId: string;
   lockId: string;
@@ -326,4 +354,56 @@ export async function getOutboxBacklogCounts(now: Date = new Date()): Promise<{
   ]);
 
   return { pending, ready, deadLettered };
+}
+
+export async function getOldestReadyOutboxAgeSeconds(
+  now: Date = new Date()
+): Promise<number> {
+  const oldestReady = await prisma.outboxEvent.findFirst({
+    where: {
+      processedAt: null,
+      deadLetteredAt: null,
+      OR: [{ scheduledFor: null }, { scheduledFor: { lte: now } }],
+      AND: [
+        { OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }] },
+        {
+          OR: [
+            { processingLockExpiresAt: null },
+            { processingLockExpiresAt: { lt: now } },
+          ],
+        },
+      ],
+    },
+    orderBy: { createdAt: "asc" },
+    select: { createdAt: true },
+  });
+  if (!oldestReady) return 0;
+  return Math.max(0, (now.getTime() - oldestReady.createdAt.getTime()) / 1000);
+}
+
+export async function getDeadLetteredOutboxEvents(limit = 50) {
+  return prisma.outboxEvent.findMany({
+    where: { deadLetteredAt: { not: null } },
+    orderBy: { deadLetteredAt: "desc" },
+    take: limit,
+  });
+}
+
+export async function replayDeadLetteredOutboxEvent(eventId: string) {
+  const updated = await prisma.outboxEvent.updateMany({
+    where: {
+      id: eventId,
+      deadLetteredAt: { not: null },
+      processedAt: null,
+    },
+    data: {
+      deadLetteredAt: null,
+      attempts: 0,
+      lastError: null,
+      nextAttemptAt: null,
+      processingLockId: null,
+      processingLockExpiresAt: null,
+    },
+  });
+  return updated.count === 1;
 }

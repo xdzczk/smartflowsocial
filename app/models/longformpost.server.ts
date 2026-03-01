@@ -556,27 +556,16 @@ export async function deleteLongFormPost({
         correlationId
       );
 
-      return row;
-    });
-
-    if (isNostrDeleteEventsEnabled()) {
-      if (!deleteRef) {
-        logInfo(
-          "Skipping LONGFORM_DELETE_REQUESTED outbox event: missing metadata",
-          { postId: deleted.id, userId: deleted.userId, correlationId }
-        );
-      } else {
+      if (isNostrDeleteEventsEnabled() && deleteRef) {
         try {
-          // @ts-ignore - Dynamic imports work at runtime in CommonJS
-          const { createOutboxEvent } =
-            await import("~/infra/outbox/outbox.server");
-          await createOutboxEvent(
+          await createOutboxEventInTransaction(
+            tx as Prisma.TransactionClient,
             "LONGFORM_DELETE_REQUESTED",
-            deleted.id,
+            row.id,
             "LongFormPost",
             {
-              postId: deleted.id,
-              userId: deleted.userId,
+              postId: row.id,
+              userId: row.userId,
               originalEventId: deleteRef.originalEventId,
               originalEventPubkey: deleteRef.originalEventPubkey,
               aCoordinate: deleteRef.aCoordinate,
@@ -592,21 +581,23 @@ export async function deleteLongFormPost({
           if (isOutboxEventTypeConstraintError(error)) {
             logInfo(
               "Skipping LONGFORM_DELETE_REQUESTED outbox event: DB constraint not yet updated",
-              { postId: deleted.id, userId: deleted.userId, correlationId }
+              { postId: row.id, userId: row.userId, correlationId }
             );
           } else {
-            logError(
-              error instanceof Error ? error : new Error(String(error)),
-              {
-                message:
-                  "Failed to enqueue LONGFORM_DELETE_REQUESTED outbox event (post already deleted)",
-                postId: deleted.id,
-                userId: deleted.userId,
-                correlationId,
-              }
-            );
+            throw error;
           }
         }
+      }
+
+      return row;
+    });
+
+    if (isNostrDeleteEventsEnabled()) {
+      if (!deleteRef) {
+        logInfo(
+          "Skipping LONGFORM_DELETE_REQUESTED outbox event: missing metadata",
+          { postId: deleted.id, userId: deleted.userId, correlationId }
+        );
       }
     }
 

@@ -60,7 +60,12 @@ export interface BulkComposerModalProps {
 export type BulkComposerUser =
   | User
   | UserData
-  | { id?: string; timezone?: string | null; scheduleInterval?: number[] };
+  | {
+      id?: string;
+      timezone?: string | null;
+      scheduleInterval?: number[];
+      timeFormat?: "12h" | "24h" | null;
+    };
 
 function getModalTitle(mode: BulkComposerMode): string {
   switch (mode) {
@@ -383,6 +388,8 @@ function BulkComposerModalContent({
           submitAction={submitAction}
           extraFormData={extraFormData}
           fetcher={submitFetcher}
+          userTimezone={userTimezone}
+          userTimeFormat={user?.timeFormat === "24h" ? "24h" : "12h"}
         />
       )}
     </>

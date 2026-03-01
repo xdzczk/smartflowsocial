@@ -33,16 +33,6 @@ vi.mock("~/lib/idempotency.server", () => ({
   generateEnqueueIdempotencyKey: vi.fn(),
 }));
 
-const mockTransition = vi.fn();
-vi.mock(
-  "~/features/posts/state-machine/longform-post-state-machine.server",
-  () => ({
-    LongFormPostStateMachine: class {
-      transition = mockTransition;
-    },
-  })
-);
-
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { ScheduleLongFormPostUseCase } from "~/features/posts/use-cases/schedule-longform-post.use-case.server";
@@ -57,14 +47,6 @@ describe("ScheduleLongFormPostUseCase", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockTransition.mockResolvedValue(undefined);
-    (
-      mockPrisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
-    ).mockResolvedValue({
-      id: TEST_POST_ID,
-      userId: TEST_USER_ID,
-      currentState: "DRAFT",
-    });
     useCase = new ScheduleLongFormPostUseCase();
   });
 
@@ -100,6 +82,9 @@ describe("ScheduleLongFormPostUseCase", () => {
           const tx = {
             longFormPost: {
               update: vi.fn().mockResolvedValue(mockPost),
+            },
+            longFormPostStateTransition: {
+              create: vi.fn().mockResolvedValue(undefined),
             },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
@@ -183,6 +168,9 @@ describe("ScheduleLongFormPostUseCase", () => {
           const tx = {
             longFormPost: {
               update: vi.fn().mockResolvedValue(mockPost),
+            },
+            longFormPostStateTransition: {
+              create: vi.fn().mockResolvedValue(undefined),
             },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback

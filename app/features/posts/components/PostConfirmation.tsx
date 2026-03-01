@@ -114,6 +114,9 @@ interface PostConfirmationProps {
   extraFormData?: Record<string, string>;
   /** Optional fetcher to use (e.g. for modal to observe submit result). Must have submit(). */
   fetcher?: FetcherWithComponents<unknown>;
+  /** User locale preferences for schedule display. */
+  userTimezone?: string;
+  userTimeFormat?: "12h" | "24h";
 }
 
 export default function PostConfirmation({
@@ -124,6 +127,8 @@ export default function PostConfirmation({
   submitAction: submitActionProp,
   extraFormData,
   fetcher: fetcherProp,
+  userTimezone = "UTC",
+  userTimeFormat = "12h",
 }: PostConfirmationProps) {
   const { dateLocale } = useFormattedDate();
   const internalFetcher = useFetcher<{ error?: string }>();
@@ -518,9 +523,11 @@ export default function PostConfirmation({
                     <p className="text-foreground text-sm font-semibold">
                       {(() => {
                         try {
-                          const timestamp = getCreatedAtTimestamp(eventsData);
+                          const timestamp =
+                            typeof eventData.scheduledFor === "number"
+                              ? eventData.scheduledFor
+                              : getCreatedAtTimestamp(eventsData);
                           const zoned = fromUnixTimestamp(timestamp, "UTC");
-                          const userTimezone = "UTC"; // Default timezone - user prop not available in this scope
                           const userZoned = zoned.withTimeZone(userTimezone);
                           return formatForDisplay(
                             userZoned,
@@ -531,8 +538,9 @@ export default function PostConfirmation({
                               year: "numeric",
                               hour: "2-digit",
                               minute: "2-digit",
+                              hour12: userTimeFormat === "12h",
                             },
-                            undefined,
+                            userTimeFormat,
                             dateLocale
                           );
                         } catch {
@@ -549,6 +557,12 @@ export default function PostConfirmation({
 
         {/* Action Buttons */}
         <div className="mt-8 flex justify-center gap-4">
+          <a
+            href="/dashboard"
+            className="bg-card border-border text-foreground hover:bg-muted rounded-lg border px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
+          >
+            Dashboard
+          </a>
           <button
             onClick={() => window.history.back()}
             className="bg-card border-border text-foreground hover:bg-muted rounded-lg border px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"

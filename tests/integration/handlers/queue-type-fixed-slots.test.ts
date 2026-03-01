@@ -581,4 +581,88 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     // The interval is used for spacing subsequent posts (index * intervalHours)
     expect(updatedPosts[0]?.scheduledFor).toMatch(/2024-12-25T10:00/);
   });
+
+  it("should expand FIXED_SLOTS in user timezone for non-UTC users", async () => {
+    const posts: BulkPost[] = [
+      {
+        clientId: "post-1",
+        files: [],
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
+      {
+        clientId: "post-2",
+        files: [],
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
+      {
+        clientId: "post-3",
+        files: [],
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
+    ];
+
+    const queueTypes: QueueType[] = [
+      {
+        id: "queue-1",
+        name: "Queue 1",
+        scheduleType: "FIXED_SLOTS" as const,
+        scheduleConfig: {
+          slots: ["09:00", "12:00", "15:00"],
+        },
+      },
+    ];
+
+    const user = {
+      id: TEST_USER_ID,
+      timezone: "America/New_York",
+      scheduleInterval: [4],
+    };
+
+    const setPosts = vi.fn();
+    const setDisplayedHashtags = vi.fn();
+    const setSelectedQueueType = vi.fn();
+
+    // Server returns datetime-local in user timezone.
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ scheduledTime: "2024-12-25T10:00" }),
+    });
+
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "queue-1"
+    );
+
+    await handleBulkQueueUpdate("Queue 1", {
+      posts,
+      setPosts,
+      queueTypes,
+      tags: [],
+      user,
+      setDisplayedHashtags,
+      setSelectedQueueType,
+      firstItemTimeManuallyChanged: false,
+    });
+
+    expect(setPosts).toHaveBeenCalled();
+    const callArgs = setPosts.mock.calls[0]?.[0] as unknown;
+    if (!callArgs) {
+      throw new Error("setPosts was not called with arguments");
+    }
+    const updatedPosts = callArgs as BulkPost[];
+    expect(updatedPosts).toHaveLength(3);
+
+    // Next slot after 10:00 in New York is 12:00, then 15:00, then 09:00 next day.
+    expect(updatedPosts[0]?.scheduledFor).toMatch(/^2024-12-25T12:00/);
+    expect(updatedPosts[1]?.scheduledFor).toMatch(/^2024-12-25T15:00/);
+    expect(updatedPosts[2]?.scheduledFor).toMatch(/^2024-12-26T09:00/);
+  });
 });

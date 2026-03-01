@@ -133,6 +133,34 @@ export const queueLengthGauge = getOrCreateMetric(
 );
 
 /**
+ * Queue jobs by status gauge
+ * Tracks queue depth split by BullMQ status.
+ */
+export const queueJobsByStatusGauge = getOrCreateMetric(
+  "queue_jobs_by_status",
+  () =>
+    new promClient.Gauge({
+      name: "queue_jobs_by_status",
+      help: "Current number of jobs by queue and status",
+      labelNames: ["queue", "status"],
+    })
+);
+
+/**
+ * Oldest waiting job age gauge
+ * Tracks staleness of backlog, in seconds.
+ */
+export const queueOldestWaitingAgeSecondsGauge = getOrCreateMetric(
+  "queue_oldest_waiting_age_seconds",
+  () =>
+    new promClient.Gauge({
+      name: "queue_oldest_waiting_age_seconds",
+      help: "Age in seconds of the oldest waiting/delayed queue job",
+      labelNames: ["queue"],
+    })
+);
+
+/**
  * Active jobs gauge
  * Tracks number of jobs currently being processed
  */
@@ -237,6 +265,27 @@ export function recordJobSkipped(queue: string, reason: string): void {
  */
 export function updateQueueLength(queue: string, length: number): void {
   queueLengthGauge.set({ queue }, length);
+}
+
+/**
+ * Set queue depth for a specific status.
+ */
+export function setQueueStatusDepth(
+  queue: string,
+  status: string,
+  count: number
+): void {
+  queueJobsByStatusGauge.set({ queue, status }, count);
+}
+
+/**
+ * Set oldest waiting backlog age in seconds.
+ */
+export function setQueueOldestWaitingAgeSeconds(
+  queue: string,
+  ageSeconds: number
+): void {
+  queueOldestWaitingAgeSecondsGauge.set({ queue }, Math.max(0, ageSeconds));
 }
 
 /**

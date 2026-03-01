@@ -521,5 +521,63 @@ describe("Queue Type Handler Integration Tests", () => {
         .calls[0]?.[0] as BulkPost[] | undefined;
       expect(updatedPosts?.[0]?.scheduledFor).toBe("");
     });
+
+    it("should calculate FIXED_SLOTS using user timezone for non-UTC users", async () => {
+      const posts: BulkPost[] = [
+        {
+          clientId: "post-1",
+          files: [],
+          caption: "",
+          queueType: "unassigned",
+          scheduledFor: "",
+          isRecyclable: false,
+        },
+        {
+          clientId: "post-2",
+          files: [],
+          caption: "",
+          queueType: "unassigned",
+          scheduledFor: "",
+          isRecyclable: false,
+        },
+      ];
+      const setPosts = vi.fn();
+      const queueTypes: QueueType[] = [
+        {
+          id: "queue-1",
+          name: "Morning",
+          scheduleType: "FIXED_SLOTS" as const,
+          scheduleConfig: {
+            slots: ["09:00", "12:00", "15:00"],
+          },
+        },
+      ];
+      const tags: string[] = [];
+      const user = { id: "user-1", timezone: "America/New_York" };
+      const setDisplayedHashtags = vi.fn();
+      const setSelectedQueueType = vi.fn();
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ scheduledTime: "2024-01-15T10:00" }),
+      });
+
+      await handleBulkQueueUpdate("Morning", {
+        posts,
+        setPosts,
+        queueTypes,
+        tags,
+        user,
+        setDisplayedHashtags,
+        setSelectedQueueType,
+        firstItemTimeManuallyChanged: false,
+      });
+
+      expect(setPosts).toHaveBeenCalled();
+      const updatedPosts: BulkPost[] | undefined = setPosts.mock
+        .calls[0]?.[0] as BulkPost[] | undefined;
+      expect(updatedPosts?.[0]?.scheduledFor).toMatch(/^2024-01-15T12:00/);
+      expect(updatedPosts?.[1]?.scheduledFor).toMatch(/^2024-01-15T15:00/);
+    });
   });
 });

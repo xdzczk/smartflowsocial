@@ -11,6 +11,7 @@ const { mockPrisma } = vi.hoisted(() => {
     outboxEvent: {
       create: vi.fn(),
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       updateMany: vi.fn(),
       count: vi.fn(),
     },
@@ -31,10 +32,13 @@ import {
   createOutboxEventInTransaction,
   getUnprocessedOutboxEvents,
   claimOutboxEvent,
+  extendOutboxEventLock,
   markOutboxEventSucceeded,
   markOutboxEventFailed,
   deadLetterOutboxEvent,
   getOutboxBacklogCounts,
+  getOldestReadyOutboxAgeSeconds,
+  replayDeadLetteredOutboxEvent,
   type PostScheduledPayload,
 } from "~/infra/outbox/outbox.server";
 import { prisma } from "~/lib/prisma.server";
@@ -350,6 +354,25 @@ describe("Outbox Server Functions", () => {
     });
   });
 
+  describe("extendOutboxEventLock", () => {
+    it("should extend lock when lock ownership matches", async () => {
+      (
+        prisma.outboxEvent.updateMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
+      const now = new Date("2024-01-01T12:00:00Z");
+      const lock = await extendOutboxEventLock({
+        eventId: "event-1",
+        lockId: "lock-1",
+        ttlMs: 10_000,
+        now,
+      });
+      expect(lock).toEqual({
+        lockId: "lock-1",
+        expiresAt: new Date("2024-01-01T12:00:10.000Z"),
+      });
+    });
+  });
+
   describe("markOutboxEventFailed", () => {
     it("should increment attempts and schedule nextAttemptAt", async () => {
       (
@@ -433,6 +456,55 @@ describe("Outbox Server Functions", () => {
       );
       expect(result).toEqual({ pending: 10, ready: 3, deadLettered: 2 });
       expect(prisma.outboxEvent.count).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe("getOldestReadyOutboxAgeSeconds", () => {
+    it("should return zero when no ready events", async () => {
+      (
+        prisma.outboxEvent.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
+      const age = await getOldestReadyOutboxAgeSeconds(
+        new Date("2024-01-01T12:00:00Z")
+      );
+      expect(age).toBe(0);
+    });
+
+    it("should return positive age for oldest ready event", async () => {
+      (
+        prisma.outboxEvent.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
+        createdAt: new Date("2024-01-01T11:59:30Z"),
+      });
+      const age = await getOldestReadyOutboxAgeSeconds(
+        new Date("2024-01-01T12:00:00Z")
+      );
+      expect(age).toBe(30);
+    });
+  });
+
+  describe("replayDeadLetteredOutboxEvent", () => {
+    it("should clear dead-letter markers for replay", async () => {
+      (
+        prisma.outboxEvent.updateMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
+      const replayed = await replayDeadLetteredOutboxEvent("event-1");
+      expect(replayed).toBe(true);
+      expect(prisma.outboxEvent.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            id: "event-1",
+            deadLetteredAt: { not: null },
+            processedAt: null,
+          },
+          data: objectContainingRecord({
+            deadLetteredAt: null,
+            attempts: 0,
+            lastError: null,
+            nextAttemptAt: null,
+          }),
+        })
+      );
     });
   });
 });

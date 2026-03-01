@@ -164,6 +164,43 @@ describe("Scheduler Torture Tests", () => {
         expect(result.getTime()).toBeGreaterThanOrEqual(baseTime.getTime());
       }
     });
+
+    it("should produce monotonic slot sequence across DST boundaries", async () => {
+      const queueType = {
+        id: "queue-1",
+        name: "test-queue",
+        scheduleType: "FIXED_SLOTS" as const,
+        scheduleConfig: {
+          slots: ["01:30", "02:30", "03:30", "04:30"],
+        },
+      };
+
+      // Around Europe/London spring DST switch.
+      const baseTime = new Date("2024-03-31T00:15:00.000Z");
+      const timezone = "Europe/London";
+
+      const generated: Date[] = [];
+      let lastPost: Date | null = null;
+      for (let i = 0; i < 8; i++) {
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPost
+        );
+        const next = await calculateNextScheduleTime({
+          queueType,
+          userId: TEST_USER_ID,
+          userTimezone: timezone,
+          baseTime,
+        });
+        generated.push(next);
+        lastPost = next;
+      }
+
+      for (let i = 1; i < generated.length; i++) {
+        expect(generated[i]!.getTime()).toBeGreaterThan(
+          generated[i - 1]!.getTime()
+        );
+      }
+    });
   });
 
   describe("Past Date Edge Cases", () => {

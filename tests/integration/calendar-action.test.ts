@@ -6,10 +6,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/infra/queue", () => ({
-  cancelPostJob: vi.fn(),
-  enqueuePostJob: vi.fn(),
+const { mockSchedulePostExecute, mockScheduleLongFormExecute } = vi.hoisted(
+  () => {
+    const mockSchedulePostExecute = vi.fn();
+    const mockScheduleLongFormExecute = vi.fn();
+    return { mockSchedulePostExecute, mockScheduleLongFormExecute };
+  }
+);
+
+vi.mock("~/features/posts/use-cases/schedule-post.use-case.server", () => ({
+  SchedulePostUseCase: class {
+    execute = mockSchedulePostExecute;
+  },
 }));
+
+vi.mock(
+  "~/features/posts/use-cases/schedule-longform-post.use-case.server",
+  () => ({
+    ScheduleLongFormPostUseCase: class {
+      execute = mockScheduleLongFormExecute;
+    },
+  })
+);
 
 vi.mock("~/lib/error-logger.server", () => ({
   logWarning: vi.fn(),
@@ -40,7 +58,6 @@ import {
   handleCalendarReschedule,
   handleCalendarRescheduleLongform,
 } from "~/features/posts/services/calendar-action.server";
-import { cancelPostJob, enqueuePostJob } from "~/infra/queue";
 import {
   getLongFormPost,
   updateLongFormPost,
@@ -59,7 +76,6 @@ describe("Calendar Action Handler", () => {
     it("should route to handleCalendarReschedule for 'reschedule' action", async () => {
       const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID };
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (cancelPostJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const formData = createFormData({
@@ -172,7 +188,6 @@ describe("Calendar Action Handler", () => {
       const newTime = String(Math.floor(Date.now() / 1000) + 3600);
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (cancelPostJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const formData = createFormData({
@@ -192,7 +207,6 @@ describe("Calendar Action Handler", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
-      expect(cancelPostJob).toHaveBeenCalledWith(TEST_POST_ID);
       expect(reschedulePost).toHaveBeenCalledWith({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
@@ -242,9 +256,7 @@ describe("Calendar Action Handler", () => {
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (cancelPostJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (enqueuePostJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
       const formData = createFormData({
         action: "reschedule",
@@ -267,12 +279,7 @@ describe("Calendar Action Handler", () => {
           nostrEvent,
         })
       );
-      expect(enqueuePostJob).toHaveBeenCalledWith(
-        TEST_POST_ID,
-        TEST_USER_ID,
-        signedEvent,
-        parseInt(newTime)
-      );
+      expect(mockSchedulePostExecute).toHaveBeenCalled();
 
       const responseObj =
         result instanceof Response
@@ -299,7 +306,6 @@ describe("Calendar Action Handler", () => {
       const newTime = String(Math.floor(Date.now() / 1000) + 3600);
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (cancelPostJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const formData = createFormData({
@@ -428,7 +434,6 @@ describe("Calendar Action Handler", () => {
       const newTime = String(Math.floor(Date.now() / 1000) + 3600);
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (cancelPostJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const formData = createFormData({

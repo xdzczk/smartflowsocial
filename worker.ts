@@ -23,6 +23,7 @@ import {
 
 // Import outbox worker
 import { startOutboxWorker } from "./app/infra/outbox/outbox-worker.server";
+import { getQueueInstance } from "./app/infra/queue";
 import {
   expireBlossomReservations,
   getBlossomReservationDriftStats,
@@ -33,6 +34,10 @@ import {
 import { env } from "./app/lib/env.server";
 import { logInfo, logWarning } from "./app/lib/error-logger.server";
 import { updateRelayMetrics } from "./app/lib/metrics/relay-metrics.server";
+import {
+  setQueueOldestWaitingAgeSeconds,
+  setQueueStatusDepth,
+} from "./app/lib/queue-metrics.server";
 
 // Initialize Sentry (safe no-op if not configured)
 import { initSentry } from "./app/lib/sentry.server";
@@ -52,6 +57,60 @@ const relayMetricsInterval = setInterval(() => {
     // Best-effort: never crash the worker because metrics export failed.
   }
 }, relayMetricsIntervalMs);
+
+const queueBacklogMetricsIntervalMs = 10_000;
+const queueBacklogMetricsInterval = setInterval(() => {
+  void (async () => {
+    try {
+      const queueNames = [
+        "scheduled-posts",
+        "scheduled-longform-posts",
+        "post-checker",
+      ] as const;
+      for (const queueName of queueNames) {
+        const queue = getQueueInstance(queueName);
+        const counts = await queue.getJobCounts(
+          "waiting",
+          "active",
+          "completed",
+          "failed",
+          "delayed",
+          "paused"
+        );
+        const statuses: Record<string, number> = {
+          waiting: counts["waiting"] ?? 0,
+          active: counts["active"] ?? 0,
+          completed: counts["completed"] ?? 0,
+          failed: counts["failed"] ?? 0,
+          delayed: counts["delayed"] ?? 0,
+          paused: counts["paused"] ?? 0,
+        };
+        for (const [status, count] of Object.entries(statuses)) {
+          setQueueStatusDepth(queueName, status, count);
+        }
+
+        const [oldestWaitingJob] = await queue.getJobs(["waiting"], 0, 0, true);
+        const [oldestDelayedJob] = await queue.getJobs(["delayed"], 0, 0, true);
+        const candidateTimestamps = [oldestWaitingJob, oldestDelayedJob]
+          .map((job) =>
+            job && typeof job.timestamp === "number" ? job.timestamp : null
+          )
+          .filter((timestamp): timestamp is number => timestamp !== null);
+        if (candidateTimestamps.length === 0) {
+          setQueueOldestWaitingAgeSeconds(queueName, 0);
+        } else {
+          const oldestTimestamp = Math.min(...candidateTimestamps);
+          setQueueOldestWaitingAgeSeconds(
+            queueName,
+            (Date.now() - oldestTimestamp) / 1000
+          );
+        }
+      }
+    } catch {
+      // Best-effort metrics collection.
+    }
+  })();
+}, queueBacklogMetricsIntervalMs);
 
 const blossomReservationCleanupIntervalMs = 60_000;
 const blossomReservationCleanupInterval = setInterval(() => {
@@ -191,6 +250,7 @@ process.on("SIGTERM", () => {
     clearInterval(outboxWorkerInterval);
   }
   clearInterval(relayMetricsInterval);
+  clearInterval(queueBacklogMetricsInterval);
   clearInterval(blossomReservationCleanupInterval);
   workerMetricsServer.close();
   void scheduledPostsWorker.close();
@@ -204,6 +264,7 @@ process.on("SIGINT", () => {
     clearInterval(outboxWorkerInterval);
   }
   clearInterval(relayMetricsInterval);
+  clearInterval(queueBacklogMetricsInterval);
   clearInterval(blossomReservationCleanupInterval);
   workerMetricsServer.close();
   void scheduledPostsWorker.close();

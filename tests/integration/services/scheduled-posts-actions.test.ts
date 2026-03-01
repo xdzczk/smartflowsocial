@@ -7,15 +7,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies - use vi.hoisted to allow top-level variables in mocks
-const { mockCancelPostJob, mockScheduleExecute } = vi.hoisted(() => {
-  const mockCancelPostJob = vi.fn();
+const { mockScheduleExecute } = vi.hoisted(() => {
   const mockScheduleExecute = vi.fn();
-  return { mockCancelPostJob, mockScheduleExecute };
+  return { mockScheduleExecute };
 });
-
-vi.mock("~/infra/queue", () => ({
-  cancelPostJob: mockCancelPostJob,
-}));
 
 vi.mock("~/features/posts/use-cases/schedule-post.use-case.server", () => ({
   SchedulePostUseCase: class {
@@ -76,7 +71,6 @@ import { getPostById } from "~/models/post.queries.server";
 describe("Scheduled Posts Service Action Handlers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCancelPostJob.mockResolvedValue(undefined);
     mockScheduleExecute.mockResolvedValue(undefined);
     mockCancelLongFormExecute.mockResolvedValue({ cancelled: true });
     mockScheduleLongFormExecute.mockResolvedValue(undefined);
@@ -135,7 +129,6 @@ describe("Scheduled Posts Service Action Handlers", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
-      expect(mockCancelPostJob).toHaveBeenCalledWith(TEST_POST_ID);
       expect(reschedulePost).toHaveBeenCalled();
       expect(mockScheduleExecute).toHaveBeenCalled();
 
@@ -168,7 +161,6 @@ describe("Scheduled Posts Service Action Handlers", () => {
 
       const result = await handleScheduledPostAction(formData, TEST_USER_ID);
 
-      expect(mockCancelPostJob).toHaveBeenCalled(); // Cancel is always called
       const responseObj =
         result instanceof Response
           ? result
@@ -203,7 +195,6 @@ describe("Scheduled Posts Service Action Handlers", () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
         expect(jsonResult.error).toContain("not found");
       }
-      expect(mockCancelPostJob).not.toHaveBeenCalled();
     });
 
     it("should return error if required fields are missing", async () => {
@@ -270,7 +261,6 @@ describe("Scheduled Posts Service Action Handlers", () => {
       const result = await handleScheduledPostAction(formData, TEST_USER_ID);
 
       expect(updatePost).toHaveBeenCalled();
-      expect(mockCancelPostJob).toHaveBeenCalled();
       expect(mockScheduleExecute).toHaveBeenCalled();
 
       const responseObj =
@@ -303,7 +293,6 @@ describe("Scheduled Posts Service Action Handlers", () => {
       const result = await handleScheduledPostAction(formData, TEST_USER_ID);
 
       expect(updatePost).toHaveBeenCalled();
-      expect(mockCancelPostJob).not.toHaveBeenCalled();
       expect(mockScheduleExecute).not.toHaveBeenCalled();
 
       const responseObj =

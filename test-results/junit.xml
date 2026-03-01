@@ -1,55 +1,245 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="24" failures="0" errors="0" time="0.017587125">
-    <testsuite name="tests/integration/longformpost-model.test.ts" timestamp="2026-03-01T07:36:47.836Z" hostname="Ivans-MacBook-Pro.local" tests="10" failures="0" errors="0" skipped="0" time="0.00647175">
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; createLongFormPost &gt; should create a longform post with all fields" time="0.002400833">
+<testsuites name="vitest tests" tests="94" failures="0" errors="0" time="0.111785333">
+    <testsuite name="tests/integration/calendar-action.test.ts" timestamp="2026-03-01T12:21:33.333Z" hostname="Ivans-MacBook-Pro.local" tests="16" failures="0" errors="0" skipped="0" time="0.017640334">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to handleCalendarReschedule for &apos;reschedule&apos; action" time="0.005788959">
         </testcase>
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; createLongFormPost &gt; should handle draft longform posts" time="0.00028825">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to handleCalendarRescheduleLongform for &apos;rescheduleLongform&apos; action" time="0.0009855">
         </testcase>
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; createLongFormPost &gt; should handle scheduled longform posts" time="0.000794333">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should return error for invalid action" time="0.000322083">
         </testcase>
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; deleteLongFormPost &gt; should delete a longform post by id and userId" time="0.000611709">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should reschedule a post successfully" time="0.0016315">
         </testcase>
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; deleteLongFormPost &gt; should emit LONGFORM_DELETE_REQUESTED when feature flag is enabled" time="0.000296917">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should reschedule with signed events" time="0.002442875">
         </testcase>
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; updateLongFormPost &gt; should update a longform post with new data" time="0.000406167">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should handle overrideQueue flag" time="0.000537958">
         </testcase>
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; getLongFormPost &gt; should get a longform post by id" time="0.000165458">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should return error for missing postId" time="0.001353542">
         </testcase>
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; getDraftLongFormPosts &gt; should get draft longform posts for a user" time="0.000209542">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should return error for missing newTime" time="0.000477">
         </testcase>
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; getPublishedLongFormPosts &gt; should get published longform posts with pagination" time="0.000259042">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should return error if post not found" time="0.000331375">
         </testcase>
-        <testcase classname="tests/integration/longformpost-model.test.ts" name="LongFormPost Model Functions &gt; getScheduledLongFormPosts &gt; should get scheduled longform posts for a user" time="0.00023">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should handle invalid JSON in signed events gracefully" time="0.000477125">
+        </testcase>
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should reschedule a longform post successfully" time="0.000507667">
+        </testcase>
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should reschedule with signed events" time="0.000533417">
+        </testcase>
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should return error for missing postId" time="0.000314625">
+        </testcase>
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should return error for missing newTime" time="0.000244542">
+        </testcase>
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should return error if longform post not found" time="0.000171625">
+        </testcase>
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should handle invalid JSON in signed events gracefully" time="0.000199208">
         </testcase>
     </testsuite>
-    <testsuite name="tests/integration/models/post-commands.test.ts" timestamp="2026-03-01T07:36:47.837Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.011115375">
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; createPost &gt; should create a post with all fields" time="0.002643875">
+    <testsuite name="tests/integration/scheduled-action.test.ts" timestamp="2026-03-01T12:21:33.335Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.012285958">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Delete Post Action &gt; should delete a single scheduled post" time="0.003387291">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; createPost &gt; should create a post with queue type connection" time="0.000316042">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Delete Longform Post Action &gt; should delete a single scheduled longform post" time="0.000428542">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; createPost &gt; should create a post with hashtag preset connection" time="0.000224875">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Bulk Delete Posts Action &gt; should delete multiple scheduled posts" time="0.000953708">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; createPost &gt; should handle scheduled post with scheduledFor" time="0.000262875">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Bulk Delete Posts Action &gt; should return error for empty postIds array" time="0.002735416">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; reschedulePost &gt; should reschedule post with new time" time="0.000632166">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Bulk Delete Longform Posts Action &gt; should delete multiple scheduled longform posts" time="0.000551167">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; reschedulePost &gt; should update signed events when provided" time="0.000245917">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Bulk Delete Mixed Content Action &gt; should delete mixed posts and longform posts" time="0.000653125">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; reschedulePost &gt; should connect queue type when queueTypeId is provided" time="0.000165666">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Bulk Delete Mixed Content Action &gt; should handle only posts in mixed delete" time="0.0001855">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; reschedulePost &gt; should disconnect queue type when queueTypeId is null" time="0.000148">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Bulk Delete Mixed Content Action &gt; should handle only longform posts in mixed delete" time="0.000155958">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; updatePost &gt; should update post with partial data" time="0.004316208">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Bulk Delete Mixed Content Action &gt; should return error for empty itemData array" time="0.000377541">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; updatePost &gt; should handle queue type connection" time="0.000245292">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Error Handling &gt; should return error for invalid action" time="0.000377">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; updatePost &gt; should handle queue type disconnection" time="0.000195334">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Error Handling &gt; should handle database errors from deletePost" time="0.000884083">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; updatePost &gt; should handle hashtag preset connection" time="0.000139042">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Error Handling &gt; should handle database errors from deleteLongFormPost" time="0.000179958">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; deletePost &gt; should delete a post" time="0.0003755">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Error Handling &gt; should handle errors in bulk delete" time="0.00016425">
         </testcase>
-        <testcase classname="tests/integration/models/post-commands.test.ts" name="Post Commands &gt; deletePost &gt; should emit POST_DELETE_REQUESTED when feature flag is enabled" time="0.000187">
+        <testcase classname="tests/integration/scheduled-action.test.ts" name="Scheduled Action Handler &gt; Error Handling &gt; should handle errors in bulk delete mixed" time="0.00016775">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/scheduler-torture.test.ts" timestamp="2026-03-01T12:21:33.336Z" hostname="Ivans-MacBook-Pro.local" tests="15" failures="0" errors="0" skipped="0" time="0.041097042">
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; DST (Daylight Saving Time) Transitions &gt; should handle spring DST transition (clock jumps forward)" time="0.010160333">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; DST (Daylight Saving Time) Transitions &gt; should handle fall DST transition (clock jumps backward)" time="0.0011845">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; DST (Daylight Saving Time) Transitions &gt; should handle DST transition with interval scheduling" time="0.000456375">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; DST (Daylight Saving Time) Transitions &gt; should handle multiple DST transitions in different timezones" time="0.004479083">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; DST (Daylight Saving Time) Transitions &gt; should produce monotonic slot sequence across DST boundaries" time="0.008535292">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Past Date Edge Cases &gt; should handle &apos;now + interval is still in the past&apos; scenario" time="0.000238541">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Past Date Edge Cases &gt; should handle interval calculation when last post + interval &lt; now" time="0.000181458">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Past Date Edge Cases &gt; should handle slot scheduling when all slots are in the past" time="0.000356583">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Concurrency and Duplicate Prevention &gt; should produce consistent results when called simultaneously" time="0.000300917">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Concurrency and Duplicate Prevention &gt; should handle rapid successive calls without race conditions" time="0.006142083">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Retry and Error Handling &gt; should handle database errors gracefully" time="0.004464334">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Database connection failed&apos;,
+  code: &apos;UNKNOWN_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: &apos;user-123&apos;,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Retry and Error Handling &gt; should handle invalid timezone gracefully" time="0.002329583">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Unrecognized time zone Invalid/Timezone&apos;,
+  code: &apos;UNKNOWN_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: &apos;user-123&apos;,
+  correlationId: undefined
+}
+
+❌ Error: {
+  message: &apos;Unrecognized time zone Invalid/Timezone&apos;,
+  code: &apos;UNKNOWN_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: &apos;user-123&apos;,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Retry and Error Handling &gt; should handle empty slot arrays" time="0.000135666">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Boundary Conditions &gt; should handle midnight boundary correctly" time="0.000562916">
+        </testcase>
+        <testcase classname="tests/integration/scheduler-torture.test.ts" name="Scheduler Torture Tests &gt; Boundary Conditions &gt; should handle year boundary correctly" time="0.000217833">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/services/calendar-action-reschedule.test.ts" timestamp="2026-03-01T12:21:33.337Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.004818333">
+        <testcase classname="tests/integration/services/calendar-action-reschedule.test.ts" name="Calendar Action Reschedule &gt; handleCalendarReschedule &gt; should reschedule a post using CancelScheduleUseCase" time="0.003103416">
+        </testcase>
+        <testcase classname="tests/integration/services/calendar-action-reschedule.test.ts" name="Calendar Action Reschedule &gt; handleCalendarReschedule &gt; should return error if post not found" time="0.000372875">
+        </testcase>
+        <testcase classname="tests/integration/services/calendar-action-reschedule.test.ts" name="Calendar Action Reschedule &gt; handleCalendarReschedule &gt; should return validation error for invalid form data" time="0.000253084">
+        </testcase>
+        <testcase classname="tests/integration/services/calendar-action-reschedule.test.ts" name="Calendar Action Reschedule &gt; handleCalendarReschedule &gt; should handle missing signed events gracefully" time="0.000300667">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/services/scheduled-posts-actions.test.ts" timestamp="2026-03-01T12:21:33.337Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.006719708">
+        <testcase classname="tests/integration/services/scheduled-posts-actions.test.ts" name="Scheduled Posts Service Action Handlers &gt; handleReschedule &gt; should reschedule a post using CancelScheduleUseCase and SchedulePostUseCase" time="0.003165208">
+        </testcase>
+        <testcase classname="tests/integration/services/scheduled-posts-actions.test.ts" name="Scheduled Posts Service Action Handlers &gt; handleReschedule &gt; should return needsSigning if signedEvent is missing" time="0.000353334">
+        </testcase>
+        <testcase classname="tests/integration/services/scheduled-posts-actions.test.ts" name="Scheduled Posts Service Action Handlers &gt; handleReschedule &gt; should return error if post not found" time="0.00025775">
+        </testcase>
+        <testcase classname="tests/integration/services/scheduled-posts-actions.test.ts" name="Scheduled Posts Service Action Handlers &gt; handleReschedule &gt; should return error if required fields are missing" time="0.000190833">
+        </testcase>
+        <testcase classname="tests/integration/services/scheduled-posts-actions.test.ts" name="Scheduled Posts Service Action Handlers &gt; handleEditPost &gt; should edit a post using CancelScheduleUseCase and SchedulePostUseCase when scheduledFor and signedEvent are provided" time="0.000591958">
+        </testcase>
+        <testcase classname="tests/integration/services/scheduled-posts-actions.test.ts" name="Scheduled Posts Service Action Handlers &gt; handleEditPost &gt; should edit a post without using use cases if scheduledFor is not provided" time="0.000329958">
+        </testcase>
+        <testcase classname="tests/integration/services/scheduled-posts-actions.test.ts" name="Scheduled Posts Service Action Handlers &gt; handleEditPost &gt; should return error if postId is missing" time="0.00019825">
+        </testcase>
+        <testcase classname="tests/integration/services/scheduled-posts-actions.test.ts" name="Scheduled Posts Service Action Handlers &gt; handleRescheduleLongform &gt; should reschedule a longform post using ScheduleLongFormPostUseCase" time="0.000860375">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/outbox/outbox-worker.server.test.ts" timestamp="2026-03-01T12:21:33.338Z" hostname="Ivans-MacBook-Pro.local" tests="15" failures="0" errors="0" skipped="0" time="0.008775125">
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process POST_SCHEDULED event successfully" time="0.003233667">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process LONGFORM_SCHEDULED event successfully" time="0.000464375">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process POST_CANCELLED event successfully" time="0.000301375">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process LONGFORM_CANCELLED event successfully" time="0.00023675">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process POST_DELETE_REQUESTED event successfully" time="0.00056625">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should dead-letter non-retryable delete signer mismatch" time="0.000485625">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should update read models for read model events" time="0.000314334">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should handle processing errors" time="0.000311375">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should handle enqueue failures" time="0.000448958">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should dead-letter when max outbox attempts reached" time="0.000284375">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should treat deterministic jobId collision as idempotent success" time="0.00025175">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should retry on transient failure and succeed on a later run" time="0.000311959">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should only allow one concurrent claim to enqueue a given event" time="0.000246042">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should process multiple events" time="0.000169042">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox-worker.server.test.ts" name="Outbox Worker &gt; processOutboxEvents &gt; should throw error for unknown event type" time="0.000292458">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/outbox/outbox.server.test.ts" timestamp="2026-03-01T12:21:33.339Z" hostname="Ivans-MacBook-Pro.local" tests="15" failures="0" errors="0" skipped="0" time="0.006203708">
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; createOutboxEvent &gt; should create an outbox event successfully" time="0.001731416">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; createOutboxEvent &gt; should create event without optional fields" time="0.000285125">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; createOutboxEventInTransaction &gt; should create an outbox event in transaction" time="0.000278209">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; getUnprocessedOutboxEvents &gt; should get unprocessed events" time="0.000315584">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; getUnprocessedOutboxEvents &gt; should use default limit if not provided" time="0.000715875">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; claimOutboxEvent &gt; should claim event when eligible" time="0.000356209">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; claimOutboxEvent &gt; should return null when claim fails" time="0.000083334">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; markOutboxEventSucceeded &gt; should mark event as processed and clear retry/lock fields" time="0.000325584">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; extendOutboxEventLock &gt; should extend lock when lock ownership matches" time="0.000118917">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; markOutboxEventFailed &gt; should increment attempts and schedule nextAttemptAt" time="0.000294042">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; deadLetterOutboxEvent &gt; should dead-letter and increment attempts" time="0.000237792">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; getOutboxBacklogCounts &gt; should return pending/ready/dead-letter counts" time="0.000194542">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; getOldestReadyOutboxAgeSeconds &gt; should return zero when no ready events" time="0.000096916">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; getOldestReadyOutboxAgeSeconds &gt; should return positive age for oldest ready event" time="0.000055834">
+        </testcase>
+        <testcase classname="tests/unit/outbox/outbox.server.test.ts" name="Outbox Server Functions &gt; replayDeadLetteredOutboxEvent &gt; should clear dead-letter markers for replay" time="0.00017125">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/use-cases/schedule-longform-post.use-case.test.ts" timestamp="2026-03-01T12:21:33.340Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.006105875">
+        <testcase classname="tests/unit/use-cases/schedule-longform-post.use-case.test.ts" name="ScheduleLongFormPostUseCase &gt; execute &gt; should schedule a longform post successfully" time="0.003766375">
+        </testcase>
+        <testcase classname="tests/unit/use-cases/schedule-longform-post.use-case.test.ts" name="ScheduleLongFormPostUseCase &gt; execute &gt; should throw error if post not found" time="0.000980083">
+        </testcase>
+        <testcase classname="tests/unit/use-cases/schedule-longform-post.use-case.test.ts" name="ScheduleLongFormPostUseCase &gt; execute &gt; should use correlation ID if provided" time="0.000514125">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/use-cases/schedule-post.use-case.test.ts" timestamp="2026-03-01T12:21:33.340Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.00813925">
+        <testcase classname="tests/unit/use-cases/schedule-post.use-case.test.ts" name="SchedulePostUseCase &gt; execute &gt; should schedule a post successfully" time="0.005222">
+        </testcase>
+        <testcase classname="tests/unit/use-cases/schedule-post.use-case.test.ts" name="SchedulePostUseCase &gt; execute &gt; should throw error if post not found" time="0.001096625">
+        </testcase>
+        <testcase classname="tests/unit/use-cases/schedule-post.use-case.test.ts" name="SchedulePostUseCase &gt; execute &gt; should use correlation ID if provided" time="0.000518458">
+        </testcase>
+        <testcase classname="tests/unit/use-cases/schedule-post.use-case.test.ts" name="SchedulePostUseCase &gt; execute &gt; should fail when transition record write fails" time="0.000411333">
         </testcase>
     </testsuite>
 </testsuites>

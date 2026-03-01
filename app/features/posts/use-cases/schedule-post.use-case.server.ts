@@ -16,13 +16,9 @@ import { prisma } from "~/lib/prisma.server";
 import { toPrismaDate, toUnixTimestamp } from "~/lib/temporal";
 import { getPostById } from "~/models/post.queries.server";
 
-import { PostStateMachine } from "../state-machine/post-state-machine.server";
-
 import type { SchedulePostInput } from "./types";
 
 export class SchedulePostUseCase {
-  private readonly stateMachine = new PostStateMachine();
-
   async execute(input: SchedulePostInput): Promise<void> {
     // Get or create correlation ID for this operation
     const correlationId = getCorrelationId(input.correlationId);
@@ -56,15 +52,25 @@ export class SchedulePostUseCase {
       scheduledForUnix
     );
 
-    // Update post and create outbox event in transaction
+    // Update post, transition state, and create outbox event atomically
     await prisma.$transaction(async (tx) => {
       await tx.post.update({
         where: { id: input.postId },
         data: {
           scheduledAtUtc: scheduledAtUtcDate,
           enqueueIdempotencyKey,
+          currentState: "SCHEDULED",
           // @deprecated - isScheduled flag removed. State machine will set it via transition.
           signedEvent: input.signedEvent as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      await tx.postStateTransition.create({
+        data: {
+          postId: input.postId,
+          fromState: post.currentState,
+          toState: "SCHEDULED",
+          reason: `Post scheduled for ${scheduledAtUtcDate.toISOString()}`,
         },
       });
 
@@ -88,14 +94,6 @@ export class SchedulePostUseCase {
         correlationId
       );
     });
-
-    // Transition to SCHEDULED state
-    await this.stateMachine.transition(
-      input.postId,
-      input.userId,
-      "SCHEDULED",
-      `Post scheduled for ${scheduledAtUtcDate.toISOString()}`
-    );
 
     // Record metrics
     recordPostScheduled(post.postType);

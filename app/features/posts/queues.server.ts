@@ -40,7 +40,10 @@ import {
   recordPostPublished,
   recordPostPublishFailed,
 } from "~/lib/metrics/business-metrics.server";
-import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
+import {
+  recordPublishLatency,
+  recordPublishLateness,
+} from "~/lib/metrics/performance-metrics.server";
 import { buildObsContext } from "~/lib/observability-context.server";
 import { prisma } from "~/lib/prisma.server";
 import {
@@ -881,6 +884,10 @@ async function runScheduledPostJob(input: {
   if (post) {
     recordPostPublished(post.postType, "scheduled");
     recordPublishLatency(post.postType, "scheduled", publishLatencyMs);
+    recordPublishLateness(
+      post.postType,
+      Math.floor(Date.now() / 1000) - scheduledForUnix
+    );
   }
 
   logInfo("Post published successfully from queue", {
@@ -1091,6 +1098,11 @@ async function runScheduledLongFormPostJob(input: {
   }
 
   recordJobMetrics(queueName, nowMillis() - input.startTime, true);
+  recordPostPublished("LONGFORM", "scheduled");
+  recordPublishLateness(
+    "LONGFORM",
+    Math.floor(Date.now() / 1000) - scheduledForUnix
+  );
   logInfo("Longform post published successfully from queue", {
     ...buildObsContext({
       postId,
@@ -1259,6 +1271,15 @@ export const postCheckerWorker = new Worker(
       // Process regular posts
       let processed = 0;
       for (const post of posts) {
+        // Outbox-managed posts are enqueued by outbox worker; skip to avoid overlap.
+        if (
+          typeof post === "object" &&
+          "enqueueIdempotencyKey" in post &&
+          typeof post.enqueueIdempotencyKey === "string" &&
+          post.enqueueIdempotencyKey.length > 0
+        ) {
+          continue;
+        }
         const postData = await extractPostData(post);
         if (postData) {
           const success = await processPost(postData, now);
@@ -1270,6 +1291,15 @@ export const postCheckerWorker = new Worker(
 
       // Process longform posts
       for (const longformPost of longformPosts) {
+        // Outbox-managed longform posts are enqueued by outbox worker; skip overlap.
+        if (
+          typeof longformPost === "object" &&
+          "enqueueIdempotencyKey" in longformPost &&
+          typeof longformPost.enqueueIdempotencyKey === "string" &&
+          longformPost.enqueueIdempotencyKey.length > 0
+        ) {
+          continue;
+        }
         const postData = await extractPostData(longformPost);
         if (postData) {
           const success = await processLongFormPost(postData, now);

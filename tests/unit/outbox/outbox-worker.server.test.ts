@@ -23,10 +23,12 @@ vi.mock("~/lib/prisma.server", () => ({
 vi.mock("~/infra/outbox/outbox.server", () => ({
   getUnprocessedOutboxEvents: vi.fn(),
   claimOutboxEvent: vi.fn(),
+  extendOutboxEventLock: vi.fn(),
   markOutboxEventSucceeded: vi.fn(),
   markOutboxEventFailed: vi.fn(),
   deadLetterOutboxEvent: vi.fn(),
   getOutboxBacklogCounts: vi.fn(),
+  getOldestReadyOutboxAgeSeconds: vi.fn(),
 }));
 
 vi.mock("~/infra/queue/queue-client.server", () => ({
@@ -80,10 +82,12 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
   recordOutboxEventRetried: vi.fn(),
   recordOutboxEventDeadLettered: vi.fn(),
   setOutboxBacklog: vi.fn(),
+  setOutboxOldestReadyAgeSeconds: vi.fn(),
 }));
 
 vi.mock("~/lib/metrics/performance-metrics.server", () => ({
   recordOutboxProcessingDuration: vi.fn(),
+  recordOutboxEnqueueToProcessLatency: vi.fn(),
 }));
 
 import {
@@ -96,10 +100,12 @@ import { processOutboxEvents } from "~/infra/outbox/outbox-worker.server";
 import {
   getUnprocessedOutboxEvents,
   claimOutboxEvent,
+  extendOutboxEventLock,
   markOutboxEventSucceeded,
   markOutboxEventFailed,
   deadLetterOutboxEvent,
   getOutboxBacklogCounts,
+  getOldestReadyOutboxAgeSeconds,
 } from "~/infra/outbox/outbox.server";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import { queueClient } from "~/infra/queue/queue-client.server";
@@ -129,11 +135,18 @@ describe("Outbox Worker", () => {
     );
     (markOutboxEventFailed as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     (deadLetterOutboxEvent as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    (extendOutboxEventLock as ReturnType<typeof vi.fn>).mockResolvedValue({
+      lockId: "lock-1",
+      expiresAt: new Date(Date.now() + 30000),
+    });
     (getOutboxBacklogCounts as ReturnType<typeof vi.fn>).mockResolvedValue({
       pending: 0,
       ready: 0,
       deadLettered: 0,
     });
+    (
+      getOldestReadyOutboxAgeSeconds as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(0);
     (buildPostKind5DeleteDraft as ReturnType<typeof vi.fn>).mockReturnValue({
       expectedPubkey: "pubkey-1",
       unsignedEvent: {

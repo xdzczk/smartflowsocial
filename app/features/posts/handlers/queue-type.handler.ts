@@ -83,9 +83,14 @@ function parseAndSortSlots(slots: string[]): SlotInfo[] {
     .sort((a, b) => a.totalMinutes - b.totalMinutes);
 }
 
-function findCurrentSlotIndex(sortedSlots: SlotInfo[], baseDate: Date): number {
-  const baseHours = baseDate.getHours();
-  const baseMinutes = baseDate.getMinutes();
+function findCurrentSlotIndex(
+  sortedSlots: SlotInfo[],
+  baseDate: Date,
+  userTimezone: string
+): number {
+  const baseZoned = fromDate(baseDate, userTimezone);
+  const baseHours = baseZoned.hour;
+  const baseMinutes = baseZoned.minute;
   const baseTotalMinutes = baseHours * 60 + baseMinutes;
 
   for (let i = 0; i < sortedSlots.length; i++) {
@@ -101,6 +106,7 @@ function calculateFixedSlotsScheduleTime(
   baseDate: Date,
   index: number,
   config: unknown,
+  userTimezone: string,
   fallbackTime: string
 ): string {
   if (!config || !isFixedSlotsScheduleConfig(config)) {
@@ -113,7 +119,11 @@ function calculateFixedSlotsScheduleTime(
   }
 
   const sortedSlots = parseAndSortSlots(slots);
-  const currentSlotIndex = findCurrentSlotIndex(sortedSlots, baseDate);
+  const currentSlotIndex = findCurrentSlotIndex(
+    sortedSlots,
+    baseDate,
+    userTimezone
+  );
   const targetSlotIndex = (currentSlotIndex + index) % sortedSlots.length;
   const targetSlot = sortedSlots[targetSlotIndex];
 
@@ -122,8 +132,6 @@ function calculateFixedSlotsScheduleTime(
   }
 
   const daysToAdd = Math.floor((currentSlotIndex + index) / sortedSlots.length);
-  // user is not available in this scope - use UTC as default
-  const userTimezone = "UTC";
   const baseZoned = fromDate(baseDate, userTimezone);
   const dateWithSlot = baseZoned.with({
     hour: targetSlot.hours,
@@ -265,6 +273,7 @@ function calculateScheduleTime(
       baseDate,
       index,
       queueTypeConfig.scheduleConfig,
+      userTimezone,
       fallbackTime
     );
   }

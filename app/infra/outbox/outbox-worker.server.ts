@@ -29,8 +29,12 @@ import {
   recordOutboxEventProcessed,
   recordOutboxEventRetried,
   setOutboxBacklog,
+  setOutboxOldestReadyAgeSeconds,
 } from "~/lib/metrics/business-metrics.server";
-import { recordOutboxProcessingDuration } from "~/lib/metrics/performance-metrics.server";
+import {
+  recordOutboxEnqueueToProcessLatency,
+  recordOutboxProcessingDuration,
+} from "~/lib/metrics/performance-metrics.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { buildObsContext } from "~/lib/observability-context.server";
 import { recordJobMetrics, recordJobStarted } from "~/lib/queue-metrics.server";
@@ -45,10 +49,12 @@ import {
 import {
   getUnprocessedOutboxEvents,
   claimOutboxEvent,
+  extendOutboxEventLock,
   markOutboxEventSucceeded,
   markOutboxEventFailed,
   deadLetterOutboxEvent,
   getOutboxBacklogCounts,
+  getOldestReadyOutboxAgeSeconds,
   type PostScheduledPayload,
   type LongFormPostScheduledPayload,
   type PostDeleteRequestedPayload,
@@ -60,6 +66,10 @@ import { updateReadModels } from "./read-model-worker.server";
 const BATCH_SIZE = 50;
 const POLL_INTERVAL_MS = 5000; // 5 seconds
 const OUTBOX_LOCK_TTL_MS = 30_000;
+const OUTBOX_LOCK_HEARTBEAT_MS = Math.max(
+  1_000,
+  Math.floor(OUTBOX_LOCK_TTL_MS / 3)
+);
 
 const QUEUE_SCHEDULED_POSTS = "scheduled-posts" as const;
 const QUEUE_SCHEDULED_LONGFORM_POSTS = "scheduled-longform-posts" as const;
@@ -87,7 +97,8 @@ function isDefinitelyNonRetryableOutboxError(error: Error): boolean {
     msg.includes("schema version") ||
     msg.includes("invalid delete payload") ||
     msg.includes("nostr_nsec") ||
-    msg.includes("delete signer pubkey mismatch")
+    msg.includes("delete signer pubkey mismatch") ||
+    msg.includes("outbox lock lost before finalize")
   );
 }
 
@@ -602,6 +613,7 @@ async function processEvent(event: ProcessableOutboxEvent) {
 /**
  * Process all unprocessed outbox events
  */
+// eslint-disable-next-line sonarjs/cognitive-complexity -- Worker orchestration intentionally centralizes retry/finalization branches.
 export async function processOutboxEvents(): Promise<{
   processed: number;
   errors: number;
@@ -623,6 +635,20 @@ export async function processOutboxEvents(): Promise<{
 
     const startTime = Date.now();
     recordJobStarted("outbox");
+    const lockState = { refreshFailed: false };
+    const heartbeat = setInterval(() => {
+      void (async () => {
+        const refreshed = await extendOutboxEventLock({
+          eventId: event.id,
+          lockId: lock.lockId,
+          ttlMs: OUTBOX_LOCK_TTL_MS,
+          now: new Date(),
+        });
+        if (!refreshed) {
+          lockState.refreshFailed = true;
+        }
+      })();
+    }, OUTBOX_LOCK_HEARTBEAT_MS);
     try {
       await processEvent({
         id: event.id,
@@ -633,11 +659,21 @@ export async function processOutboxEvents(): Promise<{
         scheduledFor: event.scheduledFor,
         correlationId: event.correlationId ?? undefined,
       });
-      await markOutboxEventSucceeded({
+      if (lockState.refreshFailed) {
+        throw new Error(
+          `Outbox lock lost before finalize for event ${event.id}`
+        );
+      }
+      const finalizeSucceeded = await markOutboxEventSucceeded({
         eventId: event.id,
         lockId: lock.lockId,
         now: new Date(),
       });
+      if (!finalizeSucceeded) {
+        throw new Error(
+          `Outbox lock lost before finalize for event ${event.id}`
+        );
+      }
       processed++;
 
       // Update read models for read model events
@@ -676,8 +712,14 @@ export async function processOutboxEvents(): Promise<{
       }
 
       const duration = Date.now() - startTime;
+      const enqueueToProcessLatencyMs =
+        Date.now() - new Date(event.createdAt).getTime();
       recordOutboxEventProcessed(event.eventType, true);
       recordOutboxProcessingDuration(event.eventType, duration, true);
+      recordOutboxEnqueueToProcessLatency(
+        event.eventType,
+        enqueueToProcessLatencyMs
+      );
       recordJobMetrics("outbox", duration, true);
     } catch (error) {
       errors++;
@@ -702,18 +744,40 @@ export async function processOutboxEvents(): Promise<{
       recordJobMetrics("outbox", duration, false, err);
 
       if (!shouldRetry) {
-        await deadLetterOutboxEvent({
+        const movedToDlq = await deadLetterOutboxEvent({
           eventId: event.id,
           lockId: lock.lockId,
           errorMessage: err.message,
         });
+        if (!movedToDlq) {
+          logError(
+            new Error("Outbox dead-letter finalize conflict"),
+            buildObsContext({
+              outboxEventId: event.id,
+              correlationId: event.correlationId ?? undefined,
+              eventType: event.eventType,
+              postId: event.aggregateId,
+            })
+          );
+        }
         recordOutboxEventDeadLettered(event.eventType, "non_retryable");
       } else if (attemptsAfterIncrement >= policy.maxAttempts) {
-        await deadLetterOutboxEvent({
+        const movedToDlq = await deadLetterOutboxEvent({
           eventId: event.id,
           lockId: lock.lockId,
           errorMessage: err.message,
         });
+        if (!movedToDlq) {
+          logError(
+            new Error("Outbox dead-letter finalize conflict"),
+            buildObsContext({
+              outboxEventId: event.id,
+              correlationId: event.correlationId ?? undefined,
+              eventType: event.eventType,
+              postId: event.aggregateId,
+            })
+          );
+        }
         recordOutboxEventDeadLettered(event.eventType, "max_attempts");
       } else {
         const suggestedDelayMs = getRetryDelayForError(err) ?? 0;
@@ -723,12 +787,23 @@ export async function processOutboxEvents(): Promise<{
           policy,
           minimumDelayMs: suggestedDelayMs,
         });
-        await markOutboxEventFailed({
+        const markedForRetry = await markOutboxEventFailed({
           eventId: event.id,
           lockId: lock.lockId,
           errorMessage: err.message,
           nextAttemptAt,
         });
+        if (!markedForRetry) {
+          logError(
+            new Error("Outbox retry finalize conflict"),
+            buildObsContext({
+              outboxEventId: event.id,
+              correlationId: event.correlationId ?? undefined,
+              eventType: event.eventType,
+              postId: event.aggregateId,
+            })
+          );
+        }
         recordOutboxEventRetried(event.eventType);
       }
 
@@ -745,15 +820,22 @@ export async function processOutboxEvents(): Promise<{
           postId: event.aggregateId,
         }),
       });
+    } finally {
+      clearInterval(heartbeat);
     }
   }
 
   // Update backlog gauges (best-effort)
   try {
-    const counts = await getOutboxBacklogCounts(new Date());
+    const now = new Date();
+    const [counts, oldestReadyAgeSeconds] = await Promise.all([
+      getOutboxBacklogCounts(now),
+      getOldestReadyOutboxAgeSeconds(now),
+    ]);
     setOutboxBacklog("pending", counts.pending);
     setOutboxBacklog("ready", counts.ready);
     setOutboxBacklog("dead_letter", counts.deadLettered);
+    setOutboxOldestReadyAgeSeconds(oldestReadyAgeSeconds);
   } catch {
     // Best-effort: never fail outbox processing due to metrics.
   }
@@ -766,23 +848,40 @@ export async function processOutboxEvents(): Promise<{
  */
 export function startOutboxWorker() {
   logInfo("Starting outbox worker", { pollInterval: POLL_INTERVAL_MS });
+  let isProcessing = false;
 
   // Process immediately on start
-  // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
-  void processOutboxEvents().catch((error) => {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      message: "Error in initial outbox processing",
-    });
-  });
+
+  void (async () => {
+    isProcessing = true;
+    try {
+      await processOutboxEvents();
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        message: "Error in initial outbox processing",
+      });
+    } finally {
+      isProcessing = false;
+    }
+  })();
 
   // Then process periodically
   const interval = setInterval(() => {
-    // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
-    void processOutboxEvents().catch((error) => {
-      logError(error instanceof Error ? error : new Error(String(error)), {
-        message: "Error in periodic outbox processing",
-      });
-    });
+    if (isProcessing) {
+      return;
+    }
+    void (async () => {
+      isProcessing = true;
+      try {
+        await processOutboxEvents();
+      } catch (error) {
+        logError(error instanceof Error ? error : new Error(String(error)), {
+          message: "Error in periodic outbox processing",
+        });
+      } finally {
+        isProcessing = false;
+      }
+    })();
   }, POLL_INTERVAL_MS);
 
   // Cleanup on shutdown

@@ -13,13 +13,9 @@ import { prisma } from "~/lib/prisma.server";
 import { toPrismaDate, toUnixTimestamp } from "~/lib/temporal";
 import { getLongFormPost } from "~/models/longformpost.server";
 
-import { LongFormPostStateMachine } from "../state-machine/longform-post-state-machine.server";
-
 import type { ScheduleLongFormPostInput } from "./longform-types";
 
 export class ScheduleLongFormPostUseCase {
-  private readonly stateMachine = new LongFormPostStateMachine();
-
   async execute(input: ScheduleLongFormPostInput): Promise<void> {
     // Verify post exists
     const post = await getLongFormPost({
@@ -46,15 +42,25 @@ export class ScheduleLongFormPostUseCase {
       scheduledForUnix
     );
 
-    // Update post and create outbox event in transaction
+    // Update post, transition state, and create outbox event atomically
     await prisma.$transaction(async (tx) => {
       await tx.longFormPost.update({
         where: { id: input.postId },
         data: {
           scheduledAtUtc: scheduledAtUtcDate,
           enqueueIdempotencyKey,
+          currentState: "SCHEDULED",
           // @deprecated - isScheduled flag removed. State machine will set it via transition.
           signedEvent: input.signedEvent as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      await tx.longFormPostStateTransition.create({
+        data: {
+          longFormPostId: input.postId,
+          fromState: post.currentState,
+          toState: "SCHEDULED",
+          reason: `Longform post scheduled for ${scheduledAtUtcDate.toISOString()}`,
         },
       });
 
@@ -78,13 +84,5 @@ export class ScheduleLongFormPostUseCase {
         input.correlationId
       );
     });
-
-    // Transition to SCHEDULED state (this will automatically sync flags)
-    await this.stateMachine.transition(
-      input.postId,
-      input.userId,
-      "SCHEDULED",
-      `Longform post scheduled for ${scheduledAtUtcDate.toISOString()}`
-    );
   }
 }

@@ -77,6 +77,36 @@ export const outboxProcessingDurationHistogram = getOrCreateMetric(
 );
 
 /**
+ * Outbox enqueue-to-process latency histogram
+ * Time from outbox event creation to successful processing.
+ */
+export const outboxEnqueueToProcessLatencyMsHistogram = getOrCreateMetric(
+  "outbox_enqueue_to_process_latency_ms",
+  () =>
+    new promClient.Histogram({
+      name: "outbox_enqueue_to_process_latency_ms",
+      help: "Latency from outbox event creation to processing in milliseconds",
+      labelNames: ["event_type"],
+      buckets: [50, 100, 500, 1000, 5000, 10000, 30000, 60000, 300000],
+    })
+);
+
+/**
+ * Publish lateness histogram
+ * How late scheduled publishing starts versus scheduled timestamp.
+ */
+export const publishLatenessSecondsHistogram = getOrCreateMetric(
+  "publish_lateness_seconds",
+  () =>
+    new promClient.Histogram({
+      name: "publish_lateness_seconds",
+      help: "Lateness in seconds for scheduled publish execution",
+      labelNames: ["post_type"],
+      buckets: [0, 1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600],
+    })
+);
+
+/**
  * Record publish latency
  */
 export function recordPublishLatency(
@@ -107,5 +137,25 @@ export function recordOutboxProcessingDuration(
       status: success ? "success" : "error",
     },
     durationMs
+  );
+}
+
+export function recordOutboxEnqueueToProcessLatency(
+  eventType: string,
+  latencyMs: number
+): void {
+  outboxEnqueueToProcessLatencyMsHistogram.observe(
+    { event_type: eventType },
+    Math.max(0, latencyMs)
+  );
+}
+
+export function recordPublishLateness(
+  postType: string,
+  latenessSeconds: number
+): void {
+  publishLatenessSecondsHistogram.observe(
+    { post_type: postType },
+    Math.max(0, latenessSeconds)
   );
 }

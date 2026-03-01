@@ -7,15 +7,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies - use vi.hoisted to allow top-level variables in mocks
-const { mockCancelPostJob, mockEnqueuePostJob } = vi.hoisted(() => {
-  const mockCancelPostJob = vi.fn();
-  const mockEnqueuePostJob = vi.fn();
-  return { mockCancelPostJob, mockEnqueuePostJob };
+const { mockSchedulePostExecute } = vi.hoisted(() => {
+  const mockSchedulePostExecute = vi.fn();
+  return { mockSchedulePostExecute };
 });
 
-vi.mock("~/infra/queue", () => ({
-  enqueuePostJob: mockEnqueuePostJob,
-  cancelPostJob: mockCancelPostJob,
+vi.mock("~/features/posts/use-cases/schedule-post.use-case.server", () => ({
+  SchedulePostUseCase: class {
+    execute = mockSchedulePostExecute;
+  },
 }));
 
 vi.mock("~/models/post.queries.server", () => ({
@@ -35,7 +35,6 @@ vi.mock("~/lib/validation", () => ({
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { handleCalendarReschedule } from "~/features/posts/services/calendar-action.server";
-import { enqueuePostJob } from "~/infra/queue";
 import { validateFormDataOrRespond } from "~/lib/validation";
 import { reschedulePost } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
@@ -45,8 +44,7 @@ const TEST_SESSION_PUBKEY = "pk-123";
 describe("Calendar Action Reschedule", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCancelPostJob.mockResolvedValue(true);
-    mockEnqueuePostJob.mockResolvedValue(undefined);
+    mockSchedulePostExecute.mockResolvedValue(undefined);
   });
 
   describe("handleCalendarReschedule", () => {
@@ -66,7 +64,6 @@ describe("Calendar Action Reschedule", () => {
       (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockUpdatedPost
       );
-      (enqueuePostJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
       (validateFormDataOrRespond as ReturnType<typeof vi.fn>).mockReturnValue({
         success: true,
@@ -108,9 +105,8 @@ describe("Calendar Action Reschedule", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
-      expect(mockCancelPostJob).toHaveBeenCalledWith(TEST_POST_ID);
       expect(reschedulePost).toHaveBeenCalled();
-      expect(enqueuePostJob).toHaveBeenCalled();
+      expect(mockSchedulePostExecute).toHaveBeenCalled();
 
       const responseObj =
         result instanceof Response
@@ -155,7 +151,7 @@ describe("Calendar Action Reschedule", () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
         expect(jsonResult.error).toContain("not found");
       }
-      expect(mockCancelPostJob).not.toHaveBeenCalled();
+      expect(mockSchedulePostExecute).not.toHaveBeenCalled();
     });
 
     it("should return validation error for invalid form data", async () => {
@@ -181,7 +177,7 @@ describe("Calendar Action Reschedule", () => {
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
       expect(jsonResult.error).toBe("Validation failed");
-      expect(mockCancelPostJob).not.toHaveBeenCalled();
+      expect(mockSchedulePostExecute).not.toHaveBeenCalled();
     });
 
     it("should handle missing signed events gracefully", async () => {
@@ -214,9 +210,9 @@ describe("Calendar Action Reschedule", () => {
         TEST_SESSION_PUBKEY
       );
 
-      expect(mockCancelPostJob).toHaveBeenCalled();
+      expect(mockSchedulePostExecute).not.toHaveBeenCalled();
       expect(reschedulePost).toHaveBeenCalled();
-      expect(enqueuePostJob).not.toHaveBeenCalled(); // No signed event, so no job enqueued
+      expect(mockSchedulePostExecute).not.toHaveBeenCalled(); // No signed event, so no scheduling
 
       const responseObj =
         result instanceof Response

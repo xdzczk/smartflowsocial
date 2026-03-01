@@ -32,13 +32,6 @@ vi.mock("~/lib/idempotency.server", () => ({
   generateEnqueueIdempotencyKey: vi.fn(),
 }));
 
-const mockTransition = vi.fn();
-vi.mock("~/features/posts/state-machine/post-state-machine.server", () => ({
-  PostStateMachine: class {
-    transition = mockTransition;
-  },
-}));
-
 vi.mock("~/lib/correlation-context.server", () => ({
   getCorrelationId: vi.fn((id) => id ?? "test-correlation-id"),
 }));
@@ -66,7 +59,6 @@ describe("SchedulePostUseCase", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockTransition.mockResolvedValue(undefined);
     useCase = new SchedulePostUseCase();
   });
 
@@ -103,6 +95,9 @@ describe("SchedulePostUseCase", () => {
           const tx = {
             post: {
               update: vi.fn().mockResolvedValue(mockPost),
+            },
+            postStateTransition: {
+              create: vi.fn().mockResolvedValue(undefined),
             },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
@@ -153,12 +148,6 @@ describe("SchedulePostUseCase", () => {
 
         expect.any(String) // correlationId
       );
-      expect(mockTransition).toHaveBeenCalledWith(
-        TEST_POST_ID,
-        TEST_USER_ID,
-        "SCHEDULED",
-        expect.stringContaining("Post scheduled for")
-      );
       expect(recordPostScheduled).toHaveBeenCalledWith("IMAGE");
     });
 
@@ -206,6 +195,9 @@ describe("SchedulePostUseCase", () => {
             post: {
               update: vi.fn().mockResolvedValue(mockPost),
             },
+            postStateTransition: {
+              create: vi.fn().mockResolvedValue(undefined),
+            },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
           return await callback(tx);
@@ -245,7 +237,7 @@ describe("SchedulePostUseCase", () => {
       );
     });
 
-    it("should handle state transition failure", async () => {
+    it("should fail when transition record write fails", async () => {
       const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC");
       const mockPost = {
         id: TEST_POST_ID,
@@ -265,6 +257,11 @@ describe("SchedulePostUseCase", () => {
             post: {
               update: vi.fn().mockResolvedValue(mockPost),
             },
+            postStateTransition: {
+              create: vi
+                .fn()
+                .mockRejectedValue(new Error("Transition write failed")),
+            },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
           return await callback(tx);
@@ -273,8 +270,6 @@ describe("SchedulePostUseCase", () => {
       (
         createOutboxEventInTransaction as ReturnType<typeof vi.fn>
       ).mockResolvedValue(undefined);
-      mockTransition.mockRejectedValue(new Error("State transition failed"));
-
       await expect(
         useCase.execute({
           postId: TEST_POST_ID,
@@ -290,7 +285,7 @@ describe("SchedulePostUseCase", () => {
             sig: "test-sig",
           },
         })
-      ).rejects.toThrow("State transition failed");
+      ).rejects.toThrow("Transition write failed");
     });
   });
 });

@@ -217,6 +217,19 @@ export const outboxBacklogGauge = getOrCreateMetric(
 );
 
 /**
+ * Outbox oldest ready age gauge
+ * Tracks how old the oldest ready-to-process outbox event is.
+ */
+export const outboxOldestReadyAgeSecondsGauge = getOrCreateMetric(
+  "outbox_oldest_ready_age_seconds",
+  () =>
+    new promClient.Gauge({
+      name: "outbox_oldest_ready_age_seconds",
+      help: "Age in seconds of oldest ready outbox event",
+    })
+);
+
+/**
  * Record post creation
  */
 export function recordPostCreated(
@@ -342,4 +355,8 @@ export function setOutboxBacklog(
   count: number
 ): void {
   outboxBacklogGauge.set({ state }, count);
+}
+
+export function setOutboxOldestReadyAgeSeconds(ageSeconds: number): void {
+  outboxOldestReadyAgeSecondsGauge.set(Math.max(0, ageSeconds));
 }

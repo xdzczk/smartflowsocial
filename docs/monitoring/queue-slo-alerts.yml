@@ -1,0 +1,43 @@
+groups:
+  - name: queue_scheduling_slos
+    interval: 30s
+    rules:
+      - alert: QueuePublishLatenessHighP95
+        expr: histogram_quantile(0.95, sum(rate(publish_lateness_seconds_bucket[10m])) by (le, post_type)) > 300
+        for: 10m
+        labels:
+          severity: warning
+          service: queue
+        annotations:
+          summary: "Scheduled publish latency degraded (p95 > 5m)"
+          description: "Scheduled publishing is consistently late for at least 10 minutes."
+
+      - alert: OutboxReadyBacklogTooOld
+        expr: outbox_oldest_ready_age_seconds > 120
+        for: 5m
+        labels:
+          severity: critical
+          service: outbox
+        annotations:
+          summary: "Outbox oldest ready event too old"
+          description: "Outbox has ready events older than 2 minutes for 5+ minutes."
+
+      - alert: OutboxDeadLetterRateElevated
+        expr: sum(rate(outbox_events_dead_lettered_total[15m])) by (event_type) > 0.02
+        for: 15m
+        labels:
+          severity: warning
+          service: outbox
+        annotations:
+          summary: "Outbox dead-letter rate elevated"
+          description: "Outbox events are repeatedly exhausting retries."
+
+      - alert: ScheduledQueueBacklogStale
+        expr: max(queue_oldest_waiting_age_seconds{queue=~"scheduled-posts|scheduled-longform-posts"}) > 300
+        for: 10m
+        labels:
+          severity: warning
+          service: queue
+        annotations:
+          summary: "Scheduled queue backlog stale"
+          description: "Oldest queued publish job is older than 5 minutes."

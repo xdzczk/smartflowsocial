@@ -46,18 +46,8 @@ describe("Post Scheduling Flow", () => {
           scheduleLabel.length > 0 ||
           scheduleButton.length > 0;
 
-        // If schedule toggle exists, verify it's accessible
-        if (hasScheduleToggle) {
-          // Verify at least one schedule-related element exists
-          expect(hasScheduleToggle).to.be.true;
-        } else {
-          // If no schedule toggle found, that's also acceptable (feature might not be available)
-          // Log a note but don't fail the test
-          cy.log(
-            "Schedule toggle not found - feature may not be available or UI may need improvement"
-          );
-          expect(true).to.be.true;
-        }
+        // Scheduling is a required capability for this flow.
+        expect(hasScheduleToggle).to.be.true;
       });
     });
 
@@ -168,14 +158,7 @@ describe("Post Scheduling Flow", () => {
           const hasPost =
             $body.text().includes(postContent) ||
             $body.find(`*:contains("${postContent}")`).length > 0;
-          if (!hasPost) {
-            // Post might not have been created or might be in a different queue
-            cy.log(
-              "Scheduled post not found in scheduled queue - may indicate application bug"
-            );
-          }
-          // Verify page loaded at least
-          expect($body.length).to.be.greaterThan(0);
+          expect(hasPost).to.be.true;
         });
       });
     });

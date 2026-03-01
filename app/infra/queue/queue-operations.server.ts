@@ -4,6 +4,8 @@
  */
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { createOutboxEvent } from "~/infra/outbox/outbox.server";
+import { logError } from "~/lib/error-logger.server";
 
 import { queueClient } from "./queue-client.server";
 import type { PostJobData, LongFormPostJobData } from "./queue-types";
@@ -43,8 +45,26 @@ export async function enqueuePostJob(
  * @returns true if the job was found and cancelled, false otherwise
  */
 export function cancelPostJob(postId: string): Promise<boolean> {
-  // Use cancelByJobId for O(1) performance since we use postId as jobId
-  return queueClient.cancelByJobId("scheduled-posts", postId);
+  return (async () => {
+    // Persist cancellation intent first so queue cancellation can be retried by outbox worker.
+    try {
+      await createOutboxEvent(
+        "POST_CANCELLED",
+        postId,
+        "Post",
+        { postId, userId: "system" },
+        new Date()
+      );
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        postId,
+        message: "Failed to persist post cancellation intent in outbox",
+      });
+    }
+
+    // Best-effort immediate cancellation for lower latency UX.
+    return await queueClient.cancelByJobId("scheduled-posts", postId);
+  })();
 }
 
 /**
@@ -83,8 +103,26 @@ export async function enqueueLongFormPostJob(
  * @returns true if the job was found and cancelled, false otherwise
  */
 export function cancelLongFormPostJob(postId: string): Promise<boolean> {
-  // Use cancelByJobId for O(1) performance since we use postId as jobId
-  return queueClient.cancelByJobId("scheduled-longform-posts", postId);
+  return (async () => {
+    // Persist cancellation intent first so queue cancellation can be retried by outbox worker.
+    try {
+      await createOutboxEvent(
+        "LONGFORM_CANCELLED",
+        postId,
+        "LongFormPost",
+        { postId, userId: "system" },
+        new Date()
+      );
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        postId,
+        message: "Failed to persist longform cancellation intent in outbox",
+      });
+    }
+
+    // Best-effort immediate cancellation for lower latency UX.
+    return await queueClient.cancelByJobId("scheduled-longform-posts", postId);
+  })();
 }
 
 /**

@@ -419,31 +419,16 @@ export async function deletePost({
         correlationId
       );
 
-      return deleted;
-    });
-
-    if (isNostrDeleteEventsEnabled()) {
-      if (!deleteRef) {
-        logInfo(
-          "Skipping POST_DELETE_REQUESTED outbox event: missing metadata",
-          {
-            postId: post.id,
-            userId: post.userId,
-            correlationId,
-          }
-        );
-      } else {
+      if (isNostrDeleteEventsEnabled() && deleteRef) {
         try {
-          // @ts-ignore - Dynamic imports work at runtime in CommonJS
-          const { createOutboxEvent } =
-            await import("~/infra/outbox/outbox.server");
-          await createOutboxEvent(
+          await createOutboxEventInTransaction(
+            tx as Prisma.TransactionClient,
             "POST_DELETE_REQUESTED",
-            post.id,
+            deleted.id,
             "Post",
             {
-              postId: post.id,
-              userId: post.userId,
+              postId: deleted.id,
+              userId: deleted.userId,
               originalEventId: deleteRef.eventId,
               originalEventPubkey: deleteRef.pubkey,
               reason: DEFAULT_DELETE_REASON,
@@ -459,24 +444,30 @@ export async function deletePost({
             logInfo(
               "Skipping POST_DELETE_REQUESTED outbox event: DB constraint not yet updated",
               {
-                postId: post.id,
-                userId: post.userId,
+                postId: deleted.id,
+                userId: deleted.userId,
                 correlationId,
               }
             );
           } else {
-            logError(
-              error instanceof Error ? error : new Error(String(error)),
-              {
-                message:
-                  "Failed to enqueue POST_DELETE_REQUESTED outbox event (post already deleted)",
-                postId: post.id,
-                userId: post.userId,
-                correlationId,
-              }
-            );
+            throw error;
           }
         }
+      }
+
+      return deleted;
+    });
+
+    if (isNostrDeleteEventsEnabled()) {
+      if (!deleteRef) {
+        logInfo(
+          "Skipping POST_DELETE_REQUESTED outbox event: missing metadata",
+          {
+            postId: post.id,
+            userId: post.userId,
+            correlationId,
+          }
+        );
       }
     }
 

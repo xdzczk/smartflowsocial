@@ -5,12 +5,9 @@
 
 import { json } from "@remix-run/node";
 
-import {
-  cancelPostJob as cancelScheduledPost,
-  enqueuePostJob as schedulePost,
-} from "~/infra/queue";
 import { logWarning } from "~/lib/error-logger.server";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
+import { fromUnixTimestamp } from "~/lib/temporal";
 import {
   calendarRescheduleSchema,
   calendarRescheduleLongformSchema,
@@ -22,6 +19,9 @@ import {
 } from "~/models/longformpost.server";
 import { reschedulePost } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
+
+import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
+import { SchedulePostUseCase } from "../use-cases/schedule-post.use-case.server";
 
 /**
  * Handle calendar reschedule action for regular posts
@@ -44,9 +44,6 @@ export async function handleCalendarReschedule(
   if (!originalPost) {
     return json({ error: "Post not found" }, { status: 404 });
   }
-
-  // Cancel existing scheduled job
-  await cancelScheduledPost(postId);
 
   // Parse signed events if provided (from client-side re-signing)
   let parsedSignedEvent = null;
@@ -80,15 +77,20 @@ export async function handleCalendarReschedule(
     }
   }
 
-  // Update post in database
+  // Update post in database (include newly signed events when present)
   const updatedPost = await reschedulePost({
     id: postId,
     userId,
     newScheduledFor: newTime,
     overrideQueue,
+    ...(parsedSignedEvent &&
+      parsedNostrEvent && {
+        signedEvent: parsedSignedEvent,
+        nostrEvent: parsedNostrEvent,
+      }),
   });
 
-  // If we have a newly signed event, update the post with it and schedule the job
+  // If we have a newly signed event, schedule via use-case (outbox intent path).
   if (parsedSignedEvent && parsedNostrEvent) {
     assertSignedEventMatchesSessionPubkey({
       sessionPubkey,
@@ -96,20 +98,15 @@ export async function handleCalendarReschedule(
       context: { feature: "calendar", action: "reschedule", postId },
     });
 
-    // Update post with new signed event
-    const finalPost = await reschedulePost({
-      id: postId,
+    const schedulePostUseCase = new SchedulePostUseCase();
+    await schedulePostUseCase.execute({
+      postId,
       userId,
-      newScheduledFor: newTime,
-      overrideQueue,
+      scheduledAtUtc: fromUnixTimestamp(parseInt(newTime, 10), "UTC"),
       signedEvent: parsedSignedEvent,
-      nostrEvent: parsedNostrEvent,
     });
 
-    // Schedule new job
-    await schedulePost(postId, userId, parsedSignedEvent, parseInt(newTime));
-
-    return json({ success: true, post: finalPost, signed: true });
+    return json({ success: true, post: updatedPost, signed: true });
   }
 
   // Return success but indicate signing is needed
@@ -188,6 +185,16 @@ export async function handleCalendarRescheduleLongform(
     signedEvent: parsedSignedEvent,
     nostrEvent: parsedNostrEvent,
   });
+
+  if (parsedSignedEvent) {
+    const scheduleLongFormPostUseCase = new ScheduleLongFormPostUseCase();
+    await scheduleLongFormPostUseCase.execute({
+      postId,
+      userId,
+      scheduledAtUtc: fromUnixTimestamp(parseInt(newTime, 10), "UTC"),
+      signedEvent: parsedSignedEvent,
+    });
+  }
 
   return json({
     success: true,
