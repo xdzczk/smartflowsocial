@@ -414,6 +414,10 @@ describe("Queue Type Handler Integration Tests", () => {
       // Should not call fetch since we're using the first item's time
       expect(mockFetch).not.toHaveBeenCalled();
       expect(setPosts).toHaveBeenCalled();
+      const updatedPosts: BulkPost[] | undefined = setPosts.mock
+        .calls[0]?.[0] as BulkPost[] | undefined;
+      expect(updatedPosts?.[0]?.scheduledFor).toContain("2024-01-15T14:");
+      expect(updatedPosts?.[1]?.scheduledFor).toContain("2024-01-15T18:");
     });
 
     it("should calculate interval-based schedule times", async () => {

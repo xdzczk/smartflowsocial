@@ -59,8 +59,8 @@ describe("Scheduling Algorithms", () => {
           baseTime: BASE_TIME,
         });
 
-        // When no last post exists, scheduler returns baseTime + 1000ms as fallback
-        expect(result.getTime()).toBe(BASE_TIME.getTime() + 1000);
+        // For interval queues, first slot defaults to baseTime + 15 minutes
+        expect(result.getTime()).toBe(BASE_TIME.getTime() + 15 * 60 * 1000);
         expect(getLastPostTimeForQueue).toHaveBeenCalledWith({
           userId: TEST_USER_ID,
           queueTypeId: "queue-1",
@@ -88,6 +88,52 @@ describe("Scheduling Algorithms", () => {
         const expectedTime = new Date(lastPostTime);
         expectedTime.setHours(expectedTime.getHours() + 4);
         expect(result).toEqual(expectedTime);
+      });
+
+      it("should preserve cadence and jump to next valid slot after long idle period", async () => {
+        // Queue cadence anchored at 2024-01-10 10:00 UTC with 12h interval.
+        // Base time is 2024-01-15 10:00 UTC, so next valid slot must be 2024-01-15 22:00 UTC.
+        const lastPostTime = createDateAtTime(2024, 1, 10, 10, 0);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime
+        );
+
+        const queueType = createIntervalQueueType(12, {
+          id: "queue-1",
+          name: "posts",
+        });
+
+        const result = await calculateNextScheduleTime({
+          queueType,
+          userId: TEST_USER_ID,
+          baseTime: BASE_TIME, // 2024-01-15 10:00 UTC
+        });
+
+        expect(result.getUTCHours()).toBe(22);
+        expect(result.getUTCMinutes()).toBe(0);
+        expect(result.getTime()).toBeGreaterThan(BASE_TIME.getTime());
+      });
+
+      it("should return a slot strictly after baseTime when cadence lands exactly on baseTime", async () => {
+        const lastPostTime = createDateAtTime(2024, 1, 15, 8, 0);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime
+        );
+
+        const queueType = createIntervalQueueType(2, {
+          id: "queue-1",
+          name: "posts",
+        });
+
+        const result = await calculateNextScheduleTime({
+          queueType,
+          userId: TEST_USER_ID,
+          baseTime: BASE_TIME, // 10:00 UTC
+        });
+
+        // Next cadence slots are 10:00 then 12:00; must choose strictly-after slot.
+        expect(result.getUTCHours()).toBe(12);
+        expect(result.getUTCMinutes()).toBe(0);
       });
 
       it("should return baseTime if calculated time is in the past", async () => {
@@ -153,10 +199,10 @@ describe("Scheduling Algorithms", () => {
           baseTime: BASE_TIME, // 10:00 UTC
         });
 
-        // 09:45 + 15 min = 10:00 UTC
+        // 09:45 + 15 min lands at "now", so interval fallback shifts first slot to now+15.
         expect(result.getUTCHours()).toBe(10);
-        expect(result.getUTCMinutes()).toBe(0);
-        expect(result.getTime()).toBe(lastPostTime.getTime() + 15 * 60 * 1000);
+        expect(result.getUTCMinutes()).toBe(15);
+        expect(result.getTime()).toBe(BASE_TIME.getTime() + 15 * 60 * 1000);
       });
     });
 
@@ -183,13 +229,8 @@ describe("Scheduling Algorithms", () => {
         });
 
         expect(getScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID);
-        const expectedTime = new Date(lastPostTime);
-        expectedTime.setHours(expectedTime.getHours() + 2); // Global interval
-        // The function checks if nextTime > now, and if not, returns now
-        // BASE_TIME is 2024-01-15T10:00:00Z, lastPostTime is 2 hours before
-        // expectedTime would be 2024-01-15T10:00:00Z, which equals BASE_TIME
-        // So the function should return BASE_TIME (now)
-        expect(result.getTime()).toBe(BASE_TIME.getTime());
+        // lastPost + 2h lands exactly on baseTime, so cadence must advance to the next slot.
+        expect(result.getTime()).toBe(BASE_TIME.getTime() + 2 * 60 * 60 * 1000);
       });
 
       it("should default to 4 hours when global interval is not available", async () => {
@@ -678,8 +719,8 @@ describe("Scheduling Algorithms", () => {
         baseTime: BASE_TIME,
       });
 
-      // Should return baseTime + 1000ms when database error occurs (fallback ensures future time)
-      expect(result.getTime()).toBe(BASE_TIME.getTime() + 1000);
+      // For interval queues, DB fallback still uses "first slot = now + 15 minutes".
+      expect(result.getTime()).toBe(BASE_TIME.getTime() + 15 * 60 * 1000);
     });
   });
 

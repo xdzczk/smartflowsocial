@@ -4,7 +4,7 @@ import { getScheduleInterval } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import {
   addDays,
-  addHours,
+  addMinutes,
   compareZonedDateTime,
   createZonedDateTime,
   fromDate,
@@ -48,6 +48,11 @@ function getDefaultFutureTime(baseTime: Date): Date {
   return toDate(futureZoned);
 }
 
+function getDefaultIntervalStartTime(baseTime: Date): Date {
+  const zonedDateTime = fromDate(baseTime, "UTC");
+  return toDate(addMinutes(zonedDateTime, 15));
+}
+
 // ============================================================================
 // Helper Functions for Interval Schedule Calculation
 // ============================================================================
@@ -76,23 +81,30 @@ function calculateIntervalTime(
   baseTime: Date
 ): Date {
   if (!isValidDate(lastPostTime)) {
-    return getDefaultFutureTime(baseTime);
+    return getDefaultIntervalStartTime(baseTime);
   }
 
-  // Use Temporal for date arithmetic
-  const lastPostZoned = fromDate(lastPostTime, "UTC");
-  const nextZoned = addHours(lastPostZoned, intervalHours);
-  const nextTime = toDate(nextZoned);
-
-  if (!isValidDate(nextTime)) {
-    return baseTime;
+  // Keep behavior stable with addHours: fractional hours are minute-rounded.
+  const intervalMinutes = Number.isInteger(intervalHours)
+    ? intervalHours * 60
+    : Math.round(intervalHours * 60);
+  if (!Number.isFinite(intervalMinutes) || intervalMinutes <= 0) {
+    return getDefaultIntervalStartTime(baseTime);
   }
 
-  const baseZoned = fromDate(baseTime, "UTC");
-  return isAfter(nextZoned, baseZoned) ||
-    compareZonedDateTime(nextZoned, baseZoned) === 0
+  const intervalMs = intervalMinutes * 60 * 1000;
+  const elapsedMs = baseTime.getTime() - lastPostTime.getTime();
+
+  // Preserve queue cadence by jumping to the first interval slot strictly after baseTime.
+  const intervalsToAdd =
+    elapsedMs < 0 ? 1 : Math.floor(elapsedMs / intervalMs) + 1;
+  const nextTime = new Date(
+    lastPostTime.getTime() + intervalsToAdd * intervalMs
+  );
+
+  return isValidDate(nextTime)
     ? nextTime
-    : getDefaultFutureTime(baseTime);
+    : getDefaultIntervalStartTime(baseTime);
 }
 
 async function calculateIntervalSchedule(

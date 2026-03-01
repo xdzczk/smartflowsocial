@@ -722,8 +722,37 @@ export function BulkComposerModal({
         setPosts,
         setFirstItemTimeManuallyChanged
       );
+
+      // Recalculate interval-expanded times when first post anchor is edited.
+      if (index !== 0 || !value || value.trim() === "") {
+        return;
+      }
+      const firstQueueType = posts[0]?.queueType;
+      if (!firstQueueType || firstQueueType === "unassigned") {
+        return;
+      }
+      const updatedPosts = posts.map((post, postIndex) =>
+        postIndex === 0 ? { ...post, scheduledFor: value } : post
+      );
+      const userDeps = user
+        ? {
+            id: user.id,
+            timezone: user.timezone ?? undefined,
+            scheduleInterval: scheduleIntervals,
+          }
+        : null;
+      void handleBulkQueueUpdateHandler(firstQueueType, {
+        posts: updatedPosts,
+        setPosts,
+        queueTypes,
+        tags: Array.isArray(tags) ? tags : [],
+        user: userDeps,
+        setDisplayedHashtags,
+        setSelectedQueueType: () => {},
+        firstItemTimeManuallyChanged: true,
+      });
     },
-    [posts]
+    [posts, queueTypes, scheduleIntervals, setDisplayedHashtags, tags, user]
   );
 
   const handleIsRecyclableChange = useCallback(

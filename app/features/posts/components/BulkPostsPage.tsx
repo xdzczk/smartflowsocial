@@ -499,6 +499,36 @@ export default function BulkPostsPage() {
       setPosts,
       setFirstItemTimeManuallyChanged
     );
+
+    // When the first post time is manually changed, re-anchor interval expansion
+    // so subsequent posts follow the queue interval from this new first time.
+    if (index !== 0 || !value || value.trim() === "") {
+      return;
+    }
+    const firstQueueType = posts[0]?.queueType;
+    if (!firstQueueType || firstQueueType === "unassigned") {
+      return;
+    }
+    const updatedPosts = posts.map((post, postIndex) =>
+      postIndex === 0 ? { ...post, scheduledFor: value } : post
+    );
+    const userDeps = user
+      ? {
+          id: user.id,
+          timezone: user.timezone ?? undefined,
+          scheduleInterval: scheduleIntervals,
+        }
+      : null;
+    void handleBulkQueueUpdateHandler(firstQueueType, {
+      posts: updatedPosts,
+      setPosts,
+      queueTypes,
+      tags,
+      user: userDeps,
+      setDisplayedHashtags,
+      setSelectedQueueType,
+      firstItemTimeManuallyChanged: true,
+    });
   };
 
   const handleIsRecyclableChange = (index: number, checked: boolean) => {

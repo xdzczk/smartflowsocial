@@ -32,6 +32,12 @@ const REVALIDATE_DEBOUNCE_MS = 1500;
 
 const LOCALE_DEFAULTS_SYNCED_KEY = "smartflow_locale_defaults_synced";
 
+function canRevalidateNow(): boolean {
+  if (typeof window === "undefined") return false;
+  if (document.visibilityState !== "visible") return false;
+  return navigator.onLine;
+}
+
 export function LifecycleHandler() {
   const revalidator = useRevalidator();
   const queryClient = useQueryClient();
@@ -49,6 +55,9 @@ export function LifecycleHandler() {
   }, [revalidator]);
 
   const runRevalidate = useCallback(() => {
+    if (!canRevalidateNow()) {
+      return;
+    }
     const now = Date.now();
     if (now - lastRevalidateAtRef.current < REVALIDATE_DEBOUNCE_MS) {
       return;

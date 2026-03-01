@@ -165,6 +165,12 @@ function DashboardContentTypeTabs({
   );
 }
 
+function canAutoRevalidateDashboard(): boolean {
+  if (typeof window === "undefined") return false;
+  if (document.visibilityState !== "visible") return false;
+  return navigator.onLine;
+}
+
 export default function DashboardIndexPage() {
   const {
     flowItems,
@@ -263,6 +269,9 @@ export default function DashboardIndexPage() {
   useEffect(() => {
     if (flowItems.length === 0) return;
     const interval = setInterval(() => {
+      if (!canAutoRevalidateDashboard()) {
+        return;
+      }
       revalidator.revalidate();
     }, 60_000);
     return () => clearInterval(interval);

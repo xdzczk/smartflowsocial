@@ -64,6 +64,8 @@ type LoginState =
   | "authenticated"
   | "failed";
 
+type ActiveSignerFlow = "nip07" | "nip46" | null;
+
 type RelayCheckStatus = "checking" | "connected" | "failed";
 
 interface RelayStatus {
@@ -420,6 +422,8 @@ export default function NostrLoginPanel() {
   }, [location.search]);
 
   const [state, setState] = useState<LoginState>("signer_selection");
+  const [activeSignerFlow, setActiveSignerFlow] =
+    useState<ActiveSignerFlow>(null);
   const [error, setError] = useState<{
     code: LoginError;
     message: string;
@@ -667,6 +671,7 @@ export default function NostrLoginPanel() {
     setCopyOk(false);
     setError(null);
     setLastFailureOrigin(null);
+    setActiveSignerFlow(null);
     setState("signer_selection");
   }, [cleanup, clearPendingNostrConnectStorage, closeRelaySockets]);
 
@@ -846,6 +851,7 @@ export default function NostrLoginPanel() {
 
     setError(null);
     setLastFailureOrigin(null);
+    setActiveSignerFlow("nip07");
     setState("signer_initializing");
     try {
       const s = new Nip07Signer();
@@ -964,6 +970,7 @@ export default function NostrLoginPanel() {
   const initNip46 = useCallback(
     // eslint-disable-next-line sonarjs/cognitive-complexity -- NIP-46 requires handling bunker input, nostrconnect URI, retries, timeouts, and mobile app switching
     async (retryCount = 0) => {
+      setActiveSignerFlow("nip46");
       // If we already have a connection URI and we're in awaiting state, don't restart
       // This prevents restarting the connection when user returns from signer app
       // Also check if we're waiting for approval (connection in progress)
@@ -1644,7 +1651,7 @@ export default function NostrLoginPanel() {
   return (
     <div className="space-y-4">
       {state === "signer_selection" ? (
-        <div className="space-y-4">
+        <div className="min-h-[164px] space-y-4">
           <div className="text-foreground text-base font-semibold">
             Sign in with Nostr
           </div>
@@ -1707,7 +1714,10 @@ export default function NostrLoginPanel() {
               type="button"
               variant="outline"
               className="border-border bg-card hover:bg-muted hover:text-foreground h-auto py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg dark:shadow-lg"
-              onClick={() => setState("signer_initializing")}
+              onClick={() => {
+                setActiveSignerFlow("nip46");
+                setState("signer_initializing");
+              }}
             >
               Remote Signer
             </Button>
@@ -1729,17 +1739,45 @@ export default function NostrLoginPanel() {
       ) : null}
 
       {(() => {
-        const isInitializing = state === "signer_initializing" && !signer;
+        const isInitializingNip07 =
+          state === "signer_initializing" &&
+          !signer &&
+          activeSignerFlow === "nip07";
+        const isInitializingNip46 =
+          state === "signer_initializing" &&
+          !signer &&
+          activeSignerFlow === "nip46";
         const isConnectionInProgress =
           !!nostrConnectUri &&
           (state === "awaiting_profile_selection" ||
             state === "requesting_signature" ||
             state === "verifying_signature");
 
-        if (!isInitializing) return null;
+        if (isInitializingNip07) {
+          return (
+            <div
+              className="border-border bg-card animate-in fade-in-0 min-h-[164px] space-y-3 rounded-lg border p-6 shadow-lg duration-150 motion-reduce:animate-none dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <div className="flex items-center gap-3">
+                <Loader2 className="text-primary h-5 w-5 animate-spin" />
+                <div className="text-foreground text-base font-semibold">
+                  Checking browser extension…
+                </div>
+              </div>
+              <div className="text-muted-foreground text-xs leading-relaxed">
+                Waiting for your extension to provide your public key.
+              </div>
+            </div>
+          );
+        }
+
+        if (!isInitializingNip46) return null;
 
         return (
-          <div className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
+          <div className="border-border bg-card animate-in fade-in-0 space-y-4 rounded-lg border p-6 shadow-lg duration-150 motion-reduce:animate-none dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
             <div className="space-y-2">
               <div className="text-foreground text-base font-bold">
                 Remote signer
@@ -1893,7 +1931,7 @@ export default function NostrLoginPanel() {
 
       {state === "awaiting_profile_selection" ? (
         <div
-          className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
+          className="border-border bg-card animate-in fade-in-0 space-y-4 rounded-lg border p-6 shadow-lg duration-150 motion-reduce:animate-none dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl"
           role="status"
           aria-live="polite"
           aria-busy="true"
@@ -2045,17 +2083,20 @@ export default function NostrLoginPanel() {
 
       {pubkey &&
       (state === "requesting_signature" || state === "verifying_signature") ? (
-        <div className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
-          <div className="text-base">
-            Signing in as{" "}
-            <span className="text-primary font-bold">
+        <div className="border-border bg-card animate-in fade-in-0 min-h-[164px] space-y-4 rounded-lg border p-6 shadow-lg duration-150 motion-reduce:animate-none dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
+          <div className="flex min-h-6 w-full items-center gap-1 text-base">
+            <span className="shrink-0">Signing in as</span>
+            <span
+              className="text-primary min-w-0 truncate font-bold"
+              title={signingInDisplayName ?? formatNpubShort(pubkey)}
+            >
               {signingInDisplayName ?? formatNpubShort(pubkey)}
             </span>
           </div>
           <div className="flex gap-3">
             <Button
               type="button"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-[170px] justify-center shadow-md"
               onClick={() => void performLogin()}
               disabled
             >

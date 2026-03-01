@@ -14,6 +14,9 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { isMobile } from "~/lib/is-mobile";
+import { isStandalonePWA } from "~/lib/is-standalone-pwa";
+import { convertToHex } from "~/lib/nostr-conversion";
 import {
   clearActiveSignerConfig,
   parseSecretKeyHex,
@@ -58,6 +61,21 @@ const PROFILE_MISMATCH_MESSAGE =
 
 const RECONNECT_SUCCESS_TOAST_RETRY =
   "Remote signer reconnected. Please retry your action.";
+
+const EXISTING_SESSION_RECONNECT_TIMEOUT_MS = 60_000;
+const EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS = 1200;
+
+/** Append callback so Primal redirects back to app (skip in standalone PWA). */
+function appendPrimalCallback(uri: string): string {
+  if (isStandalonePWA()) return uri;
+  if (typeof window === "undefined") return uri;
+  if (uri.includes("callback=")) return uri;
+
+  const callbackUrl =
+    window.location.origin + window.location.pathname + window.location.search;
+  const separator = uri.includes("?") ? "&" : "?";
+  return `${uri}${separator}callback=${encodeURIComponent(callbackUrl)}`;
+}
 
 type ConnectState =
   | "idle"
@@ -181,6 +199,10 @@ export function RemoteSignerReconnectDialog(props: {
   onReconnectSuccess?: (sessionId: string) => void;
 }) {
   const { open, onOpenChange, expectedPubkey, onReconnectSuccess } = props;
+  const expectedPubkeyHex = (() => {
+    if (!expectedPubkey) return null;
+    return convertToHex(expectedPubkey) ?? expectedPubkey;
+  })();
 
   const [tab, setTab] = useState<"nostrconnect" | "bunker">("nostrconnect");
   const [relayList, setRelayList] = useState(DEFAULT_RELAYS);
@@ -292,15 +314,32 @@ export function RemoteSignerReconnectDialog(props: {
 
     try {
       const clientSecretKey = parseSecretKeyHex(clientSecretKeyHex);
-      const { pubkey } = await connectNip46WithNostrConnectUri({
-        uri,
-        clientSecretKey,
-        pool,
-        timeoutMs: 15_000,
-        relaysToCloseOnCancel: relays,
-      });
+      const tryConnect = async () =>
+        await connectNip46WithNostrConnectUri({
+          uri,
+          clientSecretKey,
+          pool,
+          timeoutMs: EXISTING_SESSION_RECONNECT_TIMEOUT_MS,
+          relaysToCloseOnCancel: relays,
+        });
 
-      if (expectedPubkey && pubkey !== expectedPubkey) {
+      let pubkey: string;
+      try {
+        ({ pubkey } = await tryConnect());
+      } catch (firstError) {
+        // On mobile app switching, signer network state can still be warming up.
+        // Retry once after a short delay before surfacing failure.
+        await new Promise((resolve) =>
+          setTimeout(resolve, EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS)
+        );
+        try {
+          ({ pubkey } = await tryConnect());
+        } catch {
+          throw firstError;
+        }
+      }
+
+      if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
         setError(PROFILE_MISMATCH_MESSAGE);
         setState("failed");
         return;
@@ -345,7 +384,7 @@ export function RemoteSignerReconnectDialog(props: {
     } finally {
       cancelRef.current = null;
     }
-  }, [expectedPubkey, onReconnectSuccess, onOpenChange]);
+  }, [expectedPubkeyHex, onReconnectSuccess, onOpenChange]);
 
   useEffect(() => {
     if (!open) {
@@ -378,6 +417,11 @@ export function RemoteSignerReconnectDialog(props: {
     }
   }, [nostrConnectUri]);
 
+  const handleLoginWithPrimal = useCallback(() => {
+    if (!nostrConnectUri || typeof window === "undefined") return;
+    window.location.href = appendPrimalCallback(nostrConnectUri);
+  }, [nostrConnectUri]);
+
   const connect = useCallback(async () => {
     setError(null);
     setCopyOk(false);
@@ -392,7 +436,7 @@ export function RemoteSignerReconnectDialog(props: {
           timeoutMs: 2 * 60 * 1000,
         });
 
-        if (expectedPubkey && pubkey !== expectedPubkey) {
+        if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
           setError(PROFILE_MISMATCH_MESSAGE);
           setState("failed");
           return;
@@ -466,7 +510,7 @@ export function RemoteSignerReconnectDialog(props: {
         relaysToCloseOnCancel: created.relays,
       });
 
-      if (expectedPubkey && pubkey !== expectedPubkey) {
+      if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
         setError(PROFILE_MISMATCH_MESSAGE);
         setState("failed");
         return;
@@ -540,7 +584,7 @@ export function RemoteSignerReconnectDialog(props: {
     bunkerInput,
     clearPendingReconnectStorage,
     getPendingReconnect,
-    expectedPubkey,
+    expectedPubkeyHex,
     onOpenChange,
     onReconnectSuccess,
     relayList,
@@ -578,7 +622,7 @@ export function RemoteSignerReconnectDialog(props: {
         relaysToCloseOnCancel: pending.relays,
       });
 
-      if (expectedPubkey && pubkey !== expectedPubkey) {
+      if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
         setError(PROFILE_MISMATCH_MESSAGE);
         setState("failed");
         return;
@@ -648,7 +692,7 @@ export function RemoteSignerReconnectDialog(props: {
   }, [
     clearPendingReconnectStorage,
     getPendingReconnect,
-    expectedPubkey,
+    expectedPubkeyHex,
     onOpenChange,
     onReconnectSuccess,
     sessionLabel,
@@ -717,7 +761,7 @@ export function RemoteSignerReconnectDialog(props: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Reconnect remote signer</DialogTitle>
           <DialogDescription>
@@ -795,6 +839,11 @@ export function RemoteSignerReconnectDialog(props: {
                     >
                       {copyOk ? "Copied" : "Copy"}
                     </Button>
+                    {isMobile() ? (
+                      <Button type="button" onClick={handleLoginWithPrimal}>
+                        Login with Primal
+                      </Button>
+                    ) : null}
                     <div className="text-muted-foreground text-xs">
                       Scan or paste into your signer app to approve.
                     </div>
