@@ -69,6 +69,7 @@ import { TagsChipRow } from "./TagsChipRow";
 
 const ACTION_POST_TEXT = "post-text";
 const ACTION_SCHEDULE_TEXT = "schedule-text";
+const SIGNER_LABEL_NIP46 = "NIP-46 (Bunker)";
 
 const ACCEPTED_MEDIA_TYPES = /^image\/|^video\//;
 function filterMediaFiles(files: File[]): File[] {
@@ -294,7 +295,7 @@ export function UnifiedComposer({
       setSignerReady(!!config);
       setSignerLabel(
         config?.type === "nip46"
-          ? "NIP-46 (Bunker)"
+          ? SIGNER_LABEL_NIP46
           : config?.type === "nip07"
             ? "NIP-07 extension"
             : null
@@ -1106,11 +1107,13 @@ export function UnifiedComposer({
 
   const disabled = fetcher.state !== "idle" || isSigning;
   const canShowReconnectSignerAction =
-    signerLabel === "NIP-46 (Bunker)" &&
+    signerLabel === SIGNER_LABEL_NIP46 &&
     !!signingError &&
     /remote signer|websocket|subscription closed|connection|timeout|timed out|signer app/i.test(
       signingError
     );
+  const canBypassToReconnectWhileSigning =
+    isSigning && signerLabel === SIGNER_LABEL_NIP46;
   const primarySubmitRef = useRef<HTMLButtonElement>(null);
   const draftSubmitRef = useRef<HTMLButtonElement>(null);
   const hasScheduleTimeForSubmit = !!(
@@ -1183,9 +1186,25 @@ export function UnifiedComposer({
           onChange={onFileChange}
         />
         {isSigning ? (
-          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mb-3 rounded-md border bg-white/50 p-3 text-sm">
-            Waiting for signer approval… If you’re using a remote signer, open
-            it to approve the request.
+          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mb-3 flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
+            <span>
+              Waiting for signer approval… If you’re using a remote signer, open
+              it to approve the request.
+            </span>
+            {canBypassToReconnectWhileSigning ? (
+              <Button
+                type="button"
+                size="sm"
+                className="shrink-0"
+                onClick={() => {
+                  emitOpenRemoteSignerReconnectDialogEvent({
+                    mode: "new_session",
+                  });
+                }}
+              >
+                Reconnect now
+              </Button>
+            ) : null}
           </div>
         ) : null}
         {signingError ? (

@@ -77,7 +77,7 @@ export function ConnectionHistory({
   return (
     <div className="space-y-3">
       {showFilters ? (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant={filterType === "all" ? "default" : "outline"}
             size="sm"
@@ -113,15 +113,17 @@ export function ConnectionHistory({
         {displayedEntries.map((entry) => (
           <div
             key={entry.id}
-            className="bg-muted/30 hover:bg-muted/50 flex items-start gap-3 rounded-md border p-3 transition-colors"
+            className="bg-muted/30 hover:bg-muted/50 flex min-w-0 items-start gap-3 rounded-md border p-3 transition-colors"
           >
             <div className="mt-0.5">{getEntryIcon(entry)}</div>
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className={`text-sm font-medium ${getEntryColor(entry)}`}>
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <span
+                  className={`min-w-0 text-sm font-medium break-words ${getEntryColor(entry)}`}
+                >
                   {entry.message}
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-muted-foreground shrink-0 text-xs">
                   {format(new Date(entry.timestamp), "MMM d, HH:mm:ss")}
                 </span>
               </div>

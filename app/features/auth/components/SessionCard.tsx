@@ -70,12 +70,12 @@ export function SessionCard({
 
   return (
     <Card
-      className={`${isActive ? "border-primary" : ""} ${isRemoving ? "opacity-50" : ""}`}
+      className={`min-w-0 overflow-hidden ${isActive ? "border-primary" : ""} ${isRemoving ? "opacity-50" : ""}`}
     >
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
               <CardTitle className="text-base">{session.label}</CardTitle>
               {isActive ? (
                 <Badge className="bg-primary text-primary-foreground text-xs">
@@ -87,7 +87,7 @@ export function SessionCard({
               {session.metadata.signerAppName ?? "Unknown Signer"}
             </CardDescription>
           </div>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             {!isActive ? (
               <Button
                 variant="ghost"
@@ -151,20 +151,20 @@ export function SessionCard({
         </AlertDialogContent>
       </AlertDialog>
       <CardContent className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex min-w-0 items-center justify-between gap-2">
           <span className="text-muted-foreground text-sm">Status</span>
           <ConnectionStatusBadge status={session.metadata.status} />
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground text-sm">Pubkey</span>
-            <span className="font-mono text-sm">
+            <span className="min-w-0 font-mono text-sm break-all">
               {formatPubkey(session.metadata.pubkey)}
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground text-sm">
               Last Connected
             </span>
@@ -173,7 +173,7 @@ export function SessionCard({
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground text-sm">Last Activity</span>
             <span className="text-sm">
               {formatTimestamp(session.metadata.lastActivityAt)}

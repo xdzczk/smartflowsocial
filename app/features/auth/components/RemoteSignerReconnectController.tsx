@@ -851,7 +851,12 @@ export function RemoteSignerReconnectDialog(props: {
       // User returned after generating new URI and approving in signer app — resume with same URI.
       if (state === "waiting" && getPendingReconnect()) {
         if (inFlightNostrConnectRef.current) {
-          return;
+          cancelRef.current?.cancel();
+          cancelRef.current = null;
+          inFlightNostrConnectRef.current = false;
+          debugReconnectTrace(
+            "Visibility return: cancelled stale in-flight connect before resume"
+          );
         }
         setTimeout(() => {
           if (getPendingReconnect()) {
