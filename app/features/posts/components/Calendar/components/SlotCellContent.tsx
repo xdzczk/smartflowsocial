@@ -15,6 +15,7 @@ import {
 export interface SlotCellContentProps {
   slotState: SlotState;
   time: string;
+  isMobile: boolean;
   /** Row index (0–47); when >= BOTTOM_ROWS_EXPAND_UP_THRESHOLD, blocks expand upward on hover. */
   rowIndex?: number;
   /** Rows from this slot to end of day (for bottom rows: cap expansion downward and grow upward instead). */
@@ -48,6 +49,7 @@ function renderSinglePostSlotContent(
     onPostEdit,
     setActiveEmptySlotKey,
     onHoverOverlayChange,
+    isMobile,
     user,
     queueTypes,
     isLongform,
@@ -73,34 +75,38 @@ function renderSinglePostSlotContent(
         zIndex: isHovered ? CALENDAR_BLOCK_EXPANDED_Z : CALENDAR_BLOCK_BASE_Z,
       }}
       onMouseEnter={() => {
-        if (!singlePostKey) return;
+        if (isMobile || !singlePostKey) return;
         setHoveredPostKey(singlePostKey);
         onHoverOverlayChange?.(singleOverlayPayload);
       }}
       onMouseLeave={() => {
+        if (isMobile) return;
         setHoveredPostKey(null);
         onHoverOverlayChange?.(null);
       }}
       onFocusCapture={() => {
-        if (!singlePostKey) return;
+        if (isMobile || !singlePostKey) return;
         setHoveredPostKey(singlePostKey);
         onHoverOverlayChange?.(singleOverlayPayload);
       }}
       onBlurCapture={() => {
+        if (isMobile) return;
         setHoveredPostKey(null);
         onHoverOverlayChange?.(null);
       }}
       onTouchStart={() => {
-        if (!singlePostKey) return;
+        // Ignore touch hover on mobile to avoid accidental overlay while panning.
+        if (isMobile || !singlePostKey) return;
         setHoveredPostKey(singlePostKey);
         onHoverOverlayChange?.(singleOverlayPayload);
       }}
-      onTouchEnd={() =>
+      onTouchEnd={() => {
+        if (isMobile) return;
         setTimeout(() => {
           setHoveredPostKey(null);
           onHoverOverlayChange?.(null);
-        }, 300)
-      }
+        }, 300);
+      }}
     >
       <PostBlock
         post={post}
@@ -143,6 +149,7 @@ interface MultiPostBlockProps {
   isAll: boolean;
   overlayPayload: HoverOverlayPayload | null;
   onHoverOverlayChange?: (payload: HoverOverlayPayload | null) => void;
+  isMobile: boolean;
 }
 
 function getMultiPostExpandRows(
@@ -253,6 +260,7 @@ function MultiPostBlock({
   setActiveEmptySlotKey,
   overlayPayload,
   onHoverOverlayChange,
+  isMobile,
   user,
   queueTypes,
   isLongform,
@@ -282,27 +290,33 @@ function MultiPostBlock({
           : CALENDAR_BLOCK_BASE_Z,
       }}
       onMouseEnter={() => {
+        if (isMobile) return;
         setHoveredPostKey(multiPostKey);
         onHoverOverlayChange?.(overlayPayload);
       }}
       onFocusCapture={() => {
+        if (isMobile) return;
         setHoveredPostKey(multiPostKey);
         onHoverOverlayChange?.(overlayPayload);
       }}
       onBlurCapture={() => {
+        if (isMobile) return;
         setHoveredPostKey(null);
         onHoverOverlayChange?.(null);
       }}
       onTouchStart={() => {
+        // Ignore touch hover on mobile to avoid accidental overlay while panning.
+        if (isMobile) return;
         setHoveredPostKey(multiPostKey);
         onHoverOverlayChange?.(overlayPayload);
       }}
-      onTouchEnd={() =>
+      onTouchEnd={() => {
+        if (isMobile) return;
         setTimeout(() => {
           setHoveredPostKey(null);
           onHoverOverlayChange?.(null);
-        }, 300)
-      }
+        }, 300);
+      }}
     >
       <PostBlock
         post={post}
@@ -340,6 +354,7 @@ function renderMultiPostSlotContent(
     hoveredPostKey,
     setHoveredPostKey,
     onHoverOverlayChange,
+    isMobile,
     onPostEdit,
     user,
     queueTypes,
@@ -361,6 +376,7 @@ function renderMultiPostSlotContent(
     noExpandOnHover,
     onPostEdit,
     setActiveEmptySlotKey: props.setActiveEmptySlotKey,
+    isMobile,
     user,
     queueTypes,
     isLongform,
@@ -394,6 +410,7 @@ function renderMultiPostSlotContent(
         className="relative flex space-x-0.5"
         style={{ height: rowHeightPx }}
         onMouseLeave={() => {
+          if (isMobile) return;
           setHoveredPostKey(null);
           onHoverOverlayChange?.(null);
         }}
@@ -418,6 +435,7 @@ function renderMultiPostSlotContent(
       className="relative flex space-x-0.5"
       style={{ height: rowHeightPx }}
       onMouseLeave={() => {
+        if (isMobile) return;
         setHoveredPostKey(null);
         onHoverOverlayChange?.(null);
       }}

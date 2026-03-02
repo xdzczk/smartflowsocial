@@ -55,11 +55,11 @@ export function TimeFormatSettings({
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="p-4 sm:p-6">
         <div className="flex items-start gap-4">
           <Clock className="text-foreground h-5 w-5 flex-shrink-0" />
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <CardTitle>Time Format</CardTitle>
             <CardDescription>
               Choose how time is displayed across the app (12-hour AM/PM or
@@ -68,7 +68,7 @@ export function TimeFormatSettings({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="timeFormat">Time Format</Label>

@@ -59,8 +59,20 @@ const PROFILE_MISMATCH_MESSAGE =
 const RECONNECT_SUCCESS_TOAST_RETRY =
   "Remote signer reconnected. Please retry your action.";
 
-const EXISTING_SESSION_RECONNECT_TIMEOUT_MS = 20_000;
+// Existing session recovery after returning from signer app can take >20s.
+const EXISTING_SESSION_RECONNECT_TIMEOUT_MS = 45_000;
 const EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS = 1000;
+
+function debugReconnectTrace(
+  message: string,
+  details?: Record<string, unknown>
+) {
+  if (details) {
+    console.info(`[remote-signer-reconnect] ${message}`, details);
+    return;
+  }
+  console.info(`[remote-signer-reconnect] ${message}`);
+}
 
 /** Official Primal logo for "Login with Primal" button. */
 function PrimalLogoIcon({ className }: { className?: string }) {
@@ -251,6 +263,14 @@ export function RemoteSignerReconnectDialog(props: {
     }
 
     const { uri, relays, clientSecretKeyHex } = session.config;
+    debugReconnectTrace("Starting existing-session reconnect", {
+      sessionId: session.id,
+      relayCount: relays.length,
+      timeoutMs: EXISTING_SESSION_RECONNECT_TIMEOUT_MS,
+      expectedPubkeyHex,
+      status: session.metadata.status,
+      lastActivityAt: session.metadata.lastActivityAt,
+    });
 
     setState("reconnecting_existing");
     setError(null);
@@ -281,6 +301,12 @@ export function RemoteSignerReconnectDialog(props: {
       try {
         ({ pubkey } = await tryConnect());
       } catch (firstError) {
+        debugReconnectTrace("First existing-session reconnect attempt failed", {
+          error:
+            firstError instanceof Error
+              ? firstError.message
+              : String(firstError),
+        });
         // On mobile app switching, signer network state can still be warming up.
         // Retry once after a short delay before surfacing failure.
         await new Promise((resolve) =>
@@ -289,11 +315,18 @@ export function RemoteSignerReconnectDialog(props: {
         try {
           ({ pubkey } = await tryConnect());
         } catch {
+          debugReconnectTrace(
+            "Second existing-session reconnect attempt failed"
+          );
           throw firstError;
         }
       }
 
       if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
+        debugReconnectTrace("Existing-session reconnect pubkey mismatch", {
+          expectedPubkeyHex,
+          receivedPubkey: pubkey,
+        });
         setError(PROFILE_MISMATCH_MESSAGE);
         setState("failed");
         return;
@@ -326,16 +359,27 @@ export function RemoteSignerReconnectDialog(props: {
       });
 
       setActiveSignerConfig(config);
+      debugReconnectTrace("Existing-session reconnect succeeded", {
+        sessionId: session.id,
+        pubkey,
+      });
       setState("connected");
       toast.success("Remote signer reconnected.");
       onReconnectSuccess?.(session.id);
       onOpenChange(false);
-    } catch {
+    } catch (error) {
+      debugReconnectTrace(
+        "Existing-session reconnect failed; trying primary failover",
+        {
+          error: error instanceof Error ? error.message : String(error),
+        }
+      );
       const fallback = await attemptPrimarySignerFailover({
         expectedPubkey: expectedPubkeyHex,
         labelFallback: "Primary Home Signer",
       });
       if (fallback.recovered) {
+        debugReconnectTrace("Primary failover recovered reconnect");
         setState("connected");
         toast.success("Remote signer reconnected.");
         const recoveredSession = getActiveSession();
@@ -345,6 +389,9 @@ export function RemoteSignerReconnectDialog(props: {
         onOpenChange(false);
         return;
       }
+      debugReconnectTrace("Primary failover did not recover reconnect", {
+        reason: fallback.reason ?? "unknown",
+      });
 
       setState("idle");
       setError(

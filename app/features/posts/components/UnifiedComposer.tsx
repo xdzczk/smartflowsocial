@@ -1204,6 +1204,10 @@ export function UnifiedComposer({
               onClick={() => {
                 setSigningError(null);
                 setLastPublishFailed(false);
+                if (disabled || signerReady === false) {
+                  return;
+                }
+                primarySubmitRef.current?.click();
               }}
             >
               Try again

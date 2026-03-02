@@ -95,6 +95,7 @@ export function SlotCell({
         time={time}
         rowIndex={rowIndex}
         availableRowsBelow={availableRowsBelow}
+        isMobile={isMobile}
         hoveredPostKey={hoveredPostKey}
         setHoveredPostKey={setHoveredPostKey}
         onPostEdit={onPostEdit}

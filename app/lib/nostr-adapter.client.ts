@@ -30,6 +30,11 @@ import {
 } from "~/lib/nip07-readiness.client";
 import { attemptPrimarySignerFailover } from "~/lib/primary-signer-failover.client";
 import { emitRemoteSignerTimeoutEvent } from "~/lib/remote-signer-reconnect.client";
+import {
+  addConnectionLog,
+  getActiveSession,
+  updateSession,
+} from "~/lib/remote-signer-sessions.client";
 
 import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
 
@@ -37,7 +42,9 @@ import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
 // Helper Functions
 // ============================================================================
 
-const ACTIVE_SIGNER_CONNECT_TIMEOUT_MS = 15_000;
+// Rehydrating an existing NIP-46 mobile signer session can take longer after
+// app switching/backgrounding; keep the first attempt patient.
+const ACTIVE_SIGNER_CONNECT_TIMEOUT_MS = 45_000;
 const ACTIVE_SIGNER_SIGN_TIMEOUT_MS = 30_000;
 
 // Track retry counts for progressive timeouts
@@ -56,6 +63,17 @@ function isConnectionLikeError(error: unknown): boolean {
     message.includes("connection") ||
     message.includes("timeout")
   );
+}
+
+function debugSignerTrace(
+  message: string,
+  details?: Record<string, unknown>
+): void {
+  if (details) {
+    console.info(`[remote-signer-sign] ${message}`, details);
+    return;
+  }
+  console.info(`[remote-signer-sign] ${message}`);
 }
 
 /**
@@ -186,6 +204,30 @@ async function resetSignerCacheBestEffort(): Promise<void> {
   }
 }
 
+function markActiveRemoteSessionStale(error: unknown): void {
+  const activeSession = getActiveSession();
+  if (!activeSession) return;
+
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const now = Date.now();
+
+  updateSession(activeSession.id, {
+    metadata: {
+      ...activeSession.metadata,
+      status: "stale",
+      lastError: errorMessage,
+      lastActivityAt: now,
+    },
+  });
+
+  addConnectionLog(activeSession.id, {
+    type: "health_check",
+    status: "failure",
+    message: `Health check failed: ${errorMessage}`,
+    details: { error: errorMessage },
+  });
+}
+
 async function trySignWithConfiguredSigner(
   nostrEvent: NostrEvent
 ): Promise<SignedEvent | null> {
@@ -213,6 +255,14 @@ async function trySignWithConfiguredSigner(
           "Connecting to remote signer took too long. Open your signer app and try again."
         )
       : await signerManager.getActiveSigner();
+    if (prefersRemoteSigner) {
+      debugSignerTrace("Configured signer resolved", {
+        connectTimeout,
+        hasSigner: Boolean(activeSigner),
+        connectionRetryCount,
+        signRetryCount,
+      });
+    }
 
     if (!activeSigner) return null;
 
@@ -250,8 +300,15 @@ async function trySignWithConfiguredSigner(
         err instanceof RemoteSignerTimeoutError;
 
       if (isConnectionError) {
+        debugSignerTrace("Configured signer connection-like error", {
+          error: err instanceof Error ? err.message : String(err),
+          connectionRetryCount,
+          signRetryCount,
+        });
         // Increment retry count for connection errors
         incrementConnectionRetryCount();
+        // Ensure UI/session state reflects stale connection immediately.
+        markActiveRemoteSessionStale(err);
         // Clear cache and emit timeout event for connection errors
         await resetSignerCacheBestEffort();
         if (err instanceof RemoteSignerTimeoutError) {
@@ -312,17 +369,32 @@ async function signEventWithRetryLogic(
   };
 
   while (retries < maxRetries) {
+    debugSignerTrace("Retry loop iteration", {
+      retries,
+      maxRetries,
+      triedPrimaryFailover,
+      signerType: config?.type ?? "none",
+    });
     let configured: SignedEvent | null = null;
     try {
       configured = await trySignWithConfiguredSigner(nostrEvent);
     } catch (error) {
       const isConnectionError = isConnectionLikeError(error);
+      debugSignerTrace("Configured signer attempt failed", {
+        error: error instanceof Error ? error.message : String(error),
+        isConnectionError,
+        retries,
+      });
       if (isConnectionError && (await tryPrimaryFailover())) {
+        debugSignerTrace("Recovered via primary failover in retry loop");
         continue;
       }
       if (isConnectionError && retries < maxRetries - 1) {
         // Allow transient remote-signer reconnect hiccups to recover in-loop.
         retries++;
+        debugSignerTrace("Retrying configured signer after short delay", {
+          nextRetry: retries,
+        });
         await new Promise((resolve) => setTimeout(resolve, 600));
         continue;
       }

@@ -187,7 +187,7 @@ export function TimeGrid({
             isMobile={isMobile}
           />
         </div>
-        {hoverOverlayPayload ? (
+        {!isMobile && hoverOverlayPayload ? (
           <div
             className="pointer-events-none absolute inset-0"
             style={{ zIndex: CALENDAR_HOVER_OVERLAY_Z }}

@@ -459,8 +459,8 @@ export default function SettingsPage() {
           ) : null}
         </TabsList>
 
-        <TabsContent value="general" className="mt-6 space-y-6">
-          <div className="grid gap-6 md:grid-cols-1">
+        <TabsContent value="general" className="mt-6 min-w-0 space-y-6">
+          <div className="grid min-w-0 gap-6 md:grid-cols-1">
             <TimezoneSettings timezone={timezoneValue} />
             <TimeFormatSettings
               timeFormat={timeFormatRaw === "24h" ? "24h" : "12h"}
@@ -505,8 +505,8 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="content" className="mt-6 space-y-6">
-          <div className="grid gap-6 md:grid-cols-1">
+        <TabsContent value="content" className="mt-6 min-w-0 space-y-6">
+          <div className="grid min-w-0 gap-6 md:grid-cols-1">
             <HashtagPresetsSettings
               presets={hashTagPresets.map((p) => ({
                 id: p.id,
@@ -529,8 +529,8 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="network" className="mt-6 space-y-6">
-          <div className="grid gap-6 md:grid-cols-1">
+        <TabsContent value="network" className="mt-6 min-w-0 space-y-6">
+          <div className="grid min-w-0 gap-6 md:grid-cols-1">
             <RelaysSettings
               relays={relaysList}
               managedRelays={managedRelaysList}
@@ -547,8 +547,8 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="storage" className="mt-6 space-y-6">
-          <div className="grid gap-6 md:grid-cols-1">
+        <TabsContent value="storage" className="mt-6 min-w-0 space-y-6">
+          <div className="grid min-w-0 gap-6 md:grid-cols-1">
             <UploadProviderSettings
               uploadProvider={uploadProviderValue}
               customBlossomUrl={customBlossomUrlValue}
@@ -569,8 +569,8 @@ export default function SettingsPage() {
         </TabsContent>
 
         {!isChildBool ? (
-          <TabsContent value="subscription" className="mt-6 space-y-6">
-            <div className="grid gap-6 md:grid-cols-1">
+          <TabsContent value="subscription" className="mt-6 min-w-0 space-y-6">
+            <div className="grid min-w-0 gap-6 md:grid-cols-1">
               <SubscriptionSettings
                 subscription={subscription}
                 availablePlans={availablePlans}
@@ -586,8 +586,8 @@ export default function SettingsPage() {
         ) : null}
 
         {hasAccountsAccessBool ? (
-          <TabsContent value="accounts" className="mt-6 space-y-6">
-            <div className="grid gap-6 md:grid-cols-1">
+          <TabsContent value="accounts" className="mt-6 min-w-0 space-y-6">
+            <div className="grid min-w-0 gap-6 md:grid-cols-1">
               {accounts ? (
                 <AccountsSettings
                   parentNpub={accounts.parentNpub}

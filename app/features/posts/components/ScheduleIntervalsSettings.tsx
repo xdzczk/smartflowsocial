@@ -87,15 +87,15 @@ export function ScheduleIntervalsSettings({
   });
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="p-4 sm:p-6">
         <CardTitle>Schedule Intervals (hours)</CardTitle>
         <CardDescription>
           Set time intervals for posting. These will be used by queue types that
           use global intervals.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -110,8 +110,11 @@ export function ScheduleIntervalsSettings({
               are not allowed.
             </p>
             {fields.map((field, index) => (
-              <div key={field.id} className="flex items-start space-x-2">
-                <div className="flex-1">
+              <div
+                key={field.id}
+                className="flex min-w-0 items-start space-x-2"
+              >
+                <div className="min-w-0 flex-1">
                   <Input
                     type="text"
                     inputMode="decimal"

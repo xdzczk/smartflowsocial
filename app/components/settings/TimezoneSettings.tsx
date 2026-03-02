@@ -52,14 +52,14 @@ export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
   });
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="p-4 sm:p-6">
         <CardTitle>Timezone</CardTitle>
         <CardDescription>
           Set your timezone for scheduling posts
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
         <form
           onSubmit={(e) => {
             e.preventDefault();

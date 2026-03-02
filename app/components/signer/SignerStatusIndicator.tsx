@@ -17,6 +17,18 @@ import {
   useNip07Readiness,
 } from "~/lib/useNip07Readiness";
 
+const MAX_ACTIVE_IDLE_MS = 5 * 60 * 1000;
+
+function getDisplayStatus(
+  status: ConnectionStatus,
+  lastActivityAt: number | null
+): ConnectionStatus {
+  if (status !== "active") return status;
+  if (!lastActivityAt) return "stale";
+  if (Date.now() - lastActivityAt > MAX_ACTIVE_IDLE_MS) return "stale";
+  return "active";
+}
+
 function Nip46Status({ status }: { status: ConnectionStatus }) {
   if (status === "active") {
     return (
@@ -122,7 +134,10 @@ export function SignerStatusIndicator() {
 
   if (config.type === "nip46") {
     const session = getActiveSession();
-    const status = session?.metadata.status ?? "inactive";
+    const status = getDisplayStatus(
+      session?.metadata.status ?? "inactive",
+      session?.metadata.lastActivityAt ?? null
+    );
     return <Nip46Status status={status} />;
   }
 
