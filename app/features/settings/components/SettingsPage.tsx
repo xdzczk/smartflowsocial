@@ -405,7 +405,7 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-5xl p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-5xl overflow-x-hidden p-4 sm:p-6">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
           Settings
@@ -415,8 +415,10 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className={`grid h-auto w-full gap-1 ${tabsGridColsClass}`}>
+      <Tabs defaultValue={defaultTab} className="w-full min-w-0">
+        <TabsList
+          className={`grid h-auto w-full max-w-full gap-1 ${tabsGridColsClass}`}
+        >
           <TabsTrigger
             value="general"
             className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
@@ -459,7 +461,10 @@ export default function SettingsPage() {
           ) : null}
         </TabsList>
 
-        <TabsContent value="general" className="mt-6 min-w-0 space-y-6">
+        <TabsContent
+          value="general"
+          className="mt-6 min-w-0 space-y-6 overflow-x-hidden"
+        >
           <div className="grid min-w-0 gap-6 md:grid-cols-1">
             <TimezoneSettings timezone={timezoneValue} />
             <TimeFormatSettings

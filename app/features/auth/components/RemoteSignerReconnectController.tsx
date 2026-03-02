@@ -35,6 +35,7 @@ import {
 import {
   createSession,
   detectSignerAppName,
+  getAllSessions,
   getActiveSession,
   setActiveSession,
   updateSession,
@@ -201,6 +202,7 @@ export function RemoteSignerReconnectDialog(props: {
   const [copyOk, setCopyOk] = useState(false);
 
   const cancelRef = useRef<{ cancel: () => void } | null>(null);
+  const inFlightNostrConnectRef = useRef(false);
   const triedExistingRef = useRef(false);
   const pendingReconnectRef = useRef<{
     uri: string;
@@ -264,6 +266,7 @@ export function RemoteSignerReconnectDialog(props: {
   const resetLocal = useCallback(() => {
     cancelRef.current?.cancel();
     cancelRef.current = null;
+    inFlightNostrConnectRef.current = false;
     triedExistingRef.current = false;
     clearPendingReconnectStorage();
     setState("idle");
@@ -273,6 +276,44 @@ export function RemoteSignerReconnectDialog(props: {
     setSessionLabel("");
     setExistingReconnectAttempt(0);
   }, [clearPendingReconnectStorage]);
+
+  const getOrCreateSessionForConfig = useCallback(
+    (config: ActiveSignerConfig, label?: string) => {
+      const existing = getAllSessions().find((session) => {
+        if (session.config.type !== config.type) return false;
+        if (session.config.type !== "nip46" || config.type !== "nip46") {
+          return false;
+        }
+        if (
+          session.config.method === "nostrconnect_uri" &&
+          config.method === "nostrconnect_uri"
+        ) {
+          return (
+            session.config.uri === config.uri &&
+            session.config.clientSecretKeyHex === config.clientSecretKeyHex
+          );
+        }
+        if (
+          session.config.method === "bunker_input" &&
+          config.method === "bunker_input"
+        ) {
+          return (
+            session.config.bunkerInput === config.bunkerInput &&
+            session.config.clientSecretKeyHex === config.clientSecretKeyHex
+          );
+        }
+        return false;
+      });
+      if (existing) {
+        if (label && existing.label !== label) {
+          updateSession(existing.id, { label });
+        }
+        return existing;
+      }
+      return createSession(config, label);
+    },
+    []
+  );
 
   const syncRelaysAfterReconnect = useCallback(async () => {
     try {
@@ -560,6 +601,10 @@ export function RemoteSignerReconnectDialog(props: {
       }
 
       // nostrconnect
+      if (inFlightNostrConnectRef.current) {
+        return;
+      }
+      inFlightNostrConnectRef.current = true;
       const relays = parseRelayList(relayList);
       const created = createNip46NostrConnectUri({
         relays,
@@ -604,7 +649,10 @@ export function RemoteSignerReconnectDialog(props: {
       };
 
       // Create or update session
-      const session = createSession(config, sessionLabel || undefined);
+      const session = getOrCreateSessionForConfig(
+        config,
+        sessionLabel || undefined
+      );
       setActiveSession(session.id);
 
       // Update session with pubkey and detected app name
@@ -658,6 +706,7 @@ export function RemoteSignerReconnectDialog(props: {
         });
       }
     } finally {
+      inFlightNostrConnectRef.current = false;
       cancelRef.current = null;
     }
   }, [
@@ -671,6 +720,7 @@ export function RemoteSignerReconnectDialog(props: {
     sessionLabel,
     setPendingReconnect,
     syncRelaysAfterReconnect,
+    getOrCreateSessionForConfig,
     state,
     tab,
   ]);
@@ -678,6 +728,8 @@ export function RemoteSignerReconnectDialog(props: {
   const resumeReconnectWithPendingUri = useCallback(async () => {
     const pending = getPendingReconnect();
     if (!pending) return;
+    if (inFlightNostrConnectRef.current) return;
+    inFlightNostrConnectRef.current = true;
 
     setError(null);
     setNostrConnectUri(pending.uri);
@@ -717,7 +769,10 @@ export function RemoteSignerReconnectDialog(props: {
         clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
       };
 
-      const session = createSession(config, sessionLabel || undefined);
+      const session = getOrCreateSessionForConfig(
+        config,
+        sessionLabel || undefined
+      );
       setActiveSession(session.id);
 
       const detectedAppName = detectSignerAppName(config);
@@ -769,12 +824,14 @@ export function RemoteSignerReconnectDialog(props: {
         });
       }
     } finally {
+      inFlightNostrConnectRef.current = false;
       cancelRef.current = null;
     }
   }, [
     clearPendingReconnectStorage,
     getPendingReconnect,
     expectedPubkeyHex,
+    getOrCreateSessionForConfig,
     onOpenChange,
     onReconnectSuccess,
     sessionLabel,
@@ -793,6 +850,9 @@ export function RemoteSignerReconnectDialog(props: {
 
       // User returned after generating new URI and approving in signer app — resume with same URI.
       if (state === "waiting" && getPendingReconnect()) {
+        if (inFlightNostrConnectRef.current) {
+          return;
+        }
         setTimeout(() => {
           if (getPendingReconnect()) {
             void resumeRef.current();

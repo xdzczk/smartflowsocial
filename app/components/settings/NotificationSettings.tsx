@@ -458,7 +458,7 @@ export function NotificationSettings({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 space-y-0.5">
                 <Label htmlFor="push-enabled">Enable Push Notifications</Label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-muted-foreground text-xs break-words">
                   {pushConfiguredOnServer === false
                     ? "Push notifications are not configured for this server. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY."
                     : isChecking
