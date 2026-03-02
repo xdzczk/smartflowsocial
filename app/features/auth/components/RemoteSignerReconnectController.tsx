@@ -19,14 +19,19 @@ import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 import { convertToHex } from "~/lib/nostr-conversion";
 import {
   clearActiveSignerConfig,
+  getActiveSigner,
   parseSecretKeyHex,
   serializeSecretKey,
   setActiveSignerConfig,
+  syncRelaysWithRemoteSigner,
   type ActiveSignerConfig,
 } from "~/lib/nostr-signer-manager.client";
 import { attemptPrimarySignerFailover } from "~/lib/primary-signer-failover.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-import { OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT } from "~/lib/remote-signer-reconnect.client";
+import {
+  OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
+  type ReconnectDialogOpenMode,
+} from "~/lib/remote-signer-reconnect.client";
 import {
   createSession,
   detectSignerAppName,
@@ -120,15 +125,22 @@ export function RemoteSignerReconnectController(
   const expectedPubkey = user?.npub ?? null;
 
   const [dialogOpen, setDialogOpen] = useState(props?.open ?? false);
+  const [openMode, setOpenMode] = useState<ReconnectDialogOpenMode>("default");
 
-  const openDialog = useCallback(() => {
-    setDialogOpen(true);
-  }, []);
+  const openDialog = useCallback(
+    (mode: ReconnectDialogOpenMode = "default") => {
+      setOpenMode(mode);
+      setDialogOpen(true);
+    },
+    []
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const openHandler = () => {
-      openDialog();
+    const openHandler = (event: Event) => {
+      const detail = (event as CustomEvent<{ mode?: ReconnectDialogOpenMode }>)
+        .detail;
+      openDialog(detail.mode ?? "default");
     };
     window.addEventListener(
       OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
@@ -152,6 +164,7 @@ export function RemoteSignerReconnectController(
       open={props?.open ?? dialogOpen}
       onOpenChange={handleOpenChange}
       expectedPubkey={expectedPubkey}
+      openMode={openMode}
       onReconnectSuccess={props?.onReconnectSuccess}
     />
   );
@@ -161,9 +174,16 @@ export function RemoteSignerReconnectDialog(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expectedPubkey: string | null;
+  openMode?: ReconnectDialogOpenMode;
   onReconnectSuccess?: (sessionId: string) => void;
 }) {
-  const { open, onOpenChange, expectedPubkey, onReconnectSuccess } = props;
+  const {
+    open,
+    onOpenChange,
+    expectedPubkey,
+    openMode = "default",
+    onReconnectSuccess,
+  } = props;
   const expectedPubkeyHex = (() => {
     if (!expectedPubkey) return null;
     return convertToHex(expectedPubkey) ?? expectedPubkey;
@@ -253,6 +273,23 @@ export function RemoteSignerReconnectDialog(props: {
     setSessionLabel("");
     setExistingReconnectAttempt(0);
   }, [clearPendingReconnectStorage]);
+
+  const syncRelaysAfterReconnect = useCallback(async () => {
+    try {
+      const signer = await getActiveSigner();
+      if (signer?.type !== "nip46") return;
+      const result = await syncRelaysWithRemoteSigner(signer);
+      debugReconnectTrace("Relay sync after reconnect", {
+        changed: result.changed,
+        relayCount: result.relays?.length ?? null,
+        reason: result.reason ?? null,
+      });
+    } catch (error) {
+      debugReconnectTrace("Relay sync after reconnect failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }, []);
 
   const tryReconnectWithExistingSession = useCallback(async () => {
     const session = getActiveSession();
@@ -366,6 +403,7 @@ export function RemoteSignerReconnectDialog(props: {
       });
 
       setActiveSignerConfig(config);
+      await syncRelaysAfterReconnect();
       debugReconnectTrace("Existing-session reconnect succeeded", {
         sessionId: session.id,
         pubkey,
@@ -388,6 +426,7 @@ export function RemoteSignerReconnectDialog(props: {
       });
       if (fallback.recovered) {
         debugReconnectTrace("Primary failover recovered reconnect");
+        await syncRelaysAfterReconnect();
         setExistingReconnectAttempt(0);
         setState("connected");
         toast.success("Remote signer reconnected.");
@@ -410,11 +449,24 @@ export function RemoteSignerReconnectDialog(props: {
     } finally {
       cancelRef.current = null;
     }
-  }, [expectedPubkeyHex, onReconnectSuccess, onOpenChange]);
+  }, [
+    expectedPubkeyHex,
+    onReconnectSuccess,
+    onOpenChange,
+    syncRelaysAfterReconnect,
+  ]);
 
   useEffect(() => {
     if (!open) {
       resetLocal();
+      return;
+    }
+
+    if (openMode === "new_session") {
+      triedExistingRef.current = true;
+      if (tab !== "nostrconnect") {
+        setTab("nostrconnect");
+      }
       return;
     }
 
@@ -430,7 +482,7 @@ export function RemoteSignerReconnectDialog(props: {
 
     triedExistingRef.current = true;
     void tryReconnectWithExistingSession();
-  }, [open, resetLocal, tryReconnectWithExistingSession]);
+  }, [open, openMode, resetLocal, tryReconnectWithExistingSession, tab]);
 
   const copyUri = useCallback(async () => {
     if (!nostrConnectUri) return;
@@ -499,6 +551,7 @@ export function RemoteSignerReconnectDialog(props: {
         });
 
         setActiveSignerConfig(config);
+        await syncRelaysAfterReconnect();
         setState("connected");
         toast.success(RECONNECT_SUCCESS_TOAST_RETRY);
         onReconnectSuccess?.(session.id);
@@ -574,6 +627,7 @@ export function RemoteSignerReconnectDialog(props: {
       });
 
       setActiveSignerConfig(config);
+      await syncRelaysAfterReconnect();
       clearPendingReconnectStorage();
       setState("connected");
       toast.success(RECONNECT_SUCCESS_TOAST_RETRY);
@@ -616,6 +670,7 @@ export function RemoteSignerReconnectDialog(props: {
     relayList,
     sessionLabel,
     setPendingReconnect,
+    syncRelaysAfterReconnect,
     state,
     tab,
   ]);
@@ -683,6 +738,7 @@ export function RemoteSignerReconnectDialog(props: {
       });
 
       setActiveSignerConfig(config);
+      await syncRelaysAfterReconnect();
       clearPendingReconnectStorage();
       setState("connected");
       toast.success(RECONNECT_SUCCESS_TOAST_RETRY);
@@ -722,6 +778,7 @@ export function RemoteSignerReconnectDialog(props: {
     onOpenChange,
     onReconnectSuccess,
     sessionLabel,
+    syncRelaysAfterReconnect,
     state,
   ]);
 
@@ -745,7 +802,11 @@ export function RemoteSignerReconnectDialog(props: {
       }
 
       // User returned after reactivating existing session in signer app — retry reconnect with stored config.
-      if (state === "idle" && triedExistingRef.current) {
+      if (
+        openMode !== "new_session" &&
+        state === "idle" &&
+        triedExistingRef.current
+      ) {
         const session = getActiveSession();
         if (
           session?.config.type === "nip46" &&
@@ -761,7 +822,14 @@ export function RemoteSignerReconnectDialog(props: {
     document.addEventListener("visibilitychange", handleVisibility);
     return () =>
       document.removeEventListener("visibilitychange", handleVisibility);
-  }, [open, tab, state, getPendingReconnect, tryReconnectWithExistingSession]);
+  }, [
+    open,
+    openMode,
+    tab,
+    state,
+    getPendingReconnect,
+    tryReconnectWithExistingSession,
+  ]);
 
   const canRetryExisting =
     state === "idle" &&

@@ -410,4 +410,109 @@ describe("Nostr Edge Cases", () => {
       expect(topicTags).toContainEqual(["t", "tag2"]);
     });
   });
+
+  describe("NIP-46 ping and switch_relays", () => {
+    it("should delegate ping to bunker signer", async () => {
+      const mockInner = {
+        ping: vi.fn().mockResolvedValue(undefined),
+        sendRequest: vi.fn(),
+        close: vi.fn(),
+        bp: { relays: ["wss://relay.primal.net"] },
+      };
+      const mockPool = {
+        close: vi.fn(),
+      };
+
+      const { Nip46Signer } =
+        await import("~/features/auth/nostr-signer.client");
+      const signer = new Nip46Signer({
+        pool: mockPool as never,
+        inner: mockInner as never,
+      });
+
+      await signer.ping();
+
+      expect(mockInner.ping).toHaveBeenCalledTimes(1);
+    });
+
+    it("should parse switch_relays response and normalize relay list", async () => {
+      const mockInner = {
+        ping: vi.fn(),
+        sendRequest: vi
+          .fn()
+          .mockResolvedValue(
+            JSON.stringify([
+              "wss://relay.primal.net",
+              " wss://relay.damus.io ",
+              "ws://not-secure",
+              "wss://relay.primal.net",
+            ])
+          ),
+        close: vi.fn(),
+        bp: { relays: ["wss://relay.primal.net"] },
+      };
+      const mockPool = {
+        close: vi.fn(),
+      };
+
+      const { Nip46Signer } =
+        await import("~/features/auth/nostr-signer.client");
+      const signer = new Nip46Signer({
+        pool: mockPool as never,
+        inner: mockInner as never,
+      });
+
+      const relays = await signer.switchRelays();
+
+      expect(relays).toEqual([
+        "wss://relay.primal.net",
+        "wss://relay.damus.io",
+      ]);
+    });
+
+    it("should return null for malformed switch_relays payload", async () => {
+      const mockInner = {
+        ping: vi.fn(),
+        sendRequest: vi.fn().mockResolvedValue("not-json"),
+        close: vi.fn(),
+        bp: { relays: ["wss://relay.primal.net"] },
+      };
+      const mockPool = {
+        close: vi.fn(),
+      };
+
+      const { Nip46Signer } =
+        await import("~/features/auth/nostr-signer.client");
+      const signer = new Nip46Signer({
+        pool: mockPool as never,
+        inner: mockInner as never,
+      });
+
+      const relays = await signer.switchRelays();
+
+      expect(relays).toBeNull();
+    });
+
+    it("should use ping in testConnection when available", async () => {
+      vi.resetModules();
+      const ping = vi.fn().mockResolvedValue(undefined);
+      const getPublicKey = vi.fn().mockResolvedValue("pubkey-fallback");
+      vi.doMock("~/lib/nostr-signer-manager.client", () => ({
+        getActiveSigner: vi.fn().mockResolvedValue({
+          type: "nip46",
+          ping,
+          getPublicKey,
+        }),
+      }));
+
+      const { testConnection } =
+        await import("~/lib/remote-signer-health.client");
+      const result = await testConnection(200);
+
+      expect(result.healthy).toBe(true);
+      expect(result.method).toBe("ping");
+      expect(ping).toHaveBeenCalledTimes(1);
+      expect(getPublicKey).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -21,6 +21,8 @@ export interface NostrSigner {
   getPublicKey(): Promise<string>;
   signEvent(event: NostrEvent): Promise<SignedEvent>;
   getStatus(): SignerStatus;
+  ping?(): Promise<void>;
+  switchRelays?(): Promise<string[] | null>;
   close?(): Promise<void>;
 }
 
@@ -88,6 +90,39 @@ export class Nip46Signer implements NostrSigner {
   async signEvent(event: NostrEvent): Promise<SignedEvent> {
     this.status = "ready";
     return (await this.inner.signEvent(event)) as SignedEvent;
+  }
+
+  async ping(): Promise<void> {
+    this.status = "ready";
+    await this.inner.ping();
+  }
+
+  async switchRelays(): Promise<string[] | null> {
+    this.status = "ready";
+    const response = await this.inner.sendRequest("switch_relays", []);
+    if (response === "null") {
+      return null;
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(response) as unknown;
+    } catch {
+      return null;
+    }
+    if (!Array.isArray(parsed)) {
+      return null;
+    }
+
+    const normalized = parsed
+      .map((value) => (typeof value === "string" ? value.trim() : ""))
+      .filter((relay) => relay.startsWith("wss://"));
+
+    if (normalized.length === 0) {
+      return null;
+    }
+
+    return Array.from(new Set(normalized));
   }
 
   async close(): Promise<void> {

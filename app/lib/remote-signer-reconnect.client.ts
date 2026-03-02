@@ -6,6 +6,12 @@ export interface RemoteSignerTimeoutEventDetail {
   message?: string;
 }
 
+export type ReconnectDialogOpenMode = "default" | "new_session";
+
+export interface OpenRemoteSignerReconnectDialogEventDetail {
+  mode?: ReconnectDialogOpenMode;
+}
+
 export function emitRemoteSignerTimeoutEvent(
   detail: RemoteSignerTimeoutEventDetail = {}
 ): void {
@@ -22,11 +28,16 @@ export function emitRemoteSignerTimeoutEvent(
   }
 }
 
-export function emitOpenRemoteSignerReconnectDialogEvent(): void {
+export function emitOpenRemoteSignerReconnectDialogEvent(
+  detail: OpenRemoteSignerReconnectDialogEventDetail = {}
+): void {
   if (typeof window === "undefined") return;
   try {
     window.dispatchEvent(
-      new CustomEvent(OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT)
+      new CustomEvent<OpenRemoteSignerReconnectDialogEventDetail>(
+        OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
+        { detail }
+      )
     );
   } catch {
     // ignore

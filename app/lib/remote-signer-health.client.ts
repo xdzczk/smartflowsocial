@@ -5,6 +5,7 @@ export interface ConnectionHealthResult {
   error?: string;
   pubkey?: string;
   duration?: number;
+  method?: "ping" | "get_public_key";
 }
 
 /**
@@ -25,23 +26,44 @@ export async function testConnection(
       };
     }
 
-    // Test by getting public key with timeout
-    const pubkeyPromise = signer.getPublicKey();
+    const runProbe = async (): Promise<{
+      method: "ping" | "get_public_key";
+      pubkey?: string;
+    }> => {
+      if (signer.type === "nip46" && typeof signer.ping === "function") {
+        await signer.ping();
+        return { method: "ping" };
+      }
+      const pubkey = await signer.getPublicKey();
+      return { method: "get_public_key", pubkey };
+    };
+
+    // Test with timeout.
+    const probePromise = runProbe();
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error("Connection check timeout")), timeoutMs)
     );
 
-    const pubkey = await Promise.race([pubkeyPromise, timeoutPromise]);
+    const probe = await Promise.race([probePromise, timeoutPromise]);
     const duration = Date.now() - startTime;
+    console.info("[remote-signer-sign] Health check success", {
+      method: probe.method,
+      duration,
+    });
 
     return {
       healthy: true,
-      pubkey,
+      method: probe.method,
+      pubkey: probe.pubkey,
       duration,
     };
   } catch (error) {
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.info("[remote-signer-sign] Health check failed", {
+      error: errorMessage,
+      duration,
+    });
 
     return {
       healthy: false,

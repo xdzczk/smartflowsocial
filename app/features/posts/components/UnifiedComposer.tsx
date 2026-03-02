@@ -1218,7 +1218,9 @@ export function UnifiedComposer({
                 size="sm"
                 className="shrink-0"
                 onClick={() => {
-                  emitOpenRemoteSignerReconnectDialogEvent();
+                  emitOpenRemoteSignerReconnectDialogEvent({
+                    mode: "new_session",
+                  });
                 }}
               >
                 Reconnect signer
