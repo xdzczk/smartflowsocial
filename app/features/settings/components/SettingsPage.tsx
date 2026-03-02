@@ -405,7 +405,7 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="container mx-auto p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-5xl p-4 sm:p-6">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
           Settings

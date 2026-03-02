@@ -59,8 +59,22 @@ const PROFILE_MISMATCH_MESSAGE =
 const RECONNECT_SUCCESS_TOAST_RETRY =
   "Remote signer reconnected. Please retry your action.";
 
-const EXISTING_SESSION_RECONNECT_TIMEOUT_MS = 60_000;
-const EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS = 1200;
+const EXISTING_SESSION_RECONNECT_TIMEOUT_MS = 20_000;
+const EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS = 1000;
+
+/** Official Primal logo for "Login with Primal" button. */
+function PrimalLogoIcon({ className }: { className?: string }) {
+  return (
+    <img
+      src="/PrimalIcon.png"
+      alt=""
+      className={className}
+      width={20}
+      height={20}
+      aria-hidden
+    />
+  );
+}
 
 /** Append callback so Primal redirects back to app (skip in standalone PWA). */
 function appendPrimalCallback(uri: string): string {
@@ -796,7 +810,10 @@ export function RemoteSignerReconnectDialog(props: {
                     </Button>
                     {isMobile() ? (
                       <Button type="button" onClick={handleLoginWithPrimal}>
-                        Login with Primal
+                        <span className="flex items-center gap-2">
+                          <PrimalLogoIcon className="size-5 shrink-0" />
+                          Login with Primal
+                        </span>
                       </Button>
                     ) : null}
                     <div className="text-muted-foreground text-xs">
@@ -826,10 +843,12 @@ export function RemoteSignerReconnectDialog(props: {
             type="button"
             variant="outline"
             onClick={() => {
+              cancelRef.current?.cancel();
+              cancelRef.current = null;
               clearActiveSignerConfig();
               resetLocal();
             }}
-            disabled={state === "waiting" || isReconnectingExisting}
+            disabled={state === "waiting"}
           >
             Clear saved signer
           </Button>

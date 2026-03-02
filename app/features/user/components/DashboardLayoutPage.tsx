@@ -87,7 +87,7 @@ export function DashboardLayoutPage(): ReactNode {
     <>
       <div
         id="page-container"
-        className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col ${isCalendar ? "h-dvh overflow-x-visible overflow-y-hidden" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
+        className={`bg-background mx-auto flex min-h-dvh w-full min-w-[320px] flex-col overflow-x-hidden ${isCalendar ? "h-dvh overflow-x-visible overflow-y-hidden" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
         {...(mobileSidebarOpen ? { "data-mobile-sidebar-open": "" } : {})}
       >
         <Header

@@ -297,37 +297,41 @@ async function signEventWithRetryLogic(
 
   let retries = 0;
   let triedPrimaryFailover = false;
+  const tryPrimaryFailover = async (): Promise<boolean> => {
+    if (triedPrimaryFailover) return false;
+    const recovered = await attemptPrimarySignerFailover({
+      expectedPubkey: expectedHex,
+      labelFallback: "Primary Home Signer",
+    });
+    triedPrimaryFailover = true;
+    if (recovered.recovered) {
+      toast.success("Recovered signer connection via primary home signer.");
+      return true;
+    }
+    return false;
+  };
 
   while (retries < maxRetries) {
     let configured: SignedEvent | null = null;
     try {
       configured = await trySignWithConfiguredSigner(nostrEvent);
     } catch (error) {
-      if (!triedPrimaryFailover && isConnectionLikeError(error)) {
-        const recovered = await attemptPrimarySignerFailover({
-          expectedPubkey: expectedHex,
-          labelFallback: "Primary Home Signer",
-        });
-        triedPrimaryFailover = true;
-        if (recovered.recovered) {
-          toast.success("Recovered signer connection via primary home signer.");
-          continue;
-        }
+      const isConnectionError = isConnectionLikeError(error);
+      if (isConnectionError && (await tryPrimaryFailover())) {
+        continue;
+      }
+      if (isConnectionError && retries < maxRetries - 1) {
+        // Allow transient remote-signer reconnect hiccups to recover in-loop.
+        retries++;
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        continue;
       }
       throw error;
     }
     if (configured) return configured;
 
-    if (!triedPrimaryFailover) {
-      const recovered = await attemptPrimarySignerFailover({
-        expectedPubkey: expectedHex,
-        labelFallback: "Primary Home Signer",
-      });
-      triedPrimaryFailover = true;
-      if (recovered.recovered) {
-        toast.success("Recovered signer connection via primary home signer.");
-        continue;
-      }
+    if (await tryPrimaryFailover()) {
+      continue;
     }
 
     // @ts-ignore - window.nostr is injected by browser extensions at runtime
