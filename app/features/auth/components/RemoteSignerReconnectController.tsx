@@ -455,34 +455,54 @@ export function RemoteSignerReconnectDialog(props: {
       setState("reconnecting_existing");
       setError(null);
 
-      const pool = new SimplePool();
+      let activePool: SimplePool | null = null;
+      const closePool = (pool: SimplePool | null) => {
+        if (!pool) return;
+        try {
+          pool.close(relays);
+        } catch {
+          // ignore
+        }
+      };
       cancelRef.current = {
         cancel: () => {
-          try {
-            pool.close(relays);
-          } catch {
-            // ignore
-          }
+          closePool(activePool);
+          activePool = null;
         },
       };
 
       try {
         const clientSecretKey = parseSecretKeyHex(clientSecretKeyHex);
-        const tryConnect = async (timeoutMs: number) =>
-          await connectNip46WithNostrConnectUri({
+        const tryConnect = async (timeoutMs: number) => {
+          closePool(activePool);
+          const attemptPool = new SimplePool();
+          activePool = attemptPool;
+          const { signer, pubkey } = await connectNip46WithNostrConnectUri({
             uri,
             clientSecretKey,
-            pool,
+            pool: attemptPool,
             timeoutMs,
             relaysToCloseOnCancel: relays,
           });
+          try {
+            return pubkey;
+          } finally {
+            try {
+              await signer.close();
+            } catch {
+              // ignore
+            }
+            closePool(attemptPool);
+            if (activePool === attemptPool) {
+              activePool = null;
+            }
+          }
+        };
 
         let pubkey: string;
         try {
           setExistingReconnectAttempt(1);
-          ({ pubkey } = await tryConnect(
-            EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0]
-          ));
+          pubkey = await tryConnect(EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0]);
         } catch (firstError) {
           debugReconnectTrace(
             "First existing-session reconnect attempt failed",
@@ -500,9 +520,9 @@ export function RemoteSignerReconnectDialog(props: {
           );
           try {
             setExistingReconnectAttempt(2);
-            ({ pubkey } = await tryConnect(
+            pubkey = await tryConnect(
               EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[1]
-            ));
+            );
           } catch {
             debugReconnectTrace(
               "Second existing-session reconnect attempt failed"
@@ -575,6 +595,8 @@ export function RemoteSignerReconnectDialog(props: {
         if (existingReconnectRunIdRef.current === runId) {
           inFlightExistingReconnectRef.current = false;
         }
+        closePool(activePool);
+        activePool = null;
         cancelRef.current = null;
       }
     },

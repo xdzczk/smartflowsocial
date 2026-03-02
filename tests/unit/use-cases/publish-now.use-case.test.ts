@@ -38,6 +38,13 @@ vi.mock("~/features/posts/state-machine/post-state-machine.server", () => ({
   },
 }));
 
+const { mockSendPublishSuccessNotification } = vi.hoisted(() => ({
+  mockSendPublishSuccessNotification: vi.fn(),
+}));
+vi.mock("~/infra/notifications/push-notification.server", () => ({
+  sendPublishSuccessNotification: mockSendPublishSuccessNotification,
+}));
+
 vi.mock("~/lib/correlation-context.server", () => ({
   getCorrelationId: vi.fn((id) => id ?? "test-correlation-id"),
 }));
@@ -90,6 +97,8 @@ describe("PublishNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "IMAGE",
+        postKind: "POST",
+        queueType: { name: "Growth Queue" },
         currentState: "DRAFT",
       };
 
@@ -150,6 +159,17 @@ describe("PublishNowUseCase", () => {
       );
       expect(recordPostPublished).toHaveBeenCalledWith("IMAGE", "immediate");
       expect(recordPublishLatency).toHaveBeenCalled();
+      expect(mockSendPublishSuccessNotification).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        TEST_POST_ID,
+        expect.any(String),
+        {
+          isLongForm: false,
+          source: "immediate",
+          postKind: "POST",
+          queueName: "Growth Queue",
+        }
+      );
     });
 
     it("should throw error if post not found", async () => {

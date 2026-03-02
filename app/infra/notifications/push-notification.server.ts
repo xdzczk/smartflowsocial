@@ -7,9 +7,19 @@ import type { PushSubscription as WebPushSubscription } from "web-push";
 
 import { getRunwaySettings } from "~/features/user/services/user-settings.server";
 import { env } from "~/lib/env.server";
-import { logError } from "~/lib/error-logger.server";
+import { logError, logInfo } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
+import {
+  DEFAULT_PUBLISH_SOURCE,
+  buildPublishFallbackBody,
+  buildPublishTemplateKey,
+  buildPublishTitle,
+  normalizePostKind,
+  normalizeQueueName,
+  type PublishPostKind,
+  type PublishSource,
+} from "./publish-copy.server";
 import { initWebPush } from "./web-push-config.server";
 
 const RUNWAY_LOW_THROTTLE_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -62,6 +72,11 @@ export interface NotificationPayload {
     postId?: string;
     publishAttemptId?: string;
     runwayDays?: number;
+    source?: PublishSource;
+    queueName?: string;
+    postKind?: PublishPostKind;
+    contentType?: "post" | "article";
+    templateKey?: string;
     action: "publish_success" | "publish_failure" | "runway_low";
     url?: string;
   };
@@ -264,6 +279,9 @@ export async function sendPushNotificationToUser(
 
 export interface PublishSuccessNotificationOptions {
   isLongForm?: boolean;
+  source?: PublishSource;
+  queueName?: string | null;
+  postKind?: PublishPostKind;
 }
 
 /**
@@ -276,6 +294,14 @@ export async function sendPublishSuccessNotification(
   options?: PublishSuccessNotificationOptions
 ): Promise<void> {
   const isLongForm = options?.isLongForm ?? false;
+  const source = options?.source ?? DEFAULT_PUBLISH_SOURCE;
+  const queueName = normalizeQueueName(options?.queueName);
+  const postKind = normalizePostKind(options?.postKind);
+  const templateKey = buildPublishTemplateKey({
+    isLongForm,
+    source,
+    postKind,
+  });
 
   // Check user preferences and load profile for account name + pfp
   const user = await prisma.user.findUnique({
@@ -304,21 +330,32 @@ export async function sendPublishSuccessNotification(
   const icon = picture ? notificationAssetUrl(picture) : DEFAULT_ICON;
   const badge = picture ? notificationAssetUrl(picture) : DEFAULT_ICON;
 
-  let body = "Now live on Nostr";
+  let body = buildPublishFallbackBody({
+    isLongForm,
+    source,
+    queueName,
+    postKind,
+  });
   if (user.pushNotifyIncludePreview !== false) {
     const preview = await getPublishSuccessPreview(userId, postId, isLongForm);
     if (preview) {
+      const previewWithContext =
+        source === "scheduled"
+          ? `${queueName ? `Queue: ${queueName}` : "Scheduled queue"} · ${preview}`
+          : preview;
       body = truncateForNotificationBody(
-        preview,
+        previewWithContext,
         NOTIFICATION_BODY_PREVIEW_MAX_LENGTH
       );
     }
   }
 
   const payload: NotificationPayload = {
-    title: isLongForm
-      ? `Article published as ${displayName}`
-      : `Post published as ${displayName}`,
+    title: buildPublishTitle({
+      isLongForm,
+      displayName,
+      postKind,
+    }),
     body,
     icon,
     badge,
@@ -326,12 +363,29 @@ export async function sendPublishSuccessNotification(
     data: {
       postId,
       publishAttemptId,
+      source,
+      ...(queueName ? { queueName } : {}),
+      ...(!isLongForm ? { postKind } : {}),
+      contentType: isLongForm ? "article" : "post",
+      templateKey,
       action: "publish_success",
       url: `/dashboard/published?postId=${postId}`,
     },
   };
 
-  await sendPushNotificationToUser(userId, payload);
+  const result = await sendPushNotificationToUser(userId, payload);
+  logInfo("Publish success push notification dispatched", {
+    userId,
+    postId,
+    publishAttemptId,
+    source,
+    queueName: queueName ?? undefined,
+    postKind: isLongForm ? undefined : postKind,
+    contentType: isLongForm ? "article" : "post",
+    templateKey,
+    sent: result.sent,
+    failed: result.failed,
+  });
 }
 
 /**

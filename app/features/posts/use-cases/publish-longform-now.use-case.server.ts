@@ -150,7 +150,11 @@ export class PublishLongFormNowUseCase {
           input.userId,
           input.postId,
           publishAttemptId,
-          { isLongForm: true }
+          {
+            isLongForm: true,
+            source: "immediate",
+            queueName: post.queueType?.name ?? null,
+          }
         );
       } catch (notificationError) {
         logError(

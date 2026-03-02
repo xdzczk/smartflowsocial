@@ -430,7 +430,11 @@ async function handleScheduledPostJobError(input: {
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { postType: true },
+    select: {
+      postType: true,
+      postKind: true,
+      queueType: { select: { name: true } },
+    },
   });
   if (post) {
     recordPostPublishFailed(post.postType, "scheduled", errorType);
@@ -879,7 +883,15 @@ async function runScheduledPostJob(input: {
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { postType: true },
+    select: {
+      postType: true,
+      postKind: true,
+      queueType: {
+        select: {
+          name: true,
+        },
+      },
+    },
   });
   if (post) {
     recordPostPublished(post.postType, "scheduled");
@@ -921,6 +933,9 @@ async function runScheduledPostJob(input: {
       await import("~/infra/notifications/push-notification.server");
     await sendPublishSuccessNotification(userId, postId, publishAttemptId, {
       isLongForm: false,
+      source: "scheduled",
+      postKind: post?.postKind,
+      queueName: post?.queueType?.name ?? null,
     });
   } catch (notificationError) {
     // Log but don't fail the job if notification fails
@@ -955,6 +970,7 @@ async function runScheduledLongFormPostJob(input: {
     select: {
       scheduledAtUtc: true,
       currentState: true,
+      queueType: { select: { name: true } },
     },
   });
 
@@ -1134,6 +1150,8 @@ async function runScheduledLongFormPostJob(input: {
       await import("~/infra/notifications/push-notification.server");
     await sendPublishSuccessNotification(userId, postId, publishAttemptId, {
       isLongForm: true,
+      source: "scheduled",
+      queueName: existingPost.queueType?.name ?? null,
     });
   } catch (notificationError) {
     // Log but don't fail the job if notification fails

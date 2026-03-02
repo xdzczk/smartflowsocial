@@ -56,6 +56,13 @@ vi.mock(
   })
 );
 
+const { mockSendPublishSuccessNotification } = vi.hoisted(() => ({
+  mockSendPublishSuccessNotification: vi.fn(),
+}));
+vi.mock("~/infra/notifications/push-notification.server", () => ({
+  sendPublishSuccessNotification: mockSendPublishSuccessNotification,
+}));
+
 import { createValidSignedEvent } from "../../utils/nostr-test-helpers";
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
@@ -89,6 +96,7 @@ describe("PublishLongFormNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         title: "Test Title",
+        queueType: { name: "Longform Queue" },
         currentState: "DRAFT",
       };
 
@@ -120,6 +128,16 @@ describe("PublishLongFormNowUseCase", () => {
         }),
         relays,
         expect.any(String)
+      );
+      expect(mockSendPublishSuccessNotification).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        TEST_POST_ID,
+        expect.any(String),
+        {
+          isLongForm: true,
+          source: "immediate",
+          queueName: "Longform Queue",
+        }
       );
     });
 

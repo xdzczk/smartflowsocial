@@ -42,8 +42,6 @@ import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
 // Helper Functions
 // ============================================================================
 
-const ACTIVE_SIGNER_CONNECT_FALLBACK_TIMEOUT_MS = 15_000;
-const ACTIVE_SIGNER_CONNECT_MAX_TIMEOUT_MS = 45_000;
 const ACTIVE_SIGNER_SIGN_TIMEOUT_MS = 30_000;
 
 // Track retry counts for progressive timeouts
@@ -67,11 +65,6 @@ function isConnectionLikeError(error: unknown): boolean {
     message.includes("timeout") ||
     message.includes("too long")
   );
-}
-
-function getConnectTimeoutForRetry(retry: number): number {
-  const timeout = Math.round(12_000 * Math.pow(1.8, retry));
-  return Math.min(timeout, ACTIVE_SIGNER_CONNECT_MAX_TIMEOUT_MS);
 }
 
 function debugSignerTrace(
@@ -238,8 +231,7 @@ function markActiveRemoteSessionStale(error: unknown): void {
 }
 
 async function trySignWithConfiguredSigner(
-  nostrEvent: NostrEvent,
-  options?: { connectTimeoutMs?: number }
+  nostrEvent: NostrEvent
 ): Promise<SignedEvent | null> {
   let prefersRemoteSigner = false;
   try {
@@ -251,24 +243,9 @@ async function trySignWithConfiguredSigner(
         : null;
     prefersRemoteSigner = !!cfg && cfg.type === "nip46";
 
-    const connectTimeout = prefersRemoteSigner
-      ? (options?.connectTimeoutMs ??
-        getProgressiveTimeout(
-          connectionRetryCount,
-          ACTIVE_SIGNER_CONNECT_FALLBACK_TIMEOUT_MS
-        ))
-      : ACTIVE_SIGNER_CONNECT_FALLBACK_TIMEOUT_MS;
-
-    const activeSigner = prefersRemoteSigner
-      ? await withTimeout(
-          signerManager.getActiveSigner(),
-          connectTimeout,
-          "Connecting to remote signer took too long. Open your signer app and try again."
-        )
-      : await signerManager.getActiveSigner();
+    const activeSigner = await signerManager.getActiveSigner();
     if (prefersRemoteSigner) {
       debugSignerTrace("Configured signer resolved", {
-        connectTimeout,
         hasSigner: Boolean(activeSigner),
         connectionRetryCount,
         signRetryCount,
@@ -379,10 +356,7 @@ async function signEventWithRetryLogic(
     });
     let configured: SignedEvent | null = null;
     try {
-      const connectTimeoutMs = getConnectTimeoutForRetry(retries);
-      configured = await trySignWithConfiguredSigner(nostrEvent, {
-        connectTimeoutMs,
-      });
+      configured = await trySignWithConfiguredSigner(nostrEvent);
     } catch (error) {
       const isConnectionError = isConnectionLikeError(error);
       debugSignerTrace("Configured signer attempt failed", {

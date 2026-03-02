@@ -179,7 +179,13 @@ export class PublishNowUseCase {
         await sendPublishSuccessNotification(
           input.userId,
           input.postId,
-          publishAttemptId
+          publishAttemptId,
+          {
+            isLongForm: false,
+            source: "immediate",
+            postKind: post.postKind,
+            queueName: null,
+          }
         );
       } catch (notificationError) {
         logErrorUtil(
