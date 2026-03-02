@@ -33,10 +33,9 @@ import {
   type ReconnectDialogOpenMode,
 } from "~/lib/remote-signer-reconnect.client";
 import {
-  createSession,
   detectSignerAppName,
-  getAllSessions,
   getActiveSession,
+  matchOrCreateSession,
   setActiveSession,
   updateSession,
 } from "~/lib/remote-signer-sessions.client";
@@ -203,6 +202,8 @@ export function RemoteSignerReconnectDialog(props: {
 
   const cancelRef = useRef<{ cancel: () => void } | null>(null);
   const inFlightNostrConnectRef = useRef(false);
+  const inFlightExistingReconnectRef = useRef(false);
+  const existingReconnectRunIdRef = useRef(0);
   const triedExistingRef = useRef(false);
   const pendingReconnectRef = useRef<{
     uri: string;
@@ -264,6 +265,8 @@ export function RemoteSignerReconnectDialog(props: {
   }, []);
 
   const resetLocal = useCallback(() => {
+    existingReconnectRunIdRef.current += 1;
+    inFlightExistingReconnectRef.current = false;
     cancelRef.current?.cancel();
     cancelRef.current = null;
     inFlightNostrConnectRef.current = false;
@@ -276,44 +279,6 @@ export function RemoteSignerReconnectDialog(props: {
     setSessionLabel("");
     setExistingReconnectAttempt(0);
   }, [clearPendingReconnectStorage]);
-
-  const getOrCreateSessionForConfig = useCallback(
-    (config: ActiveSignerConfig, label?: string) => {
-      const existing = getAllSessions().find((session) => {
-        if (session.config.type !== config.type) return false;
-        if (session.config.type !== "nip46" || config.type !== "nip46") {
-          return false;
-        }
-        if (
-          session.config.method === "nostrconnect_uri" &&
-          config.method === "nostrconnect_uri"
-        ) {
-          return (
-            session.config.uri === config.uri &&
-            session.config.clientSecretKeyHex === config.clientSecretKeyHex
-          );
-        }
-        if (
-          session.config.method === "bunker_input" &&
-          config.method === "bunker_input"
-        ) {
-          return (
-            session.config.bunkerInput === config.bunkerInput &&
-            session.config.clientSecretKeyHex === config.clientSecretKeyHex
-          );
-        }
-        return false;
-      });
-      if (existing) {
-        if (label && existing.label !== label) {
-          updateSession(existing.id, { label });
-        }
-        return existing;
-      }
-      return createSession(config, label);
-    },
-    []
-  );
 
   const syncRelaysAfterReconnect = useCallback(async () => {
     try {
@@ -333,6 +298,9 @@ export function RemoteSignerReconnectDialog(props: {
   }, []);
 
   const tryReconnectWithExistingSession = useCallback(async () => {
+    if (inFlightExistingReconnectRef.current) {
+      return;
+    }
     const session = getActiveSession();
     if (
       session?.config.type !== "nip46" ||
@@ -340,6 +308,8 @@ export function RemoteSignerReconnectDialog(props: {
     ) {
       return;
     }
+    inFlightExistingReconnectRef.current = true;
+    const runId = ++existingReconnectRunIdRef.current;
 
     const { uri, relays, clientSecretKeyHex } = session.config;
     debugReconnectTrace("Starting existing-session reconnect", {
@@ -407,6 +377,9 @@ export function RemoteSignerReconnectDialog(props: {
         }
       }
 
+      if (existingReconnectRunIdRef.current !== runId) {
+        return;
+      }
       if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
         debugReconnectTrace("Existing-session reconnect pubkey mismatch", {
           expectedPubkeyHex,
@@ -445,6 +418,9 @@ export function RemoteSignerReconnectDialog(props: {
 
       setActiveSignerConfig(config);
       await syncRelaysAfterReconnect();
+      if (existingReconnectRunIdRef.current !== runId) {
+        return;
+      }
       debugReconnectTrace("Existing-session reconnect succeeded", {
         sessionId: session.id,
         pubkey,
@@ -465,6 +441,9 @@ export function RemoteSignerReconnectDialog(props: {
         expectedPubkey: expectedPubkeyHex,
         labelFallback: "Primary Home Signer",
       });
+      if (existingReconnectRunIdRef.current !== runId) {
+        return;
+      }
       if (fallback.recovered) {
         debugReconnectTrace("Primary failover recovered reconnect");
         await syncRelaysAfterReconnect();
@@ -488,6 +467,9 @@ export function RemoteSignerReconnectDialog(props: {
         "Could not reconnect with existing session. If the session is still in your signer app, switch to it, reactivate the session, then return here — we’ll retry automatically. Or generate a new connection string below."
       );
     } finally {
+      if (existingReconnectRunIdRef.current === runId) {
+        inFlightExistingReconnectRef.current = false;
+      }
       cancelRef.current = null;
     }
   }, [
@@ -569,7 +551,10 @@ export function RemoteSignerReconnectDialog(props: {
         };
 
         // Create or update session
-        const session = createSession(config, sessionLabel || undefined);
+        const session = matchOrCreateSession(config, {
+          label: sessionLabel || undefined,
+          signerPubkey: pubkey,
+        });
         setActiveSession(session.id);
 
         // Update session with pubkey and detected app name
@@ -649,10 +634,10 @@ export function RemoteSignerReconnectDialog(props: {
       };
 
       // Create or update session
-      const session = getOrCreateSessionForConfig(
-        config,
-        sessionLabel || undefined
-      );
+      const session = matchOrCreateSession(config, {
+        label: sessionLabel || undefined,
+        signerPubkey: pubkey,
+      });
       setActiveSession(session.id);
 
       // Update session with pubkey and detected app name
@@ -720,7 +705,6 @@ export function RemoteSignerReconnectDialog(props: {
     sessionLabel,
     setPendingReconnect,
     syncRelaysAfterReconnect,
-    getOrCreateSessionForConfig,
     state,
     tab,
   ]);
@@ -769,10 +753,10 @@ export function RemoteSignerReconnectDialog(props: {
         clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
       };
 
-      const session = getOrCreateSessionForConfig(
-        config,
-        sessionLabel || undefined
-      );
+      const session = matchOrCreateSession(config, {
+        label: sessionLabel || undefined,
+        signerPubkey: pubkey,
+      });
       setActiveSession(session.id);
 
       const detectedAppName = detectSignerAppName(config);
@@ -831,7 +815,6 @@ export function RemoteSignerReconnectDialog(props: {
     clearPendingReconnectStorage,
     getPendingReconnect,
     expectedPubkeyHex,
-    getOrCreateSessionForConfig,
     onOpenChange,
     onReconnectSuccess,
     sessionLabel,

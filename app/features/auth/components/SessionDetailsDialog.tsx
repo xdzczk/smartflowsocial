@@ -138,15 +138,14 @@ export function SessionDetailsDialog({
   const connectionUri = getConnectionUri();
   const history = getConnectionHistory(session.id);
 
-  // Calculate statistics
-  const totalConnections = history.filter((e) => e.type === "connect").length;
-  const successfulConnections = history.filter(
-    (e) => e.type === "connect" && e.status === "success"
+  const latestEvent = history[0] ?? null;
+  const lastSuccessEvent = history.find((entry) => entry.status === "success");
+  const failureCount = history.filter(
+    (entry) => entry.status === "failure"
   ).length;
-  const successRate =
-    totalConnections > 0
-      ? Math.round((successfulConnections / totalConnections) * 100)
-      : 0;
+  const timeoutCount = history.filter(
+    (entry) => entry.status === "timeout"
+  ).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -162,7 +161,7 @@ export function SessionDetailsDialog({
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="config">Configuration</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
+            <TabsTrigger value="history">Runtime Events</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -287,25 +286,31 @@ export function SessionDetailsDialog({
               ) : null}
 
               <div className="bg-muted rounded-md p-4">
-                <Label className="mb-2 block">Statistics</Label>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <Label className="mb-2 block">Runtime Snapshot</Label>
+                <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
                   <div>
-                    <div className="text-muted-foreground">
-                      Total Connections
-                    </div>
-                    <div className="text-lg font-semibold">
-                      {totalConnections}
+                    <div className="text-muted-foreground">Latest Outcome</div>
+                    <div className="text-sm font-semibold">
+                      {latestEvent
+                        ? `${latestEvent.status} (${latestEvent.type})`
+                        : "No events"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Success Rate</div>
-                    <div className="text-lg font-semibold">{successRate}%</div>
+                    <div className="text-muted-foreground">Last Success</div>
+                    <div className="text-sm font-semibold">
+                      {lastSuccessEvent
+                        ? format(new Date(lastSuccessEvent.timestamp), "PPp")
+                        : "Never"}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">History Entries</div>
-                    <div className="text-lg font-semibold">
-                      {history.length}
-                    </div>
+                    <div className="text-muted-foreground">Failures</div>
+                    <div className="text-lg font-semibold">{failureCount}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">Timeouts</div>
+                    <div className="text-lg font-semibold">{timeoutCount}</div>
                   </div>
                 </div>
               </div>

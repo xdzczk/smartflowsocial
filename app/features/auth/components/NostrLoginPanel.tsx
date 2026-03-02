@@ -35,9 +35,8 @@ import {
   setActiveSignerConfig,
 } from "~/lib/nostr-signer-manager.client";
 import {
-  createSession,
   detectSignerAppName,
-  getAllSessions,
+  matchOrCreateSession,
   setActiveSession,
   setCurrentUserNpub,
   updateSession,
@@ -1080,16 +1079,9 @@ export default function NostrLoginPanel() {
           // Store sessions under this profile so they appear in Settings after login
           setCurrentUserNpub(convertHexToNpub(pk));
 
-          // Find existing session with matching config or create new one
-          const allSessions = getAllSessions();
-          const existingSession = allSessions.find(
-            (s) =>
-              s.config.type === "nip46" &&
-              s.config.method === "bunker_input" &&
-              s.config.bunkerInput === config.bunkerInput
-          );
-
-          const session = existingSession ?? createSession(config);
+          const session = matchOrCreateSession(config, {
+            signerPubkey: pk,
+          });
 
           setActiveSession(session.id);
 
@@ -1203,16 +1195,9 @@ export default function NostrLoginPanel() {
         // Store sessions under this profile so they appear in Settings after login
         setCurrentUserNpub(convertHexToNpub(pk));
 
-        // Find existing session with matching config or create new one
-        const allSessions = getAllSessions();
-        const existingSession = allSessions.find(
-          (s) =>
-            s.config.type === "nip46" &&
-            s.config.method === "nostrconnect_uri" &&
-            s.config.uri === config.uri
-        );
-
-        const session = existingSession ?? createSession(config);
+        const session = matchOrCreateSession(config, {
+          signerPubkey: pk,
+        });
 
         setActiveSession(session.id);
 
@@ -1389,8 +1374,9 @@ export default function NostrLoginPanel() {
       // Store sessions under this profile so they appear in Settings after login
       setCurrentUserNpub(convertHexToNpub(pk));
 
-      // Create or update session
-      const session = createSession(config);
+      const session = matchOrCreateSession(config, {
+        signerPubkey: pk,
+      });
       setActiveSession(session.id);
 
       // Update session with pubkey and detected app name

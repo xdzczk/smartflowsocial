@@ -442,7 +442,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
                     <Separator className="my-3" />
                     <div>
                       <h4 className="mb-2 text-sm font-medium">
-                        Recent Connection History
+                        Recent Runtime Events
                       </h4>
                       <ConnectionHistory
                         entries={activeSession.history.slice(0, 5)}

@@ -40,6 +40,7 @@ let cachedSigner: NostrSigner | null = null;
 let cachedConfigJson: string | null = null;
 let inFlightSignerPromise: Promise<NostrSigner | null> | null = null;
 let inFlightSignerConfigJson: string | null = null;
+let signerResolutionRequestId = 0;
 let wasHidden = false;
 let _lastVisibilityChangeTime = 0; // Reserved for future metrics/debugging
 let connectionCooldownUntil = 0;
@@ -540,6 +541,10 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
   if (!config) return null;
 
   if (config.type === "nip07") {
+    const latest = getActiveSignerConfig();
+    if (!latest || JSON.stringify(latest) !== JSON.stringify(config)) {
+      return null;
+    }
     cachedSigner = new Nip07Signer();
     return cachedSigner;
   }
@@ -548,6 +553,15 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
   if (inFlightSignerPromise && inFlightSignerConfigJson === configJson) {
     return await inFlightSignerPromise;
   }
+
+  const requestId = ++signerResolutionRequestId;
+  const isRequestCurrent = () => {
+    if (requestId !== signerResolutionRequestId) {
+      return false;
+    }
+    const latest = getActiveSignerConfig();
+    return latest !== null && JSON.stringify(latest) === configJson;
+  };
 
   // eslint-disable-next-line sonarjs/cognitive-complexity -- connection flow needs nuanced recovery branches for mobile/websocket scenarios
   const connectPromise = (async (): Promise<NostrSigner | null> => {
@@ -574,6 +588,10 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
         // By using the same bunker input and clientSecretKey, Primal will recognize
         // this as a reconnection attempt and restore the existing session.
         await inner.connect();
+        if (!isRequestCurrent()) {
+          await inner.close();
+          return null;
+        }
         cachedSigner = new Nip46Signer({ pool, inner });
         pool = null; // Transfer ownership to cachedSigner
         const nowEst = Date.now();
@@ -635,6 +653,10 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
         { pool },
         90_000
       );
+      if (!isRequestCurrent()) {
+        await inner.close();
+        return null;
+      }
       cachedSigner = new Nip46Signer({ pool, inner });
       pool = null; // Transfer ownership to cachedSigner
       const nowEst = Date.now();

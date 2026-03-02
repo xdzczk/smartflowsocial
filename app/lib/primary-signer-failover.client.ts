@@ -16,9 +16,8 @@ import {
   emitRemoteSignerTimeoutEvent,
 } from "~/lib/remote-signer-reconnect.client";
 import {
-  createSession,
   detectSignerAppName,
-  getAllSessions,
+  matchOrCreateSession,
   setActiveSession,
   updateSession,
 } from "~/lib/remote-signer-sessions.client";
@@ -51,29 +50,6 @@ function normalizeExpectedPubkeyHex(
     }
   }
   return null;
-}
-
-function getMatchingSessionIdForProfile(
-  profile: PrimarySignerProfile
-): string | null {
-  const sessions = getAllSessions();
-  const existing = sessions.find((session) => {
-    if (session.config.type !== "nip46") {
-      return false;
-    }
-    if (profile.method === "bunker_input") {
-      return (
-        session.config.method === "bunker_input" &&
-        session.config.bunkerInput === profile.bunkerInput
-      );
-    }
-    return (
-      session.config.method === "nostrconnect_uri" &&
-      session.config.uri === profile.uri
-    );
-  });
-
-  return existing?.id ?? null;
 }
 
 function buildConfigFromProfile(
@@ -226,31 +202,19 @@ export async function attemptPrimarySignerFailover(input?: {
 
     setActiveSignerConfig(config);
 
-    const existingId = getMatchingSessionIdForProfile(profile);
     const label =
       profile.label ?? input?.labelFallback ?? "Primary Home Signer";
-    const sessionId = (() => {
-      if (!existingId) {
-        return createSession(config, label).id;
-      }
-      updateSession(existingId, {
-        config,
-        label,
-      });
-      return existingId;
-    })();
+    const session = matchOrCreateSession(config, {
+      label,
+      signerPubkey: pubkey,
+    });
+    const sessionId = session.id;
 
     setActiveSession(sessionId);
-    const currentSession = getAllSessions().find(
-      (session) => session.id === sessionId
-    );
-    if (!currentSession) {
-      return { recovered: false, reason: "session_not_found" };
-    }
     const signerAppName = detectSignerAppName(config);
     updateSession(sessionId, {
       metadata: {
-        ...currentSession.metadata,
+        ...session.metadata,
         status: "active",
         pubkey,
         signerAppName,

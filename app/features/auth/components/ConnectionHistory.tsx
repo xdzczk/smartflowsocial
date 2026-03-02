@@ -69,7 +69,7 @@ export function ConnectionHistory({
   if (entries.length === 0) {
     return (
       <div className="text-muted-foreground rounded-md border p-4 text-center text-sm">
-        No connection history available
+        No runtime events available
       </div>
     );
   }
@@ -90,7 +90,7 @@ export function ConnectionHistory({
             size="sm"
             onClick={() => setFilterType("connect")}
           >
-            Connections
+            Connect Events
           </Button>
           <Button
             variant={filterType === "error" ? "default" : "outline"}
