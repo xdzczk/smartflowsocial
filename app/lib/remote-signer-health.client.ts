@@ -1,4 +1,7 @@
-import { getActiveSigner } from "~/lib/nostr-signer-manager.client";
+import {
+  getActiveSigner,
+  getActiveSignerConfig,
+} from "~/lib/nostr-signer-manager.client";
 
 export interface ConnectionHealthResult {
   healthy: boolean;
@@ -13,16 +16,21 @@ export interface ConnectionHealthResult {
  * Returns health status with optional pubkey and duration.
  */
 export async function testConnection(
-  timeoutMs = 5000
+  timeoutMs = 3000
 ): Promise<ConnectionHealthResult> {
   const startTime = Date.now();
 
   try {
-    const signer = await getActiveSigner();
+    const signer = await getActiveSigner({ allowReconnect: false });
     if (!signer) {
+      const activeConfig = getActiveSignerConfig();
+      const staleMessage =
+        activeConfig?.type === "nip46"
+          ? "Remote signer is not currently connected. Reconnect required."
+          : "No active signer found";
       return {
         healthy: false,
-        error: "No active signer found",
+        error: staleMessage,
       };
     }
 

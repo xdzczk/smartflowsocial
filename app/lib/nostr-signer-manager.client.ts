@@ -54,6 +54,14 @@ let _lastRelaySyncAt: number | null = null;
 const VERIFY_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
 const RELAY_SYNC_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
 
+interface GetActiveSignerOptions {
+  /**
+   * When false, never initiate a new NIP-46 reconnect attempt.
+   * Useful for fast health checks from UI where long reconnect is undesirable.
+   */
+  allowReconnect?: boolean;
+}
+
 function debugSignerManagerTrace(
   message: string,
   details?: Record<string, unknown>
@@ -491,7 +499,10 @@ function stopHealthCheckMonitoring(): void {
 }
 
 // Complex signer resolution with caching, health checks, cooldowns, and platform-specific optimizations
-export async function getActiveSigner(): Promise<NostrSigner | null> {
+export async function getActiveSigner(
+  options?: GetActiveSignerOptions
+): Promise<NostrSigner | null> {
+  const allowReconnect = options?.allowReconnect ?? true;
   // If we have a cached signer, verify it's still valid before returning it,
   // but not on every call — use a cooldown so we don't prompt the signer app (e.g. Primal) every time.
   if (cachedSigner) {
@@ -535,6 +546,10 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
         })
       );
     }
+
+    if (!allowReconnect) {
+      return null;
+    }
   }
 
   const config = getActiveSignerConfig();
@@ -550,6 +565,9 @@ export async function getActiveSigner(): Promise<NostrSigner | null> {
   }
 
   const configJson = JSON.stringify(config);
+  if (!allowReconnect) {
+    return null;
+  }
   if (inFlightSignerPromise && inFlightSignerConfigJson === configJson) {
     return await inFlightSignerPromise;
   }

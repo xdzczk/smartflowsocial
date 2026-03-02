@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.004097">
-    <testsuite name="tests/unit/remote-signer-sessions.test.ts" timestamp="2026-03-02T14:41:40.041Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.004097">
-        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions identity + storage consistency &gt; reuses logical session when signer pubkey matches" time="0.002569417">
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.002044625">
+    <testsuite name="tests/unit/reconnect-lifecycle.test.ts" timestamp="2026-03-02T15:20:39.914Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.002044625">
+        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; detects lifecycle transport errors" time="0.000733125">
         </testcase>
-        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions identity + storage consistency &gt; marks previous active session disconnected when switching active" time="0.00054675">
+        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; cancels only existing-session reconnect when app hides" time="0.000197708">
         </testcase>
-        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions identity + storage consistency &gt; keeps active-session pointer consistent after removing active" time="0.00029175">
+        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; resumes existing reconnect only with valid visible-state conditions" time="0.000122209">
+        </testcase>
+        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; defers terminal errors until a foreground-resume failure happens" time="0.000135792">
+        </testcase>
+        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; marks stale reconnect runs by run id mismatch" time="0.000102709">
         </testcase>
     </testsuite>
 </testsuites>

@@ -48,6 +48,14 @@ import {
   getNostrConnectAppMetadata,
   parseRelayList,
 } from "../nostr-signer.client";
+import {
+  isConnectionLifecycleErrorMessage,
+  isExistingReconnectRunStale,
+  shouldCancelExistingReconnectOnHidden,
+  shouldDeferExistingReconnectTerminalError,
+  shouldResumeExistingReconnectOnVisible,
+  type ExistingReconnectTrigger,
+} from "../reconnect-lifecycle.client";
 
 const DEFAULT_RELAYS = [
   "wss://relay.primal.net",
@@ -205,6 +213,8 @@ export function RemoteSignerReconnectDialog(props: {
   const inFlightExistingReconnectRef = useRef(false);
   const existingReconnectRunIdRef = useRef(0);
   const triedExistingRef = useRef(false);
+  const wasHiddenDuringExistingReconnectRef = useRef(false);
+  const existingReconnectForegroundAttemptFailedRef = useRef(false);
   const pendingReconnectRef = useRef<{
     uri: string;
     clientSecretKey: Uint8Array;
@@ -271,6 +281,8 @@ export function RemoteSignerReconnectDialog(props: {
     cancelRef.current = null;
     inFlightNostrConnectRef.current = false;
     triedExistingRef.current = false;
+    wasHiddenDuringExistingReconnectRef.current = false;
+    existingReconnectForegroundAttemptFailedRef.current = false;
     clearPendingReconnectStorage();
     setState("idle");
     setNostrConnectUri(null);
@@ -297,151 +309,65 @@ export function RemoteSignerReconnectDialog(props: {
     }
   }, []);
 
-  const tryReconnectWithExistingSession = useCallback(async () => {
-    if (inFlightExistingReconnectRef.current) {
-      return;
-    }
-    const session = getActiveSession();
-    if (
-      session?.config.type !== "nip46" ||
-      session.config.method !== "nostrconnect_uri"
-    ) {
-      return;
-    }
-    inFlightExistingReconnectRef.current = true;
-    const runId = ++existingReconnectRunIdRef.current;
+  const handleExistingReconnectFailure = useCallback(
+    async (input: {
+      error: unknown;
+      runId: number;
+      trigger: ExistingReconnectTrigger;
+    }) => {
+      if (
+        isExistingReconnectRunStale({
+          currentRunId: existingReconnectRunIdRef.current,
+          runId: input.runId,
+        })
+      ) {
+        return;
+      }
 
-    const { uri, relays, clientSecretKeyHex } = session.config;
-    debugReconnectTrace("Starting existing-session reconnect", {
-      sessionId: session.id,
-      relayCount: relays.length,
-      timeoutsMs: EXISTING_SESSION_RECONNECT_TIMEOUTS_MS,
-      expectedPubkeyHex,
-      status: session.metadata.status,
-      lastActivityAt: session.metadata.lastActivityAt,
-    });
+      const errorMessage =
+        input.error instanceof Error
+          ? input.error.message
+          : String(input.error);
+      const lifecycleError = isConnectionLifecycleErrorMessage(errorMessage);
 
-    setState("reconnecting_existing");
-    setError(null);
-
-    const pool = new SimplePool();
-    cancelRef.current = {
-      cancel: () => {
-        try {
-          pool.close(relays);
-        } catch {
-          // ignore
-        }
-      },
-    };
-
-    try {
-      const clientSecretKey = parseSecretKeyHex(clientSecretKeyHex);
-      const tryConnect = async (timeoutMs: number) =>
-        await connectNip46WithNostrConnectUri({
-          uri,
-          clientSecretKey,
-          pool,
-          timeoutMs,
-          relaysToCloseOnCancel: relays,
-        });
-
-      let pubkey: string;
-      try {
-        setExistingReconnectAttempt(1);
-        ({ pubkey } = await tryConnect(
-          EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0]
-        ));
-      } catch (firstError) {
-        debugReconnectTrace("First existing-session reconnect attempt failed", {
-          error:
-            firstError instanceof Error
-              ? firstError.message
-              : String(firstError),
-        });
-        // On mobile app switching, signer network state can still be warming up.
-        // Retry once after a short delay before surfacing failure.
-        await new Promise((resolve) =>
-          setTimeout(resolve, EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS)
+      if (
+        input.trigger !== "foreground_resume" &&
+        shouldDeferExistingReconnectTerminalError({
+          lifecycleError,
+          wasHiddenDuringExistingReconnect:
+            wasHiddenDuringExistingReconnectRef.current,
+          trigger: input.trigger,
+          foregroundResumeAttemptFailed:
+            existingReconnectForegroundAttemptFailedRef.current,
+        })
+      ) {
+        debugReconnectTrace(
+          "Existing-session reconnect failed during app-switch window; deferring terminal error",
+          { trigger: input.trigger, error: errorMessage }
         );
-        try {
-          setExistingReconnectAttempt(2);
-          ({ pubkey } = await tryConnect(
-            EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[1]
-          ));
-        } catch {
-          debugReconnectTrace(
-            "Second existing-session reconnect attempt failed"
-          );
-          throw firstError;
-        }
-      }
-
-      if (existingReconnectRunIdRef.current !== runId) {
-        return;
-      }
-      if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
-        debugReconnectTrace("Existing-session reconnect pubkey mismatch", {
-          expectedPubkeyHex,
-          receivedPubkey: pubkey,
-        });
-        setError(PROFILE_MISMATCH_MESSAGE);
-        setState("failed");
+        setState("idle");
+        setExistingReconnectAttempt(0);
+        setError(null);
         return;
       }
 
-      const config: ActiveSignerConfig = {
-        type: "nip46",
-        method: "nostrconnect_uri",
-        uri,
-        relays,
-        clientSecretKeyHex,
-      };
-
-      const detectedAppName = detectSignerAppName(config);
-      updateSession(session.id, {
-        metadata: {
-          ...session.metadata,
-          pubkey,
-          signerAppName: detectedAppName,
-          status: "active",
-          connectedAt: Date.now(),
-          lastActivityAt: Date.now(),
-          lastError: null,
-        },
-      });
-
-      recordConnectionEvent(session.id, {
-        type: "connected",
-        pubkey,
-      });
-
-      setActiveSignerConfig(config);
-      await syncRelaysAfterReconnect();
-      if (existingReconnectRunIdRef.current !== runId) {
-        return;
-      }
-      debugReconnectTrace("Existing-session reconnect succeeded", {
-        sessionId: session.id,
-        pubkey,
-      });
-      setExistingReconnectAttempt(0);
-      setState("connected");
-      toast.success("Remote signer reconnected.");
-      onReconnectSuccess?.(session.id);
-      onOpenChange(false);
-    } catch (error) {
       debugReconnectTrace(
         "Existing-session reconnect failed; trying primary failover",
         {
-          error: error instanceof Error ? error.message : String(error),
+          error: errorMessage,
         }
       );
+
       const fallback = await attemptPrimarySignerFailover({
         expectedPubkey: expectedPubkeyHex,
         labelFallback: "Primary Home Signer",
       });
-      if (existingReconnectRunIdRef.current !== runId) {
+      if (
+        isExistingReconnectRunStale({
+          currentRunId: existingReconnectRunIdRef.current,
+          runId: input.runId,
+        })
+      ) {
         return;
       }
       if (fallback.recovered) {
@@ -461,23 +387,205 @@ export function RemoteSignerReconnectDialog(props: {
         reason: fallback.reason ?? "unknown",
       });
 
+      if (input.trigger === "foreground_resume") {
+        existingReconnectForegroundAttemptFailedRef.current = true;
+      } else if (
+        shouldDeferExistingReconnectTerminalError({
+          lifecycleError,
+          wasHiddenDuringExistingReconnect:
+            wasHiddenDuringExistingReconnectRef.current,
+          trigger: input.trigger,
+          foregroundResumeAttemptFailed:
+            existingReconnectForegroundAttemptFailedRef.current,
+        })
+      ) {
+        debugReconnectTrace(
+          "Suppressing terminal reconnect error until foreground resume attempt fails",
+          { trigger: input.trigger }
+        );
+        setState("idle");
+        setExistingReconnectAttempt(0);
+        setError(null);
+        return;
+      }
+
       setState("idle");
       setExistingReconnectAttempt(0);
       setError(
         "Could not reconnect with existing session. If the session is still in your signer app, switch to it, reactivate the session, then return here — we’ll retry automatically. Or generate a new connection string below."
       );
-    } finally {
-      if (existingReconnectRunIdRef.current === runId) {
-        inFlightExistingReconnectRef.current = false;
+    },
+    [
+      expectedPubkeyHex,
+      onOpenChange,
+      onReconnectSuccess,
+      syncRelaysAfterReconnect,
+    ]
+  );
+
+  const tryReconnectWithExistingSession = useCallback(
+    async (trigger: ExistingReconnectTrigger = "initial") => {
+      if (inFlightExistingReconnectRef.current) {
+        return;
       }
-      cancelRef.current = null;
-    }
-  }, [
-    expectedPubkeyHex,
-    onReconnectSuccess,
-    onOpenChange,
-    syncRelaysAfterReconnect,
-  ]);
+      const session = getActiveSession();
+      if (
+        session?.config.type !== "nip46" ||
+        session.config.method !== "nostrconnect_uri"
+      ) {
+        return;
+      }
+      inFlightExistingReconnectRef.current = true;
+      const runId = ++existingReconnectRunIdRef.current;
+      if (trigger === "foreground_resume") {
+        wasHiddenDuringExistingReconnectRef.current = false;
+      }
+
+      const { uri, relays, clientSecretKeyHex } = session.config;
+      debugReconnectTrace("Starting existing-session reconnect", {
+        sessionId: session.id,
+        relayCount: relays.length,
+        timeoutsMs: EXISTING_SESSION_RECONNECT_TIMEOUTS_MS,
+        expectedPubkeyHex,
+        status: session.metadata.status,
+        lastActivityAt: session.metadata.lastActivityAt,
+        trigger,
+      });
+
+      setState("reconnecting_existing");
+      setError(null);
+
+      const pool = new SimplePool();
+      cancelRef.current = {
+        cancel: () => {
+          try {
+            pool.close(relays);
+          } catch {
+            // ignore
+          }
+        },
+      };
+
+      try {
+        const clientSecretKey = parseSecretKeyHex(clientSecretKeyHex);
+        const tryConnect = async (timeoutMs: number) =>
+          await connectNip46WithNostrConnectUri({
+            uri,
+            clientSecretKey,
+            pool,
+            timeoutMs,
+            relaysToCloseOnCancel: relays,
+          });
+
+        let pubkey: string;
+        try {
+          setExistingReconnectAttempt(1);
+          ({ pubkey } = await tryConnect(
+            EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0]
+          ));
+        } catch (firstError) {
+          debugReconnectTrace(
+            "First existing-session reconnect attempt failed",
+            {
+              error:
+                firstError instanceof Error
+                  ? firstError.message
+                  : String(firstError),
+            }
+          );
+          // On mobile app switching, signer network state can still be warming up.
+          // Retry once after a short delay before surfacing failure.
+          await new Promise((resolve) =>
+            setTimeout(resolve, EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS)
+          );
+          try {
+            setExistingReconnectAttempt(2);
+            ({ pubkey } = await tryConnect(
+              EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[1]
+            ));
+          } catch {
+            debugReconnectTrace(
+              "Second existing-session reconnect attempt failed"
+            );
+            throw firstError;
+          }
+        }
+
+        if (
+          isExistingReconnectRunStale({
+            currentRunId: existingReconnectRunIdRef.current,
+            runId,
+          })
+        ) {
+          return;
+        }
+        if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
+          debugReconnectTrace("Existing-session reconnect pubkey mismatch", {
+            expectedPubkeyHex,
+            receivedPubkey: pubkey,
+          });
+          setError(PROFILE_MISMATCH_MESSAGE);
+          setState("failed");
+          return;
+        }
+
+        const config: ActiveSignerConfig = {
+          type: "nip46",
+          method: "nostrconnect_uri",
+          uri,
+          relays,
+          clientSecretKeyHex,
+        };
+
+        const detectedAppName = detectSignerAppName(config);
+        updateSession(session.id, {
+          metadata: {
+            ...session.metadata,
+            pubkey,
+            signerAppName: detectedAppName,
+            status: "active",
+            connectedAt: Date.now(),
+            lastActivityAt: Date.now(),
+            lastError: null,
+          },
+        });
+
+        recordConnectionEvent(session.id, {
+          type: "connected",
+          pubkey,
+        });
+
+        setActiveSignerConfig(config);
+        await syncRelaysAfterReconnect();
+        if (existingReconnectRunIdRef.current !== runId) {
+          return;
+        }
+        debugReconnectTrace("Existing-session reconnect succeeded", {
+          sessionId: session.id,
+          pubkey,
+        });
+        setExistingReconnectAttempt(0);
+        setState("connected");
+        toast.success("Remote signer reconnected.");
+        onReconnectSuccess?.(session.id);
+        onOpenChange(false);
+      } catch (error) {
+        await handleExistingReconnectFailure({ error, runId, trigger });
+      } finally {
+        if (existingReconnectRunIdRef.current === runId) {
+          inFlightExistingReconnectRef.current = false;
+        }
+        cancelRef.current = null;
+      }
+    },
+    [
+      handleExistingReconnectFailure,
+      expectedPubkeyHex,
+      onReconnectSuccess,
+      onOpenChange,
+      syncRelaysAfterReconnect,
+    ]
+  );
 
   useEffect(() => {
     if (!open) {
@@ -504,7 +612,7 @@ export function RemoteSignerReconnectDialog(props: {
     }
 
     triedExistingRef.current = true;
-    void tryReconnectWithExistingSession();
+    void tryReconnectWithExistingSession("initial");
   }, [open, openMode, resetLocal, tryReconnectWithExistingSession, tab]);
 
   const copyUri = useCallback(async () => {
@@ -829,7 +937,40 @@ export function RemoteSignerReconnectDialog(props: {
     if (!open) return;
 
     const handleVisibility = () => {
-      if (document.visibilityState !== "visible") return;
+      if (document.visibilityState !== "visible") {
+        if (shouldCancelExistingReconnectOnHidden(state)) {
+          wasHiddenDuringExistingReconnectRef.current = true;
+          existingReconnectRunIdRef.current += 1;
+          inFlightExistingReconnectRef.current = false;
+          cancelRef.current?.cancel();
+          cancelRef.current = null;
+          setState("idle");
+          setExistingReconnectAttempt(0);
+          debugReconnectTrace(
+            "Visibility hidden: cancelled in-flight existing-session reconnect"
+          );
+        }
+        return;
+      }
+
+      const activeSession = getActiveSession();
+      const hasValidExistingSession =
+        activeSession?.config.type === "nip46" &&
+        activeSession.config.method === "nostrconnect_uri";
+      if (
+        shouldResumeExistingReconnectOnVisible({
+          openMode,
+          wasHiddenDuringExistingReconnect:
+            wasHiddenDuringExistingReconnectRef.current,
+          inFlightExistingReconnect: inFlightExistingReconnectRef.current,
+          hasValidExistingSession,
+        })
+      ) {
+        setTimeout(() => {
+          void tryReconnectWithExistingSession("foreground_resume");
+        }, 500);
+        return;
+      }
 
       // User returned after generating new URI and approving in signer app — resume with same URI.
       if (state === "waiting" && getPendingReconnect()) {
@@ -861,7 +1002,7 @@ export function RemoteSignerReconnectDialog(props: {
           session.config.method === "nostrconnect_uri"
         ) {
           setTimeout(() => {
-            void tryReconnectWithExistingSession();
+            void tryReconnectWithExistingSession("foreground_resume");
           }, 500);
         }
       }
@@ -1031,7 +1172,7 @@ export function RemoteSignerReconnectDialog(props: {
             type="button"
             onClick={() => {
               if (canRetryExisting) {
-                void tryReconnectWithExistingSession();
+                void tryReconnectWithExistingSession("manual_retry");
               } else if (tab === "nostrconnect" && getPendingReconnect()) {
                 void resumeReconnectWithPendingUri();
               } else {
