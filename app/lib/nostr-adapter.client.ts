@@ -42,9 +42,8 @@ import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
 // Helper Functions
 // ============================================================================
 
-// Rehydrating an existing NIP-46 mobile signer session can take longer after
-// app switching/backgrounding; keep the first attempt patient.
-const ACTIVE_SIGNER_CONNECT_TIMEOUT_MS = 45_000;
+const ACTIVE_SIGNER_CONNECT_FALLBACK_TIMEOUT_MS = 15_000;
+const ACTIVE_SIGNER_CONNECT_MAX_TIMEOUT_MS = 45_000;
 const ACTIVE_SIGNER_SIGN_TIMEOUT_MS = 30_000;
 
 // Track retry counts for progressive timeouts
@@ -52,6 +51,9 @@ let connectionRetryCount = 0;
 let signRetryCount = 0;
 
 function isConnectionLikeError(error: unknown): boolean {
+  if (error instanceof RemoteSignerTimeoutError) {
+    return true;
+  }
   const message =
     error instanceof Error
       ? error.message.toLowerCase()
@@ -61,8 +63,15 @@ function isConnectionLikeError(error: unknown): boolean {
     message.includes("websocket") ||
     message.includes("closed") ||
     message.includes("connection") ||
-    message.includes("timeout")
+    message.includes("connecting") ||
+    message.includes("timeout") ||
+    message.includes("too long")
   );
+}
+
+function getConnectTimeoutForRetry(retry: number): number {
+  const timeout = Math.round(12_000 * Math.pow(1.8, retry));
+  return Math.min(timeout, ACTIVE_SIGNER_CONNECT_MAX_TIMEOUT_MS);
 }
 
 function debugSignerTrace(
@@ -229,7 +238,8 @@ function markActiveRemoteSessionStale(error: unknown): void {
 }
 
 async function trySignWithConfiguredSigner(
-  nostrEvent: NostrEvent
+  nostrEvent: NostrEvent,
+  options?: { connectTimeoutMs?: number }
 ): Promise<SignedEvent | null> {
   let prefersRemoteSigner = false;
   try {
@@ -242,11 +252,12 @@ async function trySignWithConfiguredSigner(
     prefersRemoteSigner = !!cfg && cfg.type === "nip46";
 
     const connectTimeout = prefersRemoteSigner
-      ? getProgressiveTimeout(
+      ? (options?.connectTimeoutMs ??
+        getProgressiveTimeout(
           connectionRetryCount,
-          ACTIVE_SIGNER_CONNECT_TIMEOUT_MS
-        )
-      : ACTIVE_SIGNER_CONNECT_TIMEOUT_MS;
+          ACTIVE_SIGNER_CONNECT_FALLBACK_TIMEOUT_MS
+        ))
+      : ACTIVE_SIGNER_CONNECT_FALLBACK_TIMEOUT_MS;
 
     const activeSigner = prefersRemoteSigner
       ? await withTimeout(
@@ -288,16 +299,7 @@ async function trySignWithConfiguredSigner(
   } catch (err) {
     if (prefersRemoteSigner) {
       // Check if this is a connection error that should trigger cache reset
-      const errorMessage =
-        err instanceof Error
-          ? err.message.toLowerCase()
-          : String(err).toLowerCase();
-      const isConnectionError =
-        errorMessage.includes("subscription closed") ||
-        errorMessage.includes("websocket") ||
-        errorMessage.includes("closed") ||
-        errorMessage.includes("connection") ||
-        err instanceof RemoteSignerTimeoutError;
+      const isConnectionError = isConnectionLikeError(err);
 
       if (isConnectionError) {
         debugSignerTrace("Configured signer connection-like error", {
@@ -377,7 +379,10 @@ async function signEventWithRetryLogic(
     });
     let configured: SignedEvent | null = null;
     try {
-      configured = await trySignWithConfiguredSigner(nostrEvent);
+      const connectTimeoutMs = getConnectTimeoutForRetry(retries);
+      configured = await trySignWithConfiguredSigner(nostrEvent, {
+        connectTimeoutMs,
+      });
     } catch (error) {
       const isConnectionError = isConnectionLikeError(error);
       debugSignerTrace("Configured signer attempt failed", {

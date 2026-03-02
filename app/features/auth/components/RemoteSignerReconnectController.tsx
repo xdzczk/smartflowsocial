@@ -59,8 +59,7 @@ const PROFILE_MISMATCH_MESSAGE =
 const RECONNECT_SUCCESS_TOAST_RETRY =
   "Remote signer reconnected. Please retry your action.";
 
-// Existing session recovery after returning from signer app can take >20s.
-const EXISTING_SESSION_RECONNECT_TIMEOUT_MS = 45_000;
+const EXISTING_SESSION_RECONNECT_TIMEOUTS_MS = [20_000, 40_000] as const;
 const EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS = 1000;
 
 function debugReconnectTrace(
@@ -176,6 +175,7 @@ export function RemoteSignerReconnectDialog(props: {
   const [sessionLabel, setSessionLabel] = useState("");
 
   const [state, setState] = useState<ConnectState>("idle");
+  const [existingReconnectAttempt, setExistingReconnectAttempt] = useState(0);
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copyOk, setCopyOk] = useState(false);
@@ -251,6 +251,7 @@ export function RemoteSignerReconnectDialog(props: {
     setError(null);
     setCopyOk(false);
     setSessionLabel("");
+    setExistingReconnectAttempt(0);
   }, [clearPendingReconnectStorage]);
 
   const tryReconnectWithExistingSession = useCallback(async () => {
@@ -266,7 +267,7 @@ export function RemoteSignerReconnectDialog(props: {
     debugReconnectTrace("Starting existing-session reconnect", {
       sessionId: session.id,
       relayCount: relays.length,
-      timeoutMs: EXISTING_SESSION_RECONNECT_TIMEOUT_MS,
+      timeoutsMs: EXISTING_SESSION_RECONNECT_TIMEOUTS_MS,
       expectedPubkeyHex,
       status: session.metadata.status,
       lastActivityAt: session.metadata.lastActivityAt,
@@ -288,18 +289,21 @@ export function RemoteSignerReconnectDialog(props: {
 
     try {
       const clientSecretKey = parseSecretKeyHex(clientSecretKeyHex);
-      const tryConnect = async () =>
+      const tryConnect = async (timeoutMs: number) =>
         await connectNip46WithNostrConnectUri({
           uri,
           clientSecretKey,
           pool,
-          timeoutMs: EXISTING_SESSION_RECONNECT_TIMEOUT_MS,
+          timeoutMs,
           relaysToCloseOnCancel: relays,
         });
 
       let pubkey: string;
       try {
-        ({ pubkey } = await tryConnect());
+        setExistingReconnectAttempt(1);
+        ({ pubkey } = await tryConnect(
+          EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0]
+        ));
       } catch (firstError) {
         debugReconnectTrace("First existing-session reconnect attempt failed", {
           error:
@@ -313,7 +317,10 @@ export function RemoteSignerReconnectDialog(props: {
           setTimeout(resolve, EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS)
         );
         try {
-          ({ pubkey } = await tryConnect());
+          setExistingReconnectAttempt(2);
+          ({ pubkey } = await tryConnect(
+            EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[1]
+          ));
         } catch {
           debugReconnectTrace(
             "Second existing-session reconnect attempt failed"
@@ -363,6 +370,7 @@ export function RemoteSignerReconnectDialog(props: {
         sessionId: session.id,
         pubkey,
       });
+      setExistingReconnectAttempt(0);
       setState("connected");
       toast.success("Remote signer reconnected.");
       onReconnectSuccess?.(session.id);
@@ -380,6 +388,7 @@ export function RemoteSignerReconnectDialog(props: {
       });
       if (fallback.recovered) {
         debugReconnectTrace("Primary failover recovered reconnect");
+        setExistingReconnectAttempt(0);
         setState("connected");
         toast.success("Remote signer reconnected.");
         const recoveredSession = getActiveSession();
@@ -394,6 +403,7 @@ export function RemoteSignerReconnectDialog(props: {
       });
 
       setState("idle");
+      setExistingReconnectAttempt(0);
       setError(
         "Could not reconnect with existing session. If the session is still in your signer app, switch to it, reactivate the session, then return here — we’ll retry automatically. Or generate a new connection string below."
       );
@@ -793,8 +803,10 @@ export function RemoteSignerReconnectDialog(props: {
 
         {isReconnectingExisting ? (
           <div className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-sm">
-            Reconnecting with existing session… No need to switch to your signer
-            app.
+            Reconnecting with existing session (attempt{" "}
+            {Math.max(existingReconnectAttempt, 1)}/
+            {EXISTING_SESSION_RECONNECT_TIMEOUTS_MS.length})… No need to switch
+            to your signer app.
           </div>
         ) : null}
 
