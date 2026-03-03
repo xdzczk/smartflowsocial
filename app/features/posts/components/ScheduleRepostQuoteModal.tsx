@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -25,6 +26,118 @@ import {
   buildKind6RepostEvent,
   buildQuoteEvent,
 } from "../utils/repost-quote-events.client";
+
+interface SignedEventShape {
+  id: string;
+  pubkey: string;
+  created_at: number;
+  kind: number;
+  tags: string[][];
+  content: string;
+  sig: string;
+}
+
+function validateScheduleInput(
+  post: PostData | null,
+  mode: "repost" | "quote" | null,
+  scheduledFor: string,
+  userTimezone: string
+): { scheduledForUnix: number; signed: SignedEventShape } | string {
+  if (!post || !mode || !scheduledFor.trim()) {
+    return "Please select a date and time.";
+  }
+  const originalSignedEvent = post.signedEvent;
+  if (
+    !originalSignedEvent ||
+    typeof originalSignedEvent !== "object" ||
+    !("id" in originalSignedEvent) ||
+    !("pubkey" in originalSignedEvent)
+  ) {
+    return "Original event not found. Cannot schedule repost/quote.";
+  }
+  const zoned = parseDateTimeLocal(scheduledFor, userTimezone);
+  const utcZoned = zoned.withTimeZone("UTC");
+  const scheduledForUnix = toUnixTimestamp(utcZoned);
+  const minMs = getMinScheduleTimestampMs(
+    userTimezone,
+    post.scheduledAtUtc ?? undefined
+  );
+  if (utcZoned.epochMilliseconds < minMs) {
+    return post.scheduledAtUtc
+      ? "Repost/quote must be scheduled at or after the original post's scheduled time."
+      : "Please select a date and time in the future.";
+  }
+  const signed = originalSignedEvent as SignedEventShape;
+  return { scheduledForUnix, signed };
+}
+
+async function signAndSubmitRepost(
+  post: PostData,
+  signed: SignedEventShape,
+  scheduledForUnix: number,
+  fetcher: ReturnType<typeof useFetcher<{ success?: boolean; error?: string }>>
+): Promise<void> {
+  const repostEvent = buildKind6RepostEvent(signed, scheduledForUnix);
+  const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
+    content: repostEvent.content,
+    created_at: repostEvent.created_at,
+    kind: repostEvent.kind,
+    tags: repostEvent.tags,
+  });
+  const formData = new FormData();
+  formData.set("_action", "scheduleRepost");
+  formData.set("postId", post.id);
+  formData.set("scheduledFor", scheduledForUnix.toString());
+  formData.set("signedEvent", JSON.stringify(repostSignedEvent));
+  fetcher.submit(formData, { method: "post", action: "/dashboard/scheduled" });
+}
+
+async function signAndSubmitQuote(
+  post: PostData,
+  signed: SignedEventShape,
+  scheduledForUnix: number,
+  quoteCaption: string,
+  fetcher: ReturnType<typeof useFetcher<{ success?: boolean; error?: string }>>
+): Promise<void> {
+  const tagArray: string[][] = [];
+  const quoteEvent = buildQuoteEvent(
+    signed,
+    quoteCaption,
+    scheduledForUnix,
+    tagArray
+  );
+  const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
+    content: quoteEvent.content,
+    created_at: quoteEvent.created_at,
+    kind: quoteEvent.kind,
+    tags: quoteEvent.tags,
+  });
+  const formData = new FormData();
+  formData.set("_action", "scheduleQuote");
+  formData.set("postId", post.id);
+  formData.set("scheduledFor", scheduledForUnix.toString());
+  formData.set("signedEvent", JSON.stringify(quoteSignedEvent));
+  if (quoteCaption) {
+    formData.set("quoteCaption", quoteCaption);
+  }
+  fetcher.submit(formData, { method: "post", action: "/dashboard/scheduled" });
+}
+
+function getConfirmButtonLabel(
+  isSigning: boolean,
+  signAttempt: { attempt: number; maxAttempts: number } | null,
+  signElapsedSeconds: number,
+  isSubmitting: boolean,
+  mode: "repost" | "quote"
+): string {
+  if (isSigning) {
+    return signAttempt
+      ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${signElapsedSeconds}s`
+      : "Signing...";
+  }
+  if (isSubmitting) return "Signing...";
+  return mode === "repost" ? "Schedule repost" : "Schedule quote";
+}
 
 interface ScheduleRepostQuoteModalProps {
   open: boolean;
@@ -46,6 +159,8 @@ export function ScheduleRepostQuoteModal({
   const [scheduledFor, setScheduledFor] = useState("");
   const [quoteCaption, setQuoteCaption] = useState("");
   const [signingError, setSigningError] = useState<string | null>(null);
+  const [isSigning, setIsSigning] = useState(false);
+  const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
   const fetcher = useFetcher<{
     success?: boolean;
@@ -56,110 +171,46 @@ export function ScheduleRepostQuoteModal({
   const userTimezone = user?.timezone ?? "Etc/UTC";
 
   useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data) return;
+    if (fetcher.state === "idle" || !fetcher.data) return;
+    const successMsg =
+      mode === "repost"
+        ? "Repost scheduled successfully!"
+        : "Quote post scheduled successfully!";
     if (fetcher.data.success) {
-      toast.success(
-        mode === "repost"
-          ? "Repost scheduled successfully!"
-          : "Quote post scheduled successfully!"
-      );
+      toast.success(successMsg);
       onSuccess?.();
       onClose();
-    }
-    if (fetcher.data.error) {
+    } else if (fetcher.data.error) {
       toast.error(String(fetcher.data.error));
     }
   }, [fetcher.data, fetcher.state, mode, onClose, onSuccess]);
 
   const handleConfirm = async () => {
-    if (!post || !mode || !scheduledFor.trim()) {
-      toast.error("Please select a date and time.");
+    const validation = validateScheduleInput(
+      post,
+      mode,
+      scheduledFor,
+      userTimezone
+    );
+    if (typeof validation === "string") {
+      toast.error(validation);
       return;
     }
-    const originalSignedEvent = post.signedEvent;
-    if (
-      !originalSignedEvent ||
-      typeof originalSignedEvent !== "object" ||
-      !("id" in originalSignedEvent) ||
-      !("pubkey" in originalSignedEvent)
-    ) {
-      toast.error("Original event not found. Cannot schedule repost/quote.");
-      return;
-    }
+    const { scheduledForUnix, signed } = validation;
+    if (!post || !mode) return;
     try {
       setSigningError(null);
-      const zoned = parseDateTimeLocal(scheduledFor, userTimezone);
-      const utcZoned = zoned.withTimeZone("UTC");
-      const scheduledForUnix = toUnixTimestamp(utcZoned);
-
-      const minMs = getMinScheduleTimestampMs(
-        userTimezone,
-        post.scheduledAtUtc ?? undefined
-      );
-      if (utcZoned.epochMilliseconds < minMs) {
-        toast.error(
-          post.scheduledAtUtc
-            ? "Repost/quote must be scheduled at or after the original post's scheduled time."
-            : "Please select a date and time in the future."
-        );
-        return;
-      }
-
-      const signed = originalSignedEvent as {
-        id: string;
-        pubkey: string;
-        created_at: number;
-        kind: number;
-        tags: string[][];
-        content: string;
-        sig: string;
-      };
-
+      setIsSigning(true);
       if (mode === "repost") {
-        const repostEvent = buildKind6RepostEvent(signed, scheduledForUnix);
-        const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent(
-          {
-            content: repostEvent.content,
-            created_at: repostEvent.created_at,
-            kind: repostEvent.kind,
-            tags: repostEvent.tags,
-          }
-        );
-        const formData = new FormData();
-        formData.set("_action", "scheduleRepost");
-        formData.set("postId", post.id);
-        formData.set("scheduledFor", scheduledForUnix.toString());
-        formData.set("signedEvent", JSON.stringify(repostSignedEvent));
-        fetcher.submit(formData, {
-          method: "post",
-          action: "/dashboard/scheduled",
-        });
+        await signAndSubmitRepost(post, signed, scheduledForUnix, fetcher);
       } else {
-        const tagArray: string[][] = [];
-        const quoteEvent = buildQuoteEvent(
+        await signAndSubmitQuote(
+          post,
           signed,
-          quoteCaption,
           scheduledForUnix,
-          tagArray
+          quoteCaption,
+          fetcher
         );
-        const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
-          content: quoteEvent.content,
-          created_at: quoteEvent.created_at,
-          kind: quoteEvent.kind,
-          tags: quoteEvent.tags,
-        });
-        const formData = new FormData();
-        formData.set("_action", "scheduleQuote");
-        formData.set("postId", post.id);
-        formData.set("scheduledFor", scheduledForUnix.toString());
-        formData.set("signedEvent", JSON.stringify(quoteSignedEvent));
-        if (quoteCaption) {
-          formData.set("quoteCaption", quoteCaption);
-        }
-        fetcher.submit(formData, {
-          method: "post",
-          action: "/dashboard/scheduled",
-        });
       }
     } catch (error) {
       handleErrorSafely(error, {
@@ -172,6 +223,8 @@ export function ScheduleRepostQuoteModal({
           : "Failed to sign. Please try again.";
       setSigningError(msg);
       toast.error(msg);
+    } finally {
+      setIsSigning(false);
     }
   };
 
@@ -269,6 +322,21 @@ export function ScheduleRepostQuoteModal({
                     />
                   </div>
                 ) : null}
+                {isSigning ? (
+                  <div className="bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
+                    Waiting for signer approval…
+                    {signAttempt ? (
+                      <>
+                        {" "}
+                        Attempt {signAttempt.attempt} of{" "}
+                        {signAttempt.maxAttempts} · {signElapsedSeconds}s
+                      </>
+                    ) : null}
+                    {" — "}
+                    If you’re using a remote signer, open it to approve the
+                    request.
+                  </div>
+                ) : null}
                 {(fetcher.data?.error ?? signingError) ? (
                   <div className="border-destructive/30 bg-destructive/10 rounded-lg border p-3">
                     <div className="text-destructive text-sm">
@@ -291,14 +359,16 @@ export function ScheduleRepostQuoteModal({
                 <button
                   type="button"
                   onClick={() => void handleConfirm()}
-                  disabled={isSubmitting || !scheduledFor.trim()}
+                  disabled={isSubmitting || isSigning || !scheduledFor.trim()}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
                 >
-                  {isSubmitting
-                    ? "Signing..."
-                    : mode === "repost"
-                      ? "Schedule repost"
-                      : "Schedule quote"}
+                  {getConfirmButtonLabel(
+                    isSigning,
+                    signAttempt,
+                    signElapsedSeconds,
+                    isSubmitting,
+                    mode ?? "repost"
+                  )}
                 </button>
               ) : null}
             </div>

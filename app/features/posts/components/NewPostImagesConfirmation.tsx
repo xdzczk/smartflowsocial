@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
@@ -196,6 +197,7 @@ export default function NewPostImagesConfirmation({
   const isSubmitting = fetcher.state !== "idle";
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
+  const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
   const user = useOptionalUser();
   const { dateLocale } = useFormattedDate();
 
@@ -346,8 +348,16 @@ export default function NewPostImagesConfirmation({
 
         {isSigning ? (
           <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mx-auto mb-4 max-w-2xl rounded-md border bg-white/50 p-3 text-sm">
-            Waiting for signer approval… If you’re using a remote signer, open
-            it to approve the request.
+            Waiting for signer approval…
+            {signAttempt ? (
+              <>
+                {" "}
+                Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
+                {signElapsedSeconds}s
+              </>
+            ) : null}
+            {" — "}
+            If you’re using a remote signer, open it to approve the request.
           </div>
         ) : null}
         {signingError ? (

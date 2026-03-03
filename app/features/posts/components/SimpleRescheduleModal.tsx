@@ -5,6 +5,7 @@ import type { z } from "zod";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -86,6 +87,8 @@ export function SimpleRescheduleModal({
   const fetcher = useFetcher<FetcherData>();
   const [isSigningEvent, setIsSigningEvent] = React.useState(false);
   const [signingError, setSigningError] = React.useState<string | null>(null);
+  const { signAttempt, signElapsedSeconds } =
+    useSignAttemptProgress(isSigningEvent);
 
   // Determine if this is a longform post
   const isLongform = "title" in post;
@@ -421,8 +424,16 @@ export function SimpleRescheduleModal({
             </div>
             {isSigningEvent ? (
               <div className="bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
-                Waiting for signer approval… If you’re using a remote signer,
-                open it to approve the request.
+                Waiting for signer approval…
+                {signAttempt ? (
+                  <>
+                    {" "}
+                    Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
+                    {signElapsedSeconds}s
+                  </>
+                ) : null}
+                {" — "}
+                If you’re using a remote signer, open it to approve the request.
               </div>
             ) : null}
 

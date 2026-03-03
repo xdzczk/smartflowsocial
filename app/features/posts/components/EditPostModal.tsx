@@ -11,6 +11,7 @@ import {
   getClientDisplayErrorMessage,
   showErrorToastFromUnknown,
 } from "~/lib/error-handler.client";
+import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -222,6 +223,8 @@ export function EditPostModal({
   }>();
   const [isSigningEvent, setIsSigningEvent] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
+  const { signAttempt, signElapsedSeconds } =
+    useSignAttemptProgress(isSigningEvent);
   // "Also schedule repost/quote" (only for regular posts) – hours after main post (multiple)
   const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
   const [repostDelayList, setRepostDelayList] = useState<
@@ -750,8 +753,17 @@ export function EditPostModal({
               </div>
               {isSigningEvent ? (
                 <div className="bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
-                  Waiting for signer approval… If you’re using a remote signer,
-                  open it to approve the request.
+                  Waiting for signer approval…
+                  {signAttempt ? (
+                    <>
+                      {" "}
+                      Attempt {signAttempt.attempt} of {signAttempt.maxAttempts}{" "}
+                      · {signElapsedSeconds}s
+                    </>
+                  ) : null}
+                  {" — "}
+                  If you’re using a remote signer, open it to approve the
+                  request.
                 </div>
               ) : null}
 

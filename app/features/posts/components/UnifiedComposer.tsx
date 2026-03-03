@@ -18,6 +18,7 @@ import { Textarea } from "~/components/ui/textarea";
 import type { SignedEvent } from "~/features/nostr/types";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
+import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -286,6 +287,7 @@ export function UnifiedComposer({
   const [lastPublishFailed, setLastPublishFailed] = React.useState(false);
   const [signerLabel, setSignerLabel] = useState<string | null>(null);
   const [signerReady, setSignerReady] = useState<boolean | null>(null);
+  const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
   const refreshSignerState = React.useCallback(() => {
     void (async () => {
@@ -310,6 +312,7 @@ export function UnifiedComposer({
     return () =>
       window.removeEventListener(SIGNER_CONFIG_HYDRATED_EVENT, handler);
   }, [refreshSignerState]);
+
   const tags: string[] = [];
   const [selectedHashtags, setSelectedHashtags] = React.useState(
     () => initialDraft?.tags ?? ""
@@ -1188,8 +1191,16 @@ export function UnifiedComposer({
         {isSigning ? (
           <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mb-3 flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
             <span>
-              Waiting for signer approval… If you’re using a remote signer, open
-              it to approve the request.
+              Waiting for signer approval…
+              {signAttempt ? (
+                <>
+                  {" "}
+                  Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
+                  {signElapsedSeconds}s
+                </>
+              ) : null}
+              {" — "}
+              If you’re using a remote signer, open it to approve the request.
             </span>
             {canBypassToReconnectWhileSigning ? (
               <Button

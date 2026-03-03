@@ -11,6 +11,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import type { SignedEvent } from "~/features/nostr/types";
+import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -220,6 +221,7 @@ export default function TextPost({
   const user = useOptionalUser();
   const [isSigning, setIsSigning] = React.useState(false);
   const [signingError, setSigningError] = React.useState<string | null>(null);
+  const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
   // Note: User doesn't have hashTags property - this would need to come from hashTagPresets relation
   const tags: string[] = [];
   const [selectedHashtags, setSelectedHashtags] = React.useState("");
@@ -496,8 +498,16 @@ export default function TextPost({
     >
       {isSigning ? (
         <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mb-3 rounded-md border bg-white/50 p-3 text-sm">
-          Waiting for signer approval… If you’re using a remote signer, open it
-          to approve the request.
+          Waiting for signer approval…
+          {signAttempt ? (
+            <>
+              {" "}
+              Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
+              {signElapsedSeconds}s
+            </>
+          ) : null}
+          {" — "}
+          If you’re using a remote signer, open it to approve the request.
         </div>
       ) : null}
       {signingError ? (
@@ -604,7 +614,9 @@ export default function TextPost({
                   aria-hidden
                 />
                 {isSigning
-                  ? "Waiting for signer…"
+                  ? signAttempt
+                    ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${signElapsedSeconds}s`
+                    : "Waiting for signer…"
                   : fetcher.state !== "idle"
                     ? "Scheduling..."
                     : "Sign and Schedule"}
@@ -895,7 +907,9 @@ export default function TextPost({
               aria-hidden
             />
             {isSigning
-              ? "Waiting for signer…"
+              ? signAttempt
+                ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${signElapsedSeconds}s`
+                : "Waiting for signer…"
               : fetcher.state !== "idle"
                 ? "Posting..."
                 : "Post Now"}

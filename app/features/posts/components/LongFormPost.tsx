@@ -6,6 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import {
   SMALL_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -482,6 +483,7 @@ export default function LongFormPost({
     quoteEntries,
     userTimezone,
   });
+  const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
   // Form validation using Zod
   const isFormValid = form.formState.isValid && !!image;
@@ -691,6 +693,8 @@ export default function LongFormPost({
                   }
                   wordCount={wordCount}
                   isSigning={isSigning}
+                  signAttempt={signAttempt}
+                  signElapsedSeconds={signElapsedSeconds}
                   onPreview={() => {
                     if (onPreview) {
                       onPreview({
@@ -713,8 +717,17 @@ export default function LongFormPost({
 
                 {isSigning ? (
                   <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground rounded-md border bg-white/50 p-3 text-sm">
-                    Waiting for signer approval… If you’re using a remote
-                    signer, open it to approve the request.
+                    Waiting for signer approval…
+                    {signAttempt ? (
+                      <>
+                        {" "}
+                        Attempt {signAttempt.attempt} of{" "}
+                        {signAttempt.maxAttempts} · {signElapsedSeconds}s
+                      </>
+                    ) : null}
+                    {" — "}
+                    If you’re using a remote signer, open it to approve the
+                    request.
                   </div>
                 ) : null}
                 {signingError ? (

@@ -67,12 +67,23 @@ function isConnectionLikeError(error: unknown): boolean {
   );
 }
 
-/** True if we should clear the NIP-46 signer cache (connection dropped). False for sign timeout so we keep the same signer and let the user retry. */
+/**
+ * True if we should clear the NIP-46 signer cache.
+ * - Connection errors (subscription closed, etc.): clear so we reconnect.
+ * - Sign timeout ("did not respond"): keep cache on first timeout so user can retry with same signer.
+ *   After 1+ sign timeout, clear so the next retry does a full reconnect; this fixes the case where
+ *   both app and Primal were closed and the cached signer's channel no longer receives responses
+ *   after Primal is reopened and "resumed".
+ */
 function shouldClearSignerCacheOnError(error: unknown): boolean {
   if (error instanceof RemoteSignerTimeoutError) {
     const msg = error.message.toLowerCase();
-    if (msg.includes("did not respond") || msg.includes("approve the request"))
-      return false;
+    if (
+      msg.includes("did not respond") ||
+      msg.includes("approve the request")
+    ) {
+      return signRetryCount >= 1;
+    }
   }
   return isConnectionLikeError(error);
 }
@@ -240,6 +251,49 @@ function markActiveRemoteSessionStale(error: unknown): void {
   });
 }
 
+async function handleConfiguredSignerError(
+  err: unknown,
+  prefersRemoteSigner: boolean
+): Promise<void> {
+  if (!prefersRemoteSigner) {
+    incrementSignRetryCount();
+    return;
+  }
+  const isConnectionError = isConnectionLikeError(err);
+  if (isConnectionError) {
+    const isSignTimeout =
+      err instanceof RemoteSignerTimeoutError &&
+      (err.message.toLowerCase().includes("did not respond") ||
+        err.message.toLowerCase().includes("approve the request"));
+    if (isSignTimeout) {
+      incrementSignRetryCount();
+    } else {
+      incrementConnectionRetryCount();
+    }
+    const clearCache = shouldClearSignerCacheOnError(err);
+    debugSignerTrace("Configured signer connection-like error", {
+      error: err instanceof Error ? err.message : String(err),
+      connectionRetryCount,
+      signRetryCount,
+      clearCache,
+    });
+    markActiveRemoteSessionStale(err);
+    if (clearCache) {
+      await resetSignerCacheBestEffort();
+    }
+    if (err instanceof RemoteSignerTimeoutError) {
+      emitRemoteSignerTimeoutEvent({ message: err.message });
+    } else {
+      emitRemoteSignerTimeoutEvent({
+        message:
+          "Connection to remote signer failed. Please try again or reconnect your signer.",
+      });
+    }
+  } else {
+    incrementSignRetryCount();
+  }
+}
+
 async function trySignWithConfiguredSigner(
   nostrEvent: NostrEvent
 ): Promise<SignedEvent | null> {
@@ -279,9 +333,7 @@ async function trySignWithConfiguredSigner(
           )
         : await signPromise;
 
-    // Reset retry counts on success
     resetNostrRetryCounts();
-    // So the next getActiveSigner() skips verification and reuses this signer for the next post
     if (
       activeSigner.type === "nip46" &&
       typeof signerManager.recordSuccessfulSign === "function"
@@ -291,36 +343,8 @@ async function trySignWithConfiguredSigner(
 
     return normalizeSignResult(signResult, nostrEvent);
   } catch (err) {
-    if (prefersRemoteSigner) {
-      const isConnectionError = isConnectionLikeError(err);
-      const clearCache = shouldClearSignerCacheOnError(err);
-
-      if (isConnectionError) {
-        debugSignerTrace("Configured signer connection-like error", {
-          error: err instanceof Error ? err.message : String(err),
-          connectionRetryCount,
-          signRetryCount,
-          clearCache,
-        });
-        incrementConnectionRetryCount();
-        markActiveRemoteSessionStale(err);
-        if (clearCache) {
-          await resetSignerCacheBestEffort();
-        }
-        if (err instanceof RemoteSignerTimeoutError) {
-          emitRemoteSignerTimeoutEvent({ message: err.message });
-        } else {
-          emitRemoteSignerTimeoutEvent({
-            message:
-              "Connection to remote signer failed. Please try again or reconnect your signer.",
-          });
-        }
-      } else {
-        incrementSignRetryCount();
-      }
-      throw err;
-    }
-    return null;
+    await handleConfiguredSignerError(err, prefersRemoteSigner);
+    throw err;
   }
 }
 
@@ -363,6 +387,18 @@ async function signEventWithRetryLogic(
   };
 
   while (retries < maxRetries) {
+    const attemptNum = retries + 1;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("nostr-sign-attempt", {
+          detail: {
+            attempt: attemptNum,
+            maxAttempts: maxRetries,
+            startedAt: Date.now(),
+          },
+        })
+      );
+    }
     debugSignerTrace("Retry loop iteration", {
       retries,
       maxRetries,

@@ -18,6 +18,9 @@ interface LongFormActionButtonsProps {
   /** Shown in panel next to status (e.g. "234 words") */
   wordCount?: number;
   isSigning?: boolean;
+  /** When signing, optional attempt progress for "Attempt X of Y · Zs" in button label */
+  signAttempt?: { attempt: number; maxAttempts: number } | null;
+  signElapsedSeconds?: number;
   onPreview: () => void;
   onSchedule: () => void;
   onPublish: () => void;
@@ -45,6 +48,20 @@ function formatScheduleLabel(scheduledFor: string): string {
   }
 }
 
+function getSigningButtonLabel(
+  isSigning: boolean,
+  signAttempt: { attempt: number; maxAttempts: number } | null | undefined,
+  signElapsedSeconds: number,
+  idleLabel: string,
+  busyLabel: string
+): string {
+  if (!isSigning) return idleLabel;
+  if (signAttempt) {
+    return `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${signElapsedSeconds}s`;
+  }
+  return busyLabel;
+}
+
 export function LongFormActionButtons({
   fetcherState,
   isFormValid,
@@ -54,6 +71,8 @@ export function LongFormActionButtons({
   scheduledForLabel,
   wordCount = 0,
   isSigning = false,
+  signAttempt = null,
+  signElapsedSeconds = 0,
   onPreview,
   onSchedule,
   onPublish,
@@ -116,11 +135,13 @@ export function LongFormActionButtons({
             disabled={isDisabled}
             className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 px-8 font-medium"
           >
-            {isSigning
-              ? "Waiting for signer…"
-              : fetcherState !== "idle"
-                ? "Scheduling..."
-                : scheduleLabel}
+            {getSigningButtonLabel(
+              isSigning,
+              signAttempt,
+              signElapsedSeconds,
+              fetcherState !== "idle" ? "Scheduling..." : scheduleLabel,
+              "Waiting for signer…"
+            )}
           </Button>
         ) : (
           <Button
@@ -129,11 +150,13 @@ export function LongFormActionButtons({
             disabled={isDisabled}
             className="bg-success hover:bg-success/90 flex-1 px-8 font-medium text-white"
           >
-            {isSigning
-              ? "Waiting for signer…"
-              : fetcherState !== "idle"
-                ? "Publishing..."
-                : "Publish to NOSTR"}
+            {getSigningButtonLabel(
+              isSigning,
+              signAttempt,
+              signElapsedSeconds,
+              fetcherState !== "idle" ? "Publishing..." : "Publish to NOSTR",
+              "Waiting for signer…"
+            )}
           </Button>
         )}
       </div>

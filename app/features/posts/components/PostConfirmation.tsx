@@ -6,6 +6,7 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import type { SignedEvent } from "~/features/nostr/types";
 import { logClientError } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { fromUnixTimestamp, formatForDisplay } from "~/lib/temporal";
 
@@ -140,6 +141,7 @@ export default function PostConfirmation({
     current: number;
     total: number;
   } | null>(null);
+  const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
   const actionError =
     fetcher.state === "idle" &&
@@ -355,11 +357,20 @@ export default function PostConfirmation({
         {isSigning ? (
           <div className="bg-muted text-muted-foreground mx-auto mb-4 max-w-3xl rounded-md border p-3 text-sm">
             Waiting for signer approval…
+            {signAttempt ? (
+              <>
+                {" "}
+                Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
+                {signElapsedSeconds}s
+              </>
+            ) : null}
             {signingProgress ? (
               <span className="text-muted-foreground ml-2">
-                ({signingProgress.current}/{signingProgress.total})
+                {" "}
+                (post {signingProgress.current}/{signingProgress.total})
               </span>
-            ) : null}{" "}
+            ) : null}
+            {" — "}
             If you’re using a remote signer, open it to approve the request.
           </div>
         ) : null}
