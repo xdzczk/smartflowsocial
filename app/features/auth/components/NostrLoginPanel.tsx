@@ -1,4 +1,4 @@
-import { useLocation } from "@remix-run/react";
+import { useLocation, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ExternalLink, Loader2 } from "lucide-react";
 import { generateSecretKey, SimplePool } from "nostr-tools";
@@ -412,6 +412,7 @@ async function postJson<T>(url: string, body?: unknown): Promise<T> {
 // eslint-disable-next-line sonarjs/cognitive-complexity -- Authentication flows require handling many edge cases, error states, and platform-specific behaviors
 export default function NostrLoginPanel() {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const expectedPubkey = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -1588,10 +1589,10 @@ export default function NostrLoginPanel() {
         cacheNip46SignerFromLogin(signer);
         signerTransferredToManagerRef.current = true;
       }
-      // Always redirect to dashboard after sign-in (server returns redirectTo: "/dashboard")
+      // Use client-side navigation so the in-memory NIP-46 signer cache is preserved (full reload would lose it)
       queryClient.clear();
       clearPersistedState();
-      window.location.href = verify.redirectTo;
+      navigate(verify.redirectTo, { replace: true });
     } catch (e) {
       const n = normalizeError(e);
       // Map a few known server messages to typed errors
@@ -1623,7 +1624,7 @@ export default function NostrLoginPanel() {
       setLastFailureOrigin("verify");
       setState("failed");
     }
-  }, [pubkey, signer, queryClient]);
+  }, [pubkey, signer, queryClient, navigate]);
 
   // When we land on "requesting_signature" (after extension or remote signer is ready),
   // trigger the actual signature request. The UI shows "Waiting for signature..." but we
