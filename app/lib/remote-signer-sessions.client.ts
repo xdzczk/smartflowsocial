@@ -12,21 +12,47 @@ export interface ConnectionLogEntry {
   details?: Record<string, unknown>;
 }
 
+/** Connection-level metadata (no event history). */
+export interface RemoteSignerConnectionMetadata {
+  status: ConnectionStatus;
+  signerAppName: string | null;
+  pubkey: string | null;
+  relays: string[];
+  connectedAt: number | null;
+  lastActivityAt: number | null;
+  lastError: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** A NIP-46 connection (config + metadata). Contains multiple sessions over time. */
+export interface RemoteSignerConnection {
+  id: string;
+  label: string;
+  config: ActiveSignerConfig;
+  metadata: RemoteSignerConnectionMetadata;
+  /** Session we are currently logging to (null if disconnected). */
+  currentSessionId: string | null;
+}
+
+/** One time-bound session under a connection; has its own event log. */
+export interface RemoteSignerSessionRecord {
+  id: string;
+  connectionId: string;
+  startedAt: number;
+  endedAt: number | null;
+  history: ConnectionLogEntry[];
+}
+
+/**
+ * Legacy view: connection + current session history. Used by getActiveSession/getSessionById
+ * until all call sites use connections and sessions.
+ */
 export interface RemoteSignerSession {
   id: string;
   label: string;
   config: ActiveSignerConfig;
-  metadata: {
-    status: ConnectionStatus;
-    signerAppName: string | null;
-    pubkey: string | null;
-    relays: string[];
-    connectedAt: number | null;
-    lastActivityAt: number | null;
-    lastError: string | null;
-    createdAt: number;
-    updatedAt: number;
-  };
+  metadata: RemoteSignerConnectionMetadata;
   history: ConnectionLogEntry[];
 }
 
@@ -35,15 +61,28 @@ interface MatchOrCreateSessionOptions {
   signerPubkey?: string | null;
 }
 
-interface RemoteSignerSessionsStorage {
+/** Legacy v1 storage (flat sessions with history on each). */
+interface RemoteSignerSessionsStorageV1 {
   sessions: RemoteSignerSession[];
   activeSessionId: string | null;
-  version: number;
+  version: 1;
+}
+
+/** V2 storage: connections and sessions. */
+interface RemoteSignerSessionsStorageV2 {
+  version: 2;
+  connections: RemoteSignerConnection[];
+  sessions: RemoteSignerSessionRecord[];
+  activeConnectionId: string | null;
 }
 
 const STORAGE_KEY_PREFIX = "__smartflow_remote_signer_sessions_v1";
+const STORAGE_KEY_V2_PREFIX = "__smartflow_remote_signer_sessions_v2";
 const MAX_HISTORY_ENTRIES = 100;
+const MAX_SESSIONS_PER_CONNECTION = 20;
 const ACTIVE_SESSION_CHANGED_EVENT = "remote-signer-active-session-changed";
+const ACTIVE_CONNECTION_CHANGED_EVENT =
+  "remote-signer-active-connection-changed";
 
 /**
  * Current user npub for per-profile storage. When set, sessions are keyed by
@@ -102,94 +141,458 @@ function getStorageKey(): string {
   return STORAGE_KEY_PREFIX;
 }
 
+function getStorageKeyV2(): string {
+  if (currentUserNpub) {
+    return `${STORAGE_KEY_V2_PREFIX}_${currentUserNpub}`;
+  }
+  return STORAGE_KEY_V2_PREFIX;
+}
+
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
-function getStorage(): RemoteSignerSessionsStorage {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return { sessions: [], activeSessionId: null, version: 1 };
-  }
+const EMPTY_V2: RemoteSignerSessionsStorageV2 = {
+  version: 2,
+  connections: [],
+  sessions: [],
+  activeConnectionId: null,
+};
 
-  try {
-    const key = getStorageKey();
-    const stored = localStorage.getItem(key);
-    if (!stored) {
-      // Backward compatibility: if profile identifier format changed
-      // (hex <-> npub), read from the old key and migrate.
-      if (currentUserNpub) {
-        for (const alternate of getAlternateUserIdentifiers(currentUserNpub)) {
-          const alternateKey = `${STORAGE_KEY_PREFIX}_${alternate}`;
-          const alternateStored = localStorage.getItem(alternateKey);
-          if (!alternateStored) {
-            continue;
-          }
-          try {
-            const parsed = JSON.parse(
-              alternateStored
-            ) as RemoteSignerSessionsStorage;
-            localStorage.setItem(key, JSON.stringify(parsed));
-            return parsed;
-          } catch {
-            // Ignore invalid legacy data and continue fallback lookup.
-          }
-        }
-      }
-      return { sessions: [], activeSessionId: null, version: 1 };
+function migrateV1ToV2(
+  v1: RemoteSignerSessionsStorageV1
+): RemoteSignerSessionsStorageV2 {
+  const connections: RemoteSignerConnection[] = [];
+  const sessions: RemoteSignerSessionRecord[] = [];
+  for (const old of v1.sessions) {
+    const connectionId = old.id;
+    const sessionId = generateId();
+    connections.push({
+      id: connectionId,
+      label: old.label,
+      config: old.config,
+      metadata: old.metadata,
+      currentSessionId: sessionId,
+    });
+    sessions.push({
+      id: sessionId,
+      connectionId,
+      startedAt: old.metadata.createdAt,
+      endedAt: null,
+      history: old.history,
+    });
+  }
+  return {
+    version: 2,
+    connections,
+    sessions,
+    activeConnectionId: v1.activeSessionId,
+  };
+}
+
+function readV1Storage(): RemoteSignerSessionsStorageV1 | null {
+  const key = getStorageKey();
+  const stored = localStorage.getItem(key);
+  if (stored) {
+    try {
+      return JSON.parse(stored) as RemoteSignerSessionsStorageV1;
+    } catch {
+      // fall through
     }
-    return JSON.parse(stored) as RemoteSignerSessionsStorage;
+  }
+  if (currentUserNpub) {
+    for (const alternate of getAlternateUserIdentifiers(currentUserNpub)) {
+      const alternateKey = `${STORAGE_KEY_PREFIX}_${alternate}`;
+      const alternateStored = localStorage.getItem(alternateKey);
+      if (!alternateStored) continue;
+      try {
+        return JSON.parse(alternateStored) as RemoteSignerSessionsStorageV1;
+      } catch {
+        // continue
+      }
+    }
+  }
+  return null;
+}
+
+function getStorage(): RemoteSignerSessionsStorageV2 {
+  if (typeof window === "undefined" || typeof localStorage === "undefined") {
+    return { ...EMPTY_V2 };
+  }
+  try {
+    const keyV2 = getStorageKeyV2();
+    const storedV2 = localStorage.getItem(keyV2);
+    if (storedV2) {
+      const parsed = JSON.parse(storedV2) as RemoteSignerSessionsStorageV2;
+      if (Array.isArray(parsed.connections) && Array.isArray(parsed.sessions)) {
+        return parsed;
+      }
+    }
+    const v1 = readV1Storage();
+    if (v1?.version === 1 && Array.isArray(v1.sessions)) {
+      const v2 = migrateV1ToV2(v1);
+      localStorage.setItem(keyV2, JSON.stringify(v2));
+      return v2;
+    }
+    return { ...EMPTY_V2 };
   } catch {
-    return { sessions: [], activeSessionId: null, version: 1 };
+    return { ...EMPTY_V2 };
   }
 }
 
-function saveStorage(storage: RemoteSignerSessionsStorage): void {
+function saveStorage(storage: RemoteSignerSessionsStorageV2): void {
   if (typeof window === "undefined" || typeof localStorage === "undefined") {
     return;
   }
 
   try {
-    localStorage.setItem(getStorageKey(), JSON.stringify(storage));
+    localStorage.setItem(getStorageKeyV2(), JSON.stringify(storage));
   } catch (error) {
     console.warn("Failed to save remote signer sessions:", error);
   }
 }
 
-function normalizeActiveSessionId(storage: RemoteSignerSessionsStorage): void {
+function normalizeActiveConnectionId(
+  storage: RemoteSignerSessionsStorageV2
+): void {
   if (
-    storage.activeSessionId &&
-    !storage.sessions.some((session) => session.id === storage.activeSessionId)
+    storage.activeConnectionId &&
+    !storage.connections.some((c) => c.id === storage.activeConnectionId)
   ) {
-    storage.activeSessionId = null;
+    storage.activeConnectionId = null;
+  }
+}
+
+function normalizeCurrentSessionIds(
+  storage: RemoteSignerSessionsStorageV2
+): void {
+  for (const conn of storage.connections) {
+    if (
+      conn.currentSessionId &&
+      !storage.sessions.some(
+        (s) => s.id === conn.currentSessionId && s.connectionId === conn.id
+      )
+    ) {
+      (conn as { currentSessionId: string | null }).currentSessionId = null;
+    }
   }
 }
 
 function updateStorage<T>(
-  mutator: (storage: RemoteSignerSessionsStorage) => T
+  mutator: (storage: RemoteSignerSessionsStorageV2) => T
 ): T {
   const storage = getStorage();
   const result = mutator(storage);
-  normalizeActiveSessionId(storage);
+  normalizeActiveConnectionId(storage);
+  normalizeCurrentSessionIds(storage);
   saveStorage(storage);
   return result;
 }
 
+function _sessionRecordToLegacyView(
+  conn: RemoteSignerConnection,
+  session: RemoteSignerSessionRecord
+): RemoteSignerSession {
+  return {
+    id: conn.id,
+    label: conn.label,
+    config: conn.config,
+    metadata: conn.metadata,
+    history: session.history,
+  };
+}
+
+function connectionToLegacyView(
+  conn: RemoteSignerConnection,
+  currentSession: RemoteSignerSessionRecord | null
+): RemoteSignerSession {
+  return {
+    id: conn.id,
+    label: conn.label,
+    config: conn.config,
+    metadata: conn.metadata,
+    history: currentSession?.history ?? [],
+  };
+}
+
+// ---------- New connection/session APIs ----------
+
+export function getAllConnections(): RemoteSignerConnection[] {
+  const storage = getStorage();
+  return storage.connections;
+}
+
+export function getActiveConnection(): RemoteSignerConnection | null {
+  const storage = getStorage();
+  if (!storage.activeConnectionId) return null;
+  return (
+    storage.connections.find((c) => c.id === storage.activeConnectionId) ?? null
+  );
+}
+
+export function getActiveConnectionId(): string | null {
+  return getStorage().activeConnectionId;
+}
+
+export function getConnectionById(id: string): RemoteSignerConnection | null {
+  const storage = getStorage();
+  return storage.connections.find((c) => c.id === id) ?? null;
+}
+
+export function getSessionsForConnection(
+  connectionId: string,
+  limit = MAX_SESSIONS_PER_CONNECTION
+): RemoteSignerSessionRecord[] {
+  const storage = getStorage();
+  const list = storage.sessions
+    .filter((s) => s.connectionId === connectionId)
+    .sort((a, b) => b.startedAt - a.startedAt);
+  return list.slice(0, limit);
+}
+
+export function getSessionById(
+  sessionId: string
+): RemoteSignerSessionRecord | null {
+  const storage = getStorage();
+  return storage.sessions.find((s) => s.id === sessionId) ?? null;
+}
+
+export function getCurrentSessionForConnection(
+  connectionId: string
+): RemoteSignerSessionRecord | null {
+  const conn = getConnectionById(connectionId);
+  if (!conn?.currentSessionId) return null;
+  const session = getSessionById(conn.currentSessionId);
+  if (session?.connectionId !== connectionId) return null;
+  if (session.endedAt != null) return null;
+  return session;
+}
+
+export function startNewSessionForConnection(
+  connectionId: string
+): RemoteSignerSessionRecord {
+  return updateStorage((storage) => {
+    const conn = storage.connections.find((c) => c.id === connectionId);
+    if (!conn) {
+      throw new Error(`Connection not found: ${connectionId}`);
+    }
+    const now = Date.now();
+    const session: RemoteSignerSessionRecord = {
+      id: generateId(),
+      connectionId,
+      startedAt: now,
+      endedAt: null,
+      history: [],
+    };
+    storage.sessions.push(session);
+    const cap = MAX_SESSIONS_PER_CONNECTION;
+    const forConn = storage.sessions
+      .filter((s) => s.connectionId === connectionId)
+      .sort((a, b) => b.startedAt - a.startedAt);
+    if (forConn.length > cap) {
+      const toRemove = forConn.slice(cap).map((s) => s.id);
+      storage.sessions = storage.sessions.filter(
+        (s) => s.connectionId !== connectionId || !toRemove.includes(s.id)
+      );
+    }
+    (conn as { currentSessionId: string | null }).currentSessionId = session.id;
+    return session;
+  });
+}
+
+export function endCurrentSessionForConnection(connectionId: string): void {
+  updateStorage((storage) => {
+    const conn = storage.connections.find((c) => c.id === connectionId);
+    if (!conn?.currentSessionId) return;
+    const session = storage.sessions.find(
+      (s) => s.id === conn.currentSessionId && s.connectionId === connectionId
+    );
+    if (session) {
+      session.endedAt = Date.now();
+    }
+    (conn as { currentSessionId: string | null }).currentSessionId = null;
+  });
+}
+
+export function createConnection(
+  config: ActiveSignerConfig,
+  label: string
+): RemoteSignerConnection {
+  return updateStorage((storage) => {
+    const now = Date.now();
+    const conn: RemoteSignerConnection = {
+      id: generateId(),
+      label,
+      config,
+      metadata: {
+        status: "disconnected",
+        signerAppName: null,
+        pubkey: null,
+        relays: [],
+        connectedAt: null,
+        lastActivityAt: null,
+        lastError: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      currentSessionId: null,
+    };
+    storage.connections.push(conn);
+    return conn;
+  });
+}
+
+export function updateConnection(
+  connectionId: string,
+  updates: Partial<
+    Pick<RemoteSignerConnection, "label" | "config" | "metadata">
+  >
+): void {
+  updateStorage((storage) => {
+    const conn = storage.connections.find((c) => c.id === connectionId);
+    if (!conn) return;
+    if (updates.label !== undefined) conn.label = updates.label;
+    if (updates.config !== undefined) conn.config = updates.config;
+    if (updates.metadata !== undefined) {
+      conn.metadata = {
+        ...conn.metadata,
+        ...updates.metadata,
+        updatedAt: Date.now(),
+      };
+    }
+  });
+}
+
+export function updateSessionRecord(
+  sessionId: string,
+  updates: Partial<Pick<RemoteSignerSessionRecord, "endedAt">>
+): void {
+  updateStorage((storage) => {
+    const session = storage.sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+    if (updates.endedAt !== undefined) session.endedAt = updates.endedAt;
+  });
+}
+
+export function removeConnection(connectionId: string): void {
+  updateStorage((storage) => {
+    storage.connections = storage.connections.filter(
+      (c) => c.id !== connectionId
+    );
+    storage.sessions = storage.sessions.filter(
+      (s) => s.connectionId !== connectionId
+    );
+    if (storage.activeConnectionId === connectionId) {
+      storage.activeConnectionId = null;
+    }
+  });
+}
+
+export function setActiveConnection(connectionId: string | null): void {
+  updateStorage((storage) => {
+    storage.activeConnectionId = connectionId;
+  });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent(ACTIVE_CONNECTION_CHANGED_EVENT, { detail: connectionId })
+    );
+    window.dispatchEvent(
+      new CustomEvent(ACTIVE_SESSION_CHANGED_EVENT, { detail: connectionId })
+    );
+  }
+}
+
+export function clearActiveConnection(): void {
+  setActiveConnection(null);
+}
+
+/** Append a log entry to the current session of the given connection; creates session if needed. */
+export function addConnectionLog(
+  connectionId: string,
+  entry: Omit<ConnectionLogEntry, "id" | "timestamp">
+): void {
+  const withMeta: ConnectionLogEntry = {
+    ...entry,
+    id: generateId(),
+    timestamp: Date.now(),
+  };
+  updateStorage((storage) => {
+    const conn = storage.connections.find((c) => c.id === connectionId);
+    if (!conn) return;
+    let session = conn.currentSessionId
+      ? storage.sessions.find(
+          (s) =>
+            s.id === conn.currentSessionId && s.connectionId === connectionId
+        )
+      : null;
+    if (!session) {
+      const newSession: RemoteSignerSessionRecord = {
+        id: generateId(),
+        connectionId,
+        startedAt: withMeta.timestamp,
+        endedAt: null,
+        history: [],
+      };
+      storage.sessions.push(newSession);
+      (conn as { currentSessionId: string | null }).currentSessionId =
+        newSession.id;
+      session = newSession;
+      const forConn = storage.sessions
+        .filter((s) => s.connectionId === connectionId)
+        .sort((a, b) => b.startedAt - a.startedAt);
+      if (forConn.length > MAX_SESSIONS_PER_CONNECTION) {
+        const toRemove = forConn
+          .slice(MAX_SESSIONS_PER_CONNECTION)
+          .map((s) => s.id);
+        storage.sessions = storage.sessions.filter(
+          (s) => s.connectionId !== connectionId || !toRemove.includes(s.id)
+        );
+      }
+    }
+    session.history.push(withMeta);
+    if (session.history.length > MAX_HISTORY_ENTRIES) {
+      session.history = session.history.slice(-MAX_HISTORY_ENTRIES);
+    }
+  });
+}
+
+export function getSessionHistory(
+  sessionId: string,
+  limit = MAX_HISTORY_ENTRIES
+): ConnectionLogEntry[] {
+  const session = getSessionById(sessionId);
+  if (!session) return [];
+  return session.history.slice(-limit);
+}
+
+// ---------- Legacy session APIs (connection + current session view) ----------
+// Prefer getAllConnections, getActiveConnection, getSessionsForConnection, etc.
+// when adding new code. These remain for backward compatibility with existing call sites.
+
 export function getAllSessions(): RemoteSignerSession[] {
   const storage = getStorage();
-  return storage.sessions;
+  return storage.connections.map((conn) => {
+    const current = conn.currentSessionId
+      ? storage.sessions.find(
+          (s) => s.id === conn.currentSessionId && s.connectionId === conn.id
+        )
+      : null;
+    return connectionToLegacyView(conn, current ?? null);
+  });
 }
 
 export function getActiveSession(): RemoteSignerSession | null {
-  const storage = getStorage();
-  if (!storage.activeSessionId) {
-    return null;
-  }
-  return storage.sessions.find((s) => s.id === storage.activeSessionId) ?? null;
+  const conn = getActiveConnection();
+  if (!conn) return null;
+  const current = getCurrentSessionForConnection(conn.id);
+  return connectionToLegacyView(conn, current);
 }
 
-export function getSessionById(id: string): RemoteSignerSession | null {
-  const storage = getStorage();
-  return storage.sessions.find((s) => s.id === id) ?? null;
+export function getSessionByIdLegacy(id: string): RemoteSignerSession | null {
+  const conn = getConnectionById(id);
+  if (!conn) return null;
+  const current = getCurrentSessionForConnection(conn.id);
+  return connectionToLegacyView(conn, current);
 }
 
 function normalizePubkeyHex(pubkey: string | null | undefined): string | null {
@@ -252,247 +655,167 @@ function isConfigEquivalent(
   return false;
 }
 
-function getLatestSession(
-  sessions: RemoteSignerSession[]
-): RemoteSignerSession | null {
-  if (sessions.length === 0) {
-    return null;
-  }
-  return sessions.reduce((latest, candidate) =>
-    candidate.metadata.updatedAt > latest.metadata.updatedAt
-      ? candidate
-      : latest
+function getLatestConnection(
+  connections: RemoteSignerConnection[]
+): RemoteSignerConnection | null {
+  if (connections.length === 0) return null;
+  return connections.reduce((latest, c) =>
+    c.metadata.updatedAt > latest.metadata.updatedAt ? c : latest
   );
+}
+
+export function findMatchingConnectionForConfig(
+  config: ActiveSignerConfig,
+  signerPubkey?: string | null
+): RemoteSignerConnection | null {
+  const connections = getAllConnections();
+  if (config.type !== "nip46") return null;
+  const pubkeyHex = normalizePubkeyHex(signerPubkey);
+  if (pubkeyHex) {
+    const byPubkey = connections.filter((c) => {
+      if (c.config.type !== "nip46" || c.config.method !== config.method)
+        return false;
+      return normalizePubkeyHex(c.metadata.pubkey) === pubkeyHex;
+    });
+    const latest = getLatestConnection(byPubkey);
+    if (latest) return latest;
+  }
+  const byConfig = connections.filter((c) =>
+    isConfigEquivalent(c.config, config)
+  );
+  return getLatestConnection(byConfig);
 }
 
 export function findMatchingSessionForConfig(
   config: ActiveSignerConfig,
   signerPubkey?: string | null
 ): RemoteSignerSession | null {
-  const sessions = getAllSessions();
-  if (config.type !== "nip46") {
-    return null;
-  }
+  const conn = findMatchingConnectionForConfig(config, signerPubkey);
+  if (!conn) return null;
+  return getSessionByIdLegacy(conn.id);
+}
 
-  const pubkeyHex = normalizePubkeyHex(signerPubkey);
-  if (pubkeyHex) {
-    const matchedByPubkey = sessions.filter((session) => {
-      if (
-        session.config.type !== "nip46" ||
-        session.config.method !== config.method
-      ) {
-        return false;
-      }
-      return normalizePubkeyHex(session.metadata.pubkey) === pubkeyHex;
-    });
-    const latestByPubkey = getLatestSession(matchedByPubkey);
-    if (latestByPubkey) {
-      return latestByPubkey;
-    }
-  }
-
-  const matchedByConfig = sessions.filter((session) =>
-    isConfigEquivalent(session.config, config)
+export function matchOrCreateConnection(
+  config: ActiveSignerConfig,
+  options?: MatchOrCreateSessionOptions
+): RemoteSignerConnection {
+  const existing = findMatchingConnectionForConfig(
+    config,
+    options?.signerPubkey
   );
-  return getLatestSession(matchedByConfig);
+  if (existing) {
+    const updates: Partial<Pick<RemoteSignerConnection, "label" | "config">> =
+      {};
+    if (options?.label && existing.label !== options.label)
+      updates.label = options.label;
+    if (existing.config !== config) updates.config = config;
+    if (Object.keys(updates).length > 0) {
+      updateConnection(existing.id, updates);
+      return getConnectionById(existing.id) ?? { ...existing, ...updates };
+    }
+    return existing;
+  }
+  return createConnection(
+    config,
+    options?.label ?? `Connection ${getAllConnections().length + 1}`
+  );
 }
 
 export function matchOrCreateSession(
   config: ActiveSignerConfig,
   options?: MatchOrCreateSessionOptions
 ): RemoteSignerSession {
-  const existing = findMatchingSessionForConfig(config, options?.signerPubkey);
-  if (existing) {
-    const updates: Partial<RemoteSignerSession> = {};
-    if (options?.label && existing.label !== options.label) {
-      updates.label = options.label;
-    }
-    if (existing.config !== config) {
-      updates.config = config;
-    }
-    if (Object.keys(updates).length > 0) {
-      updateSession(existing.id, updates);
-      return getSessionById(existing.id) ?? { ...existing, ...updates };
-    }
-    return existing;
-  }
-  return createSession(config, options?.label);
+  const conn = matchOrCreateConnection(config, options);
+  return getSessionByIdLegacy(conn.id) ?? connectionToLegacyView(conn, null);
 }
 
 export function createSession(
   config: ActiveSignerConfig,
   label?: string
 ): RemoteSignerSession {
-  const session = updateStorage((storage) => {
-    const now = Date.now();
-    const defaultLabel = label ?? `Session ${storage.sessions.length + 1}`;
-    const signerAppName = detectSignerAppName(config);
-    const relays =
-      config.type === "nip46" && config.method === "nostrconnect_uri"
-        ? config.relays
-        : [];
-
-    const created: RemoteSignerSession = {
-      id: generateId(),
-      label: defaultLabel,
-      config,
-      metadata: {
-        status: "inactive",
-        signerAppName,
-        pubkey: null,
-        relays,
-        connectedAt: null,
-        lastActivityAt: null,
-        lastError: null,
-        createdAt: now,
-        updatedAt: now,
-      },
-      history: [],
-    };
-
-    storage.sessions.push(created);
-    return created;
-  });
-
-  // Emit event
+  const defaultLabel = label ?? `Session ${getAllConnections().length + 1}`;
+  const conn = createConnection(config, defaultLabel);
   if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent("remote-signer-session-created", {
-        detail: { sessionId: session.id },
+        detail: { connectionId: conn.id, sessionId: conn.id },
       })
     );
   }
-
-  return session;
+  return getSessionByIdLegacy(conn.id) ?? connectionToLegacyView(conn, null);
 }
 
+/** Legacy: update connection by id (label, config, metadata). */
 export function updateSession(
   id: string,
-  updates: Partial<RemoteSignerSession>
+  updates: Partial<Pick<RemoteSignerSession, "label" | "config" | "metadata">>
 ): void {
-  const updated = updateStorage((storage) => {
-    const sessionIndex = storage.sessions.findIndex((s) => s.id === id);
-    if (sessionIndex === -1) {
-      return false;
-    }
-
-    const session = storage.sessions[sessionIndex];
-    if (!session) {
-      return false;
-    }
-
-    const updatedSession: RemoteSignerSession = {
-      ...session,
-      ...updates,
-      metadata: {
-        ...session.metadata,
-        ...(updates.metadata ?? {}),
-        updatedAt: Date.now(),
-      },
-      history: updates.history ?? session.history,
-    };
-
-    storage.sessions[sessionIndex] = updatedSession;
-    return true;
-  });
-  if (!updated) {
-    return;
-  }
-
-  // Emit event
+  const conn = getConnectionById(id);
+  if (!conn) return;
+  updateConnection(id, updates);
   if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent("remote-signer-session-updated", {
-        detail: { sessionId: id },
+        detail: { connectionId: id, sessionId: id },
       })
     );
   }
 }
 
 export function setActiveSession(id: string): void {
-  const result = updateStorage((storage) => {
-    const session = storage.sessions.find((s) => s.id === id);
-    if (!session) {
-      return null;
-    }
-
-    let previousActiveId: string | null = null;
-    if (storage.activeSessionId && storage.activeSessionId !== id) {
-      const oldActive = storage.sessions.find(
-        (s) => s.id === storage.activeSessionId
-      );
-      if (oldActive?.metadata.status === "active") {
-        previousActiveId = oldActive.id;
-        oldActive.metadata = {
-          ...oldActive.metadata,
+  const conn = getConnectionById(id);
+  if (!conn) return;
+  const previousId = getActiveConnectionId();
+  if (previousId && previousId !== id) {
+    const oldConn = getConnectionById(previousId);
+    if (oldConn?.metadata.status === "active") {
+      endCurrentSessionForConnection(previousId);
+      updateConnection(previousId, {
+        metadata: {
+          ...oldConn.metadata,
           status: "disconnected",
           updatedAt: Date.now(),
-        };
-      }
+        },
+      });
+      void (async () => {
+        const mod = await import("~/lib/remote-signer-status.client");
+        mod.recordConnectionEvent(previousId, {
+          type: "disconnected",
+          reason: "Switched to different session",
+        });
+      })();
     }
-
-    storage.activeSessionId = id;
-    return {
-      sessionConfig: session.config,
-      previousActiveId,
-    };
-  });
-  if (!result) {
-    return;
   }
-
-  // Update sessionStorage for backward compatibility
+  setActiveConnection(id);
   if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
     try {
       sessionStorage.setItem(
         "__smartflow_active_nostr_signer_v1",
-        JSON.stringify(result.sessionConfig)
+        JSON.stringify(conn.config)
       );
     } catch {
       // ignore
     }
   }
-
-  if (result.previousActiveId) {
-    const previousActiveId = result.previousActiveId;
-    // Import and call recordConnectionEvent asynchronously to avoid circular dependency
-    void (async () => {
-      const module = await import("~/lib/remote-signer-status.client");
-      module.recordConnectionEvent(previousActiveId, {
-        type: "disconnected",
-        reason: "Switched to different session",
-      });
-    })();
-  }
-
-  // Clear cached signer so it will reconnect with new session's config
-  // This is done asynchronously to avoid circular dependencies
   if (typeof window !== "undefined") {
     setTimeout(() => {
       void (async () => {
-        const module = await import("~/lib/nostr-signer-manager.client");
-        module.resetCachedSigner();
+        const mod = await import("~/lib/nostr-signer-manager.client");
+        mod.resetCachedSigner();
       })();
     }, 0);
   }
-
-  // Emit event
   if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent(ACTIVE_SESSION_CHANGED_EVENT, {
-        detail: { sessionId: id },
+        detail: { connectionId: id, sessionId: id },
       })
     );
   }
 }
 
 export function clearActiveSession(): void {
-  updateStorage((storage) => {
-    storage.activeSessionId = null;
-    return null;
-  });
-
-  // Clear sessionStorage for backward compatibility
+  clearActiveConnection();
   if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
     try {
       sessionStorage.removeItem("__smartflow_active_nostr_signer_v1");
@@ -500,29 +823,19 @@ export function clearActiveSession(): void {
       // ignore
     }
   }
-
-  // Emit event
   if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent(ACTIVE_SESSION_CHANGED_EVENT, {
-        detail: { sessionId: null },
+        detail: { connectionId: null, sessionId: null },
       })
     );
   }
 }
 
 export function removeSession(id: string): void {
-  const removedActive = updateStorage((storage) => {
-    storage.sessions = storage.sessions.filter((s) => s.id !== id);
-    const wasActive = storage.activeSessionId === id;
-    if (storage.activeSessionId === id) {
-      storage.activeSessionId = null;
-    }
-    return wasActive;
-  });
-
-  if (removedActive) {
-    // Keep backward-compatible active signer snapshot in sync.
+  const wasActive = getActiveConnectionId() === id;
+  removeConnection(id);
+  if (wasActive) {
     if (
       typeof window !== "undefined" &&
       typeof sessionStorage !== "undefined"
@@ -536,72 +849,29 @@ export function removeSession(id: string): void {
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent(ACTIVE_SESSION_CHANGED_EVENT, {
-          detail: { sessionId: null },
+          detail: { connectionId: null, sessionId: null },
         })
       );
     }
   }
-
-  // Emit event
   if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent("remote-signer-session-removed", {
-        detail: { sessionId: id },
+        detail: { connectionId: id, sessionId: id },
       })
     );
   }
 }
 
-export function addConnectionLog(
-  sessionId: string,
-  entry: Omit<ConnectionLogEntry, "id" | "timestamp">
-): void {
-  updateStorage((storage) => {
-    const sessionIndex = storage.sessions.findIndex((s) => s.id === sessionId);
-    if (sessionIndex === -1) {
-      return null;
-    }
-
-    const session = storage.sessions[sessionIndex];
-    if (!session) {
-      return null;
-    }
-
-    const logEntry: ConnectionLogEntry = {
-      id: generateId(),
-      timestamp: Date.now(),
-      ...entry,
-    };
-
-    // Add to history and limit size
-    const history = [logEntry, ...session.history].slice(
-      0,
-      MAX_HISTORY_ENTRIES
-    );
-
-    storage.sessions[sessionIndex] = {
-      ...session,
-      history,
-      metadata: {
-        ...session.metadata,
-        updatedAt: Date.now(),
-      },
-    };
-    return null;
-  });
-}
-
+/** Returns history for the current session of the given connection (legacy: id was connection id). */
 export function getConnectionHistory(
-  sessionId: string,
-  limit?: number
+  connectionId: string,
+  limit = MAX_HISTORY_ENTRIES
 ): ConnectionLogEntry[] {
-  const session = getSessionById(sessionId);
-  if (!session) {
-    return [];
-  }
-
+  const session = getCurrentSessionForConnection(connectionId);
+  if (!session) return [];
   const history = session.history;
-  return limit ? history.slice(0, limit) : history;
+  return limit ? history.slice(-limit) : history;
 }
 
 function detectAppFromHostname(hostname: string): string | null {

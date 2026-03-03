@@ -18,7 +18,7 @@ import { isMobile } from "~/lib/is-mobile";
 import { convertToHex } from "~/lib/nostr-conversion";
 import {
   addConnectionLog,
-  getActiveSession,
+  getActiveConnection,
   updateSession,
 } from "~/lib/remote-signer-sessions.client";
 import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
@@ -167,7 +167,7 @@ export { isMobile };
  *
  * IMPORTANT: This only clears the cached signer object, NOT the stored config.
  * The config (connection URI/credentials) is preserved so that:
- * - Signer apps like Primal can restore the session using the same credentials
+ * - Signer apps like Primal can restore the connection using the same credentials
  * - We can attempt reconnection with the same connection URI
  * - Users don't need to re-approve if the signer app remembers the connection
  */
@@ -201,7 +201,7 @@ function clearCachedNip46Signer(): void {
 
 /**
  * Exported teardown for NIP-46 signer. Call before clearing session storage (e.g. before
- * clearActiveSession or removeSession when removing the active session) so the in-memory
+ * clearActiveSession or removeSession when removing the active connection) so the in-memory
  * signer, pool, and health-check timer are closed and the next connect does not overlap.
  */
 export function teardownActiveNip46Signer(): void {
@@ -434,23 +434,23 @@ export async function syncRelaysWithRemoteSigner(
     relays: normalized,
   });
 
-  const activeSession = getActiveSession();
-  if (activeSession?.config.type === NIP46_SIGNER_TYPE) {
-    updateSession(activeSession.id, {
+  const activeConnection = getActiveConnection();
+  if (activeConnection?.config.type === NIP46_SIGNER_TYPE) {
+    updateSession(activeConnection.id, {
       config:
-        activeSession.config.method === "nostrconnect_uri"
+        activeConnection.config.method === "nostrconnect_uri"
           ? {
-              ...activeSession.config,
+              ...activeConnection.config,
               relays: normalized,
             }
-          : activeSession.config,
+          : activeConnection.config,
       metadata: {
-        ...activeSession.metadata,
+        ...activeConnection.metadata,
         relays: normalized,
         lastActivityAt: Date.now(),
       },
     });
-    addConnectionLog(activeSession.id, {
+    addConnectionLog(activeConnection.id, {
       type: "health_check",
       status: "success",
       message: "Relays updated via switch_relays",
@@ -566,10 +566,10 @@ function startHealthCheckMonitoring(): void {
             connectionEstablishedAt = null;
             _lastActivityTime = null;
 
-            // Update session status
-            const activeSession = getActiveSession();
-            if (activeSession) {
-              recordConnectionEvent(activeSession.id, {
+            // Update connection status
+            const activeConnection = getActiveConnection();
+            if (activeConnection) {
+              recordConnectionEvent(activeConnection.id, {
                 type: "health_check",
                 healthy: false,
                 error: "Connection stale",
@@ -670,13 +670,20 @@ export async function getActiveSigner(
     clearCachedNip46Signer();
   }
 
-  // If we have a cached signer, verify it's still valid before returning it,
-  // but not on every call — use a cooldown so we don't prompt the signer app (e.g. Primal) every time.
+  // If we have a cached signer, verify it's still valid before returning it.
+  // Skip verification only when recently verified (cooldown) AND connection is fresh (< 1 min).
+  // Otherwise re-verify so we don't return a stale signer after user closed Primal and resumed.
   if (cachedSigner) {
     const now = Date.now();
+    const connectionAge = connectionEstablishedAt
+      ? now - connectionEstablishedAt
+      : 0;
+    const recentlyVerified =
+      _lastVerificationTime != null &&
+      now - _lastVerificationTime <= VERIFY_COOLDOWN_MS;
+    const connectionFresh = connectionAge < 60 * 1000; // 1 minute
     const shouldVerify =
-      _lastVerificationTime == null ||
-      now - _lastVerificationTime > VERIFY_COOLDOWN_MS;
+      !recentlyVerified || !connectionFresh || _lastVerificationTime == null;
 
     if (!shouldVerify) {
       _lastActivityTime = now;
@@ -692,10 +699,10 @@ export async function getActiveSigner(
     clearCachedNip46Signer();
     needsReprobe = true;
 
-    // Update session status
-    const activeSession = getActiveSession();
-    if (activeSession) {
-      recordConnectionEvent(activeSession.id, {
+    // Update connection status
+    const activeConnection = getActiveConnection();
+    if (activeConnection) {
+      recordConnectionEvent(activeConnection.id, {
         type: "health_check",
         healthy: false,
         error: "Connection verification failed",
@@ -794,9 +801,9 @@ export async function getActiveSigner(
             resetCachedSigner();
             connectionEstablishedAt = null;
             _lastActivityTime = null;
-            const activeSession = getActiveSession();
-            if (activeSession) {
-              recordConnectionEvent(activeSession.id, {
+            const activeConnection = getActiveConnection();
+            if (activeConnection) {
+              recordConnectionEvent(activeConnection.id, {
                 type: "health_check",
                 healthy: false,
                 error: "Probe failed after resume",
@@ -828,15 +835,15 @@ export async function getActiveSigner(
           return null;
         }
 
-        // Get pubkey for session update
+        // Get pubkey for connection update
         const pubkey = await cachedSigner.getPublicKey();
 
-        // Update session if exists
-        const activeSession = getActiveSession();
-        if (activeSession) {
-          updateSession(activeSession.id, {
+        // Update connection if exists
+        const activeConnection = getActiveConnection();
+        if (activeConnection) {
+          updateSession(activeConnection.id, {
             metadata: {
-              ...activeSession.metadata,
+              ...activeConnection.metadata,
               status: "active",
               pubkey,
               connectedAt: Date.now(),
@@ -845,7 +852,7 @@ export async function getActiveSigner(
             },
           });
 
-          recordConnectionEvent(activeSession.id, {
+          recordConnectionEvent(activeConnection.id, {
             type: "connected",
             pubkey,
           });
@@ -961,9 +968,9 @@ export async function getActiveSigner(
           resetCachedSigner();
           connectionEstablishedAt = null;
           _lastActivityTime = null;
-          const activeSession = getActiveSession();
-          if (activeSession) {
-            recordConnectionEvent(activeSession.id, {
+          const activeConnection = getActiveConnection();
+          if (activeConnection) {
+            recordConnectionEvent(activeConnection.id, {
               type: "health_check",
               healthy: false,
               error: "Probe failed after resume",
@@ -1004,18 +1011,18 @@ export async function getActiveSigner(
           ...config,
           relays: relaysToClose,
         });
-        const sessionForRelays = getActiveSession();
+        const connectionForRelays = getActiveConnection();
         if (
-          sessionForRelays?.config.type === NIP46_SIGNER_TYPE &&
-          sessionForRelays.config.method === "nostrconnect_uri"
+          connectionForRelays?.config.type === NIP46_SIGNER_TYPE &&
+          connectionForRelays.config.method === "nostrconnect_uri"
         ) {
-          updateSession(sessionForRelays.id, {
+          updateSession(connectionForRelays.id, {
             config: {
-              ...sessionForRelays.config,
+              ...connectionForRelays.config,
               relays: relaysToClose,
             },
             metadata: {
-              ...sessionForRelays.metadata,
+              ...connectionForRelays.metadata,
               relays: relaysToClose,
               lastActivityAt: Date.now(),
             },
@@ -1023,7 +1030,7 @@ export async function getActiveSigner(
         }
       }
 
-      // Get pubkey for session update
+      // Get pubkey for connection update
       const pubkey = await cachedSigner.getPublicKey();
 
       // Persist signerPubkey and bunkerPointer when available so next reconnect uses Method 1
@@ -1043,12 +1050,12 @@ export async function getActiveSigner(
         persistActiveSignerConfigWithoutReset({ ...config, ...configUpdates });
       }
 
-      // Update session if exists
-      const activeSession = getActiveSession();
-      if (activeSession) {
-        updateSession(activeSession.id, {
+      // Update connection if exists
+      const activeConnection = getActiveConnection();
+      if (activeConnection) {
+        updateSession(activeConnection.id, {
           metadata: {
-            ...activeSession.metadata,
+            ...activeConnection.metadata,
             status: "active",
             pubkey,
             connectedAt: Date.now(),
@@ -1057,7 +1064,7 @@ export async function getActiveSigner(
           },
         });
 
-        recordConnectionEvent(activeSession.id, {
+        recordConnectionEvent(activeConnection.id, {
           type: "connected",
           pubkey,
         });
@@ -1093,7 +1100,7 @@ export async function getActiveSigner(
 
       // If connection fails, clear only the cached signer object, NOT the config
       // The config (connection URI/credentials) is preserved so that:
-      // 1. Signer apps like Primal can restore the session using the same credentials
+      // 1. Signer apps like Primal can restore the connection using the same credentials
       // 2. We can attempt reconnection with the same connection URI
       // 3. Users don't need to re-approve the connection if the signer app remembers it
       const errorMessage =
@@ -1115,12 +1122,12 @@ export async function getActiveSigner(
         _lastActivityTime = null;
         needsReprobe = true;
 
-        // Update session with error
-        const activeSession = getActiveSession();
-        if (activeSession) {
+        // Update connection with error
+        const activeConnection = getActiveConnection();
+        if (activeConnection) {
           const fullErrorMessage =
             err instanceof Error ? err.message : String(err);
-          recordConnectionEvent(activeSession.id, {
+          recordConnectionEvent(activeConnection.id, {
             type: "error",
             error: fullErrorMessage,
           });

@@ -229,17 +229,17 @@ export async function attemptPrimarySignerFailover(input?: {
 
     const label =
       profile.label ?? input?.labelFallback ?? "Primary Home Signer";
-    const session = matchOrCreateSession(config, {
+    const connectionView = matchOrCreateSession(config, {
       label,
       signerPubkey: pubkey,
     });
-    const sessionId = session.id;
+    const connectionId = connectionView.id;
 
-    setActiveSession(sessionId);
+    setActiveSession(connectionId);
     const signerAppName = detectSignerAppName(config);
-    updateSession(sessionId, {
+    updateSession(connectionId, {
       metadata: {
-        ...session.metadata,
+        ...connectionView.metadata,
         status: "active",
         pubkey,
         signerAppName,
@@ -248,7 +248,7 @@ export async function attemptPrimarySignerFailover(input?: {
         lastError: null,
       },
     });
-    recordConnectionEvent(sessionId, {
+    recordConnectionEvent(connectionId, {
       type: "connected",
       pubkey,
     });

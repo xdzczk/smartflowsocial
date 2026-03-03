@@ -10,7 +10,7 @@ import {
   getActiveSignerConfig,
   SIGNER_CONFIG_HYDRATED_EVENT,
 } from "~/lib/nostr-signer-manager.client";
-import { getActiveSession } from "~/lib/remote-signer-sessions.client";
+import { getActiveConnection } from "~/lib/remote-signer-sessions.client";
 import type { ConnectionStatus } from "~/lib/remote-signer-sessions.client";
 import {
   type Nip07Readiness,
@@ -133,10 +133,10 @@ export function SignerStatusIndicator() {
   }
 
   if (config.type === "nip46") {
-    const session = getActiveSession();
+    const connection = getActiveConnection();
     const status = getDisplayStatus(
-      session?.metadata.status ?? "inactive",
-      session?.metadata.lastActivityAt ?? null
+      connection?.metadata.status ?? "inactive",
+      connection?.metadata.lastActivityAt ?? null
     );
     return <Nip46Status status={status} />;
   }

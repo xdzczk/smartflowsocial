@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.00142225">
-    <testsuite name="tests/unit/reconnect-lifecycle.test.ts" timestamp="2026-03-03T06:20:34.613Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.00142225">
-        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; detects lifecycle transport errors" time="0.000532125">
+<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.005564166">
+    <testsuite name="tests/unit/remote-signer-sessions.test.ts" timestamp="2026-03-03T13:48:21.193Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.005564166">
+        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions identity + storage consistency &gt; reuses logical session when signer pubkey matches" time="0.002617875">
         </testcase>
-        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; cancels only existing-session reconnect when app hides" time="0.000103416">
+        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions identity + storage consistency &gt; marks previous active session disconnected when switching active" time="0.000636334">
         </testcase>
-        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; resumes existing reconnect only with valid visible-state conditions" time="0.000075125">
+        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions identity + storage consistency &gt; keeps active-session pointer consistent after removing active" time="0.000281458">
         </testcase>
-        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; defers terminal errors until a foreground-resume failure happens" time="0.000099541">
+        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions connection and session model &gt; createConnection creates a connection with no current session" time="0.000317459">
         </testcase>
-        <testcase classname="tests/unit/reconnect-lifecycle.test.ts" name="reconnect lifecycle helpers &gt; marks stale reconnect runs by run id mismatch" time="0.000078959">
+        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions connection and session model &gt; startNewSessionForConnection creates a session and getConnectionLog appends to it" time="0.000688458">
+        </testcase>
+        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions connection and session model &gt; getSessionsForConnection returns sessions ordered by startedAt desc" time="0.00023825">
         </testcase>
     </testsuite>
 </testsuites>

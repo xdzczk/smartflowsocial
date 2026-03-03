@@ -22,21 +22,21 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { convertHexToNpub } from "~/lib/nostr-conversion";
-import type { RemoteSignerSession } from "~/lib/remote-signer-sessions.client";
+import type { RemoteSignerConnection } from "~/lib/remote-signer-sessions.client";
 
 import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
 
 interface SessionCardProps {
-  session: RemoteSignerSession;
+  connection: RemoteSignerConnection;
   isActive: boolean;
-  onReconnect: (sessionId: string) => void;
-  onSetActive: (sessionId: string) => void;
-  onViewDetails: (sessionId: string) => void;
-  onRemove: (sessionId: string) => void;
+  onReconnect: (connectionId: string) => void;
+  onSetActive: (connectionId: string) => void;
+  onViewDetails: (connectionId: string) => void;
+  onRemove: (connectionId: string) => void;
 }
 
 export function SessionCard({
-  session,
+  connection,
   isActive,
   onReconnect,
   onSetActive,
@@ -61,7 +61,7 @@ export function SessionCard({
   const handleRemove = () => {
     setIsRemoving(true);
     try {
-      onRemove(session.id);
+      onRemove(connection.id);
       setShowRemoveConfirm(false);
     } finally {
       setIsRemoving(false);
@@ -76,7 +76,7 @@ export function SessionCard({
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <CardTitle className="text-base">{session.label}</CardTitle>
+              <CardTitle className="text-base">{connection.label}</CardTitle>
               {isActive ? (
                 <Badge className="bg-primary text-primary-foreground text-xs">
                   Active
@@ -84,7 +84,7 @@ export function SessionCard({
               ) : null}
             </div>
             <CardDescription className="mt-1">
-              {session.metadata.signerAppName ?? "Unknown Signer"}
+              {connection.metadata.signerAppName ?? "Unknown Signer"}
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-1">
@@ -92,7 +92,7 @@ export function SessionCard({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onSetActive(session.id)}
+                onClick={() => onSetActive(connection.id)}
                 className="h-8"
               >
                 <Check className="mr-1 h-3 w-3" />
@@ -102,7 +102,7 @@ export function SessionCard({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onReconnect(session.id)}
+              onClick={() => onReconnect(connection.id)}
               className="h-8"
             >
               <RefreshCw className="mr-1 h-3 w-3" />
@@ -111,7 +111,7 @@ export function SessionCard({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onViewDetails(session.id)}
+              onClick={() => onViewDetails(connection.id)}
               className="h-8"
             >
               <Eye className="mr-1 h-3 w-3" />
@@ -132,10 +132,10 @@ export function SessionCard({
       <AlertDialog open={showRemoveConfirm} onOpenChange={setShowRemoveConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove session?</AlertDialogTitle>
+            <AlertDialogTitle>Remove connection?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove &quot;{session.label}&quot;? This
-              action cannot be undone.
+              Are you sure you want to remove &quot;{connection.label}&quot;?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -153,14 +153,14 @@ export function SessionCard({
       <CardContent className="space-y-3">
         <div className="flex min-w-0 items-center justify-between gap-2">
           <span className="text-muted-foreground text-sm">Status</span>
-          <ConnectionStatusBadge status={session.metadata.status} />
+          <ConnectionStatusBadge status={connection.metadata.status} />
         </div>
 
         <div className="space-y-2">
           <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground text-sm">Pubkey</span>
             <span className="min-w-0 font-mono text-sm break-all">
-              {formatPubkey(session.metadata.pubkey)}
+              {formatPubkey(connection.metadata.pubkey)}
             </span>
           </div>
 
@@ -169,21 +169,21 @@ export function SessionCard({
               Last Connected
             </span>
             <span className="text-sm">
-              {formatTimestamp(session.metadata.connectedAt)}
+              {formatTimestamp(connection.metadata.connectedAt)}
             </span>
           </div>
 
           <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground text-sm">Last Activity</span>
             <span className="text-sm">
-              {formatTimestamp(session.metadata.lastActivityAt)}
+              {formatTimestamp(connection.metadata.lastActivityAt)}
             </span>
           </div>
         </div>
 
-        {session.metadata.lastError ? (
+        {connection.metadata.lastError ? (
           <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-md border p-2 text-xs">
-            {session.metadata.lastError}
+            {connection.metadata.lastError}
           </div>
         ) : null}
       </CardContent>

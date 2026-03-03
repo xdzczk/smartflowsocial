@@ -96,7 +96,7 @@ function buildRelayUnion(
 const PENDING_RECONNECT_STORAGE_KEY = "__smartflow_pending_reconnect_nip46_v1";
 
 const PROFILE_MISMATCH_MESSAGE =
-  "Different signer profile detected. Please activate the same identity as your SmartFlow session.";
+  "Different signer profile detected. Please activate the same identity as your SmartFlow connection.";
 
 const RECONNECT_SUCCESS_TOAST_RETRY =
   "Remote signer reconnected. Please retry your action.";
@@ -169,7 +169,7 @@ type ConnectState =
 interface RemoteSignerReconnectControllerProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  onReconnectSuccess?: (sessionId: string) => void;
+  onReconnectSuccess?: (connectionId: string) => void;
 }
 
 export function RemoteSignerReconnectController(
@@ -229,7 +229,7 @@ export function RemoteSignerReconnectDialog(props: {
   onOpenChange: (open: boolean) => void;
   expectedPubkey: string | null;
   openMode?: ReconnectDialogOpenMode;
-  onReconnectSuccess?: (sessionId: string) => void;
+  onReconnectSuccess?: (connectionId: string) => void;
 }) {
   const {
     open,
@@ -246,7 +246,7 @@ export function RemoteSignerReconnectDialog(props: {
   const [tab, setTab] = useState<"nostrconnect" | "bunker">("nostrconnect");
   const [relayList, setRelayList] = useState(DEFAULT_RELAYS);
   const [bunkerInput, setBunkerInput] = useState("");
-  const [sessionLabel, setSessionLabel] = useState("");
+  const [connectionLabel, setConnectionLabel] = useState("");
 
   const [state, setState] = useState<ConnectState>("idle");
   const [existingReconnectAttempt, setExistingReconnectAttempt] = useState(0);
@@ -334,7 +334,7 @@ export function RemoteSignerReconnectDialog(props: {
     setNostrConnectUri(null);
     setError(null);
     setCopyOk(false);
-    setSessionLabel("");
+    setConnectionLabel("");
     setExistingReconnectAttempt(0);
   }, [clearPendingReconnectStorage]);
 
@@ -388,7 +388,7 @@ export function RemoteSignerReconnectDialog(props: {
         })
       ) {
         debugReconnectTrace(
-          "Existing-session reconnect failed during app-switch window; deferring terminal error",
+          "Existing-connection reconnect failed during app-switch window; deferring terminal error",
           { trigger: input.trigger, error: errorMessage }
         );
         setState("idle");
@@ -398,7 +398,7 @@ export function RemoteSignerReconnectDialog(props: {
       }
 
       debugReconnectTrace(
-        "Existing-session reconnect failed; trying primary failover",
+        "Existing-connection reconnect failed; trying primary failover",
         {
           error: errorMessage,
         }
@@ -422,9 +422,9 @@ export function RemoteSignerReconnectDialog(props: {
         setExistingReconnectAttempt(0);
         setState("connected");
         toast.success(TOAST_RECONNECT_SUCCESS);
-        const recoveredSession = getActiveSession();
-        if (recoveredSession) {
-          onReconnectSuccess?.(recoveredSession.id);
+        const recoveredConnection = getActiveSession();
+        if (recoveredConnection) {
+          onReconnectSuccess?.(recoveredConnection.id);
         }
         onOpenChange(false);
         return;
@@ -458,7 +458,7 @@ export function RemoteSignerReconnectDialog(props: {
       setState("idle");
       setExistingReconnectAttempt(0);
       setError(
-        "Could not reconnect with existing session. If the session is still in your signer app, switch to it, reactivate the session, then return here — we’ll retry automatically. Or generate a new connection string below."
+        "Could not reconnect with existing connection. If the connection is still in your signer app, switch to it, reactivate the connection, then return here — we’ll retry automatically. Or generate a new connection string below."
       );
     },
     [
@@ -469,15 +469,15 @@ export function RemoteSignerReconnectDialog(props: {
     ]
   );
 
-  const tryReconnectWithExistingSession = useCallback(
+  const tryReconnectWithExistingConnection = useCallback(
     async (trigger: ExistingReconnectTrigger = "initial") => {
       if (inFlightExistingReconnectRef.current) {
         return;
       }
-      const session = getActiveSession();
+      const connectionView = getActiveSession();
       if (
-        session?.config.type !== "nip46" ||
-        session.config.method !== "nostrconnect_uri"
+        connectionView?.config.type !== "nip46" ||
+        connectionView.config.method !== "nostrconnect_uri"
       ) {
         return;
       }
@@ -491,12 +491,13 @@ export function RemoteSignerReconnectDialog(props: {
         ActiveSignerConfig,
         { type: "nip46"; method: "nostrconnect_uri" }
       >;
-      const ncConfig: Nip46NostrConnectConfig = session.config;
+      const ncConfig: Nip46NostrConnectConfig = connectionView.config;
       const { uri, relays, clientSecretKeyHex } = ncConfig;
       const signerPubkeyHex =
         ncConfig.signerPubkey ??
-        (session.metadata.pubkey
-          ? (convertToHex(session.metadata.pubkey) ?? session.metadata.pubkey)
+        (connectionView.metadata.pubkey
+          ? (convertToHex(connectionView.metadata.pubkey) ??
+            connectionView.metadata.pubkey)
           : null);
       const clientPubkeyHex = (() => {
         try {
@@ -505,16 +506,16 @@ export function RemoteSignerReconnectDialog(props: {
           return null;
         }
       })();
-      debugReconnectTrace("Starting existing-session reconnect", {
-        sessionId: session.id,
+      debugReconnectTrace("Starting existing-connection reconnect", {
+        connectionId: connectionView.id,
         client_pubkey: clientPubkeyHex,
         relays,
         method: "nostrconnect_uri",
         relayCount: relays.length,
         timeoutsMs: EXISTING_SESSION_RECONNECT_TIMEOUTS_MS,
         expectedPubkeyHex,
-        status: session.metadata.status,
-        lastActivityAt: session.metadata.lastActivityAt,
+        status: connectionView.metadata.status,
+        lastActivityAt: connectionView.metadata.lastActivityAt,
         trigger,
       });
 
@@ -609,7 +610,7 @@ export function RemoteSignerReconnectDialog(props: {
           );
         } catch (firstError) {
           debugReconnectTrace(
-            "First existing-session reconnect attempt failed",
+            "First existing-connection reconnect attempt failed",
             {
               error:
                 firstError instanceof Error
@@ -642,7 +643,7 @@ export function RemoteSignerReconnectDialog(props: {
             relaysUsed = relaysSecond;
           } catch {
             debugReconnectTrace(
-              "Second existing-session reconnect attempt failed"
+              "Second existing-connection reconnect attempt failed"
             );
             throw firstError;
           }
@@ -657,7 +658,7 @@ export function RemoteSignerReconnectDialog(props: {
           return;
         }
         if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
-          debugReconnectTrace("Existing-session reconnect pubkey mismatch", {
+          debugReconnectTrace("Existing-connection reconnect pubkey mismatch", {
             expectedPubkeyHex,
             receivedPubkey: pubkey,
           });
@@ -676,15 +677,15 @@ export function RemoteSignerReconnectDialog(props: {
         };
 
         const detectedAppName = detectSignerAppName(config);
-        updateSession(session.id, {
+        updateSession(connectionView.id, {
           config: {
-            ...session.config,
+            ...connectionView.config,
             relays: relaysUsed,
             signerPubkey: config.signerPubkey,
-            bunkerPointer: session.config.bunkerPointer,
+            bunkerPointer: connectionView.config.bunkerPointer,
           },
           metadata: {
-            ...session.metadata,
+            ...connectionView.metadata,
             pubkey,
             signerAppName: detectedAppName,
             status: "active",
@@ -695,7 +696,7 @@ export function RemoteSignerReconnectDialog(props: {
           },
         });
 
-        recordConnectionEvent(session.id, {
+        recordConnectionEvent(connectionView.id, {
           type: "connected",
           pubkey,
         });
@@ -705,14 +706,14 @@ export function RemoteSignerReconnectDialog(props: {
         if (existingReconnectRunIdRef.current !== runId) {
           return;
         }
-        debugReconnectTrace("Existing-session reconnect succeeded", {
-          sessionId: session.id,
+        debugReconnectTrace("Existing-connection reconnect succeeded", {
+          connectionId: connectionView.id,
           pubkey,
         });
         setExistingReconnectAttempt(0);
         setState("connected");
         toast.success(TOAST_RECONNECT_SUCCESS);
-        onReconnectSuccess?.(session.id);
+        onReconnectSuccess?.(connectionView.id);
         onOpenChange(false);
       } catch (error) {
         await handleExistingReconnectFailure({ error, runId, trigger });
@@ -734,13 +735,13 @@ export function RemoteSignerReconnectDialog(props: {
     ]
   );
 
-  const tryReconnectWithExistingBunkerSession = useCallback(
+  const tryReconnectWithExistingBunkerConnection = useCallback(
     async (trigger: ExistingReconnectTrigger = "initial") => {
       if (inFlightExistingReconnectRef.current) return;
-      const session = getActiveSession();
+      const connectionView = getActiveSession();
       if (
-        session?.config.type !== "nip46" ||
-        session.config.method !== "bunker_input"
+        connectionView?.config.type !== "nip46" ||
+        connectionView.config.method !== "bunker_input"
       ) {
         return;
       }
@@ -754,7 +755,7 @@ export function RemoteSignerReconnectDialog(props: {
         ActiveSignerConfig,
         { type: "nip46"; method: "bunker_input" }
       >;
-      const bunkerConfig: Nip46BunkerConfig = session.config;
+      const bunkerConfig: Nip46BunkerConfig = connectionView.config;
       const { bunkerInput, clientSecretKeyHex } = bunkerConfig;
       const clientPubkeyHexBunker = (() => {
         try {
@@ -763,8 +764,8 @@ export function RemoteSignerReconnectDialog(props: {
           return null;
         }
       })();
-      debugReconnectTrace("Starting existing-session bunker reconnect", {
-        sessionId: session.id,
+      debugReconnectTrace("Starting existing-connection bunker reconnect", {
+        connectionId: connectionView.id,
         client_pubkey: clientPubkeyHexBunker,
         method: "bunker_input",
         trigger,
@@ -831,7 +832,7 @@ export function RemoteSignerReconnectDialog(props: {
           result = await tryConnect(EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0]);
         } catch (firstError) {
           debugReconnectTrace(
-            "First existing-session bunker reconnect attempt failed",
+            "First existing-connection bunker reconnect attempt failed",
             {
               error:
                 firstError instanceof Error
@@ -849,7 +850,7 @@ export function RemoteSignerReconnectDialog(props: {
             );
           } catch {
             debugReconnectTrace(
-              "Second existing-session bunker reconnect attempt failed"
+              "Second existing-connection bunker reconnect attempt failed"
             );
             throw firstError;
           }
@@ -866,7 +867,7 @@ export function RemoteSignerReconnectDialog(props: {
         const { signer, pubkey } = result;
         if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
           debugReconnectTrace(
-            "Existing-session bunker reconnect pubkey mismatch",
+            "Existing-connection bunker reconnect pubkey mismatch",
             { expectedPubkeyHex, receivedPubkey: pubkey }
           );
           setError(PROFILE_MISMATCH_MESSAGE);
@@ -882,9 +883,9 @@ export function RemoteSignerReconnectDialog(props: {
         };
 
         const detectedAppName = detectSignerAppName(config);
-        updateSession(session.id, {
+        updateSession(connectionView.id, {
           metadata: {
-            ...session.metadata,
+            ...connectionView.metadata,
             pubkey,
             signerAppName: detectedAppName,
             status: "active",
@@ -894,7 +895,7 @@ export function RemoteSignerReconnectDialog(props: {
           },
         });
 
-        recordConnectionEvent(session.id, {
+        recordConnectionEvent(connectionView.id, {
           type: "connected",
           pubkey,
         });
@@ -907,14 +908,14 @@ export function RemoteSignerReconnectDialog(props: {
         }
         await syncRelaysAfterReconnect();
         if (existingReconnectRunIdRef.current !== runId) return;
-        debugReconnectTrace("Existing-session bunker reconnect succeeded", {
-          sessionId: session.id,
+        debugReconnectTrace("Existing-connection bunker reconnect succeeded", {
+          connectionId: connectionView.id,
           pubkey,
         });
         setExistingReconnectAttempt(0);
         setState("connected");
         toast.success(TOAST_RECONNECT_SUCCESS);
-        onReconnectSuccess?.(session.id);
+        onReconnectSuccess?.(connectionView.id);
         onOpenChange(false);
       } catch (error) {
         await handleExistingReconnectFailure({ error, runId, trigger });
@@ -960,24 +961,24 @@ export function RemoteSignerReconnectDialog(props: {
       return;
     }
 
-    // When dialog opens with an existing session, try reconnecting with stored config first.
+    // When dialog opens with an existing connection, try reconnecting with stored config first.
     if (triedExistingRef.current) return;
-    const session = getActiveSession();
-    if (session?.config.type !== "nip46") return;
-    if (session.config.method === "nostrconnect_uri") {
+    const connectionView = getActiveSession();
+    if (connectionView?.config.type !== "nip46") return;
+    if (connectionView.config.method === "nostrconnect_uri") {
       triedExistingRef.current = true;
-      void tryReconnectWithExistingSession("initial");
+      void tryReconnectWithExistingConnection("initial");
       return;
     }
-    // nip46 session that is not nostrconnect_uri is bunker_input
+    // nip46 connection that is not nostrconnect_uri is bunker_input
     triedExistingRef.current = true;
-    void tryReconnectWithExistingBunkerSession("initial");
+    void tryReconnectWithExistingBunkerConnection("initial");
   }, [
     open,
     openMode,
     resetLocal,
-    tryReconnectWithExistingSession,
-    tryReconnectWithExistingBunkerSession,
+    tryReconnectWithExistingConnection,
+    tryReconnectWithExistingBunkerConnection,
     tab,
   ]);
 
@@ -1005,11 +1006,11 @@ export function RemoteSignerReconnectDialog(props: {
       if (tab === "bunker") {
         setState("waiting");
         const trimmedBunker = bunkerInput.trim();
-        const activeSessionForBunker = getActiveSession();
+        const activeConnectionForBunker = getActiveSession();
         const bunkerConfig =
-          activeSessionForBunker?.config.type === "nip46" &&
-          activeSessionForBunker.config.method === "bunker_input"
-            ? activeSessionForBunker.config
+          activeConnectionForBunker?.config.type === "nip46" &&
+          activeConnectionForBunker.config.method === "bunker_input"
+            ? activeConnectionForBunker.config
             : null;
         let isReconnectExisting = false;
         let reconnectBunkerConfig: typeof bunkerConfig = null;
@@ -1051,18 +1052,18 @@ export function RemoteSignerReconnectDialog(props: {
               : serializeSecretKey(clientSecretKey),
         };
 
-        // Create or update session
-        const session = matchOrCreateSession(config, {
-          label: sessionLabel || undefined,
+        // Create or update connection
+        const connectionView = matchOrCreateSession(config, {
+          label: connectionLabel || undefined,
           signerPubkey: pubkey,
         });
-        setActiveSession(session.id);
+        setActiveSession(connectionView.id);
 
-        // Update session with pubkey and detected app name
+        // Update connection with pubkey and detected app name
         const detectedAppName = detectSignerAppName(config);
-        updateSession(session.id, {
+        updateSession(connectionView.id, {
           metadata: {
-            ...session.metadata,
+            ...connectionView.metadata,
             pubkey,
             signerAppName: detectedAppName,
             status: "active",
@@ -1072,7 +1073,7 @@ export function RemoteSignerReconnectDialog(props: {
         });
 
         // Record connection event
-        recordConnectionEvent(session.id, {
+        recordConnectionEvent(connectionView.id, {
           type: "connected",
           pubkey,
         });
@@ -1081,7 +1082,7 @@ export function RemoteSignerReconnectDialog(props: {
         await syncRelaysAfterReconnect();
         setState("connected");
         toast.success(RECONNECT_SUCCESS_TOAST_RETRY);
-        onReconnectSuccess?.(session.id);
+        onReconnectSuccess?.(connectionView.id);
         onOpenChange(false);
         return;
       }
@@ -1134,18 +1135,18 @@ export function RemoteSignerReconnectDialog(props: {
         clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
       };
 
-      // Create or update session
-      const session = matchOrCreateSession(config, {
-        label: sessionLabel || undefined,
+      // Create or update connection
+      const connectionView = matchOrCreateSession(config, {
+        label: connectionLabel || undefined,
         signerPubkey: pubkey,
       });
-      setActiveSession(session.id);
+      setActiveSession(connectionView.id);
 
-      // Update session with pubkey and detected app name
+      // Update connection with pubkey and detected app name
       const detectedAppName = detectSignerAppName(config);
-      updateSession(session.id, {
+      updateSession(connectionView.id, {
         metadata: {
-          ...session.metadata,
+          ...connectionView.metadata,
           pubkey,
           signerAppName: detectedAppName,
           status: "active",
@@ -1155,7 +1156,7 @@ export function RemoteSignerReconnectDialog(props: {
       });
 
       // Record connection event
-      recordConnectionEvent(session.id, {
+      recordConnectionEvent(connectionView.id, {
         type: "connected",
         pubkey,
       });
@@ -1165,7 +1166,7 @@ export function RemoteSignerReconnectDialog(props: {
       clearPendingReconnectStorage();
       setState("connected");
       toast.success(RECONNECT_SUCCESS_TOAST_RETRY);
-      onReconnectSuccess?.(session.id);
+      onReconnectSuccess?.(connectionView.id);
       onOpenChange(false);
     } catch (e) {
       const errorMessage =
@@ -1184,9 +1185,9 @@ export function RemoteSignerReconnectDialog(props: {
       setError(errorMessage);
       setState("failed");
 
-      const activeSession = getActiveSession();
-      if (activeSession) {
-        recordConnectionEvent(activeSession.id, {
+      const activeConnectionView = getActiveSession();
+      if (activeConnectionView) {
+        recordConnectionEvent(activeConnectionView.id, {
           type: "error",
           error: errorMessage,
         });
@@ -1203,7 +1204,7 @@ export function RemoteSignerReconnectDialog(props: {
     onOpenChange,
     onReconnectSuccess,
     relayList,
-    sessionLabel,
+    connectionLabel,
     setPendingReconnect,
     syncRelaysAfterReconnect,
     state,
@@ -1254,16 +1255,16 @@ export function RemoteSignerReconnectDialog(props: {
         clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
       };
 
-      const session = matchOrCreateSession(config, {
-        label: sessionLabel || undefined,
+      const connectionView = matchOrCreateSession(config, {
+        label: connectionLabel || undefined,
         signerPubkey: pubkey,
       });
-      setActiveSession(session.id);
+      setActiveSession(connectionView.id);
 
       const detectedAppName = detectSignerAppName(config);
-      updateSession(session.id, {
+      updateSession(connectionView.id, {
         metadata: {
-          ...session.metadata,
+          ...connectionView.metadata,
           pubkey,
           signerAppName: detectedAppName,
           status: "active",
@@ -1272,7 +1273,7 @@ export function RemoteSignerReconnectDialog(props: {
         },
       });
 
-      recordConnectionEvent(session.id, {
+      recordConnectionEvent(connectionView.id, {
         type: "connected",
         pubkey,
       });
@@ -1282,7 +1283,7 @@ export function RemoteSignerReconnectDialog(props: {
       clearPendingReconnectStorage();
       setState("connected");
       toast.success(RECONNECT_SUCCESS_TOAST_RETRY);
-      onReconnectSuccess?.(session.id);
+      onReconnectSuccess?.(connectionView.id);
       onOpenChange(false);
     } catch (e) {
       const errorMessage =
@@ -1301,9 +1302,9 @@ export function RemoteSignerReconnectDialog(props: {
       setError(errorMessage);
       setState("failed");
 
-      const activeSession = getActiveSession();
-      if (activeSession) {
-        recordConnectionEvent(activeSession.id, {
+      const activeConnectionView = getActiveSession();
+      if (activeConnectionView) {
+        recordConnectionEvent(activeConnectionView.id, {
           type: "error",
           error: errorMessage,
         });
@@ -1318,7 +1319,7 @@ export function RemoteSignerReconnectDialog(props: {
     expectedPubkeyHex,
     onOpenChange,
     onReconnectSuccess,
-    sessionLabel,
+    connectionLabel,
     syncRelaysAfterReconnect,
     state,
   ]);
@@ -1340,37 +1341,37 @@ export function RemoteSignerReconnectDialog(props: {
           setState("idle");
           setExistingReconnectAttempt(0);
           debugReconnectTrace(
-            "Visibility hidden: cancelled in-flight existing-session reconnect"
+            "Visibility hidden: cancelled in-flight existing-connection reconnect"
           );
         }
         return;
       }
 
-      const activeSession = getActiveSession();
-      const hasValidExistingSession =
-        activeSession?.config.type === "nip46" &&
-        (activeSession.config.method === "nostrconnect_uri" ||
+      const activeConnectionView = getActiveSession();
+      const hasValidExistingConnection =
+        activeConnectionView?.config.type === "nip46" &&
+        (activeConnectionView.config.method === "nostrconnect_uri" ||
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- method is "nostrconnect_uri" | "bunker_input"
-          activeSession.config.method === METHOD_BUNKER_INPUT);
+          activeConnectionView.config.method === METHOD_BUNKER_INPUT);
       if (
         shouldResumeExistingReconnectOnVisible({
           openMode,
           wasHiddenDuringExistingReconnect:
             wasHiddenDuringExistingReconnectRef.current,
           inFlightExistingReconnect: inFlightExistingReconnectRef.current,
-          hasValidExistingSession,
+          hasValidExistingSession: hasValidExistingConnection,
         })
       ) {
         setTimeout(() => {
           const method =
-            activeSession?.config.type === "nip46"
-              ? activeSession.config.method
+            activeConnectionView?.config.type === "nip46"
+              ? activeConnectionView.config.method
               : undefined;
 
           if (method === METHOD_BUNKER_INPUT) {
-            void tryReconnectWithExistingBunkerSession("foreground_resume");
+            void tryReconnectWithExistingBunkerConnection("foreground_resume");
           } else {
-            void tryReconnectWithExistingSession("foreground_resume");
+            void tryReconnectWithExistingConnection("foreground_resume");
           }
         }, 500);
         return;
@@ -1394,25 +1395,26 @@ export function RemoteSignerReconnectDialog(props: {
         return;
       }
 
-      // User returned after reactivating existing session in signer app — retry reconnect with stored config.
+      // User returned after reactivating existing connection in signer app — retry reconnect with stored config.
       if (
         openMode !== "new_session" &&
         state === "idle" &&
         triedExistingRef.current
       ) {
-        const session = getActiveSession();
+        const connectionView = getActiveSession();
         const method =
-          session?.config.type === "nip46" && "method" in session.config
-            ? session.config.method
+          connectionView?.config.type === "nip46" &&
+          "method" in connectionView.config
+            ? connectionView.config.method
             : undefined;
 
         if (method === METHOD_BUNKER_INPUT) {
           setTimeout(() => {
-            void tryReconnectWithExistingBunkerSession("foreground_resume");
+            void tryReconnectWithExistingBunkerConnection("foreground_resume");
           }, 500);
-        } else if (session?.config.type === "nip46") {
+        } else if (connectionView?.config.type === "nip46") {
           setTimeout(() => {
-            void tryReconnectWithExistingSession("foreground_resume");
+            void tryReconnectWithExistingConnection("foreground_resume");
           }, 500);
         }
       }
@@ -1427,20 +1429,20 @@ export function RemoteSignerReconnectDialog(props: {
     tab,
     state,
     getPendingReconnect,
-    tryReconnectWithExistingSession,
-    tryReconnectWithExistingBunkerSession,
+    tryReconnectWithExistingConnection,
+    tryReconnectWithExistingBunkerConnection,
   ]);
 
   const canRetryExisting =
     state === "idle" &&
-    error?.includes("Could not reconnect with existing session") &&
+    error?.includes("Could not reconnect with existing connection") &&
     (() => {
-      const session = getActiveSession();
+      const connectionView = getActiveSession();
       return (
-        session?.config.type === "nip46" &&
-        (session.config.method === "nostrconnect_uri" ||
+        connectionView?.config.type === "nip46" &&
+        (connectionView.config.method === "nostrconnect_uri" ||
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- method is "nostrconnect_uri" | "bunker_input"
-          session.config.method === METHOD_BUNKER_INPUT)
+          connectionView.config.method === METHOD_BUNKER_INPUT)
       );
     })() &&
     !getPendingReconnect();
@@ -1449,7 +1451,7 @@ export function RemoteSignerReconnectDialog(props: {
     if (state === "reconnecting_existing") return "Reconnecting…";
     if (state === "waiting") return "Waiting for signer…";
     if (tab === "bunker") return "Connect";
-    if (canRetryExisting) return "Try again with existing session";
+    if (canRetryExisting) return "Try again with existing connection";
     return nostrConnectUri ? "Retry" : "Generate & wait";
   }, [canRetryExisting, nostrConnectUri, state, tab]);
 
@@ -1473,7 +1475,7 @@ export function RemoteSignerReconnectDialog(props: {
 
         {isReconnectingExisting ? (
           <div className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-sm">
-            Reconnecting with existing session (attempt{" "}
+            Reconnecting with existing connection (attempt{" "}
             {Math.max(existingReconnectAttempt, 1)}/
             {EXISTING_SESSION_RECONNECT_TIMEOUTS_MS.length})… No need to switch
             to your signer app.
@@ -1485,8 +1487,8 @@ export function RemoteSignerReconnectDialog(props: {
             <Label htmlFor="session-label">Session Label (Optional)</Label>
             <Input
               id="session-label"
-              value={sessionLabel}
-              onChange={(e) => setSessionLabel(e.target.value)}
+              value={connectionLabel}
+              onChange={(e) => setConnectionLabel(e.target.value)}
               placeholder="e.g., Primal on iPhone"
               disabled={state === "waiting" || isReconnectingExisting}
             />
@@ -1585,14 +1587,14 @@ export function RemoteSignerReconnectDialog(props: {
             type="button"
             onClick={() => {
               if (canRetryExisting) {
-                const session = getActiveSession();
+                const connectionView = getActiveSession();
                 if (
-                  session?.config.type === "nip46" &&
-                  session.config.method === "bunker_input"
+                  connectionView?.config.type === "nip46" &&
+                  connectionView.config.method === "bunker_input"
                 ) {
-                  void tryReconnectWithExistingBunkerSession("manual_retry");
+                  void tryReconnectWithExistingBunkerConnection("manual_retry");
                 } else {
-                  void tryReconnectWithExistingSession("manual_retry");
+                  void tryReconnectWithExistingConnection("manual_retry");
                 }
               } else if (tab === "nostrconnect" && getPendingReconnect()) {
                 void resumeReconnectWithPendingUri();

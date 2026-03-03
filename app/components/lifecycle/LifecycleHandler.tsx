@@ -22,7 +22,7 @@ import {
 } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
-  getActiveSession,
+  getActiveConnection,
   setCurrentUserNpub,
 } from "~/lib/remote-signer-sessions.client";
 import { triggerForegroundSync } from "~/lib/sync-manager.client";
@@ -115,16 +115,16 @@ export function LifecycleHandler() {
   }, [localeDefaultsFetcher.state, localeDefaultsFetcher.data]);
 
   // When user is logged in but sessionStorage has no signer config (e.g. new tab),
-  // restore from active remote-signer session first; otherwise default to NIP-07.
+  // restore from active remote-signer connection first; otherwise default to NIP-07.
   useEffect(() => {
     if (!user?.npub || typeof window === "undefined") return;
     if (getActiveSignerConfig() != null) return;
 
-    const activeRemoteSession = getActiveSession();
-    if (activeRemoteSession?.config.type === "nip46") {
-      setActiveSignerConfig(activeRemoteSession.config);
+    const activeConnection = getActiveConnection();
+    if (activeConnection?.config.type === "nip46") {
+      setActiveSignerConfig(activeConnection.config);
     } else {
-      // Keep extension-only users unblocked when no remote signer session exists.
+      // Keep extension-only users unblocked when no remote signer connection exists.
       setActiveSignerConfig({ type: "nip07" });
     }
 

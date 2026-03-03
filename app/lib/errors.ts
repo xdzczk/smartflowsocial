@@ -78,7 +78,7 @@ export class AuthenticationError extends AppError {
 
 /**
  * Profile/pubkey mismatch errors (401)
- * Used when the active session identity does not match the signer identity.
+ * Used when the active connection identity does not match the signer identity.
  */
 export class ProfileMismatchError extends AppError {
   constructor(

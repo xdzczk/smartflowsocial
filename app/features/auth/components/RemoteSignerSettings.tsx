@@ -24,12 +24,13 @@ import { testConnection } from "~/lib/remote-signer-health.client";
 import { REMOTE_SIGNER_TIMEOUT_EVENT } from "~/lib/remote-signer-reconnect.client";
 import {
   clearActiveSession,
-  getAllSessions,
-  getActiveSession,
-  removeSession,
-  setActiveSession,
+  getAllConnections,
+  getActiveConnection,
+  getConnectionHistory,
+  removeConnection,
+  setActiveConnection,
 } from "~/lib/remote-signer-sessions.client";
-import type { RemoteSignerSession } from "~/lib/remote-signer-sessions.client";
+import type { RemoteSignerConnection } from "~/lib/remote-signer-sessions.client";
 import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
 
 import { ConnectionHistory } from "./ConnectionHistory";
@@ -50,13 +51,13 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
   const user = useOptionalUser();
   const expectedPubkey = user?.npub ?? null;
 
-  const [sessions, setSessions] = useState<RemoteSignerSession[]>([]);
-  const [activeSession, setActiveSessionState] =
-    useState<RemoteSignerSession | null>(null);
+  const [connections, setConnections] = useState<RemoteSignerConnection[]>([]);
+  const [activeConnection, setActiveConnectionState] =
+    useState<RemoteSignerConnection | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
-    null
-  );
+  const [selectedConnectionId, setSelectedConnectionId] = useState<
+    string | null
+  >(null);
   const [reconnectDialogOpen, setReconnectDialogOpen] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [isTestingPrimarySigner, setIsTestingPrimarySigner] = useState(false);
@@ -93,48 +94,37 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
     );
   }, [primarySignerFetcher.data, primarySignerFetcher.state]);
 
-  const loadSessions = useCallback(() => {
-    const allSessions = getAllSessions();
-    const active = getActiveSession();
-    setSessions(allSessions);
-    setActiveSessionState(active);
+  const loadConnections = useCallback(() => {
+    setConnections(getAllConnections());
+    setActiveConnectionState(getActiveConnection());
   }, []);
 
   useEffect(() => {
-    loadSessions();
+    loadConnections();
 
-    // Listen to session events
-    const handleSessionCreated = () => loadSessions();
-    const handleSessionUpdated = () => loadSessions();
-    const handleSessionRemoved = () => loadSessions();
-    const handleActiveSessionChanged = () => loadSessions();
-
-    // Listen to connection events
-    const handleConnectionStale = () => {
-      loadSessions();
-    };
-    const handleConnectionHealthy = () => {
-      loadSessions();
-    };
-    const handleTimeout = () => {
-      loadSessions();
-    };
+    const handleConnectionCreated = () => loadConnections();
+    const handleConnectionUpdated = () => loadConnections();
+    const handleConnectionRemoved = () => loadConnections();
+    const handleActiveConnectionChanged = () => loadConnections();
+    const handleConnectionStale = () => loadConnections();
+    const handleConnectionHealthy = () => loadConnections();
+    const handleTimeout = () => loadConnections();
 
     window.addEventListener(
       "remote-signer-session-created",
-      handleSessionCreated
+      handleConnectionCreated
     );
     window.addEventListener(
       "remote-signer-session-updated",
-      handleSessionUpdated
+      handleConnectionUpdated
     );
     window.addEventListener(
       "remote-signer-session-removed",
-      handleSessionRemoved
+      handleConnectionRemoved
     );
     window.addEventListener(
       "remote-signer-active-session-changed",
-      handleActiveSessionChanged
+      handleActiveConnectionChanged
     );
     window.addEventListener("nostr-connection-stale", handleConnectionStale);
     window.addEventListener(
@@ -143,10 +133,10 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
     );
     window.addEventListener(REMOTE_SIGNER_TIMEOUT_EVENT, handleTimeout);
 
-    // Poll active session health every 2 minutes (avoid prompting signer app too often)
+    // Poll active connection health every 2 minutes (avoid prompting signer app too often)
     const HEALTH_POLL_MS = 2 * 60 * 1000;
     const healthCheckInterval = setInterval(() => {
-      const active = getActiveSession();
+      const active = getActiveConnection();
       if (active?.metadata.status === "active") {
         void (async () => {
           const result = await testConnection(3000, {
@@ -157,7 +147,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
             healthy: result.healthy,
             error: result.error,
           });
-          loadSessions();
+          loadConnections();
         })();
       }
     }, HEALTH_POLL_MS);
@@ -165,19 +155,19 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
     return () => {
       window.removeEventListener(
         "remote-signer-session-created",
-        handleSessionCreated
+        handleConnectionCreated
       );
       window.removeEventListener(
         "remote-signer-session-updated",
-        handleSessionUpdated
+        handleConnectionUpdated
       );
       window.removeEventListener(
         "remote-signer-session-removed",
-        handleSessionRemoved
+        handleConnectionRemoved
       );
       window.removeEventListener(
         "remote-signer-active-session-changed",
-        handleActiveSessionChanged
+        handleActiveConnectionChanged
       );
       window.removeEventListener(
         "nostr-connection-stale",
@@ -190,128 +180,125 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
       window.removeEventListener(REMOTE_SIGNER_TIMEOUT_EVENT, handleTimeout);
       clearInterval(healthCheckInterval);
     };
-  }, [loadSessions]);
+  }, [loadConnections]);
 
-  const filteredSessions = sessions.filter((session) => {
+  const filteredConnections = connections.filter((conn) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
-      session.label.toLowerCase().includes(query) ||
-      (session.metadata.signerAppName?.toLowerCase().includes(query) ??
-        false) ||
-      (session.metadata.pubkey?.toLowerCase().includes(query) ?? false)
+      conn.label.toLowerCase().includes(query) ||
+      (conn.metadata.signerAppName?.toLowerCase().includes(query) ?? false) ||
+      (conn.metadata.pubkey?.toLowerCase().includes(query) ?? false)
     );
   });
 
   const handleReconnect = useCallback(
-    (sessionId: string) => {
-      const session = sessions.find((s) => s.id === sessionId);
-      if (!session) return;
-
-      // Set as active and open reconnect dialog
-      setActiveSession(sessionId);
+    (connectionId: string) => {
+      const conn = connections.find((c) => c.id === connectionId);
+      if (!conn) return;
+      setActiveConnection(connectionId);
       setReconnectDialogOpen(true);
     },
-    [sessions]
+    [connections]
   );
 
   const handleSetActive = useCallback(
-    (sessionId: string) => {
-      setActiveSession(sessionId);
-      loadSessions();
+    (connectionId: string) => {
+      setActiveConnection(connectionId);
+      loadConnections();
     },
-    [loadSessions]
+    [loadConnections]
   );
 
-  const handleViewDetails = useCallback((sessionId: string) => {
-    setSelectedSessionId(sessionId);
+  const handleViewDetails = useCallback((connectionId: string) => {
+    setSelectedConnectionId(connectionId);
   }, []);
 
   const handleRemove = useCallback(
-    (sessionId: string) => {
-      if (activeSession?.id === sessionId) {
+    (connectionId: string) => {
+      if (activeConnection?.id === connectionId) {
         teardownActiveNip46Signer();
       }
-      removeSession(sessionId);
-      loadSessions();
-      if (selectedSessionId === sessionId) {
-        setSelectedSessionId(null);
+      removeConnection(connectionId);
+      loadConnections();
+      if (selectedConnectionId === connectionId) {
+        setSelectedConnectionId(null);
       }
     },
-    [activeSession?.id, loadSessions, selectedSessionId]
+    [activeConnection?.id, loadConnections, selectedConnectionId]
   );
 
   const handleTestConnection = useCallback(async () => {
-    if (!activeSession) return;
+    if (!activeConnection) return;
 
     setIsTestingConnection(true);
     try {
       const result = await testConnection();
-      recordConnectionEvent(activeSession.id, {
+      recordConnectionEvent(activeConnection.id, {
         type: "health_check",
         healthy: result.healthy,
         error: result.error,
       });
-      loadSessions();
+      loadConnections();
     } finally {
       setIsTestingConnection(false);
     }
-  }, [activeSession, loadSessions]);
+  }, [activeConnection, loadConnections]);
 
   const handleDisconnect = useCallback(() => {
-    if (!activeSession) return;
+    if (!activeConnection) return;
 
-    recordConnectionEvent(activeSession.id, {
+    recordConnectionEvent(activeConnection.id, {
       type: "disconnected",
       reason: "User disconnected",
     });
 
     teardownActiveNip46Signer();
     clearActiveSession();
-    loadSessions();
-  }, [activeSession, loadSessions]);
+    loadConnections();
+  }, [activeConnection, loadConnections]);
 
-  const selectedSession = selectedSessionId
-    ? (sessions.find((s) => s.id === selectedSessionId) ?? null)
+  const selectedConnection = selectedConnectionId
+    ? (connections.find((c) => c.id === selectedConnectionId) ?? null)
     : null;
 
-  const activeSessionSupportsPrimarySave =
-    activeSession?.config.type === "nip46" ? activeSession : null;
+  const activeConnectionSupportsPrimarySave =
+    activeConnection?.config.type === "nip46" ? activeConnection : null;
 
-  const handleSaveActiveSessionAsPrimary = useCallback(() => {
-    if (!activeSessionSupportsPrimarySave) {
+  const handleSaveActiveConnectionAsPrimary = useCallback(() => {
+    if (!activeConnectionSupportsPrimarySave) {
       return;
     }
-    if (activeSessionSupportsPrimarySave.config.type !== "nip46") {
+    if (activeConnectionSupportsPrimarySave.config.type !== "nip46") {
       return;
     }
     const formData = new FormData();
     formData.set("_action", "update_primary_signer_profile");
-    formData.set("method", activeSessionSupportsPrimarySave.config.method);
-    formData.set("label", activeSessionSupportsPrimarySave.label);
-    if (activeSessionSupportsPrimarySave.metadata.pubkey) {
+    formData.set("method", activeConnectionSupportsPrimarySave.config.method);
+    formData.set("label", activeConnectionSupportsPrimarySave.label);
+    if (activeConnectionSupportsPrimarySave.metadata.pubkey) {
       formData.set(
         "expectedPubkey",
-        activeSessionSupportsPrimarySave.metadata.pubkey
+        activeConnectionSupportsPrimarySave.metadata.pubkey
       );
     }
-    if (activeSessionSupportsPrimarySave.config.method === "bunker_input") {
+    if (activeConnectionSupportsPrimarySave.config.method === "bunker_input") {
       formData.set(
         "bunkerInput",
-        activeSessionSupportsPrimarySave.config.bunkerInput
+        activeConnectionSupportsPrimarySave.config.bunkerInput
       );
     } else {
-      formData.set("uri", activeSessionSupportsPrimarySave.config.uri);
+      formData.set("uri", activeConnectionSupportsPrimarySave.config.uri);
       formData.set(
         "relays",
-        activeSessionSupportsPrimarySave.config.relays.join("\n")
+        activeConnectionSupportsPrimarySave.config.relays.join("\n")
       );
     }
     primarySignerFetcher.submit(formData, {
       method: "post",
       action: "/dashboard/settings",
     });
-  }, [activeSessionSupportsPrimarySave, primarySignerFetcher]);
+  }, [activeConnectionSupportsPrimarySave, primarySignerFetcher]);
 
   const handleClearPrimaryProfile = useCallback(() => {
     const formData = new FormData();
@@ -346,10 +333,10 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Remote Signer Sessions</CardTitle>
+          <CardTitle>Remote Signer Connections</CardTitle>
           <CardDescription>
             Manage your NIP-46 remote signer connections. You can have multiple
-            sessions and switch between them.
+            connections and switch between them.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -359,7 +346,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
               <Input
                 id="remote-signer-sessions-search"
                 name="remote-signer-sessions-search"
-                placeholder="Search sessions..."
+                placeholder="Search connections..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8"
@@ -380,23 +367,23 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
               className="w-full sm:w-auto"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Session
+              Add Connection
             </Button>
           </div>
 
-          {filteredSessions.length === 0 ? (
+          {filteredConnections.length === 0 ? (
             <div className="text-muted-foreground rounded-md border p-8 text-center">
               {searchQuery
-                ? "No sessions match your search"
-                : "No remote signer sessions. Click 'Add Session' to create one."}
+                ? "No connections match your search"
+                : "No remote signer connections. Click 'Add Connection' to create one."}
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {filteredSessions.map((session) => (
+              {filteredConnections.map((connection) => (
                 <SessionCard
-                  key={session.id}
-                  session={session}
-                  isActive={activeSession?.id === session.id}
+                  key={connection.id}
+                  connection={connection}
+                  isActive={activeConnection?.id === connection.id}
                   onReconnect={handleReconnect}
                   onSetActive={handleSetActive}
                   onViewDetails={handleViewDetails}
@@ -406,18 +393,22 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
             </div>
           )}
 
-          {activeSession ? (
+          {activeConnection ? (
             <>
               <Separator className="my-4" />
               <div>
                 <div className="mb-4">
-                  <h3 className="mb-2 text-lg font-semibold">Active Session</h3>
+                  <h3 className="mb-2 text-lg font-semibold">
+                    Active Connection
+                  </h3>
                   <div className="bg-muted/30 rounded-md border p-4">
                     <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
-                        <div className="font-medium">{activeSession.label}</div>
+                        <div className="font-medium">
+                          {activeConnection.label}
+                        </div>
                         <div className="text-muted-foreground text-sm break-words">
-                          {activeSession.metadata.signerAppName ??
+                          {activeConnection.metadata.signerAppName ??
                             "Unknown Signer"}
                         </div>
                       </div>
@@ -451,7 +442,9 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
                         Recent Runtime Events
                       </h4>
                       <ConnectionHistory
-                        entries={activeSession.history.slice(0, 5)}
+                        entries={getConnectionHistory(
+                          activeConnection.id
+                        ).slice(0, 5)}
                       />
                     </div>
                   </div>
@@ -503,13 +496,13 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
-              onClick={handleSaveActiveSessionAsPrimary}
+              onClick={handleSaveActiveConnectionAsPrimary}
               disabled={
-                !activeSessionSupportsPrimarySave ||
+                !activeConnectionSupportsPrimarySave ||
                 primarySignerFetcher.state !== "idle"
               }
             >
-              Use active session as primary
+              Use active connection as primary
             </Button>
             <Button
               variant="outline"
@@ -542,19 +535,19 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
           open={reconnectDialogOpen}
           onOpenChange={setReconnectDialogOpen}
           expectedPubkey={expectedPubkey}
-          onReconnectSuccess={(_sessionId) => {
+          onReconnectSuccess={(_connectionId) => {
             setReconnectDialogOpen(false);
-            loadSessions();
+            loadConnections();
           }}
         />
       ) : null}
 
       <SessionDetailsDialog
-        session={selectedSession}
-        open={selectedSession !== null}
+        connection={selectedConnection}
+        open={selectedConnection !== null}
         onOpenChange={(open) => {
           if (!open) {
-            setSelectedSessionId(null);
+            setSelectedConnectionId(null);
           }
         }}
         onReconnect={handleReconnect}

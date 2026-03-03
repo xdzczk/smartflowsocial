@@ -17,25 +17,27 @@ import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { convertHexToNpub } from "~/lib/nostr-conversion";
 import {
   getConnectionHistory,
+  getSessionHistory,
+  getSessionsForConnection,
   maskConnectionUri,
   updateSession,
 } from "~/lib/remote-signer-sessions.client";
-import type { RemoteSignerSession } from "~/lib/remote-signer-sessions.client";
+import type { RemoteSignerConnection } from "~/lib/remote-signer-sessions.client";
 
 import { ConnectionHistory } from "./ConnectionHistory";
 import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
 
 interface SessionDetailsDialogProps {
-  session: RemoteSignerSession | null;
+  connection: RemoteSignerConnection | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onReconnect: (sessionId: string) => void;
-  onSetActive?: (sessionId: string) => void;
-  onRemove: (sessionId: string) => void;
+  onReconnect: (connectionId: string) => void;
+  onSetActive?: (connectionId: string) => void;
+  onRemove: (connectionId: string) => void;
 }
 
 export function SessionDetailsDialog({
-  session,
+  connection,
   open,
   onOpenChange,
   onReconnect,
@@ -46,19 +48,22 @@ export function SessionDetailsDialog({
   const [editedLabel, setEditedLabel] = useState("");
   const [isEditingAppName, setIsEditingAppName] = useState(false);
   const [editedAppName, setEditedAppName] = useState("");
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
+    null
+  );
 
-  if (!session) {
+  if (!connection) {
     return null;
   }
 
   const handleEditLabel = () => {
-    setEditedLabel(session.label);
+    setEditedLabel(connection.label);
     setIsEditingLabel(true);
   };
 
   const handleSaveLabel = () => {
     if (editedLabel.trim()) {
-      updateSession(session.id, { label: editedLabel.trim() });
+      updateSession(connection.id, { label: editedLabel.trim() });
     }
     setIsEditingLabel(false);
   };
@@ -69,14 +74,14 @@ export function SessionDetailsDialog({
   };
 
   const handleEditAppName = () => {
-    setEditedAppName(session.metadata.signerAppName ?? "");
+    setEditedAppName(connection.metadata.signerAppName ?? "");
     setIsEditingAppName(true);
   };
 
   const handleSaveAppName = () => {
-    updateSession(session.id, {
+    updateSession(connection.id, {
       metadata: {
-        ...session.metadata,
+        ...connection.metadata,
         signerAppName: editedAppName.trim() || null,
       },
     });
@@ -90,20 +95,22 @@ export function SessionDetailsDialog({
 
   const handleExport = () => {
     const exportData = {
-      id: session.id,
-      label: session.label,
+      id: connection.id,
+      label: connection.label,
       config: {
-        type: session.config.type,
+        type: connection.config.type,
         method:
-          session.config.type === "nip46" ? session.config.method : undefined,
+          connection.config.type === "nip46"
+            ? connection.config.method
+            : undefined,
         // Don't export sensitive data like clientSecretKey
       },
       metadata: {
-        signerAppName: session.metadata.signerAppName,
-        pubkey: session.metadata.pubkey,
-        relays: session.metadata.relays,
+        signerAppName: connection.metadata.signerAppName,
+        pubkey: connection.metadata.pubkey,
+        relays: connection.metadata.relays,
       },
-      createdAt: new Date(session.metadata.createdAt).toISOString(),
+      createdAt: new Date(connection.metadata.createdAt).toISOString(),
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -112,7 +119,7 @@ export function SessionDetailsDialog({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `remote-signer-session-${session.id}.json`;
+    a.download = `remote-signer-connection-${connection.id}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -125,18 +132,21 @@ export function SessionDetailsDialog({
   };
 
   const getConnectionUri = (): string | null => {
-    if (session.config.type === "nip46") {
-      if (session.config.method === "nostrconnect_uri") {
-        return session.config.uri;
+    if (connection.config.type === "nip46") {
+      if (connection.config.method === "nostrconnect_uri") {
+        return connection.config.uri;
       }
-      // bunker_input method
-      return session.config.bunkerInput;
+      return connection.config.bunkerInput;
     }
     return null;
   };
 
   const connectionUri = getConnectionUri();
-  const history = getConnectionHistory(session.id);
+  const recentSessions = getSessionsForConnection(connection.id);
+  const history =
+    selectedSessionId !== null
+      ? getSessionHistory(selectedSessionId)
+      : getConnectionHistory(connection.id);
 
   const latestEvent = history[0] ?? null;
   const lastSuccessEvent = history.find((entry) => entry.status === "success");
@@ -151,9 +161,9 @@ export function SessionDetailsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Session Details</DialogTitle>
+          <DialogTitle>Connection Details</DialogTitle>
           <DialogDescription>
-            View and manage remote signer session details
+            View and manage remote signer connection and sessions
           </DialogDescription>
         </DialogHeader>
 
@@ -167,7 +177,7 @@ export function SessionDetailsDialog({
           <TabsContent value="overview" className="space-y-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>Session Label</Label>
+                <Label>Connection Label</Label>
                 <div className="flex items-center gap-2">
                   {isEditingLabel ? (
                     <>
@@ -189,7 +199,7 @@ export function SessionDetailsDialog({
                     </>
                   ) : (
                     <>
-                      <span className="font-medium">{session.label}</span>
+                      <span className="font-medium">{connection.label}</span>
                       <Button
                         size="sm"
                         variant="ghost"
@@ -227,7 +237,7 @@ export function SessionDetailsDialog({
                   ) : (
                     <>
                       <span className="text-muted-foreground">
-                        {session.metadata.signerAppName ?? "Unknown"}
+                        {connection.metadata.signerAppName ?? "Unknown"}
                       </span>
                       <Button
                         size="sm"
@@ -243,28 +253,28 @@ export function SessionDetailsDialog({
 
               <div className="flex items-center justify-between">
                 <Label>Status</Label>
-                <ConnectionStatusBadge status={session.metadata.status} />
+                <ConnectionStatusBadge status={connection.metadata.status} />
               </div>
 
               <div className="flex items-center justify-between">
                 <Label>Pubkey</Label>
                 <span className="font-mono text-sm">
-                  {formatPubkey(session.metadata.pubkey)}
+                  {formatPubkey(connection.metadata.pubkey)}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <Label>Created</Label>
                 <span className="text-sm">
-                  {format(new Date(session.metadata.createdAt), "PPpp")}
+                  {format(new Date(connection.metadata.createdAt), "PPpp")}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <Label>Last Connected</Label>
                 <span className="text-sm">
-                  {session.metadata.connectedAt
-                    ? format(new Date(session.metadata.connectedAt), "PPpp")
+                  {connection.metadata.connectedAt
+                    ? format(new Date(connection.metadata.connectedAt), "PPpp")
                     : "Never"}
                 </span>
               </div>
@@ -272,16 +282,19 @@ export function SessionDetailsDialog({
               <div className="flex items-center justify-between">
                 <Label>Last Activity</Label>
                 <span className="text-sm">
-                  {session.metadata.lastActivityAt
-                    ? format(new Date(session.metadata.lastActivityAt), "PPpp")
+                  {connection.metadata.lastActivityAt
+                    ? format(
+                        new Date(connection.metadata.lastActivityAt),
+                        "PPpp"
+                      )
                     : "Never"}
                 </span>
               </div>
 
-              {session.metadata.lastError ? (
+              {connection.metadata.lastError ? (
                 <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-md border p-3">
                   <Label className="mb-1 block">Last Error</Label>
-                  <p className="text-sm">{session.metadata.lastError}</p>
+                  <p className="text-sm">{connection.metadata.lastError}</p>
                 </div>
               ) : null}
 
@@ -322,9 +335,9 @@ export function SessionDetailsDialog({
               <div>
                 <Label>Connection Method</Label>
                 <p className="text-sm">
-                  {session.config.type === "nip07"
+                  {connection.config.type === "nip07"
                     ? "Browser Extension (NIP-07)"
-                    : session.config.method === "nostrconnect_uri"
+                    : connection.config.method === "nostrconnect_uri"
                       ? "NostrConnect URI"
                       : "Bunker Input"}
                 </p>
@@ -350,12 +363,12 @@ export function SessionDetailsDialog({
                 </div>
               ) : null}
 
-              {session.metadata.relays.length > 0 ? (
+              {connection.metadata.relays.length > 0 ? (
                 <div>
                   <Label>Relays</Label>
                   <div className="bg-muted rounded-md p-3">
                     <ul className="list-inside list-disc space-y-1">
-                      {session.metadata.relays.map((relay) => (
+                      {connection.metadata.relays.map((relay) => (
                         <li key={relay} className="font-mono text-sm">
                           {relay}
                         </li>
@@ -368,7 +381,44 @@ export function SessionDetailsDialog({
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
-            <ConnectionHistory entries={history} showFilters />
+            {recentSessions.length > 0 ? (
+              <div className="space-y-2">
+                <Label>Recent sessions</Label>
+                <ul className="bg-muted divide-y rounded-md border">
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSessionId(null)}
+                      className={`hover:bg-muted/80 w-full px-3 py-2 text-left text-sm ${selectedSessionId === null ? "bg-muted/80 font-medium" : ""}`}
+                    >
+                      Current session
+                    </button>
+                  </li>
+                  {recentSessions.map((s) => (
+                    <li key={s.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSessionId(s.id)}
+                        className={`hover:bg-muted/80 w-full px-3 py-2 text-left text-sm ${selectedSessionId === s.id ? "bg-muted/80 font-medium" : ""}`}
+                      >
+                        {format(new Date(s.startedAt), "PPp")}
+                        {s.endedAt != null
+                          ? ` – ${format(new Date(s.endedAt), "PPp")}`
+                          : ""}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            <div>
+              <Label className="mb-2 block">
+                {selectedSessionId === null
+                  ? "Current session events"
+                  : "Session events"}
+              </Label>
+              <ConnectionHistory entries={history} showFilters />
+            </div>
           </TabsContent>
         </Tabs>
 
@@ -380,7 +430,7 @@ export function SessionDetailsDialog({
           <Button
             variant="outline"
             onClick={() => {
-              onReconnect(session.id);
+              onReconnect(connection.id);
               onOpenChange(false);
             }}
           >
@@ -390,7 +440,7 @@ export function SessionDetailsDialog({
           <Button
             variant="destructive"
             onClick={() => {
-              onRemove(session.id);
+              onRemove(connection.id);
               onOpenChange(false);
             }}
           >

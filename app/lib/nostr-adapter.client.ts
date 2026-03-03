@@ -32,7 +32,7 @@ import { attemptPrimarySignerFailover } from "~/lib/primary-signer-failover.clie
 import { emitRemoteSignerTimeoutEvent } from "~/lib/remote-signer-reconnect.client";
 import {
   addConnectionLog,
-  getActiveSession,
+  getActiveConnection,
   updateSession,
 } from "~/lib/remote-signer-sessions.client";
 
@@ -72,10 +72,10 @@ function isConnectionLikeError(error: unknown): boolean {
 /**
  * True if we should clear the NIP-46 signer cache.
  * - Connection errors (subscription closed, etc.): clear so we reconnect.
- * - Sign timeout ("did not respond"): keep cache on first timeout so user can retry with same signer.
- *   After 1+ sign timeout, clear so the next retry does a full reconnect; this fixes the case where
- *   both app and Primal were closed and the cached signer's channel no longer receives responses
- *   after Primal is reopened and "resumed".
+ * - Sign timeout ("did not respond" / "approve the request"): always clear so the next attempt
+ *   creates a fresh connection. This fixes the case where both app and Primal were closed,
+ *   user reopens Primal and "resumes" the connection, but our cached signer's channel is dead
+ *   so sign_event never completes; clearing forces a new connection that can work with resumed Primal.
  */
 function shouldClearSignerCacheOnError(error: unknown): boolean {
   if (error instanceof RemoteSignerTimeoutError) {
@@ -84,7 +84,7 @@ function shouldClearSignerCacheOnError(error: unknown): boolean {
       msg.includes("did not respond") ||
       msg.includes("approve the request")
     ) {
-      return signRetryCount >= 1;
+      return true;
     }
   }
   return isConnectionLikeError(error);
@@ -229,23 +229,23 @@ async function resetSignerCacheBestEffort(): Promise<void> {
   }
 }
 
-function markActiveRemoteSessionStale(error: unknown): void {
-  const activeSession = getActiveSession();
-  if (!activeSession) return;
+function markActiveRemoteConnectionStale(error: unknown): void {
+  const activeConnection = getActiveConnection();
+  if (!activeConnection) return;
 
   const errorMessage = error instanceof Error ? error.message : String(error);
   const now = Date.now();
 
-  updateSession(activeSession.id, {
+  updateSession(activeConnection.id, {
     metadata: {
-      ...activeSession.metadata,
+      ...activeConnection.metadata,
       status: "stale",
       lastError: errorMessage,
       lastActivityAt: now,
     },
   });
 
-  addConnectionLog(activeSession.id, {
+  addConnectionLog(activeConnection.id, {
     type: "health_check",
     status: "failure",
     message: `Health check failed: ${errorMessage}`,
@@ -279,7 +279,7 @@ async function handleConfiguredSignerError(
       signRetryCount,
       clearCache,
     });
-    markActiveRemoteSessionStale(err);
+    markActiveRemoteConnectionStale(err);
     if (clearCache) {
       await resetSignerCacheBestEffort();
     }

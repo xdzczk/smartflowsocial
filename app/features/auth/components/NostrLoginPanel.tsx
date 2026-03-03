@@ -1081,20 +1081,20 @@ export default function NostrLoginPanel() {
           };
           setActiveSignerConfig(config);
 
-          // Store sessions under this profile so they appear in Settings after login
+          // Store connections under this profile so they appear in Settings after login
           setCurrentUserNpub(convertHexToNpub(pk));
 
-          const session = matchOrCreateSession(config, {
+          const connectionView = matchOrCreateSession(config, {
             signerPubkey: pk,
           });
 
-          setActiveSession(session.id);
+          setActiveSession(connectionView.id);
 
-          // Update session with pubkey and detected app name
+          // Update connection with pubkey and detected app name
           const detectedAppName = detectSignerAppName(config);
-          updateSession(session.id, {
+          updateSession(connectionView.id, {
             metadata: {
-              ...session.metadata,
+              ...connectionView.metadata,
               pubkey: pk,
               signerAppName: detectedAppName,
               status: "active",
@@ -1104,7 +1104,7 @@ export default function NostrLoginPanel() {
           });
 
           // Record connection event
-          recordConnectionEvent(session.id, {
+          recordConnectionEvent(connectionView.id, {
             type: "connected",
             pubkey: pk,
           });
@@ -1211,20 +1211,20 @@ export default function NostrLoginPanel() {
         };
         setActiveSignerConfig(config);
 
-        // Store sessions under this profile so they appear in Settings after login
+        // Store connections under this profile so they appear in Settings after login
         setCurrentUserNpub(convertHexToNpub(pk));
 
-        const session = matchOrCreateSession(config, {
+        const connectionView = matchOrCreateSession(config, {
           signerPubkey: pk,
         });
 
-        setActiveSession(session.id);
+        setActiveSession(connectionView.id);
 
-        // Update session with pubkey and detected app name
+        // Update connection with pubkey and detected app name
         const detectedAppName = detectSignerAppName(config);
-        updateSession(session.id, {
+        updateSession(connectionView.id, {
           metadata: {
-            ...session.metadata,
+            ...connectionView.metadata,
             pubkey: pk,
             signerAppName: detectedAppName,
             status: "active",
@@ -1234,7 +1234,7 @@ export default function NostrLoginPanel() {
         });
 
         // Record connection event
-        recordConnectionEvent(session.id, {
+        recordConnectionEvent(connectionView.id, {
           type: "connected",
           pubkey: pk,
         });
@@ -1404,19 +1404,19 @@ export default function NostrLoginPanel() {
       };
       setActiveSignerConfig(config);
 
-      // Store sessions under this profile so they appear in Settings after login
+      // Store connections under this profile so they appear in Settings after login
       setCurrentUserNpub(convertHexToNpub(pk));
 
-      const session = matchOrCreateSession(config, {
+      const connectionView = matchOrCreateSession(config, {
         signerPubkey: pk,
       });
-      setActiveSession(session.id);
+      setActiveSession(connectionView.id);
 
-      // Update session with pubkey and detected app name
+      // Update connection with pubkey and detected app name
       const detectedAppName = detectSignerAppName(config);
-      updateSession(session.id, {
+      updateSession(connectionView.id, {
         metadata: {
-          ...session.metadata,
+          ...connectionView.metadata,
           pubkey: pk,
           signerAppName: detectedAppName,
           status: "active",
@@ -1426,7 +1426,7 @@ export default function NostrLoginPanel() {
       });
 
       // Record connection event
-      recordConnectionEvent(session.id, {
+      recordConnectionEvent(connectionView.id, {
         type: "connected",
         pubkey: pk,
       });

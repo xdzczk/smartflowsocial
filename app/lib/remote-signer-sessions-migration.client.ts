@@ -8,7 +8,7 @@ import {
 const MIGRATION_FLAG_KEY = "__smartflow_remote_signer_migrated_v1";
 
 /**
- * Migrate existing active signer config to new session system.
+ * Migrate existing active signer config to new connection/session system.
  * This is a one-time migration that runs automatically.
  */
 export function migrateExistingConfig(): void {
@@ -26,10 +26,10 @@ export function migrateExistingConfig(): void {
     // Continue with migration
   }
 
-  // Check if there are already sessions (user might have created them manually)
+  // Check if there are already connections (user might have created them manually)
   const existingSessions = getAllSessions();
   if (existingSessions.length > 0) {
-    // Already have sessions, mark as migrated
+    // Already have connections, mark as migrated
     try {
       localStorage.setItem(MIGRATION_FLAG_KEY, "true");
     } catch {
@@ -50,7 +50,7 @@ export function migrateExistingConfig(): void {
     return;
   }
 
-  // Skip NIP-07 (browser extension) - doesn't need session management
+  // Skip NIP-07 (browser extension) - doesn't need connection management
   if (existingConfig.type === "nip07") {
     try {
       localStorage.setItem(MIGRATION_FLAG_KEY, "true");
@@ -60,7 +60,7 @@ export function migrateExistingConfig(): void {
     return;
   }
 
-  // Create session from existing config
+  // Create connection from existing config
   try {
     const session = createSession(existingConfig, "Migrated Session");
     setActiveSession(session.id);
