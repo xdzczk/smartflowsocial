@@ -83,6 +83,12 @@ let teardownInProgress = false;
 
 /** Minimum time between verification checks (avoid prompting signer app too often). */
 const VERIFY_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+/** Treat connection as "fresh" for this long after it was established. */
+const CONNECTION_FRESH_MS = 5 * 60 * 1000; // 5 minutes
+/** If we had activity (e.g. sign) in the last N min, skip verification. */
+const RECENT_ACTIVITY_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+/** After a reconnect (new session), skip verification for this long. */
+const RECONNECT_GRACE_MS = 15 * 60 * 1000; // 15 minutes
 /** Verification timeout when returning cached signer (e.g. before sign). Give signer app time to respond after app switch. */
 const VERIFY_BEFORE_USE_TIMEOUT_MS = 12_000; // 12 seconds
 const RELAY_SYNC_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
@@ -471,8 +477,8 @@ export async function syncRelaysWithRemoteSigner(
 
 /**
  * Verify that a cached NIP-46 signer connection is still valid.
- * Returns true if the signer is available and can be used, false otherwise.
- * Uses a quick health check with a short timeout to avoid blocking.
+ * Uses only ping (no getPublicKey) so we don't prompt the signer app.
+ * Returns true if ping succeeds or if signer has no ping (skip check); false on ping failure.
  */
 async function verifySignerConnection(
   signer: NostrSigner,
@@ -480,39 +486,25 @@ async function verifySignerConnection(
 ): Promise<boolean> {
   if (signer.type !== NIP46_SIGNER_TYPE) return true; // NIP-07 doesn't need verification
 
+  if (typeof signer.ping !== "function") {
+    // Health checks use only ping; don't use getPublicKey (would prompt signer app).
+    debugSignerManagerTrace("Ping unavailable, skipping verification");
+    return true;
+  }
+
   try {
-    // Prefer ping for health checks to avoid unnecessarily prompting signer UI.
-    if (typeof signer.ping === "function") {
-      debugSignerManagerTrace("Running ping-based signer health check");
-      await Promise.race([
-        signer.ping(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Ping check timeout")), timeoutMs)
-        ),
-      ]);
-    } else {
-      debugSignerManagerTrace(
-        "Ping unavailable, falling back to get_public_key health check"
-      );
-      // Fallback path for signer implementations without ping support.
-      await Promise.race([
-        signer.getPublicKey(),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error("Connection check timeout")),
-            timeoutMs
-          )
-        ),
-      ]);
-    }
+    debugSignerManagerTrace("Running ping-based signer health check");
+    await Promise.race([
+      signer.ping(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Ping check timeout")), timeoutMs)
+      ),
+    ]);
     const now = Date.now();
     _lastActivityTime = now;
     _lastVerificationTime = now;
     return true;
   } catch {
-    // Any error means the connection is stale or unreachable
-    // This includes "subscription closed", websocket errors, and other connection issues
-    // However, this doesn't mean we should give up - we can try reconnecting with the same URI
     return false;
   }
 }
@@ -551,7 +543,7 @@ function startHealthCheckMonitoring(): void {
           (_lastRelaySyncAt == null ||
             now - _lastRelaySyncAt > RELAY_SYNC_COOLDOWN_MS);
 
-        // Only check when: connection is at least 5 min old AND (no activity for 5 min OR last verification was > 5 min ago)
+        // Only check when: past reconnect grace (15 min) AND (no activity for 5 min OR last verification was > 5 min ago)
         const connectionAge = connectionEstablishedAt
           ? now - connectionEstablishedAt
           : 0;
@@ -560,29 +552,22 @@ function startHealthCheckMonitoring(): void {
 
         if (
           connectionEstablishedAt &&
-          connectionAge > 5 * 60 * 1000 &&
+          connectionAge > RECONNECT_GRACE_MS &&
           (idleLongEnough || verificationStale)
         ) {
           const signerToCheck = cachedSigner;
-          const isValid = await verifySignerConnection(signerToCheck);
+          const isValid = await verifySignerConnection(
+            signerToCheck,
+            VERIFY_BEFORE_USE_TIMEOUT_MS
+          );
           if (!isValid) {
             // Only clear if the signer we checked is still the current one.
-            // Otherwise getActiveSigner() may have replaced it with a new signer
-            // and we would wrongly clear the new signer.
             if (cachedSigner === signerToCheck) {
               clearCachedNip46Signer();
               connectionEstablishedAt = null;
               _lastActivityTime = null;
 
-              const activeConnection = getActiveConnection();
-              if (activeConnection) {
-                recordConnectionEvent(activeConnection.id, {
-                  type: "health_check",
-                  healthy: false,
-                  error: "Connection stale",
-                });
-              }
-
+              // Emit only; remote-signer-status listener will record one "Health check failed: Connection stale".
               if (typeof window !== "undefined") {
                 window.dispatchEvent(
                   new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
@@ -677,20 +662,26 @@ export async function getActiveSigner(
     clearCachedNip46Signer();
   }
 
-  // If we have a cached signer, verify it's still valid before returning it.
-  // Skip verification only when recently verified (cooldown) AND connection is fresh (< 1 min).
-  // Otherwise re-verify so we don't return a stale signer after user closed Primal and resumed.
+  // If we have a cached signer, optionally verify before returning it.
+  // Skip verification when: within reconnect grace, or recently verified and connection fresh, or we had recent activity.
+  // On verification failure we do not clear the cache; only a failed sign() will clear (in the adapter).
   if (cachedSigner) {
     const now = Date.now();
     const connectionAge = connectionEstablishedAt
       ? now - connectionEstablishedAt
       : 0;
+    const withinReconnectGrace = connectionAge < RECONNECT_GRACE_MS;
     const recentlyVerified =
       _lastVerificationTime != null &&
       now - _lastVerificationTime <= VERIFY_COOLDOWN_MS;
-    const connectionFresh = connectionAge < 60 * 1000; // 1 minute
+    const connectionFresh = connectionAge < CONNECTION_FRESH_MS;
+    const activityRecent =
+      _lastActivityTime != null &&
+      now - _lastActivityTime <= RECENT_ACTIVITY_WINDOW_MS;
     const shouldVerify =
-      !recentlyVerified || !connectionFresh || _lastVerificationTime == null;
+      !withinReconnectGrace &&
+      !activityRecent &&
+      (!recentlyVerified || !connectionFresh || _lastVerificationTime == null);
 
     if (!shouldVerify) {
       _lastActivityTime = now;
@@ -705,32 +696,9 @@ export async function getActiveSigner(
       _lastActivityTime = Date.now();
       return cachedSigner;
     }
-    // Connection verification failed; clear cache so next call creates fresh signer and probes.
-    clearCachedNip46Signer();
-    needsReprobe = true;
-
-    // Update connection status
-    const activeConnection = getActiveConnection();
-    if (activeConnection) {
-      recordConnectionEvent(activeConnection.id, {
-        type: "health_check",
-        healthy: false,
-        error: "Connection verification failed",
-      });
-    }
-
-    // Emit connection stale event
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
-          detail: { signerType: NIP46_SIGNER_TYPE },
-        })
-      );
-    }
-
-    if (!allowReconnect) {
-      return null;
-    }
+    // Verification failed (e.g. ping timeout). Do not clear here; only clear after a failed sign() in the adapter.
+    // Return the cached signer so the sign attempt can proceed; if sign fails we clear there.
+    return cachedSigner;
   }
 
   const config = getActiveSignerConfig();
