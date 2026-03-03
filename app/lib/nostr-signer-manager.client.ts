@@ -340,6 +340,16 @@ export function cacheNip46SignerFromLogin(signer: NostrSigner): void {
   startHealthCheckMonitoring();
 }
 
+/**
+ * Call after a successful sign so the next getActiveSigner() skips verification
+ * and returns the same cached signer (avoids ping/timeout clearing the cache for the next post).
+ */
+export function recordSuccessfulSign(): void {
+  const now = Date.now();
+  _lastActivityTime = now;
+  _lastVerificationTime = now;
+}
+
 export function getActiveSignerConfig(): ActiveSignerConfig | null {
   try {
     const json = sessionStorage.getItem(STORAGE_KEY);

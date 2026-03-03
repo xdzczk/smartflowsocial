@@ -67,6 +67,16 @@ function isConnectionLikeError(error: unknown): boolean {
   );
 }
 
+/** True if we should clear the NIP-46 signer cache (connection dropped). False for sign timeout so we keep the same signer and let the user retry. */
+function shouldClearSignerCacheOnError(error: unknown): boolean {
+  if (error instanceof RemoteSignerTimeoutError) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("did not respond") || msg.includes("approve the request"))
+      return false;
+  }
+  return isConnectionLikeError(error);
+}
+
 function debugSignerTrace(
   message: string,
   details?: Record<string, unknown>
@@ -271,36 +281,41 @@ async function trySignWithConfiguredSigner(
 
     // Reset retry counts on success
     resetNostrRetryCounts();
+    // So the next getActiveSigner() skips verification and reuses this signer for the next post
+    if (
+      activeSigner.type === "nip46" &&
+      typeof signerManager.recordSuccessfulSign === "function"
+    ) {
+      signerManager.recordSuccessfulSign();
+    }
 
     return normalizeSignResult(signResult, nostrEvent);
   } catch (err) {
     if (prefersRemoteSigner) {
-      // Check if this is a connection error that should trigger cache reset
       const isConnectionError = isConnectionLikeError(err);
+      const clearCache = shouldClearSignerCacheOnError(err);
 
       if (isConnectionError) {
         debugSignerTrace("Configured signer connection-like error", {
           error: err instanceof Error ? err.message : String(err),
           connectionRetryCount,
           signRetryCount,
+          clearCache,
         });
-        // Increment retry count for connection errors
         incrementConnectionRetryCount();
-        // Ensure UI/session state reflects stale connection immediately.
         markActiveRemoteSessionStale(err);
-        // Clear cache and emit timeout event for connection errors
-        await resetSignerCacheBestEffort();
+        if (clearCache) {
+          await resetSignerCacheBestEffort();
+        }
         if (err instanceof RemoteSignerTimeoutError) {
           emitRemoteSignerTimeoutEvent({ message: err.message });
         } else {
-          // For other connection errors, emit a generic timeout event
           emitRemoteSignerTimeoutEvent({
             message:
               "Connection to remote signer failed. Please try again or reconnect your signer.",
           });
         }
       } else {
-        // Increment sign retry count for sign errors (prefersRemoteSigner is already true in this block)
         incrementSignRetryCount();
       }
       throw err;
