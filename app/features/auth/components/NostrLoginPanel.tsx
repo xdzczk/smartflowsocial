@@ -28,6 +28,7 @@ import {
 import { recordConnectionAttempt } from "~/lib/nostr-connection-metrics.client";
 import { convertHexToNpub, convertToHex } from "~/lib/nostr-conversion";
 import {
+  cacheNip46SignerFromLogin,
   clearActiveSignerConfig,
   getActiveSignerConfig,
   parseSecretKeyHex,
@@ -439,6 +440,8 @@ export default function NostrLoginPanel() {
   const [relayList, setRelayList] = useState(DEFAULT_RELAYS);
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
   const nip46CancelRef = useRef<{ cancel: () => void } | null>(null);
+  /** When true, the current NIP-46 signer was transferred to the signer manager before redirect; cleanup must not close it. */
+  const signerTransferredToManagerRef = useRef(false);
   /** Stored when we create a nostrconnect URI so we can retry with the same URI after app switch (mobile). */
   const pendingNostrConnectRef = useRef<{
     uri: string;
@@ -610,7 +613,7 @@ export default function NostrLoginPanel() {
   const cleanup = useCallback(async () => {
     nip46CancelRef.current?.cancel();
     nip46CancelRef.current = null;
-    if (signer?.type === "nip46") {
+    if (signer?.type === "nip46" && !signerTransferredToManagerRef.current) {
       await signer.close?.();
     }
   }, [signer]);
@@ -662,6 +665,7 @@ export default function NostrLoginPanel() {
     } catch {
       // ignore
     }
+    signerTransferredToManagerRef.current = false;
     clearActiveSignerConfig();
     setSigner(null);
     setPubkey(null);
@@ -1579,6 +1583,11 @@ export default function NostrLoginPanel() {
       });
 
       setState("authenticated");
+      // Transfer NIP-46 signer to the manager so publish/schedule can use it without opening a second connection
+      if (signer.type === "nip46") {
+        cacheNip46SignerFromLogin(signer);
+        signerTransferredToManagerRef.current = true;
+      }
       // Always redirect to dashboard after sign-in (server returns redirectTo: "/dashboard")
       queryClient.clear();
       clearPersistedState();

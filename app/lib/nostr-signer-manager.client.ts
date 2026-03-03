@@ -319,6 +319,27 @@ export function setActiveSignerConfig(config: ActiveSignerConfig): void {
   }
 }
 
+/**
+ * Cache a live NIP-46 signer from the login flow so the first sign (publish/schedule)
+ * reuses it instead of opening a second connection. Call this before redirect after
+ * successful login; the login UI must not close this signer on unmount (e.g. use a
+ * ref to skip close when transferred). When the config is NIP-46 and matches storage,
+ * sets the signer as cached and starts health monitoring.
+ */
+export function cacheNip46SignerFromLogin(signer: NostrSigner): void {
+  if (signer.type !== NIP46_SIGNER_TYPE) return;
+  const config = getActiveSignerConfig();
+  if (config?.type !== NIP46_SIGNER_TYPE) return;
+  cachedSigner = signer;
+  cachedConfigJson = JSON.stringify(config);
+  const now = Date.now();
+  connectionEstablishedAt = now;
+  _lastActivityTime = now;
+  _lastVerificationTime = now;
+  needsReprobe = false;
+  startHealthCheckMonitoring();
+}
+
 export function getActiveSignerConfig(): ActiveSignerConfig | null {
   try {
     const json = sessionStorage.getItem(STORAGE_KEY);
