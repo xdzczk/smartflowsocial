@@ -19,6 +19,7 @@ import { isMobile } from "~/lib/is-mobile";
 import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 import { convertToHex } from "~/lib/nostr-conversion";
 import {
+  cacheNip46SignerFromLogin,
   clearActiveSignerConfig,
   createNip46SignerFromStoredConfig,
   getActiveSigner,
@@ -553,7 +554,12 @@ export function RemoteSignerReconnectDialog(props: {
         const tryConnect = async (
           timeoutMs: number,
           relaysToUse: string[]
-        ): Promise<string> => {
+        ): Promise<{
+          signer: Awaited<
+            ReturnType<typeof createNip46SignerFromStoredConfig>
+          >["signer"];
+          pubkey: string;
+        }> => {
           closePool(activePool);
           const attemptPool = new SimplePool();
           activePool = attemptPool;
@@ -574,19 +580,7 @@ export function RemoteSignerReconnectDialog(props: {
                 timeoutMs,
               }
             );
-            try {
-              return pubkey;
-            } finally {
-              try {
-                await signer.close();
-              } catch {
-                // ignore
-              }
-              closePool(attemptPool);
-              if (activePool === attemptPool) {
-                activePool = null;
-              }
-            }
+            return { signer, pubkey };
           }
           const { signer, pubkey } = await connectNip46WithNostrConnectUri({
             uri,
@@ -595,26 +589,14 @@ export function RemoteSignerReconnectDialog(props: {
             timeoutMs,
             relaysToCloseOnCancel: relaysToUse,
           });
-          try {
-            return pubkey;
-          } finally {
-            try {
-              await signer.close();
-            } catch {
-              // ignore
-            }
-            closePool(attemptPool);
-            if (activePool === attemptPool) {
-              activePool = null;
-            }
-          }
+          return { signer, pubkey };
         };
 
-        let pubkey: string;
+        let result: Awaited<ReturnType<typeof tryConnect>>;
         let relaysUsed = relays;
         try {
           setExistingReconnectAttempt(1);
-          pubkey = await tryConnect(
+          result = await tryConnect(
             EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0],
             relays
           );
@@ -646,7 +628,7 @@ export function RemoteSignerReconnectDialog(props: {
           );
           try {
             setExistingReconnectAttempt(2);
-            pubkey = await tryConnect(
+            result = await tryConnect(
               EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[1],
               relaysSecond
             );
@@ -665,13 +647,26 @@ export function RemoteSignerReconnectDialog(props: {
             runId,
           })
         ) {
+          try {
+            await result.signer.close();
+          } catch {
+            // ignore
+          }
+          activePool = null;
           return;
         }
+        const { signer, pubkey } = result;
         if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
           debugReconnectTrace("Existing-connection reconnect pubkey mismatch", {
             expectedPubkeyHex,
             receivedPubkey: pubkey,
           });
+          try {
+            await signer.close();
+          } catch {
+            // ignore
+          }
+          activePool = null;
           setError(PROFILE_MISMATCH_MESSAGE);
           setState("failed");
           return;
@@ -712,6 +707,8 @@ export function RemoteSignerReconnectDialog(props: {
         });
 
         setActiveSignerConfig(config);
+        cacheNip46SignerFromLogin(signer);
+        activePool = null;
         await syncRelaysAfterReconnect();
         if (existingReconnectRunIdRef.current !== runId) {
           return;
@@ -819,24 +816,12 @@ export function RemoteSignerReconnectDialog(props: {
               timeoutMs,
             }
           );
-          try {
-            return { signer, pubkey };
-          } finally {
-            try {
-              await signer.close();
-            } catch {
-              // ignore
-            }
-            try {
-              pool.close(bp.relays);
-            } catch {
-              // ignore
-            }
-            if (activePool === pool) activePool = null;
-          }
+          return { signer, pubkey };
         };
 
-        let result: { signer: { close?: () => Promise<void> }; pubkey: string };
+        let result: Awaited<
+          ReturnType<typeof createNip46SignerFromStoredConfig>
+        >;
         try {
           setExistingReconnectAttempt(1);
           result = await tryConnect(EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0]);
@@ -872,6 +857,12 @@ export function RemoteSignerReconnectDialog(props: {
             runId,
           })
         ) {
+          try {
+            await result.signer.close();
+          } catch {
+            // ignore
+          }
+          activePool = null;
           return;
         }
         const { signer, pubkey } = result;
@@ -880,6 +871,12 @@ export function RemoteSignerReconnectDialog(props: {
             "Existing-connection bunker reconnect pubkey mismatch",
             { expectedPubkeyHex, receivedPubkey: pubkey }
           );
+          try {
+            await signer.close();
+          } catch {
+            // ignore
+          }
+          activePool = null;
           setError(PROFILE_MISMATCH_MESSAGE);
           setState("failed");
           return;
@@ -911,11 +908,8 @@ export function RemoteSignerReconnectDialog(props: {
         });
 
         setActiveSignerConfig(config);
-        try {
-          await signer.close?.();
-        } catch {
-          // ignore
-        }
+        cacheNip46SignerFromLogin(signer);
+        activePool = null;
         await syncRelaysAfterReconnect();
         if (existingReconnectRunIdRef.current !== runId) return;
         debugReconnectTrace("Existing-connection bunker reconnect succeeded", {

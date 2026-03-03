@@ -220,7 +220,7 @@ export function teardownActiveNip46Signer(): void {
  * Teardown cached NIP-46 signer and set needsReprobe so the next getActiveSigner()
  * creates a fresh signer and runs a short probe. Call on app resume (visibility/focus/pageshow).
  */
-function teardownNip46SignerAndSetNeedsReprobe(): void {
+function _teardownNip46SignerAndSetNeedsReprobe(): void {
   const config = getActiveSignerConfig();
   if (config?.type !== NIP46_SIGNER_TYPE) return;
   clearCachedNip46Signer();
@@ -228,23 +228,15 @@ function teardownNip46SignerAndSetNeedsReprobe(): void {
 }
 
 /**
- * Initialize page visibility detection: on resume (visible/focus/pageshow), tear down
- * cached NIP-46 signer and set needsReprobe so the next use creates a fresh signer and probes.
+ * Initialize page visibility detection: on resume we only mark wasHidden = false.
+ * We do not clear the cached signer on visibility change; cache is only cleared
+ * when sign() actually fails (in the adapter), so returning users keep their signer.
  */
 function initVisibilityHandler(): void {
   if (typeof document === "undefined") return;
 
   const onResume = () => {
-    const now = Date.now();
     wasHidden = false;
-    teardownNip46SignerAndSetNeedsReprobe();
-    // Cooldown so we don't reconnect immediately if getActiveSigner is called in the same tick
-    if (isMobile()) {
-      const baseCooldown = isIOS() ? 3000 : 1500;
-      connectionCooldownUntil = now + baseCooldown + Math.random() * 500;
-    } else {
-      connectionCooldownUntil = now + 500;
-    }
   };
 
   const handleVisibilityChange = () => {
@@ -561,13 +553,9 @@ function startHealthCheckMonitoring(): void {
             VERIFY_BEFORE_USE_TIMEOUT_MS
           );
           if (!isValid) {
-            // Only clear if the signer we checked is still the current one.
+            // Record/emit stale for UI and logs but do not clear the cache.
+            // Cache is only cleared when sign() actually fails (in the adapter).
             if (cachedSigner === signerToCheck) {
-              clearCachedNip46Signer();
-              connectionEstablishedAt = null;
-              _lastActivityTime = null;
-
-              // Emit only; remote-signer-status listener will record one "Health check failed: Connection stale".
               if (typeof window !== "undefined") {
                 window.dispatchEvent(
                   new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
