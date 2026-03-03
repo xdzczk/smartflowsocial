@@ -1,5 +1,10 @@
 import { SimplePool, getPublicKey } from "nostr-tools";
-import { BunkerSigner, parseBunkerInput } from "nostr-tools/nip46";
+import {
+  BunkerSigner,
+  createNostrConnectURI,
+  parseBunkerInput,
+  parseNostrConnectURI,
+} from "nostr-tools/nip46";
 
 import {
   Nip07Signer,
@@ -7,6 +12,7 @@ import {
   type NostrSigner,
 } from "~/features/auth/nostr-signer.client";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import { RemoteSignerTimeoutError } from "~/lib/errors";
 import { isMobile } from "~/lib/is-mobile";
 import {
   addConnectionLog,
@@ -33,6 +39,12 @@ export type ActiveSignerConfig =
 
 const STORAGE_KEY = "__smartflow_active_nostr_signer_v1";
 
+/** Value for CustomEvent detail.signerType when signer is NIP-46. */
+const NIP46_SIGNER_TYPE = "nip46";
+
+/** CustomEvent name when NIP-46 connection becomes stale. */
+const NOSTR_CONNECTION_STALE_EVENT = "nostr-connection-stale";
+
 /** Fired when signer config was missing and we defaulted to NIP-07 so components can re-read. */
 export const SIGNER_CONFIG_HYDRATED_EVENT = "smartflow:signer-config-hydrated";
 
@@ -50,9 +62,43 @@ let _lastActivityTime: number | null = null; // Reserved for future metrics/debu
 let _lastVerificationTime: number | null = null; // Skip verifySignerConnection if recent (avoids spamming signer app)
 let _lastRelaySyncAt: number | null = null;
 
+/** When true, next getActiveSigner() must create a fresh signer and run a short probe (set on app resume). */
+let needsReprobe = false;
+
 /** Minimum time between verification checks (avoid prompting signer app too often). */
 const VERIFY_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
 const RELAY_SYNC_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+
+/** Timeout for probe on first use after resume (plan: 2–5s). */
+const PROBE_ON_FIRST_USE_TIMEOUT_MS = 4000;
+
+/** Default relays for relay-union when connecting (same as reconnect modal). */
+const DEFAULT_RELAYS_CONNECT = [
+  "wss://relay.primal.net",
+  "wss://relay.damus.io",
+  "wss://nos.lol/",
+];
+
+const RELAY_UNION_CAP = 8;
+
+function buildRelayUnion(
+  stored: string[],
+  defaults: string[],
+  cap: number = RELAY_UNION_CAP
+): string[] {
+  const normalized = (r: string) => r.trim().toLowerCase();
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of [...stored, ...defaults]) {
+    const n = normalized(r);
+    if (r.startsWith("wss://") && !seen.has(n)) {
+      seen.add(n);
+      out.push(r.trim());
+      if (out.length >= cap) break;
+    }
+  }
+  return out;
+}
 
 interface GetActiveSignerOptions {
   /**
@@ -108,9 +154,9 @@ export { isMobile };
  */
 function clearCachedNip46Signer(): void {
   const config = getActiveSignerConfig();
-  if (config?.type === "nip46" && cachedSigner) {
+  if (config?.type === NIP46_SIGNER_TYPE && cachedSigner) {
     // Close existing connections gracefully
-    if (cachedSigner.type === "nip46" && cachedSigner.close) {
+    if (cachedSigner.type === NIP46_SIGNER_TYPE && cachedSigner.close) {
       const closeFn = cachedSigner.close;
       void (async () => {
         try {
@@ -129,66 +175,66 @@ function clearCachedNip46Signer(): void {
 }
 
 /**
- * Initialize page visibility detection to reset cached NIP-46 signers
- * when the page becomes visible again after being hidden.
- * This helps recover from stale WebSocket connections when users switch
- * between the browser and signer app on the same device.
- * On iOS, adds a cooldown period after becoming visible to allow WebSocket
- * connections to stabilize before attempting new connections.
+ * Exported teardown for NIP-46 signer. Call before clearing session storage (e.g. before
+ * clearActiveSession or removeSession when removing the active session) so the in-memory
+ * signer, pool, and health-check timer are closed and the next connect does not overlap.
+ */
+export function teardownActiveNip46Signer(): void {
+  clearCachedNip46Signer();
+}
+
+/**
+ * Teardown cached NIP-46 signer and set needsReprobe so the next getActiveSigner()
+ * creates a fresh signer and runs a short probe. Call on app resume (visibility/focus/pageshow).
+ */
+function teardownNip46SignerAndSetNeedsReprobe(): void {
+  const config = getActiveSignerConfig();
+  if (config?.type !== NIP46_SIGNER_TYPE) return;
+  clearCachedNip46Signer();
+  needsReprobe = true;
+}
+
+/**
+ * Initialize page visibility detection: on resume (visible/focus/pageshow), tear down
+ * cached NIP-46 signer and set needsReprobe so the next use creates a fresh signer and probes.
  */
 function initVisibilityHandler(): void {
   if (typeof document === "undefined") return;
 
-  // Track if page was hidden
+  const onResume = () => {
+    const now = Date.now();
+    wasHidden = false;
+    teardownNip46SignerAndSetNeedsReprobe();
+    // Cooldown so we don't reconnect immediately if getActiveSigner is called in the same tick
+    if (isMobile()) {
+      const baseCooldown = isIOS() ? 3000 : 1500;
+      connectionCooldownUntil = now + baseCooldown + Math.random() * 500;
+    } else {
+      connectionCooldownUntil = now + 500;
+    }
+  };
+
   const handleVisibilityChange = () => {
     const now = Date.now();
     if (document.hidden) {
       wasHidden = true;
       _lastVisibilityChangeTime = now;
     } else if (wasHidden) {
-      // Page became visible again after being hidden
-      // DON'T clear the connection immediately - the signer app (e.g., Primal) might
-      // still be maintaining the connection in the background. We'll verify it when
-      // it's actually used (lazy verification in getActiveSigner).
-      // This allows us to reuse the same connection URI if the signer app recognizes it.
-      wasHidden = false;
-
-      // Add a cooldown period after becoming visible
-      // This gives WebSocket connections time to stabilize
-      // iOS aggressively closes WebSocket connections when apps are backgrounded
-      // Android can also have issues, though less frequently
-      if (isMobile()) {
-        // Mobile devices: longer cooldown (iOS needs more, Android benefits too)
-        // Increased cooldown to give connections more time to recover
-        const baseCooldown = isIOS() ? 3000 : 1500; // iOS: 3s, Android: 1.5s
-        const cooldownMs = baseCooldown + Math.random() * 500;
-        connectionCooldownUntil = now + cooldownMs;
-      } else {
-        // Desktop: shorter cooldown
-        connectionCooldownUntil = now + 500; // 0.5 seconds
-      }
+      onResume();
     }
   };
 
-  // Also listen for focus events as a backup (handles some edge cases)
   const handleFocus = () => {
-    if (wasHidden) {
-      // DON'T clear the connection immediately - same reasoning as visibility change
-      // The signer app might still be maintaining the connection
-      wasHidden = false;
-      const now = Date.now();
-      if (isMobile()) {
-        const baseCooldown = isIOS() ? 3000 : 1500;
-        const cooldownMs = baseCooldown + Math.random() * 500;
-        connectionCooldownUntil = now + cooldownMs;
-      } else {
-        connectionCooldownUntil = now + 500;
-      }
-    }
+    if (wasHidden) onResume();
+  };
+
+  const handlePageShow = () => {
+    if (wasHidden) onResume();
   };
 
   document.addEventListener("visibilitychange", handleVisibilityChange);
   window.addEventListener("focus", handleFocus);
+  window.addEventListener("pageshow", handlePageShow);
 }
 
 // Initialize visibility handler when module loads
@@ -296,12 +342,18 @@ function relayListsEqual(a: string[], b: string[]): boolean {
 export async function syncRelaysWithRemoteSigner(
   signer: NostrSigner
 ): Promise<{ changed: boolean; relays?: string[]; reason?: string }> {
-  if (signer.type !== "nip46" || typeof signer.switchRelays !== "function") {
+  if (
+    signer.type !== NIP46_SIGNER_TYPE ||
+    typeof signer.switchRelays !== "function"
+  ) {
     return { changed: false, reason: "unsupported" };
   }
 
   const config = getActiveSignerConfig();
-  if (config?.type !== "nip46" || config.method !== "nostrconnect_uri") {
+  if (
+    config?.type !== NIP46_SIGNER_TYPE ||
+    config.method !== "nostrconnect_uri"
+  ) {
     return { changed: false, reason: "not_nostrconnect_uri" };
   }
 
@@ -326,7 +378,7 @@ export async function syncRelaysWithRemoteSigner(
   });
 
   const activeSession = getActiveSession();
-  if (activeSession?.config.type === "nip46") {
+  if (activeSession?.config.type === NIP46_SIGNER_TYPE) {
     updateSession(activeSession.id, {
       config:
         activeSession.config.method === "nostrconnect_uri"
@@ -361,8 +413,11 @@ export async function syncRelaysWithRemoteSigner(
  * Returns true if the signer is available and can be used, false otherwise.
  * Uses a quick health check with a short timeout to avoid blocking.
  */
-async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
-  if (signer.type !== "nip46") return true; // NIP-07 doesn't need verification
+async function verifySignerConnection(
+  signer: NostrSigner,
+  timeoutMs = 5000
+): Promise<boolean> {
+  if (signer.type !== NIP46_SIGNER_TYPE) return true; // NIP-07 doesn't need verification
 
   try {
     // Prefer ping for health checks to avoid unnecessarily prompting signer UI.
@@ -371,7 +426,7 @@ async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
       await Promise.race([
         signer.ping(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Ping check timeout")), 5000)
+          setTimeout(() => reject(new Error("Ping check timeout")), timeoutMs)
         ),
       ]);
     } else {
@@ -382,7 +437,10 @@ async function verifySignerConnection(signer: NostrSigner): Promise<boolean> {
       await Promise.race([
         signer.getPublicKey(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Connection check timeout")), 5000)
+          setTimeout(
+            () => reject(new Error("Connection check timeout")),
+            timeoutMs
+          )
         ),
       ]);
     }
@@ -408,7 +466,7 @@ function startHealthCheckMonitoring(): void {
     () => {
       void (async () => {
         const config = getActiveSignerConfig();
-        if (config?.type !== "nip46" || !cachedSigner) {
+        if (config?.type !== NIP46_SIGNER_TYPE || !cachedSigner) {
           // No active NIP-46 connection, stop monitoring
           if (healthCheckInterval) {
             clearInterval(healthCheckInterval);
@@ -428,7 +486,7 @@ function startHealthCheckMonitoring(): void {
           ? now - _lastVerificationTime
           : Infinity;
         const shouldSyncRelays =
-          cachedSigner.type === "nip46" &&
+          cachedSigner.type === NIP46_SIGNER_TYPE &&
           (_lastRelaySyncAt == null ||
             now - _lastRelaySyncAt > RELAY_SYNC_COOLDOWN_MS);
 
@@ -464,8 +522,8 @@ function startHealthCheckMonitoring(): void {
             // Emit event for connection state change
             if (typeof window !== "undefined") {
               window.dispatchEvent(
-                new CustomEvent("nostr-connection-stale", {
-                  detail: { signerType: "nip46" },
+                new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
+                  detail: { signerType: NIP46_SIGNER_TYPE },
                 })
               );
             }
@@ -475,7 +533,7 @@ function startHealthCheckMonitoring(): void {
           }
         }
 
-        if (shouldSyncRelays && cachedSigner.type === "nip46") {
+        if (shouldSyncRelays && cachedSigner.type === NIP46_SIGNER_TYPE) {
           try {
             await syncRelaysWithRemoteSigner(cachedSigner);
           } catch {
@@ -503,6 +561,12 @@ export async function getActiveSigner(
   options?: GetActiveSignerOptions
 ): Promise<NostrSigner | null> {
   const allowReconnect = options?.allowReconnect ?? true;
+
+  // On resume we tear down and set needsReprobe; never return cached signer until we reprobe.
+  if (needsReprobe && cachedSigner) {
+    clearCachedNip46Signer();
+  }
+
   // If we have a cached signer, verify it's still valid before returning it,
   // but not on every call — use a cooldown so we don't prompt the signer app (e.g. Primal) every time.
   if (cachedSigner) {
@@ -521,12 +585,9 @@ export async function getActiveSigner(
       _lastActivityTime = Date.now();
       return cachedSigner;
     }
-    // Connection verification failed, but don't give up yet
-    // Clear the cached signer so we can try reconnecting with the same URI
-    // The signer app (e.g., Primal) can restore the session using the same credentials
-    // This is especially useful since Primal keeps track of all connected apps
-    // and can restart sessions even if they were previously stopped
+    // Connection verification failed; clear cache so next call creates fresh signer and probes.
     clearCachedNip46Signer();
+    needsReprobe = true;
 
     // Update session status
     const activeSession = getActiveSession();
@@ -541,8 +602,8 @@ export async function getActiveSigner(
     // Emit connection stale event
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("nostr-connection-stale", {
-          detail: { signerType: "nip46" },
+        new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
+          detail: { signerType: NIP46_SIGNER_TYPE },
         })
       );
     }
@@ -593,6 +654,7 @@ export async function getActiveSigner(
 
     const clientSecretKey = hexToBytes(config.clientSecretKeyHex);
     let pool: SimplePool | null = new SimplePool();
+    let relaysToClose: string[] = [];
 
     try {
       if (config.method === "bunker_input") {
@@ -617,6 +679,41 @@ export async function getActiveSigner(
         _lastActivityTime = nowEst;
         _lastVerificationTime = nowEst; // We just connected; skip verify cooldown until needed
         startHealthCheckMonitoring();
+
+        // Probe on first use after resume; short timeout so we fail fast if signer app is closed.
+        if (needsReprobe) {
+          const probeOk = await verifySignerConnection(
+            cachedSigner,
+            PROBE_ON_FIRST_USE_TIMEOUT_MS
+          );
+          if (!probeOk) {
+            try {
+              await cachedSigner.close?.();
+            } catch {
+              // ignore
+            }
+            resetCachedSigner();
+            connectionEstablishedAt = null;
+            _lastActivityTime = null;
+            const activeSession = getActiveSession();
+            if (activeSession) {
+              recordConnectionEvent(activeSession.id, {
+                type: "health_check",
+                healthy: false,
+                error: "Probe failed after resume",
+              });
+            }
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
+                  detail: { signerType: NIP46_SIGNER_TYPE },
+                })
+              );
+            }
+            throw new RemoteSignerTimeoutError();
+          }
+          needsReprobe = false;
+        }
 
         // Get pubkey for session update
         const pubkey = await cachedSigner.getPublicKey();
@@ -645,7 +742,7 @@ export async function getActiveSigner(
         if (typeof window !== "undefined") {
           window.dispatchEvent(
             new CustomEvent("nostr-connection-healthy", {
-              detail: { signerType: "nip46" },
+              detail: { signerType: NIP46_SIGNER_TYPE },
             })
           );
         }
@@ -660,14 +757,31 @@ export async function getActiveSigner(
       }
 
       // nostrconnect_uri
-      // Reuse the same connection URI - signer apps like Primal keep track of all
-      // connected apps and can restore sessions even if they were previously stopped.
-      // By using the same URI and clientSecretKey, Primal will recognize this as a
-      // reconnection attempt and restore the existing session (no re-approval needed).
-      // Increased timeout to 90 seconds to give more time for session restoration.
+      // Use relay union (stored + defaults) for resilience; same client key for session restore.
+      let uriToUse = config.uri;
+      relaysToClose = config.relays;
+      try {
+        const parsed = parseNostrConnectURI(config.uri);
+        const unionRelays = buildRelayUnion(
+          config.relays,
+          DEFAULT_RELAYS_CONNECT,
+          RELAY_UNION_CAP
+        );
+        if (unionRelays.length > 0) {
+          uriToUse = createNostrConnectURI({
+            clientPubkey: parsed.clientPubkey,
+            relays: unionRelays,
+            secret: parsed.params.secret,
+            perms: parsed.params.perms,
+          });
+          relaysToClose = unionRelays;
+        }
+      } catch {
+        // Keep original uri/relays if parse fails
+      }
       const inner = await BunkerSigner.fromURI(
         clientSecretKey,
-        config.uri,
+        uriToUse,
         { pool },
         90_000
       );
@@ -682,6 +796,41 @@ export async function getActiveSigner(
       _lastActivityTime = nowEst;
       _lastVerificationTime = nowEst; // We just connected; skip verify cooldown until needed
       startHealthCheckMonitoring();
+
+      // Probe on first use after resume; short timeout so we fail fast if signer app is closed.
+      if (needsReprobe) {
+        const probeOk = await verifySignerConnection(
+          cachedSigner,
+          PROBE_ON_FIRST_USE_TIMEOUT_MS
+        );
+        if (!probeOk) {
+          try {
+            await cachedSigner.close?.();
+          } catch {
+            // ignore
+          }
+          resetCachedSigner();
+          connectionEstablishedAt = null;
+          _lastActivityTime = null;
+          const activeSession = getActiveSession();
+          if (activeSession) {
+            recordConnectionEvent(activeSession.id, {
+              type: "health_check",
+              healthy: false,
+              error: "Probe failed after resume",
+            });
+          }
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
+                detail: { signerType: NIP46_SIGNER_TYPE },
+              })
+            );
+          }
+          throw new RemoteSignerTimeoutError();
+        }
+        needsReprobe = false;
+      }
 
       // Get pubkey for session update
       const pubkey = await cachedSigner.getPublicKey();
@@ -710,7 +859,7 @@ export async function getActiveSigner(
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("nostr-connection-healthy", {
-            detail: { signerType: "nip46" },
+            detail: { signerType: NIP46_SIGNER_TYPE },
           })
         );
       }
@@ -726,10 +875,8 @@ export async function getActiveSigner(
       // Clean up pool if connection failed
       if (pool) {
         try {
-          // Close any relay connections that might have been opened
-          // When method is nostrconnect_uri, relays is always defined in the type
           if (config.method === "nostrconnect_uri") {
-            pool.close(config.relays);
+            pool.close(relaysToClose);
           }
         } catch {
           // Ignore cleanup errors
@@ -754,11 +901,11 @@ export async function getActiveSigner(
         errorMessage.includes("timeout") ||
         errorMessage.includes("too long")
       ) {
-        // Clear only the cached signer object, keep the config for reconnection
-        // This allows signer apps (e.g., Primal) to restore the session
+        // Clear cached signer so next call creates fresh and probes (stateless signer discipline).
         resetCachedSigner();
         connectionEstablishedAt = null;
         _lastActivityTime = null;
+        needsReprobe = true;
 
         // Update session with error
         const activeSession = getActiveSession();

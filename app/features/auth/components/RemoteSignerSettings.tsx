@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Separator } from "~/components/ui/separator";
+import { teardownActiveNip46Signer } from "~/lib/nostr-signer-manager.client";
 import { testPrimarySignerProfileConnection } from "~/lib/primary-signer-failover.client";
 import {
   type PrimarySignerProfile,
@@ -226,13 +227,16 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
 
   const handleRemove = useCallback(
     (sessionId: string) => {
+      if (activeSession?.id === sessionId) {
+        teardownActiveNip46Signer();
+      }
       removeSession(sessionId);
       loadSessions();
       if (selectedSessionId === sessionId) {
         setSelectedSessionId(null);
       }
     },
-    [loadSessions, selectedSessionId]
+    [activeSession?.id, loadSessions, selectedSessionId]
   );
 
   const handleTestConnection = useCallback(async () => {
@@ -260,7 +264,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
       reason: "User disconnected",
     });
 
-    // Clear active session
+    teardownActiveNip46Signer();
     clearActiveSession();
     loadSessions();
   }, [activeSession, loadSessions]);
