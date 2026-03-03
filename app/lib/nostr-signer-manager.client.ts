@@ -2,11 +2,12 @@ import { SimplePool, getPublicKey } from "nostr-tools";
 import {
   BunkerSigner,
   createNostrConnectURI,
-  parseBunkerInput,
   parseNostrConnectURI,
 } from "nostr-tools/nip46";
 
 import {
+  connectNip46ReconnectWithStoredNostrConnect,
+  connectNip46WithBunkerInput,
   Nip07Signer,
   Nip46Signer,
   type NostrSigner,
@@ -14,6 +15,7 @@ import {
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { RemoteSignerTimeoutError } from "~/lib/errors";
 import { isMobile } from "~/lib/is-mobile";
+import { convertToHex } from "~/lib/nostr-conversion";
 import {
   addConnectionLog,
   getActiveSession,
@@ -35,6 +37,14 @@ export type ActiveSignerConfig =
       uri: string;
       clientSecretKeyHex: string;
       relays: string[];
+      /** Remote signer pubkey (hex). Set after first connection so reconnects use Method 1 (fromBunker) instead of fromURI(). */
+      signerPubkey?: string;
+      /** Full BunkerPointer when available; used for Method 1 reconnect instead of reconstructing from signerPubkey + relays. */
+      bunkerPointer?: {
+        pubkey: string;
+        relays: string[];
+        secret: null | string;
+      };
     };
 
 const STORAGE_KEY = "__smartflow_active_nostr_signer_v1";
@@ -64,6 +74,12 @@ let _lastRelaySyncAt: number | null = null;
 
 /** When true, next getActiveSigner() must create a fresh signer and run a short probe (set on app resume). */
 let needsReprobe = false;
+
+/** Incremented on teardown so in-flight connects do not cache a signer that is about to be torn down. */
+let signerGeneration = 0;
+
+/** True while async close() from teardown is in progress; makes repeated teardown calls idempotent. */
+let teardownInProgress = false;
 
 /** Minimum time between verification checks (avoid prompting signer app too often). */
 const VERIFY_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
@@ -154,8 +170,11 @@ export { isMobile };
  */
 function clearCachedNip46Signer(): void {
   const config = getActiveSignerConfig();
-  if (config?.type === NIP46_SIGNER_TYPE && cachedSigner) {
-    // Close existing connections gracefully
+  if (config?.type !== NIP46_SIGNER_TYPE || !cachedSigner) return;
+
+  signerGeneration++;
+  if (!teardownInProgress) {
+    teardownInProgress = true;
     if (cachedSigner.type === NIP46_SIGNER_TYPE && cachedSigner.close) {
       const closeFn = cachedSigner.close;
       void (async () => {
@@ -163,15 +182,18 @@ function clearCachedNip46Signer(): void {
           await closeFn();
         } catch {
           // Ignore errors during cleanup
+        } finally {
+          teardownInProgress = false;
         }
       })();
+    } else {
+      teardownInProgress = false;
     }
-    // Clear only the cached signer object, keep the config for reconnection
-    resetCachedSigner();
-    stopHealthCheckMonitoring();
-    connectionEstablishedAt = null;
-    _lastActivityTime = null;
   }
+  resetCachedSigner();
+  stopHealthCheckMonitoring();
+  connectionEstablishedAt = null;
+  _lastActivityTime = null;
 }
 
 /**
@@ -235,6 +257,7 @@ function initVisibilityHandler(): void {
   document.addEventListener("visibilitychange", handleVisibilityChange);
   window.addEventListener("focus", handleFocus);
   window.addEventListener("pageshow", handlePageShow);
+  window.addEventListener("online", onResume);
 }
 
 // Initialize visibility handler when module loads
@@ -556,6 +579,52 @@ function stopHealthCheckMonitoring(): void {
   }
 }
 
+/**
+ * Single "create + probe" path: build signer from stored config (fromBunker, no connect), run getPublicKey (probe), return signer and pubkey or throw.
+ * Use for both bunker and nostrconnect reconnect. Ensures every reconnect goes through the same probe; on failure signer is not cached.
+ */
+export async function createNip46SignerFromStoredConfig(
+  config: Extract<ActiveSignerConfig, { type: "nip46" }>,
+  options: { pool?: SimplePool; timeoutMs?: number } = {}
+): Promise<{ signer: Nip46Signer; pubkey: string }> {
+  const clientSecretKey = hexToBytes(config.clientSecretKeyHex);
+  const pool = options.pool ?? new SimplePool();
+  const timeoutMs = options.timeoutMs ?? 90_000;
+
+  if (config.method === "bunker_input") {
+    return connectNip46WithBunkerInput({
+      bunkerInput: config.bunkerInput,
+      clientSecretKey,
+      pool,
+      timeoutMs,
+      skipConnect: true,
+    });
+  }
+
+  // nostrconnect_uri: use bunkerPointer when present, else signerPubkey + relays
+  if (config.bunkerPointer) {
+    return connectNip46ReconnectWithStoredNostrConnect({
+      clientSecretKey,
+      bunkerPointer: config.bunkerPointer,
+      relays: config.bunkerPointer.relays,
+      pool,
+      timeoutMs,
+    });
+  }
+  if (config.signerPubkey && config.relays.length > 0) {
+    return connectNip46ReconnectWithStoredNostrConnect({
+      clientSecretKey,
+      signerPubkey: config.signerPubkey,
+      relays: config.relays,
+      pool,
+      timeoutMs,
+    });
+  }
+  throw new Error(
+    "createNip46SignerFromStoredConfig: nostrconnect config needs bunkerPointer or signerPubkey+relays for reconnect"
+  );
+}
+
 // Complex signer resolution with caching, health checks, cooldowns, and platform-specific optimizations
 export async function getActiveSigner(
   options?: GetActiveSignerOptions
@@ -652,27 +721,23 @@ export async function getActiveSigner(
       await new Promise((resolve) => setTimeout(resolve, waitMs));
     }
 
+    const myGen = signerGeneration;
     const clientSecretKey = hexToBytes(config.clientSecretKeyHex);
     let pool: SimplePool | null = new SimplePool();
     let relaysToClose: string[] = [];
 
     try {
       if (config.method === "bunker_input") {
-        const bp = await parseBunkerInput(config.bunkerInput);
-        if (!bp) {
-          throw new Error("Invalid bunker input");
-        }
-        const inner = BunkerSigner.fromBunker(clientSecretKey, bp, { pool });
-        // Reuse the same bunker input - signer apps like Primal keep track of all
-        // connected apps and can restore sessions even if they were previously stopped.
-        // By using the same bunker input and clientSecretKey, Primal will recognize
-        // this as a reconnection attempt and restore the existing session.
-        await inner.connect();
+        // Reconnect from stored config: single create+probe path (fromBunker, no connect).
+        const result = await createNip46SignerFromStoredConfig(config, {
+          pool,
+          timeoutMs: 90_000,
+        });
         if (!isRequestCurrent()) {
-          await inner.close();
+          await result.signer.close();
           return null;
         }
-        cachedSigner = new Nip46Signer({ pool, inner });
+        cachedSigner = result.signer;
         pool = null; // Transfer ownership to cachedSigner
         const nowEst = Date.now();
         connectionEstablishedAt = nowEst;
@@ -713,6 +778,20 @@ export async function getActiveSigner(
             throw new RemoteSignerTimeoutError();
           }
           needsReprobe = false;
+        }
+
+        if (myGen !== signerGeneration) {
+          const s = cachedSigner;
+          resetCachedSigner();
+          connectionEstablishedAt = null;
+          _lastActivityTime = null;
+          stopHealthCheckMonitoring();
+          try {
+            await s.close?.();
+          } catch {
+            // ignore
+          }
+          return null;
         }
 
         // Get pubkey for session update
@@ -757,40 +836,76 @@ export async function getActiveSigner(
       }
 
       // nostrconnect_uri
-      // Use relay union (stored + defaults) for resilience; same client key for session restore.
-      let uriToUse = config.uri;
+      // Reconnect: use Method 1 (fromBunker, no connect) when we have signerPubkey; else fromURI once and persist signerPubkey.
       relaysToClose = config.relays;
       try {
-        const parsed = parseNostrConnectURI(config.uri);
         const unionRelays = buildRelayUnion(
           config.relays,
           DEFAULT_RELAYS_CONNECT,
           RELAY_UNION_CAP
         );
         if (unionRelays.length > 0) {
-          uriToUse = createNostrConnectURI({
-            clientPubkey: parsed.clientPubkey,
-            relays: unionRelays,
-            secret: parsed.params.secret,
-            perms: parsed.params.perms,
-          });
           relaysToClose = unionRelays;
         }
       } catch {
-        // Keep original uri/relays if parse fails
+        // Keep original relays if build fails
       }
-      const inner = await BunkerSigner.fromURI(
-        clientSecretKey,
-        uriToUse,
-        { pool },
-        90_000
-      );
-      if (!isRequestCurrent()) {
-        await inner.close();
-        return null;
+
+      if (
+        config.bunkerPointer ||
+        (config.signerPubkey && config.relays.length > 0)
+      ) {
+        if (config.bunkerPointer?.relays.length) {
+          relaysToClose = config.bunkerPointer.relays
+            .map((r) => r.trim())
+            .filter((r) => r.startsWith("wss://"));
+        }
+        // Method 1 reconnect: single create+probe path (fromBunker, no connect).
+        const result = await createNip46SignerFromStoredConfig(config, {
+          pool,
+          timeoutMs: 90_000,
+        });
+        if (!isRequestCurrent()) {
+          await result.signer.close();
+          return null;
+        }
+        cachedSigner = result.signer;
+        pool = null; // Transfer ownership to cachedSigner
+      } else {
+        // Legacy or first time: use fromURI(); after success we persist signerPubkey.
+        let uriToUse = config.uri;
+        try {
+          const parsed = parseNostrConnectURI(config.uri);
+          const unionRelays = buildRelayUnion(
+            config.relays,
+            DEFAULT_RELAYS_CONNECT,
+            RELAY_UNION_CAP
+          );
+          if (unionRelays.length > 0) {
+            uriToUse = createNostrConnectURI({
+              clientPubkey: parsed.clientPubkey,
+              relays: unionRelays,
+              secret: parsed.params.secret,
+              perms: parsed.params.perms,
+            });
+            relaysToClose = unionRelays;
+          }
+        } catch {
+          // Keep original uri/relays if parse fails
+        }
+        const inner = await BunkerSigner.fromURI(
+          clientSecretKey,
+          uriToUse,
+          { pool },
+          90_000
+        );
+        if (!isRequestCurrent()) {
+          await inner.close();
+          return null;
+        }
+        cachedSigner = new Nip46Signer({ pool, inner });
+        pool = null; // Transfer ownership to cachedSigner
       }
-      cachedSigner = new Nip46Signer({ pool, inner });
-      pool = null; // Transfer ownership to cachedSigner
       const nowEst = Date.now();
       connectionEstablishedAt = nowEst;
       _lastActivityTime = nowEst;
@@ -832,8 +947,67 @@ export async function getActiveSigner(
         needsReprobe = false;
       }
 
+      if (myGen !== signerGeneration) {
+        const s = cachedSigner;
+        resetCachedSigner();
+        connectionEstablishedAt = null;
+        _lastActivityTime = null;
+        stopHealthCheckMonitoring();
+        try {
+          await s.close?.();
+        } catch {
+          // ignore
+        }
+        return null;
+      }
+
+      // Persist winning relays when we connected using union so next time we try the working set first
+      if (
+        relaysToClose.length > 0 &&
+        !relayListsEqual(relaysToClose, config.relays)
+      ) {
+        persistActiveSignerConfigWithoutReset({
+          ...config,
+          relays: relaysToClose,
+        });
+        const sessionForRelays = getActiveSession();
+        if (
+          sessionForRelays?.config.type === NIP46_SIGNER_TYPE &&
+          sessionForRelays.config.method === "nostrconnect_uri"
+        ) {
+          updateSession(sessionForRelays.id, {
+            config: {
+              ...sessionForRelays.config,
+              relays: relaysToClose,
+            },
+            metadata: {
+              ...sessionForRelays.metadata,
+              relays: relaysToClose,
+              lastActivityAt: Date.now(),
+            },
+          });
+        }
+      }
+
       // Get pubkey for session update
       const pubkey = await cachedSigner.getPublicKey();
+
+      // Persist signerPubkey and bunkerPointer when available so next reconnect uses Method 1
+      const configUpdates: Partial<typeof config> = {};
+      if (!config.signerPubkey) {
+        configUpdates.signerPubkey = convertToHex(pubkey) ?? pubkey;
+      }
+      if (
+        cachedSigner.type === NIP46_SIGNER_TYPE &&
+        "getBunkerPointer" in cachedSigner
+      ) {
+        configUpdates.bunkerPointer = (
+          cachedSigner as Nip46Signer
+        ).getBunkerPointer();
+      }
+      if (Object.keys(configUpdates).length > 0) {
+        persistActiveSignerConfigWithoutReset({ ...config, ...configUpdates });
+      }
 
       // Update session if exists
       const activeSession = getActiveSession();

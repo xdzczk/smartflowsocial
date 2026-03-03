@@ -125,6 +125,23 @@ export class Nip46Signer implements NostrSigner {
     return Array.from(new Set(normalized));
   }
 
+  /**
+   * Returns the stored BunkerPointer (pubkey, relays, secret) for persisting
+   * so reconnects can use Method 1 (fromBunker) with the exact pointer shape.
+   */
+  getBunkerPointer(): {
+    pubkey: string;
+    relays: string[];
+    secret: null | string;
+  } {
+    const bp = this.inner.bp;
+    return {
+      pubkey: bp.pubkey,
+      relays: [...bp.relays],
+      secret: bp.secret,
+    };
+  }
+
   async close(): Promise<void> {
     try {
       await this.inner.close();
@@ -211,6 +228,8 @@ export async function connectNip46WithBunkerInput(input: {
   clientSecretKey?: Uint8Array;
   timeoutMs: number;
   retryCount?: number;
+  /** When true, skip connect() (reconnect from stored config per nostr-tools docs). */
+  skipConnect?: boolean;
 }): Promise<Nip46ConnectResult> {
   const clientSecretKey = input.clientSecretKey ?? generateSecretKey();
   const pool = input.pool ?? new SimplePool();
@@ -221,20 +240,21 @@ export async function connectNip46WithBunkerInput(input: {
   }
   const inner = BunkerSigner.fromBunker(clientSecretKey, bp, { pool });
 
-  // Use progressive timeout if retryCount is provided, otherwise use provided timeoutMs
   const timeoutMs =
     input.retryCount !== undefined
       ? getProgressiveConnectionTimeout(input.retryCount)
       : input.timeoutMs;
-
   const timeout = new Promise<never>((_resolve, reject) =>
     setTimeout(() => reject(new Error("SIGNER_TIMEOUT")), timeoutMs)
   );
 
-  await Promise.race([inner.connect(), timeout]);
+  if (!input.skipConnect) {
+    await Promise.race([inner.connect(), timeout]);
+  }
+
   const signer = new Nip46Signer({ pool, inner });
   signer.setStatus("ready");
-  const pubkey = await signer.getPublicKey();
+  const pubkey = await Promise.race([signer.getPublicKey(), timeout]);
 
   return { signer, pubkey };
 }
@@ -263,5 +283,61 @@ export async function connectNip46WithNostrConnectUri(input: {
   const signer = new Nip46Signer({ pool: input.pool, inner });
   signer.setStatus("ready");
   const pubkey = await signer.getPublicKey();
+  return { signer, pubkey };
+}
+
+/** Serializable BunkerPointer shape for persisting and reconnecting. */
+export interface StoredBunkerPointer {
+  pubkey: string;
+  relays: string[];
+  secret: null | string;
+}
+
+/**
+ * Reconnect using Method 1 (fromBunker, no connect) per nostr-tools docs.
+ * Use when we have stored signer pubkey + relays (or full bunkerPointer) from a previous nostrconnect connection.
+ */
+export async function connectNip46ReconnectWithStoredNostrConnect(input: {
+  clientSecretKey: Uint8Array;
+  /** Use when no bunkerPointer is stored (backward compat). */
+  signerPubkey?: string;
+  relays: string[];
+  /** When present, use this for fromBunker instead of reconstructing from signerPubkey + relays. */
+  bunkerPointer?: StoredBunkerPointer;
+  pool?: SimplePool;
+  timeoutMs?: number;
+}): Promise<Nip46ConnectResult> {
+  const pool = input.pool ?? new SimplePool();
+  const bp: StoredBunkerPointer = input.bunkerPointer
+    ? {
+        pubkey: input.bunkerPointer.pubkey,
+        relays: input.bunkerPointer.relays
+          .map((r) => r.trim())
+          .filter((r) => r.startsWith("wss://")),
+        secret: input.bunkerPointer.secret,
+      }
+    : {
+        pubkey: input.signerPubkey!,
+        relays: input.relays
+          .map((r) => r.trim())
+          .filter((r) => r.startsWith("wss://")),
+        secret: null,
+      };
+  if (bp.relays.length === 0 && input.relays.length > 0) {
+    bp.relays = input.relays.map((r) => r.trim());
+  }
+  if (!bp.pubkey) {
+    throw new Error(
+      "connectNip46ReconnectWithStoredNostrConnect: signerPubkey or bunkerPointer required"
+    );
+  }
+  const inner = BunkerSigner.fromBunker(input.clientSecretKey, bp, { pool });
+  const signer = new Nip46Signer({ pool, inner });
+  signer.setStatus("ready");
+  const timeoutMs = input.timeoutMs ?? 15_000;
+  const timeout = new Promise<never>((_resolve, reject) =>
+    setTimeout(() => reject(new Error("SIGNER_TIMEOUT")), timeoutMs)
+  );
+  const pubkey = await Promise.race([signer.getPublicKey(), timeout]);
   return { signer, pubkey };
 }

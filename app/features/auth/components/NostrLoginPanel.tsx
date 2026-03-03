@@ -26,7 +26,7 @@ import {
   recordCircuitBreakerSuccess,
 } from "~/lib/nostr-circuit-breaker.client";
 import { recordConnectionAttempt } from "~/lib/nostr-connection-metrics.client";
-import { convertHexToNpub } from "~/lib/nostr-conversion";
+import { convertHexToNpub, convertToHex } from "~/lib/nostr-conversion";
 import {
   clearActiveSignerConfig,
   getActiveSignerConfig,
@@ -50,8 +50,8 @@ import {
   createNip46NostrConnectUri,
   getNostrConnectAppMetadata,
   Nip07Signer,
-  type NostrSigner,
 } from "../nostr-signer.client";
+import type { NostrSigner } from "../nostr-signer.client";
 import { parseRelayList } from "../parse-relay-list";
 
 type LoginState =
@@ -1183,12 +1183,26 @@ export default function NostrLoginPanel() {
         setConnectionTimeout(null);
         setSigner(nip46Signer);
         setPubkey(pk);
+        const bunkerPointer =
+          "getBunkerPointer" in nip46Signer
+            ? (
+                nip46Signer as {
+                  getBunkerPointer(): {
+                    pubkey: string;
+                    relays: string[];
+                    secret: null | string;
+                  };
+                }
+              ).getBunkerPointer()
+            : undefined;
         const config = {
           type: "nip46" as const,
           method: "nostrconnect_uri" as const,
           uri: created.uri,
           relays: created.relays,
           clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
+          signerPubkey: convertToHex(pk) ?? pk,
+          ...(bunkerPointer && { bunkerPointer }),
         };
         setActiveSignerConfig(config);
 
@@ -1362,12 +1376,26 @@ export default function NostrLoginPanel() {
       setConnectionTimeout(null);
       setSigner(nip46Signer);
       setPubkey(pk);
+      const bunkerPointer =
+        "getBunkerPointer" in nip46Signer
+          ? (
+              nip46Signer as {
+                getBunkerPointer(): {
+                  pubkey: string;
+                  relays: string[];
+                  secret: null | string;
+                };
+              }
+            ).getBunkerPointer()
+          : undefined;
       const config = {
         type: "nip46" as const,
         method: "nostrconnect_uri" as const,
         uri: pending.uri,
         relays: pending.relays,
         clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
+        signerPubkey: convertToHex(pk) ?? pk,
+        ...(bunkerPointer && { bunkerPointer }),
       };
       setActiveSignerConfig(config);
 

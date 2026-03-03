@@ -4,6 +4,7 @@ import {
   connectNip46WithBunkerInput,
   connectNip46WithNostrConnectUri,
 } from "~/features/auth/nostr-signer.client";
+import { convertToHex } from "~/lib/nostr-conversion";
 import {
   serializeSecretKey,
   setActiveSignerConfig,
@@ -100,7 +101,31 @@ async function connectProfile(
       timeoutMs,
       relaysToCloseOnCancel: profile.relays,
     });
+    const signerPubkeyHex = convertToHex(pubkey) ?? pubkey;
+    const bunkerPointer =
+      "getBunkerPointer" in signer
+        ? (
+            signer as {
+              getBunkerPointer(): {
+                pubkey: string;
+                relays: string[];
+                secret: null | string;
+              };
+            }
+          ).getBunkerPointer()
+        : undefined;
     await signer.close();
+    const narrowed = config;
+    if (narrowed.type === "nip46" && narrowed.method === "nostrconnect_uri") {
+      return {
+        pubkey,
+        config: {
+          ...narrowed,
+          signerPubkey: signerPubkeyHex,
+          ...(bunkerPointer && { bunkerPointer }),
+        },
+      };
+    }
     return { pubkey, config };
   } finally {
     try {

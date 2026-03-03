@@ -1,9 +1,5 @@
 import { generateSecretKey, getPublicKey, SimplePool } from "nostr-tools";
-import {
-  createNostrConnectURI,
-  parseBunkerInput,
-  parseNostrConnectURI,
-} from "nostr-tools/nip46";
+import { parseBunkerInput } from "nostr-tools/nip46";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import QRCode from "react-qr-code";
@@ -24,6 +20,7 @@ import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 import { convertToHex } from "~/lib/nostr-conversion";
 import {
   clearActiveSignerConfig,
+  createNip46SignerFromStoredConfig,
   getActiveSigner,
   parseSecretKeyHex,
   serializeSecretKey,
@@ -107,6 +104,19 @@ const RECONNECT_SUCCESS_TOAST_RETRY =
 const TOAST_RECONNECT_SUCCESS = "Remote signer reconnected.";
 
 const METHOD_BUNKER_INPUT = "bunker_input";
+
+/** Canonical key for bunker identity (pubkey + normalized relays + secret) for reconnect vs new comparison. */
+function bunkerCanonicalKey(bp: {
+  pubkey: string;
+  relays: string[];
+  secret: null | string;
+}): string {
+  const normalized = bp.relays
+    .map((r) => r.trim().toLowerCase())
+    .filter((r) => r.startsWith("wss://"));
+  const sorted = [...new Set(normalized)].sort();
+  return `${bp.pubkey}\n${sorted.join(",")}\n${bp.secret ?? ""}`;
+}
 
 const EXISTING_SESSION_RECONNECT_TIMEOUTS_MS = [20_000, 40_000] as const;
 const EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS = 1000;
@@ -477,7 +487,17 @@ export function RemoteSignerReconnectDialog(props: {
         wasHiddenDuringExistingReconnectRef.current = false;
       }
 
-      const { uri, relays, clientSecretKeyHex } = session.config;
+      type Nip46NostrConnectConfig = Extract<
+        ActiveSignerConfig,
+        { type: "nip46"; method: "nostrconnect_uri" }
+      >;
+      const ncConfig: Nip46NostrConnectConfig = session.config;
+      const { uri, relays, clientSecretKeyHex } = ncConfig;
+      const signerPubkeyHex =
+        ncConfig.signerPubkey ??
+        (session.metadata.pubkey
+          ? (convertToHex(session.metadata.pubkey) ?? session.metadata.pubkey)
+          : null);
       const clientPubkeyHex = (() => {
         try {
           return getPublicKey(parseSecretKeyHex(clientSecretKeyHex));
@@ -521,20 +541,48 @@ export function RemoteSignerReconnectDialog(props: {
         const clientSecretKey = parseSecretKeyHex(clientSecretKeyHex);
         const tryConnect = async (
           timeoutMs: number,
-          uriToUse?: string,
-          relaysToClose?: string[]
-        ) => {
+          relaysToUse: string[]
+        ): Promise<string> => {
           closePool(activePool);
           const attemptPool = new SimplePool();
           activePool = attemptPool;
-          const u = uriToUse ?? uri;
-          const r = relaysToClose ?? relays;
+          if (signerPubkeyHex || ncConfig.bunkerPointer) {
+            const config: Nip46NostrConnectConfig = {
+              ...ncConfig,
+              relays: relaysToUse,
+              signerPubkey:
+                ncConfig.signerPubkey ?? signerPubkeyHex ?? undefined,
+              bunkerPointer: ncConfig.bunkerPointer
+                ? { ...ncConfig.bunkerPointer, relays: relaysToUse }
+                : ncConfig.bunkerPointer,
+            };
+            const { signer, pubkey } = await createNip46SignerFromStoredConfig(
+              config,
+              {
+                pool: attemptPool,
+                timeoutMs,
+              }
+            );
+            try {
+              return pubkey;
+            } finally {
+              try {
+                await signer.close();
+              } catch {
+                // ignore
+              }
+              closePool(attemptPool);
+              if (activePool === attemptPool) {
+                activePool = null;
+              }
+            }
+          }
           const { signer, pubkey } = await connectNip46WithNostrConnectUri({
-            uri: u,
+            uri,
             clientSecretKey,
             pool: attemptPool,
             timeoutMs,
-            relaysToCloseOnCancel: r,
+            relaysToCloseOnCancel: relaysToUse,
           });
           try {
             return pubkey;
@@ -552,9 +600,13 @@ export function RemoteSignerReconnectDialog(props: {
         };
 
         let pubkey: string;
+        let relaysUsed = relays;
         try {
           setExistingReconnectAttempt(1);
-          pubkey = await tryConnect(EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0]);
+          pubkey = await tryConnect(
+            EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0],
+            relays
+          );
         } catch (firstError) {
           debugReconnectTrace(
             "First existing-session reconnect attempt failed",
@@ -565,27 +617,18 @@ export function RemoteSignerReconnectDialog(props: {
                   : String(firstError),
             }
           );
-          // Second attempt with relay union (stored + defaults) for resilience.
-          let uriSecond = uri;
           let relaysSecond = relays;
           try {
-            const parsed = parseNostrConnectURI(uri);
             const unionRelays = buildRelayUnion(
               relays,
               DEFAULT_RELAYS_ARRAY,
               RELAY_UNION_CAP
             );
             if (unionRelays.length > 0) {
-              uriSecond = createNostrConnectURI({
-                clientPubkey: parsed.clientPubkey,
-                relays: unionRelays,
-                secret: parsed.params.secret,
-                perms: parsed.params.perms,
-              });
               relaysSecond = unionRelays;
             }
           } catch {
-            // Keep original uri/relays if parse/build fails
+            // Keep original relays if build fails
           }
           await new Promise((resolve) =>
             setTimeout(resolve, EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS)
@@ -594,9 +637,9 @@ export function RemoteSignerReconnectDialog(props: {
             setExistingReconnectAttempt(2);
             pubkey = await tryConnect(
               EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[1],
-              uriSecond,
               relaysSecond
             );
+            relaysUsed = relaysSecond;
           } catch {
             debugReconnectTrace(
               "Second existing-session reconnect attempt failed"
@@ -627,12 +670,19 @@ export function RemoteSignerReconnectDialog(props: {
           type: "nip46",
           method: "nostrconnect_uri",
           uri,
-          relays,
+          relays: relaysUsed,
           clientSecretKeyHex,
+          signerPubkey: convertToHex(pubkey) ?? pubkey,
         };
 
         const detectedAppName = detectSignerAppName(config);
         updateSession(session.id, {
+          config: {
+            ...session.config,
+            relays: relaysUsed,
+            signerPubkey: config.signerPubkey,
+            bunkerPointer: session.config.bunkerPointer,
+          },
           metadata: {
             ...session.metadata,
             pubkey,
@@ -641,6 +691,7 @@ export function RemoteSignerReconnectDialog(props: {
             connectedAt: Date.now(),
             lastActivityAt: Date.now(),
             lastError: null,
+            relays: relaysUsed,
           },
         });
 
@@ -699,7 +750,12 @@ export function RemoteSignerReconnectDialog(props: {
         wasHiddenDuringExistingReconnectRef.current = false;
       }
 
-      const { bunkerInput, clientSecretKeyHex } = session.config;
+      type Nip46BunkerConfig = Extract<
+        ActiveSignerConfig,
+        { type: "nip46"; method: "bunker_input" }
+      >;
+      const bunkerConfig: Nip46BunkerConfig = session.config;
+      const { bunkerInput, clientSecretKeyHex } = bunkerConfig;
       const clientPubkeyHexBunker = (() => {
         try {
           return getPublicKey(parseSecretKeyHex(clientSecretKeyHex));
@@ -718,9 +774,9 @@ export function RemoteSignerReconnectDialog(props: {
       setError(null);
 
       let activePool: SimplePool | null = null;
+      const bp = await parseBunkerInput(bunkerInput);
+      if (!bp) throw new Error("Invalid bunker input");
       try {
-        const bp = await parseBunkerInput(bunkerInput);
-        if (!bp) throw new Error("Invalid bunker input");
         cancelRef.current = {
           cancel: () => {
             if (activePool && bp.relays.length) {
@@ -734,7 +790,6 @@ export function RemoteSignerReconnectDialog(props: {
           },
         };
 
-        const clientSecretKey = parseSecretKeyHex(clientSecretKeyHex);
         const tryConnect = async (timeoutMs: number) => {
           if (activePool) {
             try {
@@ -746,12 +801,13 @@ export function RemoteSignerReconnectDialog(props: {
           }
           const pool = new SimplePool();
           activePool = pool;
-          const { signer, pubkey } = await connectNip46WithBunkerInput({
-            bunkerInput,
-            clientSecretKey,
-            pool,
-            timeoutMs,
-          });
+          const { signer, pubkey } = await createNip46SignerFromStoredConfig(
+            bunkerConfig,
+            {
+              pool,
+              timeoutMs,
+            }
+          );
           try {
             return { signer, pubkey };
           } finally {
@@ -955,11 +1011,24 @@ export function RemoteSignerReconnectDialog(props: {
           activeSessionForBunker.config.method === "bunker_input"
             ? activeSessionForBunker.config
             : null;
-        const isReconnectExisting =
-          !!bunkerConfig && bunkerConfig.bunkerInput === trimmedBunker;
-        const clientSecretKey = isReconnectExisting
-          ? parseSecretKeyHex(bunkerConfig.clientSecretKeyHex)
-          : generateSecretKey();
+        let isReconnectExisting = false;
+        let reconnectBunkerConfig: typeof bunkerConfig = null;
+        if (bunkerConfig) {
+          const storedBp = await parseBunkerInput(bunkerConfig.bunkerInput);
+          const pastedBp = await parseBunkerInput(trimmedBunker);
+          if (
+            storedBp &&
+            pastedBp &&
+            bunkerCanonicalKey(storedBp) === bunkerCanonicalKey(pastedBp)
+          ) {
+            isReconnectExisting = true;
+            reconnectBunkerConfig = bunkerConfig;
+          }
+        }
+        const clientSecretKey =
+          isReconnectExisting && reconnectBunkerConfig
+            ? parseSecretKeyHex(reconnectBunkerConfig.clientSecretKeyHex)
+            : generateSecretKey();
         const { pubkey } = await connectNip46WithBunkerInput({
           bunkerInput: trimmedBunker,
           clientSecretKey,
@@ -976,9 +1045,10 @@ export function RemoteSignerReconnectDialog(props: {
           type: "nip46",
           method: "bunker_input",
           bunkerInput: trimmedBunker,
-          clientSecretKeyHex: isReconnectExisting
-            ? bunkerConfig.clientSecretKeyHex
-            : serializeSecretKey(clientSecretKey),
+          clientSecretKeyHex:
+            isReconnectExisting && reconnectBunkerConfig
+              ? reconnectBunkerConfig.clientSecretKeyHex
+              : serializeSecretKey(clientSecretKey),
         };
 
         // Create or update session

@@ -90,8 +90,13 @@ export class ProfileMismatchError extends AppError {
 }
 
 /**
- * Remote signer timeout/unavailable (408)
+ * Remote signer timeout/unavailable (408).
  * Used when a NIP-46 remote signer doesn't respond in time (often because the signer app is closed/backgrounded).
+ *
+ * Probe error taxonomy: REMOTE_SIGNER_TIMEOUT / this error means "signer offline or timeout".
+ * It must NOT by itself trigger the reconnect dialog. The reconnect dialog is opened only via
+ * emitOpenRemoteSignerReconnectDialogEvent() (e.g. explicit user action, primary failover failed,
+ * or future unauthorized/malformed bunker paths).
  */
 export class RemoteSignerTimeoutError extends AppError {
   constructor(
