@@ -36,6 +36,7 @@ import {
 } from "~/lib/remote-signer-reconnect.client";
 import {
   detectSignerAppName,
+  getActiveConnection,
   getActiveSession,
   matchOrCreateSession,
   setActiveSession,
@@ -261,6 +262,8 @@ export function RemoteSignerReconnectDialog(props: {
   const triedExistingRef = useRef(false);
   const wasHiddenDuringExistingReconnectRef = useRef(false);
   const existingReconnectForegroundAttemptFailedRef = useRef(false);
+  /** Set when dialog is closed because connection was restored externally (e.g. user started session in Primal). Skip in-flight failure handling. */
+  const closedByExternalReconnectRef = useRef(false);
   const pendingReconnectRef = useRef<{
     uri: string;
     clientSecretKey: Uint8Array;
@@ -329,6 +332,7 @@ export function RemoteSignerReconnectDialog(props: {
     triedExistingRef.current = false;
     wasHiddenDuringExistingReconnectRef.current = false;
     existingReconnectForegroundAttemptFailedRef.current = false;
+    closedByExternalReconnectRef.current = false;
     clearPendingReconnectStorage();
     setState("idle");
     setNostrConnectUri(null);
@@ -367,6 +371,12 @@ export function RemoteSignerReconnectDialog(props: {
           runId: input.runId,
         })
       ) {
+        return;
+      }
+      if (closedByExternalReconnectRef.current) {
+        debugReconnectTrace(
+          "Skipping failure handling: dialog already closed by external reconnect"
+        );
         return;
       }
 
@@ -946,6 +956,37 @@ export function RemoteSignerReconnectDialog(props: {
       syncRelaysAfterReconnect,
     ]
   );
+
+  // When connection is restored externally (e.g. user started session in Primal while modal was open), close dialog and avoid handling the modal's in-flight timeout as failure.
+  useEffect(() => {
+    if (!open || typeof window === "undefined") return;
+    const handleConnectionHealthy = () => {
+      const active = getActiveConnection();
+      if (!active?.metadata.pubkey) return;
+      const activePubkeyHex =
+        convertToHex(active.metadata.pubkey) ?? active.metadata.pubkey;
+      if (
+        expectedPubkeyHex &&
+        activePubkeyHex.toLowerCase() !== expectedPubkeyHex.toLowerCase()
+      ) {
+        return;
+      }
+      closedByExternalReconnectRef.current = true;
+      toast.success(TOAST_RECONNECT_SUCCESS);
+      onReconnectSuccess?.(active.id);
+      onOpenChange(false);
+    };
+    window.addEventListener(
+      "nostr-connection-healthy",
+      handleConnectionHealthy
+    );
+    return () => {
+      window.removeEventListener(
+        "nostr-connection-healthy",
+        handleConnectionHealthy
+      );
+    };
+  }, [open, expectedPubkeyHex, onReconnectSuccess, onOpenChange]);
 
   useEffect(() => {
     if (!open) {
