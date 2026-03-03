@@ -1,4 +1,9 @@
-import { useFetcher, useRevalidator, useSearchParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useNavigate,
+  useRevalidator,
+  useSearchParams,
+} from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
 
@@ -137,6 +142,7 @@ export function usePublishedPosts({
   onOpenBulkComposer,
 }: UsePublishedPostsProps) {
   const _revalidator = useRevalidator();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const refreshAllPostViews = useRefreshPostViews();
   const [searchParams] = useSearchParams();
@@ -452,7 +458,7 @@ export function usePublishedPosts({
           STORAGE_KEY_REPOST_DATA,
           JSON.stringify(repostData)
         );
-        window.location.href = PATH_BULK_POSTS_RECYCLE;
+        navigate(PATH_BULK_POSTS_RECYCLE, { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -509,7 +515,7 @@ export function usePublishedPosts({
           STORAGE_KEY_SCHEDULED_REPOST_DATA,
           JSON.stringify(scheduledRepostData)
         );
-        window.location.href = PATH_BULK_POSTS_REPOST;
+        navigate(PATH_BULK_POSTS_REPOST, { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -538,7 +544,7 @@ export function usePublishedPosts({
           STORAGE_KEY_QUOTE_POST_DATA,
           JSON.stringify(quoteData)
         );
-        window.location.href = PATH_BULK_POSTS_QUOTE;
+        navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -554,11 +560,11 @@ export function usePublishedPosts({
         setSelectedPosts(new Set());
       } else {
         sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-        window.location.href = PATH_BULK_POSTS_QUOTE;
+        navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
         setSelectedPosts(new Set());
       }
     }
-  }, [repostFetcher.data, user?.timezone, onOpenBulkComposer]);
+  }, [repostFetcher.data, user?.timezone, onOpenBulkComposer, navigate]);
 
   // Handle longform repost responses
   useEffect(() => {
@@ -659,7 +665,7 @@ export function usePublishedPosts({
       sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
 
       // Navigate to bulk posts page with quote mode
-      window.location.href = PATH_BULK_POSTS_QUOTE;
+      navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
     } else if (longformQuoteFetcher.data?.error) {
       setToast({
         type: "error",
@@ -671,7 +677,7 @@ export function usePublishedPosts({
       // Hide toast after 5 seconds for errors
       setTimeout(() => setToast(null), 5000);
     }
-  }, [longformQuoteFetcher.data]);
+  }, [longformQuoteFetcher.data, navigate]);
 
   useEffect(() => {
     const handleRepost = async () => {
@@ -750,7 +756,7 @@ export function usePublishedPosts({
         sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
 
         // Navigate to bulk posts page with quote mode
-        window.location.href = "/dashboard/bulkposts?mode=quote";
+        navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
       } else if (individualRepostFetcher.data?.error) {
         setToast({
           type: "error",
@@ -766,7 +772,7 @@ export function usePublishedPosts({
     if (individualRepostFetcher.data) {
       void handleRepost();
     }
-  }, [individualRepostFetcher.data, user]);
+  }, [individualRepostFetcher.data, user, navigate]);
 
   return {
     currentTab,

@@ -1,3 +1,4 @@
+import { useNavigate } from "@remix-run/react";
 import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
@@ -111,6 +112,7 @@ export function useRecyclablesState({
   bulkRepostFetcher,
   individualRepostFetcher,
 }: UseRecyclablesStateProps) {
+  const navigate = useNavigate();
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "publishedAt",
     direction: "desc",
@@ -411,7 +413,7 @@ export function useRecyclablesState({
       });
 
       sessionStorage.setItem("repostData", JSON.stringify(repostData));
-      window.location.href = "/dashboard/bulkposts?mode=recycle";
+      navigate("/dashboard/bulkposts?mode=recycle", { replace: true });
       setSelectedPosts(new Set());
     }
 
@@ -468,7 +470,7 @@ export function useRecyclablesState({
         "scheduledRepostData",
         JSON.stringify(scheduledRepostData)
       );
-      window.location.href = "/dashboard/bulkposts?mode=repost";
+      navigate("/dashboard/bulkposts?mode=repost", { replace: true });
       setSelectedPosts(new Set());
     }
 
@@ -479,11 +481,11 @@ export function useRecyclablesState({
     ) {
       const quoteData = fetcherData.quotePostData;
       sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-      window.location.href = "/dashboard/bulkposts?mode=quote";
+      navigate("/dashboard/bulkposts?mode=quote", { replace: true });
       setSelectedPosts(new Set());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid unnecessary re-renders
-  }, [repostFetcher.data, user?.timezone, repostFetcher]);
+  }, [repostFetcher.data, user?.timezone, repostFetcher, navigate]);
 
   // Handle individual repost actions
   useEffect(() => {
@@ -611,7 +613,7 @@ export function useRecyclablesState({
           "quotePostData",
           JSON.stringify(data.quotePostData)
         );
-        window.location.href = "/dashboard/bulkposts?mode=quote";
+        navigate("/dashboard/bulkposts?mode=quote", { replace: true });
         return;
       }
 
@@ -632,6 +634,7 @@ export function useRecyclablesState({
     user?.relays,
     individualRepostFetcher,
     user,
+    navigate,
   ]);
 
   return {

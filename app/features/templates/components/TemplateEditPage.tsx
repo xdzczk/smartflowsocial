@@ -129,9 +129,9 @@ export default function TemplateEditPage() {
         JSON.stringify(fetcherData.scheduleData)
       );
       // Navigate to bulk posts page
-      window.location.href = "/dashboard/bulkposts?mode=repost";
+      navigate("/dashboard/bulkposts?mode=repost", { replace: true });
     }
-  }, [scheduleFetcher.data]);
+  }, [scheduleFetcher.data, navigate]);
 
   // After successful delete, navigate to templates list (redirect from fetcher doesn't navigate)
   useEffect(() => {

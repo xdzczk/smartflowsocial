@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
 import {
@@ -43,6 +43,7 @@ interface UseSearchStateProps {
  */
 export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
   const fetcher = useFetcher();
+  const navigate = useNavigate();
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -100,7 +101,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     sessionStorage.setItem("quotePostData", JSON.stringify(quotePostData));
 
     // Navigate to bulk posts page with quote mode
-    window.location.href = "/dashboard/bulkposts?mode=quote";
+    navigate("/dashboard/bulkposts?mode=quote", { replace: true });
   };
 
   const handleScheduleRepost = () => {
@@ -134,7 +135,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     );
 
     // Navigate to bulk posts page with repost mode
-    window.location.href = "/dashboard/bulkposts?mode=repost";
+    navigate("/dashboard/bulkposts?mode=repost", { replace: true });
   };
 
   const clearSearch = () => {

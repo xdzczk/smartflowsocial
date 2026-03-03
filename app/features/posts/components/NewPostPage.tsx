@@ -392,7 +392,8 @@ export default function NewPostPage() {
             } catch {
               // ignore
             }
-            window.location.href = getNewPostUrl(postType);
+            // Client-side navigation preserves in-memory NIP-46 signer cache so the next post can sign without reconnecting
+            navigate(getNewPostUrl(postType), { replace: true });
           }}
           onGoToDashboard={() => {
             setShowPublishModal(false);

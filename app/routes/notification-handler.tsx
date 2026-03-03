@@ -1,14 +1,14 @@
-import { useNavigate, useSearchParams } from "@remix-run/react";
+import { useSearchParams } from "@remix-run/react";
 import { useEffect } from "react";
 
-import { handleDeepLink } from "~/lib/deep-link-handler.client";
+import { useDeepLinkHandler } from "~/lib/deep-link-handler.client";
 
 /**
  * Notification Handler Route
  * Handles deep links from push notifications
  */
 export default function NotificationHandler() {
-  const navigate = useNavigate();
+  const handleDeepLink = useDeepLinkHandler();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -25,9 +25,9 @@ export default function NotificationHandler() {
       });
     } else {
       // No post ID, redirect to dashboard
-      navigate("/dashboard");
+      handleDeepLink({});
     }
-  }, [navigate, searchParams]);
+  }, [handleDeepLink, searchParams]);
 
   return null;
 }

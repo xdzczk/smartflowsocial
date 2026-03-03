@@ -1,4 +1,9 @@
-import { useFetcher, useParams, useSearchParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useParams,
+  useRevalidator,
+  useSearchParams,
+} from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 
@@ -287,8 +292,9 @@ export function useDashboardState({
     setPostToReschedule(null);
   };
 
+  const revalidator = useRevalidator();
   const handleModalSuccess = () => {
-    window.location.reload();
+    revalidator.revalidate();
   };
 
   return {
