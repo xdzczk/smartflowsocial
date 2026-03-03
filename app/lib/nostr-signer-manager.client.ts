@@ -83,6 +83,8 @@ let teardownInProgress = false;
 
 /** Minimum time between verification checks (avoid prompting signer app too often). */
 const VERIFY_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+/** Verification timeout when returning cached signer (e.g. before sign). Give signer app time to respond after app switch. */
+const VERIFY_BEFORE_USE_TIMEOUT_MS = 12_000; // 12 seconds
 const RELAY_SYNC_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
 
 /** Timeout for probe on first use after resume (plan: 2–5s). */
@@ -344,15 +346,15 @@ export function cacheNip46SignerFromLogin(signer: NostrSigner): void {
 }
 
 /**
- * Call after a successful sign. Updates last-activity time but intentionally does
- * not refresh _lastVerificationTime so the next getActiveSigner() will run
- * verification (ping/getPublicKey). That way we detect a dead connection (e.g.
- * after Primal started a new session) before the next sign instead of hanging.
+ * Call after a successful sign so the next getActiveSigner() can skip verification
+ * and return the same cached signer when recently verified (avoids clearing cache
+ * and forcing "Waiting for signer approval…" on every next post when Primal is
+ * slow to respond to ping). Cache is still cleared when sign() actually fails.
  */
 export function recordSuccessfulSign(): void {
   const now = Date.now();
   _lastActivityTime = now;
-  _lastVerificationTime = null;
+  _lastVerificationTime = now;
 }
 
 export function getActiveSignerConfig(): ActiveSignerConfig | null {
@@ -561,33 +563,36 @@ function startHealthCheckMonitoring(): void {
           connectionAge > 5 * 60 * 1000 &&
           (idleLongEnough || verificationStale)
         ) {
-          const isValid = await verifySignerConnection(cachedSigner);
+          const signerToCheck = cachedSigner;
+          const isValid = await verifySignerConnection(signerToCheck);
           if (!isValid) {
-            // Connection is stale, clear it
-            clearCachedNip46Signer();
-            connectionEstablishedAt = null;
-            _lastActivityTime = null;
+            // Only clear if the signer we checked is still the current one.
+            // Otherwise getActiveSigner() may have replaced it with a new signer
+            // and we would wrongly clear the new signer.
+            if (cachedSigner === signerToCheck) {
+              clearCachedNip46Signer();
+              connectionEstablishedAt = null;
+              _lastActivityTime = null;
 
-            // Update connection status
-            const activeConnection = getActiveConnection();
-            if (activeConnection) {
-              recordConnectionEvent(activeConnection.id, {
-                type: "health_check",
-                healthy: false,
-                error: "Connection stale",
-              });
-            }
+              const activeConnection = getActiveConnection();
+              if (activeConnection) {
+                recordConnectionEvent(activeConnection.id, {
+                  type: "health_check",
+                  healthy: false,
+                  error: "Connection stale",
+                });
+              }
 
-            // Emit event for connection state change
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(
-                new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
-                  detail: { signerType: NIP46_SIGNER_TYPE },
-                })
-              );
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(
+                  new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
+                    detail: { signerType: NIP46_SIGNER_TYPE },
+                  })
+                );
+              }
             }
-          } else {
-            // Connection is healthy, update activity time
+          } else if (cachedSigner === signerToCheck) {
+            // Connection is healthy, update activity time only if still same signer
             _lastActivityTime = Date.now();
           }
         }
@@ -692,7 +697,10 @@ export async function getActiveSigner(
       return cachedSigner;
     }
 
-    const isValid = await verifySignerConnection(cachedSigner);
+    const isValid = await verifySignerConnection(
+      cachedSigner,
+      VERIFY_BEFORE_USE_TIMEOUT_MS
+    );
     if (isValid) {
       _lastActivityTime = Date.now();
       return cachedSigner;

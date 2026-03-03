@@ -17,7 +17,8 @@ export type ConnectionEvent =
   | { type: "disconnected"; reason?: string }
   | { type: "error"; error: string }
   | { type: "health_check"; healthy: boolean; error?: string }
-  | { type: "reconnect"; success: boolean; error?: string };
+  | { type: "reconnect"; success: boolean; error?: string }
+  | { type: "signed"; kind?: number };
 
 export function getConnectionStatus(connectionId: string): ConnectionStatus {
   const connectionView = getSessionByIdLegacy(connectionId);
@@ -248,6 +249,51 @@ function handleReconnectEvent(
   };
 }
 
+function signKindToLabel(kind: number): string {
+  switch (kind) {
+    case 1:
+      return "note";
+    case 6:
+      return "repost";
+    case 16:
+      return "repost";
+    case 30023:
+      return "article";
+    default:
+      return "event";
+  }
+}
+
+function handleSignedEvent(
+  connectionId: string,
+  connectionView: RemoteSignerSession,
+  event: Extract<ConnectionEvent, { type: "signed" }>
+): {
+  logType: ConnectionLogEntry["type"];
+  logStatus: ConnectionLogEntry["status"];
+  message: string;
+  details: Record<string, unknown>;
+} {
+  const kind = event.kind ?? 1;
+  const label = signKindToLabel(kind);
+  const message = `Signed ${label}`;
+  const details: Record<string, unknown> = { kind };
+
+  updateSession(connectionId, {
+    metadata: {
+      ...connectionView.metadata,
+      lastActivityAt: Date.now(),
+    },
+  });
+
+  return {
+    logType: "sign",
+    logStatus: "success",
+    message,
+    details,
+  };
+}
+
 /**
  * Record a connection event for the given connection (by id).
  * For "connected": starts a new session then logs into it.
@@ -309,6 +355,13 @@ export function recordConnectionEvent(
       break;
     case "reconnect":
       result = handleReconnectEvent(
+        connectionId,
+        connectionViewAfterConnect,
+        event
+      );
+      break;
+    case "signed":
+      result = handleSignedEvent(
         connectionId,
         connectionViewAfterConnect,
         event

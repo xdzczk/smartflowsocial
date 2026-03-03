@@ -35,6 +35,7 @@ import {
   getActiveConnection,
   updateSession,
 } from "~/lib/remote-signer-sessions.client";
+import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
 
 import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
 
@@ -351,6 +352,13 @@ async function trySignWithConfiguredSigner(
       typeof signerManager.recordSuccessfulSign === "function"
     ) {
       signerManager.recordSuccessfulSign();
+      const activeConnection = getActiveConnection();
+      if (activeConnection) {
+        recordConnectionEvent(activeConnection.id, {
+          type: "signed",
+          kind: nostrEvent.kind,
+        });
+      }
     }
 
     return normalizeSignResult(signResult, nostrEvent);

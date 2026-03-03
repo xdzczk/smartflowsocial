@@ -6,7 +6,13 @@ export type ConnectionStatus = "active" | "disconnected" | "stale" | "inactive";
 export interface ConnectionLogEntry {
   id: string;
   timestamp: number;
-  type: "connect" | "disconnect" | "error" | "health_check" | "reconnect";
+  type:
+    | "connect"
+    | "disconnect"
+    | "error"
+    | "health_check"
+    | "reconnect"
+    | "sign";
   status: "success" | "failure" | "timeout";
   message: string;
   details?: Record<string, unknown>;

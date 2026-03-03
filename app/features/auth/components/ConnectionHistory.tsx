@@ -106,6 +106,13 @@ export function ConnectionHistory({
           >
             Health Checks
           </Button>
+          <Button
+            variant={filterType === "sign" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilterType("sign")}
+          >
+            Sign Events
+          </Button>
         </div>
       ) : null}
 
