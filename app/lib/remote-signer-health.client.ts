@@ -11,17 +11,42 @@ export interface ConnectionHealthResult {
   method?: "ping" | "get_public_key";
 }
 
+/** When no signer is cached, try to reconnect once (e.g. after both apps were closed and reopened). */
+const RECONNECT_TIMEOUT_MS = 30_000;
+
 /**
  * Test the current active signer connection.
+ * If no signer is cached (e.g. after reopen), attempts one reconnect before failing.
  * Returns health status with optional pubkey and duration.
  */
 export async function testConnection(
-  timeoutMs = 3000
+  timeoutMs = 3000,
+  options?: { tryReconnectIfDisconnected?: boolean }
 ): Promise<ConnectionHealthResult> {
+  const tryReconnect = options?.tryReconnectIfDisconnected ?? true;
   const startTime = Date.now();
 
   try {
-    const signer = await getActiveSigner({ allowReconnect: false });
+    let signer = await getActiveSigner({ allowReconnect: false });
+    if (!signer && tryReconnect) {
+      const activeConfig = getActiveSignerConfig();
+      if (activeConfig?.type === "nip46") {
+        const reconnectPromise = getActiveSigner({ allowReconnect: true });
+        const timeoutPromise = new Promise<null>((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  "Reconnect is taking too long. Ensure your signer app (e.g. Primal) is open and try again."
+                )
+              ),
+            RECONNECT_TIMEOUT_MS
+          )
+        );
+        signer =
+          (await Promise.race([reconnectPromise, timeoutPromise])) ?? null;
+      }
+    }
     if (!signer) {
       const activeConfig = getActiveSignerConfig();
       const staleMessage =

@@ -11,7 +11,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import type { SignedEvent } from "~/features/nostr/types";
-import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
+import {
+  formatAttemptElapsed,
+  useSignAttemptProgress,
+} from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -503,7 +506,7 @@ export default function TextPost({
             <>
               {" "}
               Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-              {signElapsedSeconds}s
+              {formatAttemptElapsed(signElapsedSeconds, signAttempt.timeoutMs)}
             </>
           ) : null}
           {" — "}
@@ -615,7 +618,7 @@ export default function TextPost({
                 />
                 {isSigning
                   ? signAttempt
-                    ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${signElapsedSeconds}s`
+                    ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${formatAttemptElapsed(signElapsedSeconds, signAttempt.timeoutMs)}`
                     : "Waiting for signer…"
                   : fetcher.state !== "idle"
                     ? "Scheduling..."
@@ -908,7 +911,7 @@ export default function TextPost({
             />
             {isSigning
               ? signAttempt
-                ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${signElapsedSeconds}s`
+                ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${formatAttemptElapsed(signElapsedSeconds, signAttempt.timeoutMs)}`
                 : "Waiting for signer…"
               : fetcher.state !== "idle"
                 ? "Posting..."

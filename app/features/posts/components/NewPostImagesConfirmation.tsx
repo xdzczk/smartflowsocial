@@ -4,7 +4,10 @@ import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
+import {
+  formatAttemptElapsed,
+  useSignAttemptProgress,
+} from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
@@ -353,7 +356,10 @@ export default function NewPostImagesConfirmation({
               <>
                 {" "}
                 Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                {signElapsedSeconds}s
+                {formatAttemptElapsed(
+                  signElapsedSeconds,
+                  signAttempt.timeoutMs
+                )}
               </>
             ) : null}
             {" — "}

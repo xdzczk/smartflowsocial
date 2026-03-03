@@ -6,7 +6,10 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
+import {
+  formatAttemptElapsed,
+  useSignAttemptProgress,
+} from "~/lib/hooks/useSignAttemptProgress";
 import {
   SMALL_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -722,7 +725,11 @@ export default function LongFormPost({
                       <>
                         {" "}
                         Attempt {signAttempt.attempt} of{" "}
-                        {signAttempt.maxAttempts} · {signElapsedSeconds}s
+                        {signAttempt.maxAttempts} ·{" "}
+                        {formatAttemptElapsed(
+                          signElapsedSeconds,
+                          signAttempt.timeoutMs
+                        )}
                       </>
                     ) : null}
                     {" — "}

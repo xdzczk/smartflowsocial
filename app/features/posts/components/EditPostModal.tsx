@@ -11,7 +11,10 @@ import {
   getClientDisplayErrorMessage,
   showErrorToastFromUnknown,
 } from "~/lib/error-handler.client";
-import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
+import {
+  formatAttemptElapsed,
+  useSignAttemptProgress,
+} from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -758,7 +761,11 @@ export function EditPostModal({
                     <>
                       {" "}
                       Attempt {signAttempt.attempt} of {signAttempt.maxAttempts}{" "}
-                      · {signElapsedSeconds}s
+                      ·{" "}
+                      {formatAttemptElapsed(
+                        signElapsedSeconds,
+                        signAttempt.timeoutMs
+                      )}
                     </>
                   ) : null}
                   {" — "}

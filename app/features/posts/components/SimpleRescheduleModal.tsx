@@ -5,7 +5,10 @@ import type { z } from "zod";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
+import {
+  formatAttemptElapsed,
+  useSignAttemptProgress,
+} from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -429,7 +432,10 @@ export function SimpleRescheduleModal({
                   <>
                     {" "}
                     Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                    {signElapsedSeconds}s
+                    {formatAttemptElapsed(
+                      signElapsedSeconds,
+                      signAttempt.timeoutMs
+                    )}
                   </>
                 ) : null}
                 {" — "}

@@ -137,12 +137,15 @@ function debugSignerManagerTrace(
 
 /**
  * Clear the in-memory signer cache without removing persisted config.
- * Useful when a NIP-46 remote signer connection becomes stale.
+ * Also clears any in-flight signer resolution so the next getActiveSigner() starts fresh
+ * (avoids reusing a stuck connection attempt after a timeout).
  */
 export function resetCachedSigner(): void {
   cachedSigner = null;
   _lastVerificationTime = null;
   _lastRelaySyncAt = null;
+  inFlightSignerPromise = null;
+  inFlightSignerConfigJson = null;
 }
 
 /**

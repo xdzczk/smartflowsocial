@@ -10,7 +10,10 @@ import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
-import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
+import {
+  formatAttemptElapsed,
+  useSignAttemptProgress,
+} from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -125,14 +128,18 @@ async function signAndSubmitQuote(
 
 function getConfirmButtonLabel(
   isSigning: boolean,
-  signAttempt: { attempt: number; maxAttempts: number } | null,
+  signAttempt: {
+    attempt: number;
+    maxAttempts: number;
+    timeoutMs?: number;
+  } | null,
   signElapsedSeconds: number,
   isSubmitting: boolean,
   mode: "repost" | "quote"
 ): string {
   if (isSigning) {
     return signAttempt
-      ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${signElapsedSeconds}s`
+      ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${formatAttemptElapsed(signElapsedSeconds, signAttempt.timeoutMs)}`
       : "Signing...";
   }
   if (isSubmitting) return "Signing...";
@@ -329,7 +336,11 @@ export function ScheduleRepostQuoteModal({
                       <>
                         {" "}
                         Attempt {signAttempt.attempt} of{" "}
-                        {signAttempt.maxAttempts} · {signElapsedSeconds}s
+                        {signAttempt.maxAttempts} ·{" "}
+                        {formatAttemptElapsed(
+                          signElapsedSeconds,
+                          signAttempt.timeoutMs
+                        )}
                       </>
                     ) : null}
                     {" — "}

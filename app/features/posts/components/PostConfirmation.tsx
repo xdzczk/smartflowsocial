@@ -6,7 +6,10 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import type { SignedEvent } from "~/features/nostr/types";
 import { logClientError } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
+import {
+  formatAttemptElapsed,
+  useSignAttemptProgress,
+} from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { fromUnixTimestamp, formatForDisplay } from "~/lib/temporal";
 
@@ -361,7 +364,10 @@ export default function PostConfirmation({
               <>
                 {" "}
                 Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                {signElapsedSeconds}s
+                {formatAttemptElapsed(
+                  signElapsedSeconds,
+                  signAttempt.timeoutMs
+                )}
               </>
             ) : null}
             {signingProgress ? (

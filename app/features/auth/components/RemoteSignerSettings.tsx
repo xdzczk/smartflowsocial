@@ -149,7 +149,9 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
       const active = getActiveSession();
       if (active?.metadata.status === "active") {
         void (async () => {
-          const result = await testConnection();
+          const result = await testConnection(3000, {
+            tryReconnectIfDisconnected: false,
+          });
           recordConnectionEvent(active.id, {
             type: "health_check",
             healthy: result.healthy,

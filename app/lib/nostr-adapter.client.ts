@@ -43,6 +43,8 @@ import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
 // ============================================================================
 
 const ACTIVE_SIGNER_SIGN_TIMEOUT_MS = 30_000;
+/** Max time to wait for signer resolution (getActiveSigner). Prevents hanging on "Attempt 1" when connection is slow after reopen. */
+const GET_ACTIVE_SIGNER_TIMEOUT_MS = 40_000;
 
 // Track retry counts for progressive timeouts
 let connectionRetryCount = 0;
@@ -307,7 +309,17 @@ async function trySignWithConfiguredSigner(
         : null;
     prefersRemoteSigner = !!cfg && cfg.type === "nip46";
 
-    const activeSigner = await signerManager.getActiveSigner();
+    const getSignerPromise = signerManager.getActiveSigner();
+    const activeSigner = await withTimeout(
+      getSignerPromise,
+      GET_ACTIVE_SIGNER_TIMEOUT_MS,
+      "Signer connection is taking too long. Please ensure your signer app (e.g. Primal) is open and try again."
+    ).catch(async (err) => {
+      if (err instanceof RemoteSignerTimeoutError) {
+        await resetSignerCacheBestEffort();
+      }
+      throw err;
+    });
     if (prefersRemoteSigner) {
       debugSignerTrace("Configured signer resolved", {
         hasSigner: Boolean(activeSigner),
@@ -389,12 +401,19 @@ async function signEventWithRetryLogic(
   while (retries < maxRetries) {
     const attemptNum = retries + 1;
     if (typeof window !== "undefined") {
+      const signPhaseTimeoutMs = getProgressiveTimeout(
+        signRetryCount,
+        ACTIVE_SIGNER_SIGN_TIMEOUT_MS
+      );
+      const totalAttemptTimeoutMs =
+        GET_ACTIVE_SIGNER_TIMEOUT_MS + signPhaseTimeoutMs;
       window.dispatchEvent(
         new CustomEvent("nostr-sign-attempt", {
           detail: {
             attempt: attemptNum,
             maxAttempts: maxRetries,
             startedAt: Date.now(),
+            timeoutMs: totalAttemptTimeoutMs,
           },
         })
       );

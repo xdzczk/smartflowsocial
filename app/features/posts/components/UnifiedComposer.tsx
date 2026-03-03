@@ -18,7 +18,10 @@ import { Textarea } from "~/components/ui/textarea";
 import type { SignedEvent } from "~/features/nostr/types";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
-import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
+import {
+  formatAttemptElapsed,
+  useSignAttemptProgress,
+} from "~/lib/hooks/useSignAttemptProgress";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -1196,7 +1199,10 @@ export function UnifiedComposer({
                 <>
                   {" "}
                   Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                  {signElapsedSeconds}s
+                  {formatAttemptElapsed(
+                    signElapsedSeconds,
+                    signAttempt.timeoutMs
+                  )}
                 </>
               ) : null}
               {" — "}
