@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import {
+  NOSTR_CONNECTION_HEALTHY_EVENT,
+  tryBackgroundReconnect,
+} from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
@@ -46,6 +50,24 @@ export default function DraftBulkResume({
       : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
+
+  // After successful remote signer reconnect, clear stuck signing state so user can retry.
+  useEffect(() => {
+    const handler = () => {
+      setIsSubmitting(false);
+      setSigningError(null);
+    };
+    window.addEventListener(NOSTR_CONNECTION_HEALTHY_EVENT, handler);
+    return () =>
+      window.removeEventListener(NOSTR_CONNECTION_HEALTHY_EVENT, handler);
+  }, []);
+
+  // When awaiting signer approval, try background reconnect after a delay.
+  useEffect(() => {
+    if (!isSubmitting) return;
+    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
+    return () => clearTimeout(t);
+  }, [isSubmitting]);
 
   // State for bulk operations similar to bulkposts
   const [posts, setPosts] = useState(
@@ -656,7 +678,8 @@ export default function DraftBulkResume({
         {isSubmitting ? (
           <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm">
             Signing drafts… If you’re using a remote signer, keep it open to
-            approve requests.
+            approve requests. If you started a new session in the signer app,
+            the app will reconnect automatically in a few seconds.
           </div>
         ) : null}
         {signingError ? (

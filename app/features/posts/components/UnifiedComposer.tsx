@@ -27,9 +27,11 @@ import {
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { SIGNER_CONFIG_HYDRATED_EVENT } from "~/lib/nostr-signer-manager.client";
+import {
+  SIGNER_CONFIG_HYDRATED_EVENT,
+  tryBackgroundReconnect,
+} from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-import { emitOpenRemoteSignerReconnectDialogEvent } from "~/lib/remote-signer-reconnect.client";
 import {
   getNowForDateTimeLocal,
   nowMillis,
@@ -315,6 +317,29 @@ export function UnifiedComposer({
     return () =>
       window.removeEventListener(SIGNER_CONFIG_HYDRATED_EVENT, handler);
   }, [refreshSignerState]);
+
+  // After successful remote signer reconnect, clear stuck "Waiting for signer approval"
+  // so the user can retry signing with the new session.
+  useEffect(() => {
+    const handler = () => {
+      setIsSigning(false);
+      setSigningError(null);
+    };
+    window.addEventListener("nostr-connection-healthy", handler);
+    return () =>
+      window.removeEventListener("nostr-connection-healthy", handler);
+  }, []);
+
+  // When awaiting signer approval, try background reconnect after a delay so that
+  // restarting the session in Primal (or another signer app) picks up the new session.
+  const AWAITING_SIGNER_AUTO_RECONNECT_DELAY_MS = 10_000;
+  useEffect(() => {
+    if (!isSigning) return;
+    const t = setTimeout(() => {
+      void tryBackgroundReconnect();
+    }, AWAITING_SIGNER_AUTO_RECONNECT_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [isSigning]);
 
   const tags: string[] = [];
   const [selectedHashtags, setSelectedHashtags] = React.useState(
@@ -1112,14 +1137,6 @@ export function UnifiedComposer({
   };
 
   const disabled = fetcher.state !== "idle" || isSigning;
-  const canShowReconnectSignerAction =
-    signerLabel === SIGNER_LABEL_NIP46 &&
-    !!signingError &&
-    /remote signer|websocket|subscription closed|connection|timeout|timed out|signer app/i.test(
-      signingError
-    );
-  const canBypassToReconnectWhileSigning =
-    isSigning && signerLabel === SIGNER_LABEL_NIP46;
   const primarySubmitRef = useRef<HTMLButtonElement>(null);
   const draftSubmitRef = useRef<HTMLButtonElement>(null);
   const hasScheduleTimeForSubmit = !!(
@@ -1207,21 +1224,9 @@ export function UnifiedComposer({
               ) : null}
               {" — "}
               If you’re using a remote signer, open it to approve the request.
+              If you started a new session in the signer app, the app will
+              reconnect automatically in a few seconds.
             </span>
-            {canBypassToReconnectWhileSigning ? (
-              <Button
-                type="button"
-                size="sm"
-                className="shrink-0"
-                onClick={() => {
-                  emitOpenRemoteSignerReconnectDialogEvent({
-                    mode: "new_session",
-                  });
-                }}
-              >
-                Reconnect now
-              </Button>
-            ) : null}
           </div>
         ) : null}
         {signingError ? (
@@ -1248,20 +1253,6 @@ export function UnifiedComposer({
             >
               Try again
             </Button>
-            {canShowReconnectSignerAction ? (
-              <Button
-                type="button"
-                size="sm"
-                className="shrink-0"
-                onClick={() => {
-                  emitOpenRemoteSignerReconnectDialogEvent({
-                    mode: "new_session",
-                  });
-                }}
-              >
-                Reconnect signer
-              </Button>
-            ) : null}
           </Alert>
         ) : null}
         <div className="my-8">

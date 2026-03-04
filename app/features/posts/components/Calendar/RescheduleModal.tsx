@@ -14,6 +14,7 @@ import { isVideoFile } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import {
   formatForDateTimeLocal,
   formatForDisplay,
@@ -563,6 +564,24 @@ export function RescheduleModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  // After successful remote signer reconnect, clear stuck signing state so user can retry.
+  useEffect(() => {
+    const handler = () => {
+      setIsSigningEvent(false);
+      setSigningError(null);
+    };
+    window.addEventListener("nostr-connection-healthy", handler);
+    return () =>
+      window.removeEventListener("nostr-connection-healthy", handler);
+  }, []);
+
+  // When awaiting signer approval, try background reconnect after a delay.
+  useEffect(() => {
+    if (!isSigningEvent) return;
+    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
+    return () => clearTimeout(t);
+  }, [isSigningEvent]);
 
   const FOCUSABLE_SELECTOR =
     'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';

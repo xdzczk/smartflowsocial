@@ -16,6 +16,7 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import {
   getMinDatetimeLocalForSchedule,
   getMinScheduleTimestampMs,
@@ -168,6 +169,24 @@ export function ScheduleRepostQuoteModal({
   const [signingError, setSigningError] = useState<string | null>(null);
   const [isSigning, setIsSigning] = useState(false);
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
+
+  // After successful remote signer reconnect, clear stuck signing state so user can retry.
+  useEffect(() => {
+    const handler = () => {
+      setIsSigning(false);
+      setSigningError(null);
+    };
+    window.addEventListener("nostr-connection-healthy", handler);
+    return () =>
+      window.removeEventListener("nostr-connection-healthy", handler);
+  }, []);
+
+  // When awaiting signer approval, try background reconnect after a delay.
+  useEffect(() => {
+    if (!isSigning) return;
+    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
+    return () => clearTimeout(t);
+  }, [isSigning]);
 
   const fetcher = useFetcher<{
     success?: boolean;

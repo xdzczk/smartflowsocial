@@ -17,6 +17,7 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import {
   fromDate,
   getNowForDateTimeLocal,
@@ -228,6 +229,25 @@ export function EditPostModal({
   const [signingError, setSigningError] = useState<string | null>(null);
   const { signAttempt, signElapsedSeconds } =
     useSignAttemptProgress(isSigningEvent);
+
+  // After successful remote signer reconnect, clear stuck signing state so user can retry.
+  useEffect(() => {
+    const handler = () => {
+      setIsSigningEvent(false);
+      setSigningError(null);
+    };
+    window.addEventListener("nostr-connection-healthy", handler);
+    return () =>
+      window.removeEventListener("nostr-connection-healthy", handler);
+  }, []);
+
+  // When awaiting signer approval, try background reconnect after a delay.
+  useEffect(() => {
+    if (!isSigningEvent) return;
+    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
+    return () => clearTimeout(t);
+  }, [isSigningEvent]);
+
   // "Also schedule repost/quote" (only for regular posts) – hours after main post (multiple)
   const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
   const [repostDelayList, setRepostDelayList] = useState<

@@ -17,6 +17,7 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   getMinScheduleTimestampMs,
@@ -302,6 +303,24 @@ export default function TextPost({
       setSchedulingScheduledFor(formScheduledFor);
     }
   }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
+
+  // After successful remote signer reconnect, clear stuck signing state so user can retry.
+  React.useEffect(() => {
+    const handler = () => {
+      setIsSigning(false);
+      setSigningError(null);
+    };
+    window.addEventListener("nostr-connection-healthy", handler);
+    return () =>
+      window.removeEventListener("nostr-connection-healthy", handler);
+  }, []);
+
+  // When awaiting signer approval, try background reconnect after a delay.
+  React.useEffect(() => {
+    if (!isSigning) return;
+    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
+    return () => clearTimeout(t);
+  }, [isSigning]);
 
   /**
    * Parse scheduled time from datetime-local string with fallbacks

@@ -11,6 +11,7 @@ import {
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import { fromUnixTimestamp, formatForDisplay } from "~/lib/temporal";
 
 import { getSelectedQueueStyle } from "../queue-colors";
@@ -159,6 +160,24 @@ export default function PostConfirmation({
       setSigningError(actionError);
     }
   }, [actionError]);
+
+  // After successful remote signer reconnect, clear stuck signing state so user can retry.
+  useEffect(() => {
+    const handler = () => {
+      setIsSigning(false);
+      setSigningError(null);
+    };
+    window.addEventListener("nostr-connection-healthy", handler);
+    return () =>
+      window.removeEventListener("nostr-connection-healthy", handler);
+  }, []);
+
+  // When awaiting signer approval, try background reconnect after a delay.
+  useEffect(() => {
+    if (!isSigning) return;
+    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
+    return () => clearTimeout(t);
+  }, [isSigning]);
 
   const handleSignAndSubmit = async () => {
     try {

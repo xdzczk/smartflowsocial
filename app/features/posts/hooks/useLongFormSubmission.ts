@@ -3,7 +3,7 @@
  * Extracts the complex submission logic from LongFormPost component
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   delayAfterMainToSeconds,
@@ -16,6 +16,7 @@ import {
   generateSummaryFromMarkdown,
 } from "~/lib/markdown-utils";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import {
   fromDate,
   fromISOString,
@@ -125,6 +126,24 @@ export function useLongFormSubmission({
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
+
+  // After successful remote signer reconnect, clear stuck signing state so user can retry.
+  useEffect(() => {
+    const handler = () => {
+      setIsSigning(false);
+      setSigningError(null);
+    };
+    window.addEventListener("nostr-connection-healthy", handler);
+    return () =>
+      window.removeEventListener("nostr-connection-healthy", handler);
+  }, []);
+
+  // When awaiting signer approval, try background reconnect after a delay.
+  useEffect(() => {
+    if (!isSigning) return;
+    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
+    return () => clearTimeout(t);
+  }, [isSigning]);
 
   const handleSchedule = async (actionType: "schedule" | "publish") => {
     if (!title.trim() || !content.trim()) {

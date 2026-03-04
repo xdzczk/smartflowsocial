@@ -18,6 +18,7 @@ import { isMobile } from "~/lib/is-mobile";
 import { convertToHex } from "~/lib/nostr-conversion";
 import {
   addConnectionLog,
+  detectSignerAppName,
   getActiveConnection,
   updateSession,
 } from "~/lib/remote-signer-sessions.client";
@@ -54,6 +55,9 @@ const NIP46_SIGNER_TYPE = "nip46";
 
 /** CustomEvent name when NIP-46 connection becomes stale. */
 const NOSTR_CONNECTION_STALE_EVENT = "nostr-connection-stale";
+
+/** Fired when remote signer reconnect succeeds so composers clear "Waiting for signer approval". */
+export const NOSTR_CONNECTION_HEALTHY_EVENT = "nostr-connection-healthy";
 
 /** Fired when signer config was missing and we defaulted to NIP-07 so components can re-read. */
 export const SIGNER_CONFIG_HYDRATED_EVENT = "smartflow:signer-config-hydrated";
@@ -827,7 +831,7 @@ export async function getActiveSigner(
         // Emit connection healthy event
         if (typeof window !== "undefined") {
           window.dispatchEvent(
-            new CustomEvent("nostr-connection-healthy", {
+            new CustomEvent(NOSTR_CONNECTION_HEALTHY_EVENT, {
               detail: { signerType: NIP46_SIGNER_TYPE },
             })
           );
@@ -1039,7 +1043,7 @@ export async function getActiveSigner(
       // Emit connection healthy event
       if (typeof window !== "undefined") {
         window.dispatchEvent(
-          new CustomEvent("nostr-connection-healthy", {
+          new CustomEvent(NOSTR_CONNECTION_HEALTHY_EVENT, {
             detail: { signerType: NIP46_SIGNER_TYPE },
           })
         );
@@ -1146,6 +1150,55 @@ export async function getWindowNostrLikeSigner(): Promise<{
   }
 
   return null;
+}
+
+let backgroundReconnectInProgress = false;
+const BACKGROUND_RECONNECT_TIMEOUT_MS = 20_000;
+
+/**
+ * Try to reconnect to the active NIP-46 remote signer using stored config (no UI).
+ * Use when the user has restarted the session in the signer app (e.g. Primal) and we
+ * are stuck "Awaiting for signer approval". On success: caches the new signer, updates
+ * session metadata, dispatches "nostr-connection-healthy" so composers clear the banner.
+ * Returns true if reconnected, false otherwise. Safe to call from any composer.
+ */
+export async function tryBackgroundReconnect(): Promise<boolean> {
+  if (backgroundReconnectInProgress) return false;
+  const config = getActiveSignerConfig();
+  if (config?.type !== NIP46_SIGNER_TYPE) return false;
+  const connection = getActiveConnection();
+  if (!connection) return false;
+
+  backgroundReconnectInProgress = true;
+  try {
+    const { signer, pubkey } = await createNip46SignerFromStoredConfig(config, {
+      timeoutMs: BACKGROUND_RECONNECT_TIMEOUT_MS,
+    });
+    const detectedAppName = detectSignerAppName(config);
+    setActiveSignerConfig(config);
+    cacheNip46SignerFromLogin(signer);
+    updateSession(connection.id, {
+      metadata: {
+        ...connection.metadata,
+        pubkey,
+        signerAppName: detectedAppName,
+        status: "active",
+        connectedAt: Date.now(),
+        lastActivityAt: Date.now(),
+        lastError: null,
+      },
+    });
+    recordConnectionEvent(connection.id, { type: "connected", pubkey });
+    await syncRelaysWithRemoteSigner(signer);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(NOSTR_CONNECTION_HEALTHY_EVENT));
+    }
+    return true;
+  } catch {
+    return false;
+  } finally {
+    backgroundReconnectInProgress = false;
+  }
 }
 
 export async function getActiveSignerPubkeyHint(): Promise<string | null> {

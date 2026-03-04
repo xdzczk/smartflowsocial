@@ -1,6 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -9,6 +9,7 @@ import {
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   formatForDisplay,
@@ -203,6 +204,24 @@ export default function NewPostImagesConfirmation({
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
   const user = useOptionalUser();
   const { dateLocale } = useFormattedDate();
+
+  // After successful remote signer reconnect, clear stuck signing state so user can retry.
+  useEffect(() => {
+    const handler = () => {
+      setIsSigning(false);
+      setSigningError(null);
+    };
+    window.addEventListener("nostr-connection-healthy", handler);
+    return () =>
+      window.removeEventListener("nostr-connection-healthy", handler);
+  }, []);
+
+  // When awaiting signer approval, try background reconnect after a delay.
+  useEffect(() => {
+    if (!isSigning) return;
+    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
+    return () => clearTimeout(t);
+  }, [isSigning]);
 
   // Calculate addTags for display
   const addTags = user?.showHashTagsinPosts ? `\n${tags}` : "";
