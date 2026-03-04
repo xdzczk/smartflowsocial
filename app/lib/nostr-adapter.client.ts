@@ -368,6 +368,71 @@ async function trySignWithConfiguredSigner(
   }
 }
 
+function dispatchSignAttemptEvent(
+  attemptNum: number,
+  maxRetries: number
+): void {
+  if (typeof window === "undefined") return;
+  const signPhaseTimeoutMs = getProgressiveTimeout(
+    signRetryCount,
+    ACTIVE_SIGNER_SIGN_TIMEOUT_MS
+  );
+  const totalAttemptTimeoutMs =
+    GET_ACTIVE_SIGNER_TIMEOUT_MS + signPhaseTimeoutMs;
+  window.dispatchEvent(
+    new CustomEvent("nostr-sign-attempt", {
+      detail: {
+        attempt: attemptNum,
+        maxAttempts: maxRetries,
+        startedAt: Date.now(),
+        timeoutMs: totalAttemptTimeoutMs,
+      },
+    })
+  );
+}
+
+async function handleSignAttemptFailure(options: {
+  error: unknown;
+  retries: number;
+  maxRetries: number;
+  config: { type?: string } | null;
+  tryPrimaryFailover: () => Promise<boolean>;
+}): Promise<{ action: "throw" | "retry"; nextRetries: number }> {
+  const { error, retries, maxRetries, config, tryPrimaryFailover } = options;
+  const isConnectionError = isConnectionLikeError(error);
+  debugSignerTrace("Configured signer attempt failed", {
+    error: error instanceof Error ? error.message : String(error),
+    isConnectionError,
+    retries,
+  });
+  if (isConnectionError && (await tryPrimaryFailover())) {
+    debugSignerTrace("Recovered via primary failover in retry loop");
+    return { action: "retry", nextRetries: retries };
+  }
+  if (isConnectionError && retries < maxRetries - 1) {
+    const nextRetries = retries + 1;
+    if (config?.type === "nip46") {
+      try {
+        const { tryBackgroundReconnect } =
+          await import("~/lib/nostr-signer-manager.client");
+        const reconnected = await tryBackgroundReconnect();
+        debugSignerTrace("After sign failure, tryBackgroundReconnect result", {
+          reconnected,
+          nextRetry: nextRetries,
+        });
+      } catch {
+        // ignore
+      }
+    }
+    debugSignerTrace("Retrying configured signer after short delay", {
+      nextRetry: nextRetries,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return { action: "retry", nextRetries };
+  }
+  return { action: "throw", nextRetries: retries };
+}
+
 async function signEventWithRetryLogic(
   nostrEvent: NostrEvent,
   maxRetries = 5
@@ -379,9 +444,7 @@ async function signEventWithRetryLogic(
       : null;
   const expectedHex = getExpectedPubkeyHexForGuard();
   if (config?.type === "nip07") {
-    if (expectedHex) {
-      await checkNip07Readiness(expectedHex);
-    }
+    if (expectedHex) await checkNip07Readiness(expectedHex);
     if (getNip07Readiness() === "account_mismatch") {
       const message =
         "Extension account does not match. Switch back to the correct account in your extension or re-login.";
@@ -392,7 +455,7 @@ async function signEventWithRetryLogic(
 
   let retries = 0;
   let triedPrimaryFailover = false;
-  const tryPrimaryFailover = async (): Promise<boolean> => {
+  const tryPrimaryFailoverFn = async (): Promise<boolean> => {
     if (triedPrimaryFailover) return false;
     const recovered = await attemptPrimarySignerFailover({
       expectedPubkey: expectedHex,
@@ -408,60 +471,32 @@ async function signEventWithRetryLogic(
 
   while (retries < maxRetries) {
     const attemptNum = retries + 1;
-    if (typeof window !== "undefined") {
-      const signPhaseTimeoutMs = getProgressiveTimeout(
-        signRetryCount,
-        ACTIVE_SIGNER_SIGN_TIMEOUT_MS
-      );
-      const totalAttemptTimeoutMs =
-        GET_ACTIVE_SIGNER_TIMEOUT_MS + signPhaseTimeoutMs;
-      window.dispatchEvent(
-        new CustomEvent("nostr-sign-attempt", {
-          detail: {
-            attempt: attemptNum,
-            maxAttempts: maxRetries,
-            startedAt: Date.now(),
-            timeoutMs: totalAttemptTimeoutMs,
-          },
-        })
-      );
-    }
+    dispatchSignAttemptEvent(attemptNum, maxRetries);
     debugSignerTrace("Retry loop iteration", {
       retries,
       maxRetries,
       triedPrimaryFailover,
       signerType: config?.type ?? "none",
     });
+
     let configured: SignedEvent | null = null;
     try {
       configured = await trySignWithConfiguredSigner(nostrEvent);
     } catch (error) {
-      const isConnectionError = isConnectionLikeError(error);
-      debugSignerTrace("Configured signer attempt failed", {
-        error: error instanceof Error ? error.message : String(error),
-        isConnectionError,
+      const result = await handleSignAttemptFailure({
+        error,
         retries,
+        maxRetries,
+        config,
+        tryPrimaryFailover: tryPrimaryFailoverFn,
       });
-      if (isConnectionError && (await tryPrimaryFailover())) {
-        debugSignerTrace("Recovered via primary failover in retry loop");
-        continue;
-      }
-      if (isConnectionError && retries < maxRetries - 1) {
-        // Allow transient remote-signer reconnect hiccups to recover in-loop.
-        retries++;
-        debugSignerTrace("Retrying configured signer after short delay", {
-          nextRetry: retries,
-        });
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        continue;
-      }
-      throw error;
-    }
-    if (configured) return configured;
-
-    if (await tryPrimaryFailover()) {
+      if (result.action === "throw") throw error;
+      retries = result.nextRetries;
       continue;
     }
+
+    if (configured) return configured;
+    if (await tryPrimaryFailoverFn()) continue;
 
     // @ts-ignore - window.nostr is injected by browser extensions at runtime
     if (typeof window !== "undefined" && window.nostr) {
