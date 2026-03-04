@@ -551,12 +551,12 @@ export default function DraftBulkResume({
         });
       }
 
-      // Now create signed posts using cached hashtags
+      // Sign in parallel (works after first login; if issues appear after
+      // reconnect, the cause is likely signer/cache state after reconnect).
       const signedPosts = await Promise.all(
         posts.map(async (post) => {
           const userTimezone = user?.timezone ?? "UTC";
 
-          // Use Temporal for timezone conversion
           const scheduledZoned = parseDateTimeLocal(
             post.scheduledFor,
             userTimezone
@@ -564,7 +564,6 @@ export default function DraftBulkResume({
           const utcZoned = scheduledZoned.withTimeZone("UTC");
           const scheduledForUnix = toUnixTimestamp(utcZoned);
 
-          // Get effective hashtags from cache
           const queueTypeName = getQueueTypeName(post.queueType);
           const tagsString =
             queueTypeName && queueTypeName !== "unassigned"
@@ -580,17 +579,20 @@ export default function DraftBulkResume({
             ? `${post.content ?? ""}\n${tagsString}`
             : (post.content ?? "");
 
-          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
-            content: contentToSign,
-            created_at: scheduledForUnix,
-            kind: 1,
-            tags: tagArray,
-          });
+          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+            {
+              content: contentToSign,
+              created_at: scheduledForUnix,
+              kind: 1,
+              tags: tagArray,
+            },
+            { clearCacheOnError: false }
+          );
 
           return {
             id: post.id,
-            content: post.content,
-            caption: post.caption,
+            content: post.content ?? undefined,
+            caption: post.caption ?? undefined,
             queueType: post.queueType,
             scheduledFor: scheduledForUnix.toString(),
             signedEvent: JSON.stringify(signedEvent),

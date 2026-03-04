@@ -256,7 +256,8 @@ function markActiveRemoteConnectionStale(error: unknown): void {
 
 async function handleConfiguredSignerError(
   err: unknown,
-  prefersRemoteSigner: boolean
+  prefersRemoteSigner: boolean,
+  clearCacheOnError = true
 ): Promise<void> {
   if (!prefersRemoteSigner) {
     incrementSignRetryCount();
@@ -273,15 +274,15 @@ async function handleConfiguredSignerError(
     } else {
       incrementConnectionRetryCount();
     }
-    const clearCache = shouldClearSignerCacheOnError(err);
+    const shouldClear = clearCacheOnError && shouldClearSignerCacheOnError(err);
     debugSignerTrace("Configured signer connection-like error", {
       error: err instanceof Error ? err.message : String(err),
       connectionRetryCount,
       signRetryCount,
-      clearCache,
+      clearCache: shouldClear,
     });
     markActiveRemoteConnectionStale(err);
-    if (clearCache) {
+    if (shouldClear) {
       await resetSignerCacheBestEffort();
     }
     if (err instanceof RemoteSignerTimeoutError) {
@@ -297,9 +298,16 @@ async function handleConfiguredSignerError(
   }
 }
 
+/** When false, do not clear the signer cache on error (e.g. during bulk sign so one failure doesn't break other in-flight signs). */
+export interface SignEventOptions {
+  clearCacheOnError?: boolean;
+}
+
 async function trySignWithConfiguredSigner(
-  nostrEvent: NostrEvent
+  nostrEvent: NostrEvent,
+  options?: SignEventOptions
 ): Promise<SignedEvent | null> {
+  const clearCacheOnError = options?.clearCacheOnError !== false;
   let prefersRemoteSigner = false;
   try {
     // @ts-ignore - Dynamic imports work in client-side Remix bundles
@@ -316,7 +324,7 @@ async function trySignWithConfiguredSigner(
       GET_ACTIVE_SIGNER_TIMEOUT_MS,
       "Signer connection is taking too long. Please ensure your signer app (e.g. Primal) is open and try again."
     ).catch(async (err) => {
-      if (err instanceof RemoteSignerTimeoutError) {
+      if (clearCacheOnError && err instanceof RemoteSignerTimeoutError) {
         await resetSignerCacheBestEffort();
       }
       throw err;
@@ -363,7 +371,11 @@ async function trySignWithConfiguredSigner(
 
     return normalizeSignResult(signResult, nostrEvent);
   } catch (err) {
-    await handleConfiguredSignerError(err, prefersRemoteSigner);
+    await handleConfiguredSignerError(
+      err,
+      prefersRemoteSigner,
+      clearCacheOnError
+    );
     throw err;
   }
 }
@@ -435,7 +447,8 @@ async function handleSignAttemptFailure(options: {
 
 async function signEventWithRetryLogic(
   nostrEvent: NostrEvent,
-  maxRetries = 5
+  maxRetries = 5,
+  options?: SignEventOptions
 ): Promise<SignedEvent> {
   const signerManager = await import("~/lib/nostr-signer-manager.client");
   const config =
@@ -481,7 +494,7 @@ async function signEventWithRetryLogic(
 
     let configured: SignedEvent | null = null;
     try {
-      configured = await trySignWithConfiguredSigner(nostrEvent);
+      configured = await trySignWithConfiguredSigner(nostrEvent, options);
     } catch (error) {
       const result = await handleSignAttemptFailure({
         error,
@@ -561,9 +574,13 @@ export const nostrAdapter = {
 
   /**
    * Sign an event using NIP-07 (window.nostr)
-   * This is the canonical way to sign events client-side
+   * This is the canonical way to sign events client-side.
+   * @param options.clearCacheOnError - If false, do not clear the signer cache on error (use for bulk sign so one failure doesn't break other in-flight signs). Default true.
    */
-  async signEvent(eventData: NostrEventData): Promise<SignEventResult> {
+  async signEvent(
+    eventData: NostrEventData,
+    options?: SignEventOptions
+  ): Promise<SignEventResult> {
     try {
       const nostrEvent: NostrEvent = {
         content: eventData.content,
@@ -572,7 +589,7 @@ export const nostrAdapter = {
         tags: eventData.tags ?? [],
       };
 
-      const signedEvent = await signEventWithRetryLogic(nostrEvent);
+      const signedEvent = await signEventWithRetryLogic(nostrEvent, 5, options);
       return { nostrEvent, signedEvent };
     } catch (error) {
       await logErrorIfClient(error, "signEvent");
