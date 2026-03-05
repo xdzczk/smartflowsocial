@@ -24,6 +24,7 @@ import {
   createNip46SignerFromStoredConfig,
   getActiveSigner,
   parseSecretKeyHex,
+  resetCachedSigner,
   serializeSecretKey,
   setActiveSignerConfig,
   syncRelaysWithRemoteSigner,
@@ -709,6 +710,31 @@ export function RemoteSignerReconnectDialog(props: {
         setActiveSignerConfig(config);
         cacheNip46SignerFromLogin(signer);
         activePool = null;
+
+        // Verify the new connection with a ping so we don't leave a dead signer cached
+        // (e.g. if we connected to Primal's old session before they started a new one).
+        const PING_VERIFY_MS = 5000;
+        if (typeof signer.ping === "function") {
+          try {
+            await Promise.race([
+              signer.ping(),
+              new Promise<never>((_, reject) =>
+                setTimeout(
+                  () => reject(new Error("Ping timeout")),
+                  PING_VERIFY_MS
+                )
+              ),
+            ]);
+          } catch {
+            resetCachedSigner();
+            setError(
+              "Connection could not be verified. Start a new session in your signer app (e.g. Primal), then tap Reconnect again."
+            );
+            setState("idle");
+            return;
+          }
+        }
+
         await syncRelaysAfterReconnect();
         if (existingReconnectRunIdRef.current !== runId) {
           return;
@@ -910,6 +936,30 @@ export function RemoteSignerReconnectDialog(props: {
         setActiveSignerConfig(config);
         cacheNip46SignerFromLogin(signer);
         activePool = null;
+
+        // Verify the new connection with a ping so we don't leave a dead signer cached.
+        const PING_VERIFY_MS_BUNKER = 5000;
+        if (typeof signer.ping === "function") {
+          try {
+            await Promise.race([
+              signer.ping(),
+              new Promise<never>((_, reject) =>
+                setTimeout(
+                  () => reject(new Error("Ping timeout")),
+                  PING_VERIFY_MS_BUNKER
+                )
+              ),
+            ]);
+          } catch {
+            resetCachedSigner();
+            setError(
+              "Connection could not be verified. Start a new session in your signer app (e.g. Primal), then tap Reconnect again."
+            );
+            setState("idle");
+            return;
+          }
+        }
+
         await syncRelaysAfterReconnect();
         if (existingReconnectRunIdRef.current !== runId) return;
         debugReconnectTrace("Existing-connection bunker reconnect succeeded", {
@@ -1510,10 +1560,10 @@ export function RemoteSignerReconnectDialog(props: {
 
         {isReconnectingExisting ? (
           <div className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-sm">
-            Reconnecting with existing connection (attempt{" "}
+            Start a new session in your signer app (e.g. Primal) first, then
+            we’ll connect. Reconnecting (attempt{" "}
             {Math.max(existingReconnectAttempt, 1)}/
-            {EXISTING_SESSION_RECONNECT_TIMEOUTS_MS.length})… No need to switch
-            to your signer app.
+            {EXISTING_SESSION_RECONNECT_TIMEOUTS_MS.length})…
           </div>
         ) : null}
 

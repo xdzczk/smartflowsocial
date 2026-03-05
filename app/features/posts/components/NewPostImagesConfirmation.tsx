@@ -2,6 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Button } from "~/components/ui/button";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
@@ -216,11 +217,16 @@ export default function NewPostImagesConfirmation({
       window.removeEventListener("nostr-connection-healthy", handler);
   }, []);
 
-  // When awaiting signer approval, try background reconnect after a delay.
+  // When awaiting signer approval, try background reconnect periodically.
   useEffect(() => {
     if (!isSigning) return;
-    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
-    return () => clearTimeout(t);
+    let attempts = 0;
+    const interval = setInterval(() => {
+      void tryBackgroundReconnect();
+      attempts++;
+      if (attempts >= 5) clearInterval(interval);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, [isSigning]);
 
   // Calculate addTags for display
@@ -369,20 +375,34 @@ export default function NewPostImagesConfirmation({
         </div>
 
         {isSigning ? (
-          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mx-auto mb-4 max-w-2xl rounded-md border bg-white/50 p-3 text-sm">
-            Waiting for signer approval…
-            {signAttempt ? (
-              <>
-                {" "}
-                Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                {formatAttemptElapsed(
-                  signElapsedSeconds,
-                  signAttempt.timeoutMs
-                )}
-              </>
-            ) : null}
-            {" — "}
-            If you’re using a remote signer, open it to approve the request.
+          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mx-auto mb-4 flex max-w-2xl items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
+            <span>
+              Waiting for signer approval…
+              {signAttempt ? (
+                <>
+                  {" "}
+                  Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
+                  {formatAttemptElapsed(
+                    signElapsedSeconds,
+                    signAttempt.timeoutMs
+                  )}
+                </>
+              ) : null}
+              {" — "}
+              If you’re using a remote signer, open it to approve the request.
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              onClick={() => {
+                setIsSigning(false);
+                setSigningError(null);
+              }}
+            >
+              Cancel
+            </Button>
           </div>
         ) : null}
         {signingError ? (

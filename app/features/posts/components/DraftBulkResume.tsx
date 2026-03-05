@@ -2,6 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
+import { Button } from "~/components/ui/button";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -63,10 +64,16 @@ export default function DraftBulkResume({
   }, []);
 
   // When awaiting signer approval, try background reconnect after a delay.
+  // When signing drafts, try background reconnect periodically.
   useEffect(() => {
     if (!isSubmitting) return;
-    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
-    return () => clearTimeout(t);
+    let attempts = 0;
+    const interval = setInterval(() => {
+      void tryBackgroundReconnect();
+      attempts++;
+      if (attempts >= 5) clearInterval(interval);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, [isSubmitting]);
 
   // State for bulk operations similar to bulkposts
@@ -678,10 +685,24 @@ export default function DraftBulkResume({
         </div>
 
         {isSubmitting ? (
-          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mx-auto mb-4 max-w-3xl rounded-md border bg-white/50 p-3 text-sm">
-            Signing drafts… If you’re using a remote signer, keep it open to
-            approve requests. If you started a new session in the signer app,
-            the app will reconnect automatically in a few seconds.
+          <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mx-auto mb-4 flex max-w-3xl items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
+            <span>
+              Signing drafts… If you’re using a remote signer, keep it open to
+              approve requests. If you started a new session in the signer app,
+              the app will reconnect automatically in a few seconds.
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              onClick={() => {
+                setIsSubmitting(false);
+                setSigningError(null);
+              }}
+            >
+              Cancel
+            </Button>
           </div>
         ) : null}
         {signingError ? (

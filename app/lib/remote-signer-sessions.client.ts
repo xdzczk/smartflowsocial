@@ -803,10 +803,15 @@ export function setActiveSession(id: string): void {
       // ignore
     }
   }
-  // Only clear the signer cache when switching to a different connection.
-  // If we're re-setting the same active session (e.g. after revalidation), keep the
-  // cached signer so the next sign (e.g. second post) can reuse it without reconnecting.
-  if (typeof window !== "undefined" && previousId !== id) {
+  // Only clear the signer cache when switching to a *different* connection.
+  // Do not clear when previousId is null (first time setting after login) or when
+  // re-setting the same id (revalidation); otherwise the second sign after login
+  // would see no cached signer and get stuck.
+  if (
+    typeof window !== "undefined" &&
+    previousId != null &&
+    previousId !== id
+  ) {
     setTimeout(() => {
       void (async () => {
         const mod = await import("~/lib/nostr-signer-manager.client");

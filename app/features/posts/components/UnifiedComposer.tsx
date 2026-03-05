@@ -330,15 +330,20 @@ export function UnifiedComposer({
       window.removeEventListener("nostr-connection-healthy", handler);
   }, []);
 
-  // When awaiting signer approval, try background reconnect after a delay so that
-  // restarting the session in Primal (or another signer app) picks up the new session.
-  const AWAITING_SIGNER_AUTO_RECONNECT_DELAY_MS = 10_000;
+  // When awaiting signer approval, try background reconnect periodically so that
+  // starting a new session in the signer app (e.g. Primal) is picked up without leaving.
+  const AWAITING_SIGNER_RECONNECT_INTERVAL_MS = 10_000;
+  const AWAITING_SIGNER_MAX_RECONNECT_ATTEMPTS = 5;
   useEffect(() => {
     if (!isSigning) return;
-    const t = setTimeout(() => {
+    let attempts = 0;
+    const interval = setInterval(() => {
       void tryBackgroundReconnect();
-    }, AWAITING_SIGNER_AUTO_RECONNECT_DELAY_MS);
-    return () => clearTimeout(t);
+      attempts++;
+      if (attempts >= AWAITING_SIGNER_MAX_RECONNECT_ATTEMPTS)
+        clearInterval(interval);
+    }, AWAITING_SIGNER_RECONNECT_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, [isSigning]);
 
   const tags: string[] = [];
@@ -1227,6 +1232,18 @@ export function UnifiedComposer({
               If you started a new session in the signer app, the app will
               reconnect automatically in a few seconds.
             </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              onClick={() => {
+                setIsSigning(false);
+                setSigningError(null);
+              }}
+            >
+              Cancel
+            </Button>
           </div>
         ) : null}
         {signingError ? (

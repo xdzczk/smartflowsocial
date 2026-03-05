@@ -469,23 +469,24 @@ export default function LongFormPost({
     fetcher.submit(formData, { method: "post" });
   };
 
-  const { handleSchedule, isSigning, signingError } = useLongFormSubmission({
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- useLongFormSubmission expects string; form.watch() may be undefined */
-    title: title ?? "",
-    summary: summary ?? "",
-    content: content ?? "",
-    image,
-    customTags: customTags ?? "",
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-    selectedQueueType,
-    scheduledFor,
-    displayedHashtags,
-    useHashtagPresets,
-    selectedHashtags,
-    alsoScheduleQuote,
-    quoteEntries,
-    userTimezone,
-  });
+  const { handleSchedule, isSigning, signingError, cancelSigning } =
+    useLongFormSubmission({
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- useLongFormSubmission expects string; form.watch() may be undefined */
+      title: title ?? "",
+      summary: summary ?? "",
+      content: content ?? "",
+      image,
+      customTags: customTags ?? "",
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      selectedQueueType,
+      scheduledFor,
+      displayedHashtags,
+      useHashtagPresets,
+      selectedHashtags,
+      alsoScheduleQuote,
+      quoteEntries,
+      userTimezone,
+    });
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
   // Form validation using Zod
@@ -719,22 +720,33 @@ export default function LongFormPost({
                 />
 
                 {isSigning ? (
-                  <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground rounded-md border bg-white/50 p-3 text-sm">
-                    Waiting for signer approval…
-                    {signAttempt ? (
-                      <>
-                        {" "}
-                        Attempt {signAttempt.attempt} of{" "}
-                        {signAttempt.maxAttempts} ·{" "}
-                        {formatAttemptElapsed(
-                          signElapsedSeconds,
-                          signAttempt.timeoutMs
-                        )}
-                      </>
-                    ) : null}
-                    {" — "}
-                    If you’re using a remote signer, open it to approve the
-                    request.
+                  <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
+                    <span>
+                      Waiting for signer approval…
+                      {signAttempt ? (
+                        <>
+                          {" "}
+                          Attempt {signAttempt.attempt} of{" "}
+                          {signAttempt.maxAttempts} ·{" "}
+                          {formatAttemptElapsed(
+                            signElapsedSeconds,
+                            signAttempt.timeoutMs
+                          )}
+                        </>
+                      ) : null}
+                      {" — "}
+                      If you’re using a remote signer, open it to approve the
+                      request.
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      onClick={cancelSigning}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 ) : null}
                 {signingError ? (

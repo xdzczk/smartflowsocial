@@ -576,11 +576,16 @@ export function RescheduleModal({
       window.removeEventListener("nostr-connection-healthy", handler);
   }, []);
 
-  // When awaiting signer approval, try background reconnect after a delay.
+  // When awaiting signer approval, try background reconnect periodically.
   useEffect(() => {
     if (!isSigningEvent) return;
-    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
-    return () => clearTimeout(t);
+    let attempts = 0;
+    const interval = setInterval(() => {
+      void tryBackgroundReconnect();
+      attempts++;
+      if (attempts >= 5) clearInterval(interval);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, [isSigningEvent]);
 
   const FOCUSABLE_SELECTOR =

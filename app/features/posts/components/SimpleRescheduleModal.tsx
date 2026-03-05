@@ -3,6 +3,7 @@ import { CalendarDays, Info, X } from "lucide-react";
 import React, { useEffect } from "react";
 import type { z } from "zod";
 
+import { Button } from "~/components/ui/button";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
@@ -105,11 +106,16 @@ export function SimpleRescheduleModal({
       window.removeEventListener("nostr-connection-healthy", handler);
   }, []);
 
-  // When awaiting signer approval, try background reconnect after a delay.
+  // When awaiting signer approval, try background reconnect periodically.
   React.useEffect(() => {
     if (!isSigningEvent) return;
-    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
-    return () => clearTimeout(t);
+    let attempts = 0;
+    const interval = setInterval(() => {
+      void tryBackgroundReconnect();
+      attempts++;
+      if (attempts >= 5) clearInterval(interval);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, [isSigningEvent]);
 
   // Determine if this is a longform post
@@ -445,20 +451,36 @@ export function SimpleRescheduleModal({
               </div>
             </div>
             {isSigningEvent ? (
-              <div className="bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
-                Waiting for signer approval…
-                {signAttempt ? (
-                  <>
-                    {" "}
-                    Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                    {formatAttemptElapsed(
-                      signElapsedSeconds,
-                      signAttempt.timeoutMs
-                    )}
-                  </>
-                ) : null}
-                {" — "}
-                If you’re using a remote signer, open it to approve the request.
+              <div className="bg-muted text-muted-foreground flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+                <span>
+                  Waiting for signer approval…
+                  {signAttempt ? (
+                    <>
+                      {" "}
+                      Attempt {signAttempt.attempt} of {signAttempt.maxAttempts}{" "}
+                      ·{" "}
+                      {formatAttemptElapsed(
+                        signElapsedSeconds,
+                        signAttempt.timeoutMs
+                      )}
+                    </>
+                  ) : null}
+                  {" — "}
+                  If you’re using a remote signer, open it to approve the
+                  request.
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground shrink-0"
+                  onClick={() => {
+                    setIsSigningEvent(false);
+                    setSigningError(null);
+                  }}
+                >
+                  Cancel
+                </Button>
               </div>
             ) : null}
 

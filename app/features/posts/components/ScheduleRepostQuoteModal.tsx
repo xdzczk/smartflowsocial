@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
+import { Button } from "~/components/ui/button";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import {
   formatAttemptElapsed,
@@ -181,11 +182,16 @@ export function ScheduleRepostQuoteModal({
       window.removeEventListener("nostr-connection-healthy", handler);
   }, []);
 
-  // When awaiting signer approval, try background reconnect after a delay.
+  // When awaiting signer approval, try background reconnect periodically.
   useEffect(() => {
     if (!isSigning) return;
-    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
-    return () => clearTimeout(t);
+    let attempts = 0;
+    const interval = setInterval(() => {
+      void tryBackgroundReconnect();
+      attempts++;
+      if (attempts >= 5) clearInterval(interval);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, [isSigning]);
 
   const fetcher = useFetcher<{
@@ -349,22 +355,36 @@ export function ScheduleRepostQuoteModal({
                   </div>
                 ) : null}
                 {isSigning ? (
-                  <div className="bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
-                    Waiting for signer approval…
-                    {signAttempt ? (
-                      <>
-                        {" "}
-                        Attempt {signAttempt.attempt} of{" "}
-                        {signAttempt.maxAttempts} ·{" "}
-                        {formatAttemptElapsed(
-                          signElapsedSeconds,
-                          signAttempt.timeoutMs
-                        )}
-                      </>
-                    ) : null}
-                    {" — "}
-                    If you’re using a remote signer, open it to approve the
-                    request.
+                  <div className="bg-muted text-muted-foreground flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+                    <span>
+                      Waiting for signer approval…
+                      {signAttempt ? (
+                        <>
+                          {" "}
+                          Attempt {signAttempt.attempt} of{" "}
+                          {signAttempt.maxAttempts} ·{" "}
+                          {formatAttemptElapsed(
+                            signElapsedSeconds,
+                            signAttempt.timeoutMs
+                          )}
+                        </>
+                      ) : null}
+                      {" — "}
+                      If you’re using a remote signer, open it to approve the
+                      request.
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      onClick={() => {
+                        setIsSigning(false);
+                        setSigningError(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 ) : null}
                 {(fetcher.data?.error ?? signingError) ? (

@@ -138,11 +138,16 @@ export function useLongFormSubmission({
       window.removeEventListener("nostr-connection-healthy", handler);
   }, []);
 
-  // When awaiting signer approval, try background reconnect after a delay.
+  // When awaiting signer approval, try background reconnect periodically.
   useEffect(() => {
     if (!isSigning) return;
-    const t = setTimeout(() => void tryBackgroundReconnect(), 10_000);
-    return () => clearTimeout(t);
+    let attempts = 0;
+    const interval = setInterval(() => {
+      void tryBackgroundReconnect();
+      attempts++;
+      if (attempts >= 5) clearInterval(interval);
+    }, 10_000);
+    return () => clearInterval(interval);
   }, [isSigning]);
 
   const handleSchedule = async (actionType: "schedule" | "publish") => {
@@ -308,5 +313,10 @@ export function useLongFormSubmission({
     }
   };
 
-  return { handleSchedule, isSigning, signingError };
+  const cancelSigning = () => {
+    setIsSigning(false);
+    setSigningError(null);
+  };
+
+  return { handleSchedule, isSigning, signingError, cancelSigning };
 }
