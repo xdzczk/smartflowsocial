@@ -139,7 +139,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 }
 
-export default function DashboardGiveawayIdPage() {
+export default function DashboardGiveawayDetailPage() {
   const { giveaway, giveawaysLimits } = useLoaderData<typeof loader>();
   return (
     <GiveawayDetailPage

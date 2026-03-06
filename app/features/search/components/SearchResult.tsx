@@ -1,14 +1,21 @@
 /**
- * Search result component
+ * Post viewer (search result) – layout aligned with Primal: author, content, media, stats, actions.
  */
 
-import { ExternalLink, Quote, Repeat, User } from "lucide-react";
+import { Copy, ExternalLink, Quote, Repeat, User } from "lucide-react";
+import { useCallback, useState } from "react";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
+
+function truncateEventId(id: string, head = 12, tail = 8): string {
+  if (id.length <= head + tail + 3) return id;
+  return `${id.slice(0, head)}...${id.slice(-tail)}`;
+}
+
 interface SearchResultData {
   id: string;
   pubkey: string;
@@ -46,30 +53,43 @@ export function SearchResult({
   onScheduleRepost,
 }: SearchResultProps) {
   const { formatDate } = useFormattedDate();
+  const [copied, setCopied] = useState(false);
+  const displayName =
+    result.authorName.trim() || `${result.pubkey.slice(0, 8)}...`;
+
+  const copyEventId = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(result.id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }, [result.id]);
 
   return (
     <div className="bg-card dark:border-border border-border rounded-lg border bg-white p-6">
-      {/* Clear button */}
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Search Result</h2>
+        <h2 className="text-lg font-semibold">Post</h2>
         <button
           onClick={onClear}
+          type="button"
           className="dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:text-muted-foreground text-sm"
         >
-          Clear
+          View another
         </button>
       </div>
 
-      {/* Author Info */}
+      {/* Author – Primal-style lead */}
       <div className="mb-4 flex items-center gap-3">
         {result.authorImage ? (
           <img
             src={result.authorImage}
-            alt={result.authorName}
+            alt=""
             className="h-12 w-12 rounded-full object-cover"
           />
         ) : (
-          <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-12 w-12 items-center justify-center rounded-full">
+          <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-12 w-12 shrink-0 items-center justify-center rounded-full">
             <User
               className="h-6 w-6"
               strokeWidth={INLINE_ICON_STROKE}
@@ -77,47 +97,57 @@ export function SearchResult({
             />
           </div>
         )}
-        <div>
-          <p className="font-semibold">{result.authorName}</p>
+        <div className="min-w-0">
+          <p className="font-semibold">{displayName}</p>
           <p className="text-muted-foreground dark:text-foreground text-xs">
             {formatDate(result.created_at * 1000, {
               isUnixTimestamp: false,
             })}{" "}
-            • Kind {result.kind}
+            · Kind {result.kind}
           </p>
         </div>
       </div>
 
-      {/* Media Preview */}
+      {/* Post content – prominent like Primal */}
+      {result.content ? (
+        <div className="mb-4">
+          <p className="dark:text-foreground text-foreground text-base leading-relaxed break-words whitespace-pre-wrap">
+            {result.content}
+          </p>
+        </div>
+      ) : null}
+
+      {/* Media – prominent; single image large, multiple as grid */}
       {result.mediaUrls.length > 0 ? (
         <div className="mb-4">
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-            {result.mediaUrls.slice(0, 6).map((url, index) => (
-              <img
-                // eslint-disable-next-line react/no-array-index-key -- Stable list of media URLs, no unique ID available
-                key={index}
-                src={url}
-                alt={`Media ${index + 1}`}
-                className="h-32 w-full rounded object-cover"
-              />
-            ))}
-          </div>
+          {result.mediaUrls.length === 1 ? (
+            <img
+              src={result.mediaUrls[0]}
+              alt="Post media"
+              className="max-h-[420px] w-full rounded-lg object-contain"
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+              {result.mediaUrls.slice(0, 6).map((url, index) => (
+                <img
+                  // eslint-disable-next-line react/no-array-index-key -- Stable list of media URLs
+                  key={index}
+                  src={url}
+                  alt={`Media ${index + 1}`}
+                  className="h-40 w-full rounded-lg object-cover md:h-48"
+                />
+              ))}
+            </div>
+          )}
           {result.mediaUrls.length > 6 ? (
             <p className="text-muted-foreground mt-2 text-xs">
-              +{result.mediaUrls.length - 6} more media files
+              +{result.mediaUrls.length - 6} more
             </p>
           ) : null}
         </div>
       ) : null}
 
-      {/* Content */}
-      <div className="mb-4">
-        <p className="dark:text-foreground text-muted-foreground text-sm whitespace-pre-wrap">
-          {result.content}
-        </p>
-      </div>
-
-      {/* Engagement Stats */}
+      {/* Engagement stats */}
       {stats ? (
         <div className="dark:bg-card bg-muted mb-4 grid grid-cols-3 gap-4 rounded-lg p-4 md:grid-cols-6">
           <div className="text-center">
@@ -159,14 +189,29 @@ export function SearchResult({
         </div>
       ) : null}
 
-      {/* Event ID */}
+      {/* Event ID – truncated + copy */}
       <div className="mb-4">
         <p className="dark:text-muted-foreground text-muted-foreground mb-1 text-xs font-semibold">
-          Event ID:
+          Event ID
         </p>
-        <code className="dark:bg-card dark:text-foreground bg-muted block rounded p-2 text-xs">
-          {result.id}
-        </code>
+        <div className="dark:bg-card bg-muted flex items-center gap-2 rounded p-2">
+          <code className="dark:text-foreground min-w-0 flex-1 truncate text-xs">
+            {truncateEventId(result.id)}
+          </code>
+          <button
+            type="button"
+            onClick={() => {
+              void copyEventId();
+            }}
+            className="text-muted-foreground hover:text-foreground shrink-0 rounded p-1 transition-colors"
+            title="Copy full event ID"
+          >
+            <Copy className="h-4 w-4" strokeWidth={INLINE_ICON_STROKE} />
+          </button>
+        </div>
+        {copied ? (
+          <p className="text-muted-foreground mt-1 text-xs">Copied</p>
+        ) : null}
       </div>
 
       {/* Action Buttons */}

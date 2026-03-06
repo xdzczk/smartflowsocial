@@ -8,16 +8,13 @@ import { prisma } from "~/lib/prisma.server";
 
 import { REFERRAL_COMMISSION_RATE_PERCENT } from "./referral-config.server";
 
-const DEFAULT_APP_URL = "https://smartflowsocial.com";
+/** Landing page URL for referral links (user lands here first, then goes to app to sign in). */
+const REFERRAL_LANDING_URL_DEFAULT = "https://smartflow.social";
 
-function getAppUrl(): string {
-  const appUrl = process.env["APP_URL"];
-  if (typeof appUrl === "string" && appUrl.length > 0) return appUrl;
-  const vercelUrl = process.env["VERCEL_URL"];
-  if (typeof vercelUrl === "string" && vercelUrl.length > 0) {
-    return `https://${vercelUrl}`;
-  }
-  return DEFAULT_APP_URL;
+function getReferralLandingUrl(): string {
+  const env = process.env["REFERRAL_LANDING_URL"];
+  if (typeof env === "string" && env.length > 0) return env.replace(/\/$/, "");
+  return REFERRAL_LANDING_URL_DEFAULT;
 }
 
 export interface ReferralSettingsData {
@@ -34,8 +31,8 @@ export interface ReferralSettingsData {
 export async function getReferralSettingsData(
   referrerNpub: string
 ): Promise<ReferralSettingsData> {
-  const baseUrl = getAppUrl().replace(/\/$/, "");
-  const referralLink = `${baseUrl}/?ref=${encodeURIComponent(referrerNpub)}`;
+  const landingUrl = getReferralLandingUrl();
+  const referralLink = `${landingUrl}/?ref=${encodeURIComponent(referrerNpub)}`;
 
   const [aggregates, config] = await Promise.all([
     prisma.referralEarning.groupBy({

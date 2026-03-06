@@ -21,7 +21,7 @@ import {
 } from "~/models/post.queries.server";
 
 import { toPostDTOArray, type PostDTO } from "../dtos";
-import { getPostStats } from "../stats.server";
+import type { PostStats } from "../stats.server";
 import type { PostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
@@ -65,24 +65,9 @@ export async function getRecyclableDashboardData({
   ]);
   const queueTypes = Array.isArray(queueTypesResult) ? queueTypesResult : [];
 
-  // Get event IDs from signedEvent.id
-  const eventIds = posts
-    .map((post) => {
-      const signedEvent = post.signedEvent;
-      if (
-        signedEvent &&
-        typeof signedEvent === "object" &&
-        "id" in signedEvent &&
-        typeof signedEvent["id"] === "string"
-      ) {
-        return signedEvent["id"];
-      }
-      return "";
-    })
-    .filter((id) => id !== "");
-
-  // Use the extracted stats fetching logic
-  const stats = await getPostStats(eventIds);
+  // Stats are loaded client-side via usePostStatsQuery to avoid blocking the loader
+  // on Primal/Redis (which can timeout and cause 15+ second responses for some pages).
+  const stats: Record<string, PostStats> = {};
 
   // Convert PostWithQueueType[] to PostData[] and serialize to DTOs
   const postsData: PostData[] = posts.map((post) => {

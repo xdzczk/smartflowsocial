@@ -68,7 +68,7 @@ export default function GiveawayPage() {
           {giveaways.map((g) => (
             <li key={g.id}>
               <Link
-                to={`/dashboard/giveaway/${g.id}`}
+                to={`/dashboard/giveaway/detail/${g.id}`}
                 className="hover:bg-muted/50 flex flex-col gap-2 p-4 transition-colors sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0 flex-1">

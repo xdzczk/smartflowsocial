@@ -1,4 +1,4 @@
-import { useFetcher, useLocation } from "@remix-run/react";
+import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
 import { Search, X } from "lucide-react";
 import {
   useEffect,
@@ -51,6 +51,7 @@ function getSearchPriorityContext(pathname: string): string | null {
 
 export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const priorityContext = getSearchPriorityContext(location.pathname);
 
   const [isOpen, setIsOpen] = useState(false);
@@ -95,7 +96,18 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
       setIsSearching(true);
     });
 
-    const debounceMs = isNostrEventLink(trimmedQuery) ? 0 : 500;
+    const isNostrLink = isNostrEventLink(trimmedQuery);
+    if (isNostrLink) {
+      // Redirect straight to post viewer; its loader will fetch and show the post
+      navigate(`/dashboard/search/posts?q=${encodeURIComponent(trimmedQuery)}`);
+      startTransition(() => {
+        setQuery("");
+        setResults([]);
+        setIsOpen(false);
+      });
+      return;
+    }
+
     const timeoutId = setTimeout(() => {
       // Only proceed if this is still the current request and query hasn't changed
       if (
@@ -106,7 +118,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
         if (priorityContext) params.set("context", priorityContext);
         fetcher.load(`/api/global-search?${params.toString()}`);
       }
-    }, debounceMs);
+    }, 500);
 
     return () => {
       clearTimeout(timeoutId);

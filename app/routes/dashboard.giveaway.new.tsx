@@ -64,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
       > | null,
       filters: preset.filters as Record<string, unknown> | null,
     });
-    return redirect(`/dashboard/giveaway/${giveaway.id}`);
+    return redirect(`/dashboard/giveaway/detail/${giveaway.id}`);
   }
 
   if (intent !== "create") {
@@ -79,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
     selectionMode: "UNIQUE_USER",
   });
 
-  return redirect(`/dashboard/giveaway/${giveaway.id}`);
+  return redirect(`/dashboard/giveaway/detail/${giveaway.id}`);
 }
 
 export default function DashboardGiveawayNewPage() {

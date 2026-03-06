@@ -99,13 +99,17 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
 
     if (userMetadataEvent?.[2]) {
       const event = userMetadataEvent[2];
-      const metadata = JSON.parse(event.content) as {
-        name?: string;
-        display_name?: string;
-        picture?: string;
-      };
-      authorName = metadata.name ?? metadata.display_name ?? authorName;
-      authorImage = metadata.picture ?? null;
+      try {
+        const metadata = JSON.parse(event.content) as {
+          name?: string;
+          display_name?: string;
+          picture?: string;
+        };
+        authorName = metadata.name ?? metadata.display_name ?? authorName;
+        authorImage = metadata.picture ?? null;
+      } catch {
+        // Invalid JSON in kind 0; keep pubkey fallback
+      }
     }
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
@@ -114,6 +118,9 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
     });
   }
 
+  if (!authorName || authorName.trim() === "" || authorName === "...") {
+    authorName = `${pubkey.substring(0, 8)}...`;
+  }
   return { name: authorName, image: authorImage };
 }
 
@@ -153,12 +160,40 @@ async function fetchEventStats(eventId: string): Promise<PostStats> {
 }
 
 /**
- * Extract media URLs from event content
+ * Extract media URLs from event content (plain URLs in text)
  */
-function extractMediaUrls(content: string): string[] {
+function extractMediaUrlsFromContent(content: string): string[] {
   const urlRegex =
     /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mp4|webm|mov))/gi;
   return content.match(urlRegex) ?? [];
+}
+
+/**
+ * Extract media URLs from event tags (e.g. ["url", "https://..."], NIP-94 style)
+ */
+function extractMediaUrlsFromTags(tags: string[][]): string[] {
+  const urls: string[] = [];
+  for (const tag of tags) {
+    if (!Array.isArray(tag) || tag.length < 2) continue;
+    // ["url", "https://..."]
+    if (
+      tag[0] === "url" &&
+      typeof tag[1] === "string" &&
+      /^https?:\/\//i.test(tag[1])
+    ) {
+      urls.push(tag[1]);
+    }
+    // NIP-94 imeta: ["imeta", "url", "https://..."]
+    if (
+      tag[0] === "imeta" &&
+      tag.length >= 3 &&
+      typeof tag[2] === "string" &&
+      /^https?:\/\//i.test(tag[2])
+    ) {
+      urls.push(tag[2]);
+    }
+  }
+  return urls;
 }
 
 /**
@@ -231,8 +266,11 @@ export async function handleSearchEvent(eventInput: string) {
     fetchEventStats(eventId),
   ]);
 
-  // Extract media URLs from content
-  const mediaUrls = extractMediaUrls(eventContent);
+  // Extract media URLs from content and tags (NIP-94, url tags, etc.)
+  const contentUrls = extractMediaUrlsFromContent(eventContent);
+  const eventTags = Array.isArray(event.tags) ? event.tags : [];
+  const tagUrls = extractMediaUrlsFromTags(eventTags);
+  const mediaUrls = [...new Set([...contentUrls, ...tagUrls].filter(Boolean))];
 
   return {
     success: true,

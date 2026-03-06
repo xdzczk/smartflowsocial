@@ -1,6 +1,7 @@
 import { Link, useFetcher, useParams, useSearchParams } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
+import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { CombinedContent, PostData } from "~/features/posts/server";
 import {
@@ -96,6 +97,13 @@ export default function RecyclablesPage() {
   const repostFetcher = useFetcher<RepostFetcherData>();
   const individualRepostFetcher = useFetcher<IndividualRepostFetcherData>();
 
+  // Fetch stats client-side after page load (non-blocking), same as Published page
+  const { stats: fetchedStats } = usePostStatsQuery(typedPosts);
+  const stats = useMemo(
+    () => ({ ...typedStats, ...fetchedStats }),
+    [typedStats, fetchedStats]
+  );
+
   const {
     sortConfig,
     searchTerm: _searchTerm,
@@ -115,7 +123,7 @@ export default function RecyclablesPage() {
     setToast,
   } = useRecyclablesState({
     posts: typedPosts,
-    stats: typedStats,
+    stats,
     user: user ?? null,
     repostFetcher,
     bulkDeleteFetcher,
@@ -233,7 +241,7 @@ export default function RecyclablesPage() {
             status: typeof post.status === "string" ? post.status : undefined,
           })
         )}
-        stats={typedStats}
+        stats={stats}
         sortConfig={sortConfig}
         selectedPosts={selectedPosts}
         onRequestSort={requestSort}
