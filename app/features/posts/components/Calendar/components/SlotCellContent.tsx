@@ -114,8 +114,13 @@ function renderSinglePostSlotContent(
         user={user}
         queueTypes={queueTypes}
         onEdit={(editedPost) => {
-          setActiveEmptySlotKey(null);
-          onPostEdit(editedPost);
+          if (isMobile && singlePostKey && !isHovered) {
+            setHoveredPostKey(singlePostKey);
+            onHoverOverlayChange?.(singleOverlayPayload);
+          } else {
+            setActiveEmptySlotKey(null);
+            onPostEdit(editedPost);
+          }
         }}
         isLongform={
           isAll ? Boolean(post.title && post.publishedAt) : isLongform
@@ -325,8 +330,13 @@ function MultiPostBlock({
         user={user}
         queueTypes={queueTypes}
         onEdit={(editedPost) => {
-          setActiveEmptySlotKey(null);
-          onPostEdit(editedPost);
+          if (isMobile && !multiHovered) {
+            setHoveredPostKey(multiPostKey);
+            onHoverOverlayChange?.(overlayPayload);
+          } else {
+            setActiveEmptySlotKey(null);
+            onPostEdit(editedPost);
+          }
         }}
         isLongform={
           isAll ? Boolean(post.title && post.publishedAt) : isLongform

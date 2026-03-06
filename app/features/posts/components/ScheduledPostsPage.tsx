@@ -49,6 +49,7 @@ import {
 } from "../utils/publish-result.utils";
 
 import { DateRangeFilter } from "./DateRangeFilter";
+import { DateRangeQuickPresets } from "./DateRangeQuickPresets";
 import PublishResultModal from "./PublishResultModal";
 import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
@@ -329,44 +330,44 @@ export default function ScheduledPostsPage() {
     <div className="flex min-h-screen flex-col">
       <ContentListPageHeader pageType="scheduled" currentTab={currentTab} />
 
-      <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap">
-        {/* Mobile: content type + queue each 50% width; desktop: participates in single row with order */}
-        <div className="flex w-full flex-row flex-nowrap gap-2 md:contents">
-          <div className="min-w-0 flex-1 md:order-1">
-            <PostTypeTabs
-              currentTab={currentTab}
-              allContent={allContent}
-              posts={filteredPosts}
-              longformPosts={longformPosts}
-              basePath="/dashboard/scheduled"
-              totalContentCount={totalContentCount}
-              totalPostsCount={totalPostsCount}
-              totalRepostsCount={totalRepostsCount}
-              totalLongformCount={totalLongformCount}
-              inRow
-            />
-          </div>
-          {currentTab === "all" ||
-          currentTab === "posts" ||
-          currentTab === "reposts" ||
-          currentTab === "longform" ? (
-            <div className="min-w-0 flex-1 md:order-3 md:ml-auto md:flex-shrink-0">
-              <QueueSelectionTabs
-                currentTab={currentTab}
-                queueTypes={queueTypes}
-                basePath="/dashboard/scheduled"
-              />
-            </div>
-          ) : null}
+      <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap md:items-center">
+        <div className="min-w-0 flex-1">
+          <PostTypeTabs
+            currentTab={currentTab}
+            allContent={allContent}
+            posts={filteredPosts}
+            longformPosts={longformPosts}
+            basePath="/dashboard/scheduled"
+            totalContentCount={totalContentCount}
+            totalPostsCount={totalPostsCount}
+            totalRepostsCount={totalRepostsCount}
+            totalLongformCount={totalLongformCount}
+            inRow
+          />
         </div>
-        <div className="flex w-full justify-center md:contents">
+        <div className="flex w-full flex-row flex-nowrap items-center gap-2 md:ml-auto md:w-auto md:flex-shrink-0">
           <DateRangeFilter
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             idPrefix="scheduled"
-            className="w-full max-md:w-auto md:order-2 md:w-auto md:flex-shrink-0"
+            className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
             minDate={getTodayInTimezone(userTimezone)}
           />
+          <DateRangeQuickPresets
+            variant="future"
+            userTimezone={userTimezone}
+            onDateRangeChange={setDateRange}
+          />
+          {currentTab === "all" ||
+          currentTab === "posts" ||
+          currentTab === "reposts" ||
+          currentTab === "longform" ? (
+            <QueueSelectionTabs
+              currentTab={currentTab}
+              queueTypes={queueTypes}
+              basePath="/dashboard/scheduled"
+            />
+          ) : null}
         </div>
       </div>
 

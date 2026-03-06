@@ -1,4 +1,4 @@
-import { useFetcher, useParams } from "@remix-run/react";
+import { useFetcher, useParams, useSearchParams } from "@remix-run/react";
 import { useEffect } from "react";
 
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
@@ -14,6 +14,11 @@ import {
   type IndividualRepostFetcherData,
 } from "~/features/posts/ui";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
+
+import { getTodayInTimezone } from "../utils/date-range-filter";
+
+import { DateRangeFilter } from "./DateRangeFilter";
+import { DateRangeQuickPresets } from "./DateRangeQuickPresets";
 
 interface RepostFetcherData {
   repostData?: unknown;
@@ -33,6 +38,21 @@ export default function RecyclablesPage() {
     fetchNextPage,
   } = useRecyclablesInfiniteData();
   const params = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const dateFrom = searchParams.get("dateFrom") ?? "";
+  const dateTo = searchParams.get("dateTo") ?? "";
+  const dateRange = { from: dateFrom, to: dateTo };
+  const setDateRange = (range: { from: string; to: string }) => {
+    const next = new URLSearchParams(searchParams);
+    if (range.from) next.set("dateFrom", range.from);
+    else next.delete("dateFrom");
+    if (range.to) next.set("dateTo", range.to);
+    else next.delete("dateTo");
+    setSearchParams(next, { replace: true });
+  };
+
+  const userTimezone = user?.timezone?.trim() ?? "UTC";
 
   // Set up intersection observer for infinite scroll
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
@@ -107,6 +127,24 @@ export default function RecyclablesPage() {
     <div>
       <div className="mt-5 mb-5">
         <h3 className="mb-1 font-semibold">Recyclable Posts</h3>
+      </div>
+
+      <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap md:items-center">
+        <div className="min-w-0 flex-1" />
+        <div className="flex w-full flex-row flex-nowrap items-center gap-2 md:ml-auto md:w-auto md:flex-shrink-0">
+          <DateRangeFilter
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            idPrefix="recyclables"
+            className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
+            maxDate={getTodayInTimezone(userTimezone)}
+          />
+          <DateRangeQuickPresets
+            variant="past"
+            userTimezone={userTimezone}
+            onDateRangeChange={setDateRange}
+          />
+        </div>
       </div>
 
       <RecyclablesQueueTabs

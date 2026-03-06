@@ -56,6 +56,7 @@ export interface DayViewTwoColumnGridProps {
   queueTypes?: QueueType[];
   isLongform?: boolean;
   isAll?: boolean;
+  isMobile?: boolean;
 }
 
 interface DayHoverLayout {
@@ -115,6 +116,7 @@ function BlockInColumn({
   queueTypes,
   isLongform,
   isAll,
+  isMobile,
 }: {
   placement: DayViewPlacement;
   isHovered: boolean;
@@ -126,6 +128,7 @@ function BlockInColumn({
   queueTypes?: QueueType[];
   isLongform?: boolean;
   isAll?: boolean;
+  isMobile?: boolean;
 }) {
   const baseRows = Math.max(
     1,
@@ -158,8 +161,12 @@ function BlockInColumn({
         user={user}
         queueTypes={queueTypes}
         onEdit={(editedPost) => {
-          setActiveEmptySlotKey(null);
-          onPostEdit(editedPost);
+          if (isMobile && !isHovered) {
+            onHoverOverlayChange(hoverOverlayPayload);
+          } else {
+            setActiveEmptySlotKey(null);
+            onPostEdit(editedPost);
+          }
         }}
         isLongform={
           isAll
@@ -194,6 +201,7 @@ export function DayViewTwoColumnGrid({
   queueTypes,
   isLongform = false,
   isAll = false,
+  isMobile = false,
 }: DayViewTwoColumnGridProps) {
   const [hoveredSlotKey, setHoveredSlotKey] = useState<string | null>(null);
   const [hoveredMultiPostKey, setHoveredMultiPostKey] = useState<string | null>(
@@ -439,6 +447,7 @@ export function DayViewTwoColumnGrid({
                       queueTypes={queueTypes}
                       isLongform={isLongform}
                       isAll={isAll}
+                      isMobile={isMobile}
                     />
                   </div>
                 );
@@ -530,6 +539,7 @@ export function DayViewTwoColumnGrid({
                       queueTypes={queueTypes}
                       isLongform={isLongform}
                       isAll={isAll}
+                      isMobile={isMobile}
                     />
                   </div>
                 );
@@ -632,25 +642,30 @@ export function DayViewTwoColumnGrid({
                             : CALENDAR_BLOCK_BASE_Z,
                         }}
                         onMouseEnter={() => {
+                          if (isMobile) return;
                           setHoveredSlotKey(null);
                           setHoveredMultiPostKey(key);
                           setDayHoverOverlayPayload(overlayPayload);
                         }}
                         onFocusCapture={() => {
+                          if (isMobile) return;
                           setHoveredSlotKey(null);
                           setHoveredMultiPostKey(key);
                           setDayHoverOverlayPayload(overlayPayload);
                         }}
                         onBlurCapture={() => {
+                          if (isMobile) return;
                           setHoveredMultiPostKey(null);
                           setDayHoverOverlayPayload(null);
                         }}
                         onTouchStart={() => {
+                          if (isMobile) return;
                           setHoveredSlotKey(null);
                           setHoveredMultiPostKey(key);
                           setDayHoverOverlayPayload(overlayPayload);
                         }}
                         onTouchEnd={() => {
+                          if (isMobile) return;
                           setTimeout(() => {
                             setHoveredMultiPostKey(null);
                             setDayHoverOverlayPayload(null);
@@ -664,8 +679,14 @@ export function DayViewTwoColumnGrid({
                           user={user}
                           queueTypes={queueTypes}
                           onEdit={(editedPost) => {
-                            setActiveEmptySlotKey(null);
-                            onPostEdit(editedPost);
+                            if (isMobile && !isHovered) {
+                              setHoveredSlotKey(null);
+                              setHoveredMultiPostKey(key);
+                              setDayHoverOverlayPayload(overlayPayload);
+                            } else {
+                              setActiveEmptySlotKey(null);
+                              onPostEdit(editedPost);
+                            }
                           }}
                           isLongform={
                             isAll

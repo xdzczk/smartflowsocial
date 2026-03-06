@@ -42,6 +42,8 @@ export async function getRecyclableDashboardData({
   const page = parseInt(url.searchParams.get("page") ?? "1");
   const limit = 20;
   const queueType = params.queueType ?? "all";
+  const dateFrom = url.searchParams.get("dateFrom") ?? undefined;
+  const dateTo = url.searchParams.get("dateTo") ?? undefined;
 
   const [{ posts, pagination }, userResult, queueTypesResult] =
     await Promise.all([
@@ -50,6 +52,8 @@ export async function getRecyclableDashboardData({
         page,
         limit,
         queueType,
+        dateFrom,
+        dateTo,
       }),
       getUserById(userId),
       getQueueTypesCached(userId),

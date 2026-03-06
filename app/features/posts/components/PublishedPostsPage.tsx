@@ -1,4 +1,9 @@
-import { useParams, useSearchParams, useNavigate } from "@remix-run/react";
+import {
+  Link,
+  useParams,
+  useSearchParams,
+  useNavigate,
+} from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
@@ -48,6 +53,7 @@ import {
 } from "../utils/publish-result.utils";
 
 import { DateRangeFilter } from "./DateRangeFilter";
+import { DateRangeQuickPresets } from "./DateRangeQuickPresets";
 import PublishResultModal from "./PublishResultModal";
 import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
@@ -367,45 +373,67 @@ export default function PublishedPostsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <div className="mt-5 mb-5">
-        <ContentListPageHeader pageType="published" currentTab={currentTab} />
+      <div className="flex flex-shrink-0 flex-row items-center gap-4">
+        <ContentListPageHeader
+          pageType="published"
+          currentTab={currentTab}
+          className="min-w-0"
+        />
+        <nav
+          className="bg-muted text-muted-foreground ml-auto inline-flex h-9 flex-shrink-0 items-center justify-center rounded-lg p-1"
+          aria-label="Switch between Published and Recyclables view"
+        >
+          <span
+            className="bg-background text-foreground inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap shadow"
+            aria-current="page"
+          >
+            Published
+          </span>
+          <Link
+            to="/dashboard/recyclables"
+            prefetch="intent"
+            className="hover:text-foreground focus-visible:ring-ring inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+          >
+            Recyclables
+          </Link>
+        </nav>
       </div>
 
-      <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap">
-        {/* Mobile: content type + queue each 50% width; desktop: participates in single row with order */}
-        <div className="flex w-full flex-row flex-nowrap gap-2 md:contents">
-          <div className="min-w-0 flex-1 md:order-1">
-            <PostTypeTabs
-              currentTab={currentTab}
-              basePath="/dashboard/published"
-              totalContentCount={totalContentCount}
-              totalPostsCount={totalPostsCount}
-              totalRepostsCount={totalRepostsCount}
-              totalLongformCount={totalLongformCount}
-              inRow
-            />
-          </div>
-          {currentTab === "all" ||
-          currentTab === "posts" ||
-          currentTab === "reposts" ||
-          currentTab === "longform" ? (
-            <div className="min-w-0 flex-1 md:order-3 md:ml-auto md:flex-shrink-0">
-              <QueueSelectionTabs
-                currentTab={currentTab}
-                queueTypes={queueTypes}
-                basePath="/dashboard/published"
-              />
-            </div>
-          ) : null}
+      <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap md:items-center">
+        <div className="min-w-0 flex-1">
+          <PostTypeTabs
+            currentTab={currentTab}
+            basePath="/dashboard/published"
+            totalContentCount={totalContentCount}
+            totalPostsCount={totalPostsCount}
+            totalRepostsCount={totalRepostsCount}
+            totalLongformCount={totalLongformCount}
+            inRow
+          />
         </div>
-        <div className="flex w-full justify-center md:contents">
+        <div className="flex w-full flex-row flex-nowrap items-center gap-2 md:ml-auto md:w-auto md:flex-shrink-0">
           <DateRangeFilter
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             idPrefix="published"
-            className="w-full max-md:w-auto md:order-2 md:w-auto md:flex-shrink-0"
+            className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
             maxDate={getTodayInTimezone(userTimezone)}
           />
+          <DateRangeQuickPresets
+            variant="past"
+            userTimezone={userTimezone}
+            onDateRangeChange={setDateRange}
+          />
+          {currentTab === "all" ||
+          currentTab === "posts" ||
+          currentTab === "reposts" ||
+          currentTab === "longform" ? (
+            <QueueSelectionTabs
+              currentTab={currentTab}
+              queueTypes={queueTypes}
+              basePath="/dashboard/published"
+            />
+          ) : null}
         </div>
       </div>
 

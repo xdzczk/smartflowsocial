@@ -3,7 +3,12 @@
  * Provides caching and background refetching for recyclables page
  */
 
-import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
@@ -27,8 +32,19 @@ import type { PostData, QueueType } from "../types";
 export const recyclablesKeys = {
   all: ["recyclables"] as const,
   lists: () => [...recyclablesKeys.all, "list"] as const,
-  list: (queueType?: string, page?: number) =>
-    [...recyclablesKeys.lists(), queueType, page] as const,
+  list: (
+    queueType?: string,
+    page?: number,
+    dateFrom?: string,
+    dateTo?: string
+  ) =>
+    [
+      ...recyclablesKeys.lists(),
+      queueType,
+      page,
+      dateFrom ?? "",
+      dateTo ?? "",
+    ] as const,
   detail: (id: string) => [...recyclablesKeys.all, "detail", id] as const,
 };
 
@@ -38,8 +54,11 @@ export const recyclablesKeys = {
  */
 export function useRecyclablesQuery() {
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const queueType = params["queueType"] ?? "all";
   const page = 1; // Recyclables doesn't use pagination in URL currently, but we'll support it
+  const dateFrom = searchParams.get("dateFrom") ?? "";
+  const dateTo = searchParams.get("dateTo") ?? "";
 
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
@@ -50,11 +69,15 @@ export function useRecyclablesQuery() {
     recyclablesLoaderDataSchema
   );
 
+  const queryParams = new URLSearchParams({ page: String(page) });
+  if (dateFrom) queryParams.set("dateFrom", dateFrom);
+  if (dateTo) queryParams.set("dateTo", dateTo);
+
   return useQuery({
-    queryKey: recyclablesKeys.list(queueType, page),
+    queryKey: recyclablesKeys.list(queueType, page, dateFrom, dateTo),
     queryFn: async () => {
       // Use fetcher to refetch data
-      const url = `/dashboard/recyclables${queueType !== "all" ? `/${queueType}` : ""}?page=${page}`;
+      const url = `/dashboard/recyclables${queueType !== "all" ? `/${queueType}` : ""}?${queryParams.toString()}`;
       fetcher.load(url);
 
       // Wait for fetcher to complete
@@ -94,7 +117,10 @@ export function useRecyclablesQuery() {
  */
 export function useRecyclablesInfiniteQuery() {
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const queueType = params["queueType"] ?? "all";
+  const dateFrom = searchParams.get("dateFrom") ?? "";
+  const dateTo = searchParams.get("dateTo") ?? "";
 
   const loaderDataRaw = useLoaderData();
 
@@ -108,8 +134,15 @@ export function useRecyclablesInfiniteQuery() {
     throw new Error("Invalid loader data");
   }
 
+  const buildQueryString = (pageParam: number) => {
+    const q = new URLSearchParams({ page: String(pageParam) });
+    if (dateFrom) q.set("dateFrom", dateFrom);
+    if (dateTo) q.set("dateTo", dateTo);
+    return q.toString();
+  };
+
   return useInfiniteRemixQuery<RecyclablesLoaderData>({
-    queryKey: recyclablesKeys.list(queueType),
+    queryKey: recyclablesKeys.list(queueType, undefined, dateFrom, dateTo),
     initialData: validatedLoaderData,
     getNextPageParam: (lastPage) => {
       const { pagination } = lastPage;
@@ -123,7 +156,7 @@ export function useRecyclablesInfiniteQuery() {
       return;
     },
     buildUrl: (pageParam) =>
-      `/dashboard/recyclables${queueType !== "all" ? `/${queueType}` : ""}?page=${pageParam}`,
+      `/dashboard/recyclables${queueType !== "all" ? `/${queueType}` : ""}?${buildQueryString(pageParam)}`,
     staleTime: 30 * 1000, // 30 seconds
     maxPages: 10, // Limit to 200 items (10 pages × 20 items per page)
   });

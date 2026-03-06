@@ -7,6 +7,7 @@
 
 import type { Prisma, Post } from "@prisma/client";
 
+import { parseDateRangeUtc } from "~/lib/date-range.server";
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -670,11 +671,15 @@ export async function getRecyclablePosts({
   page = 1,
   limit = 50,
   queueType,
+  dateFrom,
+  dateTo,
 }: {
   userId: string;
   page?: number;
   limit?: number;
   queueType?: string;
+  dateFrom?: string | null;
+  dateTo?: string | null;
 }): Promise<PostsWithPagination> {
   const skip = (page - 1) * limit;
 
@@ -692,6 +697,17 @@ export async function getRecyclablePosts({
     } else {
       whereClause.queueType = { name: queueType };
     }
+  }
+
+  // Filter by published date range (inclusive)
+  const dateRange = parseDateRangeUtc(dateFrom, dateTo);
+  if (dateRange?.fromUtc || dateRange?.toUtc) {
+    whereClause.publishedAt = {};
+    if (dateRange.fromUtc)
+      (whereClause.publishedAt as Prisma.DateTimeFilter).gte =
+        dateRange.fromUtc;
+    if (dateRange.toUtc)
+      (whereClause.publishedAt as Prisma.DateTimeFilter).lte = dateRange.toUtc;
   }
 
   const [posts, total] = await Promise.all([

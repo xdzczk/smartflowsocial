@@ -35,9 +35,9 @@ export const CALENDAR_HOVERED_CELL_Z = 20;
 export const CURRENT_TIME_INDICATOR_Z = 45;
 /** Shared overlay layer for expanded hover blocks in Week/Day views. */
 export const CALENDAR_HOVER_OVERLAY_Z = 46;
-/** Sticky layers for weekly headers/rails. */
-export const CALENDAR_DAYS_HEADER_Z = 20;
-export const CALENDAR_DAYS_HEADER_TIME_SPACER_Z = 21;
+/** Sticky layers for weekly headers/rails (above hover overlay so day strip is never covered). */
+export const CALENDAR_DAYS_HEADER_Z = 47;
+export const CALENDAR_DAYS_HEADER_TIME_SPACER_Z = 48;
 export const CALENDAR_TIME_RAIL_STICKY_Z = 22;
 export const CALENDAR_MOBILE_HEADER_Z = 23;
 /** Post block wrapper z-levels inside local cell contexts. */

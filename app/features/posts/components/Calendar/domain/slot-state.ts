@@ -132,7 +132,7 @@ function computeExpandRows(
 ): number {
   if (isDayView) {
     if (!isHovered) return baseRows;
-    return baseRows <= 4 ? 5 : baseRows;
+    return baseRows <= 6 ? 7 : baseRows;
   }
 
   if (!isHovered) return baseRows;

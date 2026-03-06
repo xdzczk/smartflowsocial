@@ -1,17 +1,51 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.005564166">
-    <testsuite name="tests/unit/remote-signer-sessions.test.ts" timestamp="2026-03-03T13:48:21.193Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.005564166">
-        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions identity + storage consistency &gt; reuses logical session when signer pubkey matches" time="0.002617875">
+<testsuites name="vitest tests" tests="23" failures="0" errors="0" time="0.004254666">
+    <testsuite name="tests/unit/calendar-domain.test.ts" timestamp="2026-03-06T11:07:16.156Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.004254666">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 0 for 0 posts" time="0.000690458">
         </testcase>
-        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions identity + storage consistency &gt; marks previous active session disconnected when switching active" time="0.000636334">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 6 for 1-2 posts" time="0.000112916">
         </testcase>
-        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions identity + storage consistency &gt; keeps active-session pointer consistent after removing active" time="0.000281458">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 4 for 3-4 posts" time="0.000087083">
         </testcase>
-        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions connection and session model &gt; createConnection creates a connection with no current session" time="0.000317459">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewMaxExpand &gt; returns 2 for 5+ posts" time="0.0000805">
         </testcase>
-        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions connection and session model &gt; startNewSessionForConnection creates a session and getConnectionLog appends to it" time="0.000688458">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 0 posts" time="0.000089625">
         </testcase>
-        <testcase classname="tests/unit/remote-signer-sessions.test.ts" name="remote-signer-sessions connection and session model &gt; getSessionsForConnection returns sessions ordered by startedAt desc" time="0.00023825">
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 3 for 1 post" time="0.000058125">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 2 for 2 posts" time="0.000046042">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 1 for 3-4 posts" time="0.000057208">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getWeekViewMaxExpand &gt; returns 0 for 5+ posts" time="0.000046292">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns 0 when slot is last or not in hours" time="0.000102458">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDown &gt; returns count of consecutive empty slots below" time="0.000098625">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getExpandDownDayView &gt; stops expansion when a multi-post slot exists below" time="0.000083291">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns false when slot baseRows below is out of range or has no posts" time="0.0000675">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; hasBlocksUnderneath &gt; returns true when slot baseRows below has posts" time="0.000037417">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; returns empty map for empty grid" time="0.000362042">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; assigns alternating columns when both columns free for consecutive single-post slots" time="0.000487042">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getDayViewColumnMap &gt; skips slots with not exactly one post" time="0.000069208">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns expandRows 1 and correct blockHeightPx for empty slot" time="0.000469625">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns singlePostKey and isHovered when hoveredPostKey matches" time="0.000060959">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns noExpandOnHover true for week view 3-row slot with post below" time="0.000060709">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; caps hovered single-post week slot at 3 rows when 4th row conflicts below" time="0.000063875">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; caps hovered single-post week slot at 3 rows when one conflicting slot exists 2 rows below" time="0.000057625">
+        </testcase>
+        <testcase classname="tests/unit/calendar-domain.test.ts" name="Calendar domain &gt; getSlotState &gt; returns isDragOver when dragOverSlot matches slotKey" time="0.000040542">
         </testcase>
     </testsuite>
 </testsuites>

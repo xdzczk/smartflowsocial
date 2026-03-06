@@ -5,9 +5,11 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { fromDate, nowInTimezone } from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../../types";
+import { CONTENT_MOBILE_BREAKPOINT_PX } from "../../constants";
 import { DayViewTwoColumnGrid } from "../components/DayViewTwoColumnGrid";
 import {
   DEFAULT_SCROLL_HOUR,
@@ -57,6 +59,7 @@ export function DayView({
   );
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const hasSetInitialScrollRef = useRef(false);
+  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
 
   const userTimezone = user?.timezone ?? "Etc/UTC";
   const userTimeFormat =
@@ -207,6 +210,7 @@ export function DayView({
             queueTypes={queueTypes}
             isLongform={isLongform}
             isAll={isAll}
+            isMobile={isMobile}
           />
         </div>
       </div>
