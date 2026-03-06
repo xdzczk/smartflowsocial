@@ -7,7 +7,10 @@
 
 import type { Prisma, Post } from "@prisma/client";
 
-import { parseDateRangeUtc } from "~/lib/date-range.server";
+import {
+  parseDateRangeInTimezone,
+  parseDateRangeUtc,
+} from "~/lib/date-range.server";
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -436,35 +439,47 @@ export async function getRecentPublishedPosts({
   userId,
   days,
   queueType,
+  queueTypeId,
   since,
+  publishedFrom,
+  publishedTo,
 }: {
   userId: string;
   days: number;
   queueType?: string;
+  /** Filter by queue id (takes precedence over queueType name). */
+  queueTypeId?: string;
   since?: number; // Unix timestamp in milliseconds for delta sync
+  /** Optional absolute eligibility window start (UTC). */
+  publishedFrom?: Date;
+  /** Optional absolute eligibility window end (UTC). */
+  publishedTo?: Date;
 }): Promise<PostWithQueueType[]> {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
   const whereClause: Prisma.PostWhereInput = {
-    // Use currentState as single source of truth
     currentState: "PUBLISHED",
     userId: userId,
-    publishedAt: {
-      gte: startDate,
-    },
+    publishedAt:
+      publishedFrom !== undefined || publishedTo !== undefined
+        ? {
+            ...(publishedFrom !== undefined && { gte: publishedFrom }),
+            ...(publishedTo !== undefined && { lte: publishedTo }),
+          }
+        : {
+            gte: startDate,
+          },
   };
 
-  // Add delta sync filter if since timestamp is provided
   if (since !== undefined) {
     const sinceDate = new Date(since);
-    whereClause.updatedAt = {
-      gte: sinceDate,
-    };
+    whereClause.updatedAt = { gte: sinceDate };
   }
 
-  // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)
-  if (queueType && queueType !== "all") {
+  if (queueTypeId) {
+    whereClause.queueTypeId = queueTypeId;
+  } else if (queueType && queueType !== "all") {
     if (queueType === "unassigned") {
       whereClause.queueTypeId = null;
     } else {
@@ -673,6 +688,7 @@ export async function getRecyclablePosts({
   queueType,
   dateFrom,
   dateTo,
+  timezone,
 }: {
   userId: string;
   page?: number;
@@ -680,6 +696,8 @@ export async function getRecyclablePosts({
   queueType?: string;
   dateFrom?: string | null;
   dateTo?: string | null;
+  /** When set, interpret dateFrom/dateTo as calendar days in this timezone. */
+  timezone?: string | null;
 }): Promise<PostsWithPagination> {
   const skip = (page - 1) * limit;
 
@@ -699,8 +717,11 @@ export async function getRecyclablePosts({
     }
   }
 
-  // Filter by published date range (inclusive)
-  const dateRange = parseDateRangeUtc(dateFrom, dateTo);
+  // Filter by published date range (inclusive); use user timezone when provided
+  const tz = timezone?.trim();
+  const dateRange = tz
+    ? parseDateRangeInTimezone(dateFrom, dateTo, tz)
+    : parseDateRangeUtc(dateFrom, dateTo);
   if (dateRange?.fromUtc || dateRange?.toUtc) {
     whereClause.publishedAt = {};
     if (dateRange.fromUtc)

@@ -39,31 +39,30 @@ export async function getRecyclableDashboardData({
   params: { queueType?: string };
   url: URL;
 }) {
-  const page = parseInt(url.searchParams.get("page") ?? "1");
-  const limit = 20;
-  const queueType = params.queueType ?? "all";
   const dateFrom = url.searchParams.get("dateFrom") ?? undefined;
   const dateTo = url.searchParams.get("dateTo") ?? undefined;
+  const hasDateRange = Boolean(dateFrom ?? dateTo);
+  const page = hasDateRange ? 1 : parseInt(url.searchParams.get("page") ?? "1");
+  const limit = hasDateRange ? 5000 : 20;
+  const queueType = params.queueType ?? "all";
 
-  const [{ posts, pagination }, userResult, queueTypesResult] =
-    await Promise.all([
-      getRecyclablePosts({
-        userId,
-        page,
-        limit,
-        queueType,
-        dateFrom,
-        dateTo,
-      }),
-      getUserById(userId),
-      getQueueTypesCached(userId),
-    ]);
-
-  if (!userResult) {
-    throw new Error("User not found");
-  }
-
+  const userResult = await getUserById(userId);
+  if (!userResult) throw new Error("User not found");
   const user: UserWithHashTagPresets = userResult;
+  const timezone = user.timezone?.trim() ?? "UTC";
+
+  const [{ posts, pagination }, queueTypesResult] = await Promise.all([
+    getRecyclablePosts({
+      userId,
+      page,
+      limit,
+      queueType,
+      dateFrom,
+      dateTo,
+      timezone,
+    }),
+    getQueueTypesCached(userId),
+  ]);
   const queueTypes = Array.isArray(queueTypesResult) ? queueTypesResult : [];
 
   // Get event IDs from signedEvent.id
@@ -103,9 +102,11 @@ export async function getRecyclableDashboardData({
 
   const postsDTO: PostDTO[] = toPostDTOArray(postsData);
 
+  const outPagination = hasDateRange ? { ...pagination, pages: 1 } : pagination;
+
   return {
     posts: postsDTO,
-    pagination,
+    pagination: outPagination,
     stats,
     user,
     queueTypes: queueTypes.filter(

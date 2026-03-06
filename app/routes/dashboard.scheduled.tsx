@@ -32,10 +32,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const url = new URL(request.url);
     const queueType =
       params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
-    const page = parseInt(url.searchParams.get("page") ?? "1", 10);
-    const limit = 20;
     const dateFrom = url.searchParams.get("dateFrom") ?? undefined;
     const dateTo = url.searchParams.get("dateTo") ?? undefined;
+    const hasDateRange = Boolean(dateFrom ?? dateTo);
+    const page = hasDateRange
+      ? 1
+      : parseInt(url.searchParams.get("page") ?? "1", 10);
+    const limit = hasDateRange ? 5000 : 20;
 
     const data = await loadScheduledData(
       userId,
@@ -46,8 +49,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       dateTo
     );
 
+    const outData = hasDateRange
+      ? {
+          ...data,
+          pagination: { ...data.pagination, pages: 1 },
+          longformPagination: { ...data.longformPagination, pages: 1 },
+        }
+      : data;
+
     // Validate loader response with Zod schema
-    return validateLoaderResponse(data, scheduledPostsLoaderDataSchema);
+    return validateLoaderResponse(outData, scheduledPostsLoaderDataSchema);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {

@@ -10,7 +10,7 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { parseDateRangeUtc } from "~/lib/date-range.server";
+import { parseDateRangeInTimezone } from "~/lib/date-range.server";
 import {
   validateSignedEvent,
   validateNostrEvent,
@@ -46,14 +46,15 @@ export async function loadScheduledData(
   dateFrom?: string | null,
   dateTo?: string | null
 ) {
-  const dateRange = parseDateRangeUtc(dateFrom, dateTo);
+  const user = await getUserById(userId);
+  const timezone = user?.timezone?.trim() ?? "UTC";
+  const dateRange = parseDateRangeInTimezone(dateFrom, dateTo, timezone);
   const scheduledFromUtc = dateRange?.fromUtc;
   const scheduledToUtc = dateRange?.toUtc;
 
   const [
     postsResult,
     allLongformPostsResult,
-    user,
     queueTypes,
     hashTagPresets,
     repostsCount,
@@ -73,7 +74,6 @@ export async function loadScheduledData(
       scheduledFromUtc,
       scheduledToUtc,
     }),
-    getUserById(userId),
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
     getScheduledRepostsCount({

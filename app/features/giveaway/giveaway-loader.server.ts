@@ -17,12 +17,14 @@ import { logError } from "~/lib/error-logger.server";
 import { convertToHex } from "~/lib/helpers";
 import { getRecentPublishedPosts } from "~/models/post.queries.server";
 
+import { getPostsInScope } from "./giveaway-scope.server";
 import { fetchGiveawayParticipants } from "./giveaway.server";
 import type {
   GiveawayProfile,
   GiveawayStats,
   PrimalEvent,
   RelatedEvent,
+  GiveawayScope,
 } from "./types";
 
 /**
@@ -147,10 +149,16 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
   }
 }
 
+export interface GiveawayParticipantFilters {
+  minAccountAgeDays?: number;
+  minFollowers?: number;
+}
+
 /**
- * Filter and process giveaway participants
+ * Filter and process giveaway participants (blacklist, muted, lud16, optional min age/followers).
+ * Exported for use in giveaway actions (preview/selection).
  */
-async function processGiveawayParticipants(
+export async function processGiveawayParticipants(
   relatedEvents: RelatedEvent[],
   userId: string,
   user: {
@@ -159,7 +167,8 @@ async function processGiveawayParticipants(
     filterMuted?: boolean;
     mutedList?: { npubs?: string[] };
     [key: string]: unknown;
-  }
+  },
+  options?: { filters?: GiveawayParticipantFilters }
 ): Promise<RelatedEvent[]> {
   if (relatedEvents.length === 0) {
     return [];
@@ -263,7 +272,9 @@ async function processGiveawayParticipants(
           }
         }
 
-        // Extract zap stats
+        // Extract stats (zaps, followers, time_joined)
+        let followersCount: number | undefined;
+        let timeJoined: number | undefined;
         if (statsEvent && Array.isArray(statsEvent)) {
           const statsEventData = statsEvent[2] as { content?: string };
           if (
@@ -272,9 +283,28 @@ async function processGiveawayParticipants(
           ) {
             const stats = JSON.parse(statsEventData.content) as {
               total_zap_count?: number;
+              followers_count?: number;
+              time_joined?: number;
             };
             totalZapped = stats.total_zap_count ?? 0;
+            followersCount = stats.followers_count;
+            timeJoined = stats.time_joined;
           }
+        }
+
+        // Optional filters: min followers, min account age
+        if (
+          options?.filters?.minFollowers !== undefined &&
+          followersCount !== undefined
+        ) {
+          if (followersCount < options.filters.minFollowers) return null;
+        }
+        if (
+          options?.filters?.minAccountAgeDays !== undefined &&
+          timeJoined !== undefined
+        ) {
+          const accountAgeDays = (Date.now() / 1000 - timeJoined) / 86400;
+          if (accountAgeDays < options.filters.minAccountAgeDays) return null;
         }
 
         // Only include users with valid lud16 and totalZapped > 5
@@ -358,22 +388,34 @@ async function processGiveawayParticipants(
 }
 
 /**
- * Load giveaway dashboard data
+ * Load giveaway dashboard data.
+ * Supports legacy (queueType + days) or scope-based loading.
  */
 export async function loadGiveawayData(
   userId: string,
-  queueType: string,
-  days: number
+  queueTypeOrScope: string | GiveawayScope,
+  days?: number
 ) {
+  const isLegacy =
+    typeof queueTypeOrScope === "string" && typeof days === "number";
   const [posts, user, queueTypes] = await Promise.all([
-    getRecentPublishedPosts({
-      userId,
-      days,
-      queueType,
-    }),
+    isLegacy
+      ? getRecentPublishedPosts({
+          userId,
+          days,
+          queueType: queueTypeOrScope,
+        })
+      : getPostsInScope(userId, queueTypeOrScope as GiveawayScope),
     getUserById(userId),
     getQueueTypesCached(userId),
   ]);
+
+  const selectedQueueType = isLegacy
+    ? queueTypeOrScope
+    : deriveSelectedQueueTypeFromScope(
+        queueTypeOrScope as GiveawayScope,
+        queueTypes
+      );
 
   // Get event IDs from signedEvent.id
   const eventIds = posts
@@ -532,6 +574,17 @@ export async function loadGiveawayData(
     relatedEvents: processedEvents,
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
-    selectedQueueType: queueType,
+    selectedQueueType,
   };
+}
+
+function deriveSelectedQueueTypeFromScope(
+  scope: GiveawayScope,
+  queueTypes: Array<{ id: string; name: string }>
+): string {
+  if (scope.type === "QUEUE") {
+    const q = queueTypes.find((qt) => qt.id === scope.reference.queueId);
+    return q?.name ?? "all";
+  }
+  return "all";
 }

@@ -435,6 +435,17 @@ const postDTOWithStatsSchema = postDTOSchema.extend({
 });
 
 /**
+ * Minimal giveaway item for list view (dashboard.giveaway)
+ */
+const giveawayListItemSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  scopeType: z.string(),
+  winnerCount: z.number(),
+  createdAt: z.string().or(z.date()),
+});
+
+/**
  * Schema for GiveawayLoaderData
  */
 export const giveawayLoaderDataSchema = z.object({
@@ -444,6 +455,7 @@ export const giveawayLoaderDataSchema = z.object({
   user: userWithHashTagPresetsSchema,
   queueTypes: z.array(queueTypeSchema),
   selectedQueueType: z.string(),
+  giveaways: z.array(giveawayListItemSchema).optional(),
 });
 
 export type GiveawayLoaderData = z.infer<typeof giveawayLoaderDataSchema>;

@@ -82,6 +82,32 @@ function toDateOnly(d: Date | string | null | undefined): string | null {
   return `${y}-${m}-${day}`;
 }
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Format a YYYY-MM-DD string for display using the user's date format preference.
+ * Use when showing the selected date range in the filter (respects user's date format).
+ */
+export function formatDateOnlyForDisplay(
+  isoDate: string,
+  dateFormat: "ddmmyyyy" | "mmddyyyy" | "yyyymmdd"
+): string {
+  if (!DATE_ONLY_REGEX.test(isoDate)) return isoDate;
+  const [y, m, d] = [
+    isoDate.slice(0, 4),
+    isoDate.slice(5, 7),
+    isoDate.slice(8, 10),
+  ];
+  switch (dateFormat) {
+    case "mmddyyyy":
+      return `${m}/${d}/${y}`;
+    case "yyyymmdd":
+      return `${y}-${m}-${d}`;
+    default:
+      return `${d}/${m}/${y}`;
+  }
+}
+
 /**
  * Returns true if the given date falls within [from, to] (inclusive).
  * - If from is empty, no lower bound.

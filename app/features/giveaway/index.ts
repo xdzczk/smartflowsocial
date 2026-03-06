@@ -21,6 +21,7 @@ export type {
   GiveawayProfile,
   GiveawayStats,
   PrimalEvent,
+  GiveawayWinnerEntry,
 } from "./types";
 
 // ============================================================================
@@ -32,16 +33,26 @@ export type {
 // For now, we'll export loadGiveawayData which does exist
 
 // ============================================================================
-// Giveaway Loader
+// Giveaway Loader & Actions
 // ============================================================================
 
 export { loadGiveawayData } from "./giveaway-loader.server";
+export {
+  getGiveawayById,
+  previewGiveaway,
+  rerollGiveaway,
+  excludeWinnerAndRedraw,
+  lockGiveaway,
+  cancelGiveaway,
+  markGiveawayPaidOut,
+} from "./giveaway-actions.server";
 
 // ============================================================================
 // Components (Public API)
 // ============================================================================
 
 export { GiveawayBlacklistSettings } from "./components/GiveawayBlacklistSettings";
+export { GiveawayDetailPage } from "./components/GiveawayDetailPage";
 export { GiveawayFilters } from "./components/GiveawayFilters";
 export { GiveawayQueueTabs } from "./components/GiveawayQueueTabs";
 export { default as GiveawayRandomizer } from "./components/GiveawayRandomizer";

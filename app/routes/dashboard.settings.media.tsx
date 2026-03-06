@@ -19,7 +19,9 @@ import { requireUserId } from "~/features/auth";
 import {
   requireFeatureAccess,
   requireAnySubscription,
+  getSubscriptionData,
 } from "~/features/payments";
+import { getBlossomStorageLimitBytes } from "~/features/payments/blossom-storage-limits";
 import {
   deleteMediaById,
   deleteRemoteBlossomObject,
@@ -42,21 +44,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10));
 
-  const [items, agg] = await Promise.all([
+  const SFS_PROVIDER = "BLOSSOM_SFS";
+  const [items, agg, subscriptionData] = await Promise.all([
     listMediaForUser(userId, {
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
+      provider: SFS_PROVIDER,
     }),
-    getMediaAggregateForUser(userId),
+    getMediaAggregateForUser(userId, { provider: SFS_PROVIDER }),
+    getSubscriptionData(userId),
   ]);
 
   const totalCount = agg._count.id;
   const totalSize = agg._sum.size ?? 0;
+  const storageLimitBytes = getBlossomStorageLimitBytes(
+    subscriptionData.currentSubscription?.planId ?? null
+  );
 
   return json({
     items,
     totalCount,
     totalSize,
+    storageLimitBytes: storageLimitBytes > 0 ? storageLimitBytes : null,
     page,
     totalPages: Math.ceil(totalCount / PAGE_SIZE),
   });
@@ -110,7 +119,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function SettingsMediaPage() {
-  const { items, totalCount, totalSize, page, totalPages } =
+  const { items, totalCount, totalSize, storageLimitBytes, page, totalPages } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
@@ -140,22 +149,43 @@ export default function SettingsMediaPage() {
         <CardHeader>
           <CardTitle>Usage</CardTitle>
           <CardDescription>
-            Total files and size for your Blossom media
+            SmartFlow Blossom (SFS) storage: files and size used from your
+            account limit
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <dl className="flex gap-6">
+          <dl className="flex flex-wrap gap-6">
             <div>
               <dt className="text-muted-foreground text-sm">Files</dt>
               <dd className="text-xl font-semibold">{totalCount}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground text-sm">Total size</dt>
+              <dt className="text-muted-foreground text-sm">Storage used</dt>
               <dd className="text-xl font-semibold">
                 {formatBytes(totalSize)}
+                {storageLimitBytes != null && storageLimitBytes > 0 ? (
+                  <span className="text-muted-foreground ml-1 font-normal">
+                    / {formatBytes(storageLimitBytes)} limit
+                  </span>
+                ) : null}
               </dd>
             </div>
           </dl>
+          {storageLimitBytes != null && storageLimitBytes > 0 ? (
+            <div className="mt-3">
+              <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+                <div
+                  className="bg-primary h-full rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      (100 * totalSize) / storageLimitBytes
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

@@ -36,12 +36,16 @@ export default function QueueSelectionTabs({
     params["queueType"] ?? searchParams.get("queueType") ?? "all";
 
   const handleDropdownChange = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", currentTab);
     if (value === "all") {
-      navigate(useQueryParams ? `${basePath}?tab=${currentTab}` : basePath);
+      next.delete("queueType");
+      navigate(`${basePath}?${next.toString()}`);
     } else if (useQueryParams) {
-      navigate(`${basePath}?tab=${currentTab}&queueType=${value}`);
+      next.set("queueType", value);
+      navigate(`${basePath}?${next.toString()}`);
     } else {
-      navigate(`${basePath}/${value}?tab=${currentTab}`);
+      navigate(`${basePath}/${value}?${next.toString()}`);
     }
     setTimeout(() => revalidator.revalidate(), 0);
   };

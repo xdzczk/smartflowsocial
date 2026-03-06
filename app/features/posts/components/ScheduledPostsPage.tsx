@@ -352,6 +352,13 @@ export default function ScheduledPostsPage() {
             idPrefix="scheduled"
             className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
             minDate={getTodayInTimezone(userTimezone)}
+            userDateFormat={
+              user?.dateFormat === "mmddyyyy"
+                ? "mmddyyyy"
+                : user?.dateFormat === "yyyymmdd"
+                  ? "yyyymmdd"
+                  : "ddmmyyyy"
+            }
           />
           <DateRangeQuickPresets
             variant="future"

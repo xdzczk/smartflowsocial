@@ -250,6 +250,26 @@ export function usePlanType(): PlanType {
 }
 
 /**
+ * Giveaway plan limits (Option A: single giveaways flag, tier gates advanced).
+ * Free: basic scope (PERIOD/SINGLE_POST), low winner cap, no presets.
+ * Paid (basic+): QUEUE scope, higher cap, presets.
+ */
+export function getGiveawayPlanLimits(planType: PlanType): {
+  maxWinnerCount: number;
+  canUseQueueScope: boolean;
+  canUsePresets: boolean;
+} {
+  if (planType === "free") {
+    return {
+      maxWinnerCount: 10,
+      canUseQueueScope: false,
+      canUsePresets: false,
+    };
+  }
+  return { maxWinnerCount: 50, canUseQueueScope: true, canUsePresets: true };
+}
+
+/**
  * Get the minimum plan required for a feature
  */
 export function getMinimumPlanForFeature(feature: FeatureName): PlanType {

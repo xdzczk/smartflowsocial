@@ -114,6 +114,7 @@ export function useGiveawayData() {
       user: null,
       queueTypes: emptyQueueTypes,
       selectedQueueType: "all",
+      giveaways: [],
       isLoading: query.isLoading,
       rawData: null,
     };
@@ -159,6 +160,7 @@ export function useGiveawayData() {
     user: rawData.user,
     queueTypes: Array.isArray(rawData.queueTypes) ? rawData.queueTypes : [],
     selectedQueueType: rawData.selectedQueueType,
+    giveaways: Array.isArray(rawData.giveaways) ? rawData.giveaways : [],
     isLoading: query.isLoading,
     rawData,
   };

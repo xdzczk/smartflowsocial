@@ -8,7 +8,7 @@ import type { PostType, Prisma } from "@prisma/client";
 
 import { getUserById } from "~/features/user";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
-import { parseDateRangeUtc } from "~/lib/date-range.server";
+import { parseDateRangeInTimezone } from "~/lib/date-range.server";
 import {
   validateSignedEvent,
   validateNostrEvent,
@@ -40,20 +40,24 @@ export async function getPublishedDashboardData({
   params: { queueType?: string };
   url: URL;
 }) {
-  const page = parseInt(url.searchParams.get("page") ?? "1");
-  const limit = 50;
-  const queueType =
-    params.queueType ?? url.searchParams.get("queueType") ?? "all";
   const dateFrom = url.searchParams.get("dateFrom") ?? undefined;
   const dateTo = url.searchParams.get("dateTo") ?? undefined;
-  const dateRange = parseDateRangeUtc(dateFrom, dateTo);
+  const hasDateRange = Boolean(dateFrom ?? dateTo);
+  const page = hasDateRange ? 1 : parseInt(url.searchParams.get("page") ?? "1");
+  const limit = hasDateRange ? 5000 : 50;
+  const queueType =
+    params.queueType ?? url.searchParams.get("queueType") ?? "all";
+
+  const user = await getUserById(userId);
+  if (!user) throw new Error("User not found");
+  const timezone = user.timezone?.trim() ?? "UTC";
+  const dateRange = parseDateRangeInTimezone(dateFrom, dateTo, timezone);
   const publishedFromUtc = dateRange?.fromUtc;
   const publishedToUtc = dateRange?.toUtc;
 
   const [
     { posts, pagination },
     allLongformResultRaw,
-    user,
     queueTypesRaw,
     repostsCount,
   ] = await Promise.all([
@@ -72,7 +76,6 @@ export async function getPublishedDashboardData({
       publishedFromUtc,
       publishedToUtc,
     }),
-    getUserById(userId),
     getQueueTypesCached(userId),
     getPublishedRepostsCount({
       userId,
@@ -226,11 +229,17 @@ export async function getPublishedDashboardData({
   const totalPosts =
     typeof pagination.total === "number" ? pagination.total : 0;
 
+  const outPagination = hasDateRange ? { ...pagination, pages: 1 } : pagination;
+  const outLongformPagination =
+    hasDateRange && longformResult.pagination
+      ? { ...longformResult.pagination, pages: 1 }
+      : longformResult.pagination;
+
   return {
     posts: postsDTO,
     longformPosts: longformPostsDTO,
-    longformPagination: longformResult.pagination,
-    pagination,
+    longformPagination: outLongformPagination,
+    pagination: outPagination,
     stats,
     user,
     queueTypes: queueTypes.filter(

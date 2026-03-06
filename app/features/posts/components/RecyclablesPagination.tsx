@@ -1,4 +1,4 @@
-import { Link, useParams } from "@remix-run/react";
+import { Link, useParams, useSearchParams } from "@remix-run/react";
 interface Pagination {
   currentPage: number;
   limit: number;
@@ -17,10 +17,17 @@ export function RecyclablesPagination({
   pagination,
 }: RecyclablesPaginationProps) {
   const params = useParams();
+  const [searchParams] = useSearchParams();
 
   const basePath = params["queueType"]
     ? `/dashboard/recyclables/${params["queueType"]}`
     : "/dashboard/recyclables";
+
+  const searchWithPage = (page: number) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("page", String(page));
+    return next.toString();
+  };
 
   return (
     <div className="mt-4 flex items-center justify-between">
@@ -31,7 +38,7 @@ export function RecyclablesPagination({
       </div>
       <div className="flex gap-2">
         <Link
-          to={`${basePath}?page=${pagination.currentPage - 1}`}
+          to={`${basePath}?${searchWithPage(pagination.currentPage - 1)}`}
           className={`rounded-lg border px-3 py-1 ${
             pagination.currentPage === 1
               ? "pointer-events-none opacity-50"
@@ -41,7 +48,7 @@ export function RecyclablesPagination({
           Previous
         </Link>
         <Link
-          to={`${basePath}?page=${pagination.currentPage + 1}`}
+          to={`${basePath}?${searchWithPage(pagination.currentPage + 1)}`}
           className={`rounded-lg border px-3 py-1 ${
             pagination.currentPage === pagination.pages
               ? "pointer-events-none opacity-50"

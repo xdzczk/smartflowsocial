@@ -1,4 +1,4 @@
-import { useFetcher, useParams, useSearchParams } from "@remix-run/react";
+import { Link, useFetcher, useParams, useSearchParams } from "@remix-run/react";
 import { useEffect } from "react";
 
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
@@ -125,12 +125,36 @@ export default function RecyclablesPage() {
 
   return (
     <div>
-      <div className="mt-5 mb-5">
-        <h3 className="mb-1 font-semibold">Recyclable Posts</h3>
+      <div className="flex flex-shrink-0 flex-row items-center gap-4">
+        <h3 className="min-w-0 flex-shrink-0 font-semibold">
+          Recyclable Posts
+        </h3>
+        <nav
+          className="bg-muted text-muted-foreground ml-auto inline-flex h-9 flex-shrink-0 items-center justify-center rounded-lg p-1"
+          aria-label="Switch between Published and Recyclables view"
+        >
+          <Link
+            to="/dashboard/published"
+            prefetch="intent"
+            className="hover:text-foreground focus-visible:ring-ring inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+          >
+            Published
+          </Link>
+          <span
+            className="bg-background text-foreground inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap shadow"
+            aria-current="page"
+          >
+            Recyclables
+          </span>
+        </nav>
       </div>
 
       <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap md:items-center">
-        <div className="min-w-0 flex-1" />
+        <RecyclablesQueueTabs
+          queueTypes={queueTypes}
+          currentQueueType={params["queueType"]}
+          inRow
+        />
         <div className="flex w-full flex-row flex-nowrap items-center gap-2 md:ml-auto md:w-auto md:flex-shrink-0">
           <DateRangeFilter
             dateRange={dateRange}
@@ -138,6 +162,13 @@ export default function RecyclablesPage() {
             idPrefix="recyclables"
             className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
             maxDate={getTodayInTimezone(userTimezone)}
+            userDateFormat={
+              user?.dateFormat === "mmddyyyy"
+                ? "mmddyyyy"
+                : user?.dateFormat === "yyyymmdd"
+                  ? "yyyymmdd"
+                  : "ddmmyyyy"
+            }
           />
           <DateRangeQuickPresets
             variant="past"
@@ -146,11 +177,6 @@ export default function RecyclablesPage() {
           />
         </div>
       </div>
-
-      <RecyclablesQueueTabs
-        queueTypes={queueTypes}
-        currentQueueType={params["queueType"]}
-      />
 
       <RecyclablesBulkActions
         selectedCount={selectedPosts.size}

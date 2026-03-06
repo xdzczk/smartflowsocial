@@ -57,3 +57,31 @@ export interface GiveawayStats {
  * Giveaway state data
  */
 export type GiveawayStateData = Record<string, unknown>;
+
+/**
+ * Scope for a giveaway: which posts are in scope for participant selection.
+ */
+export type GiveawayScope =
+  | {
+      type: "PERIOD";
+      reference: { days?: number; from?: Date; to?: Date };
+    }
+  | { type: "SINGLE_POST"; reference: { postId: string } }
+  | {
+      type: "QUEUE";
+      reference: { queueId: string; from?: Date; to?: Date };
+    };
+
+/**
+ * Engagement type for giveaway eligibility.
+ */
+export type GiveawayEngagementType = "REACTION" | "REPOST" | "COMMENT" | "ZAP";
+
+/**
+ * Single winner entry in winner snapshot (stored at lock).
+ */
+export interface GiveawayWinnerEntry {
+  pubkey: string;
+  npub: string;
+  qualifyingActions: Array<{ kind: number; eventId: string; postId?: string }>;
+}

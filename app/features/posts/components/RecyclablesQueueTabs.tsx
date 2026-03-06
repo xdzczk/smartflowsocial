@@ -1,4 +1,4 @@
-import { Link, useRevalidator } from "@remix-run/react";
+import { Link, useRevalidator, useSearchParams } from "@remix-run/react";
 
 import { getQueueAccentHex, getQueueColor } from "../queue-colors";
 interface QueueType {
@@ -9,6 +9,8 @@ interface QueueType {
 interface RecyclablesQueueTabsProps {
   queueTypes: QueueType[] | string[];
   currentQueueType?: string;
+  /** When true, omit outer border/margin for use in a single filter row (e.g. with date filter). */
+  inRow?: boolean;
 }
 
 /**
@@ -17,14 +19,18 @@ interface RecyclablesQueueTabsProps {
 export function RecyclablesQueueTabs({
   queueTypes,
   currentQueueType,
+  inRow = false,
 }: RecyclablesQueueTabsProps) {
   const revalidator = useRevalidator();
+  const [searchParams] = useSearchParams();
+  const search = searchParams.toString();
+  const searchSuffix = search ? `?${search}` : "";
 
   return (
-    <div className="border-border mb-6 border-b">
-      <nav className="-mb-px flex space-x-8" aria-label="Queue Types">
+    <div className={inRow ? "min-w-0 flex-1" : "border-border mb-6 border-b"}>
+      <nav className="-mb-px flex flex-wrap space-x-8" aria-label="Queue Types">
         <Link
-          to="/dashboard/recyclables"
+          to={`/dashboard/recyclables${searchSuffix}`}
           prefetch="intent"
           onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
@@ -55,7 +61,7 @@ export function RecyclablesQueueTabs({
             return (
               <Link
                 key={queueName}
-                to={`/dashboard/recyclables/${queueName}`}
+                to={`/dashboard/recyclables/${queueName}${searchSuffix}`}
                 prefetch="intent"
                 onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                 className={`${baseClasses} border-b-2`}
@@ -72,7 +78,7 @@ export function RecyclablesQueueTabs({
           return (
             <Link
               key={queueName}
-              to={`/dashboard/recyclables/${queueName}`}
+              to={`/dashboard/recyclables/${queueName}${searchSuffix}`}
               prefetch="intent"
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`${baseClasses} ${

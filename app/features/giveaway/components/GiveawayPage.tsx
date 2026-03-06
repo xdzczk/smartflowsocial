@@ -1,4 +1,4 @@
-import { useParams } from "@remix-run/react";
+import { Link, useParams } from "@remix-run/react";
 
 import { type CombinedContent, type PostData } from "~/features/posts/server";
 import { PostDetailsModal } from "~/features/posts/ui";
@@ -12,13 +12,13 @@ import GiveawayRandomizer from "./GiveawayRandomizer";
 import { GiveawayTable } from "./GiveawayTable";
 
 export default function GiveawayPage() {
-  // Use TanStack Query for data fetching with caching
   const {
     posts: typedPosts,
     stats: typedStats,
     relatedEvents,
     user,
     queueTypes,
+    giveaways,
   } = useGiveawayData();
   const params = useParams();
 
@@ -43,6 +43,39 @@ export default function GiveawayPage() {
 
   return (
     <div>
+      <div className="border-border bg-card mb-4 flex items-center justify-between rounded-lg border p-4">
+        <div>
+          <h2 className="text-foreground font-semibold">Your giveaways</h2>
+          <p className="text-muted-foreground text-sm">
+            Create a giveaway, preview winners, then lock and pay out.
+          </p>
+        </div>
+        <Link
+          to="/dashboard/giveaway/new"
+          className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm"
+        >
+          New giveaway
+        </Link>
+      </div>
+      {giveaways.length > 0 ? (
+        <ul className="border-border bg-muted/20 mb-4 rounded-lg border p-3">
+          {giveaways.map((g) => (
+            <li key={g.id} className="flex items-center justify-between py-1">
+              <Link
+                to={`/dashboard/giveaway/${g.id}`}
+                className="text-foreground hover:underline"
+              >
+                {g.id.slice(0, 8)}… · {g.status} · {g.winnerCount} winner
+                {g.winnerCount !== 1 ? "s" : ""}
+              </Link>
+              <span className="text-muted-foreground text-xs">
+                {new Date(g.createdAt).toLocaleDateString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       <GiveawayRandomizer relatedEvents={relatedEvents} />
 
       <GiveawayFilters

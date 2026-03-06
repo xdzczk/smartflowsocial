@@ -1,10 +1,13 @@
 /**
  * Date range filter for Scheduled and Published pages.
  * Renders From/To date inputs and an optional Clear action.
+ * When userDateFormat is provided, shows the selected range in that format.
  */
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+
+import { formatDateOnlyForDisplay } from "../utils/date-range-filter";
 
 import {
   DESKTOP_FILTER_INPUT_CLASS,
@@ -18,6 +21,8 @@ export interface DateRangeValue {
   to: string;
 }
 
+export type DateFormatKey = "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
+
 interface DateRangeFilterProps {
   dateRange: DateRangeValue;
   onDateRangeChange: (range: DateRangeValue) => void;
@@ -28,6 +33,8 @@ interface DateRangeFilterProps {
   minDate?: string;
   /** Optional max date (YYYY-MM-DD). E.g. for Published: only allow past and today. */
   maxDate?: string;
+  /** When set, the selected range is shown in this date format (e.g. 06/03/2026). */
+  userDateFormat?: DateFormatKey | null;
 }
 
 export function DateRangeFilter({
@@ -37,8 +44,13 @@ export function DateRangeFilter({
   className,
   minDate,
   maxDate,
+  userDateFormat,
 }: DateRangeFilterProps) {
   const hasActiveFilter = Boolean(dateRange.from || dateRange.to);
+  const formattedRangeLabel =
+    userDateFormat && dateRange.from && dateRange.to
+      ? `${formatDateOnlyForDisplay(dateRange.from, userDateFormat)} – ${formatDateOnlyForDisplay(dateRange.to, userDateFormat)}`
+      : null;
 
   const clampDate = (value: string): string => {
     if (!value) return value;
@@ -95,6 +107,11 @@ export function DateRangeFilter({
           max={maxDate}
         />
       </div>
+      {formattedRangeLabel ? (
+        <span className="text-muted-foreground text-xs" aria-hidden>
+          {formattedRangeLabel}
+        </span>
+      ) : null}
       {hasActiveFilter ? (
         <button
           type="button"

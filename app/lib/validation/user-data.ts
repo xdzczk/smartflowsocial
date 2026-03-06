@@ -16,6 +16,7 @@ export interface UserData {
   picture?: string | null;
   timezone?: string | null;
   timeFormat?: "12h" | "24h" | null;
+  dateFormat?: string | null;
   scheduleInterval?: number[];
   userRelays?: string[];
   showHashTagsinPosts?: boolean;
@@ -42,6 +43,7 @@ export function validateUserData(value: unknown): UserData | null {
       pubKey: validated.npub, // npub is the public key
       timezone: validated.timezone ?? null,
       timeFormat: validated.timeFormat ?? null,
+      dateFormat: validated.dateFormat ?? null,
       scheduleInterval: Array.isArray(validated.scheduleInterval)
         ? validated.scheduleInterval
             .map((item) => {

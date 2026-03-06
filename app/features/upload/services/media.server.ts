@@ -46,19 +46,30 @@ export async function createMediaIfMissing(data: CreateMediaParams) {
 
 export async function listMediaForUser(
   userId: string,
-  options: { skip: number; take: number }
+  options: { skip: number; take: number; provider?: string }
 ) {
+  const where: { userId: string; provider?: string } = { userId };
+  if (options.provider) {
+    where.provider = options.provider;
+  }
   return prisma.media.findMany({
-    where: { userId },
+    where,
     orderBy: { createdAt: "desc" },
     skip: options.skip,
     take: options.take,
   });
 }
 
-export async function getMediaAggregateForUser(userId: string) {
+export async function getMediaAggregateForUser(
+  userId: string,
+  options?: { provider?: string }
+) {
+  const where: { userId: string; provider?: string } = { userId };
+  if (options?.provider) {
+    where.provider = options.provider;
+  }
   return prisma.media.aggregate({
-    where: { userId },
+    where,
     _count: { id: true },
     _sum: { size: true },
   });

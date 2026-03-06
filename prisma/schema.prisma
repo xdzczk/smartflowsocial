@@ -70,6 +70,8 @@ model User {
   mediaAssets        MediaAsset[]
   blossomReservationBatches BlossomReservationBatch[]
   blossomUploadUsagePeriods BlossomUploadUsagePeriod[]
+  giveaways                Giveaway[]
+  giveawayPresets          GiveawayPreset[]
 
   @@index([parentNpub])
 }
@@ -136,6 +138,67 @@ model HashTagPreset {
   longFormPosts LongFormPost[]
   posts         Post[]
   queueTypes    QueueType[]
+
+  @@unique([userId, name])
+}
+
+enum GiveawayScopeType {
+  PERIOD
+  SINGLE_POST
+  QUEUE
+}
+
+enum GiveawayStatus {
+  DRAFT
+  PREVIEWED
+  LOCKED
+  PAID_OUT
+  CANCELLED
+}
+
+enum GiveawaySelectionMode {
+  UNIQUE_USER
+  WEIGHTED_BY_ENGAGEMENT
+}
+
+model Giveaway {
+  id                 String               @id @default(cuid())
+  userId             String
+  scopeType          GiveawayScopeType
+  scopeReference     Json                 // { days?, postId?, queueId?, from?, to? }
+  eligibilityFrom    DateTime?
+  eligibilityTo      DateTime?
+  engagementTypes    Json                 // string[]: REACTION, REPOST, COMMENT, ZAP
+  winnerCount        Int
+  selectionMode      GiveawaySelectionMode @default(UNIQUE_USER)
+  engagementWeights  Json?                // { REPOST: 2, COMMENT: 1.5, ... }
+  filters            Json?                // { excludeMuted, excludeBlocked, minAccountAgeDays?, minFollowers? }
+  status             GiveawayStatus       @default(DRAFT)
+  lockedAt           DateTime?
+  winnerSnapshot     Json?                // [{ pubkey, npub, qualifyingActions }] at lock
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+model GiveawayPreset {
+  id                String                 @id @default(cuid())
+  userId            String
+  name              String
+  scopeType         GiveawayScopeType
+  scopeReference    Json                   // { days?, postId?, queueId?, from?, to? }
+  engagementTypes   Json                   // string[]
+  winnerCount       Int
+  selectionMode     GiveawaySelectionMode  @default(UNIQUE_USER)
+  engagementWeights Json?
+  filters           Json?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name])
 }

@@ -516,6 +516,8 @@ export interface UserData {
   name?: string | null;
   picture?: string | null;
   timezone?: string | null;
+  timeFormat?: string | null;
+  dateFormat?: string | null;
   scheduleInterval?: number[];
   userRelays?: string[];
   showHashTagsinPosts?: boolean;

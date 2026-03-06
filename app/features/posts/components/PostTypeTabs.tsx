@@ -1,4 +1,9 @@
-import { Link, useNavigate, useParams } from "@remix-run/react";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 
 import {
   Select,
@@ -46,10 +51,17 @@ export default function PostTypeTabs({
   forceDropdown = false,
 }: PostTypeTabsProps) {
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const useDropdown = isMobile || forceDropdown;
   const queueParam = params["queueType"] ? `/${params["queueType"]}` : "";
+
+  const searchWithTab = (tab: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tab);
+    return next.toString();
+  };
 
   const getTabClasses = (isActive: boolean) =>
     `whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
@@ -68,7 +80,7 @@ export default function PostTypeTabs({
   const wrapperClass = inRow ? "flex-1 min-w-0" : "border-border mb-6 border-b";
 
   const handleMobileTabChange = (value: string) => {
-    navigate(`${basePath}${queueParam}?tab=${value}`);
+    navigate(`${basePath}${queueParam}?${searchWithTab(value)}`);
   };
 
   if (useDropdown) {
@@ -111,32 +123,32 @@ export default function PostTypeTabs({
     <div className={wrapperClass}>
       <nav className="-mb-px flex space-x-6" aria-label="Post Types">
         <Link
-          to={`${basePath}${queueParam}?tab=all`}
+          to={`${basePath}${queueParam}?${searchWithTab("all")}`}
           className={getTabClasses(currentTab === "all")}
         >
           All ({allCount})
         </Link>
         <Link
-          to={`${basePath}${queueParam}?tab=posts`}
+          to={`${basePath}${queueParam}?${searchWithTab("posts")}`}
           className={getTabClasses(currentTab === "posts")}
         >
           Posts ({postsCount})
         </Link>
         <Link
-          to={`${basePath}${queueParam}?tab=longform`}
+          to={`${basePath}${queueParam}?${searchWithTab("longform")}`}
           className={getTabClasses(currentTab === "longform")}
         >
           Articles ({longformCount})
         </Link>
         <Link
-          to={`${basePath}${queueParam}?tab=reposts`}
+          to={`${basePath}${queueParam}?${searchWithTab("reposts")}`}
           className={getTabClasses(currentTab === "reposts")}
         >
           Reposts ({repostsCount})
         </Link>
         {showBulkTab ? (
           <Link
-            to={`${basePath}${queueParam}?tab=bulk`}
+            to={`${basePath}${queueParam}?${searchWithTab("bulk")}`}
             className={getTabClasses(currentTab === "bulk")}
           >
             Bulk ({bulkCount})
