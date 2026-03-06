@@ -98,6 +98,11 @@ const PROFILE_MISMATCH_MESSAGE =
 /** Survives remount when app is backgrounded on mobile. */
 const PENDING_NIP46_STORAGE_KEY = "__smartflow_pending_nip46_uri_v1";
 
+/** Delay before resuming NIP-46 after visibility return; longer on mobile to let WebSockets stabilize. */
+function getResumeDelayMs(): number {
+  return isMobile() ? 800 : 500;
+}
+
 /** Official Primal logo for "Login with Primal" button. */
 function PrimalLogoIcon({ className }: { className?: string }) {
   return (
@@ -935,6 +940,14 @@ export default function NostrLoginPanel() {
           nostrConnectUri &&
           (state === "awaiting_profile_selection" || state === "failed")
         ) {
+          if (typeof navigator !== "undefined" && !navigator.onLine) {
+            setError({
+              code: "UNKNOWN",
+              message: "You're offline. Check your connection and try again.",
+            });
+            setState("failed");
+            return;
+          }
           // Immediately clear error and show retrying state to avoid showing error briefly
           if (state === "failed") {
             setError(null);
@@ -954,7 +967,7 @@ export default function NostrLoginPanel() {
                 void initNip46Ref.current?.(0);
               }
             }
-          }, 500);
+          }, getResumeDelayMs());
         }
       }
     };
@@ -988,6 +1001,16 @@ export default function NostrLoginPanel() {
         // The user might be in the middle of approving in the signer app
         return;
       }
+
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setError({
+          code: "UNKNOWN",
+          message: "You're offline. Check your connection and try again.",
+        });
+        setState("failed");
+        return;
+      }
+
       const startTime = Date.now();
 
       // Check circuit breaker (only on first attempt, retries are allowed)
@@ -1520,7 +1543,7 @@ export default function NostrLoginPanel() {
     if (!pending) return;
     const t = setTimeout(() => {
       void resumeNip46Ref.current?.();
-    }, 500);
+    }, getResumeDelayMs());
     return () => clearTimeout(t);
   }, [getPendingNostrConnect]);
 

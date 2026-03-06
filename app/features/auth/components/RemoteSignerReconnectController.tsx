@@ -493,6 +493,11 @@ export function RemoteSignerReconnectDialog(props: {
       ) {
         return;
       }
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setError("You're offline. Check your connection and try again.");
+        setState("failed");
+        return;
+      }
       inFlightExistingReconnectRef.current = true;
       const runId = ++existingReconnectRunIdRef.current;
       if (trigger === "foreground_resume") {
@@ -776,6 +781,11 @@ export function RemoteSignerReconnectDialog(props: {
         connectionView?.config.type !== "nip46" ||
         connectionView.config.method !== "bunker_input"
       ) {
+        return;
+      }
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setError("You're offline. Check your connection and try again.");
+        setState("failed");
         return;
       }
       inFlightExistingReconnectRef.current = true;

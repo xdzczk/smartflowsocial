@@ -174,16 +174,24 @@ SmartFlowSocial.
 
 **Solutions:**
 
-1. **Wait for Auto-Resume:**
+1. **Proactive connection handling:**
+   - The app **proactively** closes the NIP-46 connection when the tab or app is backgrounded on
+     **mobile** only (desktop keeps the connection alive while the tab is hidden), and when the
+     browser freezes the page where supported.
+   - When you return, the next action may trigger a quick reconnection instead of failing once. The
+     first **sign** after resume should then work without showing "Remote signer did not respond"
+     first.
+
+2. **Wait for Auto-Resume:**
    - After returning from signer app, wait 1-2 seconds
    - Connection will automatically resume
    - Progress indicator shows connection status
 
-2. **Manual Retry:**
+3. **Manual Retry:**
    - If auto-resume doesn't work, click "Try again"
    - Connection will restart with fresh WebSocket
 
-3. **Use Bunker Input:**
+4. **Use Bunker Input:**
    - Bunker input method is more stable on mobile
    - Copy bunker:// URI before starting connection
    - Paste when ready to connect
@@ -202,6 +210,8 @@ SmartFlowSocial.
 
 **Solutions:**
 
+- The app proactively closes the NIP-46 connection when the tab or app is backgrounded, so when you
+  return the next action triggers a quick reconnection instead of failing once.
 - App automatically handles iOS-specific issues
 - Wait for automatic retry (1-2 seconds)
 - Connection cooldown period helps stabilize WebSockets
@@ -216,6 +226,8 @@ SmartFlowSocial.
 
 **Solutions:**
 
+- The app proactively closes the NIP-46 connection when backgrounded; when you return, the next
+  action may briefly show reconnecting, then work normally.
 - Same as iOS but issues occur less frequently
 - Automatic retry handles most cases
 
@@ -229,6 +241,10 @@ SmartFlowSocial.
 
 **Solutions:**
 
+- On desktop, the NIP-46 connection is **not** closed when you switch tabs; returning to the tab
+  lets you post without reconnecting.
+- On browsers that support it (Chrome, Edge, Android), the app also reacts to the Page Lifecycle
+  "freeze" event to improve reliability when the tab is suspended.
 - Check firewall settings
 - Ensure WebSocket connections are allowed
 - Verify extension is installed and enabled
@@ -338,6 +354,9 @@ Enable browser console to see:
 - App lifecycle events (backgrounding/foregrounding)
 
 The app automatically retries with exponential backoff, and subsequent attempts usually succeed.
+After returning from background, the first attempt may briefly show reconnecting—this is expected.
+The first **sign** after resume should then work without showing "Remote signer did not respond"
+first.
 
 ### How do I switch between signer profiles?
 

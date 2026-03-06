@@ -87,6 +87,9 @@ let signerGeneration = 0;
 /** True while async close() from teardown is in progress; makes repeated teardown calls idempotent. */
 let teardownInProgress = false;
 
+/** Cleanup function from initVisibilityHandler; used by teardownVisibilityHandler() for tests. */
+let visibilityHandlerCleanup: (() => void) | null = null;
+
 /** Minimum time between verification checks (avoid prompting signer app too often). */
 const VERIFY_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
 /** Treat connection as "fresh" for this long after it was established. */
@@ -234,7 +237,7 @@ export function teardownActiveNip46Signer(): void {
 
 /**
  * Teardown cached NIP-46 signer and set needsReprobe so the next getActiveSigner()
- * creates a fresh signer and runs a short probe. Call on app resume (visibility/focus/pageshow).
+ * creates a fresh signer and runs a short probe. Call on app hide/freeze (and on desktop after hidden duration).
  */
 function _teardownNip46SignerAndSetNeedsReprobe(): void {
   const config = getActiveSignerConfig();
@@ -244,15 +247,18 @@ function _teardownNip46SignerAndSetNeedsReprobe(): void {
 }
 
 /**
- * Initialize page visibility detection: on resume we only mark wasHidden = false.
- * We do not clear the cached signer on visibility change; cache is only cleared
- * when sign() actually fails (in the adapter), so returning users keep their signer.
+ * Initialize page visibility and lifecycle detection. On hide we tear down NIP-46 only on mobile
+ * (desktop browsers keep WebSockets alive when the tab is hidden). On freeze (when supported) we tear down immediately.
+ * On resume we run throttled tryBackgroundReconnect unless teardown is in progress.
+ * Safari/iOS does not fire freeze; visibility hidden covers mobile.
+ * Returns a cleanup function that removes all listeners.
  */
-function initVisibilityHandler(): void {
-  if (typeof document === "undefined") return;
+function initVisibilityHandler(): () => void {
+  if (typeof document === "undefined") return () => {};
 
   const onResume = () => {
     wasHidden = false;
+    if (teardownInProgress) return;
     const now = Date.now();
     if (now - lastVisibilityReconnectAt >= VISIBILITY_RECONNECT_THROTTLE_MS) {
       lastVisibilityReconnectAt = now;
@@ -265,6 +271,16 @@ function initVisibilityHandler(): void {
     if (document.hidden) {
       wasHidden = true;
       _lastVisibilityChangeTime = now;
+      if (isMobile()) {
+        const config = getActiveSignerConfig();
+        if (config?.type === NIP46_SIGNER_TYPE && cachedSigner) {
+          debugSignerManagerTrace(
+            "NIP-46 signer torn down due to visibility hidden (mobile)"
+          );
+          _teardownNip46SignerAndSetNeedsReprobe();
+        }
+      }
+      // Desktop: do not tear down on visibility hidden; browsers keep WebSockets alive.
     } else if (wasHidden) {
       onResume();
     }
@@ -278,15 +294,52 @@ function initVisibilityHandler(): void {
     if (wasHidden) onResume();
   };
 
+  const handleFreeze = () => {
+    const config = getActiveSignerConfig();
+    if (config?.type === NIP46_SIGNER_TYPE && cachedSigner) {
+      debugSignerManagerTrace("NIP-46 signer torn down due to page freeze");
+      _teardownNip46SignerAndSetNeedsReprobe();
+    }
+  };
+
   document.addEventListener("visibilitychange", handleVisibilityChange);
   window.addEventListener("focus", handleFocus);
   window.addEventListener("pageshow", handlePageShow);
   window.addEventListener("online", onResume);
+
+  const supportsFreezeResume =
+    typeof document !== "undefined" && "onfreeze" in document;
+  if (supportsFreezeResume) {
+    document.addEventListener("freeze", handleFreeze);
+    document.addEventListener("resume", onResume);
+  }
+
+  return () => {
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    window.removeEventListener("focus", handleFocus);
+    window.removeEventListener("pageshow", handlePageShow);
+    window.removeEventListener("online", onResume);
+    if (supportsFreezeResume) {
+      document.removeEventListener("freeze", handleFreeze);
+      document.removeEventListener("resume", onResume);
+    }
+  };
+}
+
+/**
+ * Remove all visibility/lifecycle listeners.
+ * Used by tests or future module teardown. Safe to call multiple times.
+ */
+export function teardownVisibilityHandler(): void {
+  if (visibilityHandlerCleanup) {
+    visibilityHandlerCleanup();
+    visibilityHandlerCleanup = null;
+  }
 }
 
 // Initialize visibility handler when module loads
 if (typeof window !== "undefined") {
-  initVisibilityHandler();
+  visibilityHandlerCleanup = initVisibilityHandler();
 }
 
 function bytesToHex(bytes: Uint8Array): string {
