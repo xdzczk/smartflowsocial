@@ -18,9 +18,10 @@ type NostrEventWithMetadata = NostrEvent & {
 };
 
 /**
- * Decode event ID from various formats (nevent1, note1, hex)
+ * Decode event ID from various formats (nevent1, note1, nostr:nevent1, nostr:note1, hex).
+ * Exported for use in global search when looking up own posts by event id.
  */
-function decodeEventId(eventInput: string): string {
+export function decodeEventId(eventInput: string): string {
   const eventId = eventInput.trim();
 
   // Check if input is in nevent1 format
@@ -50,6 +51,15 @@ function decodeEventId(eventInput: string): string {
       }
     } catch (_e) {
       throw new Error("Invalid note1 format");
+    }
+  } else if (eventId.startsWith("nostr:note1")) {
+    try {
+      const decoded = nip19.decode(eventId.replace("nostr:", ""));
+      if (decoded.type === "note") {
+        return decoded.data;
+      }
+    } catch (_e) {
+      throw new Error("Invalid nostr:note1 format");
     }
   }
 

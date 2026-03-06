@@ -24,6 +24,18 @@ interface GlobalSearchBarProps {
   className?: string;
 }
 
+/** Detect if query looks like a Nostr event link (note1, nevent1, nostr:..., or 64-char hex) so we can search immediately on paste */
+function isNostrEventLink(query: string): boolean {
+  const t = query.trim();
+  return (
+    t.startsWith("note1") ||
+    t.startsWith("nevent1") ||
+    t.startsWith("nostr:note1") ||
+    t.startsWith("nostr:nevent1") ||
+    /^[0-9a-f]{64}$/i.test(t)
+  );
+}
+
 /** Derive search priority context from current path so results from current page appear first */
 function getSearchPriorityContext(pathname: string): string | null {
   if (pathname.startsWith("/dashboard/scheduled")) return "scheduled";
@@ -83,6 +95,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
       setIsSearching(true);
     });
 
+    const debounceMs = isNostrEventLink(trimmedQuery) ? 0 : 500;
     const timeoutId = setTimeout(() => {
       // Only proceed if this is still the current request and query hasn't changed
       if (
@@ -93,7 +106,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
         if (priorityContext) params.set("context", priorityContext);
         fetcher.load(`/api/global-search?${params.toString()}`);
       }
-    }, 500); // Increased debounce from 300ms to 500ms to reduce server load
+    }, debounceMs);
 
     return () => {
       clearTimeout(timeoutId);
@@ -195,7 +208,10 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
       open={showResults}
       onOpenChange={(open) => {
         if (!open) {
-          handleClose();
+          // Only close the dropdown; do not clear query. Clearing happens on X button or Escape.
+          // This prevents the input from being cleared when user clicks inside it to move the cursor
+          // (Radix treats that as outside the portaled content and fires onOpenChange(false)).
+          setIsOpen(false);
         }
       }}
     >
@@ -214,7 +230,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
               value={query}
               onChange={handleInputChange}
               onFocus={handleInputFocus}
-              placeholder="Search posts, drafts, templates... (⌘K)"
+              placeholder="Search or paste Nostr link (note1, nevent1, nostr:...) (⌘K)"
               className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-1.5 pr-8 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pr-10 sm:pl-10"
             />
             {query ? (

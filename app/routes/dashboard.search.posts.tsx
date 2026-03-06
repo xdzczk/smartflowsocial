@@ -18,7 +18,30 @@ import {
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadSearchData(userId);
-  return json(data);
+  const url = new URL(request.url);
+  const q = url.searchParams.get("q")?.trim();
+
+  if (!q) {
+    return json(data);
+  }
+
+  try {
+    const searchResult = await handleSearchAction(q);
+    return json({
+      ...data,
+      searchResult: {
+        event: searchResult.event,
+        stats: searchResult.stats,
+      },
+    });
+  } catch (error) {
+    return json({
+      ...data,
+      searchResult: {
+        error: error instanceof Error ? error.message : "Failed to load post",
+      },
+    });
+  }
 }
 
 export const action = withCSRFProtection(

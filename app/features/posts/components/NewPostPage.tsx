@@ -133,6 +133,7 @@ export default function NewPostPage() {
           queueTypes?: unknown;
           hashTagPresets?: unknown;
           relays?: unknown;
+          scheduleIntervals?: unknown;
         })
       : {};
 
@@ -153,6 +154,22 @@ export default function NewPostPage() {
         .map((p) => parseHashTagPreset(p))
         .filter((p): p is HashTagPreset => p !== null)
     : [];
+
+  const scheduleIntervalsRaw =
+    "scheduleIntervals" in loaderData &&
+    Array.isArray(loaderData.scheduleIntervals)
+      ? loaderData.scheduleIntervals
+      : [];
+  const scheduleIntervals: number[] = scheduleIntervalsRaw
+    .map((s: unknown) => {
+      if (typeof s === "number" && !Number.isNaN(s)) return s;
+      if (typeof s === "string") {
+        const n = parseFloat(s);
+        return Number.isNaN(n) ? null : n;
+      }
+      return null;
+    })
+    .filter((n): n is number => n !== null);
 
   const {
     selectedHashTagPresetId,
@@ -348,6 +365,9 @@ export default function NewPostPage() {
         key={`newpost-composer-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
         queueTypes={typedQueueTypes}
         hashTagPresets={typedHashTagPresets}
+        scheduleIntervals={
+          scheduleIntervals.length > 0 ? scheduleIntervals : undefined
+        }
         onQueueTypeChange={handleQueueTypeChange}
         selectedHashTagPresetId={selectedHashTagPresetId}
         onHashtagPresetChange={(presetId: string | null, _hashtags: string) =>

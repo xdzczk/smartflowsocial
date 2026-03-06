@@ -11,7 +11,7 @@ import {
 import { prisma } from "~/lib/prisma.server";
 import { getUserSubscription } from "~/models/payment.server";
 
-import { handleSearchEvent } from "./search-action.server";
+import { decodeEventId, handleSearchEvent } from "./search-action.server";
 
 export interface GlobalSearchResult {
   type:
@@ -578,15 +578,134 @@ async function searchTemplates(
 }
 
 /**
- * Check if query looks like a Nostr event ID (note1, nevent1, or hex)
+ * Check if query looks like a Nostr event ID (note1, nevent1, nostr:note1, nostr:nevent1, or 64-char hex)
  */
 function isNostrEventId(query: string): boolean {
   const trimmed = query.trim();
   return (
     trimmed.startsWith("note1") ||
     trimmed.startsWith("nevent1") ||
+    trimmed.startsWith("nostr:note1") ||
+    trimmed.startsWith("nostr:nevent1") ||
     /^[0-9a-f]{64}$/i.test(trimmed)
   );
+}
+
+/**
+ * Find the user's own posts (Post or LongFormPost) by Nostr event ID (hex).
+ * Returns results so the user can jump to their published/scheduled/draft from a pasted event link.
+ */
+async function findOwnPostsByNostrEventId(
+  userId: string,
+  eventIdHex: string
+): Promise<GlobalSearchResult[]> {
+  const results: GlobalSearchResult[] = [];
+
+  const [post, longform] = await Promise.all([
+    prisma.post.findFirst({
+      where: { userId, nostrEventId: eventIdHex },
+      select: {
+        id: true,
+        caption: true,
+        content: true,
+        currentState: true,
+        createdAt: true,
+        updatedAt: true,
+        publishedAt: true,
+        scheduledAtUtc: true,
+      },
+    }),
+    prisma.longFormPost.findFirst({
+      where: { userId, nostrEventId: eventIdHex },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        summary: true,
+        currentState: true,
+        createdAt: true,
+        updatedAt: true,
+        publishedAt: true,
+        scheduledAtUtc: true,
+      },
+    }),
+  ]);
+
+  const toType = (state: string): GlobalSearchResult["type"] => {
+    switch (state) {
+      case "PUBLISHED":
+        return "published";
+      case "SCHEDULED":
+        return "scheduled";
+      case "PUBLISHING":
+        return "publishing";
+      case "DRAFT":
+        return "draft";
+      case "FAILED":
+        return "failed";
+      case "CANCELLED":
+        return "cancelled";
+      default:
+        return "published";
+    }
+  };
+
+  if (post) {
+    const type = toType(post.currentState);
+    const url =
+      type === "published"
+        ? `/dashboard/published?postId=${post.id}`
+        : type === "scheduled" || type === "publishing"
+          ? `/dashboard/scheduled?postId=${post.id}`
+          : type === "draft"
+            ? `/dashboard/drafts/edit/${post.id}`
+            : type === "failed" || type === "cancelled"
+              ? `/dashboard/scheduled`
+              : `/dashboard/published?postId=${post.id}`;
+    results.push({
+      type,
+      id: post.id,
+      caption: post.caption ?? undefined,
+      content: post.content ?? undefined,
+      status: post.currentState,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      publishedAt: post.publishedAt?.toISOString(),
+      scheduledAt: post.scheduledAtUtc?.toISOString(),
+      url,
+      isLongform: false,
+    });
+  }
+
+  if (longform) {
+    const type = toType(longform.currentState);
+    const url =
+      type === "published"
+        ? `/dashboard/published?postId=${longform.id}&tab=longform`
+        : type === "scheduled" || type === "publishing"
+          ? `/dashboard/scheduled?postId=${longform.id}`
+          : type === "draft"
+            ? `/dashboard/drafts/longform/edit/${longform.id}`
+            : type === "failed" || type === "cancelled"
+              ? `/dashboard/scheduled`
+              : `/dashboard/published?postId=${longform.id}&tab=longform`;
+    results.push({
+      type,
+      id: longform.id,
+      title: longform.title ?? undefined,
+      content: longform.content ?? undefined,
+      summary: longform.summary ?? undefined,
+      status: longform.currentState,
+      createdAt: longform.createdAt.toISOString(),
+      updatedAt: longform.updatedAt.toISOString(),
+      publishedAt: longform.publishedAt?.toISOString(),
+      scheduledAt: longform.scheduledAtUtc?.toISOString(),
+      url,
+      isLongform: true,
+    });
+  }
+
+  return results;
 }
 
 /**
@@ -759,29 +878,39 @@ export async function performGlobalSearch(
 
   const trimmedQuery = query.trim();
 
-  // If it looks like a Nostr event ID, search external posts
+  // If it looks like a Nostr event ID, look up own posts by event id and optionally fetch external event
   const isEventId = isNostrEventId(trimmedQuery);
   let externalResults: GlobalSearchResult[] = [];
 
   if (isEventId) {
+    let eventIdHex: string | null = null;
     try {
-      const externalResult = await handleSearchEvent(trimmedQuery);
-      // handleSearchEvent always returns an object with event property if successful
-      externalResults = [
-        {
-          type: "external",
-          id: externalResult.event.id,
-          content: externalResult.event.content,
-          status: "external",
-          createdAt: new Date(
-            externalResult.event.created_at * 1000
-          ).toISOString(),
-          url: `/dashboard/search/posts?q=${encodeURIComponent(trimmedQuery)}`,
-        },
-      ];
+      eventIdHex = decodeEventId(trimmedQuery);
     } catch {
-      // If external search fails, continue with local search
+      // Invalid format; will only try external search below
     }
+
+    const [ownPosts, externalResult] = await Promise.all([
+      eventIdHex ? findOwnPostsByNostrEventId(userId, eventIdHex) : [],
+      (async () => {
+        try {
+          const data = await handleSearchEvent(trimmedQuery);
+          return {
+            type: "external" as const,
+            id: data.event.id,
+            content: data.event.content,
+            status: "external",
+            createdAt: new Date(data.event.created_at * 1000).toISOString(),
+            url: `/dashboard/search/posts?q=${encodeURIComponent(trimmedQuery)}`,
+          };
+        } catch {
+          return null;
+        }
+      })(),
+    ]);
+
+    if (ownPosts.length > 0) externalResults.push(...ownPosts);
+    if (externalResult) externalResults.push(externalResult);
   }
 
   // Search all local content types and features in parallel

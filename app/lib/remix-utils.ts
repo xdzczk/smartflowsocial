@@ -57,25 +57,45 @@ function isUser(user: unknown): user is User {
   );
 }
 
+/**
+ * Returns the current user from loader data. Prefers root loader; falls back to
+ * dashboard (or other parent) loader so the profile badge and user-dependent UI
+ * render correctly after sign-in and on first paint when root data may not be
+ * ready yet (e.g. streaming or hydration).
+ */
 export function useOptionalUser(): User | undefined {
-  const data = useMatchesData("root");
+  const matches = useMatches();
 
-  // Type guard: ensure data is not an error type and has user property
-  if (
-    !data ||
-    typeof data !== "object" ||
-    "error" in data ||
-    !("user" in data)
-  ) {
-    return undefined;
-  }
+  return useMemo(() => {
+    // Prefer root loader (canonical source)
+    const rootData = matches.find((m) => m.id === "root")?.data;
+    if (
+      rootData &&
+      typeof rootData === "object" &&
+      !(rootData instanceof Error) &&
+      !("error" in rootData) &&
+      "user" in rootData
+    ) {
+      const u = (rootData as Record<string, unknown>)["user"];
+      if (isUser(u)) return u;
+    }
 
-  const user = data["user"];
-  if (!isUser(user)) {
-    return undefined;
-  }
-
-  return user;
+    // Fallback: user from dashboard (or any parent) when under /dashboard so
+    // header badge and composer have user before root data is available
+    for (const match of matches) {
+      const data = match.data;
+      if (
+        data &&
+        typeof data === "object" &&
+        !(data instanceof Error) &&
+        "user" in data
+      ) {
+        const u = (data as Record<string, unknown>)["user"];
+        if (isUser(u)) return u;
+      }
+    }
+    return;
+  }, [matches]);
 }
 
 export function useUser(): User {

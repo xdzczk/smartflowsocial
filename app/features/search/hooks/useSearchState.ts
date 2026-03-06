@@ -36,12 +36,20 @@ interface SearchResultData {
 interface UseSearchStateProps {
   user: User | null;
   fetcherData: SearchResultData | null;
+  /** Result from loader when page was opened with ?q= (post viewer mode) */
+  loaderSearchResult?: SearchResultData | null;
 }
 
 /**
- * Custom hook for managing search state and operations
+ * Custom hook for managing search state and operations.
+ * When loaderSearchResult is provided (e.g. from ?q= in URL), it is used as the
+ * current result when there is no fetcher data (post viewer mode).
  */
-export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
+export function useSearchState({
+  user,
+  fetcherData,
+  loaderSearchResult = null,
+}: UseSearchStateProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const [toast, setToast] = useState<{
@@ -56,9 +64,10 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
   });
 
   const isSearching = fetcher.state !== "idle";
-  const searchResult = fetcherData?.event;
-  const searchStats = fetcherData?.stats;
-  const searchError = fetcherData?.error;
+  const dataSource = fetcherData ?? loaderSearchResult;
+  const searchResult = dataSource?.event;
+  const searchStats = dataSource?.stats;
+  const searchError = dataSource?.error;
 
   useEffect(() => {
     if (searchError) {
@@ -140,8 +149,8 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
 
   const clearSearch = () => {
     form.reset({ eventInput: "" });
-    // Clear fetcher data by resetting the form
-    fetcher.load("/dashboard/search/posts");
+    // Navigate to same page without q so loader returns no result (post viewer → empty state)
+    navigate("/dashboard/search/posts", { replace: true });
   };
 
   return {

@@ -261,6 +261,8 @@ export interface UnifiedComposerProps {
   initialScheduledFor?: string | null;
   /** When true, skip restoring local browser draft and clear any cached snapshot. */
   skipLocalDraftRestore?: boolean;
+  /** Schedule intervals from route loader (e.g. new post). Used when user is not yet available so time chips show on first paint. */
+  scheduleIntervals?: number[];
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -280,6 +282,7 @@ export function UnifiedComposer({
   mode = "default",
   editTemplateContext = null,
   initialTemplateName = null,
+  scheduleIntervals: scheduleIntervalsProp,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
@@ -414,7 +417,8 @@ export function UnifiedComposer({
     scheduleIntervals,
   } = usePostScheduling({
     queueTypes,
-    scheduleIntervals: user?.scheduleInterval as number[] | undefined,
+    scheduleIntervals:
+      scheduleIntervalsProp ?? (user?.scheduleInterval as number[] | undefined),
     userTimezone: user?.timezone ?? undefined,
     initialQueue: initialDraft?.queueType ?? "unassigned",
     onQueueTypeChange,

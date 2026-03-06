@@ -1,160 +1,121 @@
-import { Link, useParams } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 
-import { type CombinedContent, type PostData } from "~/features/posts/server";
-import { PostDetailsModal } from "~/features/posts/ui";
+function scopeSummary(scopeType: string): string {
+  switch (scopeType) {
+    case "PERIOD":
+      return "Period";
+    case "SINGLE_POST":
+      return "Single post";
+    case "QUEUE":
+      return "Queue";
+    default:
+      return scopeType;
+  }
+}
 
-import { useGiveawayData } from "../hooks/useGiveawayQuery";
-import { useGiveawayState } from "../hooks/useGiveawayState";
-
-import { GiveawayFilters } from "./GiveawayFilters";
-import { GiveawayQueueTabs } from "./GiveawayQueueTabs";
-import GiveawayRandomizer from "./GiveawayRandomizer";
-import { GiveawayTable } from "./GiveawayTable";
+function statusVariant(
+  status: string
+): "default" | "secondary" | "outline" | "destructive" {
+  switch (status) {
+    case "DRAFT":
+      return "secondary";
+    case "PREVIEWED":
+      return "outline";
+    case "LOCKED":
+      return "default";
+    case "PAID_OUT":
+      return "secondary";
+    case "CANCELLED":
+      return "destructive";
+    default:
+      return "secondary";
+  }
+}
 
 export default function GiveawayPage() {
-  const {
-    posts: typedPosts,
-    stats: typedStats,
-    relatedEvents,
-    user,
-    queueTypes,
-    giveaways,
-  } = useGiveawayData();
-  const params = useParams();
-
-  const {
-    sortConfig,
-    searchTerm,
-    selectedPost,
-    dateRange,
-    filteredPosts,
-    requestSort,
-    setSearchTerm,
-    setSelectedPost,
-    setDateRange,
-    clearFilters,
-  } = useGiveawayState({
-    posts: typedPosts.map((post) => ({
-      ...post,
-      publishedAt: post.publishedAt instanceof Date ? post.publishedAt : null,
-      totalEngagement: post.totalEngagement ?? 0,
-    })),
-  });
+  const { giveaways } = useLoaderData<{
+    giveaways: Array<{
+      id: string;
+      status: string;
+      scopeType: string;
+      winnerCount: number;
+      createdAt: string;
+    }>;
+  }>();
 
   return (
-    <div>
-      <div className="border-border bg-card mb-4 flex items-center justify-between rounded-lg border p-4">
+    <div className="space-y-6">
+      <div className="border-border bg-card flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-foreground font-semibold">Your giveaways</h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground mt-1 text-sm">
             Create a giveaway, preview winners, then lock and pay out.
+          </p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Create → Preview winners → Lock → Zap and mark paid out
           </p>
         </div>
         <Link
           to="/dashboard/giveaway/new"
-          className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 rounded-md px-4 py-2 text-sm font-medium transition-colors"
         >
           New giveaway
         </Link>
       </div>
+
       {giveaways.length > 0 ? (
-        <ul className="border-border bg-muted/20 mb-4 rounded-lg border p-3">
+        <ul className="border-border bg-card divide-border divide-y rounded-lg border">
           {giveaways.map((g) => (
-            <li key={g.id} className="flex items-center justify-between py-1">
+            <li key={g.id}>
               <Link
                 to={`/dashboard/giveaway/${g.id}`}
-                className="text-foreground hover:underline"
+                className="hover:bg-muted/50 flex flex-col gap-2 p-4 transition-colors sm:flex-row sm:items-center sm:justify-between"
               >
-                {g.id.slice(0, 8)}… · {g.status} · {g.winnerCount} winner
-                {g.winnerCount !== 1 ? "s" : ""}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        statusVariant(g.status) === "destructive"
+                          ? "bg-destructive/10 text-destructive"
+                          : statusVariant(g.status) === "outline"
+                            ? "bg-muted text-muted-foreground"
+                            : statusVariant(g.status) === "default"
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {g.status.replace("_", " ")}
+                    </span>
+                    <span className="text-muted-foreground text-sm">
+                      {scopeSummary(g.scopeType)} · {g.winnerCount} winner
+                      {g.winnerCount !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <span className="text-muted-foreground mt-0.5 block text-xs">
+                    Created {new Date(g.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <span className="text-primary text-sm font-medium">Open →</span>
               </Link>
-              <span className="text-muted-foreground text-xs">
-                {new Date(g.createdAt).toLocaleDateString()}
-              </span>
             </li>
           ))}
         </ul>
-      ) : null}
-
-      <GiveawayRandomizer relatedEvents={relatedEvents} />
-
-      <GiveawayFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-        onClearFilters={clearFilters}
-      />
-
-      <GiveawayQueueTabs
-        queueTypes={queueTypes}
-        currentQueueType={params["queueType"]}
-      />
-
-      <GiveawayTable
-        posts={
-          filteredPosts as Array<{
-            id: string;
-            caption?: string | null;
-            publishedAt: Date | null;
-            fileUrl: string[];
-            signedEvent?: { id: string } | null;
-            queueType?: { name: string; color?: string | null } | null;
-            repost?: boolean;
-            isQuotedPost?: boolean;
-            totalEngagement: number;
-            stats?: {
-              likes: number;
-              replies: number;
-              mentions: number;
-              reposts: number;
-              zaps: number;
-              satszapped: number;
-            };
-            [key: string]: unknown;
-          }>
-        }
-        sortConfig={sortConfig}
-        onRequestSort={requestSort}
-        onPostClick={(post) => {
-          // Find the original PostData from posts array
-          const originalPostData = typedPosts.find((p) => p.id === post.id);
-          if (originalPostData) {
-            // Convert to the Post format expected by useGiveawayState
-            setSelectedPost({
-              ...originalPostData,
-              publishedAt:
-                originalPostData.publishedAt instanceof Date
-                  ? originalPostData.publishedAt
-                  : null,
-              totalEngagement: originalPostData.totalEngagement ?? 0,
-            });
-          }
-        }}
-      />
-
-      {selectedPost ? (
-        <PostDetailsModal
-          post={selectedPost as unknown as PostData | CombinedContent}
-          stats={
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for serialized data
-            selectedPost &&
-            typeof selectedPost === "object" &&
-            "signedEvent" in selectedPost &&
-            selectedPost["signedEvent"] &&
-            typeof selectedPost["signedEvent"] === "object" &&
-            "id" in selectedPost["signedEvent"] &&
-            typeof selectedPost["signedEvent"]["id"] === "string"
-              ? typedStats[selectedPost["signedEvent"]["id"]]
-              : undefined
-          }
-          onClose={() => setSelectedPost(null)}
-          showStats={true}
-          showSignedEvent={true}
-          type="published"
-          userTimezone={user?.timezone ?? undefined}
-        />
-      ) : null}
+      ) : (
+        <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+          <p className="text-foreground font-medium">No giveaways yet</p>
+          <p className="text-muted-foreground mt-1 max-w-sm text-sm">
+            Create your first giveaway to pick winners from your post
+            engagement. You’ll set the scope, preview winners, then lock and pay
+            out.
+          </p>
+          <Link
+            to="/dashboard/giveaway/new"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 mt-4 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+          >
+            New giveaway
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
