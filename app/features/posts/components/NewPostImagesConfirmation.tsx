@@ -22,7 +22,7 @@ import {
   toUnixTimestamp,
 } from "~/lib/temporal";
 interface PreparedEventData {
-  /** MediaPost: object with fileUrl/caption/etc. ImagePost: plain string URL. */
+  /** Object: fileUrl/caption/etc. Or plain string URL. */
   content:
     | {
         fileUrl: string;
@@ -399,6 +399,7 @@ export default function NewPostImagesConfirmation({
               onClick={() => {
                 setIsSigning(false);
                 setSigningError(null);
+                void tryBackgroundReconnect();
               }}
             >
               Cancel

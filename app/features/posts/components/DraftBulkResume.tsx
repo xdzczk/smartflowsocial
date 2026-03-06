@@ -699,6 +699,7 @@ export default function DraftBulkResume({
               onClick={() => {
                 setIsSubmitting(false);
                 setSigningError(null);
+                void tryBackgroundReconnect();
               }}
             >
               Cancel

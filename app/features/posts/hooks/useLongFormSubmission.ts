@@ -316,6 +316,7 @@ export function useLongFormSubmission({
   const cancelSigning = () => {
     setIsSigning(false);
     setSigningError(null);
+    void tryBackgroundReconnect();
   };
 
   return { handleSchedule, isSigning, signingError, cancelSigning };

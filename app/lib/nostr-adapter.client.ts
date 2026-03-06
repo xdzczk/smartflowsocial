@@ -283,7 +283,14 @@ async function handleConfiguredSignerError(
     });
     markActiveRemoteConnectionStale(err);
     if (shouldClear) {
+      const activeConnection = getActiveConnection();
       await resetSignerCacheBestEffort();
+      if (activeConnection) {
+        recordConnectionEvent(activeConnection.id, {
+          type: "disconnected",
+          reason: "Connection lost or sign failed",
+        });
+      }
     }
     if (err instanceof RemoteSignerTimeoutError) {
       emitRemoteSignerTimeoutEvent({ message: err.message });

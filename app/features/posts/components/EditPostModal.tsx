@@ -807,6 +807,7 @@ export function EditPostModal({
                     onClick={() => {
                       setIsSigningEvent(false);
                       setSigningError(null);
+                      void tryBackgroundReconnect();
                     }}
                   >
                     Cancel

@@ -477,6 +477,7 @@ export function SimpleRescheduleModal({
                   onClick={() => {
                     setIsSigningEvent(false);
                     setSigningError(null);
+                    void tryBackgroundReconnect();
                   }}
                 >
                   Cancel

@@ -69,6 +69,8 @@ let inFlightSignerConfigJson: string | null = null;
 let signerResolutionRequestId = 0;
 let wasHidden = false;
 let _lastVisibilityChangeTime = 0; // Reserved for future metrics/debugging
+/** Last time we ran tryBackgroundReconnect on app visible; throttle visibility reconnects. */
+let lastVisibilityReconnectAt = 0;
 let connectionCooldownUntil = 0;
 let healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 let connectionEstablishedAt: number | null = null;
@@ -95,10 +97,13 @@ const RECENT_ACTIVITY_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 const RECONNECT_GRACE_MS = 15 * 60 * 1000; // 15 minutes
 /** Verification timeout when returning cached signer (e.g. before sign). Give signer app time to respond after app switch. */
 const VERIFY_BEFORE_USE_TIMEOUT_MS = 12_000; // 12 seconds
+/** Min time between tryBackgroundReconnect() runs when app becomes visible. */
+const VISIBILITY_RECONNECT_THROTTLE_MS = 30_000; // 30 seconds
 const RELAY_SYNC_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
 
 /** Timeout for probe on first use after resume (plan: 2–5s). */
 const PROBE_ON_FIRST_USE_TIMEOUT_MS = 4000;
+const PROBE_FAILED_AFTER_RESUME_MESSAGE = "Probe failed after resume";
 
 /** Default relays for relay-union when connecting (same as reconnect modal). */
 const DEFAULT_RELAYS_CONNECT = [
@@ -205,6 +210,13 @@ function clearCachedNip46Signer(): void {
       teardownInProgress = false;
     }
   }
+  const connection = getActiveConnection();
+  if (connection?.config.type === NIP46_SIGNER_TYPE) {
+    recordConnectionEvent(connection.id, {
+      type: "disconnected",
+      reason: "Connection closed",
+    });
+  }
   resetCachedSigner();
   stopHealthCheckMonitoring();
   connectionEstablishedAt = null;
@@ -241,6 +253,11 @@ function initVisibilityHandler(): void {
 
   const onResume = () => {
     wasHidden = false;
+    const now = Date.now();
+    if (now - lastVisibilityReconnectAt >= VISIBILITY_RECONNECT_THROTTLE_MS) {
+      lastVisibilityReconnectAt = now;
+      void tryBackgroundReconnect();
+    }
   };
 
   const handleVisibilityChange = () => {
@@ -776,7 +793,11 @@ export async function getActiveSigner(
               recordConnectionEvent(activeConnection.id, {
                 type: "health_check",
                 healthy: false,
-                error: "Probe failed after resume",
+                error: PROBE_FAILED_AFTER_RESUME_MESSAGE,
+              });
+              recordConnectionEvent(activeConnection.id, {
+                type: "disconnected",
+                reason: PROBE_FAILED_AFTER_RESUME_MESSAGE,
               });
             }
             if (typeof window !== "undefined") {
@@ -943,7 +964,11 @@ export async function getActiveSigner(
             recordConnectionEvent(activeConnection.id, {
               type: "health_check",
               healthy: false,
-              error: "Probe failed after resume",
+              error: PROBE_FAILED_AFTER_RESUME_MESSAGE,
+            });
+            recordConnectionEvent(activeConnection.id, {
+              type: "disconnected",
+              reason: PROBE_FAILED_AFTER_RESUME_MESSAGE,
             });
           }
           if (typeof window !== "undefined") {
@@ -1092,7 +1117,7 @@ export async function getActiveSigner(
         _lastActivityTime = null;
         needsReprobe = true;
 
-        // Update connection with error
+        // Update connection with error and end session (channel died).
         const activeConnection = getActiveConnection();
         if (activeConnection) {
           const fullErrorMessage =
@@ -1100,6 +1125,10 @@ export async function getActiveSigner(
           recordConnectionEvent(activeConnection.id, {
             type: "error",
             error: fullErrorMessage,
+          });
+          recordConnectionEvent(activeConnection.id, {
+            type: "disconnected",
+            reason: fullErrorMessage,
           });
         }
 

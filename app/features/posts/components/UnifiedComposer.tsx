@@ -1240,6 +1240,7 @@ export function UnifiedComposer({
               onClick={() => {
                 setIsSigning(false);
                 setSigningError(null);
+                void tryBackgroundReconnect();
               }}
             >
               Cancel
