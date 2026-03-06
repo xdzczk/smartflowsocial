@@ -12,6 +12,11 @@ import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { NostrEvent } from "~/features/nostr/types";
 import {
+  clearStoredReferralContext,
+  getStoredReferralContext,
+  setStoredReferralContext,
+} from "~/features/referral/referral-context.client";
+import {
   INLINE_ICON_SIZE_CLASS,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
@@ -425,6 +430,22 @@ export default function NostrLoginPanel() {
     if (!raw) return null;
     // Accept either hex or npub for convenience
     return nostrAdapter.decodeNpub(raw) ?? raw;
+  }, [location.search]);
+
+  // Referral: store valid ?ref= in localStorage as fallback when cookie cannot be set (e.g. cross-site)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get("ref")?.trim();
+    if (!ref) return;
+    const hex = nostrAdapter.decodeNpub(ref);
+    if (hex?.length !== 64) return;
+    const npub = nostrAdapter.encodeNpub(hex);
+    if (npub) {
+      setStoredReferralContext({
+        referrer_npub: npub,
+        created_at: new Date().toISOString(),
+      });
+    }
   }, [location.search]);
 
   const [state, setState] = useState<LoginState>("signer_selection");
@@ -1595,18 +1616,31 @@ export default function NostrLoginPanel() {
       ]);
 
       setState("verifying_signature");
+      const verifyBody: {
+        challengeId: string;
+        pubkey: string;
+        signedEvent: unknown;
+        referral_context?: string;
+      } = {
+        challengeId: challenge.challengeId,
+        pubkey,
+        signedEvent,
+      };
+      const referralContext = getStoredReferralContext();
+      if (referralContext) {
+        verifyBody.referral_context = JSON.stringify(referralContext);
+      }
       const verify = await postJson<{
         success: true;
         redirectTo: string;
         sessionId: string;
         pubkey: string;
-      }>("/auth/nostr/verify", {
-        challengeId: challenge.challengeId,
-        pubkey,
-        signedEvent,
-      });
+      }>("/auth/nostr/verify", verifyBody);
 
       setState("authenticated");
+      if (referralContext) {
+        clearStoredReferralContext();
+      }
       // Transfer NIP-46 signer to the manager so publish/schedule can use it without opening a second connection
       if (signer.type === "nip46") {
         cacheNip46SignerFromLogin(signer);

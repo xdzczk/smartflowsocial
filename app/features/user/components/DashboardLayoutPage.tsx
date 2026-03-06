@@ -15,6 +15,7 @@ import {
   getUserPlanType,
   isSubscriptionPeriodExpired,
 } from "~/features/payments";
+import { ReferredByBanner } from "~/features/referral/components/ReferredByBanner";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
@@ -50,7 +51,7 @@ function isCalendarPath(pathname: string): boolean {
 
 export function DashboardLayoutPage(): ReactNode {
   const location = useLocation();
-  const { currentSubscription, pendingParentUsers } =
+  const { currentSubscription, pendingParentUsers, referredBy } =
     useLoaderData<typeof dashboardLoader>();
   const planType = getUserPlanType(currentSubscription ?? null);
   const isFreePlan = planType === "free";
@@ -101,6 +102,12 @@ export function DashboardLayoutPage(): ReactNode {
           id="page-content"
           className="flex min-h-0 max-w-full min-w-0 flex-1 flex-col overflow-x-hidden pt-16"
         >
+          {referredBy != null ? (
+            <ReferredByBanner
+              referrerNpub={referredBy.referrerNpub}
+              referrerDisplayName={referredBy.referrerDisplayName ?? null}
+            />
+          ) : null}
           {pendingParentUsers.length > 0 ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
               {pendingParentUsers.map((p) => {

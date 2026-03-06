@@ -21,6 +21,7 @@ import {
   QueueTypesSettings,
   ScheduleIntervalsSettings,
 } from "~/features/posts/ui";
+import { ReferralSettings } from "~/features/referral/components/ReferralSettings";
 import {
   BlossomMediaMirrorsSettings,
   UploadProviderSettings,
@@ -273,7 +274,11 @@ function getSettingsDefaultTab(input: {
   hasAccountsAccess: boolean;
 }): string {
   const requested = input.tabParam ?? "general";
-  if (input.isChild && requested === "subscription") return "general";
+  if (
+    input.isChild &&
+    (requested === "subscription" || requested === "referral")
+  )
+    return "general";
   if (!input.hasAccountsAccess && requested === "accounts") return "general";
   return requested;
 }
@@ -327,6 +332,16 @@ export default function SettingsPage() {
     timeFormat?: unknown;
     dateFormat?: unknown;
     primarySignerProfile?: unknown;
+    referral?: {
+      referralLink: string;
+      commissionRatePercent: number;
+      totalEarnedSats: number;
+      paidSats: number;
+      pendingSats: number;
+      failedSats: number;
+      payoutDestination: string | null;
+      payoutDestinationType: string | null;
+    };
   };
 
   const {
@@ -363,6 +378,7 @@ export default function SettingsPage() {
     timeFormat: timeFormatRaw,
     dateFormat: dateFormatRaw,
     primarySignerProfile: primarySignerProfileRaw,
+    referral: referralRaw,
   } = data;
 
   const queueTypes = parseQueueTypes(queueTypesRaw);
@@ -384,6 +400,31 @@ export default function SettingsPage() {
     isChild: isChildBool,
     hasAccountsAccess: hasAccountsAccessBool,
   });
+
+  const referral =
+    referralRaw &&
+    typeof referralRaw === "object" &&
+    "referralLink" in referralRaw
+      ? (referralRaw as {
+          referralLink: string;
+          commissionRatePercent: number;
+          totalEarnedSats: number;
+          paidSats: number;
+          pendingSats: number;
+          failedSats: number;
+          payoutDestination: string | null;
+          payoutDestinationType: string | null;
+        })
+      : {
+          referralLink: "",
+          commissionRatePercent: 20,
+          totalEarnedSats: 0,
+          paidSats: 0,
+          pendingSats: 0,
+          failedSats: 0,
+          payoutDestination: null as string | null,
+          payoutDestinationType: null as string | null,
+        };
 
   const timezoneValue = asStringOrNull(timezone);
   const relaysList = asStringArray(relays);
@@ -457,6 +498,14 @@ export default function SettingsPage() {
               className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
             >
               Subscription
+            </TabsTrigger>
+          ) : null}
+          {!isChildBool ? (
+            <TabsTrigger
+              value="referral"
+              className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
+            >
+              Referral
             </TabsTrigger>
           ) : null}
         </TabsList>
@@ -585,6 +634,23 @@ export default function SettingsPage() {
                 nwcEnabled={nwcEnabledValue}
                 maskedNwcString={maskedNwcStringValue}
                 nwcLastUsed={nwcLastUsedValue}
+              />
+            </div>
+          </TabsContent>
+        ) : null}
+
+        {!isChildBool ? (
+          <TabsContent value="referral" className="mt-6 min-w-0 space-y-6">
+            <div className="grid min-w-0 gap-6 md:grid-cols-1">
+              <ReferralSettings
+                referralLink={referral.referralLink}
+                commissionRatePercent={referral.commissionRatePercent}
+                totalEarnedSats={referral.totalEarnedSats}
+                paidSats={referral.paidSats}
+                pendingSats={referral.pendingSats}
+                failedSats={referral.failedSats}
+                payoutDestination={referral.payoutDestination}
+                payoutDestinationType={referral.payoutDestinationType}
               />
             </div>
           </TabsContent>

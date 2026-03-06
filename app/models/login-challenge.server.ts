@@ -1,3 +1,5 @@
+import { bindReferralIfEligible } from "~/features/referral/referral-binding.server";
+import type { ReferralContext } from "~/features/referral/referral-context.server";
 import { ValidationError } from "~/lib/errors";
 import { prisma } from "~/lib/prisma.server";
 
@@ -40,6 +42,7 @@ export async function consumeChallengeAndCreateSession(input: {
   profileJson: string;
   sessionTtlMs: number;
   profileRefreshTtlMs: number;
+  referralContext?: ReferralContext | null;
 }): Promise<string> {
   return prisma.$transaction(async (tx) => {
     const consume = await tx.loginChallenge.updateMany({
@@ -105,6 +108,13 @@ export async function consumeChallengeAndCreateSession(input: {
           }
           return created;
         })();
+
+    // Referral binding: at first auth, persist referral if context exists and not self-referral
+    await bindReferralIfEligible(
+      tx,
+      input.pubkey,
+      input.referralContext ?? null
+    );
 
     const expiresAt = new Date(Date.now() + input.sessionTtlMs);
     const created = await tx.session.create({

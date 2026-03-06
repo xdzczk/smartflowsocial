@@ -8,6 +8,11 @@ import {
 } from "~/features/auth";
 import { getCompleteProfile } from "~/features/auth/profile.server";
 import { getSession, sessionStorage } from "~/features/auth/session.server";
+import {
+  getReferralContextFromCookie,
+  parseReferralContext,
+  referralContextCookie,
+} from "~/features/referral/referral-context.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { AuthenticationError, ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
@@ -71,6 +76,7 @@ export const action = withCSRFProtection(
               pubkey?: unknown;
               signedEvent?: unknown;
               redirectTo?: unknown;
+              referral_context?: unknown;
             })
           : {};
 
@@ -151,17 +157,41 @@ export const action = withCSRFProtection(
       const { nostrProfile } = await getCompleteProfile({ npub: pubkey });
       const profileJson = JSON.stringify(nostrProfile);
 
-      // Consume challenge (race-safe) + create session in a transaction
+      // Referral context: cookie first, then body (client may send from localStorage)
+      let referralContext = await getReferralContextFromCookie(request);
+      if (!referralContext && body.referral_context != null) {
+        const fromBody =
+          typeof body.referral_context === "string"
+            ? parseReferralContext(body.referral_context)
+            : null;
+        if (fromBody) referralContext = fromBody;
+      }
+
+      // Consume challenge (race-safe) + create session + referral binding in a transaction
       const sessionId = await consumeLoginChallengeAndCreateSession({
         challengeId,
         pubkey,
         profileJson,
         sessionTtlMs: SESSION_TTL_MS,
         profileRefreshTtlMs: PROFILE_REFRESH_TTL_MS,
+        referralContext: referralContext ?? undefined,
       });
 
       const cookieSession = await getSession(request);
       cookieSession.set("sessionId", sessionId);
+
+      const sessionCookie = await sessionStorage.commitSession(cookieSession, {
+        maxAge: Math.floor(SESSION_TTL_MS / 1000),
+      });
+
+      // Clear referral context cookie after binding (post-binding cleanup)
+      const clearReferralCookie = await referralContextCookie.serialize("", {
+        maxAge: 0,
+      });
+
+      const headers = new Headers();
+      headers.append("Set-Cookie", sessionCookie);
+      headers.append("Set-Cookie", clearReferralCookie);
 
       return json(
         {
@@ -170,13 +200,7 @@ export const action = withCSRFProtection(
           sessionId,
           pubkey,
         },
-        {
-          headers: {
-            "Set-Cookie": await sessionStorage.commitSession(cookieSession, {
-              maxAge: Math.floor(SESSION_TTL_MS / 1000),
-            }),
-          },
-        }
+        { headers }
       );
     } catch (error) {
       const { handleActionError } = await import("~/lib/error-handler.server");

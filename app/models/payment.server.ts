@@ -21,6 +21,7 @@ import type {
   InvoiceResponse,
   CreateRenewalPaymentParams,
 } from "~/features/payments/types";
+import { recordReferralEarningIfAny } from "~/features/referral/record-referral-earning.server";
 import { logError } from "~/lib/error-logger.server";
 import { ExternalServiceError } from "~/lib/errors";
 import { prisma } from "~/lib/prisma.server";
@@ -332,6 +333,15 @@ export async function handlePaymentCompleted(
 
     // Update user subscription
     await updateUserSubscription(userId, planId, paymentId);
+
+    // Referral: record earning if payer was referred (idempotent)
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      select: { amount: true },
+    });
+    if (payment?.amount != null && payment.amount > 0) {
+      await recordReferralEarningIfAny(userId, paymentId, payment.amount);
+    }
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,

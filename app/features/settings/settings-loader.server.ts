@@ -10,6 +10,7 @@ import type {
   QueueType,
   ScheduleConfig,
 } from "~/features/posts/types";
+import { getReferralSettingsData } from "~/features/referral/referral-settings.server";
 import type { ManagedRelay } from "~/features/relays/relay-resolution.server";
 import { getEffectiveWriteRelays } from "~/features/relays/relay-resolution.server";
 import {
@@ -144,6 +145,16 @@ export interface SettingsLoaderData {
   timeFormat: "12h" | "24h";
   dateFormat: "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
   primarySignerProfile: PrimarySignerProfile | null;
+  referral: {
+    referralLink: string;
+    commissionRatePercent: number;
+    totalEarnedSats: number;
+    paidSats: number;
+    pendingSats: number;
+    failedSats: number;
+    payoutDestination: string | null;
+    payoutDestinationType: string | null;
+  };
 }
 
 /**
@@ -284,11 +295,12 @@ export async function loadSettingsData(
     };
   }
 
-  // Get subscription information
-  const [subscription, allPlans, paymentHistory] = await Promise.all([
+  // Get subscription and referral information
+  const [subscription, allPlans, paymentHistory, referral] = await Promise.all([
     getUserSubscription(userId),
     getAllPlans(),
     getUserPaymentHistory(userId),
+    getReferralSettingsData(myNpub),
   ]);
 
   return {
@@ -382,5 +394,6 @@ export async function loadSettingsData(
     primarySignerProfile: isPrimarySignerProfile(primarySignerProfile)
       ? primarySignerProfile
       : null,
+    referral,
   };
 }

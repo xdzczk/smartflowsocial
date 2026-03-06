@@ -848,3 +848,46 @@ model BlossomUploadUsagePeriod {
   @@unique([userId, periodStartUtc])
   @@index([periodStartUtc])
 }
+
+// ---------------------------------------------------------------------------
+// Referral system (operator-aligned revenue sharing)
+// ---------------------------------------------------------------------------
+
+model Referral {
+  referrerNpub  String   @map("referrer_npub")
+  referredNpub  String   @id @map("referred_npub")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([referrerNpub])
+}
+
+enum ReferralEarningStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model ReferralEarning {
+  id                    String               @id @default(cuid())
+  referrerNpub           String               @map("referrer_npub")
+  referredNpub           String               @map("referred_npub")
+  paymentId             String               @map("payment_id")
+  amountPaidSats        Int                  @map("amount_paid_sats")
+  commissionSats        Int                  @map("commission_sats")
+  status                ReferralEarningStatus @default(PENDING)
+  payoutAttemptCount    Int                  @default(0) @map("payout_attempt_count")
+  payoutFailureReason   String?              @map("payout_failure_reason")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  paidAt                DateTime?            @map("paid_at")
+
+  @@unique([referrerNpub, paymentId])
+  @@index([referrerNpub])
+  @@index([status])
+}
+
+model ReferrerPayoutConfig {
+  referrerNpub           String   @id @map("referrer_npub")
+  payoutDestination      String   @map("payout_destination")
+  payoutDestinationType  String?  @map("payout_destination_type") // ln_address | lnurl | invoice_on_demand
+  updatedAt              DateTime @updatedAt @map("updated_at")
+}

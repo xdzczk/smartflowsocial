@@ -9,6 +9,7 @@ import {
   requireActiveSubscription,
   ensureUserHasFreePlan,
 } from "~/features/payments";
+import { getReferredByForNpub } from "~/features/referral/get-referred-by.server";
 import {
   DashboardLayoutPage,
   loadDashboardData,
@@ -29,17 +30,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Pending parent link requests for this user (as child)
   const pendingParentNpubs = await getPendingParentRequestsForChild(user.id);
 
-  const dashboardData = await loadDashboardData(
-    user.id,
-    user.npub,
-    pendingParentNpubs
-  );
+  const [dashboardData, referredBy] = await Promise.all([
+    loadDashboardData(user.id, user.npub, pendingParentNpubs),
+    getReferredByForNpub(user.npub),
+  ]);
 
   return json({
     userId: user.id,
     user: subscriptionData.user,
     currentSubscription: subscriptionData.currentSubscription,
     ...dashboardData,
+    referredBy: referredBy ?? undefined,
   });
 };
 

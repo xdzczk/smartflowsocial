@@ -1,3 +1,4 @@
+import type { ReferralContext } from "~/features/referral/referral-context.server";
 import {
   consumeChallengeAndCreateSession,
   createLoginChallenge,
@@ -22,6 +23,7 @@ export async function consumeLoginChallengeAndCreateSession(input: {
   profileJson: string;
   sessionTtlMs: number;
   profileRefreshTtlMs: number;
+  referralContext?: ReferralContext | null;
 }): Promise<string> {
   return await consumeChallengeAndCreateSession(input);
 }

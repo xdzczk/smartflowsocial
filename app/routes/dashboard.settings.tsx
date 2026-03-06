@@ -55,6 +55,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
       filterMuted: false,
       hidePostsFromLowTrustUsers: false,
       primarySignerProfile: null,
+      referral: {
+        referralLink: "",
+        commissionRatePercent: 20,
+        totalEarnedSats: 0,
+        paidSats: 0,
+        pendingSats: 0,
+        failedSats: 0,
+        payoutDestination: null,
+        payoutDestinationType: null,
+      },
     });
   }
 }

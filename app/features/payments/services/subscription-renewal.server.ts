@@ -6,6 +6,7 @@
 import { NWCClient } from "@getalby/sdk";
 import { LN, USD } from "@getalby/sdk/lnclient";
 
+import { recordReferralEarningIfAny } from "~/features/referral/record-referral-earning.server";
 import {
   disableUserAccount,
   getEnabledUsersWithSubscriptions,
@@ -260,6 +261,14 @@ async function completePaidRenewal(
   });
 
   await updateUserSubscription(user.id, planId, paymentId);
+
+  if (invoiceDetails.amountSats > 0) {
+    await recordReferralEarningIfAny(
+      user.id,
+      paymentId,
+      invoiceDetails.amountSats
+    );
+  }
 
   await sendRenewalNotification(
     user.npub,
