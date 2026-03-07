@@ -392,6 +392,7 @@ export const engagementLoaderDataSchema = z.object({
   groupedNotifications: z.object({
     replies: z.array(groupedNotificationSchema),
     quotes: z.array(groupedNotificationSchema),
+    mentions: z.array(groupedNotificationSchema),
   }),
   trustScores: z.record(z.string(), z.number()),
   engagementItemStates: z
@@ -403,6 +404,7 @@ export const engagementLoaderDataSchema = z.object({
       })
     )
     .optional(),
+  lastCheckedAt: z.string().nullable(),
 });
 
 export type EngagementLoaderData = z.infer<typeof engagementLoaderDataSchema>;

@@ -47,9 +47,8 @@ interface RecyclablesTableProps {
   onPostClick: (post: Post) => void;
   onToggleSelect: (postId: string) => void;
   onToggleSelectAll: () => void;
-  deleteFetcher: ReturnType<typeof useFetcher>;
-  individualRepostFetcher: ReturnType<typeof useFetcher>;
-  bulkDeleteFetcher: ReturnType<typeof useFetcher>;
+  /** Fetcher used for recycle (single or bulk). Submits _action=bulkRepost with postIds. */
+  recycleFetcher: ReturnType<typeof useFetcher>;
 }
 
 interface SortableHeaderProps {
@@ -90,9 +89,7 @@ export function RecyclablesTable({
   onPostClick,
   onToggleSelect,
   onToggleSelectAll,
-  deleteFetcher,
-  individualRepostFetcher,
-  bulkDeleteFetcher,
+  recycleFetcher,
 }: RecyclablesTableProps) {
   const { formatDate } = useFormattedDate();
 
@@ -280,57 +277,26 @@ export function RecyclablesTable({
                     >
                       View Note
                     </Link>
-                    <individualRepostFetcher.Form
+                    <recycleFetcher.Form
                       method="post"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <input type="hidden" name="postId" value={post.id} />
-                      <input type="hidden" name="_action" value="repost" />
+                      <input type="hidden" name="_action" value="bulkRepost" />
+                      <input
+                        type="hidden"
+                        name="postIds"
+                        value={JSON.stringify([post.id])}
+                      />
                       <button
                         type="submit"
-                        disabled={individualRepostFetcher.state !== "idle"}
+                        disabled={recycleFetcher.state !== "idle"}
                         className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
                       >
-                        {individualRepostFetcher.state !== "idle"
-                          ? "Reposting..."
-                          : "Repost"}
+                        {recycleFetcher.state !== "idle"
+                          ? "Recycling..."
+                          : "Recycle"}
                       </button>
-                    </individualRepostFetcher.Form>
-                    <individualRepostFetcher.Form
-                      method="post"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input type="hidden" name="postId" value={post.id} />
-                      <input type="hidden" name="_action" value="quote" />
-                      <button
-                        type="submit"
-                        disabled={individualRepostFetcher.state !== "idle"}
-                        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-                      >
-                        {individualRepostFetcher.state !== "idle"
-                          ? "Quoting..."
-                          : "Quote Post"}
-                      </button>
-                    </individualRepostFetcher.Form>
-                    <deleteFetcher.Form
-                      method="post"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input type="hidden" name="postId" value={post.id} />
-                      <input type="hidden" name="_action" value="delete" />
-                      <button
-                        type="submit"
-                        disabled={
-                          deleteFetcher.state !== "idle" ||
-                          bulkDeleteFetcher.state !== "idle"
-                        }
-                        className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-                      >
-                        {deleteFetcher.state !== "idle"
-                          ? "Deleting..."
-                          : "Delete"}
-                      </button>
-                    </deleteFetcher.Form>
+                    </recycleFetcher.Form>
                   </div>
                 </td>
               </tr>

@@ -34,9 +34,10 @@ function getEmptyEngagementLoaderData(): EngagementLoaderData {
       zaps: [],
       quotes: [],
     },
-    groupedNotifications: { replies: [], quotes: [] },
+    groupedNotifications: { replies: [], quotes: [], mentions: [] },
     trustScores: {},
     engagementItemStates: {},
+    lastCheckedAt: null,
   };
 }
 
@@ -260,9 +261,11 @@ export function useEngagementInfiniteData() {
     const emptyGroupedNotifications: {
       replies: GroupedNotification[];
       quotes: GroupedNotification[];
+      mentions: GroupedNotification[];
     } = {
       replies: [],
       quotes: [],
+      mentions: [],
     };
     const emptyTrustScores: Record<string, number> = {};
     const emptyEngagementItemStates: Record<
@@ -276,6 +279,7 @@ export function useEngagementInfiniteData() {
       groupedNotifications: emptyGroupedNotifications,
       trustScores: emptyTrustScores,
       engagementItemStates: emptyEngagementItemStates,
+      lastCheckedAt: null,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -290,6 +294,7 @@ export function useEngagementInfiniteData() {
   const allStats: Record<string, EventStats> = {};
   const allReplies: GroupedNotification[] = [];
   const allQuotes: GroupedNotification[] = [];
+  const allMentions: GroupedNotification[] = [];
   const allTrustScores: Record<string, number> = {};
   const allEngagementItemStates: Record<
     string,
@@ -318,8 +323,13 @@ export function useEngagementInfiniteData() {
       ? (pageData.groupedNotifications
           .quotes as unknown as GroupedNotification[])
       : [];
+    const mentions = Array.isArray(pageData.groupedNotifications.mentions)
+      ? (pageData.groupedNotifications
+          .mentions as unknown as GroupedNotification[])
+      : [];
     allReplies.push(...replies);
     allQuotes.push(...quotes);
+    allMentions.push(...mentions);
 
     // Aggregate trust scores
     if (
@@ -349,6 +359,12 @@ export function useEngagementInfiniteData() {
 
   // Get user from last page
   const lastPage = allPages[allPages.length - 1];
+  const firstPage = allPages[0];
+  const lastCheckedAt =
+    firstPage && typeof firstPage.lastCheckedAt === "string"
+      ? firstPage.lastCheckedAt
+      : null;
+
   if (!lastPage) {
     return {
       posts: allPosts,
@@ -357,9 +373,11 @@ export function useEngagementInfiniteData() {
       groupedNotifications: {
         replies: allReplies,
         quotes: allQuotes,
+        mentions: allMentions,
       },
       trustScores: allTrustScores,
       engagementItemStates: allEngagementItemStates,
+      lastCheckedAt: null,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -382,9 +400,11 @@ export function useEngagementInfiniteData() {
     groupedNotifications: {
       replies: allReplies,
       quotes: allQuotes,
+      mentions: allMentions,
     },
     trustScores: allTrustScores,
     engagementItemStates: allEngagementItemStates,
+    lastCheckedAt,
     isLoading,
     isFetchingNextPage,
     hasNextPage,

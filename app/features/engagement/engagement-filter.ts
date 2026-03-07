@@ -1,8 +1,7 @@
 /**
- * Shared filter helpers for engagement feed (inbox tab, flat list).
+ * Shared filter helpers for engagement feed (unread filter, flat list).
  */
 
-import type { InboxTab } from "./hooks/useEngagementState";
 import type { GroupedNotification } from "./types";
 
 export type EngagementItemStateMap = Record<
@@ -10,24 +9,21 @@ export type EngagementItemStateMap = Record<
   { state: "handled"; repliedFromApp: boolean }
 >;
 
-export function filterByInboxTab(
+/**
+ * Filter to only notifications newer than lastCheckedAt (time-based unread).
+ * lastCheckedAtMs: timestamp in ms (from lastCheckedAt ISO string), or null for no filter.
+ */
+export function filterByUnreadSince(
   groups: GroupedNotification[],
-  inboxTab: InboxTab,
-  states: EngagementItemStateMap
+  lastCheckedAtMs: number | null
 ): GroupedNotification[] {
-  if (inboxTab === "all") {
-    return groups;
-  }
+  if (lastCheckedAtMs === null) return groups;
   return groups
     .map((group) => ({
       ...group,
-      notifications: group.notifications.filter((n) => {
-        const s = n.eventId ? states[n.eventId] : undefined;
-        if (inboxTab === "unread") return !s;
-        if (inboxTab === "handled") return !!s;
-        // inboxTab is "replied" here (all already returned at top of function)
-        return !!s?.repliedFromApp;
-      }),
+      notifications: group.notifications.filter(
+        (n) => n.createdAt * 1000 > lastCheckedAtMs
+      ),
     }))
     .filter((group) => group.notifications.length > 0);
 }

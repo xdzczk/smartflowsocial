@@ -12,6 +12,7 @@ import {
   excludeWinnerAndRedraw,
   lockGiveaway,
   cancelGiveaway,
+  deleteGiveaway,
   markGiveawayPaidOut,
   updateGiveaway,
 } from "~/features/giveaway";
@@ -144,6 +145,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const result = await cancelGiveaway(userId, id);
       if (result.error) return json(result);
       return redirectBack();
+    }
+    case "delete": {
+      const result = await deleteGiveaway(userId, id);
+      if (result.error) return json(result);
+      return redirect("/dashboard/giveaway");
     }
     case "markPaidOut": {
       const result = await markGiveawayPaidOut(userId, id);

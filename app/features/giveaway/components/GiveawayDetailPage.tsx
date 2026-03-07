@@ -128,10 +128,12 @@ export function GiveawayDetailPage({
   }>();
   const lockFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const cancelFetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const paidFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const updateFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const [showEdit, setShowEdit] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Toasts for action results
   useEffect(() => {
@@ -165,6 +167,18 @@ export function GiveawayDetailPage({
       queueMicrotask(() => setShowCancelConfirm(false));
     }
   }, [cancelFetcher.state, cancelFetcher.data]);
+  useEffect(() => {
+    if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
+    if (
+      typeof deleteFetcher.data === "object" &&
+      deleteFetcher.data !== null && // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- fetcher.data type is generic
+      "error" in deleteFetcher.data &&
+      deleteFetcher.data.error
+    ) {
+      toast.error(deleteFetcher.data.error);
+      queueMicrotask(() => setShowDeleteConfirm(false));
+    }
+  }, [deleteFetcher.state, deleteFetcher.data]);
   useEffect(() => {
     if (paidFetcher.state !== "idle" || !paidFetcher.data) return;
     if (
@@ -212,6 +226,49 @@ export function GiveawayDetailPage({
 
       {giveaway.status === "CANCELLED" ? (
         <p className="text-muted-foreground">This giveaway was cancelled.</p>
+      ) : null}
+
+      {giveaway.status === "DRAFT" ||
+      giveaway.status === "PREVIEWED" ||
+      giveaway.status === "CANCELLED" ? (
+        <div className="border-border border-t pt-4">
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-destructive hover:text-destructive/90 text-sm underline"
+          >
+            Delete giveaway
+          </button>
+          <AlertDialog
+            open={showDeleteConfirm}
+            onOpenChange={setShowDeleteConfirm}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete giveaway?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove this giveaway. This cannot be
+                  undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <deleteFetcher.Form method="post">
+                  <input type="hidden" name="intent" value="delete" />
+                  <AlertDialogAction
+                    type="submit"
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={deleteFetcher.state !== "idle"}
+                  >
+                    {deleteFetcher.state !== "idle"
+                      ? "Deleting…"
+                      : "Delete giveaway"}
+                  </AlertDialogAction>
+                </deleteFetcher.Form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       ) : null}
 
       {giveaway.status === "DRAFT" || giveaway.status === "PREVIEWED" ? (

@@ -44,6 +44,7 @@ export {
   excludeWinnerAndRedraw,
   lockGiveaway,
   cancelGiveaway,
+  deleteGiveaway,
   markGiveawayPaidOut,
   updateGiveaway,
 } from "./giveaway-actions.server";

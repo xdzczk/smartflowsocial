@@ -22,10 +22,6 @@ import type { BulkComposerPayload } from "~/features/posts/usePublishedPosts";
 import { loadScheduledRepostDataAsBulkPosts } from "~/features/posts/utils/bulk-composer-data";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 
-import { getTodayInTimezone } from "../utils/date-range-filter";
-
-import { DateRangeFilter } from "./DateRangeFilter";
-import { DateRangeQuickPresets } from "./DateRangeQuickPresets";
 import { EngagementFilter } from "./EngagementFilter";
 import { OlderThanFilter } from "./OlderThanFilter";
 
@@ -47,11 +43,8 @@ export default function RecyclablesPage() {
     fetchNextPage,
   } = useRecyclablesInfiniteData();
   const _params = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-  const dateFrom = searchParams.get("dateFrom") ?? "";
-  const dateTo = searchParams.get("dateTo") ?? "";
-  const dateRange = { from: dateFrom, to: dateTo };
   const engagementType = searchParams.get("engagementType") ?? "";
   const engagementMinStr = searchParams.get("engagementMin") ?? "";
   const engagementMin = Number.isFinite(parseInt(engagementMinStr, 10))
@@ -66,16 +59,6 @@ export default function RecyclablesPage() {
     engagementMin >= 0
       ? { type: engagementType, min: engagementMin }
       : null;
-  const setDateRange = (range: { from: string; to: string }) => {
-    const next = new URLSearchParams(searchParams);
-    if (range.from) next.set("dateFrom", range.from);
-    else next.delete("dateFrom");
-    if (range.to) next.set("dateTo", range.to);
-    else next.delete("dateTo");
-    setSearchParams(next, { replace: true });
-  };
-
-  const userTimezone = user?.timezone?.trim() ?? "UTC";
 
   const [bulkComposer, setBulkComposer] = useState<{
     open: boolean;
@@ -171,7 +154,6 @@ export default function RecyclablesPage() {
     }
   }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const deleteFetcher = useFetcher();
   const bulkDeleteFetcher = useFetcher();
   const repostFetcher = useFetcher<RepostFetcherData>();
   const individualRepostFetcher = useFetcher<IndividualRepostFetcherData>();
@@ -195,10 +177,10 @@ export default function RecyclablesPage() {
     setSelectedPost,
     togglePostSelection,
     toggleSelectAll,
-    handleBulkDelete,
+    handleBulkDelete: _handleBulkDelete,
     handleBulkRepost,
-    handleBulkScheduledRepost,
-    handleBulkQuote,
+    handleBulkScheduledRepost: _handleBulkScheduledRepost,
+    handleBulkQuote: _handleBulkQuote,
     setToast,
   } = useRecyclablesState({
     posts: typedPosts,
@@ -244,37 +226,14 @@ export default function RecyclablesPage() {
           <EngagementFilter />
         </div>
         <div className="flex w-full flex-row flex-nowrap items-center gap-2 md:ml-auto md:w-auto md:flex-shrink-0">
-          <DateRangeFilter
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            idPrefix="recyclables"
-            className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
-            maxDate={getTodayInTimezone(userTimezone)}
-            userDateFormat={
-              user?.dateFormat === "mmddyyyy"
-                ? "mmddyyyy"
-                : user?.dateFormat === "yyyymmdd"
-                  ? "yyyymmdd"
-                  : "ddmmyyyy"
-            }
-          />
-          <DateRangeQuickPresets
-            variant="past"
-            userTimezone={userTimezone}
-            onDateRangeChange={setDateRange}
-          />
           <RecyclablesQueueFilter queueTypes={queueTypes} />
         </div>
       </div>
 
       <RecyclablesBulkActions
         selectedCount={selectedPosts.size}
-        onBulkRepost={handleBulkRepost}
-        onBulkScheduledRepost={handleBulkScheduledRepost}
-        onBulkQuote={handleBulkQuote}
-        onBulkDelete={handleBulkDelete}
-        repostFetcher={repostFetcher}
-        bulkDeleteFetcher={bulkDeleteFetcher}
+        onBulkRecycle={handleBulkRepost}
+        recycleFetcher={repostFetcher}
       />
 
       <RecyclablesTable
@@ -355,9 +314,7 @@ export default function RecyclablesPage() {
         }}
         onToggleSelect={togglePostSelection}
         onToggleSelectAll={toggleSelectAll}
-        deleteFetcher={deleteFetcher}
-        individualRepostFetcher={individualRepostFetcher}
-        bulkDeleteFetcher={bulkDeleteFetcher}
+        recycleFetcher={repostFetcher}
       />
 
       {/* Scroll sentinel for infinite scroll */}

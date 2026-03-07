@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import type { PostData } from "~/features/posts/server";
 import { PostDetailsModal } from "~/features/posts/ui";
@@ -7,7 +7,7 @@ import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 import {
   applyPowerFilters,
   applySort,
-  filterByInboxTab,
+  filterByUnreadSince,
   getFlatItemCount,
 } from "../engagement-filter";
 import { useEngagementKeyboard } from "../hooks/useEngagementKeyboard";
@@ -32,6 +32,7 @@ export default function EngagementFeedPage() {
     groupedNotifications: safeGroupedNotifications,
     trustScores: safeTrustScores,
     engagementItemStates: safeEngagementItemStates,
+    lastCheckedAt,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -39,11 +40,11 @@ export default function EngagementFeedPage() {
 
   const {
     selectedPost,
-    inboxTab,
-    setInboxTab,
+    setSelectedPost,
     activeTab,
     setActiveTab,
-    setSelectedPost,
+    filterUnreadOnly,
+    setFilterUnreadOnly,
     filterHighReputation,
     setFilterHighReputation,
     filterMentionsOnly,
@@ -62,29 +63,39 @@ export default function EngagementFeedPage() {
     loadReplyTemplates();
   }, [loadReplyTemplates]);
 
-  // Filtered groups (same as EngagementContent) for keyboard flat list count
   const engagementStates = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- safeEngagementItemStates can be undefined before load
     return safeEngagementItemStates ?? {};
   }, [safeEngagementItemStates]);
+
+  const lastCheckedAtMs = useMemo(
+    () => (lastCheckedAt ? new Date(lastCheckedAt).getTime() : null),
+    [lastCheckedAt]
+  );
+  const unreadFilterMs = filterUnreadOnly ? lastCheckedAtMs : null;
+
   const filteredReplies = useMemo(
-    () =>
-      filterByInboxTab(
-        safeGroupedNotifications.replies,
-        inboxTab,
-        engagementStates
-      ),
-    [safeGroupedNotifications.replies, inboxTab, engagementStates]
+    () => filterByUnreadSince(safeGroupedNotifications.replies, unreadFilterMs),
+    [safeGroupedNotifications.replies, unreadFilterMs]
   );
   const filteredQuotes = useMemo(
-    () =>
-      filterByInboxTab(
-        safeGroupedNotifications.quotes,
-        inboxTab,
-        engagementStates
-      ),
-    [safeGroupedNotifications.quotes, inboxTab, engagementStates]
+    () => filterByUnreadSince(safeGroupedNotifications.quotes, unreadFilterMs),
+    [safeGroupedNotifications.quotes, unreadFilterMs]
   );
+  const filteredMentions = useMemo(
+    () =>
+      filterByUnreadSince(safeGroupedNotifications.mentions, unreadFilterMs),
+    [safeGroupedNotifications.mentions, unreadFilterMs]
+  );
+  const mergedMentionsTab = useMemo(() => {
+    const combined = [...filteredQuotes, ...filteredMentions];
+    return combined.sort((a, b) => {
+      const maxA = Math.max(...a.notifications.map((n) => n.createdAt), 0);
+      const maxB = Math.max(...b.notifications.map((n) => n.createdAt), 0);
+      return maxB - maxA;
+    });
+  }, [filteredQuotes, filteredMentions]);
+
   const afterPowerReplies = useMemo(
     () =>
       applySort(
@@ -105,11 +116,11 @@ export default function EngagementFeedPage() {
       sortBy,
     ]
   );
-  const afterPowerQuotes = useMemo(
+  const afterPowerMentionsTab = useMemo(
     () =>
       applySort(
         applyPowerFilters(
-          filteredQuotes,
+          mergedMentionsTab,
           safeTrustScores,
           filterHighReputation,
           filterMentionsOnly
@@ -118,7 +129,7 @@ export default function EngagementFeedPage() {
         sortBy
       ),
     [
-      filteredQuotes,
+      mergedMentionsTab,
       safeTrustScores,
       filterHighReputation,
       filterMentionsOnly,
@@ -128,57 +139,16 @@ export default function EngagementFeedPage() {
   const flatItemCount =
     activeTab === "replies"
       ? getFlatItemCount(afterPowerReplies)
-      : activeTab === "quotes"
-        ? getFlatItemCount(afterPowerQuotes)
+      : activeTab === "mentions"
+        ? getFlatItemCount(afterPowerMentionsTab)
         : getFlatItemCount(afterPowerReplies) +
-          getFlatItemCount(afterPowerQuotes);
+          getFlatItemCount(afterPowerMentionsTab);
 
   const { focusedIndex, registerHandlers: registerKeyboardHandlers } =
     useEngagementKeyboard(
       flatItemCount,
       !selectedPost /* disable when modal open */
     );
-
-  // Count notifications by inbox state for tab badges
-  const inboxCounts = (() => {
-    let unread = 0;
-    let handled = 0;
-    let replied = 0;
-    const states = engagementStates;
-    for (const group of [
-      ...safeGroupedNotifications.replies,
-      ...safeGroupedNotifications.quotes,
-    ]) {
-      for (const n of group.notifications) {
-        const s = n.eventId ? states[n.eventId] : undefined;
-        if (!s) {
-          unread++;
-        } else {
-          handled++;
-          if (s.repliedFromApp) replied++;
-        }
-      }
-    }
-    return { unread, handled, replied };
-  })();
-
-  // "New replies" badge when background refetch returns more unread than last seen
-  const lastSeenUnreadRef = useRef<number | null>(null);
-  const [newRepliesCount, setNewRepliesCount] = useState(0);
-  useEffect(() => {
-    const current = inboxCounts.unread;
-    if (lastSeenUnreadRef.current === null) {
-      lastSeenUnreadRef.current = current;
-      return;
-    }
-    if (current > lastSeenUnreadRef.current) {
-      setNewRepliesCount(current - lastSeenUnreadRef.current);
-    }
-  }, [inboxCounts.unread]);
-  const dismissNewRepliesBadge = () => {
-    lastSeenUnreadRef.current = inboxCounts.unread;
-    setNewRepliesCount(0);
-  };
 
   // Set up intersection observer for infinite scroll
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
@@ -236,18 +206,18 @@ export default function EngagementFeedPage() {
       <EngagementHeader />
 
       <EngagementTabs
-        inboxTab={inboxTab}
-        onInboxTabChange={setInboxTab}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        unreadCount={inboxCounts.unread}
-        handledCount={inboxCounts.handled}
-        repliedCount={inboxCounts.replied}
-        repliesCount={safeGroupedNotifications.replies.length}
-        quotesCount={safeGroupedNotifications.quotes.length}
+        repliesCount={getFlatItemCount(safeGroupedNotifications.replies)}
+        mentionsCount={
+          getFlatItemCount(safeGroupedNotifications.quotes) +
+          getFlatItemCount(safeGroupedNotifications.mentions)
+        }
       />
 
       <EngagementFilterBar
+        filterUnreadOnly={filterUnreadOnly}
+        setFilterUnreadOnly={setFilterUnreadOnly}
         filterHighReputation={filterHighReputation}
         setFilterHighReputation={setFilterHighReputation}
         filterMentionsOnly={filterMentionsOnly}
@@ -256,34 +226,16 @@ export default function EngagementFeedPage() {
         setSortBy={setSortBy}
       />
 
-      {newRepliesCount > 0 ? (
-        <div className="bg-primary/10 border-primary/30 mb-3 flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
-          <span className="text-foreground text-sm font-medium">
-            {newRepliesCount} new repl{newRepliesCount === 1 ? "y" : "ies"}
-          </span>
-          <button
-            type="button"
-            onClick={dismissNewRepliesBadge}
-            className="text-primary hover:bg-primary/20 rounded px-2 py-1 text-sm font-medium"
-          >
-            Show
-          </button>
-        </div>
-      ) : null}
-
       <EngagementContent
-        inboxTab={inboxTab}
         activeTab={activeTab}
-        groupedNotifications={safeGroupedNotifications}
+        groupedReplies={afterPowerReplies}
+        groupedMentionsTab={afterPowerMentionsTab}
         engagementItemStates={engagementStates}
         onMarkDone={markDone}
         userTimezone={userTimezone}
         userRelays={userRelays}
         trustScores={safeTrustScores}
         postsCount={safePosts.length}
-        filterHighReputation={filterHighReputation}
-        filterMentionsOnly={filterMentionsOnly}
-        sortBy={sortBy}
         focusedIndex={focusedIndex}
         registerKeyboardHandlers={registerKeyboardHandlers}
         replyTemplates={replyTemplates}

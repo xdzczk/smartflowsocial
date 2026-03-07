@@ -45,8 +45,10 @@ export const loader = async (args: LoaderFunctionArgs) => {
       groupedNotifications: {
         replies: [],
         quotes: [],
+        mentions: [],
       },
       trustScores: {},
+      lastCheckedAt: null,
     });
   }
 };

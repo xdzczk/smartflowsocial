@@ -1,10 +1,7 @@
 import { useState } from "react";
 
-/** Inbox view: unread (default), all, handled, or replied */
-export type InboxTab = "unread" | "all" | "handled" | "replied";
-
-/** Type filter: all, replies only, or quotes only */
-export type EngagementTypeTab = "all" | "replies" | "quotes";
+/** Type filter: all, replies only, or mentions (quotes + mention-type) */
+export type EngagementTypeTab = "all" | "replies" | "mentions";
 
 /** Sort order for engagement list */
 export type EngagementSortBy = "newest" | "trust" | "zaps";
@@ -14,19 +11,19 @@ export type EngagementSortBy = "newest" | "trust" | "zaps";
  */
 export function useEngagementState() {
   const [selectedPost, setSelectedPost] = useState<unknown>(null);
-  const [inboxTab, setInboxTab] = useState<InboxTab>("unread");
   const [activeTab, setActiveTab] = useState<EngagementTypeTab>("all");
+  const [filterUnreadOnly, setFilterUnreadOnly] = useState(false);
   const [filterHighReputation, setFilterHighReputation] = useState(false);
   const [filterMentionsOnly, setFilterMentionsOnly] = useState(false);
   const [sortBy, setSortBy] = useState<EngagementSortBy>("newest");
 
   return {
     selectedPost,
-    inboxTab,
-    setInboxTab,
+    setSelectedPost,
     activeTab,
     setActiveTab,
-    setSelectedPost,
+    filterUnreadOnly,
+    setFilterUnreadOnly,
     filterHighReputation,
     setFilterHighReputation,
     filterMentionsOnly,

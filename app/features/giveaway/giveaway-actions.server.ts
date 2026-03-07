@@ -367,6 +367,25 @@ export async function cancelGiveaway(
   return { success: true };
 }
 
+/** Delete a giveaway permanently. Only allowed for DRAFT, PREVIEWED, or CANCELLED. */
+export async function deleteGiveaway(
+  userId: string,
+  giveawayId: string
+): Promise<{ success: boolean; error?: string }> {
+  const g = await getGiveawayById(giveawayId, userId);
+  if (!g) return { success: false, error: ERROR_GIVEAWAY_NOT_FOUND };
+  if (g.status === "LOCKED" || g.status === "PAID_OUT")
+    return {
+      success: false,
+      error: "Cannot delete locked or paid-out giveaway",
+    };
+
+  await prisma.giveaway.delete({
+    where: { id: giveawayId },
+  });
+  return { success: true };
+}
+
 export async function markGiveawayPaidOut(
   userId: string,
   giveawayId: string

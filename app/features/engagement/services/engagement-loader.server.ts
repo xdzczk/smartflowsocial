@@ -13,6 +13,10 @@ import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
 import { getUserById } from "~/features/user";
 import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
+import {
+  getEngagementLastCheckedAt,
+  updateEngagementLastCheckedAt,
+} from "~/features/user/services/user-settings.server";
 import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { getPublishedPosts } from "~/models/post.queries.server";
@@ -282,7 +286,10 @@ function getMutedNpubsFromUser(user: UserWithHashTagPresets): string[] {
     : [];
 }
 
-function buildEmptyEngagementResponse(user: UserWithHashTagPresets) {
+function buildEmptyEngagementResponse(
+  user: UserWithHashTagPresets,
+  lastCheckedAt: Date | null
+) {
   const stats: Record<string, EventStats> = {};
   const trustScores: Record<string, number> = {};
   const engagementItemStates: Record<
@@ -300,9 +307,10 @@ function buildEmptyEngagementResponse(user: UserWithHashTagPresets) {
       zaps: [],
       quotes: [],
     },
-    groupedNotifications: { replies: [], quotes: [] },
+    groupedNotifications: { replies: [], quotes: [], mentions: [] },
     trustScores,
     engagementItemStates,
+    lastCheckedAt: lastCheckedAt?.toISOString() ?? null,
   };
 }
 
@@ -462,7 +470,7 @@ export async function loadEngagementFeedData(
   page = 1,
   limit = ENGAGEMENT_FEED_PAGE_SIZE
 ) {
-  const [{ posts }, userResult] = await Promise.all([
+  const [{ posts }, userResult, lastCheckedAt] = await Promise.all([
     getPublishedPosts({
       userId,
       page,
@@ -470,6 +478,7 @@ export async function loadEngagementFeedData(
       queueType: "all",
     }),
     getUserById(userId),
+    getEngagementLastCheckedAt(userId),
   ]);
 
   if (!userResult) throw new Error("User not found");
@@ -484,7 +493,7 @@ export async function loadEngagementFeedData(
   const trustScoresMap = new Map<string, number>();
 
   if (eventIds.length === 0) {
-    return buildEmptyEngagementResponse(user);
+    return buildEmptyEngagementResponse(user, lastCheckedAt);
   }
 
   // Start get_notifications call early (parallel with event processing)
@@ -618,6 +627,12 @@ export async function loadEngagementFeedData(
       [],
       stats
     ),
+    mentions: groupNotificationsByParent(
+      groupedNotifications.mentions,
+      postsAsPostData,
+      [],
+      stats
+    ),
   };
 
   let groupedQuoteReposts: GroupedNotification[] = [];
@@ -671,6 +686,13 @@ export async function loadEngagementFeedData(
   );
   const serializedGroupedQuotes =
     serializeGroupedForResponse(groupedQuoteReposts);
+  const serializedGroupedMentions = serializeGroupedForResponse(
+    groupedByParent.mentions
+  );
+
+  if (page === 1) {
+    await updateEngagementLastCheckedAt(userId);
+  }
 
   return {
     posts: postsAsDTOs,
@@ -680,9 +702,11 @@ export async function loadEngagementFeedData(
     groupedNotifications: {
       replies: serializedGroupedReplies,
       quotes: serializedGroupedQuotes,
+      mentions: serializedGroupedMentions,
     },
     trustScores,
     engagementItemStates,
+    lastCheckedAt: lastCheckedAt?.toISOString() ?? null,
   };
 }
 

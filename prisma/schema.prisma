@@ -46,6 +46,8 @@ model User {
   runwaySettings             Json?
   // Account-level preferred NIP-46 signer profile (non-secret metadata only)
   primarySignerProfile       Json?
+  // When the user last opened the Engagement Feed (for time-based "unread")
+  engagementLastCheckedAt    DateTime?
   // Child/parent self-relation via npub
   isChild                    Boolean        @default(false)
   parentNpub                 String?

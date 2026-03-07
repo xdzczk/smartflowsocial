@@ -93,6 +93,7 @@ const USER_SCALAR_SELECT = {
   pendingParentRequests: true,
   localeDefaultsAppliedAt: true,
   primarySignerProfile: true,
+  engagementLastCheckedAt: true,
 } as const;
 
 /**

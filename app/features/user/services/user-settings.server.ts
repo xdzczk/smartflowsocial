@@ -688,6 +688,31 @@ export function updateUserDateFormat(
 }
 
 /**
+ * Returns when the user last opened the Engagement Feed, or null if never.
+ * Used for time-based "unread" (items newer than this are unread).
+ */
+export async function getEngagementLastCheckedAt(
+  userId: string
+): Promise<Date | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { engagementLastCheckedAt: true },
+  });
+  return user?.engagementLastCheckedAt ?? null;
+}
+
+/**
+ * Sets the user's last Engagement Feed check time to now.
+ * Call when the user opens the feed (e.g. loader for page 1).
+ */
+export function updateEngagementLastCheckedAt(userId: string): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { engagementLastCheckedAt: new Date() },
+  });
+}
+
+/**
  * Returns when locale defaults were applied for this user, or null if never.
  * Used to run "apply device locale" only once ever per user.
  */
@@ -875,6 +900,7 @@ export async function updateRunwaySettings(
           pendingParentRequests: true,
           localeDefaultsAppliedAt: true,
           primarySignerProfile: true,
+          engagementLastCheckedAt: true,
         },
       });
       if (!user) throw err;

@@ -4,6 +4,11 @@
 
 import type { EngagementSortBy } from "../hooks/useEngagementState";
 
+const FILTER_BUTTON_BASE =
+  "rounded-full px-3 py-1 text-xs font-medium transition-colors";
+const FILTER_ACTIVE = "bg-primary text-primary-foreground";
+const FILTER_INACTIVE = "bg-muted text-muted-foreground hover:bg-muted/80";
+
 const SORT_OPTIONS: Array<{ value: EngagementSortBy; label: string }> = [
   { value: "newest", label: "Newest first" },
   { value: "trust", label: "Trust first" },
@@ -11,6 +16,8 @@ const SORT_OPTIONS: Array<{ value: EngagementSortBy; label: string }> = [
 ];
 
 interface EngagementFilterBarProps {
+  filterUnreadOnly: boolean;
+  setFilterUnreadOnly: (v: boolean) => void;
   filterHighReputation: boolean;
   setFilterHighReputation: (v: boolean) => void;
   filterMentionsOnly: boolean;
@@ -20,6 +27,8 @@ interface EngagementFilterBarProps {
 }
 
 export function EngagementFilterBar({
+  filterUnreadOnly,
+  setFilterUnreadOnly,
   filterHighReputation,
   setFilterHighReputation,
   filterMentionsOnly,
@@ -34,11 +43,18 @@ export function EngagementFilterBar({
       </span>
       <button
         type="button"
+        onClick={() => setFilterUnreadOnly(!filterUnreadOnly)}
+        className={`${FILTER_BUTTON_BASE} ${
+          filterUnreadOnly ? FILTER_ACTIVE : FILTER_INACTIVE
+        }`}
+      >
+        Unread only
+      </button>
+      <button
+        type="button"
         onClick={() => setFilterHighReputation(!filterHighReputation)}
-        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-          filterHighReputation
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground hover:bg-muted/80"
+        className={`${FILTER_BUTTON_BASE} ${
+          filterHighReputation ? FILTER_ACTIVE : FILTER_INACTIVE
         }`}
       >
         High reputation
@@ -46,10 +62,8 @@ export function EngagementFilterBar({
       <button
         type="button"
         onClick={() => setFilterMentionsOnly(!filterMentionsOnly)}
-        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-          filterMentionsOnly
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground hover:bg-muted/80"
+        className={`${FILTER_BUTTON_BASE} ${
+          filterMentionsOnly ? FILTER_ACTIVE : FILTER_INACTIVE
         }`}
       >
         Mentions only
