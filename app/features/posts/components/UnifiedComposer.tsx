@@ -1232,9 +1232,9 @@ export function UnifiedComposer({
                 </>
               ) : null}
               {" — "}
-              If you’re using a remote signer, open it to approve the request.
-              If you started a new session in the signer app, the app will
-              reconnect automatically in a few seconds.
+              {signerLabel === "NIP-07 extension"
+                ? "Approve the request in your browser extension."
+                : "If you're using a remote signer, open it to approve the request. If you started a new session in the signer app, the app will reconnect automatically in a few seconds."}
             </span>
             <Button
               type="button"

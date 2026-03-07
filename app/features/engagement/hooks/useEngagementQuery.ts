@@ -21,6 +21,25 @@ import type { EventStats, GroupedNotification } from "../types";
 
 // EngagementLoaderData is now exported from schemas
 
+/** Fallback when loader returns invalid or error payload so the app does not throw. */
+function getEmptyEngagementLoaderData(): EngagementLoaderData {
+  return {
+    posts: [],
+    stats: {},
+    user: null,
+    notifications: {
+      all: [],
+      replies: [],
+      mentions: [],
+      zaps: [],
+      quotes: [],
+    },
+    groupedNotifications: { replies: [], quotes: [] },
+    trustScores: {},
+    engagementItemStates: {},
+  };
+}
+
 /**
  * Query key factory for engagement
  */
@@ -91,19 +110,16 @@ export function useEngagementQuery() {
 export function useEngagementInfiniteQuery() {
   const loaderDataRaw = useLoaderData();
 
-  // Validate initial loader data
+  // Validate initial loader data; use empty fallback so we don't throw on error/500
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
     engagementLoaderDataSchema
   );
-
-  if (!validatedLoaderData) {
-    throw new Error("Invalid loader data");
-  }
+  const initialData = validatedLoaderData ?? getEmptyEngagementLoaderData();
 
   return useInfiniteRemixQuery<EngagementLoaderData>({
     queryKey: engagementKeys.list(),
-    initialData: validatedLoaderData,
+    initialData,
     getNextPageParam: (lastPage, allPages) => {
       const posts = Array.isArray(lastPage.posts) ? lastPage.posts : [];
       if (posts.length < ENGAGEMENT_FEED_PAGE_SIZE) {

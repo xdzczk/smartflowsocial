@@ -184,6 +184,7 @@ export {
   BulkComposerModal,
   type BulkComposerMode,
   type BulkComposerModalProps,
+  type BulkComposerUser,
 } from "./components/BulkComposerModal";
 
 // ============================================================================

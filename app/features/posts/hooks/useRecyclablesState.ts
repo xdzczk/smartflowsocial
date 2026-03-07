@@ -2,6 +2,12 @@ import { useNavigate } from "@remix-run/react";
 import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
+import type { BulkComposerPayload } from "~/features/posts/usePublishedPosts";
+import type { QuotePostDataItem } from "~/features/posts/utils/bulk-composer-data";
+import {
+  convertQuoteDataToBulkPosts,
+  convertRepostDataToBulkPosts,
+} from "~/features/posts/utils/bulk-composer-data";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
@@ -93,6 +99,8 @@ interface UseRecyclablesStateProps {
   stats: Stats;
   /** When set, only show posts with stats[eventId][statKey] >= min (client-side). */
   engagementFilter?: EngagementFilterOption | null;
+  /** When set, bulk recycle/repost/quote open the in-page BulkComposerModal instead of navigating to bulk posts page. */
+  onOpenBulkComposer?: (payload: BulkComposerPayload) => void;
   user?: User | null;
   repostFetcher:
     | FetcherWithComponents<RepostFetcherData>
@@ -125,6 +133,7 @@ export function useRecyclablesState({
   posts,
   stats,
   engagementFilter = null,
+  onOpenBulkComposer,
   user,
   repostFetcher,
   bulkDeleteFetcher,
@@ -432,22 +441,33 @@ export function useRecyclablesState({
           scheduleZoned,
           userTimezone
         );
-
+        const qt = post.queueType;
+        const queueType =
+          typeof qt === "object" && qt && "name" in qt
+            ? ((qt as { name?: string }).name ?? "unassigned")
+            : "unassigned";
         return {
           caption: post.caption ?? "",
           fileUrl:
             Array.isArray(post.fileUrl) && post.fileUrl.length > 0
               ? post.fileUrl[0]
               : "",
-          queueType: post.queueType?.name ?? "unassigned",
+          queueType,
           scheduledFor,
           originalPostId: post.id,
+          isRecyclable: true,
         };
       });
 
-      sessionStorage.setItem("repostData", JSON.stringify(repostData));
-      navigate("/dashboard/bulkposts?mode=recycle", { replace: true });
-      setSelectedPosts(new Set());
+      if (onOpenBulkComposer) {
+        const initialPosts = convertRepostDataToBulkPosts(repostData);
+        onOpenBulkComposer({ mode: "recycle", initialPosts });
+        setSelectedPosts(new Set());
+      } else {
+        sessionStorage.setItem("repostData", JSON.stringify(repostData));
+        navigate("/dashboard/bulkposts?mode=recycle", { replace: true });
+        setSelectedPosts(new Set());
+      }
     }
 
     if (
@@ -499,12 +519,17 @@ export function useRecyclablesState({
         }
       );
 
-      sessionStorage.setItem(
-        "scheduledRepostData",
-        JSON.stringify(scheduledRepostData)
-      );
-      navigate("/dashboard/bulkposts?mode=repost", { replace: true });
-      setSelectedPosts(new Set());
+      if (onOpenBulkComposer) {
+        onOpenBulkComposer({ mode: "repost", scheduledRepostData });
+        setSelectedPosts(new Set());
+      } else {
+        sessionStorage.setItem(
+          "scheduledRepostData",
+          JSON.stringify(scheduledRepostData)
+        );
+        navigate("/dashboard/bulkposts?mode=repost", { replace: true });
+        setSelectedPosts(new Set());
+      }
     }
 
     if (
@@ -513,12 +538,26 @@ export function useRecyclablesState({
       fetcherData.quotePostData
     ) {
       const quoteData = fetcherData.quotePostData;
-      sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-      navigate("/dashboard/bulkposts?mode=quote", { replace: true });
-      setSelectedPosts(new Set());
+      if (onOpenBulkComposer) {
+        const initialPosts = convertQuoteDataToBulkPosts(
+          quoteData as unknown as QuotePostDataItem[]
+        );
+        onOpenBulkComposer({ mode: "quote", initialPosts });
+        setSelectedPosts(new Set());
+      } else {
+        sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
+        navigate("/dashboard/bulkposts?mode=quote", { replace: true });
+        setSelectedPosts(new Set());
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid unnecessary re-renders
-  }, [repostFetcher.data, user?.timezone, repostFetcher, navigate]);
+  }, [
+    repostFetcher.data,
+    user?.timezone,
+    repostFetcher,
+    navigate,
+    onOpenBulkComposer,
+  ]);
 
   // Handle individual repost actions
   useEffect(() => {

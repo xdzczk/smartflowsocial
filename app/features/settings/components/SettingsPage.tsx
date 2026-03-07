@@ -290,12 +290,10 @@ function getTabsGridColsClass(input: {
   isChild: boolean;
   hasAccountsAccess: boolean;
 }): string {
-  // Mobile-first:
-  // - 2 columns on very small screens, 3 on small screens
-  // - preserve previous 5/6-column behavior on large screens
+  // Mobile: 2 cols, sm: 3 cols. Desktop (lg): single row — 6 tabs (no Accounts) or 7 tabs (with Accounts).
   return input.isChild || !input.hasAccountsAccess
-    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
-    : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6";
+    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+    : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-7";
 }
 
 export default function SettingsPage() {

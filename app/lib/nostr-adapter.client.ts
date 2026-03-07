@@ -359,7 +359,11 @@ async function trySignWithConfiguredSigner(
             signTimeout,
             "Remote signer did not respond. Open your signer app (e.g. Primal) and approve the request."
           )
-        : await signPromise;
+        : await withTimeout(
+            signPromise,
+            signTimeout,
+            "Extension did not respond. Please approve the request in your browser extension or try again."
+          );
 
     resetNostrRetryCounts();
     if (

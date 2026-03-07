@@ -55,7 +55,10 @@ export default function EngagementFeedPage() {
   const { templates: replyTemplates, load: loadReplyTemplates } =
     useReplyTemplates({ enabled: true });
 
+  const hasLoadedReplyTemplatesRef = useRef(false);
   useEffect(() => {
+    if (hasLoadedReplyTemplatesRef.current) return;
+    hasLoadedReplyTemplatesRef.current = true;
     loadReplyTemplates();
   }, [loadReplyTemplates]);
 

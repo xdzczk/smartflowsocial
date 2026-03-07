@@ -23,6 +23,8 @@ function emptySlotHandleActivate(
     slotKey: string;
     setActiveEmptySlotKey: (key: string | null) => void;
     onClearSelection?: () => void;
+    /** Called when user taps/clicks empty cell; use to collapse any expanded post block (e.g. on mobile). */
+    onClearExpandedPost?: () => void;
   }
 ) {
   const {
@@ -31,7 +33,9 @@ function emptySlotHandleActivate(
     slotKey,
     setActiveEmptySlotKey,
     onClearSelection,
+    onClearExpandedPost,
   } = opts;
+  onClearExpandedPost?.();
   if (isFutureSlot) {
     if (isActive && e.target === e.currentTarget) {
       setActiveEmptySlotKey(null);
@@ -121,6 +125,7 @@ export function EmptySlotCellContent({
   activeEmptySlotKey,
   setActiveEmptySlotKey,
   onClearSelection,
+  onClearExpandedPost,
 }: {
   dateKey: string;
   time: string;
@@ -129,6 +134,8 @@ export function EmptySlotCellContent({
   activeEmptySlotKey: string | null;
   setActiveEmptySlotKey: (key: string | null) => void;
   onClearSelection?: () => void;
+  /** Called when user taps empty cell; use to collapse any expanded post block. */
+  onClearExpandedPost?: () => void;
 }) {
   const slotZoned = parseDateTimeLocal(`${dateKey}T${time}`, userTimezone);
   const nowZoned = nowInTimezone(userTimezone);
@@ -145,6 +152,7 @@ export function EmptySlotCellContent({
           slotKey,
           setActiveEmptySlotKey,
           onClearSelection,
+          onClearExpandedPost,
         })
       }
       onKeyDown={(e) =>
@@ -177,6 +185,7 @@ export function DayViewEmptyColumnArea({
   activeEmptySlotKey,
   setActiveEmptySlotKey,
   onClearSelection,
+  onClearExpandedPost,
   pointerEventsNone = false,
 }: {
   dateKey: string;
@@ -187,6 +196,8 @@ export function DayViewEmptyColumnArea({
   activeEmptySlotKey: string | null;
   setActiveEmptySlotKey: (key: string | null) => void;
   onClearSelection?: () => void;
+  /** Called when user taps empty cell; use to collapse any expanded post block. */
+  onClearExpandedPost?: () => void;
   /** When true, pass pointer events through so the block from above (extending into this row) is clickable. */
   pointerEventsNone?: boolean;
 }) {
@@ -208,6 +219,7 @@ export function DayViewEmptyColumnArea({
           slotKey,
           setActiveEmptySlotKey,
           onClearSelection,
+          onClearExpandedPost,
         })
       }
       onKeyDown={(e) =>

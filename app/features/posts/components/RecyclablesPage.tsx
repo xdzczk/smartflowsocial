@@ -1,11 +1,14 @@
 import { Link, useFetcher, useParams, useSearchParams } from "@remix-run/react";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import type { EngagementFilterOption } from "~/features/posts/hooks/useRecyclablesState";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { CombinedContent, PostData } from "~/features/posts/server";
+import type { BulkPost } from "~/features/posts/types";
 import {
+  BulkComposerModal,
+  type BulkComposerUser,
   PostDetailsModal,
   RecyclablesBulkActions,
   RecyclablesQueueFilter,
@@ -15,6 +18,8 @@ import {
   useRecyclablesState,
   type IndividualRepostFetcherData,
 } from "~/features/posts/ui";
+import type { BulkComposerPayload } from "~/features/posts/usePublishedPosts";
+import { loadScheduledRepostDataAsBulkPosts } from "~/features/posts/utils/bulk-composer-data";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 
 import { getTodayInTimezone } from "../utils/date-range-filter";
@@ -71,6 +76,63 @@ export default function RecyclablesPage() {
   };
 
   const userTimezone = user?.timezone?.trim() ?? "UTC";
+
+  const [bulkComposer, setBulkComposer] = useState<{
+    open: boolean;
+    mode: BulkComposerPayload["mode"];
+    initialPosts: BulkPost[];
+    pendingScheduledRepostData?: unknown[];
+  } | null>(null);
+
+  const onOpenBulkComposer = useCallback(
+    (payload: BulkComposerPayload) => {
+      if (payload.mode === "repost") {
+        setBulkComposer({
+          open: true,
+          mode: "repost",
+          initialPosts: [],
+          pendingScheduledRepostData: payload.scheduledRepostData,
+        });
+      } else {
+        setBulkComposer({
+          open: true,
+          mode: payload.mode,
+          initialPosts: payload.initialPosts,
+        });
+      }
+    },
+    [setBulkComposer]
+  );
+
+  // Load scheduled repost data when modal opens with pending data (repost mode)
+  useEffect(() => {
+    if (
+      !bulkComposer?.open ||
+      bulkComposer.mode !== "repost" ||
+      !bulkComposer.pendingScheduledRepostData?.length
+    ) {
+      return;
+    }
+    const data = bulkComposer.pendingScheduledRepostData;
+    void (async () => {
+      const posts = await loadScheduledRepostDataAsBulkPosts(
+        data as Parameters<typeof loadScheduledRepostDataAsBulkPosts>[0]
+      );
+      setBulkComposer((prev) =>
+        prev
+          ? {
+              ...prev,
+              initialPosts: posts,
+              pendingScheduledRepostData: undefined,
+            }
+          : null
+      );
+    })();
+  }, [
+    bulkComposer?.open,
+    bulkComposer?.mode,
+    bulkComposer?.pendingScheduledRepostData,
+  ]);
 
   // Set up intersection observer for infinite scroll
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
@@ -142,6 +204,7 @@ export default function RecyclablesPage() {
     posts: typedPosts,
     stats,
     engagementFilter,
+    onOpenBulkComposer,
     user: user ?? null,
     repostFetcher,
     bulkDeleteFetcher,
@@ -308,6 +371,18 @@ export default function RecyclablesPage() {
         <div className="text-muted-foreground mt-4 text-center text-sm">
           Loading more posts...
         </div>
+      ) : null}
+
+      {bulkComposer?.open ? (
+        <BulkComposerModal
+          open={true}
+          onClose={() => setBulkComposer(null)}
+          onSuccess={() => setBulkComposer(null)}
+          mode={bulkComposer.mode}
+          initialPosts={bulkComposer.initialPosts}
+          user={user as BulkComposerUser | null}
+          queueTypes={queueTypes}
+        />
       ) : null}
 
       {selectedPost ? (

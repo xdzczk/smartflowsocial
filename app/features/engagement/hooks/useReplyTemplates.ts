@@ -17,15 +17,20 @@ interface FetcherData {
 export function useReplyTemplates(options?: { enabled?: boolean }) {
   const enabled = options?.enabled ?? true;
   const fetcher = useFetcher<FetcherData>();
+  const fetcherRef = useRef(fetcher);
   const [templates, setTemplates] = useState<ReplyTemplate[]>([]);
   const didMutateRef = useRef(false);
+
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
 
   const load = useCallback(() => {
     if (enabled) {
       didMutateRef.current = false;
-      fetcher.load(API);
+      fetcherRef.current.load(API);
     }
-  }, [enabled, fetcher]);
+  }, [enabled]);
 
   useEffect(() => {
     if (fetcher.state !== "idle" || !fetcher.data) return;

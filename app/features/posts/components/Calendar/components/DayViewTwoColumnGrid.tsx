@@ -149,6 +149,7 @@ function BlockInColumn({
       }}
       onMouseEnter={() => onHoverOverlayChange(hoverOverlayPayload)}
       onMouseLeave={(e) => {
+        if (isMobile) return;
         if (isMovingIntoDayHoverOverlay(e.relatedTarget)) return;
         onHoverOverlayChange(null);
       }}
@@ -365,6 +366,7 @@ export function DayViewTwoColumnGrid({
             }
           }}
           onMouseLeave={() => {
+            if (isMobile) return;
             setHoveredSlotKey(null);
             setHoveredMultiPostKey(null);
             setDayHoverOverlayPayload(null);
@@ -475,6 +477,11 @@ export function DayViewTwoColumnGrid({
                       activeEmptySlotKey={activeEmptySlotKey}
                       setActiveEmptySlotKey={setActiveEmptySlotKey}
                       onClearSelection={onClearSelection}
+                      onClearExpandedPost={() => {
+                        setHoveredSlotKey(null);
+                        setHoveredMultiPostKey(null);
+                        setDayHoverOverlayPayload(null);
+                      }}
                     />
                   </div>
                 );
@@ -566,6 +573,11 @@ export function DayViewTwoColumnGrid({
                       activeEmptySlotKey={activeEmptySlotKey}
                       setActiveEmptySlotKey={setActiveEmptySlotKey}
                       onClearSelection={onClearSelection}
+                      onClearExpandedPost={() => {
+                        setHoveredSlotKey(null);
+                        setHoveredMultiPostKey(null);
+                        setDayHoverOverlayPayload(null);
+                      }}
                     />
                   </div>
                 );
@@ -589,6 +601,7 @@ export function DayViewTwoColumnGrid({
                     height: row.blockHeightPx,
                   }}
                   onMouseLeave={(e) => {
+                    if (isMobile) return;
                     if (isMovingIntoDayHoverOverlay(e.relatedTarget)) return;
                     setHoveredMultiPostKey(null);
                     setDayHoverOverlayPayload(null);
@@ -747,6 +760,7 @@ export function DayViewTwoColumnGrid({
                   onPostEdit(dayHoverOverlayPayload.post);
                 }}
                 onMouseLeave={() => {
+                  if (isMobile) return;
                   setHoveredSlotKey(null);
                   setHoveredMultiPostKey(null);
                   setDayHoverOverlayPayload(null);

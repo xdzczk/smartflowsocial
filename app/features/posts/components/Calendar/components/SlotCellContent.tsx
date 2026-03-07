@@ -508,6 +508,10 @@ export function SlotCellContent(props: SlotCellContentProps) {
         activeEmptySlotKey={activeEmptySlotKey}
         setActiveEmptySlotKey={setActiveEmptySlotKey}
         onClearSelection={onClearSelection}
+        onClearExpandedPost={() => {
+          props.setHoveredPostKey(null);
+          props.onHoverOverlayChange?.(null);
+        }}
       />
     );
   }

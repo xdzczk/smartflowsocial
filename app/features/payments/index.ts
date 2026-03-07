@@ -29,6 +29,7 @@ export type {
 
 export {
   PLAN_FEATURES,
+  getGiveawayPlanLimits,
   getUserPlanType,
   hasFeatureAccess,
   isSubscriptionPeriodExpired,
