@@ -44,7 +44,7 @@ export default function SearchPostsPage() {
         <p className="dark:text-muted-foreground text-foreground text-sm">
           {searchResult
             ? "Viewing post from link. Use the search bar above to open another."
-            : "Use the search bar above to view a Nostr post by event ID (note1, nevent1, or hex)."}
+            : "Use the search bar above to view a Nostr post or article (note1, nevent1, naddr1, or hex)."}
         </p>
       </div>
 
@@ -76,7 +76,8 @@ export default function SearchPostsPage() {
             aria-hidden
           />
           <p className="dark:text-muted-foreground text-muted-foreground text-sm">
-            Paste a Nostr event link in the top search bar to view a post here.
+            Paste a Nostr link (note1, nevent1, naddr1) in the top search bar to
+            view a post or article here.
           </p>
         </div>
       ) : null}

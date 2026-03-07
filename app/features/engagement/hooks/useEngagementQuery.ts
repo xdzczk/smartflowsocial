@@ -4,7 +4,7 @@
  */
 
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
@@ -112,12 +112,12 @@ export function useEngagementInfiniteQuery() {
       return allPages.length + 1;
     },
     buildUrl: (pageParam) => `/dashboard/engagement/feed?page=${pageParam}`,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 15 * 1000, // 15 seconds
     maxPages: 10, // 10 pages × 50 = 500 posts max
     // Keep previous data visible during refetches for smoother UX
     placeholderData: (previousData) => previousData,
-    // Background refetching to keep engagement feed fresh
-    refetchInterval: 30000, // Refetch every 30 seconds
+    // Background refetching to keep engagement feed fresh (light real-time)
+    refetchInterval: 15000, // Refetch every 15 seconds
     refetchIntervalInBackground: true, // Continue refetching when tab is inactive
   });
 }
@@ -140,12 +140,17 @@ export function useEngagementData() {
       quotes: [],
     };
     const emptyTrustScores: Record<string, number> = {};
+    const emptyEngagementItemStates: Record<
+      string,
+      { state: "handled"; repliedFromApp: boolean }
+    > = {};
     return {
       posts: emptyPosts,
       stats: emptyStats,
       user: null,
       groupedNotifications: emptyGroupedNotifications,
       trustScores: emptyTrustScores,
+      engagementItemStates: emptyEngagementItemStates,
       isLoading: query.isLoading,
       rawData: null,
     };
@@ -197,12 +202,27 @@ export function useEngagementData() {
       ? rawData.user
       : null;
 
+  // Type guard for engagementItemStates (defensive for loader response shape)
+  const engagementItemStates: Record<
+    string,
+    { state: "handled"; repliedFromApp: boolean }
+  > =
+    typeof rawData.engagementItemStates === "object" &&
+    rawData.engagementItemStates !== null && // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- defensive guard for loader
+    !Array.isArray(rawData.engagementItemStates)
+      ? (rawData.engagementItemStates as Record<
+          string,
+          { state: "handled"; repliedFromApp: boolean }
+        >)
+      : {};
+
   return {
     posts,
     stats,
     user,
     groupedNotifications,
     trustScores,
+    engagementItemStates,
     isLoading: query.isLoading,
     rawData,
   };
@@ -229,12 +249,17 @@ export function useEngagementInfiniteData() {
       quotes: [],
     };
     const emptyTrustScores: Record<string, number> = {};
+    const emptyEngagementItemStates: Record<
+      string,
+      { state: "handled"; repliedFromApp: boolean }
+    > = {};
     return {
       posts: emptyPosts,
       stats: emptyStats,
       user: null,
       groupedNotifications: emptyGroupedNotifications,
       trustScores: emptyTrustScores,
+      engagementItemStates: emptyEngagementItemStates,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -250,6 +275,10 @@ export function useEngagementInfiniteData() {
   const allReplies: GroupedNotification[] = [];
   const allQuotes: GroupedNotification[] = [];
   const allTrustScores: Record<string, number> = {};
+  const allEngagementItemStates: Record<
+    string,
+    { state: "handled"; repliedFromApp: boolean }
+  > = {};
 
   // Process each page
   for (const pageData of allPages) {
@@ -291,6 +320,15 @@ export function useEngagementInfiniteData() {
         )
       );
     }
+
+    // Aggregate engagement item states (defensive for page shape)
+    if (
+      typeof pageData.engagementItemStates === "object" &&
+      pageData.engagementItemStates !== null && // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- defensive guard for page data
+      !Array.isArray(pageData.engagementItemStates)
+    ) {
+      Object.assign(allEngagementItemStates, pageData.engagementItemStates);
+    }
   }
 
   // Get user from last page
@@ -305,6 +343,7 @@ export function useEngagementInfiniteData() {
         quotes: allQuotes,
       },
       trustScores: allTrustScores,
+      engagementItemStates: allEngagementItemStates,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -329,10 +368,40 @@ export function useEngagementInfiniteData() {
       quotes: allQuotes,
     },
     trustScores: allTrustScores,
+    engagementItemStates: allEngagementItemStates,
     isLoading,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
     rawData: lastPage,
   };
+}
+
+/** Engagement item state per eventId */
+export type EngagementItemStateMap = Record<
+  string,
+  { state: "handled"; repliedFromApp: boolean }
+>;
+
+/**
+ * Hook to mark an engagement item as done (or replied from app).
+ * Calls the API and invalidates the engagement list so the UI updates.
+ */
+export function useMarkEngagementDone() {
+  const queryClient = useQueryClient();
+
+  const markDone = async (eventId: string, repliedFromApp = false) => {
+    const res = await fetch("/api/engagement/mark-state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventId, repliedFromApp }),
+    });
+    const data = (await res.json()) as { success?: boolean; error?: string };
+    if (!res.ok || !data.success) {
+      throw new Error(data.error ?? "Failed to mark as done");
+    }
+    await queryClient.invalidateQueries({ queryKey: engagementKeys.lists() });
+  };
+
+  return { markDone };
 }

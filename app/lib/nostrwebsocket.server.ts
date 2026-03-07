@@ -84,6 +84,24 @@ async function tryConnectToCache(
             ])
           );
           break;
+        case "event_by_addr":
+          ws.send(
+            JSON.stringify([
+              "REQ",
+              requestId,
+              {
+                cache: [
+                  "event_by_addr",
+                  {
+                    kind: params["kind"],
+                    pubkey: params["pubkey"],
+                    identifier: params["identifier"],
+                  },
+                ],
+              },
+            ])
+          );
+          break;
         case "user_profile":
           ws.send(
             JSON.stringify([

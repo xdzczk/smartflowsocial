@@ -7,7 +7,10 @@ import { TimeFormatSettings } from "~/components/settings/TimeFormatSettings";
 import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { RemoteSignerSettings } from "~/features/auth/components/RemoteSignerSettings";
-import { MutedListSettings } from "~/features/engagement";
+import {
+  MutedListSettings,
+  ReplyTemplatesSettings,
+} from "~/features/engagement";
 import { GiveawayBlacklistSettings } from "~/features/giveaway";
 import { NWCSettings, SubscriptionSettings } from "~/features/payments";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
@@ -321,6 +324,7 @@ export default function SettingsPage() {
     hasAccountsAccess?: unknown;
     accounts?: unknown;
     mutedList?: unknown;
+    replyTemplates?: unknown;
     filterMuted?: unknown;
     hidePostsFromLowTrustUsers?: unknown;
     pushNotificationsEnabled?: unknown;
@@ -367,6 +371,7 @@ export default function SettingsPage() {
     hasAccountsAccess,
     accounts: accountsRaw,
     mutedList: mutedListRaw,
+    replyTemplates: replyTemplatesRaw,
     filterMuted,
     hidePostsFromLowTrustUsers,
     pushNotificationsEnabled,
@@ -380,6 +385,28 @@ export default function SettingsPage() {
     primarySignerProfile: primarySignerProfileRaw,
     referral: referralRaw,
   } = data;
+
+  function parseReplyTemplates(
+    value: unknown
+  ): Array<{ id: string; slug: string; body: string }> {
+    if (!Array.isArray(value)) return [];
+    return value
+      .filter(
+        (t): t is Record<string, unknown> =>
+          t != null &&
+          typeof t === "object" &&
+          typeof (t as { id?: unknown }).id === "string" &&
+          typeof (t as { slug?: unknown }).slug === "string" &&
+          typeof (t as { body?: unknown }).body === "string"
+      )
+      .map((t) => ({
+        id: (t as { id: string }).id,
+        slug: (t as { slug: string }).slug,
+        body: (t as { body: string }).body,
+      }));
+  }
+
+  const replyTemplates = parseReplyTemplates(replyTemplatesRaw);
 
   const queueTypes = parseQueueTypes(queueTypesRaw);
   const accounts = validateAccounts(accountsRaw);
@@ -598,6 +625,7 @@ export default function SettingsPage() {
               filterMuted={filterMutedValue}
               hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
             />
+            <ReplyTemplatesSettings templates={replyTemplates} />
           </div>
         </TabsContent>
 

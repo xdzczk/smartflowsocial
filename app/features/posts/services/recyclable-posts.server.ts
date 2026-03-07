@@ -41,6 +41,7 @@ export async function getRecyclableDashboardData({
 }) {
   const dateFrom = url.searchParams.get("dateFrom") ?? undefined;
   const dateTo = url.searchParams.get("dateTo") ?? undefined;
+  const olderThan = url.searchParams.get("olderThan") ?? undefined;
   const hasDateRange = Boolean(dateFrom ?? dateTo);
   const page = hasDateRange ? 1 : parseInt(url.searchParams.get("page") ?? "1");
   const limit = hasDateRange ? 5000 : 20;
@@ -60,6 +61,7 @@ export async function getRecyclableDashboardData({
       dateFrom,
       dateTo,
       timezone,
+      olderThan,
     }),
     getQueueTypesCached(userId),
   ]);

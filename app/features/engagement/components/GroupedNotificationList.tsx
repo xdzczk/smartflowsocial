@@ -5,6 +5,11 @@ import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { Separator } from "~/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -12,14 +17,37 @@ import {
 } from "~/lib/icon-constants";
 
 import type { Notification } from "../engagement.server";
+import type { ReplyTemplate } from "../hooks/useReplyTemplates";
 import type { GroupedNotification } from "../types";
 
 import { NotificationItem } from "./NotificationItem";
+
+type EngagementItemStateMap = Record<
+  string,
+  { state: "handled"; repliedFromApp: boolean }
+>;
+
+interface EngagementKeyboardHandlers {
+  openReply: () => void;
+  like: () => void;
+  markDone: () => void;
+  expandThread: () => void;
+}
+
 interface GroupedNotificationListProps {
   groupedNotifications: GroupedNotification[];
   userTimezone?: string;
   userRelays?: string[];
   trustScores?: Record<string, number>;
+  engagementItemStates?: EngagementItemStateMap;
+  onMarkDone?: (eventId: string, repliedFromApp?: boolean) => Promise<void>;
+  baseIndex?: number;
+  focusedIndex?: number;
+  registerKeyboardHandlers?: (
+    index: number,
+    handlers: EngagementKeyboardHandlers | null
+  ) => void;
+  replyTemplates?: ReplyTemplate[];
 }
 
 export default function GroupedNotificationList({
@@ -27,6 +55,12 @@ export default function GroupedNotificationList({
   userTimezone: _userTimezone,
   userRelays = ["wss://relay.primal.net"],
   trustScores = {},
+  engagementItemStates = {},
+  onMarkDone,
+  baseIndex = 0,
+  focusedIndex = -1,
+  registerKeyboardHandlers,
+  replyTemplates = [],
 }: GroupedNotificationListProps) {
   const { userTimezone } = useFormattedDate();
 
@@ -50,6 +84,7 @@ export default function GroupedNotificationList({
     );
   }
 
+  let itemIndex = baseIndex;
   return (
     <div className="space-y-6">
       {groupedNotifications.map((group) => (
@@ -59,6 +94,12 @@ export default function GroupedNotificationList({
           userTimezone={userTimezone}
           userRelays={userRelays}
           trustScores={trustScores}
+          engagementItemStates={engagementItemStates}
+          onMarkDone={onMarkDone}
+          getNextIndex={() => itemIndex++}
+          focusedIndex={focusedIndex}
+          registerKeyboardHandlers={registerKeyboardHandlers}
+          replyTemplates={replyTemplates}
         />
       ))}
     </div>
@@ -70,11 +111,26 @@ function GroupedNotificationCard({
   userTimezone: _userTimezone,
   userRelays,
   trustScores = {},
+  engagementItemStates = {},
+  onMarkDone,
+  getNextIndex,
+  focusedIndex = -1,
+  registerKeyboardHandlers,
+  replyTemplates = [],
 }: {
   group: GroupedNotification;
   userTimezone?: string;
   userRelays?: string[];
   trustScores?: Record<string, number>;
+  engagementItemStates?: EngagementItemStateMap;
+  onMarkDone?: (eventId: string, repliedFromApp?: boolean) => Promise<void>;
+  getNextIndex: () => number;
+  focusedIndex?: number;
+  registerKeyboardHandlers?: (
+    index: number,
+    handlers: EngagementKeyboardHandlers | null
+  ) => void;
+  replyTemplates?: ReplyTemplate[];
 }) {
   const { formatDate, userTimezone } = useFormattedDate();
   const { parentPost, notifications } = group;
@@ -148,34 +204,55 @@ function GroupedNotificationCard({
               </div>
             ) : null}
 
-            {/* Content Preview */}
+            {/* Content Preview - hover shows full content */}
             <div className="flex-1 overflow-hidden">
-              {parentPost.isLongform ? (
-                <>
-                  {parentPost.title ? (
-                    <h4 className="text-foreground mb-1 font-semibold">
-                      {parentPost.title.length > 100
-                        ? parentPost.title.substring(0, 100) + "..."
-                        : parentPost.title}
-                    </h4>
-                  ) : null}
-                  {parentPost.content ? (
-                    <p className="text-muted-foreground text-sm">
-                      {parentPost.content.length > 150
-                        ? parentPost.content.substring(0, 150) + "..."
-                        : parentPost.content}
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                parentPost.caption && (
-                  <p className="text-foreground text-sm whitespace-pre-wrap">
-                    {parentPost.caption.length > 200
-                      ? parentPost.caption.substring(0, 200) + "..."
-                      : parentPost.caption}
-                  </p>
-                )
-              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-default">
+                    {parentPost.isLongform ? (
+                      <>
+                        {parentPost.title ? (
+                          <h4 className="text-foreground mb-1 font-semibold">
+                            {parentPost.title.length > 100
+                              ? parentPost.title.substring(0, 100) + "..."
+                              : parentPost.title}
+                          </h4>
+                        ) : null}
+                        {parentPost.content ? (
+                          <p className="text-muted-foreground text-sm">
+                            {parentPost.content.length > 150
+                              ? parentPost.content.substring(0, 150) + "..."
+                              : parentPost.content}
+                          </p>
+                        ) : null}
+                      </>
+                    ) : (
+                      parentPost.caption && (
+                        <p className="text-foreground text-sm whitespace-pre-wrap">
+                          {parentPost.caption.length > 200
+                            ? parentPost.caption.substring(0, 200) + "..."
+                            : parentPost.caption}
+                        </p>
+                      )
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="max-w-sm p-3 text-left break-words whitespace-pre-wrap"
+                >
+                  {parentPost.isLongform ? (
+                    <>
+                      {parentPost.title ? (
+                        <div className="font-semibold">{parentPost.title}</div>
+                      ) : null}
+                      {parentPost.content ?? ""}
+                    </>
+                  ) : (
+                    (parentPost.caption ?? "")
+                  )}
+                </TooltipContent>
+              </Tooltip>
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Link
@@ -212,12 +289,12 @@ function GroupedNotificationCard({
             </div>
           ) : null}
 
-          {/* Parent Post Stats */}
+          {/* Parent Post Stats - slightly larger numbers for scanability */}
           {parentPost.stats ? (
             <>
               <Separator className="my-3" />
               <div className="flex flex-wrap gap-4">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
                   <MessageCircle
                     className={INLINE_ICON_SIZE_CLASS}
                     strokeWidth={INLINE_ICON_STROKE}
@@ -225,7 +302,7 @@ function GroupedNotificationCard({
                   />
                   <span>{parentPost.stats.replies}</span>
                 </div>
-                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
+                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-sm">
                   <Zap
                     className={INLINE_ICON_SIZE_CLASS}
                     strokeWidth={INLINE_ICON_STROKE}
@@ -237,7 +314,7 @@ function GroupedNotificationCard({
                       : "0"}
                   </span>
                 </div>
-                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
+                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-sm">
                   <Heart
                     className={INLINE_ICON_SIZE_CLASS}
                     strokeWidth={INLINE_ICON_STROKE}
@@ -245,7 +322,7 @@ function GroupedNotificationCard({
                   />
                   <span>{parentPost.stats.likes}</span>
                 </div>
-                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-xs">
+                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-sm">
                   <Repeat
                     className={INLINE_ICON_SIZE_CLASS}
                     strokeWidth={INLINE_ICON_STROKE}
@@ -269,6 +346,10 @@ function GroupedNotificationCard({
 
           <div className="divide-border max-h-[500px] divide-y overflow-y-auto">
             {notifications.map((notification: Notification) => {
+              const isHandled = notification.eventId
+                ? !!engagementItemStates[notification.eventId]
+                : false;
+              const itemIndex = getNextIndex();
               return (
                 <NotificationItem
                   key={notification.id}
@@ -276,6 +357,12 @@ function GroupedNotificationCard({
                   userTimezone={userTimezone}
                   userRelays={userRelays}
                   trustScores={trustScores}
+                  isHandled={isHandled}
+                  onMarkDone={onMarkDone}
+                  keyboardIndex={itemIndex}
+                  isKeyboardFocused={itemIndex === focusedIndex}
+                  registerKeyboardHandlers={registerKeyboardHandlers}
+                  replyTemplates={replyTemplates}
                 />
               );
             })}

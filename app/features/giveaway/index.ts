@@ -45,6 +45,7 @@ export {
   lockGiveaway,
   cancelGiveaway,
   markGiveawayPaidOut,
+  updateGiveaway,
 } from "./giveaway-actions.server";
 
 // ============================================================================

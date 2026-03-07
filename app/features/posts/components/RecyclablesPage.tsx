@@ -2,12 +2,13 @@ import { Link, useFetcher, useParams, useSearchParams } from "@remix-run/react";
 import { useEffect, useMemo } from "react";
 
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
+import type { EngagementFilterOption } from "~/features/posts/hooks/useRecyclablesState";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { CombinedContent, PostData } from "~/features/posts/server";
 import {
   PostDetailsModal,
   RecyclablesBulkActions,
-  RecyclablesQueueTabs,
+  RecyclablesQueueFilter,
   RecyclablesTable,
   RecyclablesToast,
   useRecyclablesInfiniteData,
@@ -20,6 +21,8 @@ import { getTodayInTimezone } from "../utils/date-range-filter";
 
 import { DateRangeFilter } from "./DateRangeFilter";
 import { DateRangeQuickPresets } from "./DateRangeQuickPresets";
+import { EngagementFilter } from "./EngagementFilter";
+import { OlderThanFilter } from "./OlderThanFilter";
 
 interface RepostFetcherData {
   repostData?: unknown;
@@ -38,12 +41,26 @@ export default function RecyclablesPage() {
     hasNextPage,
     fetchNextPage,
   } = useRecyclablesInfiniteData();
-  const params = useParams();
+  const _params = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const dateFrom = searchParams.get("dateFrom") ?? "";
   const dateTo = searchParams.get("dateTo") ?? "";
   const dateRange = { from: dateFrom, to: dateTo };
+  const engagementType = searchParams.get("engagementType") ?? "";
+  const engagementMinStr = searchParams.get("engagementMin") ?? "";
+  const engagementMin = Number.isFinite(parseInt(engagementMinStr, 10))
+    ? parseInt(engagementMinStr, 10)
+    : 0;
+  const engagementFilter: EngagementFilterOption | null =
+    engagementType &&
+    (engagementType === "zaps" ||
+      engagementType === "reactions" ||
+      engagementType === "replies" ||
+      engagementType === "reposts") &&
+    engagementMin >= 0
+      ? { type: engagementType, min: engagementMin }
+      : null;
   const setDateRange = (range: { from: string; to: string }) => {
     const next = new URLSearchParams(searchParams);
     if (range.from) next.set("dateFrom", range.from);
@@ -124,6 +141,7 @@ export default function RecyclablesPage() {
   } = useRecyclablesState({
     posts: typedPosts,
     stats,
+    engagementFilter,
     user: user ?? null,
     repostFetcher,
     bulkDeleteFetcher,
@@ -158,11 +176,10 @@ export default function RecyclablesPage() {
       </div>
 
       <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap md:items-center">
-        <RecyclablesQueueTabs
-          queueTypes={queueTypes}
-          currentQueueType={params["queueType"]}
-          inRow
-        />
+        <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-2">
+          <OlderThanFilter />
+          <EngagementFilter />
+        </div>
         <div className="flex w-full flex-row flex-nowrap items-center gap-2 md:ml-auto md:w-auto md:flex-shrink-0">
           <DateRangeFilter
             dateRange={dateRange}
@@ -183,6 +200,7 @@ export default function RecyclablesPage() {
             userTimezone={userTimezone}
             onDateRangeChange={setDateRange}
           />
+          <RecyclablesQueueFilter queueTypes={queueTypes} />
         </div>
       </div>
 

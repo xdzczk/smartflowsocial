@@ -3,6 +3,7 @@
  * Centralized data fetching for settings page
  */
 
+import { listReplyTemplates } from "~/features/engagement/engagement-reply-templates.server";
 import type { ProfileData } from "~/features/nostr/types";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type {
@@ -136,6 +137,7 @@ export interface SettingsLoaderData {
   mutedList: MutedList | null;
   filterMuted: boolean;
   hidePostsFromLowTrustUsers: boolean;
+  replyTemplates: Array<{ id: string; slug: string; body: string }>;
   pushNotificationsEnabled: boolean;
   pushNotifyPublishSuccess: boolean;
   pushNotifyPublishFailure: boolean;
@@ -189,6 +191,7 @@ export async function loadSettingsData(
     hashTagPresets,
     nwcSettings,
     mutedList,
+    replyTemplates,
     filterMuted,
     hidePostsFromLowTrustUsers,
     pushNotificationPreferences,
@@ -209,6 +212,7 @@ export async function loadSettingsData(
     getHashTagPresetsCached(userId),
     getUserNWC(userId),
     getUserMutedList(userId),
+    listReplyTemplates(userId),
     getUserFilterMuted(userId),
     getUserHidePostsFromLowTrustUsers(userId),
     getUserPushNotificationPreferences(userId),
@@ -377,6 +381,7 @@ export async function loadSettingsData(
     hasAccountsAccess,
     accounts,
     mutedList,
+    replyTemplates,
     filterMuted,
     hidePostsFromLowTrustUsers,
     pushNotificationsEnabled:

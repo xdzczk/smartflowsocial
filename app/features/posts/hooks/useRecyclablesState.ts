@@ -82,9 +82,17 @@ export interface IndividualRepostFetcherData {
   message?: string;
 }
 
+/** Engagement filter from URL: type (stat key) and minimum value. Applied client-side using stats. */
+export interface EngagementFilterOption {
+  type: "zaps" | "reactions" | "replies" | "reposts";
+  min: number;
+}
+
 interface UseRecyclablesStateProps {
   posts: Post[] | PostData[]; // Accept any post type from loader
   stats: Stats;
+  /** When set, only show posts with stats[eventId][statKey] >= min (client-side). */
+  engagementFilter?: EngagementFilterOption | null;
   user?: User | null;
   repostFetcher:
     | FetcherWithComponents<RepostFetcherData>
@@ -103,9 +111,20 @@ interface SortConfig {
 /**
  * Custom hook for managing recyclables posts state and operations
  */
+const ENGAGEMENT_STAT_KEY: Record<
+  EngagementFilterOption["type"],
+  keyof Stats[string]
+> = {
+  zaps: "zaps",
+  reactions: "likes",
+  replies: "replies",
+  reposts: "reposts",
+};
+
 export function useRecyclablesState({
   posts,
   stats,
+  engagementFilter = null,
   user,
   repostFetcher,
   bulkDeleteFetcher,
@@ -276,12 +295,26 @@ export function useRecyclablesState({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sortRecyclablePosts is a stable function defined in the same scope
   }, [posts, sortConfig, stats]);
 
-  // Filter posts - memoized to prevent unnecessary filtering on every render
+  // Filter posts - memoized (search + optional engagement filter from URL)
   const filteredPosts = useMemo(() => {
-    return sortedPosts.filter((post) =>
+    let list = sortedPosts.filter((post) =>
       post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [sortedPosts, searchTerm]);
+    if (engagementFilter && engagementFilter.min >= 0) {
+      const statKey = ENGAGEMENT_STAT_KEY[engagementFilter.type];
+      const min = engagementFilter.min;
+      list = list.filter((post) => {
+        const eventId = getEventId(post);
+        const postStats = getPostStats(
+          eventId,
+          stats as Record<string, unknown>
+        );
+        const value = Number(postStats[statKey] ?? 0);
+        return value >= min;
+      });
+    }
+    return list;
+  }, [sortedPosts, searchTerm, engagementFilter, stats]);
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({

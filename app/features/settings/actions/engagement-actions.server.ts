@@ -1,9 +1,13 @@
 /**
- * Engagement/muted list action handlers
+ * Engagement/muted list and reply templates action handlers
  */
 
 import { json } from "@remix-run/node";
 
+import {
+  createReplyTemplate,
+  deleteReplyTemplate,
+} from "~/features/engagement/engagement-reply-templates.server";
 import { fetchMutedList } from "~/features/engagement/mutedList.server";
 import {
   getUserBasicInfo,
@@ -76,6 +80,40 @@ export async function handleEngagementAction(
       success: true,
       hidePostsFromLowTrustUsers: result.data.hidePostsFromLowTrustUsers,
     });
+  }
+
+  if (action === "reply_template_create") {
+    const slug = formData.get("slug");
+    const body = formData.get("body");
+    if (typeof slug !== "string" || !slug.trim()) {
+      return json({ error: "Slug is required" }, { status: 400 });
+    }
+    if (typeof body !== "string") {
+      return json({ error: "Body is required" }, { status: 400 });
+    }
+    const result = await createReplyTemplate(userId, slug.trim(), body);
+    if (!result.success) {
+      return json(
+        { error: result.error ?? "Failed to create" },
+        { status: 400 }
+      );
+    }
+    return json({ success: true });
+  }
+
+  if (action === "reply_template_delete") {
+    const id = formData.get("id");
+    if (typeof id !== "string" || !id) {
+      return json({ error: "Template id is required" }, { status: 400 });
+    }
+    const result = await deleteReplyTemplate(userId, id);
+    if (!result.success) {
+      return json(
+        { error: result.error ?? "Failed to delete" },
+        { status: 400 }
+      );
+    }
+    return json({ success: true });
   }
 
   return null;

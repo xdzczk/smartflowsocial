@@ -56,6 +56,7 @@ export { calculateTrustScore } from "./trust-score";
 // ============================================================================
 
 export { MutedListSettings } from "./components/MutedListSettings";
+export { ReplyTemplatesSettings } from "./components/ReplyTemplatesSettings";
 export { EngagementContent } from "./components/EngagementContent";
 export { EngagementHeader } from "./components/EngagementHeader";
 export { EngagementTabs } from "./components/EngagementTabs";
@@ -71,6 +72,8 @@ export {
   useEngagementData,
   useEngagementInfiniteQuery,
   useEngagementInfiniteData,
+  useMarkEngagementDone,
   engagementKeys,
 } from "./hooks/useEngagementQuery";
+export type { EngagementItemStateMap } from "./hooks/useEngagementQuery";
 export type { EngagementLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";

@@ -1,4 +1,5 @@
 import { AtSign, MessageCircle, Quote } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
@@ -8,6 +9,7 @@ import {
 
 import type { Notification } from "../engagement.server";
 import { useNotificationActions } from "../hooks/useNotificationActions";
+import type { ReplyTemplate } from "../hooks/useReplyTemplates";
 import { getTrustLevel, getTrustScoreBadgeColor } from "../trust-score";
 
 import { ChildRepliesPanel } from "./ChildRepliesPanel";
@@ -22,6 +24,25 @@ interface NotificationItemProps {
   userTimezone?: string;
   userRelays?: string[];
   trustScores?: Record<string, number>;
+  isHandled?: boolean;
+  /** Mark this item as done. (eventId, repliedFromApp). */
+  onMarkDone?: (eventId: string, repliedFromApp?: boolean) => Promise<void>;
+  /** Keyboard nav: flat list index for this item. */
+  keyboardIndex?: number;
+  /** Keyboard nav: whether this item is currently focused. */
+  isKeyboardFocused?: boolean;
+  /** Keyboard nav: register handlers for R/L/M/E. */
+  registerKeyboardHandlers?: (
+    index: number,
+    handlers: {
+      openReply: () => void;
+      like: () => void;
+      markDone: () => void;
+      expandThread: () => void;
+    } | null
+  ) => void;
+  /** Reply templates for slash-command / Insert template */
+  replyTemplates?: ReplyTemplate[];
 }
 
 // Type badge configuration for each notification type
@@ -72,6 +93,12 @@ export function NotificationItem({
   userTimezone: _userTimezone,
   userRelays = ["wss://relay.primal.net"],
   trustScores = {},
+  isHandled = false,
+  onMarkDone,
+  keyboardIndex = -1,
+  isKeyboardFocused = false,
+  registerKeyboardHandlers,
+  replyTemplates = [],
 }: NotificationItemProps) {
   const { formatDate } = useFormattedDate();
   const actions = useNotificationActions({
@@ -99,8 +126,51 @@ export function NotificationItem({
   // Get stats (available on all notification types)
   const stats: NotificationStats | undefined = notification.stats;
 
+  // Keep handlers in a ref so we can register once and always call latest. Update in effect to avoid ref mutation during render.
+  const handlersRef = useRef({
+    openReply: () => actions.setShowReplyInput(true),
+    like: () => {
+      void actions.handleLike();
+    },
+    markDone: () => {
+      if (onMarkDone && notification.eventId) {
+        void onMarkDone(notification.eventId, false);
+      }
+    },
+    expandThread: () => actions.setShowChildReplies(!actions.showChildReplies),
+  });
+  useEffect(() => {
+    handlersRef.current = {
+      openReply: () => actions.setShowReplyInput(true),
+      like: () => {
+        void actions.handleLike();
+      },
+      markDone: () => {
+        if (onMarkDone && notification.eventId) {
+          void onMarkDone(notification.eventId, false);
+        }
+      },
+      expandThread: () =>
+        actions.setShowChildReplies(!actions.showChildReplies),
+    };
+  }, [onMarkDone, notification.eventId, actions]);
+
+  // Register keyboard handlers for this item (R, L, M, E)
+  useEffect(() => {
+    if (keyboardIndex < 0 || !registerKeyboardHandlers) return;
+    registerKeyboardHandlers(keyboardIndex, {
+      openReply: () => handlersRef.current.openReply(),
+      like: () => handlersRef.current.like(),
+      markDone: () => handlersRef.current.markDone(),
+      expandThread: () => handlersRef.current.expandThread(),
+    });
+    return () => registerKeyboardHandlers(keyboardIndex, null);
+  }, [keyboardIndex, registerKeyboardHandlers]);
+
   return (
-    <div className="hover:bg-muted p-3 transition-colors">
+    <div
+      className={`p-3 transition-colors ${isHandled ? "hover:bg-muted/50 opacity-90" : "hover:bg-muted border-primary/30 bg-primary/5 border-l-2"} ${isKeyboardFocused ? "ring-primary ring-2 ring-inset" : ""}`}
+    >
       <div className="flex gap-2">
         {/* Author Avatar */}
         <div className="flex-shrink-0">
@@ -108,10 +178,10 @@ export function NotificationItem({
             <img
               src={notification.authorPicture}
               alt={displayName}
-              className="h-10 w-10 rounded-full"
+              className="h-11 w-11 rounded-full"
             />
           ) : (
-            <div className="bg-muted h-10 w-10 rounded-full" />
+            <div className="bg-muted h-11 w-11 rounded-full" />
           )}
         </div>
 
@@ -177,6 +247,14 @@ export function NotificationItem({
             onToggleChildReplies={() =>
               actions.setShowChildReplies(!actions.showChildReplies)
             }
+            onMarkDone={
+              onMarkDone && notification.eventId
+                ? () => {
+                    void onMarkDone(notification.eventId, false);
+                  }
+                : undefined
+            }
+            isHandled={isHandled}
           />
 
           {/* Reply Input */}
@@ -186,12 +264,25 @@ export function NotificationItem({
               isReplying={actions.isReplying}
               onContentChange={actions.setReplyContent}
               onSubmit={() => {
-                void actions.handleReply();
+                void (async () => {
+                  try {
+                    await actions.handleReply();
+                    if (onMarkDone && notification.eventId) {
+                      await onMarkDone(notification.eventId, true);
+                    }
+                  } catch {
+                    // handleReply shows its own toast
+                  }
+                })();
               }}
               onCancel={() => {
                 actions.setShowReplyInput(false);
                 actions.setReplyContent("");
               }}
+              templates={replyTemplates}
+              onInsertTemplate={(body) =>
+                actions.setReplyContent(actions.replyContent + body)
+              }
             />
           ) : null}
 

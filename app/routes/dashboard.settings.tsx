@@ -52,6 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       hasAccountsAccess: false,
       accounts: null,
       mutedList: { npubs: [], lastSynced: new Date().toISOString() },
+      replyTemplates: [],
       filterMuted: false,
       hidePostsFromLowTrustUsers: false,
       primarySignerProfile: null,

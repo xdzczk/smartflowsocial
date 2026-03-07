@@ -9,6 +9,7 @@ import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import type { NostrEvent } from "~/features/nostr/types";
 import { getPostStats, type PostStats } from "~/features/posts/stats.server";
 import { logError } from "~/lib/error-logger.server";
+import { extractNostrIdentifier } from "~/lib/extract-nostr-identifier";
 /**
  * Extended NostrEvent with pubkey and id (from Primal cache)
  */
@@ -17,60 +18,78 @@ type NostrEventWithMetadata = NostrEvent & {
   id?: string;
 };
 
+/** Result of decoding a search input: either an event id (note/nevent/hex) or an naddr (long-form article). */
+export type DecodedSearchInput =
+  | { type: "event_id"; eventId: string }
+  | { type: "naddr"; kind: number; pubkey: string; identifier: string };
+
+/**
+ * Decode search input to either an event id or naddr (long-form) address.
+ * Supports: note1, nevent1, nostr:note1, nostr:nevent1, naddr1, nostr:naddr1, 64-char hex.
+ */
+export function decodeSearchInput(eventInput: string): DecodedSearchInput {
+  const raw = eventInput.trim();
+  const normalized = raw.startsWith("nostr:") ? raw.slice(6) : raw;
+
+  if (normalized.startsWith("naddr1")) {
+    try {
+      const decoded = nip19.decode(normalized);
+      if (decoded.type === "naddr") {
+        const { kind, pubkey, identifier } = decoded.data;
+        return {
+          type: "naddr",
+          kind: typeof kind === "number" ? kind : 30023,
+          pubkey: typeof pubkey === "string" ? pubkey : "",
+          identifier: typeof identifier === "string" ? identifier : "",
+        };
+      }
+    } catch (_e) {
+      throw new Error("Invalid naddr1 format");
+    }
+  }
+
+  return { type: "event_id", eventId: decodeEventId(eventInput) };
+}
+
 /**
  * Decode event ID from various formats (nevent1, note1, nostr:nevent1, nostr:note1, hex).
  * Exported for use in global search when looking up own posts by event id.
+ * For naddr use decodeSearchInput instead.
  */
 export function decodeEventId(eventInput: string): string {
   const eventId = eventInput.trim();
+  const normalized = eventId.startsWith("nostr:")
+    ? eventId.replace("nostr:", "")
+    : eventId;
 
-  // Check if input is in nevent1 format
-  if (eventId.startsWith("nevent1")) {
+  if (normalized.startsWith("nevent1")) {
     try {
-      const decoded = nip19.decode(eventId);
+      const decoded = nip19.decode(normalized);
       if (decoded.type === "nevent") {
         return decoded.data.id;
       }
     } catch (_e) {
       throw new Error("Invalid nevent1 format");
     }
-  } else if (eventId.startsWith("nostr:nevent1")) {
+  } else if (normalized.startsWith("note1")) {
     try {
-      const decoded = nip19.decode(eventId.replace("nostr:", ""));
-      if (decoded.type === "nevent") {
-        return decoded.data.id;
-      }
-    } catch (_e) {
-      throw new Error("Invalid nevent1 format");
-    }
-  } else if (eventId.startsWith("note1")) {
-    try {
-      const decoded = nip19.decode(eventId);
+      const decoded = nip19.decode(normalized);
       if (decoded.type === "note") {
         return decoded.data;
       }
     } catch (_e) {
       throw new Error("Invalid note1 format");
     }
-  } else if (eventId.startsWith("nostr:note1")) {
-    try {
-      const decoded = nip19.decode(eventId.replace("nostr:", ""));
-      if (decoded.type === "note") {
-        return decoded.data;
-      }
-    } catch (_e) {
-      throw new Error("Invalid nostr:note1 format");
-    }
   }
 
   // Validate hex format (64 character hex string)
-  if (!/^[a-f0-9]{64}$/i.test(eventId)) {
+  if (!/^[a-f0-9]{64}$/i.test(normalized)) {
     throw new Error(
-      "Invalid event ID format. Must be a 64-character hex string, note1, or nevent1"
+      "Invalid event ID format. Must be a 64-character hex string, note1, nevent1, or naddr1"
     );
   }
 
-  return eventId;
+  return normalized;
 }
 
 /**
@@ -197,68 +216,151 @@ function extractMediaUrlsFromTags(tags: string[][]): string[] {
 }
 
 /**
- * Handle search event action
+ * Handle search event action (notes, nevents, naddr long-form articles).
  */
+/* eslint-disable sonarjs/cognitive-complexity -- branches for multiple identifier types */
 export async function handleSearchEvent(eventInput: string) {
-  if (!eventInput || eventInput.trim() === "") {
+  const raw = eventInput.trim();
+  if (!raw) {
     const { ValidationError } = await import("~/lib/errors");
-    throw new ValidationError("Please enter an event ID or nevent1");
+    throw new ValidationError("Please enter an event ID, nevent1, or naddr1");
   }
 
-  // Decode event ID from various formats
-  let eventId: string;
+  const normalized = extractNostrIdentifier(raw) ?? raw;
+
+  let decoded: DecodedSearchInput;
   try {
-    eventId = decodeEventId(eventInput);
+    decoded = decodeSearchInput(normalized);
   } catch (error) {
     const { ValidationError } = await import("~/lib/errors");
     throw new ValidationError(
-      error instanceof Error ? error.message : "Invalid event ID format",
-      { input: eventInput }
+      error instanceof Error ? error.message : "Invalid format",
+      { input: raw }
     );
   }
 
-  // Fetch event from Primal cache
   let responses: unknown;
-  try {
-    responses = await connectToPrimalCache("events", {
-      event_ids: [eventId],
-    });
-  } catch (error) {
-    const { ExternalServiceError } = await import("~/lib/errors");
-    throw new ExternalServiceError("Failed to fetch event from cache", 502, {
-      service: "PrimalCache",
-      eventId,
-      originalError: error instanceof Error ? error.message : String(error),
-    });
+  let eventIdNorm: string;
+  let matchByNaddr: {
+    kind: number;
+    pubkey: string;
+    identifier: string;
+  } | null = null;
+
+  if (decoded.type === "naddr") {
+    eventIdNorm = ""; // match by kind+pubkey+identifier below
+    matchByNaddr = {
+      kind: decoded.kind,
+      pubkey: decoded.pubkey,
+      identifier: decoded.identifier,
+    };
+    try {
+      responses = await connectToPrimalCache("event_by_addr", {
+        kind: decoded.kind,
+        pubkey: decoded.pubkey,
+        identifier: decoded.identifier,
+      });
+    } catch {
+      // Fallback: some caches accept "kind:pubkey:identifier" as event_id
+      try {
+        responses = await connectToPrimalCache("events", {
+          event_ids: [
+            `${decoded.kind}:${decoded.pubkey}:${decoded.identifier}`,
+          ],
+        });
+      } catch (error) {
+        const { ExternalServiceError } = await import("~/lib/errors");
+        throw new ExternalServiceError(
+          "Failed to fetch article from cache",
+          502,
+          {
+            service: "PrimalCache",
+            originalError:
+              error instanceof Error ? error.message : String(error),
+          }
+        );
+      }
+    }
+  } else {
+    eventIdNorm = decoded.eventId.toLowerCase();
+    try {
+      responses = await connectToPrimalCache("events", {
+        event_ids: [decoded.eventId],
+      });
+    } catch (error) {
+      const { ExternalServiceError } = await import("~/lib/errors");
+      throw new ExternalServiceError("Failed to fetch event from cache", 502, {
+        service: "PrimalCache",
+        eventId: decoded.eventId,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
-  // Find the EVENT response
-  const eventResponse = Array.isArray(responses)
-    ? responses.find(
-        (res): res is [string, string, NostrEventWithMetadata] =>
-          Array.isArray(res) && res[0] === "EVENT" && res[2] !== undefined
-      )
-    : null;
+  const flattenPayload = (raw: unknown): NostrEventWithMetadata[] => {
+    if (!raw || typeof raw !== "object") return [];
+    if (Array.isArray(raw)) {
+      return raw.filter(
+        (e): e is NostrEventWithMetadata => e != null && typeof e === "object"
+      );
+    }
+    if ("event" in raw && raw.event != null && typeof raw.event === "object") {
+      return [raw.event as NostrEventWithMetadata];
+    }
+    return [raw as NostrEventWithMetadata];
+  };
+  const candidates = Array.isArray(responses)
+    ? (responses as unknown[])
+        .filter(
+          (res): res is [string, string, unknown] =>
+            Array.isArray(res) && res[0] === "EVENT" && res[2] != null
+        )
+        .flatMap((res) => flattenPayload(res[2]))
+        .filter((ev): ev is NostrEventWithMetadata => typeof ev === "object")
+    : [];
 
-  if (!eventResponse?.[2]) {
+  const getDTag = (ev: NostrEventWithMetadata): string => {
+    const tags = Array.isArray(ev.tags) ? ev.tags : [];
+    const d = tags.find((t) => Array.isArray(t) && t[0] === "d");
+    return d && d.length > 1 && typeof d[1] === "string" ? d[1] : "";
+  };
+
+  let eventToUse: NostrEventWithMetadata | null = null;
+  if (matchByNaddr) {
+    eventToUse =
+      candidates.find(
+        (ev) =>
+          (typeof ev.kind === "number" ? ev.kind : 0) === matchByNaddr.kind &&
+          (typeof ev.pubkey === "string" ? ev.pubkey : "") ===
+            matchByNaddr.pubkey &&
+          getDTag(ev) === matchByNaddr.identifier
+      ) ?? null;
+  } else {
+    const matching = candidates.filter(
+      (ev) =>
+        (typeof ev.id === "string" ? ev.id : "").toLowerCase() === eventIdNorm
+    );
+    const kind1Note = matching.find(
+      (ev) => (typeof ev.kind === "number" ? ev.kind : 0) === 1
+    );
+    eventToUse = kind1Note ?? matching[0] ?? null;
+  }
+
+  if (!eventToUse) {
     const { NotFoundError } = await import("~/lib/errors");
     throw new NotFoundError(
-      "Event not found. Please check the event ID and try again.",
-      { eventId }
+      "Event not found. Please check the ID or address and try again.",
+      { input: decoded.type === "naddr" ? "naddr" : decoded.eventId }
     );
   }
 
-  const event = eventResponse[2];
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: defensive check for array access
-  if (!event) {
-    const { NotFoundError } = await import("~/lib/errors");
-    throw new NotFoundError(
-      "Event not found. Please check the event ID and try again.",
-      { eventId }
-    );
-  }
-
-  // Fetch author profile info and stats in parallel
+  const event = eventToUse;
+  const eventId =
+    typeof event.id === "string" && event.id
+      ? event.id
+      : decoded.type === "event_id"
+        ? decoded.eventId
+        : "";
   const eventPubkey = typeof event.pubkey === "string" ? event.pubkey : "";
   const eventContent = typeof event.content === "string" ? event.content : "";
   const [authorInfo, stats] = await Promise.all([
@@ -275,7 +377,7 @@ export async function handleSearchEvent(eventInput: string) {
   return {
     success: true,
     event: {
-      id: typeof event.id === "string" ? event.id : eventId,
+      id: typeof event.id === "string" ? event.id : eventId || "",
       pubkey: eventPubkey,
       created_at: typeof event.created_at === "number" ? event.created_at : 0,
       kind: typeof event.kind === "number" ? event.kind : 1,
@@ -288,3 +390,4 @@ export async function handleSearchEvent(eventInput: string) {
     stats,
   };
 }
+/* eslint-enable sonarjs/cognitive-complexity */

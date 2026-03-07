@@ -8,10 +8,11 @@ import {
   type FeatureName,
   type UserSubscription,
 } from "~/features/payments/types";
+import { extractNostrIdentifier } from "~/lib/extract-nostr-identifier";
 import { prisma } from "~/lib/prisma.server";
 import { getUserSubscription } from "~/models/payment.server";
 
-import { decodeEventId, handleSearchEvent } from "./search-action.server";
+import { decodeSearchInput, handleSearchEvent } from "./search-action.server";
 
 export interface GlobalSearchResult {
   type:
@@ -578,17 +579,10 @@ async function searchTemplates(
 }
 
 /**
- * Check if query looks like a Nostr event ID (note1, nevent1, nostr:note1, nostr:nevent1, or 64-char hex)
+ * Check if query looks like or contains a Nostr event/address (direct id or URL from Primal/Coracle etc.)
  */
 function isNostrEventId(query: string): boolean {
-  const trimmed = query.trim();
-  return (
-    trimmed.startsWith("note1") ||
-    trimmed.startsWith("nevent1") ||
-    trimmed.startsWith("nostr:note1") ||
-    trimmed.startsWith("nostr:nevent1") ||
-    /^[0-9a-f]{64}$/i.test(trimmed)
-  );
+  return extractNostrIdentifier(query.trim()) !== null;
 }
 
 /**
@@ -883,25 +877,28 @@ export async function performGlobalSearch(
   let externalResults: GlobalSearchResult[] = [];
 
   if (isEventId) {
+    const normalizedQuery =
+      extractNostrIdentifier(trimmedQuery) ?? trimmedQuery;
     let eventIdHex: string | null = null;
     try {
-      eventIdHex = decodeEventId(trimmedQuery);
+      const decoded = decodeSearchInput(normalizedQuery);
+      if (decoded.type === "event_id") eventIdHex = decoded.eventId;
     } catch {
       // Invalid format; will only try external search below
     }
 
     const [ownPosts, externalResult] = await Promise.all([
-      eventIdHex ? findOwnPostsByNostrEventId(userId, eventIdHex) : [],
+      eventIdHex != null ? findOwnPostsByNostrEventId(userId, eventIdHex) : [],
       (async () => {
         try {
-          const data = await handleSearchEvent(trimmedQuery);
+          const data = await handleSearchEvent(normalizedQuery);
           return {
             type: "external" as const,
             id: data.event.id,
             content: data.event.content,
             status: "external",
             createdAt: new Date(data.event.created_at * 1000).toISOString(),
-            url: `/dashboard/search/posts?q=${encodeURIComponent(trimmedQuery)}`,
+            url: `/dashboard/search/posts?q=${encodeURIComponent(normalizedQuery)}`,
           };
         } catch {
           return null;

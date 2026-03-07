@@ -125,6 +125,7 @@ export async function getGiveawayById(
 }
 
 export interface CreateGiveawayInput {
+  name?: string | null;
   scopeType: "PERIOD" | "SINGLE_POST" | "QUEUE";
   scopeReference: Record<string, unknown>;
   eligibilityFrom?: Date | null;
@@ -155,6 +156,7 @@ export async function createGiveaway(
   return prisma.giveaway.create({
     data: {
       userId,
+      name: (input.name?.trim() ?? "") || undefined,
       scopeType: input.scopeType,
       scopeReference: input.scopeReference,
       eligibilityFrom: input.eligibilityFrom ?? undefined,
@@ -167,6 +169,57 @@ export async function createGiveaway(
       status: "DRAFT",
     },
   });
+}
+
+export interface UpdateGiveawayInput {
+  name?: string | null;
+  winnerCount?: number;
+  engagementTypes?: string[];
+  selectionMode?: GiveawaySelectionMode;
+}
+
+/** Update giveaway config; only allowed when status is DRAFT. */
+export async function updateGiveaway(
+  userId: string,
+  giveawayId: string,
+  input: UpdateGiveawayInput
+): Promise<{ success: boolean; error?: string }> {
+  const g = await getGiveawayById(giveawayId, userId);
+  if (!g) return { success: false, error: ERROR_GIVEAWAY_NOT_FOUND };
+  if (g.status !== "DRAFT") {
+    return { success: false, error: "Only draft giveaways can be edited" };
+  }
+
+  const subscription = await getUserSubscription(userId);
+  const planType = getUserPlanType(subscription as UserSubscription | null);
+  const limits = getGiveawayPlanLimits(planType);
+
+  const data: Parameters<typeof prisma.giveaway.update>[0]["data"] = {};
+  if (input.name !== undefined) data.name = input.name?.trim() ?? null;
+  if (input.winnerCount !== undefined) {
+    data.winnerCount = Math.min(
+      Math.max(1, Math.floor(input.winnerCount)),
+      limits.maxWinnerCount
+    );
+  }
+  if (input.engagementTypes !== undefined) {
+    if (
+      !Array.isArray(input.engagementTypes) ||
+      input.engagementTypes.length === 0
+    ) {
+      return { success: false, error: "At least one engagement type required" };
+    }
+    data.engagementTypes = input.engagementTypes;
+  }
+  if (input.selectionMode !== undefined) {
+    data.selectionMode = input.selectionMode;
+  }
+
+  await prisma.giveaway.update({
+    where: { id: giveawayId },
+    data,
+  });
+  return { success: true };
 }
 
 export async function previewGiveaway(

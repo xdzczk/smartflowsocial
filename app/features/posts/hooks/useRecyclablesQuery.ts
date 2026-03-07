@@ -36,7 +36,8 @@ export const recyclablesKeys = {
     queueType?: string,
     page?: number,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    olderThan?: string
   ) =>
     [
       ...recyclablesKeys.lists(),
@@ -44,6 +45,7 @@ export const recyclablesKeys = {
       page,
       dateFrom ?? "",
       dateTo ?? "",
+      olderThan ?? "",
     ] as const,
   detail: (id: string) => [...recyclablesKeys.all, "detail", id] as const,
 };
@@ -59,6 +61,7 @@ export function useRecyclablesQuery() {
   const page = 1; // Recyclables doesn't use pagination in URL currently, but we'll support it
   const dateFrom = searchParams.get("dateFrom") ?? "";
   const dateTo = searchParams.get("dateTo") ?? "";
+  const olderThan = searchParams.get("olderThan") ?? "";
 
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
@@ -72,9 +75,16 @@ export function useRecyclablesQuery() {
   const queryParams = new URLSearchParams({ page: String(page) });
   if (dateFrom) queryParams.set("dateFrom", dateFrom);
   if (dateTo) queryParams.set("dateTo", dateTo);
+  if (olderThan) queryParams.set("olderThan", olderThan);
 
   return useQuery({
-    queryKey: recyclablesKeys.list(queueType, page, dateFrom, dateTo),
+    queryKey: recyclablesKeys.list(
+      queueType,
+      page,
+      dateFrom,
+      dateTo,
+      olderThan
+    ),
     queryFn: async () => {
       // Use fetcher to refetch data
       const url = `/dashboard/recyclables${queueType !== "all" ? `/${queueType}` : ""}?${queryParams.toString()}`;
@@ -121,6 +131,7 @@ export function useRecyclablesInfiniteQuery() {
   const queueType = params["queueType"] ?? "all";
   const dateFrom = searchParams.get("dateFrom") ?? "";
   const dateTo = searchParams.get("dateTo") ?? "";
+  const olderThan = searchParams.get("olderThan") ?? "";
 
   const loaderDataRaw = useLoaderData();
 
@@ -138,11 +149,18 @@ export function useRecyclablesInfiniteQuery() {
     const q = new URLSearchParams({ page: String(pageParam) });
     if (dateFrom) q.set("dateFrom", dateFrom);
     if (dateTo) q.set("dateTo", dateTo);
+    if (olderThan) q.set("olderThan", olderThan);
     return q.toString();
   };
 
   return useInfiniteRemixQuery<RecyclablesLoaderData>({
-    queryKey: recyclablesKeys.list(queueType, undefined, dateFrom, dateTo),
+    queryKey: recyclablesKeys.list(
+      queueType,
+      undefined,
+      dateFrom,
+      dateTo,
+      olderThan
+    ),
     initialData: validatedLoaderData,
     getNextPageParam: (lastPage) => {
       const { pagination } = lastPage;

@@ -18,6 +18,7 @@ import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { getPublishedPosts } from "~/models/post.queries.server";
 
 import { ENGAGEMENT_FEED_PAGE_SIZE } from "../constants";
+import { getEngagementItemStates } from "../engagement-mark-state.server";
 import {
   groupNotificationsByParent,
   groupNotificationsByType,
@@ -251,6 +252,208 @@ function filterLowTrustNotifications(
   });
 }
 
+function getEventIdsFromPosts(
+  posts: Array<{ signedEvent: unknown }>
+): string[] {
+  return posts
+    .filter((post) => {
+      const se = post.signedEvent;
+      return (
+        se &&
+        typeof se === "object" &&
+        !Array.isArray(se) &&
+        "id" in se &&
+        typeof (se as { id: unknown }).id === "string"
+      );
+    })
+    .map((post) => (post.signedEvent as { id: string }).id);
+}
+
+function getMutedNpubsFromUser(user: UserWithHashTagPresets): string[] {
+  const mutedListData =
+    user.mutedList &&
+    typeof user.mutedList === "object" &&
+    !Array.isArray(user.mutedList) &&
+    "npubs" in user.mutedList
+      ? (user.mutedList as { npubs?: unknown })
+      : null;
+  return mutedListData && Array.isArray(mutedListData.npubs)
+    ? (mutedListData.npubs as string[])
+    : [];
+}
+
+function buildEmptyEngagementResponse(user: UserWithHashTagPresets) {
+  const stats: Record<string, EventStats> = {};
+  const trustScores: Record<string, number> = {};
+  const engagementItemStates: Record<
+    string,
+    { state: "handled"; repliedFromApp: boolean }
+  > = {};
+  return {
+    posts: [],
+    stats,
+    user,
+    notifications: {
+      all: [],
+      replies: [],
+      mentions: [],
+      zaps: [],
+      quotes: [],
+    },
+    groupedNotifications: { replies: [], quotes: [] },
+    trustScores,
+    engagementItemStates,
+  };
+}
+
+function buildFallbackStatsFromPosts(
+  posts: Array<{ signedEvent: unknown }>
+): Record<string, EventStats> {
+  const emptyStats: EventStats = {
+    likes: 0,
+    replies: 0,
+    mentions: 0,
+    reposts: 0,
+    zaps: 0,
+    satszapped: 0,
+  };
+  return posts
+    .filter((post) => {
+      const se = post.signedEvent;
+      return (
+        se &&
+        typeof se === "object" &&
+        !Array.isArray(se) &&
+        "id" in se &&
+        typeof (se as { id: string }).id === "string"
+      );
+    })
+    .reduce<Record<string, EventStats>>((acc, post) => {
+      const se = post.signedEvent as { id: string };
+      acc[se.id] = { ...emptyStats };
+      return acc;
+    }, {});
+}
+
+function isPrimalItemQuoteRepostMentioningUser(
+  item: PrimalEvent,
+  userPubkeyHex: string
+): boolean {
+  if (
+    !Array.isArray(item) ||
+    item[0] !== "EVENT" ||
+    typeof item[2] !== "object" ||
+    Array.isArray(item[2])
+  )
+    return false;
+  const event = item[2] as {
+    id?: unknown;
+    pubkey?: unknown;
+    content?: unknown;
+    kind?: unknown;
+    tags?: unknown;
+  };
+  if (event.kind !== 1) return false;
+  if (
+    !event.id ||
+    typeof event.id !== "string" ||
+    !event.pubkey ||
+    typeof event.pubkey !== "string" ||
+    typeof event.content !== "string"
+  )
+    return false;
+  if (event.pubkey === userPubkeyHex) return false;
+  const tags = (event as { tags: NostrTag[] }).tags;
+  const eMentionTags = tags.filter(
+    (tag: NostrTag) => tag[0] === "e" && tag[3] === "mention"
+  );
+  const pMentionTags = tags.filter(
+    (tag: NostrTag) => tag[0] === "p" && (tag[3] === "mention" || tag[3] === "")
+  );
+  if (eMentionTags.length === 0 || pMentionTags.length === 0) return false;
+  const mentionedUserPubkey = pMentionTags[0]?.[1];
+  return mentionedUserPubkey === userPubkeyHex;
+}
+
+function extractQuoteRepostEventsFromPrimal(
+  notificationsData: unknown,
+  userPubkeyHex: string
+): NotificationEvent[] {
+  if (!Array.isArray(notificationsData)) return [];
+  return (notificationsData as PrimalEvent[])
+    .filter((item) =>
+      isPrimalItemQuoteRepostMentioningUser(item, userPubkeyHex)
+    )
+    .map((item: PrimalEvent) => {
+      if (Array.isArray(item)) return item[2] as NotificationEvent;
+      throw new Error("Invalid PrimalEvent structure");
+    });
+}
+
+async function processAndGroupQuoteReposts(
+  rawQuoteReposts: NotificationEvent[],
+  userPubkeyHex: string,
+  userFilterMuted: boolean,
+  userHidePostsFromLowTrustUsers: boolean,
+  mutedNpubs: string[],
+  userProfilesMap: Map<string, User>,
+  trustScoresMap: Map<string, number>,
+  postsAsPostData: PostData[],
+  stats: Record<string, EventStats>
+): Promise<GroupedNotification[]> {
+  if (rawQuoteReposts.length === 0) return [];
+  let quoteRepostNotifications: Notification[] = await processQuoteReposts(
+    rawQuoteReposts,
+    connectToPrimalCache
+  );
+  if (userFilterMuted && mutedNpubs.length > 0) {
+    quoteRepostNotifications = filterMutedNotifications(
+      quoteRepostNotifications,
+      mutedNpubs
+    );
+  }
+  const quoteUniquePubkeys = Array.from(
+    new Set(quoteRepostNotifications.map((n) => n.pubkey))
+  );
+  const quoteProfilePromises = quoteUniquePubkeys.map(async (pubkey) => {
+    if (!userProfilesMap.has(pubkey)) {
+      const userProfile = await fetchUserProfile(pubkey);
+      if (userProfile) {
+        userProfilesMap.set(pubkey, userProfile);
+        trustScoresMap.set(pubkey, calculateTrustScore(userProfile));
+      }
+    }
+  });
+  await Promise.all(quoteProfilePromises);
+  if (userHidePostsFromLowTrustUsers) {
+    quoteRepostNotifications = filterLowTrustNotifications(
+      quoteRepostNotifications,
+      trustScoresMap
+    );
+  }
+  return groupNotificationsByParent(
+    quoteRepostNotifications,
+    postsAsPostData,
+    [],
+    stats
+  );
+}
+
+/** Serialize grouped notifications for JSON response (publishedAt → ISO string). */
+function serializeGroupedForResponse(
+  groups: GroupedNotification[]
+): GroupedNotification[] {
+  return groups.map((group) => ({
+    ...group,
+    parentPost: {
+      ...group.parentPost,
+      publishedAt: group.parentPost.publishedAt
+        ? group.parentPost.publishedAt.toISOString()
+        : null,
+    },
+  })) as GroupedNotification[];
+}
+
 /**
  * Load engagement feed data
  */
@@ -269,74 +472,19 @@ export async function loadEngagementFeedData(
     getUserById(userId),
   ]);
 
-  // Validate user data
-  if (!userResult) {
-    throw new Error("User not found");
-  }
-
+  if (!userResult) throw new Error("User not found");
   const user: UserWithHashTagPresets = userResult;
-
-  // Ensure user has required properties with safe defaults
-  const userNpub = user.npub;
-  // Primal cache and Nostr events use hex pubkeys; decode for API calls and comparisons
-  const userPubkeyHex = nostrAdapter.decodeNpub(userNpub) ?? userNpub;
-  const userFilterMuted = user.filterMuted;
-  const userHidePostsFromLowTrustUsers = user.hidePostsFromLowTrustUsers;
-
-  // Type guard for mutedList
-  const mutedListData =
-    user.mutedList &&
-    typeof user.mutedList === "object" &&
-    !Array.isArray(user.mutedList) &&
-    "npubs" in user.mutedList
-      ? (user.mutedList as { npubs?: unknown; lastSynced?: unknown })
-      : null;
-  const mutedNpubs =
-    mutedListData && Array.isArray(mutedListData.npubs)
-      ? (mutedListData.npubs as string[])
-      : [];
-
-  // Get event IDs from signedEvent.id
-  const eventIds = posts
-    .filter((post) => {
-      const se = post.signedEvent;
-      return (
-        se &&
-        typeof se === "object" &&
-        !Array.isArray(se) &&
-        "id" in se &&
-        typeof (se as { id: unknown }).id === "string"
-      );
-    })
-    .map((post) => {
-      const se = post.signedEvent as { id: string };
-      return se.id;
-    });
+  const userPubkeyHex = nostrAdapter.decodeNpub(user.npub) ?? user.npub;
+  const mutedNpubs = getMutedNpubsFromUser(user);
+  const eventIds = getEventIdsFromPosts(posts);
 
   let stats: Record<string, EventStats> = {};
   let allNotifications: Notification[] = [];
   const userProfilesMap = new Map<string, User>();
   const trustScoresMap = new Map<string, number>();
 
-  // Early return if no posts - skip expensive API calls
   if (eventIds.length === 0) {
-    return {
-      posts: [],
-      stats: {},
-      user,
-      notifications: {
-        all: [],
-        replies: [],
-        mentions: [],
-        zaps: [],
-        quotes: [],
-      },
-      groupedNotifications: {
-        replies: [],
-        quotes: [],
-      },
-      trustScores: {},
-    };
+    return buildEmptyEngagementResponse(user);
   }
 
   // Start get_notifications call early (parallel with event processing)
@@ -374,8 +522,7 @@ export async function loadEngagementFeedData(
       Array.isArray(result.notifications) ? result.notifications : []
     );
 
-    // Filter out muted users if enabled
-    if (userFilterMuted && mutedNpubs.length > 0) {
+    if (user.filterMuted && mutedNpubs.length > 0) {
       allNotifications = filterMutedNotifications(allNotifications, mutedNpubs);
     }
 
@@ -419,8 +566,7 @@ export async function loadEngagementFeedData(
       await Promise.allSettled(batchPromises);
     }
 
-    // Filter out low trust users if enabled
-    if (userHidePostsFromLowTrustUsers) {
+    if (user.hidePostsFromLowTrustUsers) {
       allNotifications = filterLowTrustNotifications(
         allNotifications,
         trustScoresMap
@@ -430,52 +576,12 @@ export async function loadEngagementFeedData(
     logError(error instanceof Error ? error : new Error(String(error)), {
       message: "Error fetching engagement stats",
     });
-    // Gracefully handle errors
-    stats = posts
-      .filter((post) => {
-        const se = post.signedEvent;
-        return (
-          se &&
-          typeof se === "object" &&
-          !Array.isArray(se) &&
-          "id" in se &&
-          typeof (se as { id: unknown }).id === "string"
-        );
-      })
-      .reduce(
-        (acc, post) => {
-          const se = post.signedEvent;
-          if (
-            se &&
-            typeof se === "object" &&
-            !Array.isArray(se) &&
-            "id" in se &&
-            typeof se["id"] === "string"
-          ) {
-            const result: Record<string, EventStats> = acc;
-            const eventStats: EventStats = {
-              likes: 0,
-              replies: 0,
-              mentions: 0,
-              reposts: 0,
-              zaps: 0,
-              satszapped: 0,
-            };
-            result[se["id"]] = eventStats;
-            return result;
-          }
-          return acc;
-        },
-        ((): Record<string, EventStats> => ({}))()
-      );
+    stats = buildFallbackStatsFromPosts(posts);
   }
 
-  // Group notifications by type
   const groupedNotifications = groupNotificationsByType(allNotifications);
 
-  // Group notifications by parent event - focus on replies only
-  // Convert PostWithQueueType[] to PostData[] for compatibility
-  const postsAsPostData: PostData[] = posts.map((post) => {
+  const postsAsPostData: PostData[] = posts.map((post): PostData => {
     const { queueType, ...rest } = post;
     const convertedQueueType: QueueType | null = queueType
       ? {
@@ -496,10 +602,11 @@ export async function loadEngagementFeedData(
           userId: queueType.userId,
         }
       : null;
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Type assertion needed for Prisma query result compatibility
+    const signedEvent = post.signedEvent as SignedEvent | null | undefined;
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Prisma query result spread compatible with PostData at runtime
     return {
       ...rest,
-      signedEvent: post.signedEvent as SignedEvent | null | undefined,
+      signedEvent,
       queueType: convertedQueueType,
     } as PostData;
   });
@@ -508,179 +615,62 @@ export async function loadEngagementFeedData(
     replies: groupNotificationsByParent(
       groupedNotifications.replies,
       postsAsPostData,
-      [], // No longform posts in this feed
+      [],
       stats
     ),
   };
 
-  // Fetch quote reposts using get_notifications (await the promise started earlier)
-  let quoteRepostNotifications: Notification[] = [];
   let groupedQuoteReposts: GroupedNotification[] = [];
   try {
     const notificationsData = await notificationsPromise;
-
-    // Extract quote reposts (kind 1 events with mention tags)
-    if (Array.isArray(notificationsData)) {
-      const rawQuoteReposts = (notificationsData as PrimalEvent[])
-        .filter((item: PrimalEvent) => {
-          if (
-            Array.isArray(item) &&
-            item[0] === "EVENT" &&
-            typeof item[2] === "object" &&
-            !Array.isArray(item[2]) &&
-            "kind" in item[2] &&
-            (item[2] as { kind?: unknown }).kind === 1
-          ) {
-            const event = item[2] as {
-              id?: unknown;
-              pubkey?: unknown;
-              content?: unknown;
-              kind?: unknown;
-              tags?: unknown;
-            };
-
-            if (typeof event !== "object" || Array.isArray(event)) {
-              return false;
-            }
-
-            const eventTyped = event;
-            if (
-              !eventTyped.id ||
-              typeof eventTyped.id !== "string" ||
-              !eventTyped.pubkey ||
-              typeof eventTyped.pubkey !== "string" ||
-              typeof eventTyped.content !== "string"
-            ) {
-              return false;
-            }
-
-            const tags = (eventTyped as { tags: NostrTag[] }).tags;
-
-            // Skip if it's the user's own post (event.pubkey is hex)
-            if (eventTyped.pubkey === userPubkeyHex) {
-              return false;
-            }
-
-            // Check if it has both "e" and "p" tags with mention marker
-            const eMentionTags = tags.filter(
-              (tag: NostrTag) => tag[0] === "e" && tag[3] === "mention"
-            );
-            const hasEMention = eMentionTags.length > 0;
-
-            const pMentionTags = tags.filter(
-              (tag: NostrTag) =>
-                tag[0] === "p" && (tag[3] === "mention" || tag[3] === "")
-            );
-            const hasPMention = pMentionTags.length > 0;
-
-            if (!hasEMention || !hasPMention) {
-              return false;
-            }
-
-            // Check if the mentioned user (p tag) is the current user (tags use hex)
-            const mentionedUserPubkey = tags.find(
-              (tag: NostrTag) =>
-                tag[0] === "p" && (tag[3] === "mention" || tag[3] === "")
-            )?.[1];
-            return mentionedUserPubkey === userPubkeyHex;
-          }
-          return false;
-        })
-        .map((item: PrimalEvent) => {
-          if (Array.isArray(item)) {
-            return item[2] as NotificationEvent;
-          }
-          throw new Error("Invalid PrimalEvent structure");
-        }); // Extract the event object
-
-      // Process quote reposts
-      if (rawQuoteReposts.length > 0) {
-        quoteRepostNotifications = await processQuoteReposts(
-          rawQuoteReposts,
-          connectToPrimalCache
-        );
-
-        // Filter out muted users if enabled
-        if (userFilterMuted && mutedNpubs.length > 0) {
-          quoteRepostNotifications = filterMutedNotifications(
-            quoteRepostNotifications,
-            mutedNpubs
-          );
-        }
-
-        // Fetch user profiles and calculate trust scores for quote reposts
-        const quoteUniquePubkeys = Array.from(
-          new Set(
-            quoteRepostNotifications.map((notification) => notification.pubkey)
-          )
-        );
-
-        const quoteProfilePromises = quoteUniquePubkeys.map(async (pubkey) => {
-          if (!userProfilesMap.has(pubkey)) {
-            const userProfile = await fetchUserProfile(pubkey);
-            if (userProfile) {
-              userProfilesMap.set(pubkey, userProfile);
-              const trustScore = calculateTrustScore(userProfile);
-              trustScoresMap.set(pubkey, trustScore);
-            }
-          }
-        });
-
-        await Promise.all(quoteProfilePromises);
-
-        // Filter out low trust users from quote reposts if enabled
-        if (userHidePostsFromLowTrustUsers) {
-          quoteRepostNotifications = filterLowTrustNotifications(
-            quoteRepostNotifications,
-            trustScoresMap
-          );
-        }
-
-        // Group quote reposts by parent post
-        groupedQuoteReposts = groupNotificationsByParent(
-          quoteRepostNotifications,
-          postsAsPostData,
-          [], // No longform posts in this feed
-          stats
-        );
-      }
-    }
+    const rawQuoteReposts = extractQuoteRepostEventsFromPrimal(
+      notificationsData,
+      userPubkeyHex
+    );
+    groupedQuoteReposts = await processAndGroupQuoteReposts(
+      rawQuoteReposts,
+      userPubkeyHex,
+      user.filterMuted,
+      user.hidePostsFromLowTrustUsers,
+      mutedNpubs,
+      userProfilesMap,
+      trustScoresMap,
+      postsAsPostData,
+      stats
+    );
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       message: "Error fetching quote reposts",
     });
   }
 
-  // Convert trust scores map to object for JSON serialization
   const trustScores: Record<string, number> = {};
   trustScoresMap.forEach((score, pubkey) => {
     trustScores[pubkey] = score;
   });
 
-  // Convert all fetched posts to DTOs so "Posts fetched" reflects how many we checked.
-  // Replies are shown via groupedNotifications; we return all posts for accurate count and modal.
+  const allEventIds: string[] = [];
+  for (const group of groupedByParent.replies) {
+    for (const n of group.notifications) {
+      if (n.eventId) allEventIds.push(n.eventId);
+    }
+  }
+  for (const group of groupedQuoteReposts) {
+    for (const n of group.notifications) {
+      if (n.eventId) allEventIds.push(n.eventId);
+    }
+  }
+  const engagementItemStates = await getEngagementItemStates(
+    user.id,
+    allEventIds
+  );
+
   const postsAsDTOs = toPostDTOArray(postsAsPostData);
-
-  // Serialize dates in groupedNotifications
-  const serializedGroupedReplies = groupedByParent.replies.map((group) => ({
-    ...group,
-    parentPost: {
-      ...group.parentPost,
-      publishedAt: group.parentPost.publishedAt
-        ? group.parentPost.publishedAt.toISOString()
-        : null,
-    },
-  }));
-
-  const serializedGroupedQuotes = groupedQuoteReposts.map((group) => ({
-    ...group,
-    parentPost: {
-      ...group.parentPost,
-      publishedAt: group.parentPost.publishedAt
-        ? group.parentPost.publishedAt.toISOString()
-        : null,
-    },
-  }));
+  const serializedGroupedReplies = serializeGroupedForResponse(
+    groupedByParent.replies
+  );
+  const serializedGroupedQuotes =
+    serializeGroupedForResponse(groupedQuoteReposts);
 
   return {
     posts: postsAsDTOs,
@@ -692,6 +682,7 @@ export async function loadEngagementFeedData(
       quotes: serializedGroupedQuotes,
     },
     trustScores,
+    engagementItemStates,
   };
 }
 

@@ -681,6 +681,30 @@ export function getPostsByIds({
   });
 }
 
+/** Parse "olderThan" URL value (e.g. 1m, 12m, 1y, 3y) into a cutoff Date (posts with published_at < cutoff). */
+function parseOlderThanCutoff(
+  olderThan: string | null | undefined
+): Date | null {
+  if (!olderThan || typeof olderThan !== "string") return null;
+  const m = olderThan.match(/^(\d+)(m|y)$/i);
+  if (m?.[1] == null || m[2] == null) return null;
+  const n = parseInt(m[1], 10);
+  const unit = m[2].toLowerCase();
+  if (unit === "m") {
+    if (n < 1 || n > 12) return null;
+    const d = new Date();
+    d.setMonth(d.getMonth() - n);
+    return d;
+  }
+  if (unit === "y") {
+    if (n < 1 || n > 3) return null;
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - n);
+    return d;
+  }
+  return null;
+}
+
 export async function getRecyclablePosts({
   userId,
   page = 1,
@@ -689,6 +713,7 @@ export async function getRecyclablePosts({
   dateFrom,
   dateTo,
   timezone,
+  olderThan,
 }: {
   userId: string;
   page?: number;
@@ -698,6 +723,8 @@ export async function getRecyclablePosts({
   dateTo?: string | null;
   /** When set, interpret dateFrom/dateTo as calendar days in this timezone. */
   timezone?: string | null;
+  /** When set, only posts with published_at < cutoff (e.g. "6m", "1y", "3y"). */
+  olderThan?: string | null;
 }): Promise<PostsWithPagination> {
   const skip = (page - 1) * limit;
 
@@ -717,13 +744,24 @@ export async function getRecyclablePosts({
     }
   }
 
+  // Older than filter: published_at < cutoff
+  const olderThanCutoff = parseOlderThanCutoff(olderThan);
+  if (olderThanCutoff) {
+    whereClause.publishedAt = {
+      ...(whereClause.publishedAt as Prisma.DateTimeFilter | undefined),
+      lt: olderThanCutoff,
+    };
+  }
+
   // Filter by published date range (inclusive); use user timezone when provided
   const tz = timezone?.trim();
   const dateRange = tz
     ? parseDateRangeInTimezone(dateFrom, dateTo, tz)
     : parseDateRangeUtc(dateFrom, dateTo);
   if (dateRange?.fromUtc || dateRange?.toUtc) {
-    whereClause.publishedAt = {};
+    whereClause.publishedAt = {
+      ...(whereClause.publishedAt as Prisma.DateTimeFilter | undefined),
+    };
     if (dateRange.fromUtc)
       (whereClause.publishedAt as Prisma.DateTimeFilter).gte =
         dateRange.fromUtc;

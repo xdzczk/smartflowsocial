@@ -1,18 +1,5 @@
 import { Link, useLoaderData } from "@remix-run/react";
 
-function scopeSummary(scopeType: string): string {
-  switch (scopeType) {
-    case "PERIOD":
-      return "Period";
-    case "SINGLE_POST":
-      return "Single post";
-    case "QUEUE":
-      return "Queue";
-    default:
-      return scopeType;
-  }
-}
-
 function statusVariant(
   status: string
 ): "default" | "secondary" | "outline" | "destructive" {
@@ -36,8 +23,10 @@ export default function GiveawayPage() {
   const { giveaways } = useLoaderData<{
     giveaways: Array<{
       id: string;
+      name: string | null;
       status: string;
-      scopeType: string;
+      statusLabel: string;
+      scopeSummaryLabel: string;
       winnerCount: number;
       createdAt: string;
     }>;
@@ -57,7 +46,7 @@ export default function GiveawayPage() {
         </div>
         <Link
           to="/dashboard/giveaway/new"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 ring-primary/20 shrink-0 rounded-md px-4 py-2 text-sm font-medium ring-2 shadow-sm transition-colors"
         >
           New giveaway
         </Link>
@@ -72,6 +61,9 @@ export default function GiveawayPage() {
                 className="hover:bg-muted/50 flex flex-col gap-2 p-4 transition-colors sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0 flex-1">
+                  {g.name ? (
+                    <p className="text-foreground font-medium">{g.name}</p>
+                  ) : null}
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -84,10 +76,10 @@ export default function GiveawayPage() {
                               : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {g.status.replace("_", " ")}
+                      {g.statusLabel}
                     </span>
                     <span className="text-muted-foreground text-sm">
-                      {scopeSummary(g.scopeType)} · {g.winnerCount} winner
+                      {g.scopeSummaryLabel} · {g.winnerCount} winner
                       {g.winnerCount !== 1 ? "s" : ""}
                     </span>
                   </div>

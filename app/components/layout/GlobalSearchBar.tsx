@@ -13,6 +13,7 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "~/components/ui/popover";
+import { extractNostrIdentifier } from "~/lib/extract-nostr-identifier";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import {
@@ -22,18 +23,6 @@ import {
 
 interface GlobalSearchBarProps {
   className?: string;
-}
-
-/** Detect if query looks like a Nostr event link (note1, nevent1, nostr:..., or 64-char hex) so we can search immediately on paste */
-function isNostrEventLink(query: string): boolean {
-  const t = query.trim();
-  return (
-    t.startsWith("note1") ||
-    t.startsWith("nevent1") ||
-    t.startsWith("nostr:note1") ||
-    t.startsWith("nostr:nevent1") ||
-    /^[0-9a-f]{64}$/i.test(t)
-  );
 }
 
 /** Derive search priority context from current path so results from current page appear first */
@@ -96,10 +85,10 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
       setIsSearching(true);
     });
 
-    const isNostrLink = isNostrEventLink(trimmedQuery);
-    if (isNostrLink) {
-      // Redirect straight to post viewer; its loader will fetch and show the post
-      navigate(`/dashboard/search/posts?q=${encodeURIComponent(trimmedQuery)}`);
+    const extracted = extractNostrIdentifier(trimmedQuery);
+    if (extracted !== null) {
+      // Redirect straight to post viewer with clean identifier (handles Primal/Coracle URLs)
+      navigate(`/dashboard/search/posts?q=${encodeURIComponent(extracted)}`);
       startTransition(() => {
         setQuery("");
         setResults([]);
@@ -242,7 +231,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
               value={query}
               onChange={handleInputChange}
               onFocus={handleInputFocus}
-              placeholder="Search or paste Nostr link (note1, nevent1, nostr:...) (⌘K)"
+              placeholder="Search or paste Nostr link (note1, nevent1, naddr1...) (⌘K)"
               className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-1.5 pr-8 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pr-10 sm:pl-10"
             />
             {query ? (

@@ -165,6 +165,7 @@ export { default as LongFormDraftEditPage } from "./components/LongFormDraftEdit
 export { BulkDraftsListing } from "./components/BulkDraftsListing";
 export { DraftsTable } from "./components/DraftsTable";
 export { default as PublishedPostsTable } from "./components/PublishedPostsTable";
+export { RecyclablesQueueFilter } from "./components/RecyclablesQueueFilter";
 export { RecyclablesQueueTabs } from "./components/RecyclablesQueueTabs";
 export { RecyclablesSearch } from "./components/RecyclablesSearch";
 export { RecyclablesTable } from "./components/RecyclablesTable";

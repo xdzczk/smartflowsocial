@@ -1,5 +1,6 @@
 import { Link } from "@remix-run/react";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -7,6 +8,7 @@ import {
   MessageCircle,
   Quote,
   Repeat,
+  Zap,
 } from "lucide-react";
 
 import {
@@ -33,6 +35,8 @@ interface NotificationActionButtonsProps {
   onToggleQuote: () => void;
   onCopyNevent: () => void;
   onToggleChildReplies: () => void;
+  onMarkDone?: () => void;
+  isHandled?: boolean;
 }
 
 export function NotificationActionButtons({
@@ -46,9 +50,42 @@ export function NotificationActionButtons({
   onToggleQuote,
   onCopyNevent,
   onToggleChildReplies,
+  onMarkDone,
+  isHandled,
 }: NotificationActionButtonsProps) {
   return (
     <div className="mb-2 flex flex-wrap items-center gap-2">
+      {/* Mark as done - only show when not already handled */}
+      {onMarkDone && !isHandled ? (
+        <button
+          type="button"
+          onClick={onMarkDone}
+          className="text-muted-foreground hover:bg-success/10 hover:text-success dark:hover:text-success inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+        >
+          <Check
+            className={INLINE_ICON_SIZE_CLASS}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
+          Mark as done
+        </button>
+      ) : null}
+
+      {/* Zap (when reply has zaps) */}
+      {(stats?.zaps && stats.zaps > 0) ||
+      (stats?.satszapped && stats.satszapped > 0) ? (
+        <span className="text-muted-foreground inline-flex items-center gap-1 text-xs font-medium">
+          <Zap
+            className={INLINE_ICON_SIZE_CLASS}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
+          {stats.satszapped
+            ? `${Number(stats.satszapped).toLocaleString()} sats`
+            : `${stats.zaps ?? 0} zap${(stats.zaps ?? 0) === 1 ? "" : "s"}`}
+        </span>
+      ) : null}
+
       {/* Like Button */}
       <button
         onClick={onLike}

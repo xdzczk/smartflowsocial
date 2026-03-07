@@ -350,6 +350,15 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+
+  /* Prevent iOS zoom on input focus: use at least 16px on mobile (otherwise Safari zooms in) */
+  @media (max-width: 767px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @layer utilities {

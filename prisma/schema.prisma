@@ -72,8 +72,39 @@ model User {
   blossomUploadUsagePeriods BlossomUploadUsagePeriod[]
   giveaways                Giveaway[]
   giveawayPresets          GiveawayPreset[]
+  engagementItemStates     EngagementItemState[]
+  engagementReplyTemplates EngagementReplyTemplate[]
 
   @@index([parentNpub])
+}
+
+enum EngagementItemStateKind {
+  HANDLED
+}
+
+model EngagementItemState {
+  id              String                  @id @default(cuid())
+  userId          String
+  eventId         String
+  state           EngagementItemStateKind @default(HANDLED)
+  repliedFromApp  Boolean                 @default(false)
+  updatedAt       DateTime                @updatedAt
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+}
+
+model EngagementReplyTemplate {
+  id        String   @id @default(cuid())
+  userId    String
+  slug      String
+  body      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slug])
+  @@index([userId])
 }
 
 model LoginChallenge {
@@ -164,6 +195,7 @@ enum GiveawaySelectionMode {
 model Giveaway {
   id                 String               @id @default(cuid())
   userId             String
+  name               String?              // optional human-readable label
   scopeType          GiveawayScopeType
   scopeReference     Json                 // { days?, postId?, queueId?, from?, to? }
   eligibilityFrom    DateTime?
