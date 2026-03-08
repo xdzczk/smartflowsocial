@@ -1,11 +1,19 @@
 import { AtSign, MessageCircle, Quote } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import ZapButton from "~/components/dashboard/ZapButton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { Notification } from "../engagement.server";
 import { useNotificationActions } from "../hooks/useNotificationActions";
@@ -101,6 +109,9 @@ export function NotificationItem({
   replyTemplates = [],
 }: NotificationItemProps) {
   const { formatDate } = useFormattedDate();
+  const [zapModalNpub, setZapModalNpub] = useState<string | null>(null);
+  const zapNpub = nostrAdapter.encodeNpub(notification.pubkey) ?? undefined;
+
   const actions = useNotificationActions({
     notification: {
       eventId: notification.eventId,
@@ -132,11 +143,7 @@ export function NotificationItem({
     like: () => {
       void actions.handleLike();
     },
-    markDone: () => {
-      if (onMarkDone && notification.eventId) {
-        void onMarkDone(notification.eventId, false);
-      }
-    },
+    markDone: () => {}, // Mark as done action removed in favor of Zap
     expandThread: () => actions.setShowChildReplies(!actions.showChildReplies),
   });
   useEffect(() => {
@@ -145,15 +152,11 @@ export function NotificationItem({
       like: () => {
         void actions.handleLike();
       },
-      markDone: () => {
-        if (onMarkDone && notification.eventId) {
-          void onMarkDone(notification.eventId, false);
-        }
-      },
+      markDone: () => {},
       expandThread: () =>
         actions.setShowChildReplies(!actions.showChildReplies),
     };
-  }, [onMarkDone, notification.eventId, actions]);
+  }, [actions]);
 
   // Register keyboard handlers for this item (R, L, M, E)
   useEffect(() => {
@@ -212,8 +215,8 @@ export function NotificationItem({
               {typeBadge.label}
             </span>
             <span className="text-muted-foreground text-xs">
-              {formatDate(notification.createdAt * 1000, {
-                isUnixTimestamp: false,
+              {formatDate(notification.createdAt, {
+                isUnixTimestamp: true,
               })}
             </span>
           </div>
@@ -247,14 +250,8 @@ export function NotificationItem({
             onToggleChildReplies={() =>
               actions.setShowChildReplies(!actions.showChildReplies)
             }
-            onMarkDone={
-              onMarkDone && notification.eventId
-                ? () => {
-                    void onMarkDone(notification.eventId, false);
-                  }
-                : undefined
-            }
-            isHandled={isHandled}
+            zapNpub={zapNpub}
+            onZapClick={zapNpub ? (npub) => setZapModalNpub(npub) : undefined}
           />
 
           {/* Reply Input */}
@@ -322,6 +319,19 @@ export function NotificationItem({
           ) : null}
         </div>
       </div>
+
+      {/* Zap modal - single target so nostr-zap script works */}
+      <Dialog
+        open={!!zapModalNpub}
+        onOpenChange={(open) => !open && setZapModalNpub(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Zap reply author</DialogTitle>
+          </DialogHeader>
+          {zapModalNpub ? <ZapButton npub={zapModalNpub} /> : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

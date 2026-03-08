@@ -132,8 +132,8 @@ function ReplyNotification({
 
           <div className="dark:text-muted-foreground text-muted-foreground flex items-center gap-4 text-xs">
             <span>
-              {formatDate(notification.createdAt * 1000, {
-                isUnixTimestamp: false,
+              {formatDate(notification.createdAt, {
+                isUnixTimestamp: true,
               })}
             </span>
             <Link
@@ -213,8 +213,8 @@ function ZapNotification({
 
           <div className="dark:text-muted-foreground text-muted-foreground flex items-center gap-4 text-xs">
             <span>
-              {formatDate(notification.createdAt * 1000, {
-                isUnixTimestamp: false,
+              {formatDate(notification.createdAt, {
+                isUnixTimestamp: true,
               })}
             </span>
             <Link
@@ -287,8 +287,8 @@ function MentionNotification({
 
           <div className="dark:text-muted-foreground text-muted-foreground flex items-center gap-4 text-xs">
             <span>
-              {formatDate(notification.createdAt * 1000, {
-                isUnixTimestamp: false,
+              {formatDate(notification.createdAt, {
+                isUnixTimestamp: true,
               })}
             </span>
             <Link

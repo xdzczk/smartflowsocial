@@ -205,26 +205,27 @@ export default function EngagementFeedPage() {
     <div>
       <EngagementHeader />
 
-      <EngagementTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        repliesCount={getFlatItemCount(safeGroupedNotifications.replies)}
-        mentionsCount={
-          getFlatItemCount(safeGroupedNotifications.quotes) +
-          getFlatItemCount(safeGroupedNotifications.mentions)
-        }
-      />
-
-      <EngagementFilterBar
-        filterUnreadOnly={filterUnreadOnly}
-        setFilterUnreadOnly={setFilterUnreadOnly}
-        filterHighReputation={filterHighReputation}
-        setFilterHighReputation={setFilterHighReputation}
-        filterMentionsOnly={filterMentionsOnly}
-        setFilterMentionsOnly={setFilterMentionsOnly}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-      />
+      <div className="border-border mb-6 flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+        <EngagementTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          repliesCount={getFlatItemCount(safeGroupedNotifications.replies)}
+          mentionsCount={
+            getFlatItemCount(safeGroupedNotifications.quotes) +
+            getFlatItemCount(safeGroupedNotifications.mentions)
+          }
+        />
+        <EngagementFilterBar
+          filterUnreadOnly={filterUnreadOnly}
+          setFilterUnreadOnly={setFilterUnreadOnly}
+          filterHighReputation={filterHighReputation}
+          setFilterHighReputation={setFilterHighReputation}
+          filterMentionsOnly={filterMentionsOnly}
+          setFilterMentionsOnly={setFilterMentionsOnly}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+        />
+      </div>
 
       <EngagementContent
         activeTab={activeTab}

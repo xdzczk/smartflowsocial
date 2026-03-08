@@ -37,7 +37,7 @@ export function EngagementFilterBar({
   setSortBy,
 }: EngagementFilterBarProps) {
   return (
-    <div className="border-border mb-4 flex flex-wrap items-center gap-2 border-b pb-3">
+    <div className="flex flex-wrap items-center justify-end gap-2 md:ml-auto md:flex-shrink-0">
       <span className="text-muted-foreground mr-1 text-xs font-medium">
         Filters:
       </span>

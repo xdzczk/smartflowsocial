@@ -14,11 +14,12 @@ export type EngagementItemStateMap = Record<
  * lastCheckedAtMs: timestamp in ms (from lastCheckedAt ISO string), or null for no filter.
  */
 export function filterByUnreadSince(
-  groups: GroupedNotification[],
+  groups: GroupedNotification[] | undefined | null,
   lastCheckedAtMs: number | null
 ): GroupedNotification[] {
-  if (lastCheckedAtMs === null) return groups;
-  return groups
+  const list = Array.isArray(groups) ? groups : [];
+  if (lastCheckedAtMs === null) return list;
+  return list
     .map((group) => ({
       ...group,
       notifications: group.notifications.filter(

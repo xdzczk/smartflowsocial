@@ -257,11 +257,20 @@ export function formatForDisplay(
         ? true
         : (options?.hour12 ?? true);
 
-  return date.toLocaleString(dateLocale, {
+  let result = date.toLocaleString(dateLocale, {
     timeZone: timezone,
     ...options,
     hour12,
   });
+
+  // When using 12h format, normalize locale day-period to am/pm (e.g. Swedish uses fm/em)
+  if (hour12) {
+    result = result
+      .replace(/\bfm\b/gi, (m) => (m === "FM" ? "AM" : "am"))
+      .replace(/\bem\b/gi, (m) => (m === "EM" ? "PM" : "pm"));
+  }
+
+  return result;
 }
 
 /**

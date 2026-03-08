@@ -343,59 +343,98 @@ function buildFallbackStatsFromPosts(
     }, {});
 }
 
+/** Extract kind-1 event from Primal response item (EVENT tuple or raw event object). */
+function getKind1EventFromItem(
+  item: unknown
+): { kind: number; tags?: NostrTag[]; [key: string]: unknown } | null {
+  if (
+    Array.isArray(item) &&
+    item[0] === "EVENT" &&
+    typeof item[2] === "object" &&
+    item[2] !== null &&
+    !Array.isArray(item[2])
+  ) {
+    const ev = item[2] as { kind?: number; tags?: NostrTag[] };
+    return ev.kind === 1
+      ? (ev as { kind: number; tags?: NostrTag[]; [key: string]: unknown })
+      : null;
+  }
+  if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+    const ev = item as { kind?: number; tags?: NostrTag[] };
+    return ev.kind === 1
+      ? (ev as { kind: number; tags?: NostrTag[]; [key: string]: unknown })
+      : null;
+  }
+  return null;
+}
+
 function isPrimalItemQuoteRepostMentioningUser(
-  item: PrimalEvent,
+  item: PrimalEvent | Record<string, unknown>,
   userPubkeyHex: string
 ): boolean {
-  if (
-    !Array.isArray(item) ||
-    item[0] !== "EVENT" ||
-    typeof item[2] !== "object" ||
-    Array.isArray(item[2])
-  )
-    return false;
-  const event = item[2] as {
+  const event = getKind1EventFromItem(item);
+  if (!event) return false;
+  const ev = event as {
     id?: unknown;
     pubkey?: unknown;
     content?: unknown;
-    kind?: unknown;
-    tags?: unknown;
+    kind?: number;
+    tags?: NostrTag[];
   };
-  if (event.kind !== 1) return false;
   if (
-    !event.id ||
-    typeof event.id !== "string" ||
-    !event.pubkey ||
-    typeof event.pubkey !== "string" ||
-    typeof event.content !== "string"
+    !ev.id ||
+    typeof ev.id !== "string" ||
+    !ev.pubkey ||
+    typeof ev.pubkey !== "string" ||
+    typeof ev.content !== "string"
   )
     return false;
-  if (event.pubkey === userPubkeyHex) return false;
-  const tags = (event as { tags: NostrTag[] }).tags;
-  const eMentionTags = tags.filter(
-    (tag: NostrTag) => tag[0] === "e" && tag[3] === "mention"
+  if (ev.pubkey === userPubkeyHex) return false;
+  const tags = Array.isArray(ev.tags) ? ev.tags : [];
+  const eTags = tags.filter((tag: NostrTag) => tag[0] === "e");
+  const pTagsWithUser = tags.filter(
+    (tag: NostrTag) => tag[0] === "p" && tag[1] === userPubkeyHex
   );
-  const pMentionTags = tags.filter(
-    (tag: NostrTag) => tag[0] === "p" && (tag[3] === "mention" || tag[3] === "")
-  );
-  if (eMentionTags.length === 0 || pMentionTags.length === 0) return false;
-  const mentionedUserPubkey = pMentionTags[0]?.[1];
-  return mentionedUserPubkey === userPubkeyHex;
+  return eTags.length > 0 && pTagsWithUser.length > 0;
 }
 
 function extractQuoteRepostEventsFromPrimal(
   notificationsData: unknown,
   userPubkeyHex: string
 ): NotificationEvent[] {
-  if (!Array.isArray(notificationsData)) return [];
-  return (notificationsData as PrimalEvent[])
-    .filter((item) =>
-      isPrimalItemQuoteRepostMentioningUser(item, userPubkeyHex)
+  let items: unknown[] = [];
+  if (Array.isArray(notificationsData)) {
+    items = notificationsData;
+  } else if (
+    notificationsData &&
+    typeof notificationsData === "object" &&
+    !Array.isArray(notificationsData)
+  ) {
+    const obj = notificationsData as Record<string, unknown>;
+    if (Array.isArray(obj["notifications"])) items = obj["notifications"];
+    else if (Array.isArray(obj["data"])) items = obj["data"];
+    else if (Array.isArray(obj["events"])) items = obj["events"];
+  }
+  if (items.length === 0) return [];
+  const result: NotificationEvent[] = [];
+  for (const item of items) {
+    if (
+      !isPrimalItemQuoteRepostMentioningUser(
+        item as PrimalEvent | Record<string, unknown>,
+        userPubkeyHex
+      )
     )
-    .map((item: PrimalEvent) => {
-      if (Array.isArray(item)) return item[2] as NotificationEvent;
-      throw new Error("Invalid PrimalEvent structure");
-    });
+      continue;
+    const event = getKind1EventFromItem(item);
+    if (
+      event &&
+      typeof event === "object" &&
+      "id" in event &&
+      "pubkey" in event
+    )
+      result.push(event as unknown as NotificationEvent);
+  }
+  return result;
 }
 
 async function processAndGroupQuoteReposts(

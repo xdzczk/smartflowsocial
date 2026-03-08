@@ -104,11 +104,17 @@ function formatDateFallback(
       return "-";
     }
 
-    return dateObj.toLocaleString(dateLocale, {
+    let result = dateObj.toLocaleString(dateLocale, {
       timeZone: timezone,
       ...dateFormatOptions,
       hour12: timeFormat === "12h",
     });
+    if (timeFormat === "12h") {
+      result = result
+        .replace(/\bfm\b/gi, (m) => (m === "FM" ? "AM" : "am"))
+        .replace(/\bem\b/gi, (m) => (m === "EM" ? "PM" : "pm"));
+    }
+    return result;
   } catch {
     return "-";
   }

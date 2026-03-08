@@ -1,6 +1,5 @@
 import { Link } from "@remix-run/react";
 import {
-  Check,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -35,8 +34,9 @@ interface NotificationActionButtonsProps {
   onToggleQuote: () => void;
   onCopyNevent: () => void;
   onToggleChildReplies: () => void;
-  onMarkDone?: () => void;
-  isHandled?: boolean;
+  /** When set, show a Zap action that calls this with the reply author's npub */
+  zapNpub?: string;
+  onZapClick?: (npub: string) => void;
 }
 
 export function NotificationActionButtons({
@@ -50,28 +50,28 @@ export function NotificationActionButtons({
   onToggleQuote,
   onCopyNevent,
   onToggleChildReplies,
-  onMarkDone,
-  isHandled,
+  zapNpub,
+  onZapClick,
 }: NotificationActionButtonsProps) {
   return (
     <div className="mb-2 flex flex-wrap items-center gap-2">
-      {/* Mark as done - only show when not already handled */}
-      {onMarkDone && !isHandled ? (
+      {/* Zap action - send sats to reply author */}
+      {zapNpub && onZapClick ? (
         <button
           type="button"
-          onClick={onMarkDone}
-          className="text-muted-foreground hover:bg-success/10 hover:text-success dark:hover:text-success inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+          onClick={() => onZapClick(zapNpub)}
+          className="text-muted-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
         >
-          <Check
+          <Zap
             className={INLINE_ICON_SIZE_CLASS}
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
-          Mark as done
+          Zap
         </button>
       ) : null}
 
-      {/* Zap (when reply has zaps) */}
+      {/* Zap count (when reply has zaps) */}
       {(stats?.zaps && stats.zaps > 0) ||
       (stats?.satszapped && stats.satszapped > 0) ? (
         <span className="text-muted-foreground inline-flex items-center gap-1 text-xs font-medium">

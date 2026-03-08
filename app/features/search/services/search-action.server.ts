@@ -304,8 +304,32 @@ export async function handleSearchEvent(eventInput: string) {
         (e): e is NostrEventWithMetadata => e != null && typeof e === "object"
       );
     }
-    if ("event" in raw && raw.event != null && typeof raw.event === "object") {
-      return [raw.event as NostrEventWithMetadata];
+    const obj = raw as Record<string, unknown>;
+    const ev = obj["event"];
+    if (ev != null && typeof ev === "object") {
+      return [ev as NostrEventWithMetadata];
+    }
+    const data = obj["data"];
+    const events = obj["events"];
+    const arr = Array.isArray(data)
+      ? data
+      : Array.isArray(events)
+        ? events
+        : null;
+    if (arr) {
+      return (arr as unknown[]).filter(
+        (e): e is NostrEventWithMetadata => e != null && typeof e === "object"
+      );
+    }
+    if (data != null && typeof data === "object" && !Array.isArray(data)) {
+      return [data as NostrEventWithMetadata];
+    }
+    if (
+      events != null &&
+      typeof events === "object" &&
+      !Array.isArray(events)
+    ) {
+      return [events as NostrEventWithMetadata];
     }
     return [raw as NostrEventWithMetadata];
   };
@@ -325,25 +349,35 @@ export async function handleSearchEvent(eventInput: string) {
     return d && d.length > 1 && typeof d[1] === "string" ? d[1] : "";
   };
 
+  const getEvId = (ev: NostrEventWithMetadata): string =>
+    (
+      (ev as { id?: string }).id ??
+      (ev as { event_id?: string }).event_id ??
+      ""
+    ).toLowerCase();
+  const getEvKind = (ev: NostrEventWithMetadata): number =>
+    (ev as { kind?: number }).kind ??
+    (ev as { event_kind?: number }).event_kind ??
+    0;
+
   let eventToUse: NostrEventWithMetadata | null = null;
   if (matchByNaddr) {
     eventToUse =
       candidates.find(
         (ev) =>
-          (typeof ev.kind === "number" ? ev.kind : 0) === matchByNaddr.kind &&
+          getEvKind(ev) === matchByNaddr.kind &&
           (typeof ev.pubkey === "string" ? ev.pubkey : "") ===
             matchByNaddr.pubkey &&
           getDTag(ev) === matchByNaddr.identifier
       ) ?? null;
   } else {
-    const matching = candidates.filter(
-      (ev) =>
-        (typeof ev.id === "string" ? ev.id : "").toLowerCase() === eventIdNorm
-    );
-    const kind1Note = matching.find(
-      (ev) => (typeof ev.kind === "number" ? ev.kind : 0) === 1
-    );
-    eventToUse = kind1Note ?? matching[0] ?? null;
+    const idMatching = candidates.filter((ev) => getEvId(ev) === eventIdNorm);
+    const kind1Note = idMatching.find((ev) => getEvKind(ev) === 1);
+    const firstMatch = idMatching.length > 0 ? (idMatching[0] ?? null) : null;
+    eventToUse = kind1Note ?? firstMatch;
+    if (eventToUse && getEvKind(eventToUse) !== 1) {
+      eventToUse = null;
+    }
   }
 
   if (!eventToUse) {
@@ -355,14 +389,18 @@ export async function handleSearchEvent(eventInput: string) {
   }
 
   const event = eventToUse;
+  const evWithEventId = event as unknown as { event_id?: string };
+  const evWithBody = event as unknown as { body?: string };
   const eventId =
-    typeof event.id === "string" && event.id
-      ? event.id
-      : decoded.type === "event_id"
-        ? decoded.eventId
-        : "";
+    (typeof event.id === "string" && event.id ? event.id : null) ??
+    (typeof evWithEventId.event_id === "string"
+      ? evWithEventId.event_id
+      : null) ??
+    (decoded.type === "event_id" ? decoded.eventId : "");
   const eventPubkey = typeof event.pubkey === "string" ? event.pubkey : "";
-  const eventContent = typeof event.content === "string" ? event.content : "";
+  const eventContent =
+    (typeof event.content === "string" ? event.content : null) ??
+    (typeof evWithBody.body === "string" ? evWithBody.body : "");
   const [authorInfo, stats] = await Promise.all([
     fetchAuthorInfo(eventPubkey),
     fetchEventStats(eventId),
@@ -377,10 +415,17 @@ export async function handleSearchEvent(eventInput: string) {
   return {
     success: true,
     event: {
-      id: typeof event.id === "string" ? event.id : eventId || "",
+      id:
+        ((typeof event.id === "string" ? event.id : null) ??
+          evWithEventId.event_id ??
+          eventId) ||
+        "",
       pubkey: eventPubkey,
-      created_at: typeof event.created_at === "number" ? event.created_at : 0,
-      kind: typeof event.kind === "number" ? event.kind : 1,
+      created_at:
+        typeof event.created_at === "number"
+          ? event.created_at
+          : ((event as { created_at?: number }).created_at ?? 0),
+      kind: getEvKind(event) || 1,
       content: eventContent,
       tags: Array.isArray(event.tags) ? event.tags : [],
       authorName: authorInfo.name,

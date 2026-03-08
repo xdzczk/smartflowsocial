@@ -337,13 +337,6 @@ function GroupedNotificationCard({
 
         {/* Notifications - Right Side */}
         <div className="flex-1 lg:w-3/5">
-          <div className="bg-muted px-4 py-2">
-            <span className="text-foreground text-sm font-medium">
-              {notifications.length}{" "}
-              {notifications.length === 1 ? "reply" : "replies"} / mentions
-            </span>
-          </div>
-
           <div className="divide-border max-h-[500px] divide-y overflow-y-auto">
             {notifications.map((notification: Notification) => {
               const isHandled = notification.eventId

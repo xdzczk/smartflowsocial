@@ -104,8 +104,8 @@ export function ChildRepliesPanel({
                 {replyAuthorName}
               </span>
               <span className="text-muted-foreground text-xs">
-                {formatDate(reply.created_at * 1000, {
-                  isUnixTimestamp: false,
+                {formatDate(reply.created_at, {
+                  isUnixTimestamp: true,
                 })}
               </span>
             </div>

@@ -23,7 +23,7 @@ export function EngagementTabs({
   mentionsCount,
 }: EngagementTabsProps) {
   return (
-    <div className="border-border mb-6 border-b">
+    <div className="flex-shrink-0">
       <nav className="-mb-px flex space-x-8" aria-label="Type tabs">
         <button
           type="button"

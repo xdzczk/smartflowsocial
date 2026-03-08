@@ -71,25 +71,19 @@ export function EngagementContent({
     return (
       <div className="space-y-6">
         {groupedReplies.length > 0 ? (
-          <div>
-            <h4 className="text-foreground mb-3 font-medium">Replies</h4>
-            <GroupedNotificationList
-              groupedNotifications={groupedReplies}
-              {...listProps}
-              baseIndex={0}
-            />
-          </div>
+          <GroupedNotificationList
+            groupedNotifications={groupedReplies}
+            {...listProps}
+            baseIndex={0}
+          />
         ) : null}
 
         {groupedMentionsTab.length > 0 ? (
-          <div>
-            <h4 className="text-foreground mb-3 font-medium">Mentions</h4>
-            <GroupedNotificationList
-              groupedNotifications={groupedMentionsTab}
-              {...listProps}
-              baseIndex={repliesFlatCount}
-            />
-          </div>
+          <GroupedNotificationList
+            groupedNotifications={groupedMentionsTab}
+            {...listProps}
+            baseIndex={repliesFlatCount}
+          />
         ) : null}
 
         {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
