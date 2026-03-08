@@ -122,6 +122,19 @@ export async function handleDraftEditAction(
     ? resumeData.hashTagPresetId
     : null;
 
+  let nominalScheduledAtUtc: Date | undefined;
+  if (
+    resumeData.nominalScheduledFor != null &&
+    resumeData.nominalScheduledFor.trim() !== ""
+  ) {
+    const parsed = new Date(
+      parseInt(resumeData.nominalScheduledFor, 10) * 1000
+    );
+    nominalScheduledAtUtc = Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  } else {
+    nominalScheduledAtUtc = undefined;
+  }
+
   // Update post data (flags will be set by state machine transition)
   await updatePost({
     id: postId,
@@ -131,6 +144,7 @@ export async function handleDraftEditAction(
       caption: resumeData.caption,
       queueTypeId: resolvedQueueTypeId,
       scheduledFor: resumeData.scheduledFor,
+      ...(nominalScheduledAtUtc != null ? { nominalScheduledAtUtc } : {}),
       signedEvent: resumeData.signedEvent,
       nostrEvent: resumeData.nostrEvent,
       hashTagPresetId,

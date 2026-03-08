@@ -16,7 +16,7 @@ import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import { fromUnixTimestamp, formatForDisplay } from "~/lib/temporal";
 
 import { getSelectedQueueStyle } from "../queue-colors";
-import type { BulkPost, PreparedEvent } from "../types";
+import type { BulkPost, PreparedEvent, RepostConditions } from "../types";
 import {
   buildAndSignQuoteSchedules,
   buildAndSignRepostSchedules,
@@ -118,6 +118,8 @@ interface PostConfirmationProps {
   submitAction?: string;
   /** Extra form fields to append on submit (e.g. _inModal). */
   extraFormData?: Record<string, string>;
+  /** Optional engagement conditions for all reposts in this bulk (only repost if original meets these). */
+  repostConditions?: RepostConditions | null;
   /** Optional fetcher to use (e.g. for modal to observe submit result). Must have submit(). */
   fetcher?: FetcherWithComponents<unknown>;
   /** User locale preferences for schedule display. */
@@ -132,6 +134,7 @@ export default function PostConfirmation({
   groupId = null,
   submitAction: submitActionProp,
   extraFormData,
+  repostConditions,
   fetcher: fetcherProp,
   userTimezone = "UTC",
   userTimeFormat = "12h",
@@ -274,7 +277,14 @@ export default function PostConfirmation({
             repostSched,
             signedEntry.signedEvent as SignedEvent
           );
-          finalFormData.append("repostSchedules", JSON.stringify(repostArr));
+          const withConditions =
+            repostConditions && Object.keys(repostConditions).length > 0
+              ? repostArr.map((e) => ({ ...e, ...repostConditions }))
+              : repostArr;
+          finalFormData.append(
+            "repostSchedules",
+            JSON.stringify(withConditions)
+          );
         } else {
           finalFormData.append("repostSchedules", JSON.stringify([]));
         }

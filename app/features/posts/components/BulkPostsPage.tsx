@@ -1088,6 +1088,7 @@ export default function BulkPostsPage() {
           groupId={groupId}
           userTimezone={user?.timezone ?? "UTC"}
           userTimeFormat={user?.timeFormat === "24h" ? "24h" : "12h"}
+          repostConditions={undefined}
         />
       )}
 

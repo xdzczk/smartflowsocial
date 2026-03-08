@@ -14,7 +14,12 @@ import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import { getQueueColorBundle, getSelectedQueueStyle } from "../queue-colors";
-import type { PostData, QueueType, HashTagPreset } from "../types";
+import type {
+  PostData,
+  QueueType,
+  HashTagPreset,
+  RepostConditions,
+} from "../types";
 interface DraftEditFormProps {
   post: PostData;
   content: string;
@@ -42,6 +47,8 @@ interface DraftEditFormProps {
   onRepostDelayListChange?: (
     value: Array<{ id: string; value: number; unit: "hours" | "minutes" }>
   ) => void;
+  repostConditions?: RepostConditions | null;
+  onRepostConditionsChange?: (value: RepostConditions | null) => void;
   alsoScheduleQuote?: boolean;
   onAlsoScheduleQuoteChange?: (value: boolean) => void;
   userTimezone?: string;
@@ -82,6 +89,8 @@ export function DraftEditForm({
   onAlsoScheduleRepostChange,
   repostDelayList = [{ id: "default-repost", value: 2, unit: "hours" }],
   onRepostDelayListChange,
+  repostConditions,
+  onRepostConditionsChange,
   alsoScheduleQuote = false,
   onAlsoScheduleQuoteChange,
   userTimezone = "UTC",
@@ -327,6 +336,57 @@ export function DraftEditForm({
                   >
                     Add another repost
                   </button>
+                  {onRepostConditionsChange ? (
+                    <div className="border-border mt-3 space-y-1.5 rounded border p-3">
+                      <span className="text-muted-foreground text-xs">
+                        Only repost if original gets (optional)
+                      </span>
+                      <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
+                        {[
+                          { key: "minReactions" as const, label: "Reactions" },
+                          { key: "minZaps" as const, label: "Zaps" },
+                          { key: "minComments" as const, label: "Comments" },
+                          { key: "minReposts" as const, label: "Reposts" },
+                          { key: "minSats" as const, label: "Sats" },
+                        ].map(({ key, label }) => (
+                          <div key={key} className="flex items-center gap-1.5">
+                            <label className="text-muted-foreground text-xs whitespace-nowrap">
+                              {label}
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              placeholder="—"
+                              value={repostConditions?.[key] ?? ""}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const v =
+                                  raw.trim() === ""
+                                    ? undefined
+                                    : Math.max(0, parseInt(raw, 10) || 0);
+                                onRepostConditionsChange(
+                                  v !== undefined
+                                    ? { ...repostConditions, [key]: v }
+                                    : (() => {
+                                        const next = repostConditions
+                                          ? { ...repostConditions }
+                                          : {};
+                                        delete next[key];
+                                        return Object.keys(next).length > 0
+                                          ? next
+                                          : null;
+                                      })()
+                                );
+                              }}
+                              disabled={isSubmitting}
+                              className="bg-card border-border text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                              aria-label={`Min ${label.toLowerCase()}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               <label

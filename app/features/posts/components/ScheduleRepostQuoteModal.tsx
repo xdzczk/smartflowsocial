@@ -26,7 +26,7 @@ import {
 } from "~/lib/temporal";
 import type { UserData } from "~/lib/validation/user-data";
 
-import type { PostData } from "../types";
+import type { PostData, RepostConditions } from "../types";
 import {
   buildKind6RepostEvent,
   buildQuoteEvent,
@@ -80,7 +80,14 @@ async function signAndSubmitRepost(
   post: PostData,
   signed: SignedEventShape,
   scheduledForUnix: number,
-  fetcher: ReturnType<typeof useFetcher<{ success?: boolean; error?: string }>>
+  fetcher: ReturnType<typeof useFetcher<{ success?: boolean; error?: string }>>,
+  repostConditions?: {
+    minReactions?: number;
+    minZaps?: number;
+    minComments?: number;
+    minReposts?: number;
+    minSats?: number;
+  } | null
 ): Promise<void> {
   const repostEvent = buildKind6RepostEvent(signed, scheduledForUnix);
   const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
@@ -94,6 +101,18 @@ async function signAndSubmitRepost(
   formData.set("postId", post.id);
   formData.set("scheduledFor", scheduledForUnix.toString());
   formData.set("signedEvent", JSON.stringify(repostSignedEvent));
+  if (repostConditions) {
+    if (repostConditions.minReactions != null)
+      formData.set("minReactions", String(repostConditions.minReactions));
+    if (repostConditions.minZaps != null)
+      formData.set("minZaps", String(repostConditions.minZaps));
+    if (repostConditions.minComments != null)
+      formData.set("minComments", String(repostConditions.minComments));
+    if (repostConditions.minReposts != null)
+      formData.set("minReposts", String(repostConditions.minReposts));
+    if (repostConditions.minSats != null)
+      formData.set("minSats", String(repostConditions.minSats));
+  }
   fetcher.submit(formData, { method: "post", action: "/dashboard/scheduled" });
 }
 
@@ -167,6 +186,8 @@ export function ScheduleRepostQuoteModal({
 }: ScheduleRepostQuoteModalProps) {
   const [scheduledFor, setScheduledFor] = useState("");
   const [quoteCaption, setQuoteCaption] = useState("");
+  const [repostConditions, setRepostConditions] =
+    useState<RepostConditions | null>(null);
   const [signingError, setSigningError] = useState<string | null>(null);
   const [isSigning, setIsSigning] = useState(false);
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
@@ -234,7 +255,13 @@ export function ScheduleRepostQuoteModal({
       setSigningError(null);
       setIsSigning(true);
       if (mode === "repost") {
-        await signAndSubmitRepost(post, signed, scheduledForUnix, fetcher);
+        await signAndSubmitRepost(
+          post,
+          signed,
+          scheduledForUnix,
+          fetcher,
+          repostConditions
+        );
       } else {
         await signAndSubmitQuote(
           post,
@@ -336,6 +363,53 @@ export function ScheduleRepostQuoteModal({
                     className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
                   />
                 </div>
+                {mode === "repost" ? (
+                  <div className="border-border space-y-1.5 rounded border p-3">
+                    <span className="text-muted-foreground text-xs">
+                      Only repost if original gets (optional)
+                    </span>
+                    <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
+                      {[
+                        { key: "minReactions" as const, label: "Reactions" },
+                        { key: "minZaps" as const, label: "Zaps" },
+                        { key: "minComments" as const, label: "Comments" },
+                        { key: "minReposts" as const, label: "Reposts" },
+                        { key: "minSats" as const, label: "Sats" },
+                      ].map(({ key, label }) => (
+                        <div key={key} className="flex items-center gap-1.5">
+                          <label className="text-muted-foreground text-xs whitespace-nowrap">
+                            {label}
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="—"
+                            value={repostConditions?.[key] ?? ""}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const v =
+                                raw.trim() === ""
+                                  ? undefined
+                                  : Math.max(0, parseInt(raw, 10) || 0);
+                              setRepostConditions((prev) => {
+                                if (v === undefined) {
+                                  const next = prev ? { ...prev } : {};
+                                  delete next[key];
+                                  return Object.keys(next).length > 0
+                                    ? next
+                                    : null;
+                                }
+                                return { ...prev, [key]: v };
+                              });
+                            }}
+                            className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                            aria-label={`Min ${label.toLowerCase()}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 {mode === "quote" ? (
                   <div>
                     <label

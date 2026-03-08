@@ -21,17 +21,35 @@ const ERROR_INVALID_SIGNED_EVENT_FORMAT =
 function parseRepostSchedulesFromForm(formData: FormData): Array<{
   scheduledFor: number;
   signedEvent: SignedEvent;
+  minReactions?: number;
+  minZaps?: number;
+  minComments?: number;
+  minReposts?: number;
+  minSats?: number;
 }> {
   const repostSchedulesStr = formData.get("repostSchedules");
   const alsoScheduleRepost = formData.get("alsoScheduleRepost") === "on";
   const repostScheduledForStr = formData.get("repostScheduledFor");
   const repostSignedEventStr = formData.get("repostSignedEvent");
-  let list: Array<{ scheduledFor: number; signedEvent: SignedEvent }> = [];
+  let list: Array<{
+    scheduledFor: number;
+    signedEvent: SignedEvent;
+    minReactions?: number;
+    minZaps?: number;
+    minComments?: number;
+    minReposts?: number;
+    minSats?: number;
+  }> = [];
   if (repostSchedulesStr && typeof repostSchedulesStr === "string") {
     try {
       const parsed = JSON.parse(repostSchedulesStr) as Array<{
         scheduledFor: number;
         signedEvent: SignedEvent;
+        minReactions?: number;
+        minZaps?: number;
+        minComments?: number;
+        minReposts?: number;
+        minSats?: number;
       }>;
       if (Array.isArray(parsed)) {
         list = parsed.filter(
@@ -273,8 +291,44 @@ export async function handleScheduleImages({
   await assertMediaUrlsReady(fileUrlArray);
   const isVideo = isVideoFile(fileUrlArray);
 
-  const repostSchedules = parseRepostSchedulesFromForm(formData);
+  const repostSchedulesRaw = parseRepostSchedulesFromForm(formData);
+  const repostSchedules =
+    repostSchedulesRaw.length > 0
+      ? repostSchedulesRaw.map((item) => {
+          const conditions: {
+            minReactions?: number;
+            minZaps?: number;
+            minComments?: number;
+            minReposts?: number;
+            minSats?: number;
+          } = {};
+          if (item.minReactions != null && item.minReactions >= 0)
+            conditions.minReactions = item.minReactions;
+          if (item.minZaps != null && item.minZaps >= 0)
+            conditions.minZaps = item.minZaps;
+          if (item.minComments != null && item.minComments >= 0)
+            conditions.minComments = item.minComments;
+          if (item.minReposts != null && item.minReposts >= 0)
+            conditions.minReposts = item.minReposts;
+          if (item.minSats != null && item.minSats >= 0)
+            conditions.minSats = item.minSats;
+          return {
+            scheduledFor: item.scheduledFor,
+            signedEvent: item.signedEvent,
+            ...(Object.keys(conditions).length > 0 && {
+              repostConditions: conditions,
+            }),
+          };
+        })
+      : undefined;
   const quoteSchedules = parseQuoteSchedulesFromForm(formData);
+
+  const nominalScheduledForRaw = formData.get("nominalScheduledFor");
+  const nominalScheduledFor =
+    nominalScheduledForRaw != null &&
+    String(nominalScheduledForRaw).trim() !== ""
+      ? parseInt(String(nominalScheduledForRaw), 10)
+      : undefined;
 
   // Use CreatePostUseCase for post creation with scheduling (handles queue type resolution internally)
   const createPostUseCase = new CreatePostUseCase();
@@ -291,10 +345,13 @@ export async function handleScheduleImages({
     signedEvent: signedEvent,
     nostrEvent: nostrEvent,
     scheduledFor: signedEvent.created_at,
+    nominalScheduledFor: Number.isFinite(nominalScheduledFor)
+      ? nominalScheduledFor
+      : undefined,
     hashTagPresetTags,
     showHashTagsinPosts,
     correlationId,
-    repostSchedules: repostSchedules.length > 0 ? repostSchedules : undefined,
+    repostSchedules,
     quoteSchedules: quoteSchedules.length > 0 ? quoteSchedules : undefined,
   });
 

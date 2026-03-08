@@ -33,6 +33,7 @@ import type {
   QueueType,
   HashTagPreset,
   UserData,
+  RepostConditions,
 } from "../types";
 import {
   delayAfterMainToSeconds,
@@ -75,7 +76,14 @@ async function runScheduleRepostQuoteIfNeeded(
     caption: string;
   }>,
   alsoScheduleRepost: boolean,
-  alsoScheduleQuote: boolean
+  alsoScheduleQuote: boolean,
+  repostConditions?: {
+    minReactions?: number;
+    minZaps?: number;
+    minComments?: number;
+    minReposts?: number;
+    minSats?: number;
+  } | null
 ): Promise<void> {
   if (
     isLongform ||
@@ -101,7 +109,8 @@ async function runScheduleRepostQuoteIfNeeded(
       repostDelayList,
       quoteEntries,
       alsoScheduleRepost,
-      alsoScheduleQuote
+      alsoScheduleQuote,
+      repostConditions
     );
     if (
       (alsoScheduleRepost && repostDelayList.length > 0) ||
@@ -120,6 +129,91 @@ async function runScheduleRepostQuoteIfNeeded(
   }
 }
 
+type RepostConditionsForm = {
+  minReactions?: number;
+  minZaps?: number;
+  minComments?: number;
+  minReposts?: number;
+  minSats?: number;
+} | null;
+
+function appendRepostConditionsToForm(
+  fd: FormData,
+  repostConditions: RepostConditionsForm
+): void {
+  if (!repostConditions) return;
+  if (repostConditions.minReactions != null)
+    fd.set("minReactions", String(repostConditions.minReactions));
+  if (repostConditions.minZaps != null)
+    fd.set("minZaps", String(repostConditions.minZaps));
+  if (repostConditions.minComments != null)
+    fd.set("minComments", String(repostConditions.minComments));
+  if (repostConditions.minReposts != null)
+    fd.set("minReposts", String(repostConditions.minReposts));
+  if (repostConditions.minSats != null)
+    fd.set("minSats", String(repostConditions.minSats));
+}
+
+async function scheduleOneRepost(
+  mainScheduledUnix: number,
+  mainEv: MainEv,
+  postId: string,
+  item: { value: number; unit: DelayAfterMain["unit"] },
+  repostConditions: RepostConditionsForm
+): Promise<void> {
+  const delay: DelayAfterMain = { value: item.value, unit: item.unit };
+  if (!isValidDelayAfterMain(delay)) return;
+  const offsetSeconds = delayAfterMainToSeconds(delay);
+  const repostScheduledForUnix = mainScheduledUnix + offsetSeconds;
+  const repostEvent = buildKind6RepostEvent(mainEv, repostScheduledForUnix);
+  const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
+    content: repostEvent.content,
+    created_at: repostEvent.created_at,
+    kind: repostEvent.kind,
+    tags: repostEvent.tags,
+  });
+  const fd = new FormData();
+  fd.set("_action", "scheduleRepost");
+  fd.set("postId", postId);
+  fd.set("scheduledFor", repostScheduledForUnix.toString());
+  fd.set("signedEvent", JSON.stringify(repostSignedEvent));
+  appendRepostConditionsToForm(fd, repostConditions);
+  const res = await fetch("/dashboard/scheduled", { method: "POST", body: fd });
+  if (!res.ok) throw new Error("Failed to schedule repost");
+}
+
+async function scheduleOneQuote(
+  mainScheduledUnix: number,
+  mainEv: MainEv,
+  postId: string,
+  entry: { value: number; unit: DelayAfterMain["unit"]; caption: string }
+): Promise<void> {
+  const delay: DelayAfterMain = { value: entry.value, unit: entry.unit };
+  if (!isValidDelayAfterMain(delay)) return;
+  const offsetSeconds = delayAfterMainToSeconds(delay);
+  const quoteScheduledForUnix = mainScheduledUnix + offsetSeconds;
+  const quoteEvent = buildQuoteEvent(
+    mainEv,
+    entry.caption,
+    quoteScheduledForUnix,
+    []
+  );
+  const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
+    content: quoteEvent.content,
+    created_at: quoteEvent.created_at,
+    kind: quoteEvent.kind,
+    tags: quoteEvent.tags,
+  });
+  const fd = new FormData();
+  fd.set("_action", "scheduleQuote");
+  fd.set("postId", postId);
+  fd.set("scheduledFor", quoteScheduledForUnix.toString());
+  fd.set("signedEvent", JSON.stringify(quoteSignedEvent));
+  if (entry.caption) fd.set("quoteCaption", entry.caption);
+  const res = await fetch("/dashboard/scheduled", { method: "POST", body: fd });
+  if (!res.ok) throw new Error("Failed to schedule quote");
+}
+
 async function scheduleRepostsAndQuotesAfterSubmit(
   mainScheduledUnix: number,
   mainEv: MainEv,
@@ -136,64 +230,23 @@ async function scheduleRepostsAndQuotesAfterSubmit(
     caption: string;
   }>,
   alsoScheduleRepost: boolean,
-  alsoScheduleQuote: boolean
+  alsoScheduleQuote: boolean,
+  repostConditions?: RepostConditionsForm
 ): Promise<void> {
   if (alsoScheduleRepost && repostDelayList.length > 0) {
     for (const item of repostDelayList) {
-      const delay: DelayAfterMain = { value: item.value, unit: item.unit };
-      if (!isValidDelayAfterMain(delay)) continue;
-      const offsetSeconds = delayAfterMainToSeconds(delay);
-      const repostScheduledForUnix = mainScheduledUnix + offsetSeconds;
-      const repostEvent = buildKind6RepostEvent(mainEv, repostScheduledForUnix);
-      const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
-        content: repostEvent.content,
-        created_at: repostEvent.created_at,
-        kind: repostEvent.kind,
-        tags: repostEvent.tags,
-      });
-      const fd = new FormData();
-      fd.set("_action", "scheduleRepost");
-      fd.set("postId", postId);
-      fd.set("scheduledFor", repostScheduledForUnix.toString());
-      fd.set("signedEvent", JSON.stringify(repostSignedEvent));
-      const res = await fetch("/dashboard/scheduled", {
-        method: "POST",
-        body: fd,
-      });
-      if (!res.ok) throw new Error("Failed to schedule repost");
+      await scheduleOneRepost(
+        mainScheduledUnix,
+        mainEv,
+        postId,
+        item,
+        repostConditions ?? null
+      );
     }
   }
   if (alsoScheduleQuote && quoteEntries.length > 0) {
     for (const entry of quoteEntries) {
-      const delay: DelayAfterMain = { value: entry.value, unit: entry.unit };
-      if (!isValidDelayAfterMain(delay)) continue;
-      const offsetSeconds = delayAfterMainToSeconds(delay);
-      const quoteScheduledForUnix = mainScheduledUnix + offsetSeconds;
-      const quoteEvent = buildQuoteEvent(
-        mainEv,
-        entry.caption,
-        quoteScheduledForUnix,
-        []
-      );
-      const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
-        content: quoteEvent.content,
-        created_at: quoteEvent.created_at,
-        kind: quoteEvent.kind,
-        tags: quoteEvent.tags,
-      });
-      const fd = new FormData();
-      fd.set("_action", "scheduleQuote");
-      fd.set("postId", postId);
-      fd.set("scheduledFor", quoteScheduledForUnix.toString());
-      fd.set("signedEvent", JSON.stringify(quoteSignedEvent));
-      if (entry.caption) {
-        fd.set("quoteCaption", entry.caption);
-      }
-      const res = await fetch("/dashboard/scheduled", {
-        method: "POST",
-        body: fd,
-      });
-      if (!res.ok) throw new Error("Failed to schedule quote");
+      await scheduleOneQuote(mainScheduledUnix, mainEv, postId, entry);
     }
   }
 }
@@ -259,6 +312,8 @@ export function EditPostModal({
   const [repostDelayList, setRepostDelayList] = useState<
     Array<{ id: string; value: number; unit: DelayAfterMain["unit"] }>
   >([{ id: crypto.randomUUID(), value: 2, unit: "hours" }]);
+  const [repostConditions, setRepostConditions] =
+    useState<RepostConditions | null>(null);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const [quoteEntries, setQuoteEntries] = useState<
     Array<{
@@ -406,7 +461,8 @@ export function EditPostModal({
         repostDelayList,
         quoteEntries,
         alsoScheduleRepost,
-        alsoScheduleQuote
+        alsoScheduleQuote,
+        repostConditions
       );
     } catch (error: unknown) {
       logClientError(
@@ -629,6 +685,57 @@ export function EditPostModal({
                       >
                         Add another repost
                       </button>
+                      <div className="border-border mt-3 space-y-1.5 rounded border p-3">
+                        <span className="text-muted-foreground text-xs">
+                          Only repost if original gets (optional)
+                        </span>
+                        <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
+                          {[
+                            {
+                              key: "minReactions" as const,
+                              label: "Reactions",
+                            },
+                            { key: "minZaps" as const, label: "Zaps" },
+                            { key: "minComments" as const, label: "Comments" },
+                            { key: "minReposts" as const, label: "Reposts" },
+                            { key: "minSats" as const, label: "Sats" },
+                          ].map(({ key, label }) => (
+                            <div
+                              key={key}
+                              className="flex items-center gap-1.5"
+                            >
+                              <label className="text-muted-foreground text-xs whitespace-nowrap">
+                                {label}
+                              </label>
+                              <input
+                                type="number"
+                                min={0}
+                                placeholder="—"
+                                value={repostConditions?.[key] ?? ""}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const v =
+                                    raw.trim() === ""
+                                      ? undefined
+                                      : Math.max(0, parseInt(raw, 10) || 0);
+                                  setRepostConditions((prev) => {
+                                    if (v === undefined) {
+                                      const next = prev ? { ...prev } : {};
+                                      delete next[key];
+                                      return Object.keys(next).length > 0
+                                        ? next
+                                        : null;
+                                    }
+                                    return { ...prev, [key]: v };
+                                  });
+                                }}
+                                className="bg-card border-border text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                                aria-label={`Min ${label.toLowerCase()}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   ) : null}
                   <label

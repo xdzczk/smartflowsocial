@@ -7,6 +7,8 @@
 import type { Post, PostKind, PostType, QueueType } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import type { RepostConditions } from "~/features/posts/types";
+
 export interface CreatePostData {
   userId: string;
   content?: string;
@@ -42,6 +44,10 @@ export interface CreatePostData {
   replyToEventId?: string | null;
   /** Reply: our Post id when the replied-to event is one of our posts */
   replyToPostId?: string | null;
+  /** When random schedule window was used: user-chosen time (for queue "next slot"). */
+  nominalScheduledAtUtc?: Date | null;
+  /** Optional: only publish repost if source post meets these engagement thresholds */
+  repostConditions?: RepostConditions | null;
 }
 
 export type PostWithQueueType = Post & { queueType: QueueType | null };

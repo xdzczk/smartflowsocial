@@ -126,6 +126,13 @@ export const queueTypeClientSchema = z
     intervalHours: z.string().optional(),
     slots: z.string().optional(),
     weeklySlots: z.array(weeklySlotEntryClientSchema).optional(),
+    scheduleRandomWindowMinutes: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(15)
+      .optional()
+      .default(0),
   })
   .refine(
     (data) => {

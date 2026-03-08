@@ -13,6 +13,13 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
 import type { SignedEvent } from "~/features/nostr/types";
@@ -32,6 +39,7 @@ import {
   tryBackgroundReconnect,
 } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { applyRandomScheduleWindow } from "~/lib/schedule-random";
 import {
   getNowForDateTimeLocal,
   nowMillis,
@@ -47,7 +55,7 @@ import {
 } from "../hooks/useComposerLocalDraft";
 import { useComposerState } from "../hooks/useComposerState";
 import { usePostScheduling } from "../hooks/usePostScheduling";
-import type { QueueType, ComposerAttachment } from "../types";
+import type { QueueType, ComposerAttachment, RepostConditions } from "../types";
 import {
   delayAfterMainToSeconds,
   isValidDelayAfterMain,
@@ -375,6 +383,8 @@ export function UnifiedComposer({
   const [repostDelayList, setRepostDelayList] = React.useState<
     Array<{ id: string; value: number; unit: DelayAfterMain["unit"] }>
   >([{ id: crypto.randomUUID(), value: 2, unit: "hours" }]);
+  const [repostConditions, setRepostConditions] =
+    React.useState<RepostConditions | null>(null);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = React.useState(false);
   const [quoteEntries, setQuoteEntries] = React.useState<
     Array<{
@@ -386,6 +396,8 @@ export function UnifiedComposer({
   >([{ id: crypto.randomUUID(), value: 2, unit: "hours", caption: "" }]);
 
   const [postOptionsOpen, setPostOptionsOpen] = React.useState(false);
+  const [scheduleRandomWindowMinutes, setScheduleRandomWindowMinutes] =
+    React.useState(0);
   const [isThreadMode, setIsThreadMode] = React.useState(false);
   const [threadSegments, setThreadSegments] = React.useState<
     Array<{ id: string; content: string; attachments: ComposerAttachment[] }>
@@ -423,6 +435,23 @@ export function UnifiedComposer({
     initialQueue: initialDraft?.queueType ?? "unassigned",
     onQueueTypeChange,
   });
+
+  React.useEffect(() => {
+    const qt = queueTypes.find(
+      (q) => (typeof q === "string" ? q : q.name) === selectedQueue
+    );
+    const window =
+      typeof qt === "object" &&
+      qt.scheduleConfig &&
+      typeof qt.scheduleConfig === "object" &&
+      "scheduleRandomWindowMinutes" in qt.scheduleConfig
+        ? ((qt.scheduleConfig as { scheduleRandomWindowMinutes?: number })
+            .scheduleRandomWindowMinutes ?? 0)
+        : 0;
+    setScheduleRandomWindowMinutes(
+      typeof window === "number" && window >= 0 && window <= 15 ? window : 0
+    );
+  }, [selectedQueue, queueTypes]);
 
   const {
     restored: localRestored,
@@ -848,14 +877,18 @@ export function UnifiedComposer({
         submitType === ACTION_POST_TEXT
           ? nowMillis()
           : await parseScheduledTime(data.scheduledFor ?? "", userTimezone);
-      const scheduledForUnix = Math.floor(scheduledTime / 1000);
+      const nominalUnix = Math.floor(scheduledTime / 1000);
       if (
         submitType === ACTION_SCHEDULE_TEXT &&
-        scheduledForUnix * 1000 < Date.now()
+        nominalUnix * 1000 < Date.now()
       ) {
         setSigningError("Schedule time must be in the future.");
         return;
       }
+      const scheduledForUnix =
+        submitType === ACTION_SCHEDULE_TEXT && scheduleRandomWindowMinutes > 0
+          ? applyRandomScheduleWindow(nominalUnix, scheduleRandomWindowMinutes)
+          : nominalUnix;
 
       const effectiveHashtags = await getEffectiveHashtagsForSubmit(
         data.useHashtagPresets,
@@ -895,6 +928,12 @@ export function UnifiedComposer({
         signedEvent: JSON.stringify(signedEvent),
         scheduledFor: scheduledForUnix.toString(),
       };
+      if (
+        submitType === ACTION_SCHEDULE_TEXT &&
+        scheduleRandomWindowMinutes > 0
+      ) {
+        payload["nominalScheduledFor"] = String(nominalUnix);
+      }
       if (data["isRecyclable"]) payload["isRecyclable"] = "on";
       if (data["useHashtagPresets"] && data["hashTagPresetId"]) {
         payload["hashTagPresetId"] = data["hashTagPresetId"];
@@ -922,7 +961,14 @@ export function UnifiedComposer({
         );
         if (repostSchedules == null) return;
         if (repostSchedules.length > 0) {
-          payload["repostSchedules"] = JSON.stringify(repostSchedules);
+          const withConditions =
+            repostConditions && Object.keys(repostConditions).length > 0
+              ? repostSchedules.map((s) => ({
+                  ...s,
+                  ...repostConditions,
+                }))
+              : repostSchedules;
+          payload["repostSchedules"] = JSON.stringify(withConditions);
         }
       }
       if (alsoScheduleQuote && quoteEntries.length > 0) {
@@ -1709,6 +1755,27 @@ export function UnifiedComposer({
                   showTimeInput={false}
                   userTimezone={user?.timezone ?? "UTC"}
                 />
+                <div className="space-y-2">
+                  <Label htmlFor="scheduleRandomWindowMinutes">
+                    Post at random time within ± minutes
+                  </Label>
+                  <Select
+                    value={String(scheduleRandomWindowMinutes)}
+                    onValueChange={(value) =>
+                      setScheduleRandomWindowMinutes(Number(value))
+                    }
+                  >
+                    <SelectTrigger id="scheduleRandomWindowMinutes">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Off (exact time)</SelectItem>
+                      <SelectItem value="5">±5 minutes</SelectItem>
+                      <SelectItem value="10">±10 minutes</SelectItem>
+                      <SelectItem value="15">±15 minutes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="border-border rounded-lg border">
                   <button
                     type="button"
@@ -1787,6 +1854,8 @@ export function UnifiedComposer({
                           onAlsoScheduleRepostChange={setAlsoScheduleRepost}
                           repostDelayList={repostDelayList}
                           onRepostDelayListChange={setRepostDelayList}
+                          repostConditions={repostConditions}
+                          onRepostConditionsChange={setRepostConditions}
                           alsoScheduleQuote={alsoScheduleQuote}
                           onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
                           quoteEntries={quoteEntries}

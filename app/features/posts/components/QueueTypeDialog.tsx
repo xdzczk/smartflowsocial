@@ -101,6 +101,13 @@ export function QueueTypeDialog({
     if (queueType) {
       const scheduleConfig = queueType.scheduleConfig;
       const qt = queueType as QueueType & { colorToken?: string | null };
+      const randomWindow =
+        scheduleConfig &&
+        typeof scheduleConfig === "object" &&
+        "scheduleRandomWindowMinutes" in scheduleConfig
+          ? ((scheduleConfig as { scheduleRandomWindowMinutes?: number })
+              .scheduleRandomWindowMinutes ?? 0)
+          : 0;
       return {
         name: queueType.name,
         description: queueType.description ?? "",
@@ -124,6 +131,7 @@ export function QueueTypeDialog({
           scheduleConfig && isWeeklySlotsScheduleConfig(scheduleConfig)
             ? scheduleConfig.weeklySlots
             : undefined,
+        scheduleRandomWindowMinutes: randomWindow,
       };
     }
     return {
@@ -139,6 +147,7 @@ export function QueueTypeDialog({
       weeklySlots: undefined as
         | Array<{ dayOfWeek: number; time: string }>
         | undefined,
+      scheduleRandomWindowMinutes: 0,
     };
   }, [queueType]);
 
@@ -238,6 +247,9 @@ export function QueueTypeDialog({
       ...(data.slots ? { slots: data.slots } : {}),
       ...(data.scheduleType === "WEEKLY_SLOTS" && data.weeklySlots?.length
         ? { weeklySlots: JSON.stringify(data.weeklySlots) }
+        : {}),
+      ...(typeof data.scheduleRandomWindowMinutes === "number"
+        ? { scheduleRandomWindowMinutes: data.scheduleRandomWindowMinutes }
         : {}),
     };
 
@@ -459,6 +471,35 @@ export function QueueTypeDialog({
               </p>
             </div>
           ) : null}
+
+          <div className="space-y-2">
+            <Label htmlFor="scheduleRandomWindowMinutes">
+              Post at random time within ± minutes (optional)
+            </Label>
+            <Select
+              value={String(form.watch("scheduleRandomWindowMinutes"))}
+              onValueChange={(value) => {
+                form.setValue(
+                  "scheduleRandomWindowMinutes",
+                  Number(value) as 0 | 5 | 10 | 15
+                );
+              }}
+            >
+              <SelectTrigger id="scheduleRandomWindowMinutes">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Off (exact time)</SelectItem>
+                <SelectItem value="5">±5 minutes</SelectItem>
+                <SelectItem value="10">±10 minutes</SelectItem>
+                <SelectItem value="15">±15 minutes</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-muted-foreground text-xs">
+              Default for posts in this queue. Keeps queue slots and intervals
+              from drifting.
+            </p>
+          </div>
 
           {scheduleType === "WEEKLY_SLOTS" ? (
             <div className="space-y-2">

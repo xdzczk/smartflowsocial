@@ -20,6 +20,11 @@ const ERROR_INVALID_SIGNED_EVENT_FORMAT =
 interface RepostScheduleItem {
   scheduledFor: number;
   signedEvent: SignedEvent;
+  minReactions?: number;
+  minZaps?: number;
+  minComments?: number;
+  minReposts?: number;
+  minSats?: number;
 }
 interface QuoteScheduleItem {
   scheduledFor: number;
@@ -39,15 +44,25 @@ function parseRepostSchedulesFromForm(
     try {
       const parsed = JSON.parse(repostSchedulesStr) as unknown;
       if (Array.isArray(parsed)) {
-        list = parsed.filter(
-          (p): p is RepostScheduleItem =>
-            typeof p === "object" &&
-            p !== null &&
-            "scheduledFor" in p &&
-            "signedEvent" in p &&
-            typeof (p as RepostScheduleItem).scheduledFor === "number" &&
-            typeof (p as RepostScheduleItem).signedEvent === "object"
-        );
+        list = parsed
+          .filter(
+            (p): p is RepostScheduleItem =>
+              typeof p === "object" &&
+              p !== null &&
+              "scheduledFor" in p &&
+              "signedEvent" in p &&
+              typeof (p as RepostScheduleItem).scheduledFor === "number" &&
+              typeof (p as RepostScheduleItem).signedEvent === "object"
+          )
+          .map((p) => ({
+            scheduledFor: p.scheduledFor,
+            signedEvent: p.signedEvent,
+            ...(p.minReactions != null && { minReactions: p.minReactions }),
+            ...(p.minZaps != null && { minZaps: p.minZaps }),
+            ...(p.minComments != null && { minComments: p.minComments }),
+            ...(p.minReposts != null && { minReposts: p.minReposts }),
+            ...(p.minSats != null && { minSats: p.minSats }),
+          }));
       }
     } catch {
       list = [];
@@ -281,8 +296,44 @@ export async function handlePostOrScheduleText({
     showHashTagsinPosts
   );
 
-  const repostSchedules = parseRepostSchedulesFromForm(formData);
+  const repostSchedulesRaw = parseRepostSchedulesFromForm(formData);
+  const repostSchedules =
+    repostSchedulesRaw.length > 0
+      ? repostSchedulesRaw.map((item) => {
+          const conditions: {
+            minReactions?: number;
+            minZaps?: number;
+            minComments?: number;
+            minReposts?: number;
+            minSats?: number;
+          } = {};
+          if (item.minReactions != null && item.minReactions >= 0)
+            conditions.minReactions = item.minReactions;
+          if (item.minZaps != null && item.minZaps >= 0)
+            conditions.minZaps = item.minZaps;
+          if (item.minComments != null && item.minComments >= 0)
+            conditions.minComments = item.minComments;
+          if (item.minReposts != null && item.minReposts >= 0)
+            conditions.minReposts = item.minReposts;
+          if (item.minSats != null && item.minSats >= 0)
+            conditions.minSats = item.minSats;
+          return {
+            scheduledFor: item.scheduledFor,
+            signedEvent: item.signedEvent,
+            ...(Object.keys(conditions).length > 0 && {
+              repostConditions: conditions,
+            }),
+          };
+        })
+      : undefined;
   const quoteSchedules = parseQuoteSchedulesFromForm(formData);
+
+  const nominalScheduledForRaw = formData.get("nominalScheduledFor");
+  const nominalScheduledFor =
+    nominalScheduledForRaw != null &&
+    String(nominalScheduledForRaw).trim() !== ""
+      ? parseInt(String(nominalScheduledForRaw), 10)
+      : undefined;
 
   // Use CreatePostUseCase for post creation (handles queue type resolution internally)
   const createPostUseCase = new CreatePostUseCase();
@@ -300,9 +351,13 @@ export async function handlePostOrScheduleText({
     nostrEvent,
     scheduledFor:
       action === "schedule-text" ? signedEventJson.created_at : undefined,
+    nominalScheduledFor:
+      action === "schedule-text" && Number.isFinite(nominalScheduledFor)
+        ? nominalScheduledFor
+        : undefined,
     hashTagPresetTags,
     showHashTagsinPosts,
-    repostSchedules: repostSchedules.length > 0 ? repostSchedules : undefined,
+    repostSchedules,
     quoteSchedules: quoteSchedules.length > 0 ? quoteSchedules : undefined,
   });
 

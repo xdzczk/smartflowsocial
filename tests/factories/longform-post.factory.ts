@@ -17,6 +17,7 @@ export interface LongFormPostFactoryOptions {
   content?: string;
   image?: string | null;
   scheduledFor?: string | null;
+  nominalScheduledAtUtc?: Date | null;
   currentState?: string; // State machine state - single source of truth
   postedAt?: Date | null;
   publishedAt?: Date | null;
@@ -175,6 +176,7 @@ export class LongFormPostFactory {
       content: this.options.content ?? null,
       image: this.options.image ?? null,
       scheduledAtUtc,
+      nominalScheduledAtUtc: this.options.nominalScheduledAtUtc ?? null,
       currentState: this.options.currentState ?? "DRAFT",
       postedAt: this.options.postedAt ?? null,
       publishedAt: this.options.publishedAt ?? null,

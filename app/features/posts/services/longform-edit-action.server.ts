@@ -524,11 +524,24 @@ async function handleScheduleLongform(
     const scheduleLongFormPostUseCase = new ScheduleLongFormPostUseCase();
     const { fromUnixTimestamp } = await import("~/lib/temporal");
     const scheduledAtUtcZoned = fromUnixTimestamp(scheduledForTimestamp, "UTC");
+    const nominalScheduledForRaw = formData.get("nominalScheduledFor");
+    const nominalScheduledFor =
+      nominalScheduledForRaw != null &&
+      String(nominalScheduledForRaw).trim() !== ""
+        ? parseInt(String(nominalScheduledForRaw), 10)
+        : undefined;
+    const nominalScheduledAtUtcZoned =
+      nominalScheduledFor != null && Number.isFinite(nominalScheduledFor)
+        ? fromUnixTimestamp(nominalScheduledFor, "UTC")
+        : undefined;
     await scheduleLongFormPostUseCase.execute({
       postId,
       userId,
       scheduledAtUtc: scheduledAtUtcZoned,
       signedEvent: signedEventJson,
+      ...(nominalScheduledAtUtcZoned != null
+        ? { nominalScheduledAtUtc: nominalScheduledAtUtcZoned }
+        : {}),
     });
   }
 

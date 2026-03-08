@@ -374,6 +374,24 @@ const diff = scheduled.since(now);
 
 ---
 
+## Random Schedule Window
+
+**Definition:** Users (or queue defaults) can opt in to "post at a random time within ±N minutes" of
+the chosen time.
+
+**Behavior:**
+
+- User intent remains "around T" (e.g. 13:00 ± 5 min). At schedule time, the system picks one random
+  instant in [T − N, T + N] and stores it as `scheduledAtUtc` (actual publish time).
+- When a random window was used, the user-chosen time T is also stored as `nominalScheduledAtUtc`.
+  Queue "next slot" logic uses this nominal time so that:
+  - **INTERVAL** queues do not drift (next = last nominal + interval).
+  - **FIXED_SLOTS** / **WEEKLY_SLOTS** do not suggest the same slot again when the random time lands
+    before the slot (e.g. 11:50 with nominal 12:00 still counts as "used 12:00").
+- Display can show the actual time or a label like "~13:00" when nominal differs from actual.
+
+---
+
 ## Revision History
 
 - **2025-01-02**: Initial time semantics document created

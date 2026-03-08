@@ -36,6 +36,8 @@ export interface ScheduleLongFormPostInput {
   scheduledAtUtc: Temporal.ZonedDateTime; // Use Temporal for better timezone handling
   signedEvent: SignedEvent;
   correlationId?: string; // For request tracking
+  /** When random schedule window was used: user-chosen time (for queue "next slot"). */
+  nominalScheduledAtUtc?: Temporal.ZonedDateTime;
 }
 
 export interface PublishLongFormNowInput {

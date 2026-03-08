@@ -12,6 +12,8 @@ import { Worker, type Job } from "bullmq";
 import type { SignedEvent } from "~/features/nostr/types";
 import { LongFormPostStateMachine } from "~/features/posts/state-machine/longform-post-state-machine.server";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
+import { getPostStats } from "~/features/posts/stats.server";
+import type { RepostConditions } from "~/features/posts/types";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import {
@@ -773,6 +775,86 @@ async function runScheduledPostJob(input: {
       },
     });
     return { success: true, postId, skipped: true };
+  }
+
+  // Conditional repost: only publish if source post meets engagement thresholds
+  const repostMeta = await prisma.post.findUnique({
+    where: { id: postId, userId },
+    select: { postKind: true, repostOfPostId: true, repostConditions: true },
+  });
+  const conditions = repostMeta?.repostConditions as
+    | RepostConditions
+    | null
+    | undefined;
+  const hasConditions =
+    repostMeta?.postKind === "REPOST" &&
+    repostMeta.repostOfPostId &&
+    conditions &&
+    typeof conditions === "object" &&
+    Object.keys(conditions).length > 0;
+
+  if (hasConditions && repostMeta.repostOfPostId) {
+    const sourcePost = await prisma.post.findUnique({
+      where: { id: repostMeta.repostOfPostId, userId },
+      select: { nostrEventId: true, signedEvent: true },
+    });
+    const sourceEventId =
+      sourcePost?.nostrEventId ??
+      (sourcePost?.signedEvent &&
+      typeof sourcePost.signedEvent === "object" &&
+      !Array.isArray(sourcePost.signedEvent) &&
+      "id" in sourcePost.signedEvent &&
+      typeof (sourcePost.signedEvent as { id: string }).id === "string"
+        ? (sourcePost.signedEvent as { id: string }).id
+        : null);
+    if (sourceEventId) {
+      const statsRecord = await getPostStats([sourceEventId]);
+      const stats = statsRecord[sourceEventId];
+      const cond = conditions as Record<string, number>;
+      const mapping: Record<
+        string,
+        "likes" | "zaps" | "replies" | "reposts" | "satszapped"
+      > = {
+        minReactions: "likes",
+        minZaps: "zaps",
+        minComments: "replies",
+        minReposts: "reposts",
+        minSats: "satszapped",
+      };
+      const conditionsMet = (() => {
+        if (stats === undefined) return false;
+        for (const [k, minVal] of Object.entries(cond)) {
+          const statsKey = mapping[k];
+          if (!statsKey || typeof minVal !== "number") continue;
+          const actual = stats[statsKey];
+          if (actual < minVal) return false;
+        }
+        return true;
+      })();
+      if (!conditionsMet) {
+        await releasePostPublishLease({
+          postId,
+          userId,
+          lockId: lease.lockId,
+        });
+        input.ctx.lease = null;
+        await stateMachine.transition(
+          postId,
+          userId,
+          "CANCELLED",
+          "Repost skipped: engagement conditions not met"
+        );
+        logInfo("Repost skipped: engagement conditions not met", {
+          postId,
+          userId,
+          correlationId,
+          queueName,
+          sourceEventId,
+        });
+        recordJobSkipped(queueName, "repost_conditions_not_met");
+        return { success: true, postId, skipped: true };
+      }
+    }
   }
 
   // Transition to PUBLISHING

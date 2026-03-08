@@ -8,7 +8,12 @@ import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.sch
 import { useZodForm } from "~/lib/validation/utils.client";
 
 import { signDraftForScheduling } from "../services/draft-sign.server";
-import type { UserData, HashTagPreset, PostData } from "../types";
+import type {
+  UserData,
+  HashTagPreset,
+  PostData,
+  RepostConditions,
+} from "../types";
 import {
   delayAfterMainToSeconds,
   isValidDelayAfterMain,
@@ -84,6 +89,8 @@ export function useDraftEditState({
   const [repostDelayList, setRepostDelayList] = useState<
     Array<{ id: string; value: number; unit: "hours" | "minutes" }>
   >(() => [{ id: crypto.randomUUID(), value: 2, unit: "hours" }]);
+  const [repostConditions, setRepostConditions] =
+    useState<RepostConditions | null>(null);
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const [quoteEntries, setQuoteEntries] = useState<
     Array<{
@@ -171,6 +178,7 @@ export function useDraftEditState({
         user,
         currentUser: currentUserData,
         post: post as unknown as PostData,
+        scheduleRandomWindowMinutes: 0, // TODO: pass from queue default when draft edit has queue types
       });
 
       const formData = new FormData();
@@ -179,6 +187,12 @@ export function useDraftEditState({
       formData.append("caption", caption || content);
       formData.append("queueType", selectedQueue);
       formData.append("scheduledFor", result.scheduledForUnix.toString());
+      if (result.nominalScheduledForUnix != null) {
+        formData.append(
+          "nominalScheduledFor",
+          result.nominalScheduledForUnix.toString()
+        );
+      }
       formData.append("signedEvent", JSON.stringify(result.signedEvent));
       formData.append("nostrEvent", JSON.stringify(result.nostrEvent));
 
@@ -226,7 +240,11 @@ export function useDraftEditState({
           });
         }
         if (repostSchedules.length > 0) {
-          formData.append("repostSchedules", JSON.stringify(repostSchedules));
+          const withConditions =
+            repostConditions && Object.keys(repostConditions).length > 0
+              ? repostSchedules.map((s) => ({ ...s, ...repostConditions }))
+              : repostSchedules;
+          formData.append("repostSchedules", JSON.stringify(withConditions));
         }
       }
 
@@ -340,6 +358,8 @@ export function useDraftEditState({
     setAlsoScheduleRepost,
     repostDelayList,
     setRepostDelayList,
+    repostConditions,
+    setRepostConditions,
     alsoScheduleQuote,
     setAlsoScheduleQuote,
     quoteEntries,

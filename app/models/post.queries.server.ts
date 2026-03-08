@@ -840,37 +840,34 @@ export async function getLastPostTimeForQueue({
     return null; // Queue type doesn't exist
   }
 
-  // For FIXED_SLOTS and WEEKLY_SLOTS, consider ALL scheduled posts (both posted and unposted)
-  // to find the actual last scheduled time. For INTERVAL, only consider unposted posts.
-  const whereCondition: Prisma.PostWhereInput = {
-    userId,
-    queueTypeId: queueType.id,
-    // Use currentState as single source of truth
-    // For INTERVAL: only include SCHEDULED (not yet published)
-    // For FIXED_SLOTS and WEEKLY_SLOTS: include both SCHEDULED and PUBLISHED
-    currentState:
-      queueType.scheduleType === "INTERVAL"
-        ? "SCHEDULED"
-        : { in: ["SCHEDULED", "PUBLISHED"] },
-    scheduledAtUtc: {
-      not: null,
-    },
-  };
-
-  // Get the most recent scheduled post for this queue
-  const lastPost = await prisma.post.findFirst({
-    where: whereCondition,
-    orderBy: {
-      scheduledAtUtc: "desc",
-    },
-    select: {
-      scheduledAtUtc: true,
-    },
-  });
-
-  if (!lastPost?.scheduledAtUtc) {
-    return null;
+  // For FIXED_SLOTS and WEEKLY_SLOTS, consider ALL scheduled posts (both posted and unposted).
+  // For INTERVAL, only consider unposted posts.
+  // Use nominalScheduledAtUtc when present (random window) so queue "next slot" doesn't drift.
+  if (queueType.scheduleType === "INTERVAL") {
+    const raw = await prisma.$queryRawUnsafe<Array<{ effective_at: Date }>>(
+      `SELECT COALESCE("nominalScheduledAtUtc", "scheduledAtUtc") AS effective_at
+       FROM "Post"
+       WHERE "userId" = $1 AND "queueTypeId" = $2
+         AND "currentState" = 'SCHEDULED'
+         AND "scheduledAtUtc" IS NOT NULL
+       ORDER BY effective_at DESC
+       LIMIT 1`,
+      userId,
+      queueType.id
+    );
+    return raw[0]?.effective_at ?? null;
   }
 
-  return lastPost.scheduledAtUtc;
+  const raw = await prisma.$queryRawUnsafe<Array<{ effective_at: Date }>>(
+    `SELECT COALESCE("nominalScheduledAtUtc", "scheduledAtUtc") AS effective_at
+     FROM "Post"
+     WHERE "userId" = $1 AND "queueTypeId" = $2
+       AND "currentState" IN ('SCHEDULED', 'PUBLISHED')
+       AND "scheduledAtUtc" IS NOT NULL
+     ORDER BY effective_at DESC
+     LIMIT 1`,
+    userId,
+    queueType.id
+  );
+  return raw[0]?.effective_at ?? null;
 }

@@ -243,6 +243,7 @@ model Post {
   caption                 String?
   fileUrl                 String[]
   scheduledAtUtc          DateTime? // New DateTime field (UTC)
+  nominalScheduledAtUtc   DateTime? // User-chosen time when random window used (for queue "next slot")
   publishedAt             DateTime?
   content                 String?
   postType                PostType              @default(IMAGE)
@@ -277,6 +278,8 @@ model Post {
   repostOfPostId          String?
   repostOf                Post?                 @relation("RepostOf", fields: [repostOfPostId], references: [id])
   reposts                 Post[]                @relation("RepostOf")
+  // Optional: only publish repost if source post meets these engagement thresholds (AND)
+  repostConditions        Json?                 // { minReactions?, minZaps?, minComments?, minReposts?, minSats? }
   quoteOfPostId           String?
   quoteOf                 Post?                 @relation("QuoteOf", fields: [quoteOfPostId], references: [id])
   quotes                  Post[]                @relation("QuoteOf")
@@ -328,6 +331,7 @@ model LongFormPost {
   content                 String?
   image                   String?
   scheduledAtUtc          DateTime? // New DateTime field (UTC)
+  nominalScheduledAtUtc   DateTime? // User-chosen time when random window used (for queue "next slot")
   postedAt                DateTime?
   publishedAt             DateTime?
   updatedAt               DateTime                      @updatedAt

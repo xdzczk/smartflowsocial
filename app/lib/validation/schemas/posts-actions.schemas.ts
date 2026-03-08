@@ -236,6 +236,17 @@ export const dashboardActionSchema = z.discriminatedUnion("_action", [
   updateScheduleOverviewTargetSchema,
 ]);
 
+/** Optional engagement thresholds for conditional repost (only publish if source meets all set minimums) */
+const repostConditionField = z.coerce.number().int().min(0).optional();
+export const repostConditionsSchema = z.object({
+  minReactions: repostConditionField,
+  minZaps: repostConditionField,
+  minComments: repostConditionField,
+  minReposts: repostConditionField,
+  minSats: repostConditionField,
+});
+export type RepostConditionsInput = z.infer<typeof repostConditionsSchema>;
+
 /**
  * Schedule repost: create one scheduled repost post from an existing post
  */
@@ -244,6 +255,11 @@ export const scheduleRepostSchema = z.object({
   postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
   scheduledFor: z.string().min(1, ERROR_SCHEDULED_TIME_REQUIRED),
   signedEvent: z.string().min(1, ERROR_SIGNED_EVENT_REQUIRED),
+  minReactions: repostConditionField,
+  minZaps: repostConditionField,
+  minComments: repostConditionField,
+  minReposts: repostConditionField,
+  minSats: repostConditionField,
 });
 
 /**
@@ -334,6 +350,8 @@ export const draftEditResumeSchema = z.object({
   queueType: z.string().optional().nullable(),
   queueTypeId: z.string().optional().nullable(),
   scheduledFor: z.string().min(1, ERROR_SCHEDULED_TIME_REQUIRED),
+  /** When random window was used: nominal time (Unix seconds) for queue "next slot". */
+  nominalScheduledFor: z.string().optional(),
   signedEvent: z
     .string()
     .min(1, "Signed event is required")

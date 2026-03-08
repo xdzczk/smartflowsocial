@@ -154,6 +154,12 @@ export class CreatePostUseCase {
         scheduledFor: input.scheduledFor
           ? toPrismaDate(fromUnixTimestamp(input.scheduledFor, "UTC"))
           : undefined,
+        nominalScheduledAtUtc:
+          input.nominalScheduledFor != null
+            ? (toPrismaDate(
+                fromUnixTimestamp(input.nominalScheduledFor, "UTC")
+              ) ?? null)
+            : undefined,
         tags: input.tags ?? [],
         repost: input.repost ?? false,
         isQuotedPost: input.isQuotedPost ?? false,
@@ -198,6 +204,13 @@ export class CreatePostUseCase {
     const repostList: Array<{
       scheduledFor: number;
       signedEvent: SignedEvent;
+      repostConditions?: {
+        minReactions?: number;
+        minZaps?: number;
+        minComments?: number;
+        minReposts?: number;
+        minSats?: number;
+      } | null;
     }> =
       Array.isArray(input.repostSchedules) && input.repostSchedules.length > 0
         ? input.repostSchedules
@@ -236,6 +249,10 @@ export class CreatePostUseCase {
       );
 
       const repostSignedEv = item.signedEvent;
+      const repostConditions =
+        item.repostConditions && Object.keys(item.repostConditions).length > 0
+          ? item.repostConditions
+          : null;
       const repostPost = await createPostWithOutbox(
         {
           userId: input.userId,
@@ -255,6 +272,7 @@ export class CreatePostUseCase {
           isQuotedPost: false,
           repostOfPostId: post.id,
           postKind: "REPOST",
+          ...(repostConditions && { repostConditions }),
         },
         item.scheduledFor,
         correlationId

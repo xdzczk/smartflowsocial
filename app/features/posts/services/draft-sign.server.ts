@@ -9,6 +9,7 @@ import type {
 } from "~/features/nostr/types";
 import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { applyRandomScheduleWindow } from "~/lib/schedule-random";
 import {
   fromDate,
   fromISOString,
@@ -28,6 +29,8 @@ interface SignDraftParams {
   user: UserData;
   currentUser: UserData | null;
   post: PostData;
+  /** Post at a random time within ±N minutes (0 = off). When > 0, nominal time is returned for queue "next slot". */
+  scheduleRandomWindowMinutes?: number;
 }
 
 /**
@@ -152,12 +155,15 @@ function calculateScheduledTime(
 }
 
 /**
- * Sign and prepare draft for scheduling
+ * Sign and prepare draft for scheduling.
+ * When scheduleRandomWindowMinutes > 0, actual publish time is random within ±window; nominal is returned for queue "next slot".
  */
 export async function signDraftForScheduling(params: SignDraftParams): Promise<{
   signedEvent: SignedEvent;
   nostrEvent: NostrEventType;
   scheduledForUnix: number;
+  /** When random window was used, the user-chosen time (Unix seconds) for queue logic. */
+  nominalScheduledForUnix?: number;
 }> {
   const {
     content,
@@ -169,6 +175,7 @@ export async function signDraftForScheduling(params: SignDraftParams): Promise<{
     user,
     currentUser,
     post,
+    scheduleRandomWindowMinutes = 0,
   } = params;
 
   const userTimezone =
@@ -178,7 +185,17 @@ export async function signDraftForScheduling(params: SignDraftParams): Promise<{
     typeof currentUser.timezone === "string"
       ? currentUser.timezone
       : "UTC";
-  const scheduledForUnix = calculateScheduledTime(scheduledFor, userTimezone);
+  const nominalScheduledForUnix = calculateScheduledTime(
+    scheduledFor,
+    userTimezone
+  );
+  const scheduledForUnix =
+    scheduleRandomWindowMinutes > 0
+      ? applyRandomScheduleWindow(
+          nominalScheduledForUnix,
+          scheduleRandomWindowMinutes
+        )
+      : nominalScheduledForUnix;
 
   // Get effective hashtags
   const effectiveHashtags = await getEffectiveHashtags(
@@ -216,5 +233,10 @@ export async function signDraftForScheduling(params: SignDraftParams): Promise<{
     tags: tagArray,
   });
 
-  return { signedEvent, nostrEvent, scheduledForUnix };
+  return {
+    signedEvent,
+    nostrEvent,
+    scheduledForUnix,
+    ...(scheduleRandomWindowMinutes > 0 ? { nominalScheduledForUnix } : {}),
+  };
 }

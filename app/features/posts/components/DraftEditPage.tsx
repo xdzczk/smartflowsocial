@@ -195,6 +195,8 @@ export default function DraftEditPage() {
     setAlsoScheduleRepost,
     repostDelayList,
     setRepostDelayList,
+    repostConditions,
+    setRepostConditions,
     alsoScheduleQuote,
     setAlsoScheduleQuote,
     quoteEntries,
@@ -280,6 +282,8 @@ export default function DraftEditPage() {
           onAlsoScheduleRepostChange={setAlsoScheduleRepost}
           repostDelayList={repostDelayList}
           onRepostDelayListChange={setRepostDelayList}
+          repostConditions={repostConditions}
+          onRepostConditionsChange={setRepostConditions}
           alsoScheduleQuote={alsoScheduleQuote}
           onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
           userTimezone={typedUser.timezone ?? "UTC"}

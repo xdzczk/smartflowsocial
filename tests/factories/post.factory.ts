@@ -16,6 +16,7 @@ export interface PostFactoryOptions {
   content?: string;
   fileUrl?: string[];
   scheduledFor?: string | null;
+  nominalScheduledAtUtc?: Date | null;
   publishedAt?: Date | null;
   currentState?: string; // State machine state - single source of truth
   postType?: PostType;
@@ -47,6 +48,7 @@ export interface PostFactoryOptions {
   postKind?: PostKind;
   replyToEventId?: string | null;
   replyToPostId?: string | null;
+  repostConditions?: Prisma.JsonValue | null;
 }
 
 export class PostFactory {
@@ -240,6 +242,7 @@ export class PostFactory {
       content: this.options.content ?? null,
       fileUrl: this.options.fileUrl ?? [],
       scheduledAtUtc,
+      nominalScheduledAtUtc: this.options.nominalScheduledAtUtc ?? null,
       publishedAt: this.options.publishedAt ?? null,
       currentState: this.options.currentState ?? "DRAFT",
       postType: this.options.postType ?? "IMAGE",
@@ -273,6 +276,7 @@ export class PostFactory {
       postKind,
       replyToEventId: this.options.replyToEventId ?? null,
       replyToPostId: this.options.replyToPostId ?? null,
+      repostConditions: this.options.repostConditions ?? null,
     };
     return post;
   }

@@ -167,21 +167,31 @@ function buildScheduleConfig(data: {
   intervalHours?: number;
   slots?: string[];
   weeklySlots?: Array<{ dayOfWeek: number; time: string }>;
+  scheduleRandomWindowMinutes?: number;
 }): {
   useGlobalInterval?: boolean;
   intervalHours?: number;
   slots?: string[];
   weeklySlots?: Array<{ dayOfWeek: number; time: string }>;
+  scheduleRandomWindowMinutes?: number;
 } {
+  const randomWindow =
+    typeof data.scheduleRandomWindowMinutes === "number" &&
+    data.scheduleRandomWindowMinutes > 0
+      ? { scheduleRandomWindowMinutes: data.scheduleRandomWindowMinutes }
+      : {};
   if (data.scheduleType === "INTERVAL") {
     return data.useGlobalInterval
-      ? { useGlobalInterval: true }
-      : { intervalHours: data.intervalHours };
+      ? { useGlobalInterval: true, ...randomWindow }
+      : { intervalHours: data.intervalHours, ...randomWindow };
   }
   if (data.scheduleType === "WEEKLY_SLOTS") {
-    return { weeklySlots: normalizeAndDedupeWeeklySlots(data.weeklySlots) };
+    return {
+      weeklySlots: normalizeAndDedupeWeeklySlots(data.weeklySlots),
+      ...randomWindow,
+    };
   }
-  return { slots: data.slots! };
+  return { slots: data.slots!, ...randomWindow };
 }
 
 async function handleCreateQueueType(

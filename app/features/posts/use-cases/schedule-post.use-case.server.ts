@@ -52,12 +52,19 @@ export class SchedulePostUseCase {
       scheduledForUnix
     );
 
+    const nominalScheduledAtUtcDate = input.nominalScheduledAtUtc
+      ? toPrismaDate(input.nominalScheduledAtUtc)
+      : null;
+
     // Update post, transition state, and create outbox event atomically
     await prisma.$transaction(async (tx) => {
       await tx.post.update({
         where: { id: input.postId },
         data: {
           scheduledAtUtc: scheduledAtUtcDate,
+          ...(nominalScheduledAtUtcDate != null
+            ? { nominalScheduledAtUtc: nominalScheduledAtUtcDate }
+            : {}),
           enqueueIdempotencyKey,
           currentState: "SCHEDULED",
           // @deprecated - isScheduled flag removed. State machine will set it via transition.

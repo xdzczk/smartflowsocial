@@ -29,7 +29,7 @@ import {
   toUnixTimestamp,
 } from "~/lib/temporal";
 
-import type { QueueType, UserData } from "../../types";
+import type { QueueType, UserData, RepostConditions } from "../../types";
 import {
   buildKind6RepostEvent,
   buildQuoteEvent,
@@ -191,7 +191,14 @@ async function submitRepostSchedule(
   postId: string,
   originalSignedEvent: SignedEventForRepost,
   scheduledForUnix: number,
-  submit: (formData: FormData) => void
+  submit: (formData: FormData) => void,
+  repostConditions?: {
+    minReactions?: number;
+    minZaps?: number;
+    minComments?: number;
+    minReposts?: number;
+    minSats?: number;
+  } | null
 ): Promise<void> {
   const repostEvent = buildKind6RepostEvent(
     originalSignedEvent as SignedEventForRepost & {
@@ -214,6 +221,18 @@ async function submitRepostSchedule(
   formData.set("postId", postId);
   formData.set("scheduledFor", scheduledForUnix.toString());
   formData.set("signedEvent", JSON.stringify(repostSignedEvent));
+  if (repostConditions) {
+    if (repostConditions.minReactions != null)
+      formData.set("minReactions", String(repostConditions.minReactions));
+    if (repostConditions.minZaps != null)
+      formData.set("minZaps", String(repostConditions.minZaps));
+    if (repostConditions.minComments != null)
+      formData.set("minComments", String(repostConditions.minComments));
+    if (repostConditions.minReposts != null)
+      formData.set("minReposts", String(repostConditions.minReposts));
+    if (repostConditions.minSats != null)
+      formData.set("minSats", String(repostConditions.minSats));
+  }
   submit(formData);
 }
 
@@ -537,6 +556,8 @@ export function RescheduleModal({
   >(null);
   const [repostQuoteScheduledFor, setRepostQuoteScheduledFor] = useState("");
   const [repostQuoteCaption, setRepostQuoteCaption] = useState("");
+  const [repostQuoteConditions, setRepostQuoteConditions] =
+    useState<RepostConditions | null>(null);
   const scheduleRepostQuoteFetcher = useFetcher<{
     success?: boolean;
     postId?: string;
@@ -762,7 +783,8 @@ export function RescheduleModal({
           post.id,
           ev,
           scheduledForUnix,
-          submitRepostQuote
+          submitRepostQuote,
+          repostQuoteConditions
         );
       } else if (scheduleRepostQuoteMode === "quote") {
         await submitQuoteSchedule(
@@ -857,6 +879,53 @@ export function RescheduleModal({
                   className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
                 />
               </div>
+              {scheduleRepostQuoteMode === "repost" ? (
+                <div className="border-border space-y-1.5 rounded border p-3">
+                  <span className="text-muted-foreground text-xs">
+                    Only repost if original gets (optional)
+                  </span>
+                  <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
+                    {[
+                      { key: "minReactions" as const, label: "Reactions" },
+                      { key: "minZaps" as const, label: "Zaps" },
+                      { key: "minComments" as const, label: "Comments" },
+                      { key: "minReposts" as const, label: "Reposts" },
+                      { key: "minSats" as const, label: "Sats" },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center gap-1.5">
+                        <label className="text-muted-foreground text-xs whitespace-nowrap">
+                          {label}
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="—"
+                          value={repostQuoteConditions?.[key] ?? ""}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const v =
+                              raw.trim() === ""
+                                ? undefined
+                                : Math.max(0, parseInt(raw, 10) || 0);
+                            setRepostQuoteConditions((prev) => {
+                              if (v === undefined) {
+                                const next = prev ? { ...prev } : {};
+                                delete next[key];
+                                return Object.keys(next).length > 0
+                                  ? next
+                                  : null;
+                              }
+                              return { ...prev, [key]: v };
+                            });
+                          }}
+                          className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                          aria-label={`Min ${label.toLowerCase()}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {scheduleRepostQuoteMode === "quote" ? (
                 <div>
                   <label
@@ -913,6 +982,7 @@ export function RescheduleModal({
                     setScheduleRepostQuoteMode(null);
                     setRepostQuoteScheduledFor("");
                     setRepostQuoteCaption("");
+                    setRepostQuoteConditions(null);
                   }}
                   className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
                 >

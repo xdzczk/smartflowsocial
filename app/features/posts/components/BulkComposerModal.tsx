@@ -387,6 +387,7 @@ function BulkComposerModalContent({
           postsCount={posts.length}
           submitAction={submitAction}
           extraFormData={extraFormData}
+          repostConditions={undefined}
           fetcher={submitFetcher}
           userTimezone={userTimezone}
           userTimeFormat={user?.timeFormat === "24h" ? "24h" : "12h"}

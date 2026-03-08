@@ -243,6 +243,9 @@ export async function createPostWithOutbox(
         content: data.content,
         fileUrl: data.fileUrl,
         scheduledAtUtc: convertScheduledForToDateTime(data.scheduledFor),
+        nominalScheduledAtUtc: data.nominalScheduledAtUtc
+          ? convertScheduledForToDateTime(data.nominalScheduledAtUtc)
+          : null,
         nostrEventId: data.nostrEventId,
         signedEvent: data.signedEvent,
         nostrEvent: data.nostrEvent,
@@ -300,6 +303,11 @@ export async function createPostWithOutbox(
             connect: { id: data.quoteOfLongFormPostId },
           },
         }),
+        ...(data.repostConditions != null &&
+          Object.keys(data.repostConditions).length > 0 && {
+            repostConditions:
+              data.repostConditions as unknown as Prisma.InputJsonValue,
+          }),
       },
     });
 
@@ -569,6 +577,11 @@ export async function updatePost({
       const scheduledAtUtc = convertScheduledForToDateTime(data.scheduledFor);
       updateData.scheduledAtUtc = scheduledAtUtc ?? null;
     }
+  }
+  if (data.nominalScheduledAtUtc !== undefined) {
+    updateData.nominalScheduledAtUtc = data.nominalScheduledAtUtc
+      ? convertScheduledForToDateTime(data.nominalScheduledAtUtc)
+      : null;
   }
   if (data.userId !== undefined)
     updateData.user = { connect: { id: data.userId } };

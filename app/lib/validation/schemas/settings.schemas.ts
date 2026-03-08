@@ -357,6 +357,11 @@ export const createQueueTypeSchema = z
         }
       })
       .pipe(z.array(weeklySlotEntrySchema).optional()),
+    scheduleRandomWindowMinutes: z
+      .union([z.string(), z.number()])
+      .optional()
+      .transform((val) => (val === "" || val === undefined ? 0 : Number(val)))
+      .pipe(z.number().int().min(0).max(15)),
   })
   .refine(
     (data) => {
@@ -472,6 +477,11 @@ export const updateQueueTypeSchema = z
         }
       })
       .pipe(z.array(weeklySlotEntrySchema).optional()),
+    scheduleRandomWindowMinutes: z
+      .union([z.string(), z.number()])
+      .optional()
+      .transform((val) => (val === "" || val === undefined ? 0 : Number(val)))
+      .pipe(z.number().int().min(0).max(15)),
   })
   .refine(
     (data) => {

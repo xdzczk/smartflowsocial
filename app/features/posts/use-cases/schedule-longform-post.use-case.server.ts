@@ -34,6 +34,10 @@ export class ScheduleLongFormPostUseCase {
       throw new Error("Invalid scheduledAtUtc provided");
     }
 
+    const nominalScheduledAtUtcDate = input.nominalScheduledAtUtc
+      ? toPrismaDate(input.nominalScheduledAtUtc)
+      : null;
+
     // Convert Temporal to Unix timestamp for legacy field
     const scheduledForUnix = toUnixTimestamp(input.scheduledAtUtc);
 
@@ -48,6 +52,9 @@ export class ScheduleLongFormPostUseCase {
         where: { id: input.postId },
         data: {
           scheduledAtUtc: scheduledAtUtcDate,
+          ...(nominalScheduledAtUtcDate != null
+            ? { nominalScheduledAtUtc: nominalScheduledAtUtcDate }
+            : {}),
           enqueueIdempotencyKey,
           currentState: "SCHEDULED",
           // @deprecated - isScheduled flag removed. State machine will set it via transition.

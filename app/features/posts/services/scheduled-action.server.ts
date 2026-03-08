@@ -106,8 +106,47 @@ export async function handleScheduledAction(
   return { success: true, deletedCount };
 }
 
+function buildRepostConditionsFromData(data: {
+  minReactions?: number;
+  minZaps?: number;
+  minComments?: number;
+  minReposts?: number;
+  minSats?: number;
+}): {
+  minReactions?: number;
+  minZaps?: number;
+  minComments?: number;
+  minReposts?: number;
+  minSats?: number;
+} | null {
+  const conditions: Record<string, number> = {};
+  const minReactions = data["minReactions"];
+  const minZaps = data["minZaps"];
+  const minComments = data["minComments"];
+  const minReposts = data["minReposts"];
+  const minSats = data["minSats"];
+  if (minReactions != null && minReactions >= 0)
+    conditions["minReactions"] = minReactions;
+  if (minZaps != null && minZaps >= 0) conditions["minZaps"] = minZaps;
+  if (minComments != null && minComments >= 0)
+    conditions["minComments"] = minComments;
+  if (minReposts != null && minReposts >= 0)
+    conditions["minReposts"] = minReposts;
+  if (minSats != null && minSats >= 0) conditions["minSats"] = minSats;
+  return Object.keys(conditions).length > 0 ? conditions : null;
+}
+
 async function handleScheduleRepost(
-  data: { postId: string; scheduledFor: string; signedEvent: string },
+  data: {
+    postId: string;
+    scheduledFor: string;
+    signedEvent: string;
+    minReactions?: number;
+    minZaps?: number;
+    minComments?: number;
+    minReposts?: number;
+    minSats?: number;
+  },
   userId: string
 ) {
   const sourcePost = await getPostById({ id: data.postId, userId });
@@ -123,6 +162,7 @@ async function handleScheduleRepost(
     return json({ error: "Invalid scheduled time" }, { status: 400 });
   }
   const scheduledAtUtc = new Date(scheduledForUnix * 1000);
+  const repostConditions = buildRepostConditionsFromData(data);
   const post = await createPostWithOutbox(
     {
       userId,
@@ -138,6 +178,7 @@ async function handleScheduleRepost(
       repostOfPostId: sourcePost.id,
       postKind: "REPOST",
       signedEvent,
+      ...(repostConditions && { repostConditions }),
     },
     scheduledForUnix
   );

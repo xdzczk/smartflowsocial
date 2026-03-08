@@ -20,6 +20,8 @@ import { getQueueAccentHex } from "./queue-colors";
 export interface IntervalScheduleConfig {
   useGlobalInterval?: boolean;
   intervalHours?: number;
+  /** Post at a random time within ±N minutes (0 = off). Used for queue "next slot" nominal time. */
+  scheduleRandomWindowMinutes?: number;
 }
 
 /**
@@ -27,6 +29,8 @@ export interface IntervalScheduleConfig {
  */
 export interface FixedSlotsScheduleConfig {
   slots: string[];
+  /** Post at a random time within ±N minutes (0 = off). */
+  scheduleRandomWindowMinutes?: number;
 }
 
 /**
@@ -36,6 +40,8 @@ export interface FixedSlotsScheduleConfig {
  */
 export interface WeeklySlotsScheduleConfig {
   weeklySlots: Array<{ dayOfWeek: number; time: string }>;
+  /** Post at a random time within ±N minutes (0 = off). */
+  scheduleRandomWindowMinutes?: number;
 }
 
 /**
@@ -142,12 +148,24 @@ export function convertJsonValueToScheduleConfig(
       dayOfWeek: number;
       time: string;
     }>;
-    return { weeklySlots };
+    return {
+      weeklySlots,
+      scheduleRandomWindowMinutes:
+        typeof cfg["scheduleRandomWindowMinutes"] === "number"
+          ? cfg["scheduleRandomWindowMinutes"]
+          : undefined,
+    };
   }
 
   // Check if it's a FixedSlotsScheduleConfig
   if (Array.isArray(cfg["slots"])) {
-    return { slots: cfg["slots"] as string[] };
+    return {
+      slots: cfg["slots"] as string[],
+      scheduleRandomWindowMinutes:
+        typeof cfg["scheduleRandomWindowMinutes"] === "number"
+          ? cfg["scheduleRandomWindowMinutes"]
+          : undefined,
+    };
   }
 
   // Check if it's an IntervalScheduleConfig
@@ -155,6 +173,10 @@ export function convertJsonValueToScheduleConfig(
     return {
       useGlobalInterval: cfg["useGlobalInterval"] as boolean | undefined,
       intervalHours: cfg["intervalHours"] as number | undefined,
+      scheduleRandomWindowMinutes:
+        typeof cfg["scheduleRandomWindowMinutes"] === "number"
+          ? cfg["scheduleRandomWindowMinutes"]
+          : undefined,
     };
   }
 
@@ -378,9 +400,24 @@ export interface ComposerAttachment {
   file?: File;
 }
 
+/** Engagement thresholds for conditional repost (only publish if source meets all set minimums) */
+export interface RepostConditions {
+  minReactions?: number;
+  minZaps?: number;
+  minComments?: number;
+  minReposts?: number;
+  minSats?: number;
+}
+
 /** Also-schedule repost entry (repost of this post at scheduledFor) */
 export interface AlsoScheduleRepostEntry {
   scheduledFor: number;
+  /** Optional: only repost if original meets these thresholds */
+  minReactions?: number;
+  minZaps?: number;
+  minComments?: number;
+  minReposts?: number;
+  minSats?: number;
 }
 
 /** Also-schedule quote entry (quote of this post at scheduledFor with optional caption) */

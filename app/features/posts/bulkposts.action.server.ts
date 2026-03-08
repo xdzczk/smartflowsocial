@@ -322,6 +322,11 @@ export async function handleSignAndSchedule(
           const repostList = JSON.parse(repostStr) as Array<{
             scheduledFor: number;
             signedEvent?: SignedEvent | null;
+            minReactions?: number;
+            minZaps?: number;
+            minComments?: number;
+            minReposts?: number;
+            minSats?: number;
           }>;
           if (Array.isArray(repostList)) {
             for (const item of repostList) {
@@ -343,6 +348,25 @@ export async function handleSignAndSchedule(
                 });
                 continue;
               }
+              const conditions: {
+                minReactions?: number;
+                minZaps?: number;
+                minComments?: number;
+                minReposts?: number;
+                minSats?: number;
+              } = {};
+              if (item.minReactions != null && item.minReactions >= 0)
+                conditions.minReactions = item.minReactions;
+              if (item.minZaps != null && item.minZaps >= 0)
+                conditions.minZaps = item.minZaps;
+              if (item.minComments != null && item.minComments >= 0)
+                conditions.minComments = item.minComments;
+              if (item.minReposts != null && item.minReposts >= 0)
+                conditions.minReposts = item.minReposts;
+              if (item.minSats != null && item.minSats >= 0)
+                conditions.minSats = item.minSats;
+              const repostConditions =
+                Object.keys(conditions).length > 0 ? conditions : null;
               const repostPost = await createPostWithOutbox(
                 {
                   userId,
@@ -359,6 +383,7 @@ export async function handleSignAndSchedule(
                   isQuotedPost: false,
                   repostOfPostId: mainPost.id,
                   postKind: "REPOST",
+                  ...(repostConditions && { repostConditions }),
                 },
                 item.scheduledFor,
                 correlationId
