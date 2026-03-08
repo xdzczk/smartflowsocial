@@ -434,11 +434,14 @@ function isPrimalItemQuoteRepostMentioningUser(
     typeof ev.content !== "string"
   )
     return false;
-  if (ev.pubkey === userPubkeyHex) return false;
+  const authorLower = (ev.pubkey ?? "").toLowerCase();
+  const userLower = userPubkeyHex.toLowerCase();
+  if (authorLower === userLower) return false;
   const tags = Array.isArray(ev.tags) ? ev.tags : [];
   const eTags = tags.filter((tag: NostrTag) => tag[0] === "e");
   const pTagsWithUser = tags.filter(
-    (tag: NostrTag) => tag[0] === "p" && tag[1] === userPubkeyHex
+    (tag: NostrTag) =>
+      tag[0] === "p" && (tag[1] ?? "").toLowerCase() === userLower
   );
   if (pTagsWithUser.length === 0) return false;
   return eTags.length > 0 || pTagsWithUser.length > 0;
@@ -549,6 +552,29 @@ async function processAndGroupQuoteReposts(
     [],
     stats
   );
+}
+
+/** Author pubkey of a notification (for self-filter). */
+function getNotificationAuthorPubkey(n: Notification): string {
+  return n.type === "zap"
+    ? (n as { senderPubkey: string }).senderPubkey
+    : n.pubkey;
+}
+
+/** Remove notifications from groups where the author is the current user (case-insensitive). */
+function filterGroupedExcludingUser(
+  groups: GroupedNotification[],
+  userPubkeyHex: string
+): GroupedNotification[] {
+  const userLower = userPubkeyHex.toLowerCase();
+  return groups
+    .map((group) => ({
+      ...group,
+      notifications: group.notifications.filter(
+        (n) => getNotificationAuthorPubkey(n).toLowerCase() !== userLower
+      ),
+    }))
+    .filter((group) => group.notifications.length > 0);
 }
 
 /** Serialize grouped notifications for JSON response (publishedAt → ISO string). */
@@ -791,10 +817,18 @@ export async function loadEngagementFeedData(
   const serializedGroupedReplies = serializeGroupedForResponse(
     groupedByParent.replies
   );
+  const quotesExcludingSelf = filterGroupedExcludingUser(
+    groupedQuoteReposts,
+    userPubkeyHex
+  );
+  const mentionsExcludingSelf = filterGroupedExcludingUser(
+    groupedByParent.mentions,
+    userPubkeyHex
+  );
   const serializedGroupedQuotes =
-    serializeGroupedForResponse(groupedQuoteReposts);
+    serializeGroupedForResponse(quotesExcludingSelf);
   const serializedGroupedMentions = serializeGroupedForResponse(
-    groupedByParent.mentions
+    mentionsExcludingSelf
   );
 
   if (page === 1) {

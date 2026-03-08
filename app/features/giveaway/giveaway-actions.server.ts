@@ -15,6 +15,7 @@ import { prisma } from "~/lib/prisma.server";
 import { getUserSubscription } from "~/models/payment.server";
 
 import {
+  getParticipantPubkeysForFollowScope,
   processGiveawayParticipants,
   type GiveawayParticipantFilters,
 } from "./giveaway-loader.server";
@@ -52,6 +53,10 @@ function scopeFromGiveaway(g: Giveaway): GiveawayScope {
           days: typeof ref["days"] === "number" ? ref["days"] : 7,
           from: ref["from"] ? new Date(ref["from"] as string) : undefined,
           to: ref["to"] ? new Date(ref["to"] as string) : undefined,
+          queueId:
+            typeof ref["queueId"] === "string" && ref["queueId"].trim()
+              ? ref["queueId"]
+              : undefined,
         },
       };
     case "SINGLE_POST":
@@ -68,9 +73,23 @@ function scopeFromGiveaway(g: Giveaway): GiveawayScope {
           to: ref["to"] ? new Date(ref["to"] as string) : undefined,
         },
       };
+    case "FOLLOWERS":
+      return { type: "FOLLOWERS", reference: {} };
+    case "FOLLOWING":
+      return { type: "FOLLOWING", reference: {} };
     default:
       return { type: "PERIOD", reference: { days: 7 } };
   }
+}
+
+/** Build minimal RelatedEvent per pubkey for follow-scope giveaways (kind 7 so they pass engagement filter). */
+function relatedEventsFromPubkeys(pubkeys: string[]): RelatedEvent[] {
+  return pubkeys.map((pubkey, i) => ({
+    id: `follow-${pubkey}-${i}`,
+    pubkey,
+    created_at: 0,
+    kind: 7,
+  }));
 }
 
 async function getEligibleParticipantsForGiveaway(
@@ -78,21 +97,9 @@ async function getEligibleParticipantsForGiveaway(
   g: Giveaway
 ): Promise<{ relatedEvents: RelatedEvent[] }> {
   const scope = scopeFromGiveaway(g);
-  const posts = await getPostsInScope(userId, scope);
-  const eventIds = posts
-    .filter(
-      (p) =>
-        p.signedEvent &&
-        typeof p.signedEvent === "object" &&
-        "id" in p.signedEvent
-    )
-    .map((p) => (p.signedEvent as { id: string }).id);
-  if (eventIds.length === 0) {
-    return { relatedEvents: [] };
-  }
-  const { relatedEvents } = await fetchGiveawayParticipants(eventIds);
   const user = await getUserById(userId);
   if (!user) throw new Error("User not found");
+
   const userWithDefaults = {
     ...user,
     id: user.id,
@@ -111,6 +118,36 @@ async function getEligibleParticipantsForGiveaway(
         : { npubs: [] },
   };
   const filters = g.filters as GiveawayParticipantFilters | undefined;
+
+  if (scope.type === "FOLLOWERS" || scope.type === "FOLLOWING") {
+    const pubkeys = await getParticipantPubkeysForFollowScope(
+      userId,
+      scope,
+      user.npub
+    );
+    const relatedEvents = relatedEventsFromPubkeys(pubkeys);
+    const processed = await processGiveawayParticipants(
+      relatedEvents,
+      userId,
+      userWithDefaults,
+      filters ? { filters } : undefined
+    );
+    return { relatedEvents: processed };
+  }
+
+  const posts = await getPostsInScope(userId, scope);
+  const eventIds = posts
+    .filter(
+      (p) =>
+        p.signedEvent &&
+        typeof p.signedEvent === "object" &&
+        "id" in p.signedEvent
+    )
+    .map((p) => (p.signedEvent as { id: string }).id);
+  if (eventIds.length === 0) {
+    return { relatedEvents: [] };
+  }
+  const { relatedEvents } = await fetchGiveawayParticipants(eventIds);
   const processed = await processGiveawayParticipants(
     relatedEvents,
     userId,
@@ -166,7 +203,7 @@ export async function getGiveawayById(
 
 export interface CreateGiveawayInput {
   name?: string | null;
-  scopeType: "PERIOD" | "SINGLE_POST" | "QUEUE";
+  scopeType: "PERIOD" | "SINGLE_POST" | "QUEUE" | "FOLLOWERS" | "FOLLOWING";
   scopeReference: Record<string, unknown>;
   eligibilityFrom?: Date | null;
   eligibilityTo?: Date | null;
@@ -187,9 +224,14 @@ export async function createGiveaway(
   const planType = getUserPlanType(subscription as UserSubscription | null);
   const limits = getGiveawayPlanLimits(planType);
 
-  if (input.scopeType === "QUEUE" && !limits.canUseQueueScope) {
+  const hasQueueFilter =
+    input.scopeType === "QUEUE" ||
+    (input.scopeType === "PERIOD" &&
+      typeof input.scopeReference["queueId"] === "string" &&
+      input.scopeReference["queueId"].trim() !== "");
+  if (hasQueueFilter && !limits.canUseQueueScope) {
     throw new Error(
-      "Queue scope is available on paid plans. Upgrade to create giveaways for a specific queue."
+      "Queue filter is available on paid plans. Upgrade to limit giveaway to a specific queue."
     );
   }
 

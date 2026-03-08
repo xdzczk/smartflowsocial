@@ -1,6 +1,11 @@
 /**
  * Builds "View note/article/profile" links for the user's preferred Nostr client.
- * Supports Primal-style paths (/e/, /a/, /p/) and Bech32-style paths (Damus: /nevent1..., /npub1...).
+ * Per-client path patterns:
+ * - Primal/Amethyst/Nostur: /e/{hex}, /a/{id}, /p/{npub}
+ * - Damus: /{nevent}, /{naddr}, /{npub}
+ * - noStrudel: /n/{nevent} for notes, /articles/{naddr} for articles
+ * - Yakihonne: /note/{nevent} for notes, /article/{naddr} for articles
+ * - Iris: /{note1} for notes and articles (when event id is hex)
  */
 
 import { nip19 } from "nostr-tools";
@@ -15,7 +20,12 @@ export type PreferredNostrClientPreset =
   | "YAKIHONNE"
   | "CUSTOM";
 
-export type NostrClientPathStyle = "primal" | "bech32";
+export type NostrClientPathStyle =
+  | "primal"
+  | "bech32_bare"
+  | "nostrudel"
+  | "yakihonne"
+  | "iris";
 
 export interface NostrClientConfig {
   baseUrl: string;
@@ -27,12 +37,12 @@ const PRESET_CONFIG: Record<
   { baseUrl: string; pathStyle: NostrClientPathStyle }
 > = {
   PRIMAL: { baseUrl: "https://primal.net", pathStyle: "primal" },
-  DAMUS: { baseUrl: "https://damus.io", pathStyle: "bech32" },
+  DAMUS: { baseUrl: "https://damus.io", pathStyle: "bech32_bare" },
   AMETHYST: { baseUrl: "https://amethyst.social", pathStyle: "primal" },
   NOSTUR: { baseUrl: "https://nostur.com", pathStyle: "primal" },
-  NOSTRUDEL: { baseUrl: "https://nostrudel.ninja", pathStyle: "primal" },
-  IRIS: { baseUrl: "https://iris.to", pathStyle: "primal" },
-  YAKIHONNE: { baseUrl: "https://yakihonne.com", pathStyle: "primal" },
+  NOSTRUDEL: { baseUrl: "https://nostrudel.ninja", pathStyle: "nostrudel" },
+  IRIS: { baseUrl: "https://iris.to", pathStyle: "iris" },
+  YAKIHONNE: { baseUrl: "https://yakihonne.com", pathStyle: "yakihonne" },
 };
 
 const FALLBACK_CONFIG: NostrClientConfig = {
@@ -70,6 +80,11 @@ export function getNostrClientConfig(
   return preset ?? FALLBACK_CONFIG;
 }
 
+function normalizeHexId(hex: string): string {
+  const raw = hex.trim();
+  return raw.toLowerCase().startsWith("0x") ? raw.slice(2) : raw;
+}
+
 /**
  * Builds a URL to view a note/event in the preferred client.
  * eventIdHex: event id in hex (64 chars).
@@ -80,24 +95,38 @@ export function eventUrl(
 ): string {
   if (!eventIdHex || typeof eventIdHex !== "string") return "";
   const base = config.baseUrl.replace(/\/$/, "");
-  if (config.pathStyle === "bech32") {
-    try {
-      const nevent = nip19.neventEncode({
-        id: eventIdHex.toLowerCase().startsWith("0x")
-          ? eventIdHex.slice(2)
-          : eventIdHex,
-      });
-      return `${base}/${nevent}`;
-    } catch {
-      return `${base}/e/${eventIdHex}`;
+  const hex = normalizeHexId(eventIdHex);
+  try {
+    switch (config.pathStyle) {
+      case "bech32_bare":
+        return `${base}/${nip19.neventEncode({ id: hex })}`;
+      case "nostrudel":
+        return `${base}/n/${nip19.neventEncode({ id: hex })}`;
+      case "yakihonne":
+        return `${base}/note/${nip19.neventEncode({ id: hex })}`;
+      case "iris":
+        return `${base}/${nip19.noteEncode(hex)}`;
+      case "primal":
+      default:
+        return `${base}/e/${hex}`;
     }
+  } catch {
+    return `${base}/e/${hex}`;
   }
-  return `${base}/e/${eventIdHex}`;
+}
+
+/** True if string looks like a 64-char hex event id (optional 0x). */
+function isHexEventId(s: string): boolean {
+  const h = normalizeHexId(s);
+  return /^[0-9a-f]{64}$/i.test(h);
 }
 
 /**
  * Builds a URL to view an article (long-form) in the preferred client.
  * idOrNaddr: event id (hex) or naddr1... bech32.
+ * - noStrudel: /articles/{naddr}
+ * - Yakihonne: /article/{naddr}
+ * - Iris: /{note1} when given hex event id; else /a/{idOrNaddr}
  */
 export function articleUrl(
   idOrNaddr: string,
@@ -106,10 +135,27 @@ export function articleUrl(
   if (!idOrNaddr || typeof idOrNaddr !== "string") return "";
   const base = config.baseUrl.replace(/\/$/, "");
   const raw = idOrNaddr.trim();
-  if (config.pathStyle === "bech32" && raw.startsWith("naddr1")) {
-    return `${base}/${raw}`;
+  switch (config.pathStyle) {
+    case "bech32_bare":
+      if (raw.startsWith("naddr1")) return `${base}/${raw}`;
+      return `${base}/a/${raw}`;
+    case "nostrudel":
+      return `${base}/articles/${raw}`;
+    case "yakihonne":
+      return `${base}/article/${raw}`;
+    case "iris":
+      if (isHexEventId(raw)) {
+        try {
+          return `${base}/${nip19.noteEncode(normalizeHexId(raw))}`;
+        } catch {
+          return `${base}/a/${raw}`;
+        }
+      }
+      return `${base}/a/${raw}`;
+    case "primal":
+    default:
+      return `${base}/a/${raw}`;
   }
-  return `${base}/a/${raw}`;
 }
 
 /**
@@ -120,7 +166,7 @@ export function profileUrl(npub: string, config: NostrClientConfig): string {
   if (!npub || typeof npub !== "string") return "";
   const base = config.baseUrl.replace(/\/$/, "");
   const raw = npub.trim();
-  if (config.pathStyle === "bech32" && raw.startsWith("npub1")) {
+  if (config.pathStyle === "bech32_bare" && raw.startsWith("npub1")) {
     return `${base}/${raw}`;
   }
   return `${base}/p/${raw}`;

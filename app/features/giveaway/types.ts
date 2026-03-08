@@ -59,18 +59,26 @@ export interface GiveawayStats {
 export type GiveawayStateData = Record<string, unknown>;
 
 /**
- * Scope for a giveaway: which posts are in scope for participant selection.
+ * Scope for a giveaway: which posts (or users) are in scope for participant selection.
  */
 export type GiveawayScope =
   | {
       type: "PERIOD";
-      reference: { days?: number; from?: Date; to?: Date };
+      reference: {
+        days?: number;
+        from?: Date;
+        to?: Date;
+        /** Optional queue filter (scope is still period; posts limited to this queue). */
+        queueId?: string;
+      };
     }
   | { type: "SINGLE_POST"; reference: { postId: string } }
   | {
       type: "QUEUE";
       reference: { queueId: string; from?: Date; to?: Date };
-    };
+    }
+  | { type: "FOLLOWERS"; reference: Record<string, unknown> }
+  | { type: "FOLLOWING"; reference: Record<string, unknown> };
 
 /**
  * Engagement type for giveaway eligibility.

@@ -368,12 +368,22 @@ export function GiveawayDetailPage({
                 {giveaway.filters &&
                 typeof giveaway.filters === "object" &&
                 (giveaway.filters["excludeMuted"] ||
-                  giveaway.filters["excludeBlocked"]) ? (
+                  giveaway.filters["excludeBlocked"] ||
+                  giveaway.filters["excludeLowTrust"] ||
+                  giveaway.filters["excludeNonFollowers"]) ? (
                   <li>
                     <span className="text-foreground font-medium">
-                      Filters:
+                      Filter out:
                     </span>{" "}
-                    Exclude muted/blocked
+                    {[
+                      giveaway.filters["excludeMuted"] && "Muted",
+                      giveaway.filters["excludeBlocked"] && "Blacklisted",
+                      giveaway.filters["excludeLowTrust"] && "Low Trust",
+                      giveaway.filters["excludeNonFollowers"] &&
+                        "Non-followers",
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
                   </li>
                 ) : null}
               </ul>

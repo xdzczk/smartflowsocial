@@ -23,7 +23,13 @@ export const scopeReferenceQueueSchema = z.object({
 });
 
 export const createGiveawaySchema = z.object({
-  scopeType: z.enum(["PERIOD", "SINGLE_POST", "QUEUE"]),
+  scopeType: z.enum([
+    "PERIOD",
+    "SINGLE_POST",
+    "QUEUE",
+    "FOLLOWERS",
+    "FOLLOWING",
+  ]),
   scopeReference: z.record(z.string(), z.unknown()),
   eligibilityFrom: z.string().optional().nullable(),
   eligibilityTo: z.string().optional().nullable(),
@@ -35,6 +41,8 @@ export const createGiveawaySchema = z.object({
     .object({
       excludeMuted: z.boolean().optional(),
       excludeBlocked: z.boolean().optional(),
+      excludeLowTrust: z.boolean().optional(),
+      excludeNonFollowers: z.boolean().optional(),
       minAccountAgeDays: z.number().int().min(0).optional(),
       minFollowers: z.number().int().min(0).optional(),
     })
@@ -58,7 +66,13 @@ export const winnerSnapshotSchema = z.array(
 
 export const createGiveawayPresetSchema = z.object({
   name: z.string().min(1).max(100),
-  scopeType: z.enum(["PERIOD", "SINGLE_POST", "QUEUE"]),
+  scopeType: z.enum([
+    "PERIOD",
+    "SINGLE_POST",
+    "QUEUE",
+    "FOLLOWERS",
+    "FOLLOWING",
+  ]),
   scopeReference: z.record(z.string(), z.unknown()),
   engagementTypes: z.array(engagementTypeSchema).min(1),
   winnerCount: z.number().int().min(1).max(100),

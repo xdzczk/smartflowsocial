@@ -4,7 +4,12 @@
 
 import { prisma } from "~/lib/prisma.server";
 
-export type GiveawayScopeType = "PERIOD" | "SINGLE_POST" | "QUEUE";
+export type GiveawayScopeType =
+  | "PERIOD"
+  | "SINGLE_POST"
+  | "QUEUE"
+  | "FOLLOWERS"
+  | "FOLLOWING";
 
 /**
  * Resolve queue id from scopeReference to queue name for display.
@@ -61,15 +66,21 @@ export function formatScopeSummaryLabel(
       if (from && to && typeof from === "string" && typeof to === "string") {
         const fromDate = new Date(from);
         const toDate = new Date(to);
-        return `${fromDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} – ${toDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+        const base = `${fromDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} – ${toDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+        return queueName ? `${base} · Queue: ${queueName}` : base;
       }
       const d = typeof days === "number" ? days : 7;
-      return `Last ${d} days`;
+      const base = `Last ${d} days`;
+      return queueName ? `${base} · Queue: ${queueName}` : base;
     }
     case "SINGLE_POST":
       return "Single post";
     case "QUEUE":
       return queueName ? `Queue: ${queueName}` : "Queue";
+    case "FOLLOWERS":
+      return "Followers";
+    case "FOLLOWING":
+      return "Following";
     default:
       return String(scopeType);
   }

@@ -3,6 +3,7 @@
  * Centralized data fetching and processing for giveaway page
  */
 
+import { fetchFromCache } from "~/features/cache";
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { calculateTrustScore } from "~/features/engagement/trust-score";
 import type { User } from "~/features/engagement/trust-score";
@@ -15,6 +16,7 @@ import { getQueueTypesCached } from "~/features/user/services/user-cache.server"
 import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
 import { logError } from "~/lib/error-logger.server";
 import { convertToHex } from "~/lib/helpers";
+import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { getRecentPublishedPosts } from "~/models/post.queries.server";
 
 import { getPostsInScope } from "./giveaway-scope.server";
@@ -26,6 +28,74 @@ import type {
   RelatedEvent,
   GiveawayScope,
 } from "./types";
+
+/**
+ * Fetch the given user's follow list (kind 3 contacts) and return hex pubkeys.
+ * Returns [] if not available or on error.
+ */
+async function getFollowedPubkeys(userPubkeyHex: string): Promise<string[]> {
+  try {
+    const responses = await fetchFromCache("event_by_addr", {
+      kind: 3,
+      pubkey: userPubkeyHex,
+      identifier: "",
+    });
+    if (!Array.isArray(responses) || responses.length === 0) return [];
+    for (const item of responses) {
+      if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
+      const ev = item[2] as { kind?: number; tags?: string[][] };
+      if (ev.kind !== 3 || !Array.isArray(ev.tags)) continue;
+      return ev.tags.flatMap((t) =>
+        Array.isArray(t) && t[0] === "p" && typeof t[1] === "string"
+          ? [t[1]]
+          : []
+      );
+    }
+  } catch {
+    // No follow list or cache error
+  }
+  return [];
+}
+
+/**
+ * Fetch pubkeys of users who follow the given pubkey (kind 3 events that have pubkey in "p" tag).
+ * Returns [] if not available or on error. Requires cache support for "get_followers".
+ */
+async function getFollowerPubkeys(userPubkeyHex: string): Promise<string[]> {
+  try {
+    const responses = await fetchFromCache("get_followers", {
+      pubkey: userPubkeyHex,
+      limit: 5000,
+    });
+    if (!Array.isArray(responses) || responses.length === 0) return [];
+    const pubkeys: string[] = [];
+    for (const item of responses) {
+      if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
+      const ev = item[2] as { pubkey?: string; kind?: number };
+      if (ev.kind !== 3 || typeof ev.pubkey !== "string") continue;
+      pubkeys.push(ev.pubkey);
+    }
+    return [...new Set(pubkeys)];
+  } catch {
+    // get_followers not supported or cache error
+  }
+  return [];
+}
+
+/**
+ * Return participant pubkeys for FOLLOWERS or FOLLOWING scope. Requires user.npub.
+ */
+export async function getParticipantPubkeysForFollowScope(
+  userId: string,
+  scope: GiveawayScope,
+  userNpub: string
+): Promise<string[]> {
+  const hex = nostrAdapter.decodeNpub(userNpub) ?? "";
+  if (!hex) return [];
+  if (scope.type === "FOLLOWING") return getFollowedPubkeys(hex);
+  if (scope.type === "FOLLOWERS") return getFollowerPubkeys(hex);
+  return [];
+}
 
 /**
  * Fetches user profile data from Primal API and converts to User type for trust scoring
@@ -183,6 +253,10 @@ export async function getWinnerProfiles(
 }
 
 export interface GiveawayParticipantFilters {
+  excludeMuted?: boolean;
+  excludeBlocked?: boolean;
+  excludeLowTrust?: boolean;
+  excludeNonFollowers?: boolean;
   minAccountAgeDays?: number;
   minFollowers?: number;
 }
@@ -217,18 +291,30 @@ export async function processGiveawayParticipants(
     return false;
   });
 
-  // Get blacklisted pubkeys
-  const blacklistedPubkeys = await getGiveawayBlacklist(userId);
-  const blacklistedSet = new Set(
-    blacklistedPubkeys.map((pubkey) => {
-      return convertToHex(pubkey) ?? pubkey;
-    })
-  );
+  const hasFilters = options?.filters != null;
+  const applyBlocked = hasFilters
+    ? options.filters!.excludeBlocked === true
+    : true;
+  const applyMuted = hasFilters
+    ? options.filters!.excludeMuted === true
+    : !!(
+        user.filterMuted &&
+        user.mutedList?.npubs &&
+        Array.isArray(user.mutedList.npubs)
+      );
 
-  // Get muted pubkeys if filtering is enabled
+  const blacklistedSet = new Set<string>();
+  if (applyBlocked) {
+    const blacklistedPubkeys = await getGiveawayBlacklist(userId);
+    blacklistedPubkeys.forEach((pubkey) => {
+      const hex = convertToHex(pubkey) ?? pubkey;
+      blacklistedSet.add(hex);
+    });
+  }
+
   const mutedSet = new Set<string>();
   if (
-    user.filterMuted &&
+    applyMuted &&
     user.mutedList?.npubs &&
     Array.isArray(user.mutedList.npubs)
   ) {
@@ -363,11 +449,14 @@ export async function processGiveawayParticipants(
     });
   }
 
-  // Filter by trust score if hidePostsFromLowTrustUsers is enabled
-  if (user["hidePostsFromLowTrustUsers"]) {
-    // Fetch trust scores for all participants with batching
+  // Filter by trust score when user setting or giveaway filter requests it
+  let result: RelatedEvent[] = filteredRelatedEvents;
+  const userHideLowTrust = user["hidePostsFromLowTrustUsers"];
+  const applyLowTrustFilter =
+    Boolean(userHideLowTrust) || options?.filters?.excludeLowTrust === true;
+  if (applyLowTrustFilter) {
     const TRUST_SCORE_BATCH_SIZE = 10;
-    const trustScoreBatches: Array<typeof filteredRelatedEvents> = [];
+    const trustScoreBatches: RelatedEvent[][] = [];
     for (
       let i = 0;
       i < filteredRelatedEvents.length;
@@ -383,7 +472,6 @@ export async function processGiveawayParticipants(
       trustScore: number;
     }> = [];
 
-    // Process batches sequentially, but items within batch concurrently
     for (const batch of trustScoreBatches) {
       const batchPromises = batch.map(async (event) => {
         try {
@@ -392,9 +480,8 @@ export async function processGiveawayParticipants(
             const trustScore = calculateTrustScore(userProfile);
             return { event, trustScore };
           }
-          return { event, trustScore: 0 }; // Default to 0 if profile fetch fails
+          return { event, trustScore: 0 };
         } catch (error) {
-          // Individual failures don't block others
           logError(error instanceof Error ? error : new Error(String(error)), {
             message: "Failed to fetch trust score",
             pubkey: event.pubkey,
@@ -404,20 +491,25 @@ export async function processGiveawayParticipants(
       });
 
       const batchResults = await Promise.allSettled(batchPromises);
-      batchResults.forEach((result) => {
-        if (result.status === "fulfilled") {
-          allTrustScoreResults.push(result.value);
-        }
+      batchResults.forEach((r) => {
+        if (r.status === "fulfilled") allTrustScoreResults.push(r.value);
       });
     }
 
-    // Filter out users with trust score < 40
-    return allTrustScoreResults
+    result = allTrustScoreResults
       .filter(({ trustScore }) => trustScore >= 40)
       .map(({ event }) => event);
   }
 
-  return filteredRelatedEvents;
+  // Filter to followers only when giveaway filter requests it
+  if (options?.filters?.excludeNonFollowers === true && user.npub) {
+    const userPubkeyHex = nostrAdapter.decodeNpub(user.npub) ?? "";
+    const followed = await getFollowedPubkeys(userPubkeyHex);
+    const followedSet = new Set(followed.map((p) => convertToHex(p) ?? p));
+    result = result.filter((e) => followedSet.has(e.pubkey));
+  }
+
+  return result;
 }
 
 /**

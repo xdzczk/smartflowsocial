@@ -24,9 +24,18 @@ export async function getPostsInScope(
     case "PERIOD": {
       const ref = scope.reference;
       const days = ref.days ?? 7;
+      let queueTypeId: string | undefined;
+      if (ref.queueId) {
+        const queue = await prisma.queueType.findFirst({
+          where: { id: ref.queueId, userId },
+          select: { id: true },
+        });
+        queueTypeId = queue?.id;
+      }
       return getRecentPublishedPosts({
         userId,
         days,
+        queueTypeId,
         publishedFrom: ref.from,
         publishedTo: ref.to,
       });
@@ -57,6 +66,9 @@ export async function getPostsInScope(
         publishedTo: ref.to,
       });
     }
+    case "FOLLOWERS":
+    case "FOLLOWING":
+      return [];
     default: {
       const _: never = scope;
       return [];

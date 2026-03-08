@@ -21,7 +21,7 @@ import { getQueueTypes } from "~/features/user";
 
 function parseScopeReference(
   formData: FormData,
-  scopeTypeResolved: "PERIOD" | "SINGLE_POST" | "QUEUE"
+  scopeTypeResolved: "PERIOD" | "SINGLE_POST" | "FOLLOWERS" | "FOLLOWING"
 ):
   | { scopeReference: Record<string, unknown> }
   | { error: string; status: 400 } {
@@ -31,7 +31,12 @@ function parseScopeReference(
       typeof daysRaw === "string" && /^\d+$/.test(daysRaw)
         ? Math.min(365, Math.max(1, parseInt(daysRaw, 10)))
         : 7;
-    return { scopeReference: { days } };
+    const queueId = formData.get("queueId");
+    const queueIdTrimmed =
+      typeof queueId === "string" && queueId.trim() ? queueId.trim() : "";
+    const scopeReference: Record<string, unknown> = { days };
+    if (queueIdTrimmed) scopeReference["queueId"] = queueIdTrimmed;
+    return { scopeReference };
   }
   if (scopeTypeResolved === "SINGLE_POST") {
     const postId = formData.get("postId");
@@ -45,26 +50,7 @@ function parseScopeReference(
     }
     return { scopeReference: { postId: postIdTrimmed } };
   }
-  const queueId = formData.get("queueId");
-  const queueIdTrimmed =
-    typeof queueId === "string" && queueId.trim() ? queueId.trim() : "";
-  if (!queueIdTrimmed) {
-    return { error: "Please select a queue for queue giveaway", status: 400 };
-  }
-  const queuePeriodDaysRaw = formData.get("queuePeriodDays");
-  const queuePeriodDays =
-    typeof queuePeriodDaysRaw === "string" && /^\d+$/.test(queuePeriodDaysRaw)
-      ? Math.min(365, Math.max(1, parseInt(queuePeriodDaysRaw, 10)))
-      : 30;
-  const to = new Date();
-  const from = new Date(to.getTime() - queuePeriodDays * 24 * 60 * 60 * 1000);
-  return {
-    scopeReference: {
-      queueId: queueIdTrimmed,
-      from: from.toISOString(),
-      to: to.toISOString(),
-    },
-  };
+  return { scopeReference: {} };
 }
 
 function parseEngagementAndWinners(formData: FormData):
@@ -124,6 +110,35 @@ function parseEngagementAndWinners(formData: FormData):
     winnerCount,
     selectionMode: selectionModeResolved,
     ...(Object.keys(engagementConfig).length > 0 ? { engagementConfig } : {}),
+  };
+}
+
+function parseFilters(formData: FormData): Record<string, unknown> | undefined {
+  const excludeMuted =
+    formData.get("excludeMuted") === "on" ||
+    formData.get("excludeMuted") === "true";
+  const excludeBlocked =
+    formData.get("excludeBlocked") === "on" ||
+    formData.get("excludeBlocked") === "true";
+  const excludeLowTrust =
+    formData.get("excludeLowTrust") === "on" ||
+    formData.get("excludeLowTrust") === "true";
+  const excludeNonFollowers =
+    formData.get("excludeNonFollowers") === "on" ||
+    formData.get("excludeNonFollowers") === "true";
+  if (
+    !excludeMuted &&
+    !excludeBlocked &&
+    !excludeLowTrust &&
+    !excludeNonFollowers
+  ) {
+    return undefined;
+  }
+  return {
+    ...(excludeMuted && { excludeMuted: true }),
+    ...(excludeBlocked && { excludeBlocked: true }),
+    ...(excludeLowTrust && { excludeLowTrust: true }),
+    ...(excludeNonFollowers && { excludeNonFollowers: true }),
   };
 }
 
@@ -206,14 +221,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const scopeType = formData.get("scopeType") as
     | "PERIOD"
     | "SINGLE_POST"
-    | "QUEUE"
+    | "FOLLOWERS"
+    | "FOLLOWING"
     | null;
   const scopeTypeResolved =
-    scopeType === "PERIOD" ||
-    scopeType === "SINGLE_POST" ||
-    scopeType === "QUEUE"
-      ? scopeType
-      : "PERIOD";
+    scopeType === "SINGLE_POST"
+      ? "SINGLE_POST"
+      : scopeType === "FOLLOWERS"
+        ? "FOLLOWERS"
+        : scopeType === "FOLLOWING"
+          ? "FOLLOWING"
+          : "PERIOD";
 
   const scopeResult = parseScopeReference(formData, scopeTypeResolved);
   if ("error" in scopeResult) {
@@ -235,6 +253,8 @@ export async function action({ request }: ActionFunctionArgs) {
     engagementConfig,
   } = engagementResult;
 
+  const filters = parseFilters(formData);
+
   try {
     const giveaway = await createGiveaway(userId, {
       name: typeof name === "string" ? name.trim() || undefined : undefined,
@@ -244,6 +264,7 @@ export async function action({ request }: ActionFunctionArgs) {
       winnerCount,
       engagementConfig: engagementConfig ?? undefined,
       selectionMode: selectionModeResolved,
+      filters: filters ?? undefined,
     });
     return redirect(`/dashboard/giveaway/detail/${giveaway.id}`);
   } catch (err) {
@@ -262,7 +283,7 @@ const ENGAGEMENT_OPTIONS = [
 
 const PERIOD_DAYS_OPTIONS = [7, 14, 30] as const;
 
-type ScopeType = "PERIOD" | "SINGLE_POST" | "QUEUE";
+type ScopeType = "PERIOD" | "SINGLE_POST" | "FOLLOWERS" | "FOLLOWING";
 
 export default function DashboardGiveawayNewPage() {
   const { presets, queueTypes, recentPosts, planLimits } =
@@ -335,41 +356,69 @@ export default function DashboardGiveawayNewPage() {
                 <input
                   type="radio"
                   name="scopeType"
-                  value="QUEUE"
-                  disabled={!planLimits.canUseQueueScope}
-                  checked={scopeType === "QUEUE"}
-                  onChange={() => setScopeType("QUEUE")}
+                  value="FOLLOWERS"
+                  checked={scopeType === "FOLLOWERS"}
+                  onChange={() => setScopeType("FOLLOWERS")}
                 />
-                Queue
-                {!planLimits.canUseQueueScope ? (
-                  <span className="text-muted-foreground text-xs">
-                    (upgrade for queue scope)
-                  </span>
-                ) : null}
+                Followers
+              </label>
+              <label className="text-foreground flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="scopeType"
+                  value="FOLLOWING"
+                  checked={scopeType === "FOLLOWING"}
+                  onChange={() => setScopeType("FOLLOWING")}
+                />
+                Following
               </label>
             </div>
             <div className="mt-2 flex flex-wrap gap-4">
               {scopeType === "PERIOD" ? (
-                <div className="flex items-center gap-2">
-                  <label
-                    htmlFor="periodDays"
-                    className="text-muted-foreground text-sm"
-                  >
-                    Days
-                  </label>
-                  <select
-                    id="periodDays"
-                    name="periodDays"
-                    className="border-border bg-background rounded border px-2 py-1 text-sm"
-                    defaultValue="7"
-                  >
-                    {PERIOD_DAYS_OPTIONS.map((d) => (
-                      <option key={d} value={d}>
-                        Last {d} days
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor="periodDays"
+                      className="text-muted-foreground text-sm"
+                    >
+                      Days
+                    </label>
+                    <select
+                      id="periodDays"
+                      name="periodDays"
+                      className="border-border bg-background rounded border px-2 py-1 text-sm"
+                      defaultValue="7"
+                    >
+                      {PERIOD_DAYS_OPTIONS.map((d) => (
+                        <option key={d} value={d}>
+                          Last {d} days
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {planLimits.canUseQueueScope ? (
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor="queueId"
+                        className="text-muted-foreground text-sm"
+                      >
+                        Queue (optional)
+                      </label>
+                      <select
+                        id="queueId"
+                        name="queueId"
+                        className="border-border bg-background min-w-[160px] rounded border px-2 py-1 text-sm"
+                      >
+                        <option value="">All queues</option>
+                        {queueTypes.map((q) => (
+                          <option key={q.id} value={q.id}>
+                            {q.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+                </>
               ) : null}
               {scopeType === "SINGLE_POST" ? (
                 <div className="flex items-center gap-2">
@@ -391,46 +440,6 @@ export default function DashboardGiveawayNewPage() {
                           ? `${p.caption.slice(0, 40)}${p.caption.length > 40 ? "…" : ""}`
                           : `Post ${p.id.slice(0, 8)}`}{" "}
                         · {p.publishedAt.slice(0, 10)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
-              {scopeType === "QUEUE" ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <label
-                    htmlFor="queueId"
-                    className="text-muted-foreground text-sm"
-                  >
-                    Queue
-                  </label>
-                  <select
-                    id="queueId"
-                    name="queueId"
-                    className="border-border bg-background min-w-[160px] rounded border px-2 py-1 text-sm"
-                  >
-                    <option value="">Select a queue</option>
-                    {queueTypes.map((q) => (
-                      <option key={q.id} value={q.id}>
-                        {q.name}
-                      </option>
-                    ))}
-                  </select>
-                  <label
-                    htmlFor="queuePeriodDays"
-                    className="text-muted-foreground text-sm"
-                  >
-                    Period
-                  </label>
-                  <select
-                    id="queuePeriodDays"
-                    name="queuePeriodDays"
-                    className="border-border bg-background rounded border px-2 py-1 text-sm"
-                    defaultValue="30"
-                  >
-                    {PERIOD_DAYS_OPTIONS.map((d) => (
-                      <option key={d} value={d}>
-                        Last {d} days
                       </option>
                     ))}
                   </select>
@@ -516,7 +525,7 @@ export default function DashboardGiveawayNewPage() {
                 htmlFor="winnerCount"
                 className="text-muted-foreground mb-1 block text-sm"
               >
-                Winner count (used when per-type above is all 0)
+                Winner count
               </label>
               <input
                 id="winnerCount"
@@ -548,6 +557,34 @@ export default function DashboardGiveawayNewPage() {
               </select>
             </div>
           </div>
+
+          <fieldset>
+            <legend className="text-muted-foreground mb-2 block text-sm font-medium">
+              Filter out users
+            </legend>
+            <div className="flex flex-wrap gap-4">
+              <label className="text-foreground flex items-center gap-2 text-sm">
+                <input type="checkbox" name="excludeMuted" value="true" />
+                Muted
+              </label>
+              <label className="text-foreground flex items-center gap-2 text-sm">
+                <input type="checkbox" name="excludeBlocked" value="true" />
+                Blacklisted
+              </label>
+              <label className="text-foreground flex items-center gap-2 text-sm">
+                <input type="checkbox" name="excludeLowTrust" value="true" />
+                Low Trust
+              </label>
+              <label className="text-foreground flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="excludeNonFollowers"
+                  value="true"
+                />
+                Non-followers
+              </label>
+            </div>
+          </fieldset>
 
           {actionData && "error" in actionData ? (
             <p className="text-destructive text-sm">{actionData.error}</p>

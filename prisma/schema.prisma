@@ -183,6 +183,8 @@ enum GiveawayScopeType {
   PERIOD
   SINGLE_POST
   QUEUE
+  FOLLOWERS
+  FOLLOWING
 }
 
 enum GiveawayStatus {

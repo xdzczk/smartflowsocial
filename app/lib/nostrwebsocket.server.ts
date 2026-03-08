@@ -227,6 +227,25 @@ async function tryConnectToCache(
           );
           break;
 
+        // Get followers: kind 3 events that have pubkey in "p" tag (authors = followers)
+        case "get_followers":
+          ws.send(
+            JSON.stringify([
+              "REQ",
+              requestId,
+              {
+                cache: [
+                  "get_followers",
+                  {
+                    pubkey: params["pubkey"],
+                    limit: params["limit"] ?? 5000,
+                  },
+                ],
+              },
+            ])
+          );
+          break;
+
         // ---- End of added request types ----
         default:
           ws.close();

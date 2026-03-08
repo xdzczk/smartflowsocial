@@ -16,7 +16,7 @@ import { getUserSubscription } from "~/models/payment.server";
 
 export interface CreateGiveawayPresetInput {
   name: string;
-  scopeType: "PERIOD" | "SINGLE_POST" | "QUEUE";
+  scopeType: "PERIOD" | "SINGLE_POST" | "QUEUE" | "FOLLOWERS" | "FOLLOWING";
   scopeReference: Record<string, unknown>;
   engagementTypes: string[];
   winnerCount: number;

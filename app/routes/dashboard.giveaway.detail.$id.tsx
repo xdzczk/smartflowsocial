@@ -56,10 +56,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   const scopeRef = giveaway.scopeReference as Record<string, unknown>;
-  const queueName =
-    giveaway.scopeType === "QUEUE"
-      ? await resolveGiveawayQueueName(userId, scopeRef)
-      : null;
+  const hasQueue =
+    giveaway.scopeType === "QUEUE" ||
+    (typeof scopeRef["queueId"] === "string" &&
+      scopeRef["queueId"].trim() !== "");
+  const queueName = hasQueue
+    ? await resolveGiveawayQueueName(userId, scopeRef)
+    : null;
   const scopeSummaryLabel = formatScopeSummaryLabel(
     giveaway.scopeType,
     scopeRef,

@@ -243,9 +243,16 @@ function processKind1Notifications(
 
   const targetETag = eTags.find((tag: string[]) => tag[1] === originalEventId);
   const referencesOriginal = !!targetETag;
-  const mentionsUser = pTags.some((tag: string[]) => tag[1] === userPubkey);
+  const userPubkeyLower = userPubkey.toLowerCase();
+  const mentionsUser = pTags.some(
+    (tag: string[]) => (tag[1] ?? "").toLowerCase() === userPubkeyLower
+  );
 
-  if (referencesOriginal && event.pubkey && event.pubkey !== userPubkey) {
+  if (
+    referencesOriginal &&
+    event.pubkey &&
+    (event.pubkey ?? "").toLowerCase() !== userPubkeyLower
+  ) {
     const profile = userProfiles.get(event.pubkey);
     const stats = eventStats.get(event.id);
     const isQuote = isQuotePost(event, targetETag);
@@ -276,7 +283,7 @@ function processKind1Notifications(
     mentionsUser &&
     !referencesOriginal &&
     event.pubkey &&
-    event.pubkey !== userPubkey
+    (event.pubkey ?? "").toLowerCase() !== userPubkeyLower
   ) {
     const profile = userProfiles.get(event.pubkey);
     const stats = eventStats.get(event.id);
