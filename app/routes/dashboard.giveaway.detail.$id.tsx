@@ -21,6 +21,7 @@ import {
   formatStatusLabel,
   resolveGiveawayQueueName,
 } from "~/features/giveaway/giveaway-display.server";
+import { getWinnerProfiles } from "~/features/giveaway/giveaway-loader.server";
 import { createGiveawayPreset } from "~/features/giveaway/giveaway-presets.server";
 import {
   getSubscriptionData,
@@ -69,6 +70,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isDraftOrPreviewed =
     giveaway.status === "DRAFT" || giveaway.status === "PREVIEWED";
 
+  const snapshot = giveaway.winnerSnapshot as GiveawayWinnerEntry[] | null;
+  const winnerPubkeys =
+    snapshot?.map((w: GiveawayWinnerEntry) => w.pubkey) ?? [];
+  const winnerProfiles = await getWinnerProfiles(winnerPubkeys);
+
   return json({
     giveaway: {
       id: giveaway.id,
@@ -93,6 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }),
     },
     giveawaysLimits: limits,
+    winnerProfiles,
   });
 }
 
@@ -205,9 +212,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function DashboardGiveawayDetailPage() {
-  const { giveaway, giveawaysLimits } = useLoaderData<typeof loader>();
+  const { giveaway, giveawaysLimits, winnerProfiles } =
+    useLoaderData<typeof loader>();
   return (
     <GiveawayDetailPage
+      winnerProfiles={winnerProfiles}
       giveaway={{
         id: giveaway.id,
         name: giveaway.name ?? null,

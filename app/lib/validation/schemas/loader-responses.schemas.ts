@@ -66,6 +66,8 @@ export const userSchema = z.object({
     .enum(["ddmmyyyy", "mmddyyyy", "yyyymmdd"])
     .nullable()
     .optional(),
+  preferredNostrClient: z.string().nullable().optional(),
+  customNostrClientBaseUrl: z.string().nullable().optional(),
   userRelays: z.array(z.string()),
   giveawayBlackListed: z.array(z.string()),
   uploadProvider: z.enum([
@@ -405,6 +407,7 @@ export const engagementLoaderDataSchema = z.object({
     )
     .optional(),
   lastCheckedAt: z.string().nullable(),
+  followedPubkeys: z.array(z.string()).optional(),
 });
 
 export type EngagementLoaderData = z.infer<typeof engagementLoaderDataSchema>;

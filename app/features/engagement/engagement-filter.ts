@@ -34,18 +34,25 @@ export function getFlatItemCount(groups: GroupedNotification[]): number {
   return groups.reduce((sum, g) => sum + g.notifications.length, 0);
 }
 
-/** Apply power filters: high reputation (trust >= 60), mentions only. */
+/** Apply power filters: high reputation (trust >= 60), following only. */
 export function applyPowerFilters(
   groups: GroupedNotification[],
   trustScores: Record<string, number>,
   filterHighReputation: boolean,
-  filterMentionsOnly: boolean
+  filterFollowingOnly: boolean,
+  followedPubkeys: Set<string>
 ): GroupedNotification[] {
   return groups
     .map((group) => ({
       ...group,
       notifications: group.notifications.filter((n) => {
-        if (filterMentionsOnly && n.type !== "mention") return false;
+        if (filterFollowingOnly && followedPubkeys.size > 0) {
+          const authorPubkey =
+            n.type === "zap"
+              ? (n as { senderPubkey?: string }).senderPubkey
+              : n.pubkey;
+          if (!authorPubkey || !followedPubkeys.has(authorPubkey)) return false;
+        }
         if (filterHighReputation) {
           const score = n.pubkey ? trustScores[n.pubkey] : undefined;
           if (score === undefined || score < 60) return false;

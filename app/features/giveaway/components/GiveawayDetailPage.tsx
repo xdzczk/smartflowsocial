@@ -1,5 +1,5 @@
-import { useFetcher, Link } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-hot-toast";
 
 import ZapButton from "~/components/dashboard/ZapButton";
@@ -13,15 +13,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { Button } from "~/components/ui/button";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import type { GiveawayWinnerEntry } from "../types";
 
 function WinnerNpubRow({
   npub,
+  displayName,
+  picture,
   onCopy,
+  profileUrl,
 }: {
   npub: string;
+  displayName?: string | null;
+  picture?: string | null;
   onCopy?: () => void;
+  profileUrl: string;
 }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
@@ -35,30 +43,66 @@ function WinnerNpubRow({
       toast.error("Failed to copy");
     }
   };
-  const profileUrl = `https://nostr.com/p/${npub}`;
+  const trimmedName = displayName?.trim() ?? "";
+  const primaryLabel =
+    trimmedName !== ""
+      ? trimmedName
+      : npub.length > 24
+        ? `${npub.slice(0, 20)}…${npub.slice(-8)}`
+        : npub;
+  const showNpubSecondary = Boolean(displayName?.trim());
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-foreground font-mono text-sm" title={npub}>
-        {npub.length > 24 ? `${npub.slice(0, 20)}…${npub.slice(-8)}` : npub}
-      </span>
-      <button
-        type="button"
-        onClick={() => {
-          void handleCopy();
-        }}
-        className="text-muted-foreground hover:text-foreground text-xs"
-        aria-label="Copy npub"
-      >
-        {copied ? "Copied" : "Copy"}
-      </button>
-      <a
-        href={profileUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-primary text-xs"
-      >
-        Profile
-      </a>
+      {picture ? (
+        <img
+          src={picture}
+          alt=""
+          className="size-8 shrink-0 rounded-full object-cover"
+          width={32}
+          height={32}
+        />
+      ) : (
+        <div
+          className="bg-muted text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
+          aria-hidden
+        >
+          {(displayName?.trim() ?? "").slice(0, 1).toUpperCase() || "?"}
+        </div>
+      )}
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <span
+          className="text-foreground truncate text-sm font-medium"
+          title={showNpubSecondary ? npub : undefined}
+        >
+          {primaryLabel}
+        </span>
+        {showNpubSecondary ? (
+          <span
+            className="text-muted-foreground truncate font-mono text-xs"
+            title={npub}
+          >
+            {npub.length > 24 ? `${npub.slice(0, 12)}…${npub.slice(-8)}` : npub}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => {
+            void handleCopy();
+          }}
+          className="text-muted-foreground hover:text-foreground shrink-0 text-xs"
+          aria-label="Copy npub"
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <a
+          href={profileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary shrink-0 text-xs"
+        >
+          Profile
+        </a>
+      </div>
     </div>
   );
 }
@@ -94,6 +138,11 @@ type GiveawayStatus =
   | "PAID_OUT"
   | "CANCELLED";
 
+export interface WinnerProfileDisplay {
+  displayName: string | null;
+  picture: string | null;
+}
+
 interface GiveawayDetailPageProps {
   giveaway: {
     id: string;
@@ -112,6 +161,7 @@ interface GiveawayDetailPageProps {
     engagementWeights?: Record<string, number> | null;
     filters?: Record<string, unknown> | null;
   };
+  winnerProfiles?: Record<string, WinnerProfileDisplay>;
   canUsePresets?: boolean;
 }
 
@@ -120,8 +170,21 @@ const ENGAGEMENT_OPTIONS = ["REACTION", "REPOST", "COMMENT", "ZAP"] as const;
 /* eslint-disable sonarjs/cognitive-complexity -- detail page has many fetchers and states */
 export function GiveawayDetailPage({
   giveaway,
+  winnerProfiles = {},
   canUsePresets = false,
 }: GiveawayDetailPageProps) {
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
   const previewFetcher = useFetcher<{
     winners?: GiveawayWinnerEntry[];
     error?: string;
@@ -524,7 +587,12 @@ export function GiveawayDetailPage({
                       <span className="text-muted-foreground text-sm">
                         {i + 1}.
                       </span>
-                      <WinnerNpubRow npub={w.npub} />
+                      <WinnerNpubRow
+                        npub={w.npub}
+                        displayName={winnerProfiles[w.pubkey]?.displayName}
+                        picture={winnerProfiles[w.pubkey]?.picture}
+                        profileUrl={nostrUrls.profileUrl(w.npub)}
+                      />
                     </div>
                     {giveaway.status === "PREVIEWED" ? (
                       <ExcludeWinnerForm
@@ -544,8 +612,10 @@ export function GiveawayDetailPage({
         <BatchZapFlow
           giveawayId={giveaway.id}
           winners={winners}
+          winnerProfiles={winnerProfiles}
           lockedAt={giveaway.lockedAt}
           paidFetcher={paidFetcher}
+          getProfileUrl={nostrUrls.profileUrl}
         />
       ) : null}
 
@@ -556,7 +626,12 @@ export function GiveawayDetailPage({
             {winners.map((w, i) => (
               <li key={w.pubkey} className="flex items-center gap-2">
                 <span className="text-muted-foreground">{i + 1}.</span>
-                <WinnerNpubRow npub={w.npub} />
+                <WinnerNpubRow
+                  npub={w.npub}
+                  displayName={winnerProfiles[w.pubkey]?.displayName}
+                  picture={winnerProfiles[w.pubkey]?.picture}
+                  profileUrl={nostrUrls.profileUrl(w.npub)}
+                />
               </li>
             ))}
           </ul>
@@ -595,88 +670,85 @@ function SavePresetForm() {
 function BatchZapFlow({
   giveawayId,
   winners,
+  winnerProfiles,
   lockedAt,
   paidFetcher,
+  getProfileUrl,
 }: {
   giveawayId: string;
   winners: GiveawayWinnerEntry[];
+  winnerProfiles: Record<string, WinnerProfileDisplay>;
   lockedAt: string | null;
   paidFetcher: ReturnType<typeof useFetcher>;
+  getProfileUrl: (npub: string) => string;
 }) {
   const [marked, setMarked] = useState<Record<string, boolean>>({});
-  const [step, setStep] = useState(0);
 
   useEffect(() => {
     setMarked(getMarkedZapped(giveawayId));
   }, [giveawayId]);
 
-  const currentWinner = winners[step];
   const markedCount = Object.values(marked).filter(Boolean).length;
-  const allDone = winners.length === 0 || step >= winners.length;
 
-  const handleMarkZapped = () => {
-    if (!currentWinner) return;
-    setMarkedZapped(giveawayId, currentWinner.npub, true);
-    setMarked((prev) => ({ ...prev, [currentWinner.npub]: true }));
-    setStep((s) => Math.min(s + 1, winners.length));
-  };
-
-  const handleSkip = () => {
-    setStep((s) => Math.min(s + 1, winners.length));
+  const handleMarkZapped = (npub: string) => {
+    setMarkedZapped(giveawayId, npub, true);
+    setMarked((prev) => ({ ...prev, [npub]: true }));
   };
 
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
         Locked at {lockedAt ? new Date(lockedAt).toLocaleString() : ""}. Zap
-        each winner (or skip), then mark as paid out.
+        each winner, then mark as paid out when done.
       </p>
-      <p className="text-muted-foreground text-xs">
-        Winner {step + 1} of {winners.length}
-        {winners.length > 0
-          ? ` · ${markedCount}/${winners.length} marked zapped`
-          : null}
-      </p>
-      {!allDone && currentWinner ? (
-        <div className="border-border bg-muted/30 rounded-lg border p-4">
-          <p className="text-muted-foreground mb-2 text-xs">
-            Zap in your wallet, then click Mark as zapped to move to the next
-            winner.
-          </p>
-          <div className="mb-3">
-            <WinnerNpubRow npub={currentWinner.npub} />
-          </div>
-          <ZapButton npub={currentWinner.npub} />
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              onClick={handleMarkZapped}
-              className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm"
-            >
-              Mark as zapped
-            </button>
-            <button
-              type="button"
-              onClick={handleSkip}
-              className="border-border rounded-md border px-4 py-2 text-sm"
-            >
-              Skip
-            </button>
-          </div>
-        </div>
+      {winners.length > 0 ? (
+        <p className="text-muted-foreground text-xs">
+          {markedCount}/{winners.length} marked zapped
+        </p>
       ) : null}
-      {allDone ? (
-        <paidFetcher.Form method="post">
-          <input type="hidden" name="intent" value="markPaidOut" />
-          <button
-            type="submit"
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2"
-            disabled={paidFetcher.state !== "idle"}
+      <ul className="border-border divide-border divide-y rounded-lg border">
+        {winners.map((w) => (
+          <li
+            key={w.pubkey}
+            className="flex flex-wrap items-center gap-4 p-4 sm:flex-nowrap"
           >
-            Mark as paid out
-          </button>
-        </paidFetcher.Form>
-      ) : null}
+            <div className="min-w-0 flex-1">
+              <WinnerNpubRow
+                npub={w.npub}
+                displayName={winnerProfiles[w.pubkey]?.displayName}
+                picture={winnerProfiles[w.pubkey]?.picture}
+                profileUrl={getProfileUrl(w.npub)}
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <ZapButton
+                npub={w.npub}
+                amountSats={w.satsPerWinner}
+                size="sm"
+                onZapped={() => {
+                  setMarkedZapped(giveawayId, w.npub, true);
+                  setMarked((prev) => ({ ...prev, [w.npub]: true }));
+                }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => handleMarkZapped(w.npub)}
+                aria-label="Mark as zapped"
+              >
+                {marked[w.npub] ? "Zapped ✓" : "Mark zapped"}
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <paidFetcher.Form method="post">
+        <input type="hidden" name="intent" value="markPaidOut" />
+        <Button type="submit" disabled={paidFetcher.state !== "idle"}>
+          Mark as paid out
+        </Button>
+      </paidFetcher.Form>
     </div>
   );
 }

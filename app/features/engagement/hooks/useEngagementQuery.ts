@@ -280,6 +280,7 @@ export function useEngagementInfiniteData() {
       trustScores: emptyTrustScores,
       engagementItemStates: emptyEngagementItemStates,
       lastCheckedAt: null,
+      followedPubkeys: [] as string[],
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -364,6 +365,9 @@ export function useEngagementInfiniteData() {
     firstPage && typeof firstPage.lastCheckedAt === "string"
       ? firstPage.lastCheckedAt
       : null;
+  const followedPubkeys: string[] = Array.isArray(firstPage?.followedPubkeys)
+    ? firstPage.followedPubkeys
+    : [];
 
   if (!lastPage) {
     return {
@@ -378,6 +382,7 @@ export function useEngagementInfiniteData() {
       trustScores: allTrustScores,
       engagementItemStates: allEngagementItemStates,
       lastCheckedAt: null,
+      followedPubkeys,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -405,6 +410,7 @@ export function useEngagementInfiniteData() {
     trustScores: allTrustScores,
     engagementItemStates: allEngagementItemStates,
     lastCheckedAt,
+    followedPubkeys,
     isLoading,
     isFetchingNextPage,
     hasNextPage,

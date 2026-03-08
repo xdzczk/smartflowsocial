@@ -72,6 +72,10 @@ function parseEngagementAndWinners(formData: FormData):
       engagementTypes: string[];
       winnerCount: number;
       selectionMode: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT";
+      engagementConfig?: Record<
+        string,
+        { winnerCount: number; satsPerWinner: number }
+      >;
     }
   | { error: string; status: 400 } {
   const engagementTypesRaw = formData.getAll("engagementTypes");
@@ -95,7 +99,32 @@ function parseEngagementAndWinners(formData: FormData):
     selectionMode === "WEIGHTED_BY_ENGAGEMENT"
       ? "WEIGHTED_BY_ENGAGEMENT"
       : "UNIQUE_USER";
-  return { engagementTypes, winnerCount, selectionMode: selectionModeResolved };
+
+  const engagementConfig: Record<
+    string,
+    { winnerCount: number; satsPerWinner: number }
+  > = {};
+  for (const type of allowed) {
+    const wRaw = formData.get(`engagementWinners_${type}`);
+    const sRaw = formData.get(`engagementSats_${type}`);
+    const w =
+      typeof wRaw === "string" && /^\d+$/.test(wRaw)
+        ? Math.max(0, parseInt(wRaw, 10))
+        : 0;
+    const sats =
+      typeof sRaw === "string" && /^\d+$/.test(sRaw)
+        ? Math.max(0, parseInt(sRaw, 10))
+        : 0;
+    if (w > 0 && engagementTypes.includes(type)) {
+      engagementConfig[type] = { winnerCount: w, satsPerWinner: sats };
+    }
+  }
+  return {
+    engagementTypes,
+    winnerCount,
+    selectionMode: selectionModeResolved,
+    ...(Object.keys(engagementConfig).length > 0 ? { engagementConfig } : {}),
+  };
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -203,6 +232,7 @@ export async function action({ request }: ActionFunctionArgs) {
     engagementTypes,
     winnerCount,
     selectionMode: selectionModeResolved,
+    engagementConfig,
   } = engagementResult;
 
   try {
@@ -212,6 +242,7 @@ export async function action({ request }: ActionFunctionArgs) {
       scopeReference,
       engagementTypes,
       winnerCount,
+      engagementConfig: engagementConfig ?? undefined,
       selectionMode: selectionModeResolved,
     });
     return redirect(`/dashboard/giveaway/detail/${giveaway.id}`);
@@ -430,13 +461,62 @@ export default function DashboardGiveawayNewPage() {
             </div>
           </div>
 
+          <div>
+            <span className="text-muted-foreground mb-2 block text-sm font-medium">
+              Winners & sats per engagement type (optional)
+            </span>
+            <p className="text-muted-foreground mb-2 text-xs">
+              Set winner count and sats per winner for each type. If you leave
+              all at 0, the single winner count below is used and no sats are
+              suggested.
+            </p>
+            <div className="border-border bg-muted/20 grid max-w-xl gap-2 rounded border p-3 text-sm sm:grid-cols-[auto_1fr_1fr]">
+              <span className="text-muted-foreground font-medium">Type</span>
+              <span className="text-muted-foreground font-medium">Winners</span>
+              <span className="text-muted-foreground font-medium">
+                Sats each
+              </span>
+              {ENGAGEMENT_OPTIONS.map((opt) => (
+                <div
+                  key={opt.value}
+                  className="text-foreground grid grid-cols-[auto_1fr_1fr] gap-2 sm:contents"
+                >
+                  <label
+                    htmlFor={`engagementWinners_${opt.value}`}
+                    className="flex items-center"
+                  >
+                    {opt.label}
+                  </label>
+                  <input
+                    id={`engagementWinners_${opt.value}`}
+                    name={`engagementWinners_${opt.value}`}
+                    type="number"
+                    min={0}
+                    max={planLimits.maxWinnerCount}
+                    defaultValue={0}
+                    className="border-border bg-background w-20 rounded border px-2 py-1"
+                  />
+                  <input
+                    id={`engagementSats_${opt.value}`}
+                    name={`engagementSats_${opt.value}`}
+                    type="number"
+                    min={0}
+                    defaultValue={0}
+                    className="border-border bg-background w-24 rounded border px-2 py-1"
+                    placeholder="0"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-4">
             <div>
               <label
                 htmlFor="winnerCount"
                 className="text-muted-foreground mb-1 block text-sm"
               >
-                Winner count
+                Winner count (used when per-type above is all 0)
               </label>
               <input
                 id="winnerCount"

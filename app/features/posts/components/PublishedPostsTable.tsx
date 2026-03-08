@@ -1,7 +1,7 @@
-import { Link } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal, Quote, Repeat } from "lucide-react";
-import { useRef, useState, type Key } from "react";
+import { useMemo, useRef, useState, type Key } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -26,6 +26,7 @@ import {
   INLINE_ICON_STROKE,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import { postToCombinedContent } from "../combined";
 import {
@@ -167,6 +168,18 @@ export default function PublishedPostsTable({
   });
   const virtualItems = rowVirtualizer.getVirtualItems();
   const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
 
   return (
     <>
@@ -411,7 +424,14 @@ export default function PublishedPostsTable({
                         >
                           <DropdownMenuItem asChild>
                             <Link
-                              to={`https://primal.net/e/${post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? post.signedEvent.id : ""}`}
+                              to={nostrUrls.eventUrl(
+                                post.signedEvent &&
+                                  typeof post.signedEvent === "object" &&
+                                  "id" in post.signedEvent &&
+                                  typeof post.signedEvent.id === "string"
+                                  ? post.signedEvent.id
+                                  : ""
+                              )}
                               target="_blank"
                               rel="noreferrer"
                             >

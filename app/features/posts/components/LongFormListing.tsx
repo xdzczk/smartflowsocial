@@ -1,4 +1,4 @@
-import { useFetcher, Link } from "@remix-run/react";
+import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal } from "lucide-react";
@@ -28,6 +28,7 @@ import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import {
   difference,
   formatForDisplay,
@@ -208,6 +209,18 @@ export default function LongFormListing({
   });
   const [selectedPosts, setSelectedPosts] = useState(new Set<string>());
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
   const deleteFetcher = useFetcher<{
     success?: boolean;
     moved?: boolean;
@@ -787,7 +800,18 @@ export default function LongFormListing({
                           <>
                             <DropdownMenuItem asChild>
                               <Link
-                                to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
+                                to={nostrUrls.articleUrl(
+                                  String(
+                                    post.nostrEventId ??
+                                      (post.signedEvent &&
+                                      typeof post.signedEvent === "object" &&
+                                      "id" in post.signedEvent
+                                        ? (post.signedEvent as { id?: string })
+                                            .id
+                                        : "") ??
+                                      ""
+                                  )
+                                )}
                                 target="_blank"
                                 rel="noreferrer"
                               >

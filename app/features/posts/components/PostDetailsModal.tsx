@@ -1,5 +1,5 @@
 import type { Post } from "@prisma/client";
-import { useFetcher, Link } from "@remix-run/react";
+import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
@@ -10,6 +10,7 @@ import type { ChildReply } from "~/features/engagement/hooks/useNotificationActi
 import { formatDate } from "~/features/posts/utils/content-helpers";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
 import {
   formatForDisplay,
@@ -177,6 +178,7 @@ function PostDetailsSidebar({
   showStats,
   stats,
   eventId,
+  viewThreadUrl,
   directReplies,
   isThreadLoading,
   threadMetadata,
@@ -204,6 +206,7 @@ function PostDetailsSidebar({
     satszapped: number;
   };
   eventId: string | null;
+  viewThreadUrl: string;
   directReplies: ChildReply[];
   isThreadLoading: boolean;
   threadMetadata: Record<string, unknown>;
@@ -361,7 +364,7 @@ function PostDetailsSidebar({
             />
           </div>
           <Link
-            to={`https://primal.net/e/${eventId}`}
+            to={viewThreadUrl}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="View thread (opens in new tab)"
@@ -439,6 +442,18 @@ export default function PostDetailsModal({
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [activeMediaSrc, setActiveMediaSrc] = useState<string | null>(null);
   const [showEventData, setShowEventData] = useState(false);
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
 
   // Close modal when delete completes successfully (e.g. from Flow or Scheduled section)
   useEffect(() => {
@@ -608,6 +623,7 @@ export default function PostDetailsModal({
                 showStats={showStats}
                 stats={stats}
                 eventId={eventId}
+                viewThreadUrl={eventId ? nostrUrls.eventUrl(eventId) : ""}
                 directReplies={directReplies}
                 isThreadLoading={isThreadLoading}
                 threadMetadata={threadMetadata}
@@ -627,7 +643,7 @@ export default function PostDetailsModal({
             <div className="flex flex-wrap items-center justify-end gap-3">
               {type === "published" && showViewNote ? (
                 <Link
-                  to={`https://primal.net/e/${post.signedEvent.id}`}
+                  to={nostrUrls.eventUrl(post.signedEvent.id)}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="View note (opens in new tab)"

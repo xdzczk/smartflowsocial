@@ -1,7 +1,7 @@
-import { Link } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import { Bell, Copy, Heart, MessageCircle, Repeat, Zap } from "lucide-react";
 import { nip19 } from "nostr-tools";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { Separator } from "~/components/ui/separator";
@@ -15,6 +15,12 @@ import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
+import {
+  eventUrl,
+  getNostrClientConfig,
+  getNostrClientDisplayName,
+} from "~/lib/nostr-client-urls";
+import type { NostrClientConfig } from "~/lib/nostr-client-urls";
 
 import type { Notification } from "../engagement.server";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
@@ -63,6 +69,28 @@ export default function GroupedNotificationList({
   replyTemplates = [],
 }: GroupedNotificationListProps) {
   const { userTimezone } = useFormattedDate();
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrClientConfig = useMemo(
+    () =>
+      getNostrClientConfig(
+        rootData?.user?.preferredNostrClient,
+        rootData?.user?.customNostrClientBaseUrl
+      ),
+    [
+      rootData?.user?.preferredNostrClient,
+      rootData?.user?.customNostrClientBaseUrl,
+    ]
+  );
+  const viewEventLabel = getNostrClientDisplayName(
+    rootData?.user?.preferredNostrClient
+  );
 
   if (groupedNotifications.length === 0) {
     return (
@@ -100,6 +128,8 @@ export default function GroupedNotificationList({
           focusedIndex={focusedIndex}
           registerKeyboardHandlers={registerKeyboardHandlers}
           replyTemplates={replyTemplates}
+          nostrClientConfig={nostrClientConfig}
+          viewEventLabel={viewEventLabel}
         />
       ))}
     </div>
@@ -117,6 +147,8 @@ function GroupedNotificationCard({
   focusedIndex = -1,
   registerKeyboardHandlers,
   replyTemplates = [],
+  nostrClientConfig,
+  viewEventLabel,
 }: {
   group: GroupedNotification;
   userTimezone?: string;
@@ -131,6 +163,8 @@ function GroupedNotificationCard({
     handlers: EngagementKeyboardHandlers | null
   ) => void;
   replyTemplates?: ReplyTemplate[];
+  nostrClientConfig: NostrClientConfig;
+  viewEventLabel: string;
 }) {
   const { formatDate, userTimezone } = useFormattedDate();
   const { parentPost, notifications } = group;
@@ -256,7 +290,7 @@ function GroupedNotificationCard({
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Link
-                  to={`https://primal.net/e/${parentPost.eventId}`}
+                  to={eventUrl(parentPost.eventId, nostrClientConfig)}
                   target="_blank"
                   rel="noreferrer"
                   className="text-primary text-xs hover:underline"
@@ -356,6 +390,11 @@ function GroupedNotificationCard({
                   isKeyboardFocused={itemIndex === focusedIndex}
                   registerKeyboardHandlers={registerKeyboardHandlers}
                   replyTemplates={replyTemplates}
+                  viewEventUrl={eventUrl(
+                    notification.eventId,
+                    nostrClientConfig
+                  )}
+                  viewEventLabel={`View on ${viewEventLabel}`}
                 />
               );
             })}

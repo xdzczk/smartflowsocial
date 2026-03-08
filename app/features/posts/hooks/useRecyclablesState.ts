@@ -1,4 +1,4 @@
-import { useNavigate } from "@remix-run/react";
+import { useNavigate, useRouteLoaderData } from "@remix-run/react";
 import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
@@ -10,6 +10,7 @@ import {
 } from "~/features/posts/utils/bulk-composer-data";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import {
   addHours,
   compareZonedDateTime,
@@ -154,6 +155,19 @@ export function useRecyclablesState({
     link?: string;
     linkText?: string;
   } | null>(null);
+
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
 
   // Sort and filter posts
   // ============================================================================
@@ -630,7 +644,7 @@ export function useRecyclablesState({
       setToast({
         type: "success",
         message: "Post reposted successfully!",
-        link: eventId ? `https://primal.net/e/${eventId}` : undefined,
+        link: eventId ? nostrUrls.eventUrl(eventId) : undefined,
         linkText: "View Original Post",
       });
       setTimeout(() => setToast(null), 8000);
@@ -707,6 +721,7 @@ export function useRecyclablesState({
     individualRepostFetcher,
     user,
     navigate,
+    nostrUrls,
   ]);
 
   return {

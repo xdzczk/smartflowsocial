@@ -78,10 +78,29 @@ export type GiveawayScope =
 export type GiveawayEngagementType = "REACTION" | "REPOST" | "COMMENT" | "ZAP";
 
 /**
+ * Per-engagement config: winner count and sats per winner for one engagement type.
+ */
+export interface EngagementTypeConfig {
+  winnerCount: number;
+  satsPerWinner: number;
+}
+
+/**
+ * Optional per-engagement winner counts and sats. When set, selection uses this instead of single winnerCount.
+ */
+export type GiveawayEngagementConfig = Partial<
+  Record<GiveawayEngagementType, EngagementTypeConfig>
+>;
+
+/**
  * Single winner entry in winner snapshot (stored at lock).
  */
 export interface GiveawayWinnerEntry {
   pubkey: string;
   npub: string;
   qualifyingActions: Array<{ kind: number; eventId: string; postId?: string }>;
+  /** Suggested sats to zap (when engagementConfig was used). */
+  satsPerWinner?: number;
+  /** Engagement type this winner was selected for (when per-type selection). */
+  engagementType?: GiveawayEngagementType;
 }

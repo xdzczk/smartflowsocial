@@ -149,6 +149,39 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
   }
 }
 
+export interface WinnerProfileDisplay {
+  displayName: string | null;
+  picture: string | null;
+}
+
+/**
+ * Fetch display profiles (name, picture) for winner pubkeys for use on detail page.
+ */
+export async function getWinnerProfiles(
+  pubkeys: string[]
+): Promise<Record<string, WinnerProfileDisplay>> {
+  if (pubkeys.length === 0) return {};
+  const unique = [...new Set(pubkeys)];
+  const results = await Promise.all(
+    unique.map(async (pubkey) => {
+      const user = await fetchUserProfile(pubkey);
+      return {
+        pubkey,
+        displayName: user?.displayName ?? user?.name ?? null,
+        picture: user?.picture ?? null,
+      };
+    })
+  );
+  const record: Record<string, WinnerProfileDisplay> = {};
+  for (const r of results) {
+    record[r.pubkey] = {
+      displayName: r.displayName ?? null,
+      picture: r.picture ?? null,
+    };
+  }
+  return record;
+}
+
 export interface GiveawayParticipantFilters {
   minAccountAgeDays?: number;
   minFollowers?: number;

@@ -6,9 +6,10 @@
 import { nip19 } from "nostr-tools";
 
 import type {
-  RelatedEvent,
+  GiveawayEngagementConfig,
   GiveawayEngagementType,
   GiveawayWinnerEntry,
+  RelatedEvent,
 } from "./types";
 
 const KIND_TO_ENGAGEMENT: Record<number, GiveawayEngagementType> = {
@@ -179,5 +180,75 @@ export function runGiveawaySelection(
       kind: a.kind,
       eventId: a.eventId,
     })),
+  }));
+}
+
+export interface SelectionPerEngagementInput {
+  relatedEvents: RelatedEvent[];
+  engagementConfig: GiveawayEngagementConfig;
+  selectionMode: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT";
+  engagementWeights?: Partial<Record<GiveawayEngagementType, number>>;
+}
+
+/**
+ * Run winner selection per engagement type and merge by pubkey (sum sats).
+ * Returns one entry per unique winner with combined sats and actions.
+ */
+export function runGiveawaySelectionPerEngagement(
+  input: SelectionPerEngagementInput
+): GiveawayWinnerEntry[] {
+  const { relatedEvents, engagementConfig, selectionMode, engagementWeights } =
+    input;
+  const weights: Record<GiveawayEngagementType, number> = {
+    ...DEFAULT_WEIGHTS,
+    ...engagementWeights,
+  };
+  const byPubkey = new Map<
+    string,
+    {
+      pubkey: string;
+      npub: string;
+      qualifyingActions: Array<{ kind: number; eventId: string }>;
+      satsPerWinner: number;
+    }
+  >();
+
+  const types = Object.keys(engagementConfig) as GiveawayEngagementType[];
+  for (const engagementType of types) {
+    const config = engagementConfig[engagementType];
+    if (!config || config.winnerCount <= 0) continue;
+    const filtered = filterByEngagementTypes(relatedEvents, [engagementType]);
+    const userEntries = buildUserEntries(filtered, weights);
+    const entries = Array.from(userEntries.values());
+    if (entries.length === 0) continue;
+    const k = Math.min(config.winnerCount, entries.length);
+    const selected =
+      selectionMode === "WEIGHTED_BY_ENGAGEMENT"
+        ? sampleWeighted(entries, k)
+        : sampleUniform(entries, k);
+    for (const e of selected) {
+      const npub = pubkeyToNpub(e.pubkey);
+      const existing = byPubkey.get(e.pubkey);
+      if (existing) {
+        existing.qualifyingActions.push(...e.actions);
+        /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- satsPerWinner optional in config */
+        existing.satsPerWinner += config.satsPerWinner ?? 0;
+      } else {
+        byPubkey.set(e.pubkey, {
+          pubkey: e.pubkey,
+          npub,
+          qualifyingActions: [...e.actions],
+          /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- satsPerWinner optional in config */
+          satsPerWinner: config.satsPerWinner ?? 0,
+        });
+      }
+    }
+  }
+
+  return Array.from(byPubkey.values()).map((e) => ({
+    pubkey: e.pubkey,
+    npub: e.npub,
+    qualifyingActions: e.qualifyingActions,
+    satsPerWinner: e.satsPerWinner > 0 ? e.satsPerWinner : undefined,
   }));
 }

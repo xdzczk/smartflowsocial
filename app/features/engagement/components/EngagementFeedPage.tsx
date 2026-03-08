@@ -7,7 +7,6 @@ import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 import {
   applyPowerFilters,
   applySort,
-  filterByUnreadSince,
   getFlatItemCount,
 } from "../engagement-filter";
 import { useEngagementKeyboard } from "../hooks/useEngagementKeyboard";
@@ -32,7 +31,7 @@ export default function EngagementFeedPage() {
     groupedNotifications: safeGroupedNotifications,
     trustScores: safeTrustScores,
     engagementItemStates: safeEngagementItemStates,
-    lastCheckedAt,
+    followedPubkeys: safeFollowedPubkeys,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -43,12 +42,10 @@ export default function EngagementFeedPage() {
     setSelectedPost,
     activeTab,
     setActiveTab,
-    filterUnreadOnly,
-    setFilterUnreadOnly,
     filterHighReputation,
     setFilterHighReputation,
-    filterMentionsOnly,
-    setFilterMentionsOnly,
+    filterFollowingOnly,
+    setFilterFollowingOnly,
     sortBy,
     setSortBy,
   } = useEngagementState();
@@ -68,51 +65,60 @@ export default function EngagementFeedPage() {
     return safeEngagementItemStates ?? {};
   }, [safeEngagementItemStates]);
 
-  const lastCheckedAtMs = useMemo(
-    () => (lastCheckedAt ? new Date(lastCheckedAt).getTime() : null),
-    [lastCheckedAt]
-  );
-  const unreadFilterMs = filterUnreadOnly ? lastCheckedAtMs : null;
-
-  const filteredReplies = useMemo(
-    () => filterByUnreadSince(safeGroupedNotifications.replies, unreadFilterMs),
-    [safeGroupedNotifications.replies, unreadFilterMs]
-  );
-  const filteredQuotes = useMemo(
-    () => filterByUnreadSince(safeGroupedNotifications.quotes, unreadFilterMs),
-    [safeGroupedNotifications.quotes, unreadFilterMs]
-  );
-  const filteredMentions = useMemo(
+  const followedPubkeysSet = useMemo(
     () =>
-      filterByUnreadSince(safeGroupedNotifications.mentions, unreadFilterMs),
-    [safeGroupedNotifications.mentions, unreadFilterMs]
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- safeFollowedPubkeys can be undefined before load
+      new Set(safeFollowedPubkeys ?? []),
+    [safeFollowedPubkeys]
   );
+
+  const safeReplies = useMemo(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- replies can be undefined before load
+      safeGroupedNotifications.replies ?? [],
+    [safeGroupedNotifications.replies]
+  );
+  const safeQuotes = useMemo(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- quotes can be undefined before load
+      safeGroupedNotifications.quotes ?? [],
+    [safeGroupedNotifications.quotes]
+  );
+  const safeMentions = useMemo(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mentions can be undefined before load
+      safeGroupedNotifications.mentions ?? [],
+    [safeGroupedNotifications.mentions]
+  );
+
   const mergedMentionsTab = useMemo(() => {
-    const combined = [...filteredQuotes, ...filteredMentions];
+    const combined = [...safeQuotes, ...safeMentions];
     return combined.sort((a, b) => {
       const maxA = Math.max(...a.notifications.map((n) => n.createdAt), 0);
       const maxB = Math.max(...b.notifications.map((n) => n.createdAt), 0);
       return maxB - maxA;
     });
-  }, [filteredQuotes, filteredMentions]);
+  }, [safeQuotes, safeMentions]);
 
   const afterPowerReplies = useMemo(
     () =>
       applySort(
         applyPowerFilters(
-          filteredReplies,
+          safeReplies,
           safeTrustScores,
           filterHighReputation,
-          filterMentionsOnly
+          filterFollowingOnly,
+          followedPubkeysSet
         ),
         safeTrustScores,
         sortBy
       ),
     [
-      filteredReplies,
+      safeReplies,
       safeTrustScores,
       filterHighReputation,
-      filterMentionsOnly,
+      filterFollowingOnly,
+      followedPubkeysSet,
       sortBy,
     ]
   );
@@ -123,7 +129,8 @@ export default function EngagementFeedPage() {
           mergedMentionsTab,
           safeTrustScores,
           filterHighReputation,
-          filterMentionsOnly
+          filterFollowingOnly,
+          followedPubkeysSet
         ),
         safeTrustScores,
         sortBy
@@ -132,7 +139,8 @@ export default function EngagementFeedPage() {
       mergedMentionsTab,
       safeTrustScores,
       filterHighReputation,
-      filterMentionsOnly,
+      filterFollowingOnly,
+      followedPubkeysSet,
       sortBy,
     ]
   );
@@ -216,12 +224,10 @@ export default function EngagementFeedPage() {
           }
         />
         <EngagementFilterBar
-          filterUnreadOnly={filterUnreadOnly}
-          setFilterUnreadOnly={setFilterUnreadOnly}
           filterHighReputation={filterHighReputation}
           setFilterHighReputation={setFilterHighReputation}
-          filterMentionsOnly={filterMentionsOnly}
-          setFilterMentionsOnly={setFilterMentionsOnly}
+          filterFollowingOnly={filterFollowingOnly}
+          setFilterFollowingOnly={setFilterFollowingOnly}
           sortBy={sortBy}
           setSortBy={setSortBy}
         />

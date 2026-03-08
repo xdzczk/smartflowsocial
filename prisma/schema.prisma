@@ -40,6 +40,10 @@ model User {
   timeFormat                 String?        @default("24h") // "12h" or "24h"
   // Date format preference for display (dd/mm, mm/dd, or yyyy-mm-dd)
   dateFormat                 String?        @default("ddmmyyyy") // "ddmmyyyy" | "mmddyyyy" | "yyyymmdd"
+  // Preferred Nostr client for "View note/article" links (PRIMAL, DAMUS, AMETHYST, NOSTUR, NOSTRUDEL, IRIS, YAKIHONNE, CUSTOM)
+  preferredNostrClient      String?         @default("PRIMAL")
+  // Base URL when preferredNostrClient is CUSTOM (e.g. https://example.com)
+  customNostrClientBaseUrl   String?
   // Set when we applied device locale for time/date once (so we never overwrite again)
   localeDefaultsAppliedAt    DateTime?
   // Runway KPI: which queues count and mode (last-post vs first-queue-empty)
@@ -203,13 +207,14 @@ model Giveaway {
   eligibilityFrom    DateTime?
   eligibilityTo      DateTime?
   engagementTypes    Json                 // string[]: REACTION, REPOST, COMMENT, ZAP
-  winnerCount        Int
+  winnerCount        Int                  // total (legacy or sum when engagementConfig set)
+  engagementConfig   Json?                // optional: { REACTION: { winnerCount, satsPerWinner }, ... }; when set, per-type winners + sats
   selectionMode      GiveawaySelectionMode @default(UNIQUE_USER)
   engagementWeights  Json?                // { REPOST: 2, COMMENT: 1.5, ... }
   filters            Json?                // { excludeMuted, excludeBlocked, minAccountAgeDays?, minFollowers? }
   status             GiveawayStatus       @default(DRAFT)
   lockedAt           DateTime?
-  winnerSnapshot     Json?                // [{ pubkey, npub, qualifyingActions }] at lock
+  winnerSnapshot     Json?                // [{ pubkey, npub, qualifyingActions, satsPerWinner?, engagementType? }] at lock
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -227,6 +232,7 @@ model GiveawayPreset {
   scopeReference    Json                   // { days?, postId?, queueId?, from?, to? }
   engagementTypes   Json                   // string[]
   winnerCount       Int
+  engagementConfig Json?                  // optional: { REACTION: { winnerCount, satsPerWinner }, ... }
   selectionMode     GiveawaySelectionMode  @default(UNIQUE_USER)
   engagementWeights Json?
   filters           Json?

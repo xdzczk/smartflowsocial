@@ -1,6 +1,7 @@
 import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
 
 import { DateFormatSettings } from "~/components/settings/DateFormatSettings";
+import { NostrClientSettings } from "~/components/settings/NostrClientSettings";
 import { NotificationSettings } from "~/components/settings/NotificationSettings";
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
 import { TimeFormatSettings } from "~/components/settings/TimeFormatSettings";
@@ -333,6 +334,8 @@ export default function SettingsPage() {
     runwayNotifyBelowDays?: unknown;
     timeFormat?: unknown;
     dateFormat?: unknown;
+    preferredNostrClient?: unknown;
+    customNostrClientBaseUrl?: unknown;
     primarySignerProfile?: unknown;
     referral?: {
       referralLink: string;
@@ -380,6 +383,8 @@ export default function SettingsPage() {
     runwayNotifyBelowDays,
     timeFormat: timeFormatRaw,
     dateFormat: dateFormatRaw,
+    preferredNostrClient: preferredNostrClientRaw,
+    customNostrClientBaseUrl: customNostrClientBaseUrlRaw,
     primarySignerProfile: primarySignerProfileRaw,
     referral: referralRaw,
   } = data;
@@ -550,6 +555,16 @@ export default function SettingsPage() {
                   ? dateFormatRaw
                   : "ddmmyyyy"
               }
+            />
+            <NostrClientSettings
+              preferredNostrClient={
+                typeof preferredNostrClientRaw === "string"
+                  ? preferredNostrClientRaw
+                  : "PRIMAL"
+              }
+              customNostrClientBaseUrl={asStringOrNull(
+                customNostrClientBaseUrlRaw
+              )}
             />
             <ScheduleIntervalsSettings
               scheduleIntervals={scheduleIntervalsList}

@@ -1,42 +1,78 @@
-import { useEffect } from "react";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
+
+import { Button } from "~/components/ui/button";
+import {
+  zapRecipient,
+  ZAP_FLOW_ERROR_NO_LUD16,
+  ZAP_FLOW_ERROR_NO_WEBLN,
+} from "~/lib/zap-flow.client";
+
 interface ZapButtonProps {
   npub: string;
+  /** Optional sats amount to suggest (shown in label). */
+  amountSats?: number;
+  /** Button size; defaults to default. Use "sm" in dense lists. */
+  size?: "default" | "sm" | "lg" | "icon";
+  /** Called when zap payment completes successfully (e.g. to auto-mark winner as zapped). */
+  onZapped?: () => void;
 }
 
-// Global flag to track if script is already loaded
-let nostrZapScriptLoaded = false;
-let nostrZapScriptElement: HTMLScriptElement | null = null;
+export default function ZapButton({
+  npub,
+  amountSats,
+  size = "default",
+  onZapped,
+}: ZapButtonProps) {
+  const [loading, setLoading] = useState(false);
 
-export default function ZapButton({ npub }: ZapButtonProps) {
-  useEffect(() => {
-    // Only load script once globally, not per component instance
-    if (!nostrZapScriptLoaded && !nostrZapScriptElement) {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/nostr-zap@0.20.0";
-      script.async = true;
-      script.id = "nostr-zap-script"; // Add ID to prevent duplicates
-
-      // Mark as loaded before appending to prevent race conditions
-      nostrZapScriptLoaded = true;
-      nostrZapScriptElement = script;
-
-      document.body.appendChild(script);
+  const handleClick = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const result = await zapRecipient({ npub, amountSats });
+      if (result.paid) {
+        onZapped?.();
+        toast.success("Zap sent");
+      } else {
+        toast.success("Opened in new tab — mark as zapped when done");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Zap failed";
+      if (message === ZAP_FLOW_ERROR_NO_LUD16) {
+        toast.error("Recipient has no Lightning address");
+      } else if (message === ZAP_FLOW_ERROR_NO_WEBLN) {
+        toast.error(
+          "Install a Lightning wallet with WebLN support to zap from this page"
+        );
+      } else {
+        toast.error(message);
+      }
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Don't remove script on unmount - it's shared across all ZapButton instances
-    return () => {
-      // No cleanup needed - script stays loaded for other instances
-    };
-  }, []);
+  const label =
+    amountSats != null && amountSats > 0 ? `Zap ${amountSats} sats` : "Zap";
 
   return (
-    <button
-      id="nostr-zap-target"
-      data-npub={npub}
-      data-relays="wss://relay.damus.io,wss://relay.snort.social,wss://nostr.wine,wss://nos.lol/"
-      className="text-foreground focus:ring-ring mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#004e92] bg-gradient-to-r from-[#000428] to-[#004e92] px-6 py-3 text-base font-bold transition duration-200 ease-in-out hover:scale-105 hover:shadow-lg hover:shadow-[#004e92]/40 focus:ring-2 focus:ring-offset-0 focus:outline-none active:scale-95 dark:text-white"
+    <Button
+      type="button"
+      variant="default"
+      size={size}
+      className="gap-1.5"
+      disabled={loading}
+      onClick={() => void handleClick()}
     >
-      Zap Me ⚡️
-    </button>
+      {loading ? (
+        <span className="text-muted-foreground">Opening wallet…</span>
+      ) : (
+        <>
+          <span aria-hidden>⚡</span>
+          {label}
+        </>
+      )}
+    </Button>
   );
 }

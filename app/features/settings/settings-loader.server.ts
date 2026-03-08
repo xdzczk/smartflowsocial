@@ -33,6 +33,8 @@ import {
   getResolvedUploadProviderSettings,
   getUserTimeFormat,
   getUserDateFormat,
+  getUserPreferredNostrClient,
+  getUserCustomNostrClientBaseUrl,
   getUserTimezone,
   getQueueTypes,
 } from "~/features/user";
@@ -146,6 +148,8 @@ export interface SettingsLoaderData {
   runwayNotifyBelowDays: number | null;
   timeFormat: "12h" | "24h";
   dateFormat: "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
+  preferredNostrClient: string;
+  customNostrClientBaseUrl: string | null;
   primarySignerProfile: PrimarySignerProfile | null;
   referral: {
     referralLink: string;
@@ -197,6 +201,8 @@ export async function loadSettingsData(
     pushNotificationPreferences,
     timeFormat,
     dateFormat,
+    preferredNostrClient,
+    customNostrClientBaseUrl,
     primarySignerProfile,
   ] = await Promise.all([
     getUserTimezone(userId),
@@ -218,6 +224,8 @@ export async function loadSettingsData(
     getUserPushNotificationPreferences(userId),
     getUserTimeFormat(userId),
     getUserDateFormat(userId),
+    getUserPreferredNostrClient(userId),
+    getUserCustomNostrClientBaseUrl(userId),
     getUserPrimarySignerProfile(userId),
   ]);
 
@@ -396,6 +404,8 @@ export async function loadSettingsData(
     runwayNotifyBelowDays: pushNotificationPreferences.runwayNotifyBelowDays,
     timeFormat,
     dateFormat,
+    preferredNostrClient,
+    customNostrClientBaseUrl,
     primarySignerProfile: isPrimarySignerProfile(primarySignerProfile)
       ? primarySignerProfile
       : null,

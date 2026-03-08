@@ -1,5 +1,6 @@
-import { Link } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import { MoreHorizontal, Repeat } from "lucide-react";
+import { useMemo } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -15,6 +16,7 @@ import {
   INLINE_ICON_SIZE_CLASS,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import type {
   CombinedContent,
@@ -258,6 +260,18 @@ function ContentRowActions({
   onScheduleRepost?: (post: PostData) => void;
   onScheduleQuote?: (post: PostData) => void;
 }) {
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -276,7 +290,7 @@ function ContentRowActions({
             {item.type === "post" && item.originalData.signedEvent?.id ? (
               <DropdownMenuItem asChild>
                 <Link
-                  to={`https://primal.net/e/${item.originalData.signedEvent.id}`}
+                  to={nostrUrls.eventUrl(item.originalData.signedEvent.id)}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -289,7 +303,11 @@ function ContentRowActions({
               item.originalData.signedEvent?.id) ? (
               <DropdownMenuItem asChild>
                 <Link
-                  to={`https://primal.net/a/${item.originalData.nostrEventId ?? item.originalData.signedEvent?.id ?? ""}`}
+                  to={nostrUrls.articleUrl(
+                    item.originalData.nostrEventId ??
+                      item.originalData.signedEvent?.id ??
+                      ""
+                  )}
                   target="_blank"
                   rel="noreferrer"
                 >

@@ -98,6 +98,54 @@ export const updateScheduleIntervalsSchema = z.object({
     ),
 });
 
+const PREFERRED_NOSTR_CLIENT_ENUM = z.enum([
+  "PRIMAL",
+  "DAMUS",
+  "AMETHYST",
+  "NOSTUR",
+  "NOSTRUDEL",
+  "IRIS",
+  "YAKIHONNE",
+  "CUSTOM",
+]);
+
+/**
+ * Preferred Nostr client update schema.
+ * When CUSTOM, customNostrClientBaseUrl must be a valid https URL.
+ */
+export const updatePreferredNostrClientSchema = z
+  .object({
+    preferredNostrClient: PREFERRED_NOSTR_CLIENT_ENUM,
+    customNostrClientBaseUrl: z
+      .string()
+      .optional()
+      .transform((val) => {
+        const trimmed = (val ?? "").trim();
+        return trimmed === "" ? null : trimmed;
+      }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.preferredNostrClient !== "CUSTOM") return;
+    if (data.customNostrClientBaseUrl == null) return;
+    if (!data.customNostrClientBaseUrl.startsWith("https://")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["customNostrClientBaseUrl"],
+        message: "Custom client URL must start with https://",
+      });
+      return;
+    }
+    try {
+      new URL(data.customNostrClientBaseUrl);
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["customNostrClientBaseUrl"],
+        message: ERROR_INVALID_URL_FORMAT,
+      });
+    }
+  });
+
 /**
  * Hashtag preset schemas
  */

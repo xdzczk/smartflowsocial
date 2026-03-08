@@ -1,11 +1,13 @@
-import { Link } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import { Bell, MessageCircle, Zap } from "lucide-react";
+import { useMemo } from "react";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
+import { eventUrl, getNostrClientConfig } from "~/lib/nostr-client-urls";
 
 import type { Notification } from "../engagement.server";
 import type {
@@ -23,6 +25,26 @@ export default function NotificationList({
   notifications,
   userTimezone: _userTimezone,
 }: NotificationListProps) {
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrClientConfig = useMemo(
+    () =>
+      getNostrClientConfig(
+        rootData?.user?.preferredNostrClient,
+        rootData?.user?.customNostrClientBaseUrl
+      ),
+    [
+      rootData?.user?.preferredNostrClient,
+      rootData?.user?.customNostrClientBaseUrl,
+    ]
+  );
+
   if (notifications.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -52,6 +74,7 @@ export default function NotificationList({
               key={notification.id}
               notification={notification}
               userTimezone={_userTimezone}
+              viewEventUrl={eventUrl(notification.eventId, nostrClientConfig)}
             />
           );
         } else if (notification.type === "zap") {
@@ -60,6 +83,10 @@ export default function NotificationList({
               key={notification.id}
               notification={notification}
               userTimezone={_userTimezone}
+              viewEventUrl={eventUrl(
+                notification.originalEventId,
+                nostrClientConfig
+              )}
             />
           );
         } else if (notification.type === "mention") {
@@ -68,6 +95,7 @@ export default function NotificationList({
               key={notification.id}
               notification={notification}
               userTimezone={_userTimezone}
+              viewEventUrl={eventUrl(notification.eventId, nostrClientConfig)}
             />
           );
         }
@@ -80,9 +108,11 @@ export default function NotificationList({
 function ReplyNotification({
   notification,
   userTimezone: _userTimezone,
+  viewEventUrl,
 }: {
   notification: NotificationReply;
   userTimezone?: string;
+  viewEventUrl?: string;
 }) {
   const { formatDate } = useFormattedDate();
   const displayName =
@@ -137,12 +167,15 @@ function ReplyNotification({
               })}
             </span>
             <Link
-              to={`https://primal.net/e/${String(notification.eventId)}`}
+              to={
+                viewEventUrl ??
+                `https://primal.net/e/${String(notification.eventId)}`
+              }
               target="_blank"
               rel="noreferrer"
               className="text-primary dark:text-muted-foreground hover:underline"
             >
-              View on Primal
+              View note
             </Link>
           </div>
         </div>
@@ -154,9 +187,11 @@ function ReplyNotification({
 function ZapNotification({
   notification,
   userTimezone: _userTimezone,
+  viewEventUrl,
 }: {
   notification: NotificationZap;
   userTimezone?: string;
+  viewEventUrl?: string;
 }) {
   const { formatDate } = useFormattedDate();
   const displayName =
@@ -218,7 +253,10 @@ function ZapNotification({
               })}
             </span>
             <Link
-              to={`https://primal.net/e/${String(notification.originalEventId)}`}
+              to={
+                viewEventUrl ??
+                `https://primal.net/e/${String(notification.originalEventId)}`
+              }
               target="_blank"
               rel="noreferrer"
               className="text-primary dark:text-muted-foreground hover:underline"
@@ -235,9 +273,11 @@ function ZapNotification({
 function MentionNotification({
   notification,
   userTimezone: _userTimezone,
+  viewEventUrl,
 }: {
   notification: NotificationMention;
   userTimezone?: string;
+  viewEventUrl?: string;
 }) {
   const { formatDate } = useFormattedDate();
   const displayName =
@@ -292,12 +332,15 @@ function MentionNotification({
               })}
             </span>
             <Link
-              to={`https://primal.net/e/${String(notification.eventId)}`}
+              to={
+                viewEventUrl ??
+                `https://primal.net/e/${String(notification.eventId)}`
+              }
               target="_blank"
               rel="noreferrer"
               className="text-primary dark:text-muted-foreground hover:underline"
             >
-              View on Primal
+              View note
             </Link>
           </div>
         </div>

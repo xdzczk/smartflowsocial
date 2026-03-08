@@ -3,6 +3,7 @@
  */
 
 import type { Giveaway, GiveawaySelectionMode } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import type { UserSubscription } from "~/features/payments/types";
 import {
@@ -18,9 +19,13 @@ import {
   type GiveawayParticipantFilters,
 } from "./giveaway-loader.server";
 import { getPostsInScope } from "./giveaway-scope.server";
-import { runGiveawaySelection } from "./giveaway-selection.server";
+import {
+  runGiveawaySelection,
+  runGiveawaySelectionPerEngagement,
+} from "./giveaway-selection.server";
 import { fetchGiveawayParticipants } from "./giveaway.server";
 import type {
+  GiveawayEngagementConfig,
   GiveawayEngagementType,
   GiveawayScope,
   GiveawayWinnerEntry,
@@ -115,6 +120,41 @@ async function getEligibleParticipantsForGiveaway(
   return { relatedEvents: processed };
 }
 
+function runSelectionForGiveaway(
+  g: Giveaway,
+  relatedEvents: RelatedEvent[]
+): GiveawayWinnerEntry[] {
+  const engagementConfig =
+    g.engagementConfig as GiveawayEngagementConfig | null;
+  const engagementTypes =
+    g.engagementTypes as string[] as GiveawayEngagementType[];
+  const types = engagementTypes.length
+    ? engagementTypes
+    : DEFAULT_ENGAGEMENT_TYPES;
+  const weights = g.engagementWeights as Record<string, number> | undefined;
+
+  if (
+    engagementConfig &&
+    typeof engagementConfig === "object" &&
+    Object.keys(engagementConfig).length > 0
+  ) {
+    return runGiveawaySelectionPerEngagement({
+      relatedEvents,
+      engagementConfig,
+      selectionMode: g.selectionMode,
+      engagementWeights: weights,
+    });
+  }
+
+  return runGiveawaySelection({
+    relatedEvents,
+    engagementTypes: types,
+    selectionMode: g.selectionMode,
+    engagementWeights: weights,
+    winnerCount: g.winnerCount,
+  });
+}
+
 export async function getGiveawayById(
   id: string,
   userId: string
@@ -132,6 +172,8 @@ export interface CreateGiveawayInput {
   eligibilityTo?: Date | null;
   engagementTypes: string[];
   winnerCount: number;
+  /** When set, per-engagement winner counts and sats; winnerCount becomes sum of counts. */
+  engagementConfig?: GiveawayEngagementConfig | null;
   selectionMode?: GiveawaySelectionMode;
   engagementWeights?: Record<string, number> | null;
   filters?: Record<string, unknown> | null;
@@ -151,7 +193,19 @@ export async function createGiveaway(
     );
   }
 
-  const winnerCount = Math.min(input.winnerCount, limits.maxWinnerCount);
+  let winnerCount = Math.min(input.winnerCount, limits.maxWinnerCount);
+  if (
+    input.engagementConfig &&
+    typeof input.engagementConfig === "object" &&
+    Object.keys(input.engagementConfig).length > 0
+  ) {
+    const sum = Object.values(input.engagementConfig).reduce(
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- engagementConfig entries may omit winnerCount
+      (acc, c) => acc + (c.winnerCount ?? 0),
+      0
+    );
+    winnerCount = Math.min(sum, limits.maxWinnerCount);
+  }
 
   return prisma.giveaway.create({
     data: {
@@ -163,6 +217,10 @@ export async function createGiveaway(
       eligibilityTo: input.eligibilityTo ?? undefined,
       engagementTypes: input.engagementTypes,
       winnerCount,
+      engagementConfig:
+        input.engagementConfig && Object.keys(input.engagementConfig).length > 0
+          ? (input.engagementConfig as object)
+          : undefined,
       selectionMode: input.selectionMode ?? "UNIQUE_USER",
       engagementWeights: input.engagementWeights ?? undefined,
       filters: input.filters ?? undefined,
@@ -175,6 +233,7 @@ export interface UpdateGiveawayInput {
   name?: string | null;
   winnerCount?: number;
   engagementTypes?: string[];
+  engagementConfig?: GiveawayEngagementConfig | null;
   selectionMode?: GiveawaySelectionMode;
 }
 
@@ -211,6 +270,26 @@ export async function updateGiveaway(
     }
     data.engagementTypes = input.engagementTypes;
   }
+  if (input.engagementConfig !== undefined) {
+    data.engagementConfig =
+      input.engagementConfig && Object.keys(input.engagementConfig).length > 0
+        ? (input.engagementConfig as unknown as Prisma.InputJsonValue)
+        : Prisma.JsonNull;
+    if (
+      input.engagementConfig &&
+      Object.keys(input.engagementConfig).length > 0
+    ) {
+      const sum = Object.values(input.engagementConfig).reduce(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- engagementConfig entries may omit winnerCount
+        (acc, c) => acc + (c.winnerCount ?? 0),
+        0
+      );
+      data.winnerCount = Math.min(
+        Math.max(1, Math.floor(sum)),
+        limits.maxWinnerCount
+      );
+    }
+  }
   if (input.selectionMode !== undefined) {
     data.selectionMode = input.selectionMode;
   }
@@ -232,18 +311,7 @@ export async function previewGiveaway(
     return { winners: [], error: "Giveaway cannot be previewed" };
 
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
-  const engagementTypes =
-    g.engagementTypes as string[] as GiveawayEngagementType[];
-  const weights = g.engagementWeights as Record<string, number> | undefined;
-  const winners = runGiveawaySelection({
-    relatedEvents,
-    engagementTypes: engagementTypes.length
-      ? engagementTypes
-      : DEFAULT_ENGAGEMENT_TYPES,
-    selectionMode: g.selectionMode,
-    engagementWeights: weights,
-    winnerCount: g.winnerCount,
-  });
+  const winners = runSelectionForGiveaway(g, relatedEvents);
 
   await prisma.giveaway.update({
     where: { id: giveawayId },
@@ -266,18 +334,7 @@ export async function rerollGiveaway(
     return { winners: [], error: "Only previewed giveaways can be rerolled" };
 
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
-  const engagementTypes =
-    g.engagementTypes as string[] as GiveawayEngagementType[];
-  const weights = g.engagementWeights as Record<string, number> | undefined;
-  const winners = runGiveawaySelection({
-    relatedEvents,
-    engagementTypes: engagementTypes.length
-      ? engagementTypes
-      : DEFAULT_ENGAGEMENT_TYPES,
-    selectionMode: g.selectionMode,
-    engagementWeights: weights,
-    winnerCount: g.winnerCount,
-  });
+  const winners = runSelectionForGiveaway(g, relatedEvents);
 
   await prisma.giveaway.update({
     where: { id: giveawayId },
@@ -305,23 +362,11 @@ export async function excludeWinnerAndRedraw(
     return { winners: current, error: "Winner not in list" };
 
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
-  const engagementTypes =
-    g.engagementTypes as string[] as GiveawayEngagementType[];
-  const weights = g.engagementWeights as Record<string, number> | undefined;
   const excludedPubkeys = new Set(without.map((w) => w.pubkey));
   const eligibleEvents = relatedEvents.filter(
     (e) => !excludedPubkeys.has(e.pubkey)
   );
-  const newWinners = runGiveawaySelection({
-    relatedEvents: eligibleEvents,
-    engagementTypes: engagementTypes.length
-      ? engagementTypes
-      : DEFAULT_ENGAGEMENT_TYPES,
-    selectionMode: g.selectionMode,
-    engagementWeights: weights,
-    winnerCount: 1,
-  });
-  const updated = [...without, ...newWinners].slice(0, g.winnerCount);
+  const updated = runSelectionForGiveaway(g, eligibleEvents);
 
   await prisma.giveaway.update({
     where: { id: giveawayId },

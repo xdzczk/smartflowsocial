@@ -12,6 +12,7 @@ import {
   updateUserTimezone,
   updateUserTimeFormat,
   updateUserDateFormat,
+  updateUserPreferredNostrClient,
   getUserTimeFormat,
   getUserDateFormat,
   getLocaleDefaultsAppliedAt,
@@ -22,6 +23,7 @@ import {
   updateRelaysSchema,
   updateBlacklistSchema,
   updateScheduleIntervalsSchema,
+  updatePreferredNostrClientSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
 
@@ -76,6 +78,40 @@ function parseNotificationPreferencesFromFormData(formData: FormData): {
   };
 }
 
+async function handleLocaleDefaultsAction(
+  userId: string,
+  formData: FormData
+): Promise<ReturnType<typeof json> | null> {
+  const timeFormat = formData.get("timeFormat");
+  const dateFormat = formData.get("dateFormat");
+  if (
+    (timeFormat !== "12h" && timeFormat !== "24h") ||
+    (dateFormat !== "ddmmyyyy" &&
+      dateFormat !== "mmddyyyy" &&
+      dateFormat !== "yyyymmdd")
+  ) {
+    return json(
+      { error: "Invalid time or date format for locale defaults" },
+      { status: 400 }
+    );
+  }
+  const appliedAt = await getLocaleDefaultsAppliedAt(userId);
+  if (appliedAt != null) {
+    return json({ success: true, skipped: true });
+  }
+  const [currentTimeFormat, currentDateFormat] = await Promise.all([
+    getUserTimeFormat(userId),
+    getUserDateFormat(userId),
+  ]);
+  const stillOnDefaults =
+    currentTimeFormat === "24h" && currentDateFormat === "ddmmyyyy";
+  if (!stillOnDefaults) {
+    return json({ success: true, skipped: true });
+  }
+  await applyLocaleDefaultsOnce(userId, timeFormat, dateFormat);
+  return json({ success: true });
+}
+
 export async function handleGeneralSettingsAction(
   userId: string,
   action: string,
@@ -83,27 +119,21 @@ export async function handleGeneralSettingsAction(
 ) {
   if (action === "update_timezone") {
     const result = validateFormDataOrRespond(formData, updateTimezoneSchema);
-    if (!result.success) {
-      return result.response;
-    }
+    if (!result.success) return result.response;
     await updateUserTimezone(userId, result.data.timezone);
     return json({ success: true });
   }
 
   if (action === "update_relays") {
     const result = validateFormDataOrRespond(formData, updateRelaysSchema);
-    if (!result.success) {
-      return result.response;
-    }
+    if (!result.success) return result.response;
     await updateUserRelays(userId, result.data.relays);
     return json({ success: true });
   }
 
   if (action === "update_blacklist") {
     const result = validateFormDataOrRespond(formData, updateBlacklistSchema);
-    if (!result.success) {
-      return result.response;
-    }
+    if (!result.success) return result.response;
     await updateGiveawayBlacklist(userId, result.data.blacklist);
     return json({ success: true });
   }
@@ -113,10 +143,7 @@ export async function handleGeneralSettingsAction(
       formData,
       updateScheduleIntervalsSchema
     );
-    if (!result.success) {
-      return result.response;
-    }
-    // Convert numbers back to strings for storage
+    if (!result.success) return result.response;
     const intervals = result.data.scheduleIntervals.map((num) =>
       num.toString()
     );
@@ -152,36 +179,22 @@ export async function handleGeneralSettingsAction(
     return json({ error: "Invalid date format" }, { status: 400 });
   }
 
-  if (action === "apply_locale_defaults") {
-    const timeFormat = formData.get("timeFormat");
-    const dateFormat = formData.get("dateFormat");
-    if (
-      (timeFormat !== "12h" && timeFormat !== "24h") ||
-      (dateFormat !== "ddmmyyyy" &&
-        dateFormat !== "mmddyyyy" &&
-        dateFormat !== "yyyymmdd")
-    ) {
-      return json(
-        { error: "Invalid time or date format for locale defaults" },
-        { status: 400 }
-      );
-    }
-    // Run only once ever per user: if we already applied locale defaults, never overwrite
-    const appliedAt = await getLocaleDefaultsAppliedAt(userId);
-    if (appliedAt != null) {
-      return json({ success: true, skipped: true });
-    }
-    const [currentTimeFormat, currentDateFormat] = await Promise.all([
-      getUserTimeFormat(userId),
-      getUserDateFormat(userId),
-    ]);
-    const stillOnDefaults =
-      currentTimeFormat === "24h" && currentDateFormat === "ddmmyyyy";
-    if (!stillOnDefaults) {
-      return json({ success: true, skipped: true });
-    }
-    await applyLocaleDefaultsOnce(userId, timeFormat, dateFormat);
+  if (action === "update_preferred_nostr_client") {
+    const result = validateFormDataOrRespond(
+      formData,
+      updatePreferredNostrClientSchema
+    );
+    if (!result.success) return result.response;
+    await updateUserPreferredNostrClient(
+      userId,
+      result.data.preferredNostrClient,
+      result.data.customNostrClientBaseUrl ?? undefined
+    );
     return json({ success: true });
+  }
+
+  if (action === "apply_locale_defaults") {
+    return handleLocaleDefaultsAction(userId, formData);
   }
 
   return null;

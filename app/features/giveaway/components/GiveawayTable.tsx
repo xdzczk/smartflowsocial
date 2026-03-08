@@ -1,5 +1,6 @@
-import { Link } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import { MoreHorizontal, Quote, Share2 } from "lucide-react";
+import { useMemo } from "react";
 
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ import {
   INLINE_ICON_STROKE,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 interface Post {
   id: string;
@@ -88,6 +90,18 @@ export function GiveawayTable({
   onPostClick,
 }: GiveawayTableProps) {
   const { formatDate } = useFormattedDate();
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
 
   return (
     <>
@@ -282,7 +296,7 @@ export function GiveawayTable({
                     >
                       <DropdownMenuItem asChild>
                         <Link
-                          to={`https://primal.net/e/${post.signedEvent?.id ?? ""}`}
+                          to={nostrUrls.eventUrl(post.signedEvent?.id ?? "")}
                           target="_blank"
                           rel="noreferrer"
                         >

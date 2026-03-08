@@ -2,14 +2,20 @@
  * Post viewer (search result) – layout aligned with Primal: author, content, media, stats, actions.
  */
 
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import { Copy, ExternalLink, Quote, Repeat, User } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
+import {
+  eventUrl,
+  getNostrClientConfig,
+  getNostrClientDisplayName,
+} from "~/lib/nostr-client-urls";
 
 function truncateEventId(id: string, head = 12, tail = 8): string {
   if (id.length <= head + tail + 3) return id;
@@ -54,6 +60,28 @@ export function SearchResult({
 }: SearchResultProps) {
   const { formatDate } = useFormattedDate();
   const [copied, setCopied] = useState(false);
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrClientConfig = useMemo(
+    () =>
+      getNostrClientConfig(
+        rootData?.user?.preferredNostrClient,
+        rootData?.user?.customNostrClientBaseUrl
+      ),
+    [
+      rootData?.user?.preferredNostrClient,
+      rootData?.user?.customNostrClientBaseUrl,
+    ]
+  );
+  const viewEventLabel = getNostrClientDisplayName(
+    rootData?.user?.preferredNostrClient
+  );
   const displayName =
     result.authorName.trim() || `${result.pubkey.slice(0, 8)}...`;
 
@@ -240,8 +268,8 @@ export function SearchResult({
           Schedule Repost (Kind 6)
         </button>
 
-        <a
-          href={`https://primal.net/e/${result.id}`}
+        <Link
+          to={eventUrl(result.id, nostrClientConfig)}
           target="_blank"
           rel="noopener noreferrer"
           className="bg-card dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
@@ -251,8 +279,8 @@ export function SearchResult({
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
-          View on Primal
-        </a>
+          View on {viewEventLabel}
+        </Link>
       </div>
     </div>
   );

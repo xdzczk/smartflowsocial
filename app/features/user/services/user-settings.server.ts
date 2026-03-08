@@ -687,6 +687,79 @@ export function updateUserDateFormat(
   });
 }
 
+export const PREFERRED_NOSTR_CLIENT_PRESETS = [
+  "PRIMAL",
+  "DAMUS",
+  "AMETHYST",
+  "NOSTUR",
+  "NOSTRUDEL",
+  "IRIS",
+  "YAKIHONNE",
+  "CUSTOM",
+] as const;
+export type PreferredNostrClientPreset =
+  (typeof PREFERRED_NOSTR_CLIENT_PRESETS)[number];
+
+/**
+ * Gets user's preferred Nostr client for "View note/article" links.
+ */
+export async function getUserPreferredNostrClient(
+  userId: string
+): Promise<PreferredNostrClientPreset> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { preferredNostrClient: true },
+  });
+  const v = user?.preferredNostrClient;
+  if (
+    v &&
+    PREFERRED_NOSTR_CLIENT_PRESETS.includes(v as PreferredNostrClientPreset)
+  ) {
+    return v as PreferredNostrClientPreset;
+  }
+  return "PRIMAL";
+}
+
+/**
+ * Gets user's custom Nostr client base URL (when preferredNostrClient is CUSTOM).
+ */
+export async function getUserCustomNostrClientBaseUrl(
+  userId: string
+): Promise<string | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { customNostrClientBaseUrl: true },
+  });
+  const v = user?.customNostrClientBaseUrl;
+  return typeof v === "string" && v.trim() !== "" ? v.trim() : null;
+}
+
+/**
+ * Updates user's preferred Nostr client and optional custom base URL.
+ */
+export function updateUserPreferredNostrClient(
+  userId: string,
+  preferredNostrClient: PreferredNostrClientPreset,
+  customNostrClientBaseUrl?: string | null
+): Promise<User> {
+  const data: {
+    preferredNostrClient: string;
+    customNostrClientBaseUrl?: string | null;
+  } = {
+    preferredNostrClient,
+  };
+  if (preferredNostrClient === "CUSTOM" && customNostrClientBaseUrl != null) {
+    const url = customNostrClientBaseUrl.trim();
+    data.customNostrClientBaseUrl = url !== "" ? url : null;
+  } else {
+    data.customNostrClientBaseUrl = null;
+  }
+  return prisma.user.update({
+    where: { id: userId },
+    data,
+  });
+}
+
 /**
  * Returns when the user last opened the Engagement Feed, or null if never.
  * Used for time-based "unread" (items newer than this are unread).
@@ -895,6 +968,8 @@ export async function updateRunwaySettings(
           pushNotifyPublishSuccess: true,
           pushNotifyPublishFailure: true,
           timeFormat: true,
+          preferredNostrClient: true,
+          customNostrClientBaseUrl: true,
           isChild: true,
           parentNpub: true,
           pendingParentRequests: true,

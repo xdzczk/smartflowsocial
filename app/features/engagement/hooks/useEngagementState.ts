@@ -12,9 +12,8 @@ export type EngagementSortBy = "newest" | "trust" | "zaps";
 export function useEngagementState() {
   const [selectedPost, setSelectedPost] = useState<unknown>(null);
   const [activeTab, setActiveTab] = useState<EngagementTypeTab>("all");
-  const [filterUnreadOnly, setFilterUnreadOnly] = useState(false);
   const [filterHighReputation, setFilterHighReputation] = useState(false);
-  const [filterMentionsOnly, setFilterMentionsOnly] = useState(false);
+  const [filterFollowingOnly, setFilterFollowingOnly] = useState(false);
   const [sortBy, setSortBy] = useState<EngagementSortBy>("newest");
 
   return {
@@ -22,12 +21,10 @@ export function useEngagementState() {
     setSelectedPost,
     activeTab,
     setActiveTab,
-    filterUnreadOnly,
-    setFilterUnreadOnly,
     filterHighReputation,
     setFilterHighReputation,
-    filterMentionsOnly,
-    setFilterMentionsOnly,
+    filterFollowingOnly,
+    setFilterFollowingOnly,
     sortBy,
     setSortBy,
   };

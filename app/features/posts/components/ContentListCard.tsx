@@ -1,5 +1,6 @@
-import { Link } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import { MoreHorizontal, Repeat } from "lucide-react";
+import { useMemo } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -14,6 +15,7 @@ import {
   INLINE_ICON_SIZE_CLASS,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import type {
   CombinedContent,
@@ -84,6 +86,18 @@ export function ContentListCard({
   onMenuOpenChange,
 }: ContentListCardProps) {
   const { dateLocale } = useFormattedDate();
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
   const queueDisplay = getQueueTypeDisplay(item.queueType);
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
@@ -228,7 +242,7 @@ export function ContentListCard({
               {item.type === "post" && item.originalData.signedEvent?.id ? (
                 <DropdownMenuItem asChild>
                   <Link
-                    to={`https://primal.net/e/${item.originalData.signedEvent.id}`}
+                    to={nostrUrls.eventUrl(item.originalData.signedEvent.id)}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -241,7 +255,11 @@ export function ContentListCard({
                 item.originalData.signedEvent?.id) ? (
                 <DropdownMenuItem asChild>
                   <Link
-                    to={`https://primal.net/a/${item.originalData.nostrEventId ?? item.originalData.signedEvent?.id ?? ""}`}
+                    to={nostrUrls.articleUrl(
+                      item.originalData.nostrEventId ??
+                        item.originalData.signedEvent?.id ??
+                        ""
+                    )}
                     target="_blank"
                     rel="noreferrer"
                   >

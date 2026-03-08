@@ -3,6 +3,10 @@ import type { NostrEventData, SignedEvent } from "~/features/nostr/types";
 
 declare global {
   interface Window {
+    webln?: {
+      enable?(): Promise<void>;
+      sendPayment(pr: string): Promise<{ preimage: string }>;
+    };
     nostr?: {
       getPublicKey(): Promise<string>;
       signEvent(

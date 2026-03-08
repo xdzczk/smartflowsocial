@@ -16,23 +16,19 @@ const SORT_OPTIONS: Array<{ value: EngagementSortBy; label: string }> = [
 ];
 
 interface EngagementFilterBarProps {
-  filterUnreadOnly: boolean;
-  setFilterUnreadOnly: (v: boolean) => void;
   filterHighReputation: boolean;
   setFilterHighReputation: (v: boolean) => void;
-  filterMentionsOnly: boolean;
-  setFilterMentionsOnly: (v: boolean) => void;
+  filterFollowingOnly: boolean;
+  setFilterFollowingOnly: (v: boolean) => void;
   sortBy: EngagementSortBy;
   setSortBy: (v: EngagementSortBy) => void;
 }
 
 export function EngagementFilterBar({
-  filterUnreadOnly,
-  setFilterUnreadOnly,
   filterHighReputation,
   setFilterHighReputation,
-  filterMentionsOnly,
-  setFilterMentionsOnly,
+  filterFollowingOnly,
+  setFilterFollowingOnly,
   sortBy,
   setSortBy,
 }: EngagementFilterBarProps) {
@@ -43,12 +39,12 @@ export function EngagementFilterBar({
       </span>
       <button
         type="button"
-        onClick={() => setFilterUnreadOnly(!filterUnreadOnly)}
+        onClick={() => setFilterFollowingOnly(!filterFollowingOnly)}
         className={`${FILTER_BUTTON_BASE} ${
-          filterUnreadOnly ? FILTER_ACTIVE : FILTER_INACTIVE
+          filterFollowingOnly ? FILTER_ACTIVE : FILTER_INACTIVE
         }`}
       >
-        Unread only
+        Following only
       </button>
       <button
         type="button"
@@ -58,15 +54,6 @@ export function EngagementFilterBar({
         }`}
       >
         High reputation
-      </button>
-      <button
-        type="button"
-        onClick={() => setFilterMentionsOnly(!filterMentionsOnly)}
-        className={`${FILTER_BUTTON_BASE} ${
-          filterMentionsOnly ? FILTER_ACTIVE : FILTER_INACTIVE
-        }`}
-      >
-        Mentions only
       </button>
       <span className="text-muted-foreground border-border ml-2 border-l pl-2 text-xs font-medium">
         Sort:

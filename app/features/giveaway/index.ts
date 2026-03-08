@@ -17,11 +17,13 @@
 // ============================================================================
 
 export type {
+  EngagementTypeConfig,
+  GiveawayEngagementConfig,
+  GiveawayWinnerEntry,
+  PrimalEvent,
   RelatedEvent,
   GiveawayProfile,
   GiveawayStats,
-  PrimalEvent,
-  GiveawayWinnerEntry,
 } from "./types";
 
 // ============================================================================

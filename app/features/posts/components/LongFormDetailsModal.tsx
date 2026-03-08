@@ -1,4 +1,4 @@
-import { useFetcher, Link } from "@remix-run/react";
+import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
 import { Bookmark, MoreVertical } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -16,6 +16,7 @@ import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
 import {
   formatForDisplay,
@@ -317,6 +318,18 @@ export default function LongFormDetailsModal({
   const { dateLocale } = useFormattedDate();
   const [showEventData, setShowEventData] = useState(false);
   const deleteFetcher = useFetcher();
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
 
   // Close modal when delete completes successfully (e.g. from Flow or Scheduled section)
   useEffect(() => {
@@ -577,7 +590,17 @@ export default function LongFormDetailsModal({
                   ? (post.signedEvent as { id?: string }).id
                   : undefined)) ? (
                 <Link
-                  to={`https://primal.net/a/${String(post.nostrEventId ?? (typeof post.signedEvent === "object" && post.signedEvent !== null && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
+                  to={nostrUrls.articleUrl(
+                    String(
+                      post.nostrEventId ??
+                        (typeof post.signedEvent === "object" &&
+                        post.signedEvent !== null &&
+                        "id" in post.signedEvent
+                          ? (post.signedEvent as { id?: string }).id
+                          : "") ??
+                        ""
+                    )
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="View article (opens in new tab)"

@@ -2,13 +2,15 @@ import {
   useFetcher,
   useNavigate,
   useRevalidator,
+  useRouteLoaderData,
   useSearchParams,
 } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 import type { ToastMessage } from "~/components/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import {
   addHours,
   formatForDateTimeLocal,
@@ -163,6 +165,19 @@ export function usePublishedPosts({
   const [selectedLongFormPost, setSelectedLongFormPost] =
     useState<LongFormPostData | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
 
   const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const bulkDeleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
@@ -610,7 +625,13 @@ export function usePublishedPosts({
             setToast({
               type: "success",
               message: "Article reposted successfully!",
-              link: `https://primal.net/a/${String(originalPost?.nostrEventId ?? originalPost?.signedEvent?.id ?? "")}`,
+              link: nostrUrls.articleUrl(
+                String(
+                  originalPost?.nostrEventId ??
+                    originalPost?.signedEvent?.id ??
+                    ""
+                )
+              ),
               linkText: "View Original Article",
             });
 
@@ -654,7 +675,7 @@ export function usePublishedPosts({
     if (longformRepostFetcher.data) {
       void handleLongformRepost();
     }
-  }, [longformRepostFetcher.data, user]);
+  }, [longformRepostFetcher.data, user, nostrUrls]);
 
   // Handle longform quote responses
   useEffect(() => {
@@ -721,7 +742,12 @@ export function usePublishedPosts({
             setToast({
               type: "success",
               message: "Post reposted successfully!",
-              link: `https://primal.net/e/${String(eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1] ?? "")}`,
+              link: nostrUrls.eventUrl(
+                String(
+                  eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1] ??
+                    ""
+                )
+              ),
               linkText: "View Original Post",
             });
 
@@ -772,7 +798,7 @@ export function usePublishedPosts({
     if (individualRepostFetcher.data) {
       void handleRepost();
     }
-  }, [individualRepostFetcher.data, user, navigate]);
+  }, [individualRepostFetcher.data, user, navigate, nostrUrls]);
 
   return {
     currentTab,

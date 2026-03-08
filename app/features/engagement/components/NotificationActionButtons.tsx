@@ -37,6 +37,10 @@ interface NotificationActionButtonsProps {
   /** When set, show a Zap action that calls this with the reply author's npub */
   zapNpub?: string;
   onZapClick?: (npub: string) => void;
+  /** URL for "View on client" link (from preferred Nostr client setting). */
+  viewEventUrl?: string;
+  /** Label for "View on client" link (e.g. "View on Primal"). */
+  viewEventLabel?: string;
 }
 
 export function NotificationActionButtons({
@@ -52,7 +56,10 @@ export function NotificationActionButtons({
   onToggleChildReplies,
   zapNpub,
   onZapClick,
+  viewEventUrl,
+  viewEventLabel = "View on Primal",
 }: NotificationActionButtonsProps) {
+  const eventViewUrl = viewEventUrl ?? `https://primal.net/e/${eventId}`;
   return (
     <div className="mb-2 flex flex-wrap items-center gap-2">
       {/* Zap action - send sats to reply author */}
@@ -177,14 +184,14 @@ export function NotificationActionButtons({
         </button>
       ) : null}
 
-      {/* View on Primal Link */}
+      {/* View on client link */}
       <Link
-        to={`https://primal.net/e/${eventId}`}
+        to={eventViewUrl}
         target="_blank"
         rel="noreferrer"
         className="text-primary ml-auto text-xs hover:underline"
       >
-        View on Primal →
+        {viewEventLabel} →
       </Link>
     </div>
   );

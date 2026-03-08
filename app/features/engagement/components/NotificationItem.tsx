@@ -51,6 +51,10 @@ interface NotificationItemProps {
   ) => void;
   /** Reply templates for slash-command / Insert template */
   replyTemplates?: ReplyTemplate[];
+  /** URL for "View on client" link (from preferred Nostr client setting). */
+  viewEventUrl?: string;
+  /** Label for "View on client" link (e.g. "View on Primal"). */
+  viewEventLabel?: string;
 }
 
 // Type badge configuration for each notification type
@@ -107,6 +111,8 @@ export function NotificationItem({
   isKeyboardFocused = false,
   registerKeyboardHandlers,
   replyTemplates = [],
+  viewEventUrl,
+  viewEventLabel,
 }: NotificationItemProps) {
   const { formatDate } = useFormattedDate();
   const [zapModalNpub, setZapModalNpub] = useState<string | null>(null);
@@ -252,6 +258,8 @@ export function NotificationItem({
             }
             zapNpub={zapNpub}
             onZapClick={zapNpub ? (npub) => setZapModalNpub(npub) : undefined}
+            viewEventUrl={viewEventUrl}
+            viewEventLabel={viewEventLabel}
           />
 
           {/* Reply Input */}

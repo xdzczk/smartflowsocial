@@ -1,9 +1,11 @@
-import { Link } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import type { useFetcher } from "@remix-run/react";
+import { useMemo } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import {
   getQueueColor,
@@ -92,6 +94,18 @@ export function RecyclablesTable({
   recycleFetcher,
 }: RecyclablesTableProps) {
   const { formatDate } = useFormattedDate();
+  const rootData = useRouteLoaderData("root") as
+    | {
+        user?: {
+          preferredNostrClient?: string;
+          customNostrClientBaseUrl?: string | null;
+        } | null;
+      }
+    | undefined;
+  const nostrUrls = useMemo(
+    () => getNostrClientUrlsFromUser(rootData?.user),
+    [rootData?.user]
+  );
 
   return (
     <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
@@ -269,7 +283,7 @@ export function RecyclablesTable({
                 <td className="p-3 text-center">
                   <div className="flex items-center justify-center gap-2">
                     <Link
-                      to={`https://primal.net/e/${post.signedEvent.id}`}
+                      to={nostrUrls.eventUrl(post.signedEvent.id)}
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}

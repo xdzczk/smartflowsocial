@@ -3,6 +3,7 @@
  * Centralized data fetching for engagement feed page
  */
 
+import { fetchFromCache } from "~/features/cache";
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { getThreadViewWithCache } from "~/features/cache/thread-view-cache.server";
 import type { SignedEvent } from "~/features/nostr/types";
@@ -286,9 +287,38 @@ function getMutedNpubsFromUser(user: UserWithHashTagPresets): string[] {
     : [];
 }
 
+/**
+ * Fetch the logged-in user's follow list (kind 3 contacts) and return hex pubkeys.
+ * Returns [] if not available or on error.
+ */
+async function getFollowedPubkeys(userPubkeyHex: string): Promise<string[]> {
+  try {
+    const responses = await fetchFromCache("event_by_addr", {
+      kind: 3,
+      pubkey: userPubkeyHex,
+      identifier: "",
+    });
+    if (!Array.isArray(responses) || responses.length === 0) return [];
+    for (const item of responses) {
+      if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
+      const ev = item[2] as { kind?: number; tags?: string[][] };
+      if (ev.kind !== 3 || !Array.isArray(ev.tags)) continue;
+      return ev.tags.flatMap((t) =>
+        Array.isArray(t) && t[0] === "p" && typeof t[1] === "string"
+          ? [t[1]]
+          : []
+      );
+    }
+  } catch {
+    // No follow list or cache error
+  }
+  return [];
+}
+
 function buildEmptyEngagementResponse(
   user: UserWithHashTagPresets,
-  lastCheckedAt: Date | null
+  lastCheckedAt: Date | null,
+  followedPubkeys: string[] = []
 ) {
   const stats: Record<string, EventStats> = {};
   const trustScores: Record<string, number> = {};
@@ -311,6 +341,7 @@ function buildEmptyEngagementResponse(
     trustScores,
     engagementItemStates,
     lastCheckedAt: lastCheckedAt?.toISOString() ?? null,
+    followedPubkeys,
   };
 }
 
@@ -343,24 +374,34 @@ function buildFallbackStatsFromPosts(
     }, {});
 }
 
-/** Extract kind-1 event from Primal response item (EVENT tuple or raw event object). */
+/** Extract kind-1 event from Primal response item (EVENT tuple, raw event, or { event } wrapper). */
 function getKind1EventFromItem(
   item: unknown
 ): { kind: number; tags?: NostrTag[]; [key: string]: unknown } | null {
+  // Unwrap { event: ... } (some Primal responses wrap the event)
+  let raw: unknown = item;
   if (
-    Array.isArray(item) &&
-    item[0] === "EVENT" &&
-    typeof item[2] === "object" &&
-    item[2] !== null &&
-    !Array.isArray(item[2])
+    typeof item === "object" &&
+    item !== null &&
+    !Array.isArray(item) &&
+    "event" in item
   ) {
-    const ev = item[2] as { kind?: number; tags?: NostrTag[] };
+    raw = (item as { event: unknown }).event;
+  }
+  if (
+    Array.isArray(raw) &&
+    raw[0] === "EVENT" &&
+    typeof raw[2] === "object" &&
+    raw[2] !== null &&
+    !Array.isArray(raw[2])
+  ) {
+    const ev = raw[2] as { kind?: number; tags?: NostrTag[] };
     return ev.kind === 1
       ? (ev as { kind: number; tags?: NostrTag[]; [key: string]: unknown })
       : null;
   }
-  if (typeof item === "object" && item !== null && !Array.isArray(item)) {
-    const ev = item as { kind?: number; tags?: NostrTag[] };
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    const ev = raw as { kind?: number; tags?: NostrTag[] };
     return ev.kind === 1
       ? (ev as { kind: number; tags?: NostrTag[]; [key: string]: unknown })
       : null;
@@ -372,7 +413,11 @@ function isPrimalItemQuoteRepostMentioningUser(
   item: PrimalEvent | Record<string, unknown>,
   userPubkeyHex: string
 ): boolean {
-  const event = getKind1EventFromItem(item);
+  const event = getKind1EventFromItem(
+    "event" in item && typeof (item as { event: unknown }).event !== "undefined"
+      ? (item as { event: unknown }).event
+      : item
+  );
   if (!event) return false;
   const ev = event as {
     id?: unknown;
@@ -395,7 +440,8 @@ function isPrimalItemQuoteRepostMentioningUser(
   const pTagsWithUser = tags.filter(
     (tag: NostrTag) => tag[0] === "p" && tag[1] === userPubkeyHex
   );
-  return eTags.length > 0 && pTagsWithUser.length > 0;
+  if (pTagsWithUser.length === 0) return false;
+  return eTags.length > 0 || pTagsWithUser.length > 0;
 }
 
 function extractQuoteRepostEventsFromPrimal(
@@ -404,7 +450,25 @@ function extractQuoteRepostEventsFromPrimal(
 ): NotificationEvent[] {
   let items: unknown[] = [];
   if (Array.isArray(notificationsData)) {
-    items = notificationsData;
+    if (notificationsData.length > 0) {
+      const first: unknown = notificationsData[0];
+      if (
+        typeof first === "object" &&
+        first !== null &&
+        !Array.isArray(first) &&
+        ("notifications" in first || "data" in first || "events" in first)
+      ) {
+        const obj = first as Record<string, unknown>;
+        const notifications: unknown = obj["notifications"];
+        const data: unknown = obj["data"];
+        const events: unknown = obj["events"];
+        if (Array.isArray(notifications)) items = notifications as unknown[];
+        else if (Array.isArray(data)) items = data as unknown[];
+        else if (Array.isArray(events)) items = events as unknown[];
+      } else {
+        items = notificationsData;
+      }
+    }
   } else if (
     notificationsData &&
     typeof notificationsData === "object" &&
@@ -418,6 +482,7 @@ function extractQuoteRepostEventsFromPrimal(
   if (items.length === 0) return [];
   const result: NotificationEvent[] = [];
   for (const item of items) {
+    if (Array.isArray(item) && item[0] === "EOSE") continue;
     if (
       !isPrimalItemQuoteRepostMentioningUser(
         item as PrimalEvent | Record<string, unknown>,
@@ -526,17 +591,20 @@ export async function loadEngagementFeedData(
   const mutedNpubs = getMutedNpubsFromUser(user);
   const eventIds = getEventIdsFromPosts(posts);
 
+  const followedPubkeysPromise = getFollowedPubkeys(userPubkeyHex);
+
   let stats: Record<string, EventStats> = {};
   let allNotifications: Notification[] = [];
   const userProfilesMap = new Map<string, User>();
   const trustScoresMap = new Map<string, number>();
 
   if (eventIds.length === 0) {
-    return buildEmptyEngagementResponse(user, lastCheckedAt);
+    const followedPubkeys = await followedPubkeysPromise;
+    return buildEmptyEngagementResponse(user, lastCheckedAt, followedPubkeys);
   }
 
-  // Start get_notifications call early (parallel with event processing)
-  const notificationsPromise = connectToPrimalCache("get_notifications", {
+  // Fetch notifications (use fetchFromCache so empty/EOSE-only response doesn't throw)
+  const notificationsPromise = fetchFromCache("get_notifications", {
     pubkey: userPubkeyHex,
     limit: 100,
   });
@@ -733,6 +801,8 @@ export async function loadEngagementFeedData(
     await updateEngagementLastCheckedAt(userId);
   }
 
+  const followedPubkeys = await followedPubkeysPromise;
+
   return {
     posts: postsAsDTOs,
     stats,
@@ -746,6 +816,7 @@ export async function loadEngagementFeedData(
     trustScores,
     engagementItemStates,
     lastCheckedAt: lastCheckedAt?.toISOString() ?? null,
+    followedPubkeys,
   };
 }
 
