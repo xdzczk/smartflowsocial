@@ -6,7 +6,11 @@
  */
 
 import { logWarning } from "~/lib/error-logger.server";
-import { prisma } from "~/lib/prisma.server";
+
+import {
+  findManyPosts,
+  updatePost,
+} from "../repositories/post-queries-data.server";
 
 import type { PostState } from "./post-state";
 
@@ -61,14 +65,13 @@ export function validatePostStateConsistency(post: {
 export async function validateAllPostStates(
   limit = 1000
 ): Promise<StateInconsistency[]> {
-  const posts = await prisma.post.findMany({
-    select: {
-      id: true,
-      userId: true,
-      currentState: true,
-    },
-    take: limit,
-  });
+  const posts = await findManyPosts(
+    {},
+    {
+      select: { id: true, userId: true, currentState: true },
+      take: limit,
+    }
+  );
 
   const inconsistencies: StateInconsistency[] = [];
 
@@ -93,12 +96,8 @@ export async function fixPostStateInconsistencies(
 
   for (const inconsistency of inconsistencies) {
     try {
-      // Set default state to DRAFT if missing or invalid
-      await prisma.post.update({
-        where: { id: inconsistency.postId },
-        data: {
-          currentState: "DRAFT",
-        },
+      await updatePost(inconsistency.postId, inconsistency.userId, {
+        currentState: "DRAFT",
       });
       fixed++;
     } catch (error) {
@@ -120,10 +119,8 @@ export async function fixPostStateInconsistencies(
 export async function backfillCurrentState(
   limit = 1000
 ): Promise<{ backfilled: number; errors: number }> {
-  // Find posts without currentState or with invalid currentState
-  // Note: currentState is non-nullable with default, but we check for empty string and invalid states
-  const posts = await prisma.post.findMany({
-    where: {
+  const posts = await findManyPosts(
+    {
       OR: [
         { currentState: "" },
         {
@@ -135,19 +132,21 @@ export async function backfillCurrentState(
               "PUBLISHED",
               "FAILED",
               "CANCELLED",
-            ] as string[],
+            ],
           },
         },
       ],
     },
-    select: {
-      id: true,
-      userId: true,
-      scheduledAtUtc: true,
-      publishedAt: true,
-    },
-    take: limit,
-  });
+    {
+      select: {
+        id: true,
+        userId: true,
+        scheduledAtUtc: true,
+        publishedAt: true,
+      },
+      take: limit,
+    }
+  );
 
   let backfilled = 0;
   let errors = 0;
@@ -165,11 +164,8 @@ export async function backfillCurrentState(
         derivedState = "DRAFT";
       }
 
-      await prisma.post.update({
-        where: { id: post.id },
-        data: {
-          currentState: derivedState,
-        },
+      await updatePost(post.id, post.userId, {
+        currentState: derivedState,
       });
 
       backfilled++;

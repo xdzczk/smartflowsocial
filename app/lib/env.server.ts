@@ -36,9 +36,13 @@ interface EnvConfig {
   OWNER_NWC_RELAYS?: string;
   NOSTR_NSEC?: string;
   SENTRY_DSN?: string;
+  SENTRY_TRACES_SAMPLE_RATE?: string;
+  SENTRY_PROFILES_SAMPLE_RATE?: string;
   RELAY_HEALTH_STORE?: string; // "memory" | "redis" (optional)
   NODE_ENV?: string;
   PORT?: string;
+  HOST?: string; // Listen host (e.g. 0.0.0.0 for Docker)
+  DISABLE_RATE_LIMIT?: string; // "true" to disable (e.g. E2E)
   METRICS_PORT?: string;
   WORKER_METRICS_PORT?: string;
   FLY_REGION?: string;
@@ -66,6 +70,20 @@ interface EnvConfig {
   BLOSSOM_INTERNAL_SECRET?: string;
   BLOSSOM_SFS_API_URL?: string;
   BLOSSOM_UPLOAD_TOKEN_SECRET?: string;
+
+  // Referral
+  REFERRAL_LANDING_URL?: string;
+  REFERRAL_MANUAL_PAYOUT_SECRET?: string;
+  REFERRAL_ADMIN_NPUBS?: string;
+
+  // Web Push (VAPID)
+  VAPID_PUBLIC_KEY?: string;
+  VAPID_PRIVATE_KEY?: string;
+  VAPID_SUBJECT?: string;
+
+  // Ops / tooling
+  COOLIFY_URL?: string;
+  CYPRESS?: string; // Set by Cypress when running E2E (rate-limit bypass)
 }
 
 interface ValidationError {
@@ -159,6 +177,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "NOSTR_NSEC",
     "NOSTR_PUBLISHER_API_TOKEN",
     "SENTRY_DSN",
+    "SENTRY_TRACES_SAMPLE_RATE",
+    "SENTRY_PROFILES_SAMPLE_RATE",
     "RELAY_HEALTH_STORE",
     "PORT",
     "METRICS_PORT",
@@ -172,6 +192,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "ALLOWED_ORIGINS",
     "METRICS_TOKEN",
     "METRICS_ALLOWED_IPS",
+    "HOST",
+    "DISABLE_RATE_LIMIT",
     "NOSTR_AUTH_V2_ENABLED",
     "ENFORCE_NOSTR_SESSION_PUBKEY",
     "MEDIA_PIPELINE_V2_ENABLED",
@@ -180,6 +202,14 @@ function addOptionalConfig(config: EnvConfig): void {
     "BLOSSOM_SFS_API_URL",
     "BLOSSOM_UPLOAD_TOKEN_SECRET",
     "STORAGE_CDN_URL",
+    "REFERRAL_LANDING_URL",
+    "REFERRAL_MANUAL_PAYOUT_SECRET",
+    "REFERRAL_ADMIN_NPUBS",
+    "VAPID_PUBLIC_KEY",
+    "VAPID_PRIVATE_KEY",
+    "VAPID_SUBJECT",
+    "COOLIFY_URL",
+    "CYPRESS",
   ];
 
   optionalVars.forEach((key) => {

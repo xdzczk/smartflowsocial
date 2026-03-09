@@ -22,11 +22,14 @@ const { mockExecute } = vi.hoisted(() => {
   return { mockExecute };
 });
 
-vi.mock("~/features/posts/use-cases/create-post.use-case.server", () => ({
-  CreatePostUseCase: class {
-    execute = mockExecute;
-  },
-}));
+vi.mock(
+  "~/features/posts/composer/use-cases/create-post.use-case.server",
+  () => ({
+    CreatePostUseCase: class {
+      execute = mockExecute;
+    },
+  })
+);
 
 vi.mock("~/models/post.queries.server", () => ({
   getPostsByIds: vi.fn(),

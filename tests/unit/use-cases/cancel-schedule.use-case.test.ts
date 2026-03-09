@@ -40,7 +40,7 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { CancelScheduleUseCase } from "~/features/posts/use-cases/cancel-schedule.use-case.server";
+import { CancelScheduleUseCase } from "~/features/posts/scheduling/index.server";
 import { cancelPostJob } from "~/infra/queue";
 import { recordPostCancelled } from "~/lib/metrics/business-metrics.server";
 import { updatePost } from "~/models/post.commands.server";

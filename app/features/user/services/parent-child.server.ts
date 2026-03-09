@@ -1,8 +1,18 @@
-import type { User } from "@prisma/client";
-
 import type { ProfileData } from "~/features/nostr/types";
+import type { User } from "~/features/user/data/user-prisma-types.server";
+import {
+  findUsersForParentChildSearch,
+  findUserByNpubForParentChild,
+  updateUserPendingParentRequestsPush,
+  updateUserPendingParentRequests,
+  findConfirmedChildrenForParent,
+  findPendingChildrenForParent,
+  findPendingParentRequestsForChild,
+  updateUserAcceptChildLink,
+  updateUserRejectChildLink,
+  updateUserUnlinkChild,
+} from "~/features/user/repositories/parent-child-data.server";
 import { logWarning, logError } from "~/lib/error-logger.server";
-import { prisma } from "~/lib/prisma.server";
 
 const ERROR_CHILD_NOT_FOUND = "Child not found";
 
@@ -66,28 +76,11 @@ export async function searchUsersByProfileName(
   if (!trimmed) return [];
 
   // Broad prefilter to avoid full table scan; then filter in app
-  const fetched = await prisma.user.findMany({
-    where: {
-      AND: [
-        excludeNpub ? { npub: { not: excludeNpub } } : {},
-        {
-          OR: [
-            { npub: { contains: trimmed, mode: "insensitive" } },
-            { nostrProfile: { not: { equals: null } } },
-          ],
-        },
-      ],
-    },
-    take: 200,
-    select: {
-      id: true,
-      npub: true,
-      nostrProfile: true,
-      isChild: true,
-      parentNpub: true,
-      pendingParentRequests: true,
-    },
-  });
+  const fetched = await findUsersForParentChildSearch(
+    excludeNpub,
+    trimmed,
+    200
+  );
 
   const lowered = trimmed.toLowerCase();
   const filtered = fetched
@@ -155,7 +148,7 @@ export async function requestChildLink(
     });
   }
 
-  const childUser = await prisma.user.findUnique({ where: { npub: child } });
+  const childUser = await findUserByNpubForParentChild(child);
   if (!childUser) {
     logError(new Error("[requestChildLink] Child account not found in DB"), {
       child,
@@ -176,12 +169,7 @@ export async function requestChildLink(
     return { ok: true };
   }
 
-  await prisma.user.update({
-    where: { npub: childUser.npub },
-    data: {
-      pendingParentRequests: { push: parent },
-    },
-  });
+  await updateUserPendingParentRequestsPush(childUser.npub, parent);
 
   return { ok: true };
 }
@@ -203,7 +191,7 @@ export async function cancelChildLinkRequest(
     });
   }
 
-  const childUser = await prisma.user.findUnique({ where: { npub: child } });
+  const childUser = await findUserByNpubForParentChild(child);
   if (!childUser)
     return Promise.resolve({ ok: false, reason: "Child account not found." });
 
@@ -215,12 +203,10 @@ export async function cancelChildLinkRequest(
     });
   }
 
-  await prisma.user.update({
-    where: { npub: child },
-    data: {
-      pendingParentRequests: pending.filter((p) => p !== parent),
-    },
-  });
+  await updateUserPendingParentRequests(
+    child,
+    pending.filter((p) => p !== parent)
+  );
 
   return Promise.resolve({ ok: true });
 }
@@ -229,38 +215,21 @@ export async function cancelChildLinkRequest(
  * Gets all confirmed children for a parent account
  */
 export async function getConfirmedChildrenForParent(parentNpub: string) {
-  return prisma.user.findMany({
-    where: { parentNpub },
-    select: {
-      id: true,
-      npub: true,
-      nostrProfile: true,
-      isChild: true,
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  return findConfirmedChildrenForParent(parentNpub);
 }
 
 /**
  * Gets all pending child requests for a parent account
  */
 export async function getPendingChildrenForParent(parentNpub: string) {
-  return prisma.user.findMany({
-    where: { pendingParentRequests: { has: parentNpub } },
-    select: { id: true, npub: true, nostrProfile: true },
-    orderBy: { createdAt: "asc" },
-  });
+  return findPendingChildrenForParent(parentNpub);
 }
 
 /**
  * Gets all pending parent requests for a child account
  */
 export async function getPendingParentRequestsForChild(childNpub: string) {
-  const child = await prisma.user.findUnique({
-    where: { npub: childNpub },
-    select: { pendingParentRequests: true },
-  });
-  return child ? child.pendingParentRequests : [];
+  return findPendingParentRequestsForChild(childNpub);
 }
 
 /**
@@ -271,7 +240,7 @@ export async function respondToChildRequest(
   parentNpub: string,
   accept: boolean
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const child = await prisma.user.findUnique({ where: { npub: childNpub } });
+  const child = await findUserByNpubForParentChild(childNpub);
   if (!child) return { ok: false, reason: ERROR_CHILD_NOT_FOUND };
 
   const pending = child.pendingParentRequests;
@@ -279,26 +248,14 @@ export async function respondToChildRequest(
     return { ok: false, reason: "No pending request from this parent" };
   }
 
+  const newPending = pending.filter((p) => p !== parentNpub);
   if (accept) {
     if (child.parentNpub) {
       return { ok: false, reason: "Already linked to a parent." };
     }
-
-    await prisma.user.update({
-      where: { npub: childNpub },
-      data: {
-        parentNpub,
-        isChild: true,
-        pendingParentRequests: pending.filter((p) => p !== parentNpub),
-      },
-    });
+    await updateUserAcceptChildLink(childNpub, parentNpub, newPending);
   } else {
-    await prisma.user.update({
-      where: { npub: childNpub },
-      data: {
-        pendingParentRequests: pending.filter((p) => p !== parentNpub),
-      },
-    });
+    await updateUserRejectChildLink(childNpub, newPending);
   }
 
   return { ok: true };
@@ -310,19 +267,13 @@ export async function respondToChildRequest(
 export async function unlinkParent(
   childNpub: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const child = await prisma.user.findUnique({ where: { npub: childNpub } });
+  const child = await findUserByNpubForParentChild(childNpub);
   if (!child) return { ok: false, reason: ERROR_CHILD_NOT_FOUND };
   if (!child.parentNpub || !child.isChild) {
     return { ok: false, reason: "This account is not linked to a parent." };
   }
 
-  await prisma.user.update({
-    where: { npub: childNpub },
-    data: {
-      parentNpub: null,
-      isChild: false,
-    },
-  });
+  await updateUserUnlinkChild(childNpub);
   return { ok: true };
 }
 
@@ -333,17 +284,11 @@ export async function unlinkChildByParent(
   parentNpub: string,
   childNpub: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const child = await prisma.user.findUnique({ where: { npub: childNpub } });
+  const child = await findUserByNpubForParentChild(childNpub);
   if (!child) return { ok: false, reason: ERROR_CHILD_NOT_FOUND };
   if (child.parentNpub !== parentNpub) {
     return { ok: false, reason: "Not authorized to unlink this child." };
   }
-  await prisma.user.update({
-    where: { npub: childNpub },
-    data: {
-      parentNpub: null,
-      isChild: false,
-    },
-  });
+  await updateUserUnlinkChild(childNpub);
   return { ok: true };
 }

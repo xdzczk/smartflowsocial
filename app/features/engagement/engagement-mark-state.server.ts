@@ -2,17 +2,15 @@
  * Server actions for engagement item state (mark as done, replied from app).
  */
 
-import type { PrismaClient } from "@prisma/client";
-
-import { prisma } from "~/lib/prisma.server";
+import {
+  findEngagementItemStatesByEventIds,
+  upsertEngagementItemState,
+} from "./repositories/engagement-item-state.server";
 
 export interface MarkEngagementStateInput {
   eventId: string;
   repliedFromApp?: boolean;
 }
-
-/** Use PrismaClient type so we can access engagementItemState (extended client type may lag). */
-const db = prisma as unknown as PrismaClient;
 
 /**
  * Upsert engagement item state for the current user.
@@ -29,23 +27,7 @@ export async function markEngagementItemState(
   }
 
   try {
-    await db.engagementItemState.upsert({
-      where: {
-        userId_eventId: { userId, eventId: eventId.trim() },
-      },
-      create: {
-        userId,
-        eventId: eventId.trim(),
-        state: "HANDLED",
-        repliedFromApp,
-        updatedAt: new Date(),
-      },
-      update: {
-        state: "HANDLED",
-        repliedFromApp,
-        updatedAt: new Date(),
-      },
-    });
+    await upsertEngagementItemState(userId, eventId.trim(), repliedFromApp);
     return { success: true };
   } catch (err) {
     return {
@@ -68,13 +50,7 @@ export async function getEngagementItemStates(
   }
 
   const uniqueIds = [...new Set(eventIds)];
-  const rows = await db.engagementItemState.findMany({
-    where: {
-      userId,
-      eventId: { in: uniqueIds },
-    },
-    select: { eventId: true, repliedFromApp: true },
-  });
+  const rows = await findEngagementItemStatesByEventIds(userId, uniqueIds);
 
   const result: Record<string, { state: "handled"; repliedFromApp: boolean }> =
     {};

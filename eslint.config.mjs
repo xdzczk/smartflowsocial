@@ -222,6 +222,40 @@ const featureBoundaryRestrictions = [
 ];
 
 /**
+ * Posts feature: internal submodule boundaries.
+ * Code in one submodule (e.g. composer) must not import from another submodule's
+ * internals; use the submodule's index (e.g. ../calendar) instead.
+ * See docs/reference/posts-submodules.md.
+ */
+const POSTS_SUBMODULES = [
+  "composer",
+  "calendar",
+  "scheduling",
+  "publishing",
+  "longform",
+  "drafts",
+  "runway",
+];
+const postsSubmoduleBoundaries = [];
+for (const subA of POSTS_SUBMODULES) {
+  for (const subB of POSTS_SUBMODULES) {
+    if (subA === subB) continue;
+    const indexExcept = [
+      `**/app/features/posts/${subB}/**/index.{ts,tsx}`,
+      `**/app/features/posts/${subB}/**/index.server.ts`,
+      `**/app/features/posts/${subB}/**/state-machine/**`,
+      `**/app/features/posts/${subB}/**/hooks/**`,
+    ];
+    postsSubmoduleBoundaries.push({
+      target: `app/features/posts/${subA}/**/*`,
+      from: `app/features/posts/${subB}/**/*`,
+      except: indexExcept,
+      message: `Posts submodules must use sibling's public API (index). Use ../${subB} not ../${subB}/...`,
+    });
+  }
+}
+
+/**
  * Quality improvement rules (warnings - code quality, not correctness)
  */
 const qualityRules = {
@@ -407,7 +441,7 @@ export default (async () => {
         "no-console": ["error", { allow: ["error", "warn", "info"] }],
         "import/no-restricted-paths": [
           "error",
-          { zones: featureBoundaryRestrictions },
+          { zones: [...featureBoundaryRestrictions, ...postsSubmoduleBoundaries] },
         ],
         "no-restricted-imports": "off", // Handled in routes-specific block
         // Import quality rules
@@ -443,6 +477,48 @@ export default (async () => {
             ],
           },
         ],
+      },
+    },
+
+    // Features: Prisma only in data/ or repositories/ (see architecture.md)
+    // Set to "warn" until all features complete Track 3.2 migration; then change to "error".
+    {
+      files: ["app/features/**/*.{ts,tsx}"],
+      rules: {
+        "no-restricted-imports": [
+          "warn",
+          {
+            paths: [
+              {
+                name: "@prisma/client",
+                message:
+                  "Features must not import Prisma outside data/ or repositories/. Use feature API or models layer.",
+              },
+              {
+                name: "~/lib/prisma.server",
+                message:
+                  "Features must not import prisma.server outside data/ or repositories/. Use feature API or models layer.",
+              },
+            ],
+            patterns: [
+              {
+                group: ["**/prisma.server"],
+                message:
+                  "Features must not import prisma.server outside data/ or repositories/. Use feature API or models layer.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    // Features data/repositories: allow Prisma (override above)
+    {
+      files: [
+        "app/features/**/data/**/*.{ts,tsx}",
+        "app/features/**/repositories/**/*.{ts,tsx}",
+      ],
+      rules: {
+        "no-restricted-imports": "off",
       },
     },
 

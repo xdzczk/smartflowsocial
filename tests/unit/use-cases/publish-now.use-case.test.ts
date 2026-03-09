@@ -69,7 +69,7 @@ import {
   createValidSignedEvent,
 } from "../../utils/test-helpers";
 
-import { PublishNowUseCase } from "~/features/posts/use-cases/publish-now.use-case.server";
+import { PublishNowUseCase } from "~/features/posts/publishing/index.server";
 import {
   recordPostPublished,
   recordPostPublishFailed,

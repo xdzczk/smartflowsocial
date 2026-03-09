@@ -2,7 +2,10 @@
  * Server helpers for humanized giveaway display: scope summary, queue name resolution.
  */
 
-import { prisma } from "~/lib/prisma.server";
+import {
+  findQueueTypeNameByIdAndUser,
+  findQueueTypesByIdsAndUser,
+} from "./repositories/giveaway-display-data.server";
 
 export type GiveawayScopeType =
   | "PERIOD"
@@ -21,11 +24,7 @@ export async function resolveGiveawayQueueName(
 ): Promise<string | null> {
   const queueId = scopeReference["queueId"];
   if (typeof queueId !== "string") return null;
-  const row = await prisma.queueType.findFirst({
-    where: { id: queueId, userId },
-    select: { name: true },
-  });
-  return row?.name ?? null;
+  return findQueueTypeNameByIdAndUser(userId, queueId);
 }
 
 /**
@@ -36,10 +35,7 @@ export async function getQueueNamesByIds(
   queueIds: string[]
 ): Promise<Record<string, string | null>> {
   if (queueIds.length === 0) return {};
-  const queues = await prisma.queueType.findMany({
-    where: { id: { in: queueIds }, userId },
-    select: { id: true, name: true },
-  });
+  const queues = await findQueueTypesByIdsAndUser(userId, queueIds);
   const map: Record<string, string | null> = {};
   for (const id of queueIds) {
     map[id] = queues.find((q) => q.id === id)?.name ?? null;

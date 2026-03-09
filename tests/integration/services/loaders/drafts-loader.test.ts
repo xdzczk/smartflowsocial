@@ -28,7 +28,7 @@ vi.mock("~/features/posts/services/combined.server", () => ({
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
-import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
+import { loadDraftsData } from "~/features/posts/server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { getDraftLongFormPosts } from "~/models/longformpost.server";
 import { getDraftPosts } from "~/models/post.queries.server";

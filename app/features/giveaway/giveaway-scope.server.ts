@@ -3,13 +3,16 @@
  * Used by loader and selection to derive eligible posts.
  */
 
-import { prisma } from "~/lib/prisma.server";
 import {
   getRecentPublishedPosts,
   getPostById,
 } from "~/models/post.queries.server";
 import type { PostWithQueueType } from "~/models/post.types";
 
+import {
+  findQueueTypeByIdAndUser,
+  findQueueTypeFullByIdAndUser,
+} from "./repositories/giveaway-scope-data.server";
 import type { GiveawayScope } from "./types";
 
 /**
@@ -26,10 +29,7 @@ export async function getPostsInScope(
       const days = ref.days ?? 7;
       let queueTypeId: string | undefined;
       if (ref.queueId) {
-        const queue = await prisma.queueType.findFirst({
-          where: { id: ref.queueId, userId },
-          select: { id: true },
-        });
+        const queue = await findQueueTypeByIdAndUser(userId, ref.queueId);
         queueTypeId = queue?.id;
       }
       return getRecentPublishedPosts({
@@ -51,9 +51,10 @@ export async function getPostsInScope(
       return [post as PostWithQueueType];
     }
     case "QUEUE": {
-      const queue = await prisma.queueType.findFirst({
-        where: { id: scope.reference.queueId, userId },
-      });
+      const queue = await findQueueTypeFullByIdAndUser(
+        userId,
+        scope.reference.queueId
+      );
       if (!queue) {
         return [];
       }

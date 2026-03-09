@@ -31,8 +31,8 @@ vi.mock("nostr-tools", () => {
   };
 });
 
+import { DEFAULT_USER_WRITE_RELAYS } from "~/features/relays/relay-constants";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
-import { DEFAULT_USER_WRITE_RELAYS } from "~/lib/relays";
 
 async function setNextPoolGetResult(value: unknown) {
   const mod = await import("nostr-tools");

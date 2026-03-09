@@ -4,6 +4,7 @@
  * Centralized error logging with different log levels and structured output
  */
 
+import { env } from "./env.server";
 import { recordErrorForAggregation } from "./error-aggregation.server";
 import { classifyError } from "./error-classification.server";
 import { recordErrorMetric } from "./error-metrics.server";
@@ -86,8 +87,8 @@ export function logError(
         id: context.userId,
       },
     }),
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
-    environment: process.env.NODE_ENV ?? "development",
+
+    environment: env.NODE_ENV ?? "development",
     ...(context.correlationId && { correlationId: context.correlationId }),
   };
 
@@ -104,7 +105,7 @@ export function logError(
 
   // In production, you might want to send to an external service
   // For now, we'll use structured console logging
-  if (process.env.NODE_ENV === "production") {
+  if (env.NODE_ENV === "production") {
     // In production, log as JSON for log aggregation services
     console.error(JSON.stringify(sanitizedLogEntry));
   } else {
@@ -170,11 +171,11 @@ export function logWarning(message: string, context: LogContext = {}): void {
     level: "warn" as LogLevel,
     message,
     ...context,
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
-    environment: process.env.NODE_ENV ?? "development",
+
+    environment: env.NODE_ENV ?? "development",
   };
 
-  if (process.env.NODE_ENV === "production") {
+  if (env.NODE_ENV === "production") {
     console.warn(JSON.stringify(logEntry));
   } else {
     console.warn("⚠️  Warning:", message, context);
@@ -190,11 +191,11 @@ export function logInfo(message: string, context: LogContext = {}): void {
     level: "info" as LogLevel,
     message,
     ...context,
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
-    environment: process.env.NODE_ENV ?? "development",
+
+    environment: env.NODE_ENV ?? "development",
   };
 
-  if (process.env.NODE_ENV === "production") {
+  if (env.NODE_ENV === "production") {
     console.info(JSON.stringify(logEntry));
   } else {
     console.info("ℹ️  Info:", message, context);

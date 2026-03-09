@@ -1,13 +1,13 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 
+import { signDraftForScheduling } from "~/features/posts/drafts";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
 import { useZodForm } from "~/lib/validation/utils.client";
 
-import { signDraftForScheduling } from "../services/draft-sign.server";
 import type {
   UserData,
   HashTagPreset,

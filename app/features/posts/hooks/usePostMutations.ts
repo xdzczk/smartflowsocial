@@ -5,11 +5,12 @@
 
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 
-import { calendarKeys } from "./useCalendarQuery";
+import { calendarKeys } from "~/features/posts/calendar";
+import { publishedPostsKeys } from "~/features/posts/publishing";
+import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
-import { publishedPostsKeys } from "./usePublishedPostsQuery";
-import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 
 /**
  * Invalidate all post-related queries

@@ -1,18 +1,18 @@
 /**
  * Unit tests for calendar post converter functions
- * Tests functions in app/features/posts/utils/calendar-post-converter.ts
+ * Tests functions in app/features/posts/calendar/utils/calendar-post-converter.ts
  */
 
 import { describe, it, expect } from "vitest";
 
-import type { PostData, LongFormPostData } from "~/features/posts/types";
 import {
   postDataToCalendarPost,
   longFormPostDataToCalendarPost,
   postsToCalendarPosts,
   longFormPostsToCalendarPosts,
   mixedPostsToCalendarPosts,
-} from "~/features/posts/utils/calendar-post-converter";
+} from "~/features/posts/calendar/utils/calendar-post-converter";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 
 describe("Calendar Post Converter", () => {
   describe("postDataToCalendarPost", () => {

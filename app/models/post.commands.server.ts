@@ -9,6 +9,7 @@ import { Prisma, type Post } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import type { PostScheduledPayload } from "~/infra/outbox/outbox.server";
+import { env } from "~/lib/env.server";
 import { logError, logInfo } from "~/lib/error-logger.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
@@ -19,7 +20,7 @@ const DELETE_EVENT_SCHEMA_VERSION = "1.0";
 const DEFAULT_DELETE_REASON = "Deleted via SmartFlow";
 
 function isNostrDeleteEventsEnabled(): boolean {
-  const raw = process.env["ENABLE_NOSTR_DELETE_EVENTS"];
+  const raw = env.ENABLE_NOSTR_DELETE_EVENTS;
   if (!raw) return false;
   return ["1", "true", "yes", "y", "on", "enabled"].includes(
     raw.trim().toLowerCase()

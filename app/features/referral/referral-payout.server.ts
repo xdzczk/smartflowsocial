@@ -4,25 +4,29 @@
  */
 
 import { NWCClient } from "@getalby/sdk";
-import { ReferralEarningStatus } from "@prisma/client";
 
+import { ReferralEarningStatus } from "~/features/referral/data/referral-prisma-types.server";
 import { fetchInvoiceFromLnurlPay } from "~/features/referral/lnurl-pay.server";
+import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
-import { prisma } from "~/lib/prisma.server";
 import { getOwnerNwcWithRelayOverrides } from "~/models/payment.server";
+
+import {
+  aggregatePendingCommissionByReferrer,
+  findPendingEarningsForPayout,
+  findPendingEarningsWithAttemptCount,
+  findReferrerPayoutConfig,
+  groupByReferrerPendingSats,
+  markEarningPaid,
+  markEarningPayoutAttempt,
+} from "./repositories/referral-data.server";
 
 const REFERRAL_PAYOUT_MAX_ATTEMPTS = 5;
 
 export async function getPendingBalanceSats(
   referrerNpub: string
 ): Promise<number> {
-  const result = await prisma.referralEarning.aggregate({
-    where: {
-      referrerNpub,
-      status: ReferralEarningStatus.PENDING,
-    },
-    _sum: { commissionSats: true },
-  });
+  const result = await aggregatePendingCommissionByReferrer(referrerNpub);
   return result._sum.commissionSats ?? 0;
 }
 
@@ -45,7 +49,7 @@ export async function payReferrerWithInvoice(
     };
   }
 
-  const ownerNwc = process.env["OWNER_NWC"];
+  const ownerNwc = env.OWNER_NWC;
   if (!ownerNwc) {
     return { success: false, error: "OWNER_NWC not configured" };
   }
@@ -72,24 +76,13 @@ export async function payReferrerWithInvoice(
   }
 
   const now = new Date();
-  const pendingRows = await prisma.referralEarning.findMany({
-    where: { referrerNpub, status: ReferralEarningStatus.PENDING },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, commissionSats: true },
-  });
+  const pendingRows = await findPendingEarningsForPayout(referrerNpub);
 
   let remaining = amountSats;
   for (const row of pendingRows) {
     if (remaining <= 0) break;
     if (row.commissionSats <= 0) continue;
-    await prisma.referralEarning.update({
-      where: { id: row.id },
-      data: {
-        status: ReferralEarningStatus.PAID,
-        paidAt: now,
-        payoutFailureReason: null,
-      },
-    });
+    await markEarningPaid(row.id, now);
     remaining -= row.commissionSats;
   }
 
@@ -101,11 +94,7 @@ async function markPayoutAttemptFailed(
   amountSats: number,
   reason: string
 ): Promise<void> {
-  const pendingRows = await prisma.referralEarning.findMany({
-    where: { referrerNpub, status: ReferralEarningStatus.PENDING },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, payoutAttemptCount: true, commissionSats: true },
-  });
+  const pendingRows = await findPendingEarningsWithAttemptCount(referrerNpub);
 
   let remaining = amountSats;
   for (const row of pendingRows) {
@@ -113,16 +102,13 @@ async function markPayoutAttemptFailed(
     const mark = Math.min(row.commissionSats, remaining);
     if (mark <= 0) continue;
     const nextCount = row.payoutAttemptCount + 1;
-    await prisma.referralEarning.update({
-      where: { id: row.id },
-      data: {
-        payoutAttemptCount: nextCount,
-        payoutFailureReason: reason,
-        status:
-          nextCount >= REFERRAL_PAYOUT_MAX_ATTEMPTS
-            ? ReferralEarningStatus.FAILED
-            : ReferralEarningStatus.PENDING,
-      },
+    await markEarningPayoutAttempt(row.id, {
+      payoutAttemptCount: nextCount,
+      payoutFailureReason: reason,
+      status:
+        nextCount >= REFERRAL_PAYOUT_MAX_ATTEMPTS
+          ? ReferralEarningStatus.FAILED
+          : ReferralEarningStatus.PENDING,
     });
     remaining -= row.commissionSats;
   }
@@ -133,11 +119,7 @@ export async function getEarningsForPayout(
 ): Promise<
   Array<{ id: string; commissionSats: number; payoutAttemptCount: number }>
 > {
-  return prisma.referralEarning.findMany({
-    where: { referrerNpub, status: ReferralEarningStatus.PENDING },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, commissionSats: true, payoutAttemptCount: true },
-  });
+  return findPendingEarningsWithAttemptCount(referrerNpub);
 }
 
 const REFERRAL_PAYOUT_THRESHOLD_SATS = 1000;
@@ -145,11 +127,7 @@ const REFERRAL_PAYOUT_THRESHOLD_SATS = 1000;
 export async function getReferrersEligibleForPayout(): Promise<
   Array<{ referrerNpub: string; pendingSats: number }>
 > {
-  const rows = await prisma.referralEarning.groupBy({
-    by: ["referrerNpub"],
-    where: { status: ReferralEarningStatus.PENDING },
-    _sum: { commissionSats: true },
-  });
+  const rows = await groupByReferrerPendingSats();
 
   return rows
     .map((r) => ({
@@ -184,10 +162,7 @@ export async function runReferralPayoutBatch(): Promise<ReferralPayoutBatchResul
   for (const { referrerNpub, pendingSats } of eligible) {
     result.processed += 1;
 
-    const config = await prisma.referrerPayoutConfig.findUnique({
-      where: { referrerNpub },
-      select: { payoutDestination: true, payoutDestinationType: true },
-    });
+    const config = await findReferrerPayoutConfig(referrerNpub);
 
     if (!config?.payoutDestination.trim()) {
       result.skipped += 1;

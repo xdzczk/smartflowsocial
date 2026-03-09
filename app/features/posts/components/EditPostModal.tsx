@@ -47,7 +47,7 @@ import {
 } from "../utils/repost-quote-events.client";
 
 // eslint-disable-next-line import/order -- parent and sibling groups adjacent
-import { EditLongFormFormFields } from "./EditLongFormFormFields";
+import { EditLongFormFormFields } from "~/features/posts/longform";
 
 interface MainEv {
   id: string;

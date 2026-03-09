@@ -10,6 +10,7 @@ import rateLimit from "express-rate-limit";
 import { RateLimiterRedis } from "rate-limiter-flexible";
 
 import { redis } from "~/infra/queue/queue-client.server";
+import { env } from "~/lib/env.server";
 import { logError, logWarning } from "~/lib/error-logger.server";
 
 /**
@@ -18,11 +19,10 @@ import { logError, logWarning } from "~/lib/error-logger.server";
  * This is checked at request time, not module load time, to support dynamic env vars
  */
 function isTestEnvironment(): boolean {
-  // Check environment variables at request time
-  const nodeEnv = process.env["NODE_ENV"];
-  const cypress = process.env["CYPRESS"];
-  const e2eTest = process.env["E2E_TEST"];
-  const disableRateLimit = process.env["DISABLE_RATE_LIMIT"];
+  const nodeEnv = env.NODE_ENV;
+  const cypress = env.CYPRESS;
+  const e2eTest = env.E2E_TEST;
+  const disableRateLimit = env.DISABLE_RATE_LIMIT;
 
   return (
     nodeEnv === "test" ||
@@ -140,7 +140,7 @@ export const authLimiter = rateLimit({
  * Check if Redis is available for rate limiting
  */
 function isRedisAvailable(): boolean {
-  return !!process.env["REDIS_URL"] && redis.status === "ready";
+  return !!env.REDIS_URL && redis.status === "ready";
 }
 
 /**

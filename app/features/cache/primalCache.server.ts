@@ -105,7 +105,7 @@ export async function fetchFromCache(
   requestType: string,
   params: CacheParams
 ): Promise<CacheResponse> {
-  const primalUrl = process.env["PRIMAL_CACHING_URL"] ?? env.PRIMAL_CACHING_URL;
+  const primalUrl = env.PRIMAL_CACHING_URL;
   const useHttp = isHttpPrimalUrl(primalUrl);
 
   const doFetch = (): Promise<CacheResponse> =>

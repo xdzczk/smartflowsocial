@@ -17,7 +17,7 @@ import {
   mockPublishLongFormNowExecute,
 } from "./shared-setup";
 
-import { handleNewLongFormAction } from "~/features/posts/services/newlongform-action.server";
+import { handleNewLongFormAction } from "~/features/posts/server";
 import {
   getUserById,
   getQueueTypeByNameForUser,

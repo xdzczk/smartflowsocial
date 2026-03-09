@@ -2,18 +2,21 @@
  * Referral settings data for the referrer (current user as referrer).
  */
 
-import { ReferralEarningStatus } from "@prisma/client";
+import { env } from "~/lib/env.server";
 
-import { prisma } from "~/lib/prisma.server";
-
+import { ReferralEarningStatus } from "./data/referral-prisma-types.server";
 import { REFERRAL_COMMISSION_RATE_PERCENT } from "./referral-config.server";
+import {
+  aggregateEarningsByStatus,
+  findReferrerPayoutConfigForSettings,
+} from "./repositories/referral-data.server";
 
 /** Landing page URL for referral links (user lands here first, then goes to app to sign in). */
 const REFERRAL_LANDING_URL_DEFAULT = "https://smartflow.social";
 
 function getReferralLandingUrl(): string {
-  const env = process.env["REFERRAL_LANDING_URL"];
-  if (typeof env === "string" && env.length > 0) return env.replace(/\/$/, "");
+  const url = env.REFERRAL_LANDING_URL;
+  if (typeof url === "string" && url.length > 0) return url.replace(/\/$/, "");
   return REFERRAL_LANDING_URL_DEFAULT;
 }
 
@@ -35,15 +38,8 @@ export async function getReferralSettingsData(
   const referralLink = `${landingUrl}/?ref=${encodeURIComponent(referrerNpub)}`;
 
   const [aggregates, config] = await Promise.all([
-    prisma.referralEarning.groupBy({
-      by: ["status"],
-      where: { referrerNpub },
-      _sum: { commissionSats: true },
-    }),
-    prisma.referrerPayoutConfig.findUnique({
-      where: { referrerNpub },
-      select: { payoutDestination: true, payoutDestinationType: true },
-    }),
+    aggregateEarningsByStatus(referrerNpub),
+    findReferrerPayoutConfigForSettings(referrerNpub),
   ]);
 
   let paidSats = 0;

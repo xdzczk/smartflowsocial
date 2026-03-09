@@ -9,11 +9,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 const mockRecycleExecute = vi.fn();
 
-vi.mock("~/features/posts/use-cases/recycle-post.use-case.server", () => ({
-  RecyclePostUseCase: class {
-    execute = mockRecycleExecute;
-  },
-}));
+vi.mock("~/features/posts/publishing/index.server", async (importOriginal) => {
+  const actual = await importOriginal<
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vi.mock importOriginal() generic
+    typeof import("~/features/posts/publishing/index.server")
+  >();
+  return {
+    ...actual,
+    RecyclePostUseCase: class {
+      execute = mockRecycleExecute;
+    },
+  };
+});
 
 vi.mock("~/lib/validation", () => ({
   recyclableActionSchema: {},
@@ -23,7 +30,7 @@ vi.mock("~/lib/validation", () => ({
 // RecyclePostUseCase is mocked above
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { handleRecyclablePostAction } from "~/features/posts/services/recyclable-posts.server";
+import { handleRecyclablePostAction } from "~/features/posts/publishing/index.server";
 import { validateFormDataOrRespond } from "~/lib/validation";
 
 describe("Recyclable Posts Service Recycle Action", () => {

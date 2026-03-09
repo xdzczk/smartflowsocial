@@ -42,20 +42,17 @@ vi.mock("~/features/posts/server", () => ({
 }));
 
 const mockTransition = vi.fn();
-vi.mock(
-  "~/features/posts/state-machine/longform-post-state-machine.server",
-  () => ({
-    LongFormPostStateMachine: class {
-      transition = mockTransition;
-    },
-  })
-);
+vi.mock("~/features/posts/server", () => ({
+  LongFormPostStateMachine: class {
+    transition = mockTransition;
+  },
+}));
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { calculateLongFormStatus } from "~/features/posts/server";
+import { CreateLongFormPostUseCase } from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { CreateLongFormPostUseCase } from "~/features/posts/use-cases/create-longform-post.use-case.server";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";

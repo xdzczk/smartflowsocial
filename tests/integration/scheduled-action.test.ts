@@ -23,7 +23,7 @@ import {
   createPostIds,
 } from "../utils/test-helpers";
 
-import { handleScheduledAction } from "~/features/posts/services/scheduled-action.server";
+import { handleScheduledAction } from "~/features/posts/server";
 import { deleteLongFormPost } from "~/models/longformpost.server";
 import { deletePost } from "~/models/post.commands.server";
 

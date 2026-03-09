@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="8" failures="0" errors="0" time="0.017465208">
+    <testsuite name="tests/integration/calendar-loader.test.ts" timestamp="2026-03-09T07:35:31.669Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.017465208">
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should load calendar data for authenticated user" time="0.005933541">
+        </testcase>
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should handle queue type parameter" time="0.001817791">
+        </testcase>
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should filter posts by queue type when specified" time="0.000588083">
+        </testcase>
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should return all posts when queueType is &apos;all&apos;" time="0.000571667">
+        </testcase>
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should include schedule intervals from user" time="0.000967917">
+        </testcase>
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should filter queue types to only enabled ones" time="0.000393417">
+        </testcase>
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.005048875">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Authentication required&apos;,
+  code: &apos;AUTHENTICATION_ERROR&apos;,
+  statusCode: 401,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.001065375">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Database error&apos;,
+  code: &apos;DATABASE_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+    </testsuite>
+</testsuites>

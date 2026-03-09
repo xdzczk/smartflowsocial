@@ -1,6 +1,10 @@
-import type { User } from "@prisma/client";
-
-import { prisma } from "~/lib/prisma.server";
+import type { User } from "../data/user-prisma-types.server";
+import {
+  findUserByIdWithHashTagPresets,
+  findUserByNpub,
+  updateUserProfileByNpub,
+  upsertUserByNpub,
+} from "../repositories/user-profile-data.server";
 
 export type UserWithHashTagPresets = User & {
   hashTagPresets: Array<{
@@ -23,12 +27,7 @@ export function updateUserProfile({
   nostrProfile,
   npub,
 }: UpdateUserProfileParams): Promise<User> {
-  return prisma.user.update({
-    where: { npub },
-    data: {
-      nostrProfile: nostrProfile,
-    },
-  });
+  return updateUserProfileByNpub(npub, nostrProfile);
 }
 
 /**
@@ -39,15 +38,8 @@ export function updateUserProfile({
 export async function getUserById(
   id: string
 ): Promise<UserWithHashTagPresets | null> {
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: { ...USER_SCALAR_SELECT, hashTagPresets: true },
-  });
-
-  if (!user) {
-    return null;
-  }
-
+  const user = await findUserByIdWithHashTagPresets(id);
+  if (!user) return null;
   const result: UserWithHashTagPresets = {
     ...user,
     runwaySettings: null,
@@ -56,76 +48,24 @@ export async function getUserById(
   return result;
 }
 
-/** Scalar User fields to select when runwaySettings column may not exist yet. */
-const USER_SCALAR_SELECT = {
-  id: true,
-  npub: true,
-  createdAt: true,
-  updatedAt: true,
-  isEnabled: true,
-  timezone: true,
-  userRelays: true,
-  giveawayBlackListed: true,
-  uploadProvider: true,
-  customBlossomUrl: true,
-  showHashTagsinPosts: true,
-  scheduleInterval: true,
-  nostrProfile: true,
-  enableMirrorBlossom: true,
-  mirrorUploadUrls: true,
-  encryptedNwc: true,
-  nwcEnabled: true,
-  nwcLastUsed: true,
-  mutedList: true,
-  filterMuted: true,
-  hidePostsFromLowTrustUsers: true,
-  pushNotificationsEnabled: true,
-  pushNotifyPublishSuccess: true,
-  pushNotifyPublishFailure: true,
-  pushNotifyRunwayLow: true,
-  pushNotifyIncludePreview: true,
-  runwayNotifyBelowDays: true,
-  lastRunwayLowNotificationAt: true,
-  timeFormat: true,
-  dateFormat: true,
-  preferredNostrClient: true,
-  customNostrClientBaseUrl: true,
-  isChild: true,
-  parentNpub: true,
-  pendingParentRequests: true,
-  localeDefaultsAppliedAt: true,
-  primarySignerProfile: true,
-  engagementLastCheckedAt: true,
-} as const;
-
 /**
  * Gets a user by their Nostr public key (npub).
  * Uses explicit select so the query works when runwaySettings column is not yet migrated.
  */
 export async function getUserByNpub(npub: string): Promise<User | null> {
-  const user = await prisma.user.findUnique({
-    where: { npub },
-    select: USER_SCALAR_SELECT,
-  });
+  const user = await findUserByNpub(npub);
   if (!user) return null;
-  const result: User = {
+  const result = {
     ...user,
     runwaySettings: null,
     primarySignerProfile: null,
   };
-  return result;
+  return result as User;
 }
 
 /**
  * Creates a new user or updates existing user's profile
  */
 export function createUser(npub: string, nostrProfile: string): Promise<User> {
-  return prisma.user.upsert({
-    where: { npub },
-    update: { nostrProfile },
-    create: {
-      npub,
-      nostrProfile,
-    },
-  });
+  return upsertUserByNpub(npub, nostrProfile);
 }

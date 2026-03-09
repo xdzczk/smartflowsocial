@@ -27,27 +27,27 @@ vi.mock("~/lib/error-handler.client", () => ({
   handleErrorSafely: vi.fn(),
 }));
 
-vi.mock("~/features/posts/components/Calendar/Calendar", () => ({
+vi.mock("~/features/posts/calendar/Calendar/Calendar", () => ({
   Calendar: () => null,
 }));
 
-vi.mock("~/features/posts/components/Calendar/PostBlock", () => ({
+vi.mock("~/features/posts/calendar/Calendar/PostBlock", () => ({
   PostBlock: () => null,
 }));
 
-vi.mock("~/features/posts/components/Calendar/views/DayView", () => ({
+vi.mock("~/features/posts/calendar/Calendar/views/DayView", () => ({
   DayView: () => null,
 }));
 
-vi.mock("~/features/posts/components/Calendar/views/WeekView", () => ({
+vi.mock("~/features/posts/calendar/Calendar/views/WeekView", () => ({
   WeekView: () => null,
 }));
 
-vi.mock("~/features/posts/components/Calendar/MonthlyView", () => ({
+vi.mock("~/features/posts/calendar/Calendar/MonthlyView", () => ({
   MonthlyView: () => null,
 }));
 
-vi.mock("~/features/posts/components/Calendar/RescheduleModal", () => ({
+vi.mock("~/features/posts/calendar/Calendar/RescheduleModal", () => ({
   RescheduleModal: () => null,
 }));
 
@@ -70,7 +70,7 @@ vi.mock("~/features/payments", () => ({
   requireFeatureAccess: vi.fn(),
 }));
 
-vi.mock("~/features/posts/services/calendar-loader.server", () => ({
+vi.mock("~/features/posts/calendar/services/calendar-loader.server", () => ({
   loadCalendarQueueData: vi.fn(),
 }));
 
@@ -102,7 +102,7 @@ import {
   requireAnySubscription,
   requireFeatureAccess,
 } from "~/features/payments";
-import { loadCalendarQueueData } from "~/features/posts/services/calendar-loader.server";
+import { loadCalendarQueueData } from "~/features/posts/calendar/index.server";
 import { loader } from "~/routes/dashboard.calendar.$queueType";
 
 describe("Calendar Loader Integration", () => {

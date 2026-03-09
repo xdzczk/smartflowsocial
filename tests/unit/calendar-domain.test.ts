@@ -4,17 +4,17 @@
 
 import { describe, it, expect } from "vitest";
 
-import { getDayViewColumnMap } from "~/features/posts/components/Calendar/domain/day-view-column-map";
+import { getDayViewColumnMap } from "~/features/posts/calendar/Calendar/domain/day-view-column-map";
 import {
   getDayViewMaxExpand,
   getExpandDown,
   getExpandDownDayView,
   getWeekViewMaxExpand,
   hasBlocksUnderneath,
-} from "~/features/posts/components/Calendar/domain/expand-rules";
-import type { PostsGrid } from "~/features/posts/components/Calendar/domain/grid-types";
-import { getSlotState } from "~/features/posts/components/Calendar/domain/slot-state";
-import type { CalendarPost } from "~/features/posts/components/Calendar/PostBlock.types";
+} from "~/features/posts/calendar/Calendar/domain/expand-rules";
+import type { PostsGrid } from "~/features/posts/calendar/Calendar/domain/grid-types";
+import { getSlotState } from "~/features/posts/calendar/Calendar/domain/slot-state";
+import type { CalendarPost } from "~/features/posts/calendar/Calendar/PostBlock.types";
 
 function minimalPost(id: string): CalendarPost {
   /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal fixture for domain tests */

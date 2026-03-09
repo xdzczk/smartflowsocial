@@ -32,7 +32,7 @@ import {
   createDateAtTime,
 } from "../utils/scheduling-test-helpers";
 
-import { calculateNextScheduleTime } from "~/features/posts/schedulers";
+import { calculateNextScheduleTime } from "~/features/posts/server";
 import { getScheduleInterval } from "~/features/user";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 

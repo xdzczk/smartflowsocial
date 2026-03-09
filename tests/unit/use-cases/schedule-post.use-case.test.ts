@@ -46,7 +46,7 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { SchedulePostUseCase } from "~/features/posts/use-cases/schedule-post.use-case.server";
+import { SchedulePostUseCase } from "~/features/posts/scheduling/index.server";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { recordPostScheduled } from "~/lib/metrics/business-metrics.server";

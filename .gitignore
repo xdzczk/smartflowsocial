@@ -16,6 +16,12 @@ node_modules
 /redis-data
 .DS_Store
 
+# Repo hygiene: backup dirs and junk (do not commit)
+.git-backup-*
+.git.backup.*
+__MACOSX
+.pnpm-store
+
 # Coverage reports
 /coverage
 /.nyc_output# Performance test results

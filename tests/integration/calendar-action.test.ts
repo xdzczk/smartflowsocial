@@ -14,20 +14,17 @@ const { mockSchedulePostExecute, mockScheduleLongFormExecute } = vi.hoisted(
   }
 );
 
-vi.mock("~/features/posts/use-cases/schedule-post.use-case.server", () => ({
+vi.mock("~/features/posts/scheduling/index.server", () => ({
   SchedulePostUseCase: class {
     execute = mockSchedulePostExecute;
   },
 }));
 
-vi.mock(
-  "~/features/posts/use-cases/schedule-longform-post.use-case.server",
-  () => ({
-    ScheduleLongFormPostUseCase: class {
-      execute = mockScheduleLongFormExecute;
-    },
-  })
-);
+vi.mock("~/features/posts/server", () => ({
+  ScheduleLongFormPostUseCase: class {
+    execute = mockScheduleLongFormExecute;
+  },
+}));
 
 vi.mock("~/lib/error-logger.server", () => ({
   logWarning: vi.fn(),
@@ -57,7 +54,7 @@ import {
   handleCalendarAction,
   handleCalendarReschedule,
   handleCalendarRescheduleLongform,
-} from "~/features/posts/services/calendar-action.server";
+} from "~/features/posts/calendar/index.server";
 import {
   getLongFormPost,
   updateLongFormPost,

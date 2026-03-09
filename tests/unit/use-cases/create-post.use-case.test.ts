@@ -1,6 +1,6 @@
 /**
  * Unit tests for CreatePostUseCase
- * Tests app/features/posts/use-cases/create-post.use-case.server.ts
+ * Tests app/features/posts/composer/use-cases/create-post.use-case.server.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -55,8 +55,8 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
+import { CreatePostUseCase } from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
 import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
 // recordPostCreated and recordPostScheduled are commented out in implementation
 // import { recordPostCreated, recordPostScheduled } from "~/lib/metrics/business-metrics.server";

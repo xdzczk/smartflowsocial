@@ -29,7 +29,7 @@ import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 import {
   getRecyclableDashboardData,
   handleRecyclablePostAction,
-} from "~/features/posts/services/recyclable-posts.server";
+} from "~/features/posts/publishing/index.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { deletePost } from "~/models/post.commands.server";

@@ -26,7 +26,7 @@ vi.mock("~/features/payments/subscriptions.server", () => ({
   requireFeatureAccess: vi.fn(),
 }));
 
-vi.mock("~/features/posts/services/scheduled-loader.server", () => ({
+vi.mock("~/features/posts/scheduling/services/scheduled-loader.server", () => ({
   loadScheduledData: vi.fn(),
 }));
 
@@ -40,7 +40,7 @@ import {
   requireAnySubscription,
   requireFeatureAccess,
 } from "~/features/payments/subscriptions.server";
-import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
+import { loadScheduledData } from "~/features/posts/server";
 import { loader } from "~/routes/dashboard.scheduled";
 
 describe("Scheduled Posts Loader Integration", () => {

@@ -65,6 +65,7 @@ const APP_DESCRIPTION =
 
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   try {
+    const { env } = await import("~/lib/env.server");
     // Always get fresh user data - getUser returns null for invalid/expired sessions
     let user = await getUser(request);
     // Refresh Nostr profile (pfp, name) from Primal if missing (e.g. logged in before fix or fetch failed)
@@ -77,9 +78,8 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
         user,
         // Expose Sentry DSN to client (safe - it's a public key)
         ENV: {
-          SENTRY_DSN: process.env["SENTRY_DSN"] ?? null,
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
-          NODE_ENV: process.env["NODE_ENV"] ?? "development",
+          SENTRY_DSN: env.SENTRY_DSN ?? null,
+          NODE_ENV: env.NODE_ENV ?? "development",
         },
         // Pass CSP nonce to client for inline scripts
         nonce:

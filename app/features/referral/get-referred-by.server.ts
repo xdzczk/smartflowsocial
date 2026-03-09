@@ -2,7 +2,10 @@
  * Get referrer info when current user was referred (for one-time thank-you message).
  */
 
-import { prisma } from "~/lib/prisma.server";
+import {
+  findReferralByReferredNpub,
+  findUserNostrProfileByNpub,
+} from "./repositories/referral-data.server";
 
 function displayNameFromProfile(nostrProfile: unknown): string | null {
   if (!nostrProfile || typeof nostrProfile !== "object") return null;
@@ -15,16 +18,10 @@ export async function getReferredByForNpub(referredNpub: string): Promise<{
   referrerNpub: string;
   referrerDisplayName: string | null;
 } | null> {
-  const referral = await prisma.referral.findUnique({
-    where: { referredNpub },
-    select: { referrerNpub: true },
-  });
+  const referral = await findReferralByReferredNpub(referredNpub);
   if (!referral) return null;
 
-  const referrerUser = await prisma.user.findUnique({
-    where: { npub: referral.referrerNpub },
-    select: { nostrProfile: true },
-  });
+  const referrerUser = await findUserNostrProfileByNpub(referral.referrerNpub);
 
   const referrerDisplayName = referrerUser?.nostrProfile
     ? displayNameFromProfile(referrerUser.nostrProfile)

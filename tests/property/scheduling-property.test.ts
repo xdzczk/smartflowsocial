@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
-import { calculateNextScheduleTime } from "~/features/posts/schedulers";
+import { calculateNextScheduleTime } from "~/features/posts/server";
 import { getScheduleInterval } from "~/features/user";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 

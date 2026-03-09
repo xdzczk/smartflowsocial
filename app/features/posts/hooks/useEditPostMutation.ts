@@ -5,12 +5,15 @@
 
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 
-import { calendarKeys } from "./useCalendarQuery";
+import { calendarKeys } from "~/features/posts/calendar";
+import {
+  publishedPostsKeys,
+  recyclablesKeys,
+} from "~/features/posts/publishing";
+import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
-import { publishedPostsKeys } from "./usePublishedPostsQuery";
-import { recyclablesKeys } from "./useRecyclablesQuery";
-import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 
 interface EditPostVariables {
   postId: string;

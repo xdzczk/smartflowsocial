@@ -57,8 +57,8 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
+import { RecyclePostUseCase } from "~/features/posts/publishing/index.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { RecyclePostUseCase } from "~/features/posts/use-cases/recycle-post.use-case.server";
 import { recordPostRecycled } from "~/lib/metrics/business-metrics.server";
 import { prisma } from "~/lib/prisma.server";
 import {

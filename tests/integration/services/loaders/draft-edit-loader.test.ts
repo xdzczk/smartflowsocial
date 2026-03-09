@@ -18,7 +18,7 @@ vi.mock("~/features/user", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../../utils/test-helpers";
 
-import { loadDraftEditData } from "~/features/posts/services/draft-edit-loader.server";
+import { loadDraftEditData } from "~/features/posts/server";
 import {
   getUserById,
   getQueueTypes,

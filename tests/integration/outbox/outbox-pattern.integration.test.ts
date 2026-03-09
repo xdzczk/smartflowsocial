@@ -8,8 +8,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
-import { SchedulePostUseCase } from "~/features/posts/use-cases/schedule-post.use-case.server";
+import { SchedulePostUseCase } from "~/features/posts/scheduling/index.server";
+import { CreatePostUseCase } from "~/features/posts/server";
 import {
   createOutboxEvent,
   getUnprocessedOutboxEvents,

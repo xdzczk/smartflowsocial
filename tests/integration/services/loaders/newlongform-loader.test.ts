@@ -21,7 +21,7 @@ vi.mock("~/features/user", () => ({
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
-import { loadNewLongFormData } from "~/features/posts/services/newlongform-loader.server";
+import { loadNewLongFormData } from "~/features/posts/server";
 import {
   getUserById,
   getScheduleInterval,

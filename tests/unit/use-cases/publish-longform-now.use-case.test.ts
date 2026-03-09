@@ -47,14 +47,11 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 const mockTransition = vi.fn();
-vi.mock(
-  "~/features/posts/state-machine/longform-post-state-machine.server",
-  () => ({
-    LongFormPostStateMachine: class {
-      transition = mockTransition;
-    },
-  })
-);
+vi.mock("~/features/posts/server", () => ({
+  LongFormPostStateMachine: class {
+    transition = mockTransition;
+  },
+}));
 
 const { mockSendPublishSuccessNotification } = vi.hoisted(() => ({
   mockSendPublishSuccessNotification: vi.fn(),
@@ -66,7 +63,7 @@ vi.mock("~/infra/notifications/push-notification.server", () => ({
 import { createValidSignedEvent } from "../../utils/nostr-test-helpers";
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { PublishLongFormNowUseCase } from "~/features/posts/use-cases/publish-longform-now.use-case.server";
+import { PublishLongFormNowUseCase } from "~/features/posts/server";
 import { getLongFormPost } from "~/models/longformpost.server";
 
 describe("PublishLongFormNowUseCase", () => {

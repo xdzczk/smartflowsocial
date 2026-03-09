@@ -5,12 +5,11 @@
  * from Remix loaders to components. Date objects are converted to ISO strings.
  */
 
-import type { Post, LongFormPost } from "@prisma/client";
-
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { serializeDates } from "~/lib/serialization.server";
 import { fromISOString, toDate } from "~/lib/temporal";
 
+import type { LongFormPost, Post } from "./data/posts-prisma-types.server";
 import type {
   PostData,
   LongFormPostData,

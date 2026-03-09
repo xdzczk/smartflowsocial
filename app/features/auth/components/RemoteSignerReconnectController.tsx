@@ -1,5 +1,4 @@
 import { generateSecretKey, getPublicKey, SimplePool } from "nostr-tools";
-import { parseBunkerInput } from "nostr-tools/nip46";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import QRCode from "react-qr-code";
@@ -16,7 +15,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { isMobile } from "~/lib/is-mobile";
-import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 import { convertToHex } from "~/lib/nostr-conversion";
 import {
   cacheNip46SignerFromLogin,
@@ -49,10 +47,8 @@ import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
 import {
   connectNip46WithBunkerInput,
   connectNip46WithNostrConnectUri,
-  createNip46NostrConnectUri,
-  getNostrConnectAppMetadata,
-  parseRelayList,
 } from "../nostr-signer.client";
+import { useRemoteSignerHealthPolling } from "../reconnect-health.client";
 import {
   isConnectionLifecycleErrorMessage,
   isExistingReconnectRunStale,
@@ -61,6 +57,17 @@ import {
   shouldResumeExistingReconnectOnVisible,
   type ExistingReconnectTrigger,
 } from "../reconnect-lifecycle.client";
+import type { ReconnectState } from "../reconnect-state.client";
+import {
+  appendPrimalCallback,
+  bunkerCanonicalKey,
+  clearPendingReconnectStorage,
+  createNip46NostrConnectUri,
+  getPendingReconnect,
+  parseBunkerInput,
+  parseRelayList,
+  setPendingReconnect,
+} from "../reconnect-uri.client";
 
 const DEFAULT_RELAYS = [
   "wss://relay.primal.net",
@@ -95,9 +102,6 @@ function buildRelayUnion(
   return out;
 }
 
-/** Survives app backgrounding when user switches to signer app (e.g. Primal). */
-const PENDING_RECONNECT_STORAGE_KEY = "__smartflow_pending_reconnect_nip46_v1";
-
 const PROFILE_MISMATCH_MESSAGE =
   "Different signer profile detected. Please activate the same identity as your SmartFlow connection.";
 
@@ -107,19 +111,6 @@ const RECONNECT_SUCCESS_TOAST_RETRY =
 const TOAST_RECONNECT_SUCCESS = "Remote signer reconnected.";
 
 const METHOD_BUNKER_INPUT = "bunker_input";
-
-/** Canonical key for bunker identity (pubkey + normalized relays + secret) for reconnect vs new comparison. */
-function bunkerCanonicalKey(bp: {
-  pubkey: string;
-  relays: string[];
-  secret: null | string;
-}): string {
-  const normalized = bp.relays
-    .map((r) => r.trim().toLowerCase())
-    .filter((r) => r.startsWith("wss://"));
-  const sorted = [...new Set(normalized)].sort();
-  return `${bp.pubkey}\n${sorted.join(",")}\n${bp.secret ?? ""}`;
-}
 
 const EXISTING_SESSION_RECONNECT_TIMEOUTS_MS = [20_000, 40_000] as const;
 const EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS = 1000;
@@ -148,26 +139,6 @@ function PrimalLogoIcon({ className }: { className?: string }) {
     />
   );
 }
-
-/** Append callback so Primal redirects back to app (skip in standalone PWA). */
-function appendPrimalCallback(uri: string): string {
-  if (isStandalonePWA()) return uri;
-  if (typeof window === "undefined") return uri;
-  if (uri.includes("callback=")) return uri;
-
-  const callbackUrl =
-    window.location.origin + window.location.pathname + window.location.search;
-  const separator = uri.includes("?") ? "&" : "?";
-  return `${uri}${separator}callback=${encodeURIComponent(callbackUrl)}`;
-}
-
-type ConnectState =
-  | "idle"
-  | "reconnecting_existing"
-  | "uri_ready"
-  | "waiting"
-  | "connected"
-  | "failed";
 
 interface RemoteSignerReconnectControllerProps {
   open?: boolean;
@@ -251,7 +222,7 @@ export function RemoteSignerReconnectDialog(props: {
   const [bunkerInput, setBunkerInput] = useState("");
   const [connectionLabel, setConnectionLabel] = useState("");
 
-  const [state, setState] = useState<ConnectState>("idle");
+  const [state, setState] = useState<ReconnectState>("idle");
   const [existingReconnectAttempt, setExistingReconnectAttempt] = useState(0);
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -266,64 +237,10 @@ export function RemoteSignerReconnectDialog(props: {
   const existingReconnectForegroundAttemptFailedRef = useRef(false);
   /** Set when dialog is closed because connection was restored externally (e.g. user started session in Primal). Skip in-flight failure handling. */
   const closedByExternalReconnectRef = useRef(false);
-  const pendingReconnectRef = useRef<{
-    uri: string;
-    clientSecretKey: Uint8Array;
-    relays: string[];
-  } | null>(null);
 
-  const getPendingReconnect = useCallback((): {
-    uri: string;
-    clientSecretKey: Uint8Array;
-    relays: string[];
-  } | null => {
-    if (pendingReconnectRef.current) return pendingReconnectRef.current;
-    try {
-      const raw = sessionStorage.getItem(PENDING_RECONNECT_STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw) as {
-        uri: string;
-        clientSecretKeyHex: string;
-        relays: string[];
-      };
-      return {
-        uri: parsed.uri,
-        clientSecretKey: parseSecretKeyHex(parsed.clientSecretKeyHex),
-        relays: parsed.relays,
-      };
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const setPendingReconnect = useCallback(
-    (uri: string, clientSecretKey: Uint8Array, relays: string[]) => {
-      const payload = {
-        uri,
-        clientSecretKeyHex: serializeSecretKey(clientSecretKey),
-        relays,
-      };
-      pendingReconnectRef.current = { uri, clientSecretKey, relays };
-      try {
-        sessionStorage.setItem(
-          PENDING_RECONNECT_STORAGE_KEY,
-          JSON.stringify(payload)
-        );
-      } catch {
-        // ignore
-      }
-    },
-    []
-  );
-
-  const clearPendingReconnectStorage = useCallback(() => {
-    pendingReconnectRef.current = null;
-    try {
-      sessionStorage.removeItem(PENDING_RECONNECT_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
-  }, []);
+  const { onConnectionHealthy } = useRemoteSignerHealthPolling({
+    subscribe: true,
+  });
 
   const resetLocal = useCallback(() => {
     existingReconnectRunIdRef.current += 1;
@@ -342,7 +259,7 @@ export function RemoteSignerReconnectDialog(props: {
     setCopyOk(false);
     setConnectionLabel("");
     setExistingReconnectAttempt(0);
-  }, [clearPendingReconnectStorage]);
+  }, []);
 
   const syncRelaysAfterReconnect = useCallback(async () => {
     try {
@@ -1013,8 +930,8 @@ export function RemoteSignerReconnectDialog(props: {
 
   // When connection is restored externally (e.g. user started session in Primal while modal was open), close dialog and avoid handling the modal's in-flight timeout as failure.
   useEffect(() => {
-    if (!open || typeof window === "undefined") return;
-    const handleConnectionHealthy = () => {
+    if (!open) return;
+    return onConnectionHealthy(() => {
       const active = getActiveConnection();
       if (!active?.metadata.pubkey) return;
       const activePubkeyHex =
@@ -1029,18 +946,14 @@ export function RemoteSignerReconnectDialog(props: {
       toast.success(TOAST_RECONNECT_SUCCESS);
       onReconnectSuccess?.(active.id);
       onOpenChange(false);
-    };
-    window.addEventListener(
-      "nostr-connection-healthy",
-      handleConnectionHealthy
-    );
-    return () => {
-      window.removeEventListener(
-        "nostr-connection-healthy",
-        handleConnectionHealthy
-      );
-    };
-  }, [open, expectedPubkeyHex, onReconnectSuccess, onOpenChange]);
+    });
+  }, [
+    open,
+    expectedPubkeyHex,
+    onReconnectSuccess,
+    onOpenChange,
+    onConnectionHealthy,
+  ]);
 
   useEffect(() => {
     if (!open) {
@@ -1188,11 +1101,7 @@ export function RemoteSignerReconnectDialog(props: {
       }
       inFlightNostrConnectRef.current = true;
       const relays = parseRelayList(relayList);
-      const created = createNip46NostrConnectUri({
-        relays,
-        appName: "SmartFlowSocial",
-        ...getNostrConnectAppMetadata(),
-      });
+      const created = createNip46NostrConnectUri(relays);
 
       setNostrConnectUri(created.uri);
       setState("waiting");
@@ -1293,14 +1202,11 @@ export function RemoteSignerReconnectDialog(props: {
     }
   }, [
     bunkerInput,
-    clearPendingReconnectStorage,
-    getPendingReconnect,
     expectedPubkeyHex,
     onOpenChange,
     onReconnectSuccess,
     relayList,
     connectionLabel,
-    setPendingReconnect,
     syncRelaysAfterReconnect,
     state,
     tab,
@@ -1409,8 +1315,6 @@ export function RemoteSignerReconnectDialog(props: {
       cancelRef.current = null;
     }
   }, [
-    clearPendingReconnectStorage,
-    getPendingReconnect,
     expectedPubkeyHex,
     onOpenChange,
     onReconnectSuccess,
@@ -1523,7 +1427,6 @@ export function RemoteSignerReconnectDialog(props: {
     openMode,
     tab,
     state,
-    getPendingReconnect,
     tryReconnectWithExistingConnection,
     tryReconnectWithExistingBunkerConnection,
   ]);

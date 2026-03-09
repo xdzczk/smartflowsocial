@@ -4,7 +4,6 @@
 
 import { json } from "@remix-run/node";
 
-import { prisma } from "~/lib/prisma.server";
 import {
   cancelAtPeriodEndSchema,
   scheduleDowngradeSchema,
@@ -16,6 +15,11 @@ import {
   getUserSubscription,
   updateUserSubscription,
 } from "~/models/payment.server";
+
+import {
+  updateSubscriptionCancelAtPeriodEnd,
+  updateSubscriptionCancelAtPeriodEndAndMetadata,
+} from "../repositories/subscription-actions-data.server";
 
 async function handleCancelAtPeriodEnd(
   userId: string,
@@ -52,10 +56,7 @@ async function handleCancelAtPeriodEnd(
     );
   }
 
-  await prisma.subscription.update({
-    where: { userId },
-    data: { cancelAtPeriodEnd: true },
-  });
+  await updateSubscriptionCancelAtPeriodEnd(userId, true);
 
   return json({
     success: true,
@@ -103,12 +104,9 @@ async function handleScheduleDowngrade(
     return json({ error: "A downgrade is already scheduled" }, { status: 400 });
   }
 
-  await prisma.subscription.update({
-    where: { userId },
-    data: {
-      cancelAtPeriodEnd: true,
-      metadata: { ...metadata, scheduledPlanId: result.data.planId },
-    },
+  await updateSubscriptionCancelAtPeriodEndAndMetadata(userId, {
+    cancelAtPeriodEnd: true,
+    metadata: { ...metadata, scheduledPlanId: result.data.planId },
   });
 
   return json({

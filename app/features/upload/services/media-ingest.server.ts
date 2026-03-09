@@ -1,7 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import { loadUploadProviderSettings } from "~/features/user";
-import { prisma } from "~/lib/prisma.server";
+
+import {
+  createMediaAsset,
+  createMediaVariant,
+  findMediaAssetByUserAndSha256,
+  findMediaVariantByAssetKindProviderUrl,
+  updateMediaAssetStatus,
+} from "../repositories/media-data.server";
 
 import { evaluateMediaPolicy } from "./media-policy.server";
 import { enqueueMediaProcessing } from "./media-processing.server";
@@ -122,55 +129,41 @@ export async function commitMediaIngest(
     });
 
     const existingAsset = item.sha256
-      ? await prisma.mediaAsset.findFirst({
-          where: { userId, sha256: item.sha256 },
-          select: { id: true },
-        })
+      ? await findMediaAssetByUserAndSha256(userId, item.sha256)
       : null;
 
     const asset =
       existingAsset ??
-      (await prisma.mediaAsset.create({
-        data: {
-          userId,
-          status: "uploaded",
-          sourceMimeType: item.mimeType,
-          sourceBytes: item.size,
-          sha256: item.sha256 ?? null,
-          sourceProvider: item.provider,
-        },
+      (await createMediaAsset({
+        userId,
+        status: "uploaded",
+        sourceMimeType: item.mimeType,
+        sourceBytes: item.size,
+        sha256: item.sha256 ?? null,
+        sourceProvider: item.provider,
       }));
 
-    const existingVariant = await prisma.mediaVariant.findFirst({
-      where: {
-        assetId: asset.id,
-        variantKind: "original",
-        url: item.url,
-      },
-      select: { id: true },
-    });
+    const existingVariant = await findMediaVariantByAssetKindProviderUrl(
+      asset.id,
+      "original",
+      item.provider,
+      item.url
+    );
 
     if (!existingVariant) {
-      await prisma.mediaVariant.create({
-        data: {
-          assetId: asset.id,
-          variantKind: "original",
-          mimeType: item.mimeType,
-          bytes: item.size,
-          url: item.url,
-          provider: item.provider,
-          isPrimary: true,
-          status: "pending",
-        },
+      await createMediaVariant({
+        assetId: asset.id,
+        variantKind: "original",
+        mimeType: item.mimeType,
+        bytes: item.size,
+        url: item.url,
+        provider: item.provider,
+        isPrimary: true,
+        status: "pending",
       });
     }
 
-    await prisma.mediaAsset.update({
-      where: { id: asset.id },
-      data: {
-        status: "processing",
-      },
-    });
+    await updateMediaAssetStatus(asset.id, { status: "processing" });
     enqueueMediaProcessing(asset.id);
 
     committed.push({

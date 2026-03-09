@@ -2,26 +2,19 @@
  * Server functions for engagement reply templates (CRUD).
  */
 
-import type { PrismaClient } from "@prisma/client";
+import {
+  createReplyTemplate as createReplyTemplateRow,
+  deleteReplyTemplateByIdAndUserId,
+  findManyReplyTemplatesByUserId,
+  type ReplyTemplateRecord as RepoReplyTemplateRecord,
+} from "./repositories/engagement-reply-templates-data.server";
 
-import { prisma } from "~/lib/prisma.server";
-
-const db = prisma as unknown as PrismaClient;
-
-export interface ReplyTemplateRecord {
-  id: string;
-  slug: string;
-  body: string;
-}
+export type ReplyTemplateRecord = RepoReplyTemplateRecord;
 
 export async function listReplyTemplates(
   userId: string
 ): Promise<ReplyTemplateRecord[]> {
-  return await db.engagementReplyTemplate.findMany({
-    where: { userId },
-    orderBy: { slug: "asc" },
-    select: { id: true, slug: true, body: true },
-  });
+  return findManyReplyTemplatesByUserId(userId);
 }
 
 export async function createReplyTemplate(
@@ -32,9 +25,7 @@ export async function createReplyTemplate(
   const s = slug.trim().toLowerCase().replace(/\s+/g, "-");
   if (!s) return { success: false, error: "Slug is required" };
   try {
-    await db.engagementReplyTemplate.create({
-      data: { userId, slug: s, body: body.trim() },
-    });
+    await createReplyTemplateRow(userId, s, body.trim());
     return { success: true };
   } catch (e) {
     return {
@@ -49,12 +40,8 @@ export async function deleteReplyTemplate(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const existing = await db.engagementReplyTemplate.findFirst({
-      where: { id, userId },
-    });
-    if (!existing) return { success: false, error: "Not found" };
-    await db.engagementReplyTemplate.delete({ where: { id } });
-    return { success: true };
+    const deleted = await deleteReplyTemplateByIdAndUserId(id, userId);
+    return deleted ? { success: true } : { success: false, error: "Not found" };
   } catch {
     return { success: false, error: "Failed to delete template" };
   }

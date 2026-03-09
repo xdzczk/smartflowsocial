@@ -1,11 +1,12 @@
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-import { calendarKeys } from "./useCalendarQuery";
+import { calendarKeys } from "~/features/posts/calendar";
+import { publishedPostsKeys } from "~/features/posts/publishing";
+import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
-import { publishedPostsKeys } from "./usePublishedPostsQuery";
-import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 
 const POST_VIEW_QUERY_KEYS = [
   scheduledPostsKeys.all,

@@ -25,9 +25,16 @@ vi.mock("~/features/payments/subscriptions.server", () => ({
   requireAnySubscription: vi.fn(),
 }));
 
-vi.mock("~/features/posts/services/published-posts.server", () => ({
-  getPublishedDashboardData: vi.fn(),
-}));
+vi.mock("~/features/posts/publishing/index.server", async (importOriginal) => {
+  const actual = await importOriginal<
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vi.mock importOriginal() generic
+    typeof import("~/features/posts/publishing/index.server")
+  >();
+  return {
+    ...actual,
+    getPublishedDashboardData: vi.fn(),
+  };
+});
 
 import {
   createValidUserMock,
@@ -36,7 +43,7 @@ import {
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { getPublishedDashboardData } from "~/features/posts/services/published-posts.server";
+import { getPublishedDashboardData } from "~/features/posts/publishing/index.server";
 import { loader } from "~/routes/dashboard.published";
 
 describe("Posted Posts Loader Integration", () => {

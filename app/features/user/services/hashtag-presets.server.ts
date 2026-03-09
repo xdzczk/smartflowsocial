@@ -1,6 +1,14 @@
-import type { HashTagPreset, User } from "@prisma/client";
-
-import { prisma } from "~/lib/prisma.server";
+import type { HashTagPreset, User } from "../data/user-prisma-types.server";
+import {
+  createHashTagPreset as createHashTagPresetRow,
+  deleteHashTagPreset as deleteHashTagPresetRow,
+  findHashTagPresetByIdAndUserId,
+  findHashTagPresetExists,
+  findHashTagPresetsByUserId,
+  findUserShowHashTagsInPosts,
+  updateHashTagPreset as updateHashTagPresetRow,
+  updateUserShowHashTagsInPosts,
+} from "../repositories/hashtag-presets-data.server";
 
 /**
  * Creates a new hashtag preset for a user
@@ -11,14 +19,7 @@ export function createHashTagPreset(
   tags: string,
   description?: string
 ): Promise<HashTagPreset> {
-  return prisma.hashTagPreset.create({
-    data: {
-      userId,
-      name: name.trim(),
-      tags: tags.trim(),
-      description: description?.trim(),
-    },
-  });
+  return createHashTagPresetRow({ userId, name, tags, description });
 }
 
 /**
@@ -31,32 +32,14 @@ export function updateHashTagPreset(
   tags: string,
   description?: string
 ): Promise<HashTagPreset> {
-  return prisma.hashTagPreset.update({
-    where: {
-      id,
-      userId,
-    },
-    data: {
-      name: name.trim(),
-      tags: tags.trim(),
-      description: description?.trim(),
-    },
-  });
+  return updateHashTagPresetRow(userId, id, { name, tags, description });
 }
 
 /**
  * Deletes a hashtag preset
  */
-export async function deleteHashTagPreset(
-  userId: string,
-  id: string
-): Promise<void> {
-  await prisma.hashTagPreset.delete({
-    where: {
-      id,
-      userId,
-    },
-  });
+export function deleteHashTagPreset(userId: string, id: string): Promise<void> {
+  return deleteHashTagPresetRow(userId, id);
 }
 
 /**
@@ -65,14 +48,7 @@ export async function deleteHashTagPreset(
 export function getUserHashTagPresets(
   userId: string
 ): Promise<HashTagPreset[]> {
-  return prisma.hashTagPreset.findMany({
-    where: {
-      userId,
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-  });
+  return findHashTagPresetsByUserId(userId);
 }
 
 /**
@@ -82,28 +58,17 @@ export function getHashTagPresetById(
   userId: string,
   id: string
 ): Promise<HashTagPreset | null> {
-  return prisma.hashTagPreset.findFirst({
-    where: {
-      id,
-      userId,
-    },
-  });
+  return findHashTagPresetByIdAndUserId(userId, id);
 }
 
 /**
  * Checks if a hashtag preset exists for a user
  */
-export async function hashTagPresetExistsForUser(
+export function hashTagPresetExistsForUser(
   userId: string,
   presetId: string
 ): Promise<boolean> {
-  const preset = await prisma.hashTagPreset.findFirst({
-    where: {
-      id: presetId,
-      userId: userId,
-    },
-  });
-  return !!preset;
+  return findHashTagPresetExists(userId, presetId);
 }
 
 /**
@@ -113,30 +78,14 @@ export function updateUserHashTagsAndSettings(
   userId: string,
   showHashTagsInPosts: boolean
 ): Promise<User> {
-  // Update the user's showHashTagsinPosts setting
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      showHashTagsinPosts: showHashTagsInPosts,
-    },
-  });
+  return updateUserShowHashTagsInPosts(userId, showHashTagsInPosts);
 }
 
 /**
  * Gets whether user wants to show hashtags in posts
  */
-export async function getShowHashTagsInPosts(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      showHashTagsinPosts: true,
-    },
-  });
-  return user?.showHashTagsinPosts ?? false;
+export function getShowHashTagsInPosts(userId: string): Promise<boolean> {
+  return findUserShowHashTagsInPosts(userId);
 }
 
 /**
@@ -146,12 +95,5 @@ export function updateShowHashTagsInPosts(
   userId: string,
   showHashTags: boolean
 ): Promise<User> {
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      showHashTagsinPosts: showHashTags,
-    },
-  });
+  return updateUserShowHashTagsInPosts(userId, showHashTags);
 }

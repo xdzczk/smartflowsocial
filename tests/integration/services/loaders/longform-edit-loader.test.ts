@@ -19,7 +19,7 @@ vi.mock("~/features/user", () => ({
 
 import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../../utils/test-helpers";
 
-import { loadLongFormEditData } from "~/features/posts/services/longform-edit-loader.server";
+import { loadLongFormEditData } from "~/features/posts/server";
 import {
   getUserById,
   getScheduleInterval,

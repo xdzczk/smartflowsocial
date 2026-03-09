@@ -5,7 +5,16 @@
 
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
-import { prisma } from "~/lib/prisma.server";
+
+import {
+  aggregateCanonicalOwnedBytes,
+  createMedia as createMediaRow,
+  deleteMediaById as deleteMediaByIdRow,
+  findMediaByIdAndUser,
+  findMediaByUserAndUrl,
+  findMediaManyByUser,
+  aggregateMediaByUser,
+} from "../repositories/media-data.server";
 
 export interface CreateMediaParams {
   userId: string;
@@ -17,30 +26,15 @@ export interface CreateMediaParams {
 }
 
 export async function createMedia(data: CreateMediaParams) {
-  return prisma.media.create({
-    data: {
-      userId: data.userId,
-      url: data.url,
-      sha256: data.sha256 ?? null,
-      size: data.size ?? null,
-      mimeType: data.mimeType ?? null,
-      provider: data.provider,
-    },
-  });
+  return createMediaRow(data);
 }
 
 export async function createMediaIfMissing(data: CreateMediaParams) {
-  const existing = await prisma.media.findFirst({
-    where: {
-      userId: data.userId,
-      url: data.url,
-    },
-    select: { id: true },
-  });
+  const existing = await findMediaByUserAndUrl(data.userId, data.url);
   if (existing) {
     return { id: existing.id, created: false };
   }
-  const created = await createMedia(data);
+  const created = await createMediaRow(data);
   return { id: created.id, created: true };
 }
 
@@ -48,54 +42,28 @@ export async function listMediaForUser(
   userId: string,
   options: { skip: number; take: number; provider?: string }
 ) {
-  const where: { userId: string; provider?: string } = { userId };
-  if (options.provider) {
-    where.provider = options.provider;
-  }
-  return prisma.media.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    skip: options.skip,
-    take: options.take,
-  });
+  return findMediaManyByUser(userId, options);
 }
 
 export async function getMediaAggregateForUser(
   userId: string,
   options?: { provider?: string }
 ) {
-  const where: { userId: string; provider?: string } = { userId };
-  if (options?.provider) {
-    where.provider = options.provider;
-  }
-  return prisma.media.aggregate({
-    where,
-    _count: { id: true },
-    _sum: { size: true },
-  });
+  return aggregateMediaByUser(userId, options);
 }
 
 export async function getCanonicalOwnedBytesForUser(
   userId: string
 ): Promise<bigint> {
-  const aggregate = await prisma.media.aggregate({
-    where: {
-      userId,
-      OR: [{ provider: "S3" }, { provider: { startsWith: "BLOSSOM" } }],
-    },
-    _sum: { size: true },
-  });
-  return BigInt(aggregate._sum.size ?? 0);
+  return aggregateCanonicalOwnedBytes(userId);
 }
 
 export async function findMediaByIdForUser(mediaId: string, userId: string) {
-  return prisma.media.findFirst({
-    where: { id: mediaId, userId },
-  });
+  return findMediaByIdAndUser(mediaId, userId);
 }
 
 export async function deleteMediaById(mediaId: string) {
-  return prisma.media.delete({ where: { id: mediaId } });
+  return deleteMediaByIdRow(mediaId);
 }
 
 function extractBlossomObjectKey(fileUrl: string): string | null {

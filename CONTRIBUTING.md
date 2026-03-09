@@ -377,6 +377,70 @@ All features have `index.ts` files that export their public API:
 - Document API endpoints and database schema changes
 - Update README.md for significant changes
 
+### 6. **Lint and type suppression policy**
+
+- **Prefer fixing code over adding a suppression.** Only add `eslint-disable`, `@ts-ignore`, or
+  `@ts-expect-error` when necessary (e.g. interop with untyped libs, known safe escape hatches).
+- **Every suppression must have a comment** explaining why it is there. For temporary suppressions
+  (e.g. during a refactor), add a TODO and ticket:
+  `// TODO(REFACTOR-123): remove after splitting queues.server`.
+- **Categorize suppressions** when auditing: **Acceptable** (documented interop), **Temporary**
+  (migration in progress), **Must fix** (code smell to remove when touching the file). "Must fix"
+  items go into the engineering backlog.
+- **When working in a file** that has "must fix" or "temporary" suppressions, fix or remove them in
+  the same PR when feasible.
+- To produce a full audit list: run `./scripts/audit-suppressions.sh [app|tests|all]` (outputs TSV:
+  file, line, match, category). Fill the category column when categorizing (Acceptable / Temporary /
+  Must fix). Maintain the backlog and reduce over time.
+
+### 7. **Logging**
+
+- **Server:** Use the existing error-logger (`~/lib/error-logger.server`: `logError`, `logInfo`,
+  `logWarning`) and secrets-sanitizer where output may contain user or config data. Do not use raw
+  `console.log`/`warn`/`error` in app or infra code for production paths.
+- **Client:** Use the existing safe-console (`~/lib/safe-console.client.ts`) or a small wrapper that
+  guards in production. Do not add new raw `console.*` in app code for production paths.
+- **Allow list (raw console acceptable):** `app/lib/error-logger.server.ts` (logger implementation),
+  `app/lib/secrets-sanitizer.server.ts` (safe console helpers), `app/lib/safe-console.client.ts`
+  (client wrapper), `app/entry.client.tsx` (bootstrap only). Init/config code (e.g. web-push when
+  VAPID not set) may use `console.warn` with a one-line comment.
+- **Tests and scripts** may use `console.*`.
+- **Audit:** Run `./scripts/audit-console.sh` or `rg "console\.(log|warn|error|debug|info)" app/`
+  (exclude tests). For each listed file: replace with error-logger/safe-console or add a one-line
+  comment justifying the exception. ESLint `no-console` is enabled for app code (with allow for
+  `error`, `warn`, `info`); tests and allow-listed files have it off.
+
+### 8. **Runtime configuration (process.env)**
+
+- **Server:** Read runtime configuration only from `~/lib/env.server` (import `env`). Do not use
+  `process.env` in app or infra code; add any new variables to `EnvConfig` in `env.server.ts` and
+  use `env.VAR`.
+- **Client:** Use the values passed from the server (e.g. `window.ENV` or loader data from root). Do
+  not introduce new `process.env` on the client.
+- **Scripts:** Scripts in `scripts/` and CI config (e.g. Cypress) may use `process.env` or a shared
+  `loadEnvForScripts()` until refactored; document exceptions.
+- **Documentation:** See [architecture](./docs/getting-started/architecture.md) for the
+  single-config-source rule.
+
+### 9. **app/lib: generic only**
+
+- **Rule:** `app/lib` contains only generic, shared utilities (validation, env, temporal, logging,
+  errors, security, metrics). Domain-specific code (Nostr signers, relay config, push, etc.) lives
+  in the owning feature. See [app/lib audit](docs/reference/app-lib-audit.md).
+- **When adding code:** Prefer the feature folder over lib unless the code is clearly generic. New
+  code in lib? Confirm it is generic, not feature-specific.
+
+### 10. **Type safety (any and unsafe casts)**
+
+- **Prefer proper types over `any`.** Use generics, type guards, or narrow types instead of `any` or
+  broad `as` casts. For untyped third-party APIs, document the escape hatch with a comment (e.g.
+  `// eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Nostr lib response`).
+- **Categorize when auditing:** **Acceptable** (documented interop), **Fixable** (can be replaced
+  without major refactor), **Deferred** (needs larger refactor; add TODO and ticket). Fix "Fixable"
+  when touching the file; remove "Deferred" during refactors (e.g. jumbo-file splits).
+- **No new unjustified `any`** in app code except allow-listed files. To audit:
+  `rg ": any|as any|as unknown as" app/` or run `./scripts/audit-any.sh`.
+
 ---
 
 ## Branching Strategy
@@ -433,7 +497,8 @@ test: add unit tests for user authentication
 ## Pull Request Process
 
 Before submitting a pull request (PR), make sure your code follows all standards and has been
-tested.
+tested. Do not commit generated test result artifacts (`test-results/`); CI is the source of truth
+for test status.
 
 ### 1. **Sync with Upstream**
 

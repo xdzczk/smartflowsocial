@@ -1,5 +1,8 @@
-import { prisma } from "~/lib/prisma.server";
-import { blastrRelay, DEFAULT_USER_WRITE_RELAYS } from "~/lib/relays";
+import { blastrRelay, DEFAULT_USER_WRITE_RELAYS } from "./relay-constants";
+import {
+  getRelayIntentFromDb,
+  isBlastrEnabledForUserFromDb,
+} from "./repositories/relay-resolution-data.server";
 
 export type ManagedRelayId = "blastr";
 export type ManagedRelayRole = "fanout";
@@ -15,21 +18,8 @@ export interface RelayIntent {
   writeRelays: string[];
 }
 
-function sanitizeRelayStrings(relays: unknown): string[] {
-  if (!Array.isArray(relays)) return [];
-  return relays
-    .map((relay) => (typeof relay === "string" ? relay : String(relay)).trim())
-    .filter((r) => r.length > 0);
-}
-
 function normalizeRelays(relays: string[]): string[] {
   return Array.from(new Set(relays.map((r) => r.trim()).filter(Boolean)));
-}
-
-function isTimeoutErrorMessage(message: string | undefined): boolean {
-  if (!message) return false;
-  const m = message.toLowerCase();
-  return m.includes("timeout") || m.includes("timed out");
 }
 
 /**
@@ -39,30 +29,12 @@ function isTimeoutErrorMessage(message: string | undefined): boolean {
  * - NEVER injects managed relays here.
  */
 export async function getRelayIntent(userId: string): Promise<RelayIntent> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { userRelays: true },
-  });
-  if (!user) {
-    throw new Error(`User ${userId} not found`);
-  }
-  const persisted = sanitizeRelayStrings(user.userRelays);
+  const { writeRelays: persisted } = await getRelayIntentFromDb(userId);
   const writeRelays =
     persisted.length > 0
       ? normalizeRelays(persisted)
       : DEFAULT_USER_WRITE_RELAYS;
   return { writeRelays };
-}
-
-async function isBlastrEnabledForUser(userId: string): Promise<boolean> {
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId },
-    include: { Plan: true },
-  });
-
-  return !!(
-    subscription?.status === "ACTIVE" && subscription.Plan?.enableRelayBlast
-  );
 }
 
 /**
@@ -75,7 +47,7 @@ export async function getEffectiveWriteRelays(userId: string): Promise<{
   managed: ManagedRelay[];
 }> {
   const intent = await getRelayIntent(userId);
-  const blastrEnabled = await isBlastrEnabledForUser(userId);
+  const blastrEnabled = await isBlastrEnabledForUserFromDb(userId);
 
   const managed: ManagedRelay[] = [
     {
@@ -115,5 +87,8 @@ export function mapPublisherOkToAckStatus(input: {
   error?: string;
 }): "ACCEPTED" | "FAILED" | "TIMEOUT" {
   if (input.ok) return "ACCEPTED";
-  return isTimeoutErrorMessage(input.error) ? "TIMEOUT" : "FAILED";
+  const m = input.error?.toLowerCase() ?? "";
+  return m.includes("timeout") || m.includes("timed out")
+    ? "TIMEOUT"
+    : "FAILED";
 }

@@ -3,11 +3,13 @@
  * Idempotent: unique on (referrer_npub, payment_id); duplicate insert is no-op.
  */
 
-import { ReferralEarningStatus } from "@prisma/client";
-
-import { prisma } from "~/lib/prisma.server";
-
+import { ReferralEarningStatus } from "./data/referral-prisma-types.server";
 import { computeReferralCommissionSats } from "./referral-config.server";
+import {
+  createReferralEarning,
+  findReferralByReferredNpubSelectReferrer,
+  findUserNpubById,
+} from "./repositories/referral-data.server";
 
 export async function recordReferralEarningIfAny(
   payerUserId: string,
@@ -16,31 +18,23 @@ export async function recordReferralEarningIfAny(
 ): Promise<void> {
   if (amountPaidSats <= 0) return;
 
-  const user = await prisma.user.findUnique({
-    where: { id: payerUserId },
-    select: { npub: true },
-  });
+  const user = await findUserNpubById(payerUserId);
   if (!user) return;
 
-  const referral = await prisma.referral.findUnique({
-    where: { referredNpub: user.npub },
-    select: { referrerNpub: true },
-  });
+  const referral = await findReferralByReferredNpubSelectReferrer(user.npub);
   if (!referral) return;
 
   const commissionSats = computeReferralCommissionSats(amountPaidSats);
   if (commissionSats <= 0) return;
 
   try {
-    await prisma.referralEarning.create({
-      data: {
-        referrerNpub: referral.referrerNpub,
-        referredNpub: user.npub,
-        paymentId,
-        amountPaidSats,
-        commissionSats,
-        status: ReferralEarningStatus.PENDING,
-      },
+    await createReferralEarning({
+      referrerNpub: referral.referrerNpub,
+      referredNpub: user.npub,
+      paymentId,
+      amountPaidSats,
+      commissionSats,
+      status: ReferralEarningStatus.PENDING,
     });
   } catch (error: unknown) {
     const code =

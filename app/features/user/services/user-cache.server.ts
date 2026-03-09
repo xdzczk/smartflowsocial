@@ -3,8 +3,6 @@
  * Provides cached versions of user data that rarely changes
  */
 
-import type { HashTagPreset, QueueType } from "@prisma/client";
-
 import type { RelayIntent } from "~/features/relays/relay-resolution.server";
 import { getRelayIntent } from "~/features/relays/relay-resolution.server";
 import {
@@ -12,6 +10,11 @@ import {
   deleteFromRedis,
   getOrSetJson,
 } from "~/lib/redis-cache.server";
+
+import type {
+  HashTagPreset,
+  QueueType,
+} from "../data/user-prisma-types.server";
 
 import { getUserHashTagPresets } from "./hashtag-presets.server";
 import { getQueueTypes } from "./queue-types.server";

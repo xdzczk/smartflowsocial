@@ -4,15 +4,25 @@
  * Apply preset: load by id, resolve queue by queueId if present (warn if missing).
  */
 
-import type { GiveawayPreset } from "@prisma/client";
-
 import type { UserSubscription } from "~/features/payments/types";
 import {
   getUserPlanType,
   getGiveawayPlanLimits,
 } from "~/features/payments/types";
-import { prisma } from "~/lib/prisma.server";
 import { getUserSubscription } from "~/models/payment.server";
+
+import type {
+  GiveawayPreset,
+  Prisma,
+} from "./data/giveaway-prisma-types.server";
+import {
+  createGiveawayPreset as createPresetRow,
+  deleteGiveawayPreset as deletePresetRow,
+  findQueueTypeByIdAndUser,
+  getGiveawayPresetById as getPresetByIdRow,
+  getGiveawayPresetsByUser as getPresetsByUserRow,
+  updateGiveawayPreset as updatePresetRow,
+} from "./repositories/giveaway-presets-data.server";
 
 export interface CreateGiveawayPresetInput {
   name: string;
@@ -39,18 +49,18 @@ export async function createGiveawayPreset(
     );
   }
 
-  return prisma.giveawayPreset.create({
-    data: {
-      userId,
-      name: input.name.trim(),
-      scopeType: input.scopeType,
-      scopeReference: input.scopeReference,
-      engagementTypes: input.engagementTypes,
-      winnerCount: input.winnerCount,
-      selectionMode: input.selectionMode ?? "UNIQUE_USER",
-      engagementWeights: input.engagementWeights ?? undefined,
-      filters: input.filters ?? undefined,
-    },
+  return createPresetRow({
+    user: { connect: { id: userId } },
+    name: input.name.trim(),
+    scopeType: input.scopeType,
+    scopeReference: input.scopeReference as Prisma.InputJsonValue,
+    engagementTypes: input.engagementTypes as Prisma.InputJsonValue,
+    winnerCount: input.winnerCount,
+    selectionMode: input.selectionMode ?? "UNIQUE_USER",
+    engagementWeights: (input.engagementWeights ?? undefined) as
+      | Prisma.InputJsonValue
+      | undefined,
+    filters: (input.filters ?? undefined) as Prisma.InputJsonValue | undefined,
   });
 }
 
@@ -59,55 +69,41 @@ export async function updateGiveawayPreset(
   id: string,
   input: Partial<CreateGiveawayPresetInput>
 ): Promise<GiveawayPreset> {
-  const data: Parameters<typeof prisma.giveawayPreset.update>[0]["data"] = {};
+  const data: Prisma.GiveawayPresetUpdateInput = {};
   if (input.name !== undefined) data.name = input.name.trim();
   if (input.scopeType !== undefined) data.scopeType = input.scopeType;
   if (input.scopeReference !== undefined)
-    data.scopeReference = input.scopeReference;
+    data.scopeReference = input.scopeReference as Prisma.InputJsonValue;
   if (input.engagementTypes !== undefined)
-    data.engagementTypes = input.engagementTypes;
+    data.engagementTypes = input.engagementTypes as Prisma.InputJsonValue;
   if (input.winnerCount !== undefined) data.winnerCount = input.winnerCount;
   if (input.selectionMode !== undefined)
     data.selectionMode = input.selectionMode;
   if (input.engagementWeights !== undefined)
-    data.engagementWeights = input.engagementWeights as Parameters<
-      typeof prisma.giveawayPreset.update
-    >[0]["data"]["engagementWeights"];
+    data.engagementWeights = input.engagementWeights as Prisma.InputJsonValue;
   if (input.filters !== undefined)
-    data.filters = input.filters as Parameters<
-      typeof prisma.giveawayPreset.update
-    >[0]["data"]["filters"];
-  return prisma.giveawayPreset.update({
-    where: { id, userId },
-    data,
-  });
+    data.filters = input.filters as Prisma.InputJsonValue;
+  return updatePresetRow(id, userId, data);
 }
 
 export async function deleteGiveawayPreset(
   userId: string,
   id: string
 ): Promise<void> {
-  await prisma.giveawayPreset.delete({
-    where: { id, userId },
-  });
+  await deletePresetRow(id, userId);
 }
 
 export async function getGiveawayPresetsByUser(
   userId: string
 ): Promise<GiveawayPreset[]> {
-  return prisma.giveawayPreset.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
+  return getPresetsByUserRow(userId);
 }
 
 export async function getGiveawayPresetById(
   userId: string,
   id: string
 ): Promise<GiveawayPreset | null> {
-  return prisma.giveawayPreset.findFirst({
-    where: { id, userId },
-  });
+  return getPresetByIdRow(userId, id);
 }
 
 /**
@@ -120,8 +116,5 @@ export async function resolvePresetQueue(
 ): Promise<{ id: string; name: string } | null> {
   const queueId = scopeReference["queueId"];
   if (typeof queueId !== "string") return null;
-  return await prisma.queueType.findFirst({
-    where: { id: queueId, userId },
-    select: { id: true, name: true },
-  });
+  return findQueueTypeByIdAndUser(userId, queueId);
 }

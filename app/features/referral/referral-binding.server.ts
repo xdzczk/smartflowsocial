@@ -3,11 +3,13 @@
  * One referrer per referred_npub; no self-referral; immutable.
  */
 
-import type { prisma } from "~/lib/prisma.server";
-
 import type { ReferralContext } from "./referral-context.server";
+import {
+  bindReferralInTransaction,
+  type Tx,
+} from "./repositories/referral-data.server";
 
-type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+export type { Tx };
 
 export async function bindReferralIfEligible(
   tx: Tx,
@@ -19,16 +21,5 @@ export async function bindReferralIfEligible(
   const referrerNpub = referralContext.referrer_npub.trim();
   if (referrerNpub === referredNpub) return; // self-referral blocked
 
-  const existing = await tx.referral.findUnique({
-    where: { referredNpub },
-    select: { referredNpub: true },
-  });
-  if (existing) return;
-
-  await tx.referral.create({
-    data: {
-      referrerNpub,
-      referredNpub,
-    },
-  });
+  await bindReferralInTransaction(tx, referredNpub, referrerNpub);
 }

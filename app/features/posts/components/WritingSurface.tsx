@@ -8,7 +8,7 @@ import type { ComponentProps } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import type { FieldValues, UseFormRegister } from "react-hook-form";
 
-import { LongFormContentEditor } from "./LongFormContentEditor";
+import { LongFormContentEditor } from "~/features/posts/longform";
 
 interface WritingSurfaceProps<T extends FieldValues = FieldValues> {
   /** Form register for uncontrolled title input (avoids freeze on re-render) */

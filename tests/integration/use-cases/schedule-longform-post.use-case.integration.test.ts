@@ -8,8 +8,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { CreateLongFormPostUseCase } from "~/features/posts/use-cases/create-longform-post.use-case.server";
-import { ScheduleLongFormPostUseCase } from "~/features/posts/use-cases/schedule-longform-post.use-case.server";
+import { CreateLongFormPostUseCase } from "~/features/posts/server";
+import { ScheduleLongFormPostUseCase } from "~/features/posts/server";
 import { prisma } from "~/lib/prisma.server";
 import { fromDate } from "~/lib/temporal";
 
@@ -107,7 +107,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         where: { id: postId },
       });
       const { deriveIsScheduledLongForm } =
-        await import("~/features/posts/state-machine/longform-post-state");
+        await import("~/features/posts/longform/state-machine/longform-post-state");
       expect(deriveIsScheduledLongForm(scheduledPost?.currentState)).toBe(true);
       // scheduledAtUtc is stored as Date in database, compare as Date objects
       expect(scheduledPost?.scheduledAtUtc).toBeInstanceOf(Date);

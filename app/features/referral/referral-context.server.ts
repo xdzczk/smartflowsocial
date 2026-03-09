@@ -5,6 +5,8 @@
 
 import { createCookie } from "@remix-run/node";
 
+import { env } from "~/lib/env.server";
+
 const REFERRAL_CONTEXT_TTL_DAYS = 7;
 const REFERRAL_CONTEXT_MAX_AGE_SEC = REFERRAL_CONTEXT_TTL_DAYS * 24 * 60 * 60;
 
@@ -13,8 +15,8 @@ export const referralContextCookie = createCookie("referral_context", {
   path: "/",
   sameSite: "lax",
   maxAge: REFERRAL_CONTEXT_MAX_AGE_SEC,
-  secrets: process.env["SESSION_SECRET"] ? [process.env["SESSION_SECRET"]] : [],
-  secure: process.env["NODE_ENV"] === "production",
+  secrets: env.SESSION_SECRET ? [env.SESSION_SECRET] : [],
+  secure: env.NODE_ENV === "production",
 });
 
 export interface ReferralContext {

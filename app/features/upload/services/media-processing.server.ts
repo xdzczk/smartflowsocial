@@ -1,4 +1,10 @@
-import { prisma } from "~/lib/prisma.server";
+import {
+  createMediaVariant,
+  findMediaAssetById,
+  findMediaVariantByAssetKindProviderUrl,
+  updateMediaAssetStatus,
+  updateMediaVariant,
+} from "../repositories/media-data.server";
 
 import { evaluateMediaPolicy } from "./media-policy.server";
 
@@ -17,47 +23,35 @@ async function createAliasVariant(
   url: string,
   provider: string
 ) {
-  const existing = await prisma.mediaVariant.findFirst({
-    where: { assetId, variantKind, provider, url },
-    select: { id: true },
-  });
+  const existing = await findMediaVariantByAssetKindProviderUrl(
+    assetId,
+    variantKind,
+    provider,
+    url
+  );
   if (existing) return;
 
-  await prisma.mediaVariant.create({
-    data: {
-      assetId,
-      variantKind,
-      mimeType,
-      bytes,
-      url,
-      provider,
-      isPrimary: false,
-      status: "ready",
-    },
+  await createMediaVariant({
+    assetId,
+    variantKind,
+    mimeType,
+    bytes,
+    url,
+    provider,
+    isPrimary: false,
+    status: "ready",
   });
 }
 
 export async function processMediaAsset(assetId: string): Promise<void> {
-  const asset = await prisma.mediaAsset.findUnique({
-    where: { id: assetId },
-    include: {
-      variants: {
-        where: { variantKind: "original" },
-        orderBy: { createdAt: "asc" },
-        take: 1,
-      },
-    },
-  });
+  const asset = await findMediaAssetById(assetId);
   if (!asset) return;
 
   const original = asset.variants[0];
   if (!original) {
-    await prisma.mediaAsset.update({
-      where: { id: assetId },
-      data: {
-        status: "failed",
-        errorReason: "missing_original_variant",
-      },
+    await updateMediaAssetStatus(assetId, {
+      status: "failed",
+      errorReason: "missing_original_variant",
     });
     return;
   }
@@ -68,21 +62,18 @@ export async function processMediaAsset(assetId: string): Promise<void> {
   });
 
   if (!policy.allowed) {
-    await prisma.mediaAsset.update({
-      where: { id: assetId },
-      data: { status: "failed", errorReason: policy.reason },
+    await updateMediaAssetStatus(assetId, {
+      status: "failed",
+      errorReason: policy.reason,
     });
-    await prisma.mediaVariant.update({
-      where: { id: original.id },
-      data: { status: "failed" },
-    });
+    await updateMediaVariant(original.id, { status: "failed" });
     return;
   }
 
   if (policy.mediaClass === "unknown") {
-    await prisma.mediaAsset.update({
-      where: { id: assetId },
-      data: { status: "failed", errorReason: "unsupported_media_type" },
+    await updateMediaAssetStatus(assetId, {
+      status: "failed",
+      errorReason: "unsupported_media_type",
     });
     return;
   }
@@ -100,19 +91,13 @@ export async function processMediaAsset(assetId: string): Promise<void> {
   }
 
   if (original.status !== "ready") {
-    await prisma.mediaVariant.update({
-      where: { id: original.id },
-      data: { status: "ready" },
-    });
+    await updateMediaVariant(original.id, { status: "ready" });
   }
 
-  await prisma.mediaAsset.update({
-    where: { id: assetId },
-    data: {
-      status: "ready",
-      errorReason: null,
-      lastProcessedAt: new Date(),
-    },
+  await updateMediaAssetStatus(assetId, {
+    status: "ready",
+    errorReason: null,
+    lastProcessedAt: new Date(),
   });
 }
 

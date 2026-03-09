@@ -124,20 +124,19 @@ smartflow-social/
 │   │   ├── engagement/          # Engagement feed & notifications
 │   │   ├── giveaway/            # Giveaway management
 │   │   ├── payments/            # Payment processing
-│   │   ├── posts/               # Post creation & scheduling (59 files)
+│   │   ├── posts/               # Post creation & scheduling (feature; internal submodules: composer, calendar, scheduling, publishing, longform, drafts, runway; see [posts-submodules](../reference/posts-submodules.md))
 │   │   ├── templates/           # Post templates
 │   │   ├── upload/              # File upload handling
 │   │   └── user/                # User management
 │   │
-│   ├── lib/                      # Shared utilities and helpers
+│   ├── lib/                      # Generic shared utilities only (see [app/lib audit](../reference/app-lib-audit.md))
 │   │   ├── date.ts              # Date/time utilities
 │   │   ├── encryption.server.ts # Encryption helpers
+│   │   ├── env.server.ts        # Typed environment config
 │   │   ├── helpers.ts           # General helpers
-│   │   ├── nostr.ts             # Nostr protocol utilities
-│   │   ├── nostrwebsocket.server.ts # WebSocket connections
 │   │   ├── prisma.server.ts     # Database client
-│   │   ├── relays.ts            # Nostr relay configuration
 │   │   └── utils.ts             # Misc utilities
+│   │   # app/lib rule: lib contains only generic, shared utilities. Domain-specific code lives in features. If a module in lib is clearly tied to one domain, move it to that feature (e.g. relays → features/relays). Re-export from lib only for backward compatibility.
 │   │
 │   ├── models/                   # Database models (server-side)
 │   │   ├── asset.server.ts      # Asset CRUD operations
@@ -228,8 +227,18 @@ Remix uses file-based routing with dot notation:
 ### Server vs Client Code
 
 - Files with `.server.ts` run only on the server
-- Keep Prisma database operations in `models/` directory
+- **Data access (Prisma):** Prisma may be used only in `app/models/`, in `app/features/<name>/data/`
+  or `app/features/<name>/repositories/` (feature data layer), and in `app/infra/outbox/`. Routes
+  and feature UI/hooks must not import `prisma` or `~/lib/prisma.server`; they use feature public
+  APIs or models. Migrate existing feature code that uses Prisma into a `data/` or `repositories/`
+  subfolder per feature, or move logic into `app/models/`.
 - Use `loader` functions for data fetching, `action` functions for mutations
+- **Runtime configuration:** Read config only from `~/lib/env.server` (typed `env` object). Do not
+  use `process.env` in app or infra code; add new variables to `EnvConfig` in
+  `app/lib/env.server.ts`. Client code uses values passed from the server (e.g. loader data).
+  Documented exceptions: `app/lib/prisma.server.ts` (mutates `DATABASE_URL` at boot for connection
+  pooling); `scripts/` and `cypress.config.ts` may use `process.env` until refactored (see
+  CONTRIBUTING).
 
 ### Remix Loaders and Actions
 

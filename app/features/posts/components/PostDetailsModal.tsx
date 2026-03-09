@@ -1,4 +1,3 @@
-import type { Post } from "@prisma/client";
 import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -18,6 +17,7 @@ import {
   type DateDisplayLocale,
 } from "~/lib/temporal";
 
+import type { Post } from "../data/posts-prisma-types.server";
 import { getQueueColor } from "../queue-colors";
 import type { CombinedContent, PostData } from "../types";
 

@@ -5,14 +5,14 @@
  * Internal implementation details are kept in services/ and queries/ directories.
  */
 
-// Re-export Prisma types for convenience
+// Re-export Prisma types for convenience (from feature data layer)
 export type {
   User,
   HashTagPreset,
   QueueType,
   ScheduleType,
   UploadProvider,
-} from "@prisma/client";
+} from "./data/user-prisma-types.server";
 
 // User Profile
 export {

@@ -12,11 +12,11 @@ import {
   getEnabledUsersWithSubscriptions,
 } from "~/features/user";
 import { decrypt } from "~/lib/encryption.server";
+import { env } from "~/lib/env.server";
 import { createErrorResponse } from "~/lib/error-handler.server";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
-import { prisma } from "~/lib/prisma.server";
 import {
   createRenewalPayment,
   getOwnerNwcWithRelayOverrides,
@@ -24,6 +24,11 @@ import {
 } from "~/models/payment.server";
 
 import { getBitcoinRate } from "../btc.rate";
+import {
+  findPlanById,
+  updateSubscriptionCancelAtPeriodEndAndMetadata,
+  updateSubscriptionToCanceled,
+} from "../repositories/subscription-renewal-data.server";
 
 // ============================================================================
 // Helper Functions
@@ -444,30 +449,22 @@ async function processUserSubscription(
     const scheduledPlanId = getScheduledPlanId(subscription.metadata);
 
     if (scheduledPlanId) {
-      const plan = await prisma.plan.findUnique({
-        where: { id: scheduledPlanId },
-      });
+      const plan = await findPlanById(scheduledPlanId);
       if (plan?.isActive) {
         const paymentId = `downgrade_${Date.now()}_${user.id}`;
         await updateUserSubscription(user.id, scheduledPlanId, paymentId);
-        await prisma.subscription.update({
-          where: { userId: user.id },
-          data: {
-            cancelAtPeriodEnd: false,
-            metadata: {},
-          },
+        await updateSubscriptionCancelAtPeriodEndAndMetadata(user.id, {
+          cancelAtPeriodEnd: false,
+          metadata: {},
         });
         return;
       }
     }
 
-    await prisma.subscription.update({
-      where: { userId: user.id },
-      data: {
-        status: "CANCELED",
-        endDate: new Date(),
-        cancelAtPeriodEnd: false,
-      },
+    await updateSubscriptionToCanceled(user.id, {
+      status: "CANCELED",
+      endDate: new Date(),
+      cancelAtPeriodEnd: false,
     });
     await disableUserAccount(user.id);
     results.disabled++;
@@ -599,7 +596,7 @@ async function attemptRenewal(
   }
 
   // Create invoice using owner's NWC (to receive payment)
-  const ownerNwc = process.env["OWNER_NWC"];
+  const ownerNwc = env.OWNER_NWC;
   if (!ownerNwc) {
     throw new Error("Owner NWC credentials not configured");
   }

@@ -1,4 +1,7 @@
 import crypto from "crypto";
+
+import { env } from "~/lib/env.server";
+
 // Encryption version constants
 const VERSION_LEGACY_CBC = 0x01; // Legacy AES-256-CBC (no version byte in old format)
 const VERSION_GCM = 0x02; // New AES-256-GCM
@@ -19,7 +22,7 @@ const VERSION_LENGTH = 1;
  * Derive encryption key from SESSION_SECRET
  */
 function deriveKey(salt: Buffer): Buffer {
-  const sessionSecret = process.env["SESSION_SECRET"];
+  const sessionSecret = env.SESSION_SECRET;
   if (!sessionSecret) {
     throw new Error(
       "SESSION_SECRET environment variable is required for encryption"

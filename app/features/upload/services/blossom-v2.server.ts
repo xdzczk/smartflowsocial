@@ -2,8 +2,18 @@ import { createHmac, randomUUID } from "node:crypto";
 
 import { getUserById } from "~/features/user";
 import { env } from "~/lib/env.server";
-import { prisma } from "~/lib/prisma.server";
 import { getUserSubscription } from "~/models/payment.server";
+
+import {
+  aggregateReservedSizeForPubkey,
+  commitBlossomBatch as commitBlossomBatchInRepo,
+  createBlossomReservationBatchAndItems,
+  expireBlossomReservations as expireBlossomReservationsInRepo,
+  findBlossomUsagePeriod,
+  getActiveReservedBytesForPubkey as getActiveReservedBytesForPubkeyFromRepo,
+  getBlossomReservationDriftStats as getBlossomReservationDriftStatsFromRepo,
+  upsertBlossomUsagePeriod,
+} from "../repositories/blossom-data.server";
 
 import { getCanonicalOwnedBytesForUser } from "./media.server";
 
@@ -276,24 +286,11 @@ export async function issueBlossomBulkTokens(
     .filter((entry) => !entry.validation.error)
     .sort((a, b) => a.file.size - b.file.size);
 
+  const periodStartUtc = getMonthStartUtc();
   const [storedOwnedBytes, reservedAgg, usage] = await Promise.all([
     getCanonicalOwnedBytesForUser(userId),
-    prisma.blossomReservationItem.aggregate({
-      where: {
-        pubkey,
-        status: "RESERVED",
-        expiresAt: { gt: new Date() },
-      },
-      _sum: { size: true },
-    }),
-    prisma.blossomUploadUsagePeriod.findUnique({
-      where: {
-        userId_periodStartUtc: {
-          userId,
-          periodStartUtc: getMonthStartUtc(),
-        },
-      },
-    }),
+    aggregateReservedSizeForPubkey(pubkey),
+    findBlossomUsagePeriod(userId, periodStartUtc),
   ]);
 
   let currentStorage = storedOwnedBytes + BigInt(reservedAgg._sum.size ?? 0);
@@ -357,30 +354,19 @@ export async function issueBlossomBulkTokens(
       (acc, item) => acc + BigInt(item.file.size),
       BigInt(0)
     );
-    await prisma.$transaction([
-      prisma.blossomReservationBatch.create({
-        data: {
-          batchId,
-          userId,
-          pubkey,
-          totalBytes,
-          expiresAt: batchExpiresAt,
-          status: "ACTIVE",
-        },
-      }),
-      prisma.blossomReservationItem.createMany({
-        data: acceptedForDb.map(({ jti, file }) => ({
-          jti,
-          batchId,
-          pubkey,
-          sha256: file.sha256,
-          size: file.size,
-          mimeType: file.type,
-          expiresAt: batchExpiresAt,
-          status: "RESERVED",
-        })),
-      }),
-    ]);
+    await createBlossomReservationBatchAndItems(
+      batchId,
+      userId,
+      pubkey,
+      totalBytes,
+      batchExpiresAt,
+      acceptedForDb.map(({ jti, file }) => ({
+        jti,
+        sha256: file.sha256,
+        size: file.size,
+        mimeType: file.type,
+      }))
+    );
   }
 
   return {
@@ -400,157 +386,20 @@ export async function commitBlossomBatch(
   batchId: string,
   items: CommitItem[]
 ): Promise<CommitBatchResult> {
-  const statuses: CommitBatchResult["statuses"] = [];
-  let processed = 0;
-  let duplicate = 0;
-  let failed = 0;
-
-  for (const item of items) {
-    try {
-      await prisma.$transaction(async (tx) => {
-        const existingCommit = await tx.blossomCommit.findUnique({
-          where: { jti: item.jti },
-        });
-        if (existingCommit) {
-          duplicate++;
-          statuses.push({ jti: item.jti, status: "duplicate" });
-          return;
-        }
-
-        const reservation = await tx.blossomReservationItem.findUnique({
-          where: { jti: item.jti },
-          include: { batch: true },
-        });
-        if (!reservation) {
-          throw new Error("reservation_not_found");
-        }
-        if (
-          reservation.batchId !== batchId ||
-          reservation.batch.batchId !== batchId
-        ) {
-          throw new Error("batch_mismatch");
-        }
-        if (
-          reservation.status === "EXPIRED" ||
-          reservation.status === "CANCELED"
-        ) {
-          throw new Error("reservation_inactive");
-        }
-        if (reservation.pubkey !== item.pubkey) {
-          throw new Error("pubkey_mismatch");
-        }
-        if (
-          reservation.sha256 !== item.sha256 ||
-          reservation.size !== item.size
-        ) {
-          throw new Error("payload_mismatch");
-        }
-
-        await tx.blossomCommit.create({
-          data: {
-            jti: item.jti,
-            batchId,
-            pubkey: item.pubkey,
-            sha256: item.sha256,
-            size: item.size,
-            mimeType: item.type ?? null,
-            url: item.url,
-          },
-        });
-
-        await tx.blossomReservationItem.update({
-          where: { jti: item.jti },
-          data: { status: "COMMITTED" },
-        });
-
-        const periodStartUtc = getCommitPeriodDate();
-        await tx.blossomUploadUsagePeriod.upsert({
-          where: {
-            userId_periodStartUtc: {
-              userId: reservation.batch.userId,
-              periodStartUtc,
-            },
-          },
-          create: {
-            userId: reservation.batch.userId,
-            periodStartUtc,
-            uploadedBytes: BigInt(item.size),
-            uploadedFiles: 1,
-          },
-          update: {
-            uploadedBytes: { increment: BigInt(item.size) },
-            uploadedFiles: { increment: 1 },
-          },
-        });
-
-        const existingMedia = await tx.media.findFirst({
-          where: {
-            userId: reservation.batch.userId,
-            url: item.url,
-          },
-        });
-        if (!existingMedia) {
-          await tx.media.create({
-            data: {
-              userId: reservation.batch.userId,
-              url: item.url,
-              sha256: item.sha256,
-              size: item.size,
-              mimeType: item.type ?? null,
-              provider: "BLOSSOM_SFS",
-            },
-          });
-        }
-      });
-      processed++;
-      statuses.push({ jti: item.jti, status: "processed" });
-    } catch (error) {
-      failed++;
-      statuses.push({
-        jti: item.jti,
-        status: "failed",
-        reason: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
-
-  return { processed, duplicate, failed, statuses };
+  const periodStartUtc = getCommitPeriodDate();
+  return commitBlossomBatchInRepo(items, batchId, periodStartUtc);
 }
 
 export async function expireBlossomReservations(
   now = new Date()
 ): Promise<{ itemsExpired: number; batchesExpired: number }> {
-  const items = await prisma.blossomReservationItem.updateMany({
-    where: {
-      status: "RESERVED",
-      expiresAt: { lt: now },
-    },
-    data: { status: "EXPIRED" },
-  });
-
-  const batches = await prisma.blossomReservationBatch.updateMany({
-    where: {
-      status: "ACTIVE",
-      expiresAt: { lt: now },
-    },
-    data: { status: "EXPIRED" },
-  });
-
-  return { itemsExpired: items.count, batchesExpired: batches.count };
+  return expireBlossomReservationsInRepo(now);
 }
 
 export async function getActiveReservedBytesForPubkey(
   pubkey: string
 ): Promise<bigint> {
-  const aggregate = await prisma.blossomReservationItem.aggregate({
-    where: {
-      pubkey,
-      status: "RESERVED",
-      expiresAt: { gt: new Date() },
-    },
-    _sum: { size: true },
-  });
-  return BigInt(aggregate._sum.size ?? 0);
+  return getActiveReservedBytesForPubkeyFromRepo(pubkey);
 }
 
 export async function getBlossomReservationDriftStats(): Promise<{
@@ -558,33 +407,7 @@ export async function getBlossomReservationDriftStats(): Promise<{
   activeBatchCount: number;
   oldestReservedCreatedAt: Date | null;
 }> {
-  const [reservedCount, activeBatchCount, oldestReserved] = await Promise.all([
-    prisma.blossomReservationItem.count({
-      where: {
-        status: "RESERVED",
-        expiresAt: { gt: new Date() },
-      },
-    }),
-    prisma.blossomReservationBatch.count({
-      where: {
-        status: "ACTIVE",
-        expiresAt: { gt: new Date() },
-      },
-    }),
-    prisma.blossomReservationItem.findFirst({
-      where: {
-        status: "RESERVED",
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: "asc" },
-      select: { createdAt: true },
-    }),
-  ]);
-  return {
-    reservedCount,
-    activeBatchCount,
-    oldestReservedCreatedAt: oldestReserved?.createdAt ?? null,
-  };
+  return getBlossomReservationDriftStatsFromRepo();
 }
 
 export async function recordBlossomCompatUsage(
@@ -592,24 +415,6 @@ export async function recordBlossomCompatUsage(
   size: number,
   date = new Date()
 ): Promise<void> {
-  if (!Number.isFinite(size) || size <= 0) return;
   const periodStartUtc = getMonthStartUtc(date);
-  await prisma.blossomUploadUsagePeriod.upsert({
-    where: {
-      userId_periodStartUtc: {
-        userId,
-        periodStartUtc,
-      },
-    },
-    create: {
-      userId,
-      periodStartUtc,
-      uploadedBytes: BigInt(Math.trunc(size)),
-      uploadedFiles: 1,
-    },
-    update: {
-      uploadedBytes: { increment: BigInt(Math.trunc(size)) },
-      uploadedFiles: { increment: 1 },
-    },
-  });
+  await upsertBlossomUsagePeriod(userId, periodStartUtc, size);
 }

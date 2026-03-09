@@ -32,7 +32,7 @@ vi.mock("~/features/posts/services/stats.server", () => ({
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
-import { getPublishedDashboardData } from "~/features/posts/services/published-posts.server";
+import { getPublishedDashboardData } from "~/features/posts/publishing/index.server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPublishedPosts } from "~/models/post.queries.server";

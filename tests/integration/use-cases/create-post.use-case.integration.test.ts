@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll } from "vitest";
 
 import { setupTestDatabase } from "../../database/test-db";
 
-import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
+import { CreatePostUseCase } from "~/features/posts/server";
 import { prisma } from "~/lib/prisma.server";
 
 // Skip if no test database configured

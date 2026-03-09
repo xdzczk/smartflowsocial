@@ -8,7 +8,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { CreateLongFormPostUseCase } from "~/features/posts/use-cases/create-longform-post.use-case.server";
+import { CreateLongFormPostUseCase } from "~/features/posts/server";
 import { prisma } from "~/lib/prisma.server";
 
 // Skip if no test database configured
@@ -84,7 +84,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       expect(result.post.title).toBe("Test Title");
       expect(result.post.content).toBe("Test content");
       const { deriveIsPublishedLongForm, deriveIsScheduledLongForm } =
-        await import("~/features/posts/state-machine/longform-post-state");
+        await import("~/features/posts/longform/state-machine/longform-post-state");
       expect(deriveIsPublishedLongForm(result.post.currentState)).toBe(false);
       expect(deriveIsScheduledLongForm(result.post.currentState)).toBe(false);
       expect(result.needsScheduling).toBe(false);
@@ -111,7 +111,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
 
       expect(result.post).toBeDefined();
       const { deriveIsScheduledLongForm } =
-        await import("~/features/posts/state-machine/longform-post-state");
+        await import("~/features/posts/longform/state-machine/longform-post-state");
       expect(deriveIsScheduledLongForm(result.post.currentState)).toBe(true);
       expect(result.needsScheduling).toBe(true);
 

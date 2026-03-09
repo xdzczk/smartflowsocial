@@ -9,8 +9,25 @@ import {
   type UserSubscription,
 } from "~/features/payments/types";
 import { extractNostrIdentifier } from "~/lib/extract-nostr-identifier";
-import { prisma } from "~/lib/prisma.server";
 import { getUserSubscription } from "~/models/payment.server";
+
+import {
+  findCancelledLongforms,
+  findCancelledPosts,
+  findDraftLongforms,
+  findDraftPosts,
+  findFailedLongforms,
+  findFailedPosts,
+  findLongFormPostByNostrEventId,
+  findPostByNostrEventId,
+  findPublishedLongforms,
+  findPublishedPosts,
+  findPublishingLongforms,
+  findPublishingPosts,
+  findScheduledLongforms,
+  findScheduledPosts,
+  findTemplatesByQuery,
+} from "../repositories/global-search-data.server";
 
 import { decodeSearchInput, handleSearchEvent } from "./search-action.server";
 
@@ -52,51 +69,10 @@ async function searchDrafts(
   query: string,
   limit = 5
 ): Promise<GlobalSearchResult[]> {
-  // Search regular posts
-  const draftPosts = await prisma.post.findMany({
-    where: {
-      userId,
-      currentState: "DRAFT",
-      OR: [
-        { caption: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      caption: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-      currentState: true,
-    },
-  });
-
-  // Search long-form posts
-  const draftLongforms = await prisma.longFormPost.findMany({
-    where: {
-      userId,
-      currentState: "DRAFT",
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-        { summary: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      summary: true,
-      createdAt: true,
-      updatedAt: true,
-      currentState: true,
-    },
-  });
+  const [draftPosts, draftLongforms] = await Promise.all([
+    findDraftPosts(userId, query, limit),
+    findDraftLongforms(userId, query, limit),
+  ]);
 
   const results: GlobalSearchResult[] = [
     ...draftPosts.map((post: (typeof draftPosts)[number]) => ({
@@ -135,51 +111,10 @@ async function searchScheduled(
   query: string,
   limit = 5
 ): Promise<GlobalSearchResult[]> {
-  // Search regular posts
-  const scheduledPosts = await prisma.post.findMany({
-    where: {
-      userId,
-      currentState: "SCHEDULED",
-      OR: [
-        { caption: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { scheduledAtUtc: "asc" },
-    select: {
-      id: true,
-      caption: true,
-      content: true,
-      createdAt: true,
-      scheduledAtUtc: true,
-      currentState: true,
-    },
-  });
-
-  // Search long-form posts
-  const scheduledLongforms = await prisma.longFormPost.findMany({
-    where: {
-      userId,
-      currentState: "SCHEDULED",
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-        { summary: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { scheduledAtUtc: "asc" },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      summary: true,
-      createdAt: true,
-      scheduledAtUtc: true,
-      currentState: true,
-    },
-  });
+  const [scheduledPosts, scheduledLongforms] = await Promise.all([
+    findScheduledPosts(userId, query, limit),
+    findScheduledLongforms(userId, query, limit),
+  ]);
 
   const results: GlobalSearchResult[] = [
     ...scheduledPosts.map((post: (typeof scheduledPosts)[number]) => ({
@@ -218,51 +153,10 @@ async function searchPosted(
   query: string,
   limit = 5
 ): Promise<GlobalSearchResult[]> {
-  // Search regular posts
-  const postedPosts = await prisma.post.findMany({
-    where: {
-      userId,
-      currentState: "PUBLISHED",
-      OR: [
-        { caption: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { publishedAt: "desc" },
-    select: {
-      id: true,
-      caption: true,
-      content: true,
-      createdAt: true,
-      publishedAt: true,
-      currentState: true,
-    },
-  });
-
-  // Search long-form posts
-  const postedLongforms = await prisma.longFormPost.findMany({
-    where: {
-      userId,
-      currentState: "PUBLISHED",
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-        { summary: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { publishedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      summary: true,
-      createdAt: true,
-      publishedAt: true,
-      currentState: true,
-    },
-  });
+  const [postedPosts, postedLongforms] = await Promise.all([
+    findPublishedPosts(userId, query, limit),
+    findPublishedLongforms(userId, query, limit),
+  ]);
 
   const results: GlobalSearchResult[] = [
     ...postedPosts.map((post: (typeof postedPosts)[number]) => ({
@@ -301,51 +195,10 @@ async function searchPublishing(
   query: string,
   limit = 5
 ): Promise<GlobalSearchResult[]> {
-  // Search regular posts
-  const publishingPosts = await prisma.post.findMany({
-    where: {
-      userId,
-      currentState: "PUBLISHING",
-      OR: [
-        { caption: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      caption: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-      currentState: true,
-    },
-  });
-
-  // Search long-form posts
-  const publishingLongforms = await prisma.longFormPost.findMany({
-    where: {
-      userId,
-      currentState: "PUBLISHING",
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-        { summary: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      summary: true,
-      createdAt: true,
-      updatedAt: true,
-      currentState: true,
-    },
-  });
+  const [publishingPosts, publishingLongforms] = await Promise.all([
+    findPublishingPosts(userId, query, limit),
+    findPublishingLongforms(userId, query, limit),
+  ]);
 
   const results: GlobalSearchResult[] = [
     ...publishingPosts.map((post: (typeof publishingPosts)[number]) => ({
@@ -386,51 +239,10 @@ async function searchFailed(
   query: string,
   limit = 5
 ): Promise<GlobalSearchResult[]> {
-  // Search regular posts
-  const failedPosts = await prisma.post.findMany({
-    where: {
-      userId,
-      currentState: "FAILED",
-      OR: [
-        { caption: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      caption: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-      currentState: true,
-    },
-  });
-
-  // Search long-form posts
-  const failedLongforms = await prisma.longFormPost.findMany({
-    where: {
-      userId,
-      currentState: "FAILED",
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-        { summary: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      summary: true,
-      createdAt: true,
-      updatedAt: true,
-      currentState: true,
-    },
-  });
+  const [failedPosts, failedLongforms] = await Promise.all([
+    findFailedPosts(userId, query, limit),
+    findFailedLongforms(userId, query, limit),
+  ]);
 
   const results: GlobalSearchResult[] = [
     ...failedPosts.map((post: (typeof failedPosts)[number]) => ({
@@ -469,51 +281,10 @@ async function searchCancelled(
   query: string,
   limit = 5
 ): Promise<GlobalSearchResult[]> {
-  // Search regular posts
-  const cancelledPosts = await prisma.post.findMany({
-    where: {
-      userId,
-      currentState: "CANCELLED",
-      OR: [
-        { caption: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      caption: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-      currentState: true,
-    },
-  });
-
-  // Search long-form posts
-  const cancelledLongforms = await prisma.longFormPost.findMany({
-    where: {
-      userId,
-      currentState: "CANCELLED",
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
-        { summary: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: limit,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      summary: true,
-      createdAt: true,
-      updatedAt: true,
-      currentState: true,
-    },
-  });
+  const [cancelledPosts, cancelledLongforms] = await Promise.all([
+    findCancelledPosts(userId, query, limit),
+    findCancelledLongforms(userId, query, limit),
+  ]);
 
   const results: GlobalSearchResult[] = [
     ...cancelledPosts.map((post: (typeof cancelledPosts)[number]) => ({
@@ -552,22 +323,9 @@ async function searchTemplates(
   query: string,
   limit = 5
 ): Promise<GlobalSearchResult[]> {
-  const templates = await prisma.template.findMany({
-    where: {
-      userId,
-      name: { contains: query, mode: "insensitive" },
-    },
-    take: limit,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  const templates = await findTemplatesByQuery(userId, query, limit);
 
-  return templates.map((template: (typeof templates)[number]) => ({
+  return templates.map((template) => ({
     type: "template" as const,
     id: template.id,
     title: template.name ?? undefined,
@@ -596,33 +354,8 @@ async function findOwnPostsByNostrEventId(
   const results: GlobalSearchResult[] = [];
 
   const [post, longform] = await Promise.all([
-    prisma.post.findFirst({
-      where: { userId, nostrEventId: eventIdHex },
-      select: {
-        id: true,
-        caption: true,
-        content: true,
-        currentState: true,
-        createdAt: true,
-        updatedAt: true,
-        publishedAt: true,
-        scheduledAtUtc: true,
-      },
-    }),
-    prisma.longFormPost.findFirst({
-      where: { userId, nostrEventId: eventIdHex },
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        summary: true,
-        currentState: true,
-        createdAt: true,
-        updatedAt: true,
-        publishedAt: true,
-        scheduledAtUtc: true,
-      },
-    }),
+    findPostByNostrEventId(userId, eventIdHex),
+    findLongFormPostByNostrEventId(userId, eventIdHex),
   ]);
 
   const toType = (state: string): GlobalSearchResult["type"] => {

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { redis } from "~/infra/queue";
+import { env } from "~/lib/env.server";
 import { logWarning } from "~/lib/error-logger.server";
 import {
   recordRedisCacheLatency,
@@ -9,7 +10,7 @@ import {
 
 function isRedisCacheEnabled(): boolean {
   // Keep tests deterministic: caching can interfere with mocked fetch expectations.
-  return process.env["NODE_ENV"] !== "test";
+  return env.NODE_ENV !== "test";
 }
 
 function stableStringify(value: unknown): string {

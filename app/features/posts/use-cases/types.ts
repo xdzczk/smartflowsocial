@@ -4,10 +4,14 @@
  * Type definitions for post use cases
  */
 
-import type { Post, PostKind, PostType } from "@prisma/client";
-
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import type { Temporal } from "~/lib/temporal";
+
+import type {
+  Post,
+  PostKind,
+  PostType,
+} from "../data/posts-prisma-types.server";
 
 export interface CreatePostInput {
   userId: string;

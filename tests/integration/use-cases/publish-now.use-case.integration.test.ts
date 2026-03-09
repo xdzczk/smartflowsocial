@@ -18,8 +18,8 @@ vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
 
 import { createValidSignedEvent } from "../../utils/test-helpers";
 
-import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
-import { PublishNowUseCase } from "~/features/posts/use-cases/publish-now.use-case.server";
+import { PublishNowUseCase } from "~/features/posts/publishing/index.server";
+import { CreatePostUseCase } from "~/features/posts/server";
 import { prisma } from "~/lib/prisma.server";
 
 // Skip if no test database configured

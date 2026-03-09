@@ -5,12 +5,14 @@
 
 import { redirect } from "@remix-run/node";
 
-import { parseAttachmentMeta } from "~/features/posts/services/newpost-action/handlers/text-handlers.server";
-import { getHashtagPresetTags } from "~/features/posts/services/newpost-action/hashtag-preset-utils.server";
-import { resolveContentWithTokens } from "~/features/posts/services/newpost-action/inline-tokens.server";
+import { parseAttachmentMeta } from "~/features/posts/composer/services/newpost-action/handlers/text-handlers.server";
+import { getHashtagPresetTags } from "~/features/posts/composer/services/newpost-action/hashtag-preset-utils.server";
+import { resolveContentWithTokens } from "~/features/posts/composer/services/newpost-action/inline-tokens.server";
+import {
+  CreateLongFormPostUseCase,
+  CreatePostUseCase,
+} from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { CreateLongFormPostUseCase } from "~/features/posts/use-cases/create-longform-post.use-case.server";
-import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
 import { validateFormDataOrRespond } from "~/lib/validation";
 import {
   createTemplateFromScratchPostSchema,

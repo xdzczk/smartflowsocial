@@ -12,7 +12,7 @@ vi.mock("~/features/user", () => ({
   getQueueTypeByIdForUser: vi.fn(),
 }));
 
-vi.mock("~/features/posts/schedulers", () => ({
+vi.mock("~/features/posts/scheduling/services/schedulers", () => ({
   calculateNextScheduleTime: vi.fn(),
   formatScheduleTimeForInput: vi.fn(),
 }));
@@ -22,11 +22,9 @@ import { TEST_USER_ID } from "../../utils/test-helpers";
 import {
   calculateNextScheduleTime,
   formatScheduleTimeForInput,
-} from "~/features/posts/schedulers";
-import {
   calculateQueueScheduleTime,
   parseQueueScheduleRequest,
-} from "~/features/posts/services/queue-schedule.server";
+} from "~/features/posts/server";
 import {
   getQueueTypes,
   getUserTimezone,

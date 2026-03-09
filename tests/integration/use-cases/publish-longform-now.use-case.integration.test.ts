@@ -18,8 +18,8 @@ vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
 
 import { createValidSignedEvent } from "../../utils/test-helpers";
 
-import { CreateLongFormPostUseCase } from "~/features/posts/use-cases/create-longform-post.use-case.server";
-import { PublishLongFormNowUseCase } from "~/features/posts/use-cases/publish-longform-now.use-case.server";
+import { CreateLongFormPostUseCase } from "~/features/posts/server";
+import { PublishLongFormNowUseCase } from "~/features/posts/server";
 import { prisma } from "~/lib/prisma.server";
 
 // Skip if no test database configured
@@ -99,7 +99,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         where: { id: postId },
       });
       const { deriveIsPublishedLongForm } =
-        await import("~/features/posts/state-machine/longform-post-state");
+        await import("~/features/posts/longform/state-machine/longform-post-state");
       expect(deriveIsPublishedLongForm(publishedPost?.currentState)).toBe(true);
 
       // Verify publisher was called

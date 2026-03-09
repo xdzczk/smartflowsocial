@@ -7,6 +7,7 @@ import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { payReferrerWithInvoice } from "~/features/referral/referral-payout.server";
+import { env } from "~/lib/env.server";
 
 const SECRET_HEADER = "X-Referral-Payout-Secret";
 
@@ -15,7 +16,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ error: "Method not allowed" }, { status: 405 });
   }
 
-  const secret = process.env["REFERRAL_MANUAL_PAYOUT_SECRET"];
+  const secret = env.REFERRAL_MANUAL_PAYOUT_SECRET;
   if (secret) {
     const provided = request.headers.get(SECRET_HEADER);
     if (provided !== secret) {

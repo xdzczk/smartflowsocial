@@ -1,7 +1,8 @@
-// Polyfill WebSocket for nostr-tools in Node.js (production only)
-// Keep consistent with other server code using ws polyfills.
+import { env } from "~/lib/env.server";
+
+// Polyfill WebSocket for nostr-tools in Node.js (production only); must run before nostr-tools import
 if (
-  process.env.NODE_ENV !== "development" &&
+  env.NODE_ENV !== "development" &&
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime polyfill check for Node.js environment
   globalThis.WebSocket === undefined
 ) {
@@ -11,6 +12,7 @@ if (
   globalThis.WebSocket = WebSocket;
 }
 
+// eslint-disable-next-line import/order -- env must load first for WebSocket polyfill before nostr-tools
 import { nip04, finalizeEvent, nip19, SimplePool } from "nostr-tools";
 
 import { logWarning, logError } from "~/lib/error-logger.server";
@@ -257,7 +259,7 @@ export async function sendNostrDirectMessage(
     if (!content) {
       return false;
     }
-    const nsecEnv = process.env["NOSTR_NSEC"];
+    const nsecEnv = env.NOSTR_NSEC;
     if (!nsecEnv) {
       return Promise.resolve({
         success: false,
@@ -297,7 +299,7 @@ export async function sendNostrDirectMessage(
     const signedEvent = finalizeEvent(eventTemplate, systemKey.privateKeyBytes);
 
     // Send the event to the publisher
-    const publisherUrl = process.env["NOSTR_PUBLISHER_URL"];
+    const publisherUrl = env.NOSTR_PUBLISHER_URL;
     if (!publisherUrl) {
       return {
         success: false,
@@ -312,7 +314,7 @@ export async function sendNostrDirectMessage(
     };
 
     // Add API token if configured
-    const apiToken = process.env["NOSTR_PUBLISHER_API_TOKEN"];
+    const apiToken = env.NOSTR_PUBLISHER_API_TOKEN;
     if (apiToken) {
       headers["API-TOKEN"] = apiToken;
     }

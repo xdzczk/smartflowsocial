@@ -41,7 +41,7 @@ function addAppUrlToAllowedOrigins(allowedOrigins: string[]): void {
   }
 
   // Fallback to COOLIFY_URL if APP_URL is not set
-  const coolifyUrl = process.env["COOLIFY_URL"];
+  const coolifyUrl = env.COOLIFY_URL;
   if (coolifyUrl) {
     try {
       const url = new URL(coolifyUrl);

@@ -11,7 +11,6 @@ import { type ToastMessage } from "~/components/types";
 import { Button } from "~/components/ui/button";
 import MediaModal from "~/components/ui/MediaModal";
 import Toast from "~/components/ui/Toast";
-import { useLocalDraft } from "~/features/posts/hooks/useComposerLocalDraft";
 import {
   type BulkPost,
   type PreparedEvent,
@@ -27,6 +26,7 @@ import {
   handleScheduleIntervalClick as handleScheduleIntervalClickHandler,
 } from "~/features/posts/server";
 import {
+  useLocalDraft,
   BulkPostsActionButtons,
   BulkPostsSchedulingPanel,
   BulkPostsTable,

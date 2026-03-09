@@ -38,7 +38,7 @@ vi.mock("~/features/posts/services/combined.server", () => ({
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
-import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
+import { loadScheduledData } from "~/features/posts/server";
 import {
   getUserById,
   getQueueTypes,

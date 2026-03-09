@@ -27,7 +27,7 @@ vi.mock("~/lib/prisma.server", () => ({
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
-import { LongFormPostStateMachine } from "~/features/posts/state-machine/longform-post-state-machine.server";
+import { LongFormPostStateMachine } from "~/features/posts/server";
 import { prisma } from "~/lib/prisma.server";
 
 describe("LongFormPostStateMachine", () => {

@@ -52,32 +52,17 @@ export const mockCreateLongFormPostExecute = vi.fn();
 export const mockPublishLongFormNowExecute = vi.fn();
 export const mockScheduleLongFormPostExecute = vi.fn();
 
-vi.mock(
-  "~/features/posts/use-cases/create-longform-post.use-case.server",
-  () => ({
-    CreateLongFormPostUseCase: class {
-      execute = mockCreateLongFormPostExecute;
-    },
-  })
-);
-
-vi.mock(
-  "~/features/posts/use-cases/publish-longform-now.use-case.server",
-  () => ({
-    PublishLongFormNowUseCase: class {
-      execute = mockPublishLongFormNowExecute;
-    },
-  })
-);
-
-vi.mock(
-  "~/features/posts/use-cases/schedule-longform-post.use-case.server",
-  () => ({
-    ScheduleLongFormPostUseCase: class {
-      execute = mockScheduleLongFormPostExecute;
-    },
-  })
-);
+vi.mock("~/features/posts/server", () => ({
+  CreateLongFormPostUseCase: class {
+    execute = mockCreateLongFormPostExecute;
+  },
+  PublishLongFormNowUseCase: class {
+    execute = mockPublishLongFormNowExecute;
+  },
+  ScheduleLongFormPostUseCase: class {
+    execute = mockScheduleLongFormPostExecute;
+  },
+}));
 
 vi.mock("~/lib/correlation-context.server", () => ({
   extractCorrelationId: vi.fn(() => "test-correlation-id"),

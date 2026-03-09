@@ -46,12 +46,13 @@ import {
   type PrimarySignerProfile,
   isPrimarySignerProfile,
 } from "~/lib/primary-signer-profile";
-import { prisma } from "~/lib/prisma.server";
 import {
   getAllPlans,
   getUserPaymentHistory,
   getUserSubscription,
 } from "~/models/payment.server";
+
+import { findLatestPublishRelayAcksByUserAndUrls } from "./repositories/settings-loader-data.server";
 
 /**
  * User account info for parent/child relationships
@@ -238,25 +239,10 @@ export async function loadSettingsData(
   const ackRelayUrls = Array.from(
     new Set([...relays, ...managedRelays.map((m) => m.relayUrl)])
   );
-  let ackRows: Array<{
-    relayUrl: string;
-    status: string;
-    createdAt: Date;
-    receivedAt: Date | null;
-  }> = [];
-  if (ackRelayUrls.length > 0) {
-    try {
-      ackRows = await prisma.publishRelayAck.findMany({
-        where: { userId, relayUrl: { in: ackRelayUrls } },
-        orderBy: { createdAt: "desc" },
-        distinct: ["relayUrl"],
-      });
-    } catch {
-      // Best-effort: if the ACK table isn't available yet (e.g. migrations not applied),
-      // do not break the settings page.
-      ackRows = [];
-    }
-  }
+  const ackRows =
+    ackRelayUrls.length > 0
+      ? await findLatestPublishRelayAcksByUserAndUrls(userId, ackRelayUrls)
+      : [];
 
   const relayAcks: SettingsLoaderData["relayAcks"] = Object.fromEntries(
     ackRows.map((row) => [

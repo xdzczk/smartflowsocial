@@ -7,11 +7,16 @@ import { z } from "zod";
 
 import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import {
+  createDraftGroupVersion,
+  deleteDraftGroupPosts,
+  getOrCreateDraftGroup,
+  type BulkDraftSnapshotRow,
+} from "~/features/posts/server";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { RateLimitError } from "~/lib/errors";
 import { recordPostScheduled } from "~/lib/metrics/business-metrics.server";
-import { prisma } from "~/lib/prisma.server";
 import { checkUserPostCreationLimit } from "~/lib/rate-limit.server";
 import { nowMillis, fromUnixTimestamp, toPrismaDate } from "~/lib/temporal";
 import {
@@ -25,15 +30,11 @@ import {
 } from "~/models/post.commands.server";
 import { isVideoUrl } from "~/utils/media-helpers";
 
-import {
-  createDraftGroupVersion,
-  deleteDraftGroupPosts,
-  getOrCreateDraftGroup,
-  type BulkDraftSnapshotRow,
-} from "./services/draft-group.server";
+import { CreatePostUseCase } from "./composer/index.server";
+import { updateDraftGroup as updateDraftGroupRow } from "./repositories/draft-data.server";
+import { updatePost as updatePostInRepo } from "./repositories/post-queries-data.server";
 import { resolveQueueTypeId } from "./services/queue-type-resolver.server";
 import { PostStateMachine } from "./state-machine/post-state-machine.server";
-import { CreatePostUseCase } from "./use-cases/create-post.use-case.server";
 
 /**
  * Upload result from client-side upload system
@@ -649,19 +650,15 @@ export async function handleSaveAsDraft(
           isRecyclable,
         });
 
-        await prisma.post.update({
-          where: { id: createResult.post.id, userId },
-          data: { draftGroupId: groupId },
+        await updatePostInRepo(createResult.post.id, userId, {
+          draftGroupId: groupId,
         });
 
         return createResult.post;
       })
     );
 
-    await prisma.draftGroup.update({
-      where: { id: groupId, userId },
-      data: { updatedAt: new Date() },
-    });
+    await updateDraftGroupRow(groupId, userId, { updatedAt: new Date() });
     await createDraftGroupVersion(groupId, snapshotRows, userId);
 
     if (mode === "recycle" && originalPostIds.length > 0) {

@@ -26,7 +26,7 @@ vi.mock("~/features/payments/subscriptions.server", () => ({
   requireFeatureAccess: vi.fn(),
 }));
 
-vi.mock("~/features/posts/services/drafts-loader.server", () => ({
+vi.mock("~/features/posts/drafts", () => ({
   loadDraftsData: vi.fn(),
 }));
 
@@ -40,7 +40,7 @@ import {
   requireAnySubscription,
   requireFeatureAccess,
 } from "~/features/payments/subscriptions.server";
-import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
+import { loadDraftsData } from "~/features/posts/server";
 import { loader } from "~/routes/dashboard.drafts";
 
 describe("Drafts Loader Integration", () => {

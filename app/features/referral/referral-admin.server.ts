@@ -2,14 +2,22 @@
  * Admin: list referrals and earnings with pagination/filters, CSV export, retry failed.
  */
 
-import { ReferralEarningStatus } from "@prisma/client";
+import { env } from "~/lib/env.server";
 
-import { prisma } from "~/lib/prisma.server";
+import { ReferralEarningStatus } from "./data/referral-prisma-types.server";
+import {
+  countEarningsAdmin,
+  countReferralsAdmin,
+  findEarningByIdForRetry,
+  findEarningsAdmin,
+  findReferralsAdmin,
+  updateEarningToPendingRetry,
+} from "./repositories/referral-data.server";
 
 const PAGE_SIZE = 50;
 
 function getAdminNpubs(): string[] {
-  const raw = process.env["REFERRAL_ADMIN_NPUBS"];
+  const raw = env.REFERRAL_ADMIN_NPUBS;
   if (!raw) return [];
   return raw
     .split(",")
@@ -60,13 +68,8 @@ export async function getReferralsAdmin(options: {
   }
 
   const [rows, total] = await Promise.all([
-    prisma.referral.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    }),
-    prisma.referral.count({ where }),
+    findReferralsAdmin(where, (page - 1) * PAGE_SIZE, PAGE_SIZE),
+    countReferralsAdmin(where),
   ]);
 
   return {
@@ -115,13 +118,8 @@ export async function getEarningsAdmin(options: {
   }
 
   const [rows, total] = await Promise.all([
-    prisma.referralEarning.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    }),
-    prisma.referralEarning.count({ where }),
+    findEarningsAdmin(where, (page - 1) * PAGE_SIZE, PAGE_SIZE),
+    countEarningsAdmin(where),
   ]);
 
   return {
@@ -182,21 +180,11 @@ export function earningsToCsv(
 export async function retryFailedPayout(
   earningId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const e = await prisma.referralEarning.findUnique({
-    where: { id: earningId },
-    select: { id: true, status: true },
-  });
+  const e = await findEarningByIdForRetry(earningId);
   if (!e) return { success: false, error: "Earning not found" };
   if (e.status !== ReferralEarningStatus.FAILED) {
     return { success: false, error: "Only failed earnings can be retried" };
   }
-  await prisma.referralEarning.update({
-    where: { id: earningId },
-    data: {
-      status: ReferralEarningStatus.PENDING,
-      payoutAttemptCount: 0,
-      payoutFailureReason: null,
-    },
-  });
+  await updateEarningToPendingRetry(earningId);
   return { success: true };
 }

@@ -5,9 +5,9 @@
 
 import { json } from "@remix-run/node";
 
-import { parseAttachmentMeta } from "~/features/posts/services/newpost-action/handlers/text-handlers.server";
-import { getHashtagPresetTags } from "~/features/posts/services/newpost-action/hashtag-preset-utils.server";
-import { resolveContentWithTokens } from "~/features/posts/services/newpost-action/inline-tokens.server";
+import { parseAttachmentMeta } from "~/features/posts/composer/services/newpost-action/handlers/text-handlers.server";
+import { getHashtagPresetTags } from "~/features/posts/composer/services/newpost-action/hashtag-preset-utils.server";
+import { resolveContentWithTokens } from "~/features/posts/composer/services/newpost-action/inline-tokens.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { getQueueTypeByNameForUser } from "~/features/user";
 import { getUserTimezone } from "~/features/user/services/user-settings.server";
@@ -109,10 +109,8 @@ export async function loadTemplateEditData(templateId: string, userId: string) {
     throw new ValidationError("Template not found", { templateId, userId });
   }
 
-  const { loadNewPostData } =
-    await import("~/features/posts/services/newpost-loader.server");
-  const { loadNewLongFormData } =
-    await import("~/features/posts/services/newlongform-loader.server");
+  const { loadNewPostData } = await import("~/features/posts/server");
+  const { loadNewLongFormData } = await import("~/features/posts/server");
 
   const prefill = await getTemplatePrefill({ id: templateId, userId });
 

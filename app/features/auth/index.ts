@@ -51,3 +51,10 @@ export {
 export { default as NostrAuthButton } from "./components/NostrAuthButton";
 export { default as LoginPage } from "./components/LoginPage";
 export { RemoteSignerReconnectController } from "./components/RemoteSignerReconnectController";
+export { RemoteSignerReconnectDialog } from "./components/RemoteSignerReconnectController";
+export type { ReconnectState } from "./reconnect-state.client";
+export {
+  RemoteSignerSessionList,
+  type RemoteSignerSessionListProps,
+  type RemoteSignerSessionItem,
+} from "./components/RemoteSignerSessionList";

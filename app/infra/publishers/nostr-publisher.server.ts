@@ -9,11 +9,11 @@
  */
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { relaysArray as systemDefaultRelays } from "~/features/relays/relay-constants";
 import { env } from "~/lib/env.server";
 import { logWarning, logError, logInfo } from "~/lib/error-logger.server";
 import { fetchWithRetry } from "~/lib/fetch.server";
 import { recordRelayRequest } from "~/lib/metrics/relay-metrics.server";
-import { relaysArray as systemDefaultRelays } from "~/lib/relays";
 
 import {
   prioritizeRelaysByHealth,
@@ -200,16 +200,13 @@ export class DefaultNostrPublisher implements NostrPublisher {
   private readonly apiToken: string | undefined;
 
   constructor() {
-    this.publisherUrl =
-      process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
+    this.publisherUrl = env.NOSTR_PUBLISHER_URL;
     if (!this.publisherUrl) {
       throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
     }
 
     // Optional API token for authentication
-    this.apiToken =
-      process.env["NOSTR_PUBLISHER_API_TOKEN"] ??
-      (env as { NOSTR_PUBLISHER_API_TOKEN?: string }).NOSTR_PUBLISHER_API_TOKEN;
+    this.apiToken = env.NOSTR_PUBLISHER_API_TOKEN;
   }
 
   async publish(

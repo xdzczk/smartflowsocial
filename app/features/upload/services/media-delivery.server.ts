@@ -1,28 +1,19 @@
-import { prisma } from "~/lib/prisma.server";
+import {
+  findMediaAssetStatus,
+  findMediaVariantByAssetAndKind,
+} from "../repositories/media-data.server";
 
 export async function resolveMediaVariantUrl(
   assetId: string,
   variantKind: string
 ): Promise<string | null> {
-  const preferred = await prisma.mediaVariant.findFirst({
-    where: {
-      assetId,
-      variantKind,
-      status: "ready",
-    },
-    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-    select: { url: true },
+  const preferred = await findMediaVariantByAssetAndKind(assetId, variantKind, {
+    status: "ready",
   });
   if (preferred?.url) return preferred.url;
 
-  const fallback = await prisma.mediaVariant.findFirst({
-    where: {
-      assetId,
-      variantKind: "original",
-      status: "ready",
-    },
-    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-    select: { url: true },
+  const fallback = await findMediaVariantByAssetAndKind(assetId, "original", {
+    status: "ready",
   });
   return fallback?.url ?? null;
 }
@@ -30,9 +21,5 @@ export async function resolveMediaVariantUrl(
 export async function getMediaAssetStatus(
   assetId: string
 ): Promise<string | null> {
-  const asset = await prisma.mediaAsset.findUnique({
-    where: { id: assetId },
-    select: { status: true },
-  });
-  return asset?.status ?? null;
+  return findMediaAssetStatus(assetId);
 }

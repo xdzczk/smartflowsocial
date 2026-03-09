@@ -4,9 +4,8 @@
  * Handles bulk posts dashboard data loading
  */
 
+import { getBulkDraftGroupPosts } from "~/features/posts/server";
 import { getQueueTypes, getUserHashTagPresets } from "~/features/user";
-
-import { getBulkDraftGroupPosts } from "./draft-group.server";
 
 /**
  * Get bulk posts dashboard data. When groupId is provided, also loads that group's posts for prefill.

@@ -14,6 +14,7 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 
+import { env } from "./env.server";
 import { logError } from "./error-logger.server";
 import {
   AuthenticationError,
@@ -65,8 +66,7 @@ export function createErrorResponse(
   }
 ): [ErrorResponse, number] {
   const normalizedError = normalizeError(error);
-  const includeStack =
-    options?.includeStack ?? process.env.NODE_ENV === "development";
+  const includeStack = options?.includeStack ?? env.NODE_ENV === "development";
   const includeContext = options?.includeContext ?? true;
 
   // Log the error

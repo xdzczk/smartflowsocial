@@ -3,8 +3,17 @@ import invariant from "tiny-invariant";
 
 import { getUserById } from "~/features/user";
 import type { User } from "~/features/user";
-import { prisma } from "~/lib/prisma.server";
-invariant(process.env["SESSION_SECRET"], "SESSION_SECRET must be set");
+import { env } from "~/lib/env.server";
+
+import {
+  createSession as createSessionRow,
+  findSessionByIdForPubkey,
+  findSessionByIdForUserId,
+  findSessionByIdFull,
+  revokeSessionById,
+} from "./repositories/session-data.server";
+
+invariant(env.SESSION_SECRET, "SESSION_SECRET must be set");
 
 interface CookieSessionData {
   sessionId?: string;
@@ -17,8 +26,8 @@ export const sessionStorage = createCookieSessionStorage<CookieSessionData>({
     httpOnly: true,
     path: "/",
     sameSite: "lax",
-    secrets: [process.env["SESSION_SECRET"]],
-    secure: process.env["NODE_ENV"] === "production",
+    secrets: [env.SESSION_SECRET],
+    secure: env.NODE_ENV === "production",
   },
 });
 
@@ -47,10 +56,7 @@ export async function getSessionPubkey(
   const sessionId = session.get(SESSION_ID_KEY);
 
   if (typeof sessionId === "string" && sessionId.length > 0) {
-    const dbSession = await prisma.session.findUnique({
-      where: { id: sessionId },
-      select: { pubkey: true, revokedAt: true, expiresAt: true },
-    });
+    const dbSession = await findSessionByIdForPubkey(sessionId);
 
     if (!dbSession) return undefined;
     if (dbSession.revokedAt) return undefined;
@@ -75,10 +81,7 @@ export async function getUserId(
   const sessionId = session.get(SESSION_ID_KEY);
 
   if (typeof sessionId === "string" && sessionId.length > 0) {
-    const dbSession = await prisma.session.findUnique({
-      where: { id: sessionId },
-      select: { userId: true, revokedAt: true, expiresAt: true },
-    });
+    const dbSession = await findSessionByIdForUserId(sessionId);
 
     if (!dbSession) return undefined;
     if (dbSession.revokedAt) return undefined;
@@ -110,16 +113,7 @@ export async function requireSession(
   const sessionId = session.get(SESSION_ID_KEY);
 
   if (typeof sessionId === "string" && sessionId.length > 0) {
-    const dbSession = await prisma.session.findUnique({
-      where: { id: sessionId },
-      select: {
-        id: true,
-        userId: true,
-        pubkey: true,
-        revokedAt: true,
-        expiresAt: true,
-      },
-    });
+    const dbSession = await findSessionByIdFull(sessionId);
 
     if (
       !dbSession ||
@@ -183,13 +177,10 @@ export async function createUserSession({
   const expiresAt = new Date(
     Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000)
   );
-  const dbSession = await prisma.session.create({
-    data: {
-      userId,
-      pubkey: user.npub,
-      expiresAt,
-    },
-    select: { id: true },
+  const dbSession = await createSessionRow({
+    userId,
+    pubkey: user.npub,
+    expiresAt,
   });
 
   session.set(SESSION_ID_KEY, dbSession.id);
@@ -212,10 +203,7 @@ export async function logout(request: Request) {
 
   const sessionId = session.get(SESSION_ID_KEY);
   if (typeof sessionId === "string" && sessionId.length > 0) {
-    await prisma.session.updateMany({
-      where: { id: sessionId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+    await revokeSessionById(sessionId);
   }
 
   // Explicitly clear legacy session key (defense-in-depth)

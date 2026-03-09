@@ -1,12 +1,18 @@
-import type { User } from "@prisma/client";
-
 import {
-  encrypt,
   decrypt,
-  validateNWCString,
+  encrypt,
   maskNWCString,
+  validateNWCString,
 } from "~/lib/encryption.server";
-import { prisma } from "~/lib/prisma.server";
+
+import type { User } from "../data/user-prisma-types.server";
+import {
+  clearUserNwc as clearUserNwcRow,
+  findUserEncryptedNwc,
+  findUserNwcFields,
+  updateUserNwc as updateUserNwcRow,
+  updateUserNwcEnabled as updateUserNwcEnabledRow,
+} from "../repositories/nwc-data.server";
 
 /**
  * Updates user's NWC (Nostr Wallet Connect) connection string
@@ -17,23 +23,15 @@ export async function updateUserNWC(
   nwcString: string,
   enabled = true
 ): Promise<User> {
-  // Validate NWC string format
   if (!validateNWCString(nwcString)) {
     throw new Error("Invalid NWC connection string format");
   }
-
-  // Encrypt the NWC string before storing
   const encryptedNwc = encrypt(nwcString);
-
-  return await prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      encryptedNwc,
-      nwcEnabled: enabled,
-      nwcLastUsed: new Date(),
-    },
+  const now = new Date();
+  return updateUserNwcRow(userId, {
+    encryptedNwc,
+    nwcEnabled: enabled,
+    nwcLastUsed: now,
   });
 }
 
@@ -44,31 +42,18 @@ export async function updateUserNWCEnabled(
   userId: string,
   enabled: boolean
 ): Promise<User> {
-  return await prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      nwcEnabled: enabled,
-      ...(enabled && { nwcLastUsed: new Date() }),
-    },
-  });
+  return updateUserNwcEnabledRow(
+    userId,
+    enabled,
+    enabled ? new Date() : undefined
+  );
 }
 
 /**
  * Clears user's NWC connection string
  */
 export function clearUserNWC(userId: string): Promise<User> {
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      encryptedNwc: null,
-      nwcEnabled: false,
-      nwcLastUsed: null,
-    },
-  });
+  return clearUserNwcRow(userId);
 }
 
 /**
@@ -80,27 +65,14 @@ export async function getUserNWC(userId: string): Promise<{
   maskedString?: string;
   lastUsed?: Date | null;
 }> {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      nwcEnabled: true,
-      encryptedNwc: true,
-      nwcLastUsed: true,
-    },
-  });
-
-  if (!user) {
-    return { enabled: false };
-  }
+  const user = await findUserNwcFields(userId);
+  if (!user) return { enabled: false };
 
   let maskedString: string | undefined;
   if (user.encryptedNwc) {
     try {
-      const decryptedNwc = decrypt(user.encryptedNwc);
-      maskedString = maskNWCString(decryptedNwc);
-    } catch (_error) {
+      maskedString = maskNWCString(decrypt(user.encryptedNwc));
+    } catch {
       // If decryption fails, we can't show the masked string
     }
   }
@@ -120,19 +92,8 @@ export async function getUserNWC(userId: string): Promise<{
 export async function getDecryptedUserNWC(
   userId: string
 ): Promise<string | null> {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      encryptedNwc: true,
-      nwcEnabled: true,
-    },
-  });
-
-  if (!user?.encryptedNwc || !user.nwcEnabled) {
-    return null;
-  }
+  const user = await findUserEncryptedNwc(userId);
+  if (!user?.encryptedNwc || !user.nwcEnabled) return null;
 
   try {
     return decrypt(user.encryptedNwc);

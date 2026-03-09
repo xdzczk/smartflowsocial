@@ -4,8 +4,8 @@
 
 import { json } from "@remix-run/node";
 
+import { upsertReferrerPayoutConfig } from "~/features/referral/repositories/referral-data.server";
 import { getUserById } from "~/features/user";
-import { prisma } from "~/lib/prisma.server";
 
 const REFERRAL_SAVE_PAYOUT = "referral_save_payout";
 
@@ -41,17 +41,9 @@ export async function handleReferralAction(
     );
   }
 
-  await prisma.referrerPayoutConfig.upsert({
-    where: { referrerNpub: user.npub },
-    create: {
-      referrerNpub: user.npub,
-      payoutDestination: dest,
-      payoutDestinationType: type,
-    },
-    update: {
-      payoutDestination: dest,
-      payoutDestinationType: type,
-    },
+  await upsertReferrerPayoutConfig(user.npub, {
+    payoutDestination: dest,
+    payoutDestinationType: type,
   });
 
   return json({ success: true, _action: REFERRAL_SAVE_PAYOUT });

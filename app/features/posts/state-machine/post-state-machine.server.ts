@@ -4,10 +4,20 @@
  * Manages post state transitions with database persistence.
  */
 
-import type { Prisma } from "@prisma/client";
-
+import type { Prisma } from "~/features/posts/data/posts-prisma-types.server";
 import { recordPostStateTransition } from "~/lib/metrics/business-metrics.server";
-import { prisma } from "~/lib/prisma.server";
+
+import {
+  findPostUnique,
+  updatePost,
+} from "../repositories/post-queries-data.server";
+import {
+  createPostStateTransitionInTx,
+  findPostCurrentState,
+  findPostStateTransitions,
+  runTransaction,
+  updatePostInTx,
+} from "../repositories/post-state-machine-data.server";
 
 import {
   transitionPost,
@@ -16,70 +26,46 @@ import {
 } from "./post-state";
 
 export class PostStateMachine {
-  /**
-   * Transition a post to a new state
-   * Records the transition in the database
-   */
   async transition(
     postId: string,
     userId: string,
     targetState: PostState,
     reason: string,
     options?: {
-      /**
-       * Additional Post fields to update atomically with the state transition.
-       *
-       * This is used by queue workers to make \"attempt succeeded\" updates (e.g. `publishedAt`,
-       * `publishAttemptId`) atomic with the transition to `PUBLISHED`, preventing stuck states
-       * under crashes/retries.
-       */
       additionalPostData?: Prisma.PostUpdateInput;
     }
   ): Promise<void> {
-    const post = await prisma.post.findUnique({
-      where: { id: postId, userId },
-      select: { currentState: true },
-    });
-
-    if (!post) {
+    const currentState = (await findPostCurrentState(
+      postId,
+      userId
+    )) as PostState | null;
+    if (currentState === null) {
       throw new Error(`Post ${postId} not found for user ${userId}`);
     }
 
-    const currentState = (post.currentState || "DRAFT") as PostState;
+    const state = currentState;
 
-    // Skip transition if already in target state.
-    // If additional fields need updating (e.g. releasing locks), update them and return.
-    if (currentState === targetState) {
+    if (state === targetState) {
       if (options?.additionalPostData) {
-        await prisma.post.update({
-          where: { id: postId, userId },
-          data: options.additionalPostData,
-        });
+        await updatePost(postId, userId, options.additionalPostData);
       }
       return;
     }
 
-    const transition = transitionPost(currentState, targetState, reason);
+    const transition = transitionPost(state, targetState, reason);
 
-    await prisma.$transaction(async (tx) => {
-      // Update post state (flags have been removed)
-      // Include userId in where clause for consistency and security
-      // If post was deleted between check and transaction, this will throw a clear error
+    await runTransaction(async (tx) => {
       try {
-        await tx.post.update({
-          where: { id: postId, userId },
-          data: {
-            currentState: targetState,
-            ...(options?.additionalPostData ?? {}),
-          },
+        await updatePostInTx(tx, postId, userId, {
+          currentState: targetState,
+          ...(options?.additionalPostData ?? {}),
         });
-      } catch (error) {
-        // Provide clearer error message if post was deleted
+      } catch (error: unknown) {
         if (
           error &&
           typeof error === "object" &&
           "code" in error &&
-          error.code === "P2025"
+          (error as { code: string }).code === "P2025"
         ) {
           throw new Error(
             `Post ${postId} not found for user ${userId} (may have been deleted)`
@@ -87,31 +73,20 @@ export class PostStateMachine {
         }
         throw error;
       }
-
-      // Record transition
-      await tx.postStateTransition.create({
-        data: {
-          postId,
-          fromState: transition.from,
-          toState: transition.to,
-          reason: transition.reason,
-        },
-      });
+      await createPostStateTransitionInTx(
+        tx,
+        postId,
+        transition.from,
+        transition.to,
+        transition.reason
+      );
     });
 
-    // Record state transition metric
     recordPostStateTransition(transition.from, transition.to);
   }
 
-  /**
-   * Get state transition history for a post
-   */
   async getStateHistory(postId: string): Promise<PostStateTransition[]> {
-    const transitions = await prisma.postStateTransition.findMany({
-      where: { postId },
-      orderBy: { createdAt: "desc" },
-    });
-
+    const transitions = await findPostStateTransitions(postId);
     return transitions.map((t) => ({
       from: t.fromState as PostState,
       to: t.toState as PostState,
@@ -120,15 +95,11 @@ export class PostStateMachine {
     }));
   }
 
-  /**
-   * Get current state of a post
-   */
   async getCurrentState(postId: string): Promise<PostState | null> {
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-      select: { currentState: true },
-    });
-
+    const post = await findPostUnique(
+      { id: postId },
+      { select: { currentState: true } }
+    );
     return (post?.currentState ?? "DRAFT") as PostState;
   }
 }

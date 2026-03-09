@@ -3,21 +3,22 @@
  * Handles VAPID key generation and configuration
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- web-push uses CommonJS
+import { env } from "~/lib/env.server";
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- web-push is CommonJS, no types
 const webpush = require("web-push");
 
 /**
  * Initialize web push with VAPID keys from environment
  */
 export function initWebPush(): void {
-  const publicKey = process.env["VAPID_PUBLIC_KEY"];
-  const privateKey = process.env["VAPID_PRIVATE_KEY"];
+  const publicKey = env.VAPID_PUBLIC_KEY;
+  const privateKey = env.VAPID_PRIVATE_KEY;
   const subject =
-    process.env["VAPID_SUBJECT"] ??
-    process.env["APP_URL"] ??
-    "mailto:admin@smartflow.social";
+    env.VAPID_SUBJECT ?? env.APP_URL ?? "mailto:admin@smartflow.social";
 
   if (!publicKey || !privateKey) {
+    // Init-time config warning before full logger; acceptable per logging policy
     console.warn(
       "Web Push: VAPID keys not configured. Push notifications will be disabled."
     );
@@ -32,5 +33,5 @@ export function initWebPush(): void {
  * Get VAPID public key for client subscription
  */
 export function getVapidPublicKey(): string | null {
-  return process.env["VAPID_PUBLIC_KEY"] ?? null;
+  return env.VAPID_PUBLIC_KEY ?? null;
 }

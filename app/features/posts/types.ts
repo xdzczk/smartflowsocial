@@ -3,16 +3,16 @@
  * Shared TypeScript interfaces for post and queue features
  */
 
-import type {
-  Post,
-  LongFormPost,
-  QueueType as PrismaQueueType,
-  HashTagPreset as PrismaHashTagPreset,
-} from "@prisma/client";
 import type { FetcherWithComponents } from "@remix-run/react";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 
+import type {
+  LongFormPost,
+  Post,
+  PrismaHashTagPreset,
+  PrismaQueueType,
+} from "./data/posts-prisma-types.server";
 import { getQueueAccentHex } from "./queue-colors";
 /**
  * Schedule configuration for INTERVAL schedule type

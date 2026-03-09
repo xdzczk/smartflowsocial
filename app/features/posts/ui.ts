@@ -47,7 +47,7 @@ export {
 } from "./dtos";
 
 // Re-export Prisma types for convenience (when needed for type annotations)
-export type { LongFormPost as LongFormPostType } from "@prisma/client";
+export type { LongFormPost as LongFormPostType } from "./data/posts-prisma-types.server";
 
 export { convertJsonValueToScheduleConfig } from "./types";
 
@@ -74,20 +74,23 @@ export {
 export { getQueueColor, getQueueAccentHex } from "./queue-colors";
 
 // ============================================================================
-// Calendar Components
-// ============================================================================
-
-export { Calendar } from "./components/Calendar/Calendar";
-
-// ============================================================================
-// Calendar Utilities
+// Calendar (submodule)
 // ============================================================================
 
 export {
+  Calendar,
+  CalendarPage,
+  CalendarQueuePage,
+  useCalendarQuery,
+  useCalendarData,
+  calendarKeys,
+  useCalendarQueueQuery,
+  useCalendarQueueData,
+  calendarQueueKeys,
   postsToCalendarPosts,
   longFormPostsToCalendarPosts,
   mixedPostsToCalendarPosts,
-} from "./utils/calendar-post-converter";
+} from "./calendar";
 
 // ============================================================================
 // Components (Public API)
@@ -103,31 +106,34 @@ export {
   type FlowViewHandle,
 } from "./components/FlowView";
 export { FlowCard } from "./components/FlowCard";
-export { default as LongFormDetailsModal } from "./components/LongFormDetailsModal";
-export { default as LongFormListing } from "./components/LongFormListing";
+export { LongFormDetailsModal, LongFormListing } from "./longform";
 export { default as PostDetailsModal } from "./components/PostDetailsModal";
 export { default as PublishResultModal } from "./components/PublishResultModal";
 export { PostsSearch } from "./components/PostsSearch";
 export { default as PostTypeTabs } from "./components/PostTypeTabs";
 export { default as QueueHealth } from "./components/QueueHealth";
 export { default as QueueSelectionTabs } from "./components/QueueSelectionTabs";
-export { RunwaySettingsModal } from "./components/RunwaySettingsModal";
-export { ScheduleNext7DaysCard } from "./components/ScheduleNext7DaysCard";
-export { ScheduleOverviewTargetModal } from "./components/ScheduleOverviewTargetModal";
-export { ScheduledPostsTable } from "./components/ScheduledPostsTable";
-export { SimpleRescheduleModal } from "./components/SimpleRescheduleModal";
+export { RunwaySettingsModal } from "./runway";
+export {
+  ScheduleNext7DaysCard,
+  ScheduleOverviewTargetModal,
+  ScheduledPostsTable,
+  SimpleRescheduleModal,
+  ScheduleRepostQuoteModal,
+} from "./scheduling";
 export { default as Statistics } from "./components/Statistics";
 export { SuccessMessage } from "./components/SuccessMessage";
 export {
   default as TopPostsList,
   type TopPostItemDTO,
 } from "./components/TopPostsList";
-export { default as DraftBulkResume } from "./components/DraftBulkResume";
-export { DraftsBulkActions } from "./components/DraftsBulkActions";
+export { DraftBulkResume, DraftsBulkActions } from "./drafts";
 export { ErrorMessage } from "./components/ErrorMessage";
-export { LongFormEditHeader } from "./components/LongFormEditHeader";
-export { default as LongFormPost } from "./components/LongFormPost";
-export { default as LongFormPreviewModal } from "./components/LongFormPreviewModal";
+export {
+  LongFormEditHeader,
+  LongFormPost,
+  LongFormPreviewModal,
+} from "./longform";
 export { NewPostHeader } from "./components/NewPostHeader";
 export { default as NewPostImagesConfirmation } from "./components/NewPostImagesConfirmation";
 export type { ComposerStatus } from "./components/NewPostHeader";
@@ -136,45 +142,35 @@ export { AlsoScheduleBlock } from "./components/AlsoScheduleBlock";
 export { AttachmentsStrip } from "./components/AttachmentsStrip";
 export { ConfidencePanel } from "./components/ConfidencePanel";
 export { TagsChipRow } from "./components/TagsChipRow";
-export { UnifiedComposer } from "./components/UnifiedComposer";
-export type { UnifiedComposerProps } from "./components/UnifiedComposer";
-export { default as NewPostPage } from "./components/NewPostPage";
-export { RecyclablesBulkActions } from "./components/RecyclablesBulkActions";
-export { RecyclablesPagination } from "./components/RecyclablesPagination";
-export {
-  DraftPickerModal,
-  type DraftPickerType,
-} from "./components/DraftPickerModal";
-export { DraftEditForm } from "./components/DraftEditForm";
-export {
-  DraftVersionHistory,
-  type DraftVersionItem,
-} from "./components/DraftVersionHistory";
-export { DraftPreview } from "./components/DraftPreview";
+export { UnifiedComposer, type UnifiedComposerProps } from "./composer";
+export { NewPostPage } from "./composer";
+export { RecyclablesBulkActions, RecyclablesPagination } from "./publishing";
+export { DraftPickerModal, type DraftPickerType } from "./drafts";
+export { DraftEditForm } from "./drafts";
+export { DraftVersionHistory, type DraftVersionItem } from "./drafts";
+export { DraftPreview } from "./drafts";
 export { ResumeModal } from "./components/ResumeModal";
-export { default as DraftEditPage } from "./components/DraftEditPage";
-export { default as PublishedPostsPage } from "./components/PublishedPostsPage";
-export { default as ScheduledPostsPage } from "./components/ScheduledPostsPage";
+export { DraftEditPage } from "./drafts";
+export { PublishedPostsPage, RecyclablesPage } from "./publishing";
+export { default as ScheduledPostsPage } from "./scheduling";
 export { default as DashboardIndexPage } from "./components/DashboardIndexPage";
-export { default as DraftsPage } from "./components/DraftsPage";
-export { default as CalendarPage } from "./components/CalendarPage";
-export { default as RecyclablesPage } from "./components/RecyclablesPage";
+export { DraftsPage } from "./drafts";
 export { default as BulkPostsPage } from "./components/BulkPostsPage";
-export { default as CalendarQueuePage } from "./components/CalendarQueuePage";
-export { default as LongFormDraftEditPage } from "./components/LongFormDraftEditPage";
+export { LongFormDraftEditPage } from "./longform";
 export { BulkDraftsListing } from "./components/BulkDraftsListing";
-export { DraftsTable } from "./components/DraftsTable";
-export { default as PublishedPostsTable } from "./components/PublishedPostsTable";
-export { RecyclablesQueueFilter } from "./components/RecyclablesQueueFilter";
-export { RecyclablesQueueTabs } from "./components/RecyclablesQueueTabs";
-export { RecyclablesSearch } from "./components/RecyclablesSearch";
-export { RecyclablesTable } from "./components/RecyclablesTable";
-export { RecyclablesToast } from "./components/RecyclablesToast";
-export { NewLongFormHeader } from "./components/NewLongFormHeader";
-export { default as NewLongFormPostPage } from "./components/NewLongFormPostPage";
+export { DraftsTable } from "./drafts";
+export {
+  PublishedPostsTable,
+  RecyclablesQueueFilter,
+  RecyclablesQueueTabs,
+  RecyclablesSearch,
+  RecyclablesTable,
+  RecyclablesToast,
+} from "./publishing";
+export { NewLongFormHeader, NewLongFormPostPage } from "./longform";
 export { HashtagPresetsSettings } from "./components/HashtagPresetsSettings";
 export { QueueTypesSettings } from "./components/QueueTypesSettings";
-export { ScheduleIntervalsSettings } from "./components/ScheduleIntervalsSettings";
+export { ScheduleIntervalsSettings } from "./scheduling";
 export { default as BulkPostsActionButtons } from "./components/BulkPostsActionButtons";
 export { default as BulkPostsSchedulingPanel } from "./components/BulkPostsSchedulingPanel";
 export { default as BulkPostsTable } from "./components/BulkPostsTable";
@@ -185,27 +181,25 @@ export {
   type BulkComposerMode,
   type BulkComposerModalProps,
   type BulkComposerUser,
-} from "./components/BulkComposerModal";
+} from "./composer";
 
 // ============================================================================
 // Hooks (Public API)
 // ============================================================================
 
 export { useDashboardState } from "./hooks/useDashboardState";
-export { useScheduledState } from "./hooks/useScheduledState";
+export { useScheduledState, usePostScheduling } from "./scheduling";
 export { useDraftsState } from "./hooks/useDraftsState";
 export {
   usePublishedPosts,
   type BulkComposerPayload,
-} from "./usePublishedPosts";
-export {
   usePublishedPostsQuery,
   usePublishedPostsData,
   usePublishedPostsInfiniteQuery,
   usePublishedPostsInfiniteData,
   useBulkDeletePostsMutation,
   publishedPostsKeys,
-} from "./hooks/usePublishedPostsQuery";
+} from "./publishing";
 export type { PublishedPostsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useDashboardQuery,
@@ -221,7 +215,7 @@ export {
   useScheduledPostsInfiniteQuery,
   useScheduledPostsInfiniteData,
   scheduledPostsKeys,
-} from "./hooks/useScheduledPostsQuery";
+} from "./scheduling";
 export type { ScheduledPostsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useDraftsQuery,
@@ -231,17 +225,7 @@ export {
   draftsKeys,
 } from "./hooks/useDraftsQuery";
 export type { DraftsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
-export {
-  useCalendarQuery,
-  useCalendarData,
-  calendarKeys,
-} from "./hooks/useCalendarQuery";
 export type { CalendarLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
-export {
-  useCalendarQueueQuery,
-  useCalendarQueueData,
-  calendarQueueKeys,
-} from "./hooks/useCalendarQueueQuery";
 export type { CalendarQueueLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export { useFlowData, flowKeys } from "./hooks/useFlowQuery";
 export type { UseFlowDataResult } from "./hooks/useFlowQuery";
@@ -252,17 +236,17 @@ export {
   useReschedulePostMutation,
 } from "./hooks/usePostMutations";
 export { useEditPostMutation } from "./hooks/useEditPostMutation";
-export { useRecyclablesState } from "./hooks/useRecyclablesState";
-export type { IndividualRepostFetcherData } from "./hooks/useRecyclablesState";
 export {
+  useRecyclablesState,
+  type IndividualRepostFetcherData,
   useRecyclablesQuery,
   useRecyclablesData,
   useRecyclablesInfiniteQuery,
   useRecyclablesInfiniteData,
   recyclablesKeys,
-} from "./hooks/useRecyclablesQuery";
+} from "./publishing";
 export type { RecyclablesLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export { useDraftEditState } from "./hooks/useDraftEditState";
 export { useLongFormEditState } from "./hooks/useLongFormEditState";
 export { useNewLongFormState } from "./hooks/useNewLongFormState";
-export { useNewPostState } from "./hooks/useNewPostState";
+export { useNewPostState, useLocalDraft } from "./composer";

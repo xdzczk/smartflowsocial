@@ -16,7 +16,7 @@ vi.mock("~/features/user", () => ({
   getQueueTypeByIdForUser: vi.fn(),
 }));
 
-vi.mock("~/features/posts/schedulers", () => ({
+vi.mock("~/features/posts/scheduling/services/schedulers", () => ({
   calculateNextScheduleTime: vi.fn(),
   formatScheduleTimeForInput: vi.fn(),
 }));
@@ -27,7 +27,7 @@ import { requireUserId } from "~/features/auth/session.server";
 import {
   calculateNextScheduleTime,
   formatScheduleTimeForInput,
-} from "~/features/posts/schedulers";
+} from "~/features/posts/server";
 import {
   getQueueTypes,
   getUserTimezone,

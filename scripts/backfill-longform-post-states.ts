@@ -16,7 +16,7 @@ import {
   backfillLongFormPostCurrentState,
   fixLongFormPostStateInconsistencies,
   validateAllLongFormPostStates,
-} from "~/features/posts/state-machine/longform-post-state-validator.server";
+} from "~/features/posts/longform/index.server";
 import { logInfo } from "~/lib/error-logger.server";
 
 // Script logger (avoids console.*)

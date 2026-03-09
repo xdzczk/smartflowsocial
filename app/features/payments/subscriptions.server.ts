@@ -1,6 +1,6 @@
 import { redirect } from "@remix-run/node";
 
-import { prisma } from "~/lib/prisma.server";
+import { getUserById } from "~/features/user";
 import {
   ensureUserHasFreePlan,
   getUserSubscription,
@@ -53,11 +53,7 @@ export async function requireFeatureAccess(
 export async function requireAnySubscription(userId: string): Promise<void> {
   await ensureUserHasFreePlan(userId);
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isEnabled: true },
-  });
-
+  const user = await getUserById(userId);
   if (!user?.isEnabled) {
     throw redirect(LANDING);
   }
@@ -79,12 +75,8 @@ export async function requireActiveSubscription(
 export async function getSubscriptionData(
   userId: string
 ): Promise<SubscriptionData> {
-  // Get user's enabled status and subscription
   const [user, currentSubscription] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { isEnabled: true },
-    }),
+    getUserById(userId),
     getUserSubscription(userId),
   ]);
 

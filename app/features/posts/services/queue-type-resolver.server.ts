@@ -5,7 +5,8 @@
  * This handles the lookup logic that was previously in the model layer.
  */
 
-import { prisma } from "~/lib/prisma.server";
+import { findQueueTypeByUserAndName } from "../repositories/queue-type-resolver-data.server";
+
 /**
  * Resolve queue type ID from name or ID
  *
@@ -18,27 +19,15 @@ export async function resolveQueueTypeId(
   queueTypeId?: string | null,
   queueType?: string | null
 ): Promise<string | null> {
-  // Use provided queue type ID directly (but treat empty strings as null)
   if (queueTypeId && queueTypeId.trim() !== "") {
     return Promise.resolve(queueTypeId);
   }
 
-  // If no queueType name provided or it's unassigned (sentinel), return null
   const normalized = queueType?.toLowerCase();
   if (!queueType || normalized === "unassigned") {
     return Promise.resolve(null);
   }
 
-  // Lookup queue type by name
-  const queueTypeRecord = await prisma.queueType.findFirst({
-    where: {
-      userId,
-      name: queueType,
-    },
-    select: {
-      id: true,
-    },
-  });
-
+  const queueTypeRecord = await findQueueTypeByUserAndName(userId, queueType);
   return queueTypeRecord?.id ?? null;
 }

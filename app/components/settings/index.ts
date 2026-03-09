@@ -3,7 +3,7 @@ export { RelaysSettings } from "./RelaysSettings";
 
 // Re-exports from features for backward compatibility
 export { HashtagsSettings } from "~/features/posts/components/HashtagsSettings";
-export { ScheduleIntervalsSettings } from "~/features/posts/components/ScheduleIntervalsSettings";
+export { ScheduleIntervalsSettings } from "~/features/posts/ui";
 export { GiveawayBlacklistSettings } from "~/features/giveaway/components/GiveawayBlacklistSettings";
 export { QueueTypesSettings } from "~/features/posts/components/QueueTypesSettings";
 export { QueueTypeCard } from "~/features/posts/components/QueueTypeCard";

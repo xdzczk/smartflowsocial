@@ -3,6 +3,8 @@ import { WebSocket } from "ws";
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
 
+import { env } from "~/lib/env.server";
+
 import { logError } from "./error-logger.server";
 
 /**
@@ -10,7 +12,7 @@ import { logError } from "./error-logger.server";
  * Supports comma-separated list of WebSocket URLs
  */
 function getCacheEndpoints(): string[] {
-  const envUrl = process.env["PRIMAL_CACHING_URL"];
+  const envUrl = env.PRIMAL_CACHING_URL;
 
   if (envUrl) {
     // Support comma-separated list of endpoints

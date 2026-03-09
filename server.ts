@@ -491,8 +491,8 @@ async function run() {
   // Bulk posts: More lenient (5 requests per minute) since they're expensive but legitimate
   const isTestEnv =
     env.NODE_ENV === "test" ||
-    process.env["E2E_TEST"] === "true" ||
-    process.env["DISABLE_RATE_LIMIT"] === "true";
+    env.E2E_TEST === "true" ||
+    env.DISABLE_RATE_LIMIT === "true";
 
   // Upload endpoints need higher limits for bulk uploads (500 per 15 min)
   const uploadLimiter = rateLimit({
@@ -549,7 +549,7 @@ async function run() {
   app.use(remixHandler);
 
   const port = parseInt(env.PORT ?? "3000", 10);
-  const host = process.env["HOST"] ?? "0.0.0.0"; // Listen on all interfaces for Docker
+  const host = env.HOST ?? "0.0.0.0"; // Listen on all interfaces for Docker
 
   // Run database migrations and seed plans on startup
   async function initializeDatabase() {

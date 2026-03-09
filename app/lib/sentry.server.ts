@@ -5,6 +5,7 @@
  * Only initializes if SENTRY_DSN is configured
  */
 
+import { env } from "~/lib/env.server";
 import { safeConsoleError } from "~/lib/secrets-sanitizer.server";
 
 let sentryInitialized = false;
@@ -24,7 +25,7 @@ function parseSampleRate(value: string | undefined, fallback: number): number {
  */
 export function initSentry(): void {
   // Only initialize if DSN is provided and not already initialized
-  if (sentryInitialized || !process.env["SENTRY_DSN"]) {
+  if (sentryInitialized || !env.SENTRY_DSN) {
     return;
   }
 
@@ -46,20 +47,19 @@ export function initSentry(): void {
       setUser: (user: { id?: string; email?: string }) => void;
     };
 
-    const isProduction = process.env["NODE_ENV"] === "production";
+    const isProduction = env.NODE_ENV === "production";
     const tracesSampleRate = parseSampleRate(
-      process.env["SENTRY_TRACES_SAMPLE_RATE"],
+      env.SENTRY_TRACES_SAMPLE_RATE,
       isProduction ? 0.1 : 1.0
     );
     const profilesSampleRate = parseSampleRate(
-      process.env["SENTRY_PROFILES_SAMPLE_RATE"],
+      env.SENTRY_PROFILES_SAMPLE_RATE,
       isProduction ? 0.1 : 1.0
     );
 
     Sentry.init({
-      dsn: process.env["SENTRY_DSN"],
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
-      environment: process.env["NODE_ENV"] ?? "development",
+      dsn: env.SENTRY_DSN,
+      environment: env.NODE_ENV ?? "development",
       // Adjust traces sample rate based on environment
       tracesSampleRate,
       // Enable profiling in production (optional)
@@ -131,7 +131,7 @@ export function captureException(
     level?: "fatal" | "error" | "warning" | "info" | "debug";
   }
 ): void {
-  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
+  if (!sentryInitialized || !env.SENTRY_DSN) {
     return;
   }
 
@@ -164,7 +164,7 @@ export function captureMessage(
     extra?: Record<string, unknown>;
   }
 ): void {
-  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
+  if (!sentryInitialized || !env.SENTRY_DSN) {
     return;
   }
 
@@ -194,7 +194,7 @@ export function addBreadcrumb(breadcrumb: {
   level?: "fatal" | "error" | "warning" | "info" | "debug";
   data?: Record<string, unknown>;
 }): void {
-  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
+  if (!sentryInitialized || !env.SENTRY_DSN) {
     return;
   }
 
@@ -223,7 +223,7 @@ export function setUser(user: {
   email?: string;
   username?: string;
 }): void {
-  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
+  if (!sentryInitialized || !env.SENTRY_DSN) {
     return;
   }
 
@@ -246,7 +246,7 @@ export function setUser(user: {
  * Clear user context
  */
 export function clearUser(): void {
-  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
+  if (!sentryInitialized || !env.SENTRY_DSN) {
     return;
   }
 
@@ -269,7 +269,7 @@ export async function withSentrySpan<T>(
   },
   fn: () => Promise<T> | T
 ): Promise<T> {
-  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
+  if (!sentryInitialized || !env.SENTRY_DSN) {
     return await fn();
   }
 

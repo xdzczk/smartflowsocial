@@ -4,12 +4,12 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import { parseDropToDateTime } from "~/features/posts/components/Calendar/data/parse-drop-to-date-time";
-import { postsToDateGrid } from "~/features/posts/components/Calendar/data/posts-to-date-grid";
-import { postsToTimeGrid } from "~/features/posts/components/Calendar/data/posts-to-time-grid";
-import type { CalendarPost } from "~/features/posts/components/Calendar/PostBlock.types";
+import { parseDropToDateTime } from "~/features/posts/calendar/Calendar/data/parse-drop-to-date-time";
+import { postsToDateGrid } from "~/features/posts/calendar/Calendar/data/posts-to-date-grid";
+import { postsToTimeGrid } from "~/features/posts/calendar/Calendar/data/posts-to-time-grid";
+import type { CalendarPost } from "~/features/posts/calendar/Calendar/PostBlock.types";
 
-vi.mock("~/features/posts/components/Calendar/PostBlock.utils", () => ({
+vi.mock("~/features/posts/calendar/Calendar/PostBlock.utils", () => ({
   getPostScheduleInstant: (
     post: CalendarPost,
     _isLongform: boolean,

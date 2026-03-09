@@ -1,13 +1,58 @@
-import { Prisma } from "@prisma/client";
-import type { User, UploadProvider } from "@prisma/client";
-
 import type { MutedListData } from "~/features/engagement/types";
 import { isSubscriptionActiveForGating } from "~/features/payments/subscriptions.server";
+import type {
+  User,
+  UploadProvider,
+} from "~/features/user/data/user-prisma-types.server";
+import {
+  updateUserTimezoneRow,
+  findUserTimezoneRow,
+  updateUserRelaysRow,
+  findUserRelaysRow,
+  updateGiveawayBlacklistRow,
+  findGiveawayBlacklistRow,
+  updateScheduleIntervalRow,
+  findScheduleIntervalRow,
+  updateUserUploadProviderRow,
+  findUserCustomBlossomUrlRow,
+  updateUserCustomBlossomUrlRow,
+  updateUserUploadProviderSettingsRow,
+  findUserUploadProviderSettingsRow,
+  findUserEnableMirrorBlossomRow,
+  updateUserEnableMirrorBlossomRow,
+  findUserMirrorUploadUrlsRow,
+  updateUserMirrorUploadUrlsRow,
+  updateUserMutedListRow,
+  findUserMutedListRow,
+  findUserPushNotificationPreferencesRow,
+  updateUserPushNotificationPreferencesRow,
+  updateUserFilterMutedRow,
+  findUserFilterMutedRow,
+  updateUserHidePostsFromLowTrustUsersRow,
+  findUserHidePostsFromLowTrustUsersRow,
+  findUserTimeFormatRow,
+  updateUserTimeFormatRow,
+  findUserPrimarySignerProfileRow,
+  updateUserPrimarySignerProfileRow,
+  findUserByIdRow,
+  clearUserPrimarySignerProfileRow,
+  findUserDateFormatRow,
+  updateUserDateFormatRow,
+  findUserPreferredNostrClientRow,
+  findUserCustomNostrClientBaseUrlRow,
+  updateUserPreferredNostrClientRow,
+  findEngagementLastCheckedAtRow,
+  updateEngagementLastCheckedAtRow,
+  findLocaleDefaultsAppliedAtRow,
+  applyLocaleDefaultsOnceRow,
+  findUserRunwaySettingsRow,
+  updateRunwaySettingsRow,
+  findUserForRunwayFallbackRow,
+} from "~/features/user/repositories/user-settings-data.server";
 import {
   isPrimarySignerProfile,
   type PrimarySignerProfile,
 } from "~/lib/primary-signer-profile";
-import { prisma } from "~/lib/prisma.server";
 
 /**
  * Updates user's timezone
@@ -16,28 +61,14 @@ export function updateUserTimezone(
   userId: string,
   timezone: string
 ): Promise<User> {
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      timezone: timezone,
-    },
-  });
+  return updateUserTimezoneRow(userId, timezone);
 }
 
 /**
  * Gets user's timezone
  */
 export async function getUserTimezone(userId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      timezone: true,
-    },
-  });
+  const user = await findUserTimezoneRow(userId);
   return user?.timezone ?? null;
 }
 
@@ -49,14 +80,7 @@ export function updateUserRelays(
   userId: string,
   relays: string[]
 ): Promise<User> {
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      userRelays: relays,
-    },
-  });
+  return updateUserRelaysRow(userId, relays);
 }
 
 /**
@@ -66,15 +90,7 @@ export function updateUserRelays(
  * relays must use the canonical resolver in `app/features/relays/relay-resolution.server.ts`.
  */
 export async function getUserRelays(userId: string): Promise<string[]> {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      userRelays: true,
-    },
-  });
-
+  const user = await findUserRelaysRow(userId);
   return user?.userRelays ?? [];
 }
 
@@ -85,28 +101,14 @@ export function updateGiveawayBlacklist(
   userId: string,
   blacklistedItems: string[]
 ): Promise<User> {
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      giveawayBlackListed: blacklistedItems,
-    },
-  });
+  return updateGiveawayBlacklistRow(userId, blacklistedItems);
 }
 
 /**
  * Gets user's giveaway blacklist
  */
 export async function getGiveawayBlacklist(userId: string): Promise<string[]> {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      giveawayBlackListed: true,
-    },
-  });
+  const user = await findGiveawayBlacklistRow(userId);
   return user?.giveawayBlackListed ?? [];
 }
 
@@ -117,28 +119,14 @@ export function updateScheduleInterval(
   userId: string,
   intervals: string[]
 ): Promise<User> {
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      scheduleInterval: intervals,
-    },
-  });
+  return updateScheduleIntervalRow(userId, intervals);
 }
 
 /**
  * Gets user's schedule intervals
  */
 export async function getScheduleInterval(userId: string): Promise<string[]> {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      scheduleInterval: true,
-    },
-  });
+  const user = await findScheduleIntervalRow(userId);
   return user?.scheduleInterval ?? [];
 }
 
@@ -149,14 +137,7 @@ export function updateUserUploadProvider(
   userId: string,
   uploadProvider: UploadProvider
 ): Promise<User> {
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      uploadProvider: uploadProvider,
-    },
-  });
+  return updateUserUploadProviderRow(userId, uploadProvider);
 }
 
 function resolveFallbackBlossomProvider(isPaidActive: boolean): UploadProvider {
@@ -228,10 +209,7 @@ export async function getUserUploadProvider(
 export async function getUserCustomBlossomUrl(
   userId: string
 ): Promise<string | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { customBlossomUrl: true },
-  });
+  const user = await findUserCustomBlossomUrlRow(userId);
   return user?.customBlossomUrl ?? null;
 }
 
@@ -239,10 +217,7 @@ export function updateUserCustomBlossomUrl(
   userId: string,
   customBlossomUrl: string | null
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: { customBlossomUrl },
-  });
+  return updateUserCustomBlossomUrlRow(userId, customBlossomUrl);
 }
 
 export async function updateUserUploadProviderSettings(
@@ -250,14 +225,11 @@ export async function updateUserUploadProviderSettings(
   uploadProvider: UploadProvider,
   customBlossomUrl: string | null
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      uploadProvider,
-      customBlossomUrl:
-        uploadProvider === "BLOSSOM_CUSTOM" ? customBlossomUrl : null,
-    },
-  });
+  return updateUserUploadProviderSettingsRow(
+    userId,
+    uploadProvider,
+    uploadProvider === "BLOSSOM_CUSTOM" ? customBlossomUrl : null
+  );
 }
 
 export async function getResolvedUploadProviderSettings(
@@ -266,13 +238,7 @@ export async function getResolvedUploadProviderSettings(
   provider: UploadProvider;
   customBlossomUrl: string | null;
 }> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      uploadProvider: true,
-      customBlossomUrl: true,
-    },
-  });
+  const user = await findUserUploadProviderSettingsRow(userId);
   const isPaidActive = await isSubscriptionActiveForGating(userId);
   const resolvedProvider = resolveUploadProviderWithTierDefaults({
     persistedProvider: user?.uploadProvider ?? null,
@@ -296,14 +262,7 @@ export async function getResolvedUploadProviderSettings(
 export async function getUserEnableMirrorBlossom(
   userId: string
 ): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      enableMirrorBlossom: true,
-    },
-  });
+  const user = await findUserEnableMirrorBlossomRow(userId);
   return user?.enableMirrorBlossom ?? false;
 }
 
@@ -314,14 +273,7 @@ export function updateUserEnableMirrorBlossom(
   userId: string,
   enableMirrorBlossom: boolean
 ): Promise<User> {
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      enableMirrorBlossom: enableMirrorBlossom,
-    },
-  });
+  return updateUserEnableMirrorBlossomRow(userId, enableMirrorBlossom);
 }
 
 /**
@@ -330,14 +282,7 @@ export function updateUserEnableMirrorBlossom(
 export async function getUserMirrorUploadUrls(
   userId: string
 ): Promise<string[]> {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      mirrorUploadUrls: true,
-    },
-  });
+  const user = await findUserMirrorUploadUrlsRow(userId);
   return user?.mirrorUploadUrls ?? [];
 }
 
@@ -348,14 +293,7 @@ export function updateUserMirrorUploadUrls(
   userId: string,
   mirrorUrls: string[]
 ): Promise<User> {
-  return prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      mirrorUploadUrls: mirrorUrls,
-    },
-  });
+  return updateUserMirrorUploadUrlsRow(userId, mirrorUrls);
 }
 
 /**
@@ -365,12 +303,7 @@ export function updateUserMutedList(
   userId: string,
   mutedList: { npubs: string[]; lastSynced: string }
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      mutedList: mutedList,
-    },
-  });
+  return updateUserMutedListRow(userId, mutedList);
 }
 
 /**
@@ -380,10 +313,7 @@ export async function getUserMutedList(userId: string): Promise<{
   npubs: string[];
   lastSynced: string;
 } | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { mutedList: true },
-  });
+  const user = await findUserMutedListRow(userId);
 
   if (!user?.mutedList) {
     return null;
@@ -419,17 +349,7 @@ export async function getUserPushNotificationPreferences(
   pushNotifyIncludePreview: boolean;
   runwayNotifyBelowDays: number | null;
 }> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      pushNotificationsEnabled: true,
-      pushNotifyPublishSuccess: true,
-      pushNotifyPublishFailure: true,
-      pushNotifyRunwayLow: true,
-      pushNotifyIncludePreview: true,
-      runwayNotifyBelowDays: true,
-    },
-  });
+  const user = await findUserPushNotificationPreferencesRow(userId);
 
   return {
     pushNotificationsEnabled: user?.pushNotificationsEnabled ?? true,
@@ -455,29 +375,7 @@ export async function updateUserPushNotificationPreferences(
     runwayNotifyBelowDays?: number | null;
   }
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      ...(preferences.pushNotificationsEnabled !== undefined && {
-        pushNotificationsEnabled: preferences.pushNotificationsEnabled,
-      }),
-      ...(preferences.pushNotifyPublishSuccess !== undefined && {
-        pushNotifyPublishSuccess: preferences.pushNotifyPublishSuccess,
-      }),
-      ...(preferences.pushNotifyPublishFailure !== undefined && {
-        pushNotifyPublishFailure: preferences.pushNotifyPublishFailure,
-      }),
-      ...(preferences.pushNotifyRunwayLow !== undefined && {
-        pushNotifyRunwayLow: preferences.pushNotifyRunwayLow,
-      }),
-      ...(preferences.pushNotifyIncludePreview !== undefined && {
-        pushNotifyIncludePreview: preferences.pushNotifyIncludePreview,
-      }),
-      ...(preferences.runwayNotifyBelowDays !== undefined && {
-        runwayNotifyBelowDays: preferences.runwayNotifyBelowDays,
-      }),
-    },
-  });
+  return updateUserPushNotificationPreferencesRow(userId, preferences);
 }
 
 /**
@@ -487,22 +385,14 @@ export function updateUserFilterMuted(
   userId: string,
   filterMuted: boolean
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      filterMuted: filterMuted,
-    },
-  });
+  return updateUserFilterMutedRow(userId, filterMuted);
 }
 
 /**
  * Gets the filterMuted setting
  */
 export async function getUserFilterMuted(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { filterMuted: true },
-  });
+  const user = await findUserFilterMutedRow(userId);
   return user?.filterMuted ?? false;
 }
 
@@ -513,12 +403,10 @@ export function updateUserHidePostsFromLowTrustUsers(
   userId: string,
   hidePostsFromLowTrustUsers: boolean
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      hidePostsFromLowTrustUsers: hidePostsFromLowTrustUsers,
-    },
-  });
+  return updateUserHidePostsFromLowTrustUsersRow(
+    userId,
+    hidePostsFromLowTrustUsers
+  );
 }
 
 /**
@@ -527,10 +415,7 @@ export function updateUserHidePostsFromLowTrustUsers(
 export async function getUserHidePostsFromLowTrustUsers(
   userId: string
 ): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { hidePostsFromLowTrustUsers: true },
-  });
+  const user = await findUserHidePostsFromLowTrustUsersRow(userId);
   return user?.hidePostsFromLowTrustUsers ?? false;
 }
 
@@ -540,10 +425,7 @@ export async function getUserHidePostsFromLowTrustUsers(
 export async function getUserTimeFormat(
   userId: string
 ): Promise<"12h" | "24h"> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { timeFormat: true },
-  });
+  const user = await findUserTimeFormatRow(userId);
   return user?.timeFormat === "12h" ? "12h" : "24h";
 }
 
@@ -554,12 +436,7 @@ export function updateUserTimeFormat(
   userId: string,
   timeFormat: "12h" | "24h"
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      timeFormat: timeFormat,
-    },
-  });
+  return updateUserTimeFormatRow(userId, timeFormat);
 }
 
 export type DateFormatKey = "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
@@ -573,10 +450,7 @@ export async function getUserPrimarySignerProfile(
   userId: string
 ): Promise<PrimarySignerProfile | null> {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { primarySignerProfile: true },
-    });
+    const user = await findUserPrimarySignerProfileRow(userId);
     const raw = user?.primarySignerProfile;
     return isPrimarySignerProfile(raw) ? raw : null;
   } catch (err) {
@@ -602,12 +476,7 @@ export async function updateUserPrimarySignerProfile(
   profile: PrimarySignerProfile
 ): Promise<User> {
   try {
-    return await prisma.user.update({
-      where: { id: userId },
-      data: {
-        primarySignerProfile: profile,
-      },
-    });
+    return await updateUserPrimarySignerProfileRow(userId, profile);
   } catch (err) {
     const code =
       err && typeof err === "object" && "code" in err ? err.code : null;
@@ -616,9 +485,7 @@ export async function updateUserPrimarySignerProfile(
       (err instanceof Error &&
         err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
     ) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-      });
+      const user = await findUserByIdRow(userId);
       if (!user) throw err;
       return user;
     }
@@ -633,12 +500,7 @@ export async function clearUserPrimarySignerProfile(
   userId: string
 ): Promise<User> {
   try {
-    return await prisma.user.update({
-      where: { id: userId },
-      data: {
-        primarySignerProfile: Prisma.JsonNull,
-      },
-    });
+    return await clearUserPrimarySignerProfileRow(userId);
   } catch (err) {
     const code =
       err && typeof err === "object" && "code" in err ? err.code : null;
@@ -647,9 +509,7 @@ export async function clearUserPrimarySignerProfile(
       (err instanceof Error &&
         err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
     ) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-      });
+      const user = await findUserByIdRow(userId);
       if (!user) throw err;
       return user;
     }
@@ -663,10 +523,7 @@ export async function clearUserPrimarySignerProfile(
 export async function getUserDateFormat(
   userId: string
 ): Promise<DateFormatKey> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { dateFormat: true },
-  });
+  const user = await findUserDateFormatRow(userId);
   const v = user?.dateFormat;
   if (v === "mmddyyyy" || v === "yyyymmdd") return v;
   return "ddmmyyyy";
@@ -679,12 +536,7 @@ export function updateUserDateFormat(
   userId: string,
   dateFormat: DateFormatKey
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      dateFormat: dateFormat,
-    },
-  });
+  return updateUserDateFormatRow(userId, dateFormat);
 }
 
 export const PREFERRED_NOSTR_CLIENT_PRESETS = [
@@ -706,10 +558,7 @@ export type PreferredNostrClientPreset =
 export async function getUserPreferredNostrClient(
   userId: string
 ): Promise<PreferredNostrClientPreset> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { preferredNostrClient: true },
-  });
+  const user = await findUserPreferredNostrClientRow(userId);
   const v = user?.preferredNostrClient;
   if (
     v &&
@@ -726,10 +575,7 @@ export async function getUserPreferredNostrClient(
 export async function getUserCustomNostrClientBaseUrl(
   userId: string
 ): Promise<string | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { customNostrClientBaseUrl: true },
-  });
+  const user = await findUserCustomNostrClientBaseUrlRow(userId);
   const v = user?.customNostrClientBaseUrl;
   return typeof v === "string" && v.trim() !== "" ? v.trim() : null;
 }
@@ -754,10 +600,7 @@ export function updateUserPreferredNostrClient(
   } else {
     data.customNostrClientBaseUrl = null;
   }
-  return prisma.user.update({
-    where: { id: userId },
-    data,
-  });
+  return updateUserPreferredNostrClientRow(userId, data);
 }
 
 /**
@@ -767,10 +610,7 @@ export function updateUserPreferredNostrClient(
 export async function getEngagementLastCheckedAt(
   userId: string
 ): Promise<Date | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { engagementLastCheckedAt: true },
-  });
+  const user = await findEngagementLastCheckedAtRow(userId);
   return user?.engagementLastCheckedAt ?? null;
 }
 
@@ -779,10 +619,7 @@ export async function getEngagementLastCheckedAt(
  * Call when the user opens the feed (e.g. loader for page 1).
  */
 export function updateEngagementLastCheckedAt(userId: string): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: { engagementLastCheckedAt: new Date() },
-  });
+  return updateEngagementLastCheckedAtRow(userId);
 }
 
 /**
@@ -792,10 +629,7 @@ export function updateEngagementLastCheckedAt(userId: string): Promise<User> {
 export async function getLocaleDefaultsAppliedAt(
   userId: string
 ): Promise<Date | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { localeDefaultsAppliedAt: true },
-  });
+  const user = await findLocaleDefaultsAppliedAtRow(userId);
   return user?.localeDefaultsAppliedAt ?? null;
 }
 
@@ -808,14 +642,7 @@ export function applyLocaleDefaultsOnce(
   timeFormat: "12h" | "24h",
   dateFormat: DateFormatKey
 ): Promise<User> {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      timeFormat,
-      dateFormat,
-      localeDefaultsAppliedAt: new Date(),
-    },
-  });
+  return applyLocaleDefaultsOnceRow(userId, timeFormat, dateFormat);
 }
 
 export type RunwayMode = "last-post" | "first-queue-empty";
@@ -854,10 +681,7 @@ export async function getRunwaySettings(
   userId: string
 ): Promise<RunwaySettings> {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { runwaySettings: true },
-    });
+    const user = await findUserRunwaySettingsRow(userId);
     const raw = user?.runwaySettings;
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
       return { ...DEFAULT_RUNWAY_SETTINGS };
@@ -917,20 +741,14 @@ export async function updateRunwaySettings(
   settings: RunwaySettings
 ): Promise<User> {
   try {
-    return await prisma.user.update({
-      where: { id: userId },
-      data: {
-        runwaySettings: {
-          queueNames: settings.queueNames,
-          mode: settings.mode,
-          redThresholdDays:
-            settings.redThresholdDays ?? DEFAULT_RED_THRESHOLD_DAYS,
-          orangeThresholdDays:
-            settings.orangeThresholdDays ?? DEFAULT_ORANGE_THRESHOLD_DAYS,
-          targetPostsPerDay:
-            settings.targetPostsPerDay ?? DEFAULT_TARGET_POSTS_PER_DAY,
-        },
-      },
+    return await updateRunwaySettingsRow(userId, {
+      queueNames: settings.queueNames,
+      mode: settings.mode,
+      redThresholdDays: settings.redThresholdDays ?? DEFAULT_RED_THRESHOLD_DAYS,
+      orangeThresholdDays:
+        settings.orangeThresholdDays ?? DEFAULT_ORANGE_THRESHOLD_DAYS,
+      targetPostsPerDay:
+        settings.targetPostsPerDay ?? DEFAULT_TARGET_POSTS_PER_DAY,
     });
   } catch (err) {
     const code =
@@ -940,46 +758,9 @@ export async function updateRunwaySettings(
       (err instanceof Error &&
         err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
     ) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          npub: true,
-          createdAt: true,
-          updatedAt: true,
-          isEnabled: true,
-          timezone: true,
-          userRelays: true,
-          giveawayBlackListed: true,
-          uploadProvider: true,
-          customBlossomUrl: true,
-          showHashTagsinPosts: true,
-          scheduleInterval: true,
-          nostrProfile: true,
-          enableMirrorBlossom: true,
-          mirrorUploadUrls: true,
-          encryptedNwc: true,
-          nwcEnabled: true,
-          nwcLastUsed: true,
-          mutedList: true,
-          filterMuted: true,
-          hidePostsFromLowTrustUsers: true,
-          pushNotificationsEnabled: true,
-          pushNotifyPublishSuccess: true,
-          pushNotifyPublishFailure: true,
-          timeFormat: true,
-          preferredNostrClient: true,
-          customNostrClientBaseUrl: true,
-          isChild: true,
-          parentNpub: true,
-          pendingParentRequests: true,
-          localeDefaultsAppliedAt: true,
-          primarySignerProfile: true,
-          engagementLastCheckedAt: true,
-        },
-      });
+      const user = await findUserForRunwayFallbackRow(userId);
       if (!user) throw err;
-      const result: User = {
+      const result = {
         ...user,
         runwaySettings: null,
         primarySignerProfile: null,
@@ -989,7 +770,7 @@ export async function updateRunwaySettings(
         lastRunwayLowNotificationAt: null,
         dateFormat: null,
       };
-      return result;
+      return result as User;
     }
     throw err;
   }

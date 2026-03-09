@@ -2,18 +2,19 @@
  * Giveaway CRUD and lifecycle actions: create, preview, reroll, exclude, lock, cancel, markPaidOut.
  */
 
-import type { Giveaway, GiveawaySelectionMode } from "@prisma/client";
-import { Prisma } from "@prisma/client";
-
 import type { UserSubscription } from "~/features/payments/types";
 import {
   getUserPlanType,
   getGiveawayPlanLimits,
 } from "~/features/payments/types";
 import { getUserById } from "~/features/user";
-import { prisma } from "~/lib/prisma.server";
 import { getUserSubscription } from "~/models/payment.server";
 
+import { Prisma } from "./data/giveaway-prisma-types.server";
+import type {
+  Giveaway,
+  GiveawaySelectionMode,
+} from "./data/giveaway-prisma-types.server";
 import {
   getParticipantPubkeysForFollowScope,
   processGiveawayParticipants,
@@ -25,6 +26,13 @@ import {
   runGiveawaySelectionPerEngagement,
 } from "./giveaway-selection.server";
 import { fetchGiveawayParticipants } from "./giveaway.server";
+import {
+  createGiveaway as createGiveawayRow,
+  deleteGiveawayById,
+  findGiveawayByIdAndUser,
+  listGiveawaysByUser as listGiveawaysByUserFromRepo,
+  updateGiveaway as updateGiveawayRow,
+} from "./repositories/giveaway-actions-data.server";
 import type {
   GiveawayEngagementConfig,
   GiveawayEngagementType,
@@ -196,9 +204,7 @@ export async function getGiveawayById(
   id: string,
   userId: string
 ): Promise<Giveaway | null> {
-  return prisma.giveaway.findFirst({
-    where: { id, userId },
-  });
+  return findGiveawayByIdAndUser(id, userId);
 }
 
 export interface CreateGiveawayInput {
@@ -249,25 +255,25 @@ export async function createGiveaway(
     winnerCount = Math.min(sum, limits.maxWinnerCount);
   }
 
-  return prisma.giveaway.create({
-    data: {
-      userId,
-      name: (input.name?.trim() ?? "") || undefined,
-      scopeType: input.scopeType,
-      scopeReference: input.scopeReference,
-      eligibilityFrom: input.eligibilityFrom ?? undefined,
-      eligibilityTo: input.eligibilityTo ?? undefined,
-      engagementTypes: input.engagementTypes,
-      winnerCount,
-      engagementConfig:
-        input.engagementConfig && Object.keys(input.engagementConfig).length > 0
-          ? (input.engagementConfig as object)
-          : undefined,
-      selectionMode: input.selectionMode ?? "UNIQUE_USER",
-      engagementWeights: input.engagementWeights ?? undefined,
-      filters: input.filters ?? undefined,
-      status: "DRAFT",
-    },
+  return createGiveawayRow(userId, {
+    user: { connect: { id: userId } },
+    name: (input.name?.trim() ?? "") || undefined,
+    scopeType: input.scopeType,
+    scopeReference: input.scopeReference as Prisma.InputJsonValue,
+    eligibilityFrom: input.eligibilityFrom ?? undefined,
+    eligibilityTo: input.eligibilityTo ?? undefined,
+    engagementTypes: input.engagementTypes as Prisma.InputJsonValue,
+    winnerCount,
+    engagementConfig:
+      input.engagementConfig && Object.keys(input.engagementConfig).length > 0
+        ? (input.engagementConfig as Prisma.InputJsonValue)
+        : undefined,
+    selectionMode: input.selectionMode ?? "UNIQUE_USER",
+    engagementWeights: (input.engagementWeights ?? undefined) as
+      | Prisma.InputJsonValue
+      | undefined,
+    filters: (input.filters ?? undefined) as Prisma.InputJsonValue | undefined,
+    status: "DRAFT",
   });
 }
 
@@ -295,7 +301,7 @@ export async function updateGiveaway(
   const planType = getUserPlanType(subscription as UserSubscription | null);
   const limits = getGiveawayPlanLimits(planType);
 
-  const data: Parameters<typeof prisma.giveaway.update>[0]["data"] = {};
+  const data: Prisma.GiveawayUpdateInput = {};
   if (input.name !== undefined) data.name = input.name?.trim() ?? null;
   if (input.winnerCount !== undefined) {
     data.winnerCount = Math.min(
@@ -336,10 +342,7 @@ export async function updateGiveaway(
     data.selectionMode = input.selectionMode;
   }
 
-  await prisma.giveaway.update({
-    where: { id: giveawayId },
-    data,
-  });
+  await updateGiveawayRow(giveawayId, data);
   return { success: true };
 }
 
@@ -355,12 +358,9 @@ export async function previewGiveaway(
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
   const winners = runSelectionForGiveaway(g, relatedEvents);
 
-  await prisma.giveaway.update({
-    where: { id: giveawayId },
-    data: {
-      status: "PREVIEWED",
-      winnerSnapshot: winners as unknown as Array<Record<string, unknown>>,
-    },
+  await updateGiveawayRow(giveawayId, {
+    status: "PREVIEWED",
+    winnerSnapshot: winners as unknown as Prisma.InputJsonValue,
   });
 
   return { winners };
@@ -378,11 +378,8 @@ export async function rerollGiveaway(
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
   const winners = runSelectionForGiveaway(g, relatedEvents);
 
-  await prisma.giveaway.update({
-    where: { id: giveawayId },
-    data: {
-      winnerSnapshot: winners as unknown as Array<Record<string, unknown>>,
-    },
+  await updateGiveawayRow(giveawayId, {
+    winnerSnapshot: winners as unknown as Prisma.InputJsonValue,
   });
 
   return { winners };
@@ -410,11 +407,8 @@ export async function excludeWinnerAndRedraw(
   );
   const updated = runSelectionForGiveaway(g, eligibleEvents);
 
-  await prisma.giveaway.update({
-    where: { id: giveawayId },
-    data: {
-      winnerSnapshot: updated as unknown as Array<Record<string, unknown>>,
-    },
+  await updateGiveawayRow(giveawayId, {
+    winnerSnapshot: updated as unknown as Prisma.InputJsonValue,
   });
 
   return { winners: updated };
@@ -431,9 +425,9 @@ export async function lockGiveaway(
   const snapshot = g.winnerSnapshot as GiveawayWinnerEntry[] | null;
   if (!snapshot?.length) return { success: false, error: "No winners to lock" };
 
-  await prisma.giveaway.update({
-    where: { id: giveawayId },
-    data: { status: "LOCKED", lockedAt: new Date() },
+  await updateGiveawayRow(giveawayId, {
+    status: "LOCKED",
+    lockedAt: new Date(),
   });
   return { success: true };
 }
@@ -447,10 +441,7 @@ export async function cancelGiveaway(
   if (g.status === "LOCKED" || g.status === "PAID_OUT")
     return { success: false, error: "Cannot cancel locked or paid giveaway" };
 
-  await prisma.giveaway.update({
-    where: { id: giveawayId },
-    data: { status: "CANCELLED" },
-  });
+  await updateGiveawayRow(giveawayId, { status: "CANCELLED" });
   return { success: true };
 }
 
@@ -467,9 +458,7 @@ export async function deleteGiveaway(
       error: "Cannot delete locked or paid-out giveaway",
     };
 
-  await prisma.giveaway.delete({
-    where: { id: giveawayId },
-  });
+  await deleteGiveawayById(giveawayId);
   return { success: true };
 }
 
@@ -485,10 +474,7 @@ export async function markGiveawayPaidOut(
       error: "Only locked giveaways can be marked paid",
     };
 
-  await prisma.giveaway.update({
-    where: { id: giveawayId },
-    data: { status: "PAID_OUT" },
-  });
+  await updateGiveawayRow(giveawayId, { status: "PAID_OUT" });
   return { success: true };
 }
 
@@ -496,11 +482,5 @@ export async function listGiveawaysByUser(
   userId: string,
   options?: { status?: Giveaway["status"] }
 ): Promise<Giveaway[]> {
-  return prisma.giveaway.findMany({
-    where: {
-      userId,
-      ...(options?.status !== undefined && { status: options.status }),
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  return listGiveawaysByUserFromRepo(userId, options);
 }

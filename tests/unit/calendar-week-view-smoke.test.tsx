@@ -6,9 +6,9 @@
 
 import { describe, it, expect } from "vitest";
 
-import type { CalendarPost } from "~/features/posts/components/Calendar/PostBlock.types";
-import { WeekView } from "~/features/posts/components/Calendar/views/WeekView";
-import type { WeekViewProps } from "~/features/posts/components/Calendar/views/WeekView";
+import type { CalendarPost } from "~/features/posts/calendar/Calendar/PostBlock.types";
+import { WeekView } from "~/features/posts/calendar/Calendar/views/WeekView";
+import type { WeekViewProps } from "~/features/posts/calendar/Calendar/views/WeekView";
 
 describe("WeekView smoke", () => {
   it("exports a function component", () => {

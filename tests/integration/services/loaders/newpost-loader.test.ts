@@ -1,6 +1,6 @@
 /**
  * Integration tests for new post loader
- * Tests app/features/posts/services/newpost-loader.server.ts
+ * Tests app/features/posts/composer/services/newpost-loader.server.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -18,7 +18,7 @@ vi.mock("~/features/user", () => ({
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { loadNewPostData } from "~/features/posts/services/newpost-loader.server";
+import { loadNewPostData } from "~/features/posts/server";
 import {
   getScheduleInterval,
   getQueueTypes,

@@ -8,9 +8,9 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { CancelScheduleUseCase } from "~/features/posts/use-cases/cancel-schedule.use-case.server";
-import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
-import { SchedulePostUseCase } from "~/features/posts/use-cases/schedule-post.use-case.server";
+import { CancelScheduleUseCase } from "~/features/posts/scheduling/index.server";
+import { SchedulePostUseCase } from "~/features/posts/scheduling/index.server";
+import { CreatePostUseCase } from "~/features/posts/server";
 import { prisma } from "~/lib/prisma.server";
 
 // Skip if no test database configured

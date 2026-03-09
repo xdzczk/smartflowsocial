@@ -57,23 +57,17 @@ const { mockPublishExecute, mockScheduleExecute } = vi.hoisted(() => {
   return { mockPublishExecute, mockScheduleExecute };
 });
 
-vi.mock(
-  "~/features/posts/use-cases/publish-longform-now.use-case.server",
-  () => ({
-    PublishLongFormNowUseCase: class {
-      execute = mockPublishExecute;
-    },
-  })
-);
+vi.mock("~/features/posts/server", () => ({
+  PublishLongFormNowUseCase: class {
+    execute = mockPublishExecute;
+  },
+}));
 
-vi.mock(
-  "~/features/posts/use-cases/schedule-longform-post.use-case.server",
-  () => ({
-    ScheduleLongFormPostUseCase: class {
-      execute = mockScheduleExecute;
-    },
-  })
-);
+vi.mock("~/features/posts/server", () => ({
+  ScheduleLongFormPostUseCase: class {
+    execute = mockScheduleExecute;
+  },
+}));
 
 // Note: updateLongFormPost is mocked above, do not import it here
 
@@ -193,7 +187,7 @@ vi.mock("@remix-run/node", async () => {
 
 import { TEST_USER_ID, createMockFormData } from "../utils/test-helpers";
 
-import { handleLongFormEditAction } from "~/features/posts/services/longform-edit-action.server";
+import { handleLongFormEditAction } from "~/features/posts/server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import {
   getUserById,

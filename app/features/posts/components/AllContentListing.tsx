@@ -12,7 +12,7 @@ import {
 } from "~/components/ui/select";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
-import { scheduledPostsKeys } from "~/features/posts/hooks/useScheduledPostsQuery";
+import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { fromISOString } from "~/lib/temporal";
 

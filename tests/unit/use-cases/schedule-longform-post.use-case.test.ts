@@ -35,7 +35,7 @@ vi.mock("~/lib/idempotency.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { ScheduleLongFormPostUseCase } from "~/features/posts/use-cases/schedule-longform-post.use-case.server";
+import { ScheduleLongFormPostUseCase } from "~/features/posts/server";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";

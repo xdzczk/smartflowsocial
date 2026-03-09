@@ -12,7 +12,7 @@ const { mockSchedulePostExecute } = vi.hoisted(() => {
   return { mockSchedulePostExecute };
 });
 
-vi.mock("~/features/posts/use-cases/schedule-post.use-case.server", () => ({
+vi.mock("~/features/posts/scheduling/index.server", () => ({
   SchedulePostUseCase: class {
     execute = mockSchedulePostExecute;
   },
@@ -34,7 +34,7 @@ vi.mock("~/lib/validation", () => ({
 // CancelScheduleUseCase is mocked above
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { handleCalendarReschedule } from "~/features/posts/services/calendar-action.server";
+import { handleCalendarReschedule } from "~/features/posts/calendar/index.server";
 import { validateFormDataOrRespond } from "~/lib/validation";
 import { reschedulePost } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";

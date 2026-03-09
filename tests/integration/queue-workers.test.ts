@@ -173,11 +173,11 @@ vi.mock("~/lib/prisma.server", () => ({
 import { TEST_USER_ID, createValidSignedEvent } from "../utils/test-helpers";
 
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
+import { relaysArray as systemDefaultRelays } from "~/features/relays/relay-constants";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { getUserById } from "~/features/user";
 import { enqueuePostJob } from "~/infra/queue";
 import { prisma } from "~/lib/prisma.server";
-import { relaysArray as systemDefaultRelays } from "~/lib/relays";
 import { getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
 

@@ -752,6 +752,22 @@ cp /var/lib/redis/dump.rdb /backups/redis-$(date +%Y%m%d).rdb
 
 ---
 
+## Repository hygiene and packaging
+
+When creating source zips or tarballs (e.g. for audits or distribution), exclude the following so
+archives stay small and do not leak history or local junk:
+
+- `.git`
+- `.git-backup*`, `.git.backup.*`
+- `__MACOSX`
+- `.pnpm-store`
+- `node_modules`, `coverage`, `test-results`, `build`
+
+These patterns are listed in `.gitignore`. Do not commit backup directories or generated artifacts;
+CI is the source of truth for test status.
+
+---
+
 ## Additional Resources
 
 - [Deployment Guide](./deployment.md)

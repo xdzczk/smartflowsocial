@@ -8,12 +8,13 @@ import { useState } from "react";
 
 import { Separator } from "~/components/ui/separator";
 import {
+  LongFormCoverImage,
+  LongFormPostFields,
+} from "~/features/posts/longform";
+import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
-
-import { LongFormCoverImage } from "./LongFormCoverImage";
-import { LongFormPostFields } from "./LongFormPostFields";
 
 interface ArticleDetailsCollapsibleProps {
   summary: string;

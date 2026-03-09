@@ -16,21 +16,22 @@ vi.mock("~/features/user", () => ({
   getHashTagPresetById: vi.fn(),
 }));
 
-// Mock use cases
+// Mock use cases: override only these on server so handleNewPostAction remains real
 const mockCreatePostExecute = vi.fn();
 const mockPublishNowExecute = vi.fn();
 
-vi.mock("~/features/posts/use-cases/create-post.use-case.server", () => ({
-  CreatePostUseCase: class {
-    execute = mockCreatePostExecute;
-  },
-}));
-
-vi.mock("~/features/posts/use-cases/publish-now.use-case.server", () => ({
-  PublishNowUseCase: class {
-    execute = mockPublishNowExecute;
-  },
-}));
+vi.mock("~/features/posts/server", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as Record<string, unknown>),
+    CreatePostUseCase: class {
+      execute = mockCreatePostExecute;
+    },
+    PublishNowUseCase: class {
+      execute = mockPublishNowExecute;
+    },
+  };
+});
 
 vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
@@ -45,7 +46,7 @@ global.fetch = vi.fn();
 
 import { createActionFormData, TEST_USER_ID } from "../utils/test-helpers";
 
-import { handleNewPostAction } from "~/features/posts/services/newpost-action.server";
+import { handleNewPostAction } from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import {
   getUserById,

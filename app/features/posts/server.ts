@@ -46,7 +46,7 @@ export {
 } from "./dtos";
 
 // Re-export Prisma types for convenience (when needed for type annotations)
-export type { LongFormPost as LongFormPostType } from "@prisma/client";
+export type { LongFormPost as LongFormPostType } from "./data/posts-prisma-types.server";
 
 export { convertJsonValueToScheduleConfig } from "./types";
 
@@ -54,30 +54,38 @@ export { convertJsonValueToScheduleConfig } from "./types";
 // Core Business Logic - Dashboard Data
 // ============================================================================
 
-// Scheduled Posts
+// Scheduled Posts (from scheduling submodule)
 export {
   getScheduledDashboardData,
   handleScheduledPostAction,
-} from "./services/scheduled-posts.server";
-export { handleScheduledAction } from "./services/scheduled-action.server";
+  handleScheduledAction,
+  loadScheduledData,
+  calculateNextScheduleTime,
+  formatScheduleTimeForInput,
+  calculateQueueScheduleTime,
+  parseQueueScheduleRequest,
+} from "./scheduling/index.server";
 
-// Published Posts
-export { getPublishedDashboardData } from "./services/published-posts.server";
-
-// Recyclable Posts
+// Published Posts & Recyclable Posts (from publishing submodule)
 export {
+  getPublishedDashboardData,
   getRecyclableDashboardData,
   handleRecyclablePostAction,
-} from "./services/recyclable-posts.server";
+  PostStateMachine,
+  PublishNowUseCase,
+  RecyclePostUseCase,
+} from "./publishing/index.server";
+export type {
+  RecyclePostInput,
+  RecyclePostResult,
+} from "./publishing/index.server";
 
 // Bulk Posts
 export { getBulkPostsDashboardData } from "./services/bulk-posts.server";
 
 // ============================================================================
-// Scheduling Logic
+// Scheduling Logic (re-exported from scheduling submodule above)
 // ============================================================================
-
-export { calculateNextScheduleTime } from "./schedulers";
 
 // ============================================================================
 // Post Actions
@@ -151,7 +159,7 @@ export {
   type LoadFlowDataResult,
   type FlowItemDTO,
 } from "./services/flow-loader.server";
-export { getRunwayLastScheduledAtUtcMs } from "./services/runway.server";
+export { getRunwayLastScheduledAtUtcMs } from "./runway/index.server";
 export {
   getScheduleNext7DaysCounts,
   type ScheduleDayCount,
@@ -163,38 +171,71 @@ export {
 
 export { handleDashboardAction } from "./services/dashboard-action.server";
 
-export { loadDraftsData } from "./services/drafts-loader.server";
-export { handleDraftsAction } from "./services/drafts-action.server";
-
-export { loadScheduledData } from "./services/scheduled-loader.server";
-
 // ============================================================================
-// Draft Services
+// Draft Services (from drafts submodule)
 // ============================================================================
 
-export { loadDraftEditData } from "./services/draft-edit-loader.server";
-
-export { handleDraftEditAction } from "./services/draft-edit-action.server";
+export {
+  loadDraftsData,
+  handleDraftsAction,
+  loadDraftEditData,
+  handleDraftEditAction,
+  createShortDraftVersion,
+  SHORT_SNAPSHOT_SCHEMA_VERSION,
+  createLongformDraftVersion,
+  LONGFORM_SNAPSHOT_SCHEMA_VERSION,
+  getDraftVersions,
+  getDraftVersionById,
+  listBulkDraftGroups,
+  getOrCreateDraftGroup,
+  deleteDraftGroupPosts,
+  createDraftGroupVersion,
+  getBulkDraftGroupPosts,
+  signDraftForScheduling,
+  restoreLongformDraftVersion,
+} from "./drafts/index.server";
+export type { BulkDraftSnapshotRow } from "./drafts/index.server";
 
 // ============================================================================
-// Long Form Services
+// Long Form Services (from longform submodule)
 // ============================================================================
 
-export { loadLongFormEditData } from "./services/longform-edit-loader.server";
-
-export { handleLongFormEditAction } from "./services/longform-edit-action.server";
-
-export { loadNewLongFormData } from "./services/newlongform-loader.server";
-
-export { handleNewLongFormAction } from "./services/newlongform-action.server";
+export {
+  loadLongFormEditData,
+  handleLongFormEditAction,
+  loadNewLongFormData,
+  handleNewLongFormAction,
+  calculateLongFormStatus,
+  LongFormPostStateMachine,
+  CreateLongFormPostUseCase,
+  ScheduleLongFormPostUseCase,
+  CancelScheduleLongFormUseCase,
+  MoveScheduledLongFormToDraftUseCase,
+  PublishLongFormNowUseCase,
+} from "./longform/index.server";
+export type {
+  LongFormStatus,
+  LongFormStatusCalculation,
+  LongFormPostState,
+  LongFormPostStateTransition,
+  LongFormPostStateInconsistency,
+  CreateLongFormPostInput,
+  CreateLongFormPostResult,
+  ScheduleLongFormPostInput,
+  PublishLongFormNowInput,
+  CancelLongFormPostInput,
+  MoveScheduledLongFormToDraftInput,
+} from "./longform/index.server";
 
 // ============================================================================
-// New Post Services
+// New Post Services (from composer submodule)
 // ============================================================================
 
-export { loadNewPostData } from "./services/newpost-loader.server";
-
-export { handleNewPostAction } from "./services/newpost-action.server";
+export {
+  loadNewPostData,
+  handleNewPostAction,
+  CreatePostUseCase,
+} from "./composer/index.server";
 
 // ============================================================================
 // Queue Type Resolver
@@ -203,21 +244,19 @@ export { handleNewPostAction } from "./services/newpost-action.server";
 export { resolveQueueTypeId } from "./services/queue-type-resolver.server";
 
 // ============================================================================
-// Long Form Status Calculator
+// Calendar (submodule)
 // ============================================================================
 
-export { calculateLongFormStatus } from "./services/longform-status-calculator.server";
-
-// ============================================================================
-// Calendar Services
-// ============================================================================
-
-export { handleCalendarAction } from "./services/calendar-action.server";
-export { getPostDataForModal } from "./services/post-data-loader.server";
 export {
+  handleCalendarAction,
   loadCalendarData,
   loadCalendarQueueData,
-} from "./services/calendar-loader.server";
+  postsToCalendarPosts,
+  longFormPostsToCalendarPosts,
+  mixedPostsToCalendarPosts,
+} from "./calendar/index.server";
+
+export { getPostDataForModal } from "./services/post-data-loader.server";
 
 // ============================================================================
 // API Services
@@ -232,18 +271,3 @@ export {
   getBatchPosts,
   parseBatchPostsRequest,
 } from "./services/batch-posts.server";
-
-export {
-  calculateQueueScheduleTime,
-  parseQueueScheduleRequest,
-} from "./services/queue-schedule.server";
-
-// ============================================================================
-// Calendar Utilities
-// ============================================================================
-
-export {
-  postsToCalendarPosts,
-  longFormPostsToCalendarPosts,
-  mixedPostsToCalendarPosts,
-} from "./utils/calendar-post-converter";

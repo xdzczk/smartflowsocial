@@ -265,6 +265,19 @@ pnpm test -- --grep "dashboard"
 pnpm exec cypress run --spec "tests/e2e/smoke.cy.ts"
 ```
 
+### Test suite health
+
+- **Full suite locally:** Run `pnpm test` before pushing (or `pnpm test:unit`,
+  `pnpm test:integration`, `pnpm test:property`, `pnpm test:security` for subsets). CI runs
+  `pnpm test` and coverage in
+  [.github/workflows/pr-checks.yml](../../.github/workflows/pr-checks.yml) on every PR;
+  [.github/workflows/ci.yml](../../.github/workflows/ci.yml) runs on push/PR to main/develop.
+- **CI must be green for merge:** Do not merge until PR checks pass. Fix any failing or flaky tests
+  so the default run is green.
+- **Do not commit test output artifacts:** Do not commit `test-results/` or coverage reports as
+  committed artifacts. CI is the source of truth for test status; use CI artifacts or local reports
+  to share results.
+
 ---
 
 ## Writing Tests

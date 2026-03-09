@@ -1,5 +1,6 @@
 import { MediaNotReadyError } from "~/lib/errors";
-import { prisma } from "~/lib/prisma.server";
+
+import { findMediaAssetsByIds } from "../repositories/media-data.server";
 
 const MEDIA_PATH_REGEX = /^\/media\/([^/]+)\/([^/]+)$/;
 
@@ -29,10 +30,7 @@ export async function getNotReadyAssetIds(urls: string[]): Promise<string[]> {
   );
   if (assetIds.length === 0) return [];
 
-  const rows = await prisma.mediaAsset.findMany({
-    where: { id: { in: assetIds } },
-    select: { id: true, status: true },
-  });
+  const rows = await findMediaAssetsByIds(assetIds);
   const statusById = new Map(rows.map((row) => [row.id, row.status]));
   return assetIds.filter((id) => statusById.get(id) !== "ready");
 }
