@@ -1,0 +1,88 @@
+import { Loader2 } from "lucide-react";
+
+export interface BulkPostsSubmitButtonProps {
+  isSubmitting: boolean;
+  isProcessing: boolean;
+  isPreviewSubmitting: boolean;
+  postsCount: number;
+  preparationProgress?: {
+    current: number;
+    total: number;
+    stage: string;
+  };
+  validationInvalid?: boolean;
+}
+
+export function BulkPostsSubmitButton({
+  isSubmitting,
+  isProcessing,
+  isPreviewSubmitting,
+  postsCount,
+  preparationProgress,
+  validationInvalid,
+}: BulkPostsSubmitButtonProps) {
+  const disabled =
+    isSubmitting ||
+    isProcessing ||
+    isPreviewSubmitting ||
+    (validationInvalid ?? false);
+  const showProgress =
+    isPreviewSubmitting &&
+    preparationProgress !== undefined &&
+    preparationProgress.total > 0;
+
+  const getButtonContent = () => {
+    if (isPreviewSubmitting) {
+      return (
+        <div className="flex w-full flex-col items-center gap-2">
+          <span className="flex items-center justify-center gap-2">
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+            {preparationProgress?.stage ?? "Validating & Preparing..."}
+          </span>
+          {showProgress ? (
+            <div className="w-full">
+              <div className="mb-1 text-xs text-white/80">
+                Step {preparationProgress.current} of{" "}
+                {preparationProgress.total}
+              </div>
+              <div className="h-2 w-full rounded-full bg-white/20">
+                <div
+                  className="h-2 rounded-full bg-white transition-all duration-300"
+                  style={{
+                    width: `${
+                      (preparationProgress.current /
+                        preparationProgress.total) *
+                      100
+                    }%`,
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+    if (isSubmitting) {
+      return (
+        <span className="flex items-center justify-center gap-2">
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+          Uploading Media Files...
+        </span>
+      );
+    }
+    if (isProcessing) {
+      return "Processing Media Files...";
+    }
+    return `Preview ${postsCount} Post${postsCount !== 1 ? "s" : ""}`;
+  };
+
+  return (
+    <button
+      type="submit"
+      disabled={disabled}
+      className="bg-primary text-primary-foreground hover:bg-primary/90 mt-6 w-full min-w-0 flex-1 rounded-lg p-4 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-0"
+    >
+      {getButtonContent()}
+    </button>
+  );
+}

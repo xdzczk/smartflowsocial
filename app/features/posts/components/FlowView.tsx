@@ -13,64 +13,43 @@ import {
   type ReactNode,
 } from "react";
 
-/** Mobile breakpoint (px); below this we scroll to next scheduled on load */
-const MOBILE_BREAKPOINT_PX = 768;
-
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 
 import type { CombinedContent } from "../types";
 
+import {
+  CARD_MIN_HEIGHT,
+  CARD_MIN_HEIGHT_MOBILE,
+  CARD_SLOT_SIZE,
+  CARD_SLOT_SIZE_MOBILE,
+  getGoLiveAt,
+  LOADING_LABEL,
+  MOBILE_BREAKPOINT_PX,
+  OVERSCROLL_EDGE_PX,
+  OVERSCROLL_MAX_PX,
+  OVERSCROLL_MIN_SCROLL_RANGE_PX,
+  OVERSCROLL_RESISTANCE,
+  OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS,
+  OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX,
+  OVERSCROLL_SPRING_CURVE,
+  OVERSCROLL_SPRING_MS,
+  PAST_FETCH_DEBOUNCE_MS,
+  PREFERS_REDUCED_MOTION_QUERY,
+  RIGHT_EDGE_FETCH_THRESHOLD_PX,
+  RIGHT_EDGE_VIEWPORT_MULTIPLIER,
+  SCROLL_EDGE_OFFSET_PX,
+  SCROLL_VIEWPORT_THROTTLE_MS,
+  SENTINEL_PREFETCH_ROOT_MARGIN_PX,
+  SENTINEL_WIDTH,
+  SLOT_CTA,
+  SLOT_FUTURE_SENTINEL,
+  SLOT_PAST_SENTINEL,
+} from "./flow-view-constants";
 import { FlowCard } from "./FlowCard";
 
-const CARD_WIDTH = 352;
-const GAP = 28;
-const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
-const CARD_MIN_HEIGHT = 232;
-
-/** Mobile: smaller cards so ~1.3–1.5 cards visible; reduces “trapped” feel */
-const CARD_WIDTH_MOBILE = 280;
-const GAP_MOBILE = 20;
-const CARD_SLOT_SIZE_MOBILE = CARD_WIDTH_MOBILE + GAP_MOBILE;
-const CARD_MIN_HEIGHT_MOBILE = 200; /* ~14% shorter than desktop */
-
-const SENTINEL_WIDTH = 120 + GAP;
-
-/** Rubber-band overscroll: iOS-like stretch (max pull and resistance tuned to feel like native iOS elastic) */
-const OVERSCROLL_MAX_PX = 180;
-const OVERSCROLL_RESISTANCE = 0.65;
-/** Spring-back: slightly longer + gentle overshoot for buttery iOS-like feel */
-const OVERSCROLL_SPRING_MS = 280;
-const OVERSCROLL_SPRING_CURVE = "cubic-bezier(0.33, 1.1, 0.64, 1)";
-/** Delay (ms) after last gesture before spring-back when overscroll is small (slow drag) */
-const OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS = 140;
-/** When overscroll exceeds this (px), use 0ms delay so fast/far pull springs back immediately */
-const OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX = 40;
-/** Edge threshold (px); wider so Chrome/macOS and sub-pixel scroll still trigger overscroll */
-const OVERSCROLL_EDGE_PX = 16;
-/** Min scroll range (px) to enable rubber-band; when content doesn't fill viewport we skip overscroll to avoid jitter */
-const OVERSCROLL_MIN_SCROLL_RANGE_PX = 20;
-
-/** Inset (px) from left edge for initial position and "Scroll to next": last-posted card sits away from sidebar */
-const SCROLL_EDGE_OFFSET_PX = 24;
-
-/** Media query for user's reduced-motion preference (scroll behavior) */
-const PREFERS_REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-const LOADING_LABEL = "Loading…";
-
-const SLOT_PAST_SENTINEL = "past-sentinel";
-const SLOT_FUTURE_SENTINEL = "future-sentinel";
-const SLOT_CTA = "cta";
+export { getGoLiveAt } from "./flow-view-constants";
 
 const NOW_MS = () => Date.now();
-
-export function getGoLiveAt(item: CombinedContent): number {
-  const posted = item.publishedAt ? new Date(item.publishedAt).getTime() : 0;
-  const scheduled = item.scheduledAtUtc
-    ? new Date(item.scheduledAtUtc).getTime()
-    : 0;
-  return posted || scheduled || 0;
-}
 
 type SlotType =
   | typeof SLOT_PAST_SENTINEL
@@ -83,18 +62,6 @@ interface FlowSlot {
   item?: CombinedContent;
   size: number;
 }
-
-/** Throttle (ms) for scrollViewport state updates to avoid re-renders every frame during scroll */
-const SCROLL_VIEWPORT_THROTTLE_MS = 120;
-/** Delay (ms) after past sentinel visible before fetching; avoids fetch burst during fast scroll */
-const PAST_FETCH_DEBOUNCE_MS = 150;
-
-/** rootMargin to trigger past/future fetch before sentinel is at the edge (prefetch) */
-const SENTINEL_PREFETCH_ROOT_MARGIN_PX = 400;
-/** When within this many px of the right edge, trigger future fetch (scroll-based; future sentinel may not be in DOM). */
-const RIGHT_EDGE_FETCH_THRESHOLD_PX = 600;
-/** Also trigger when within one viewport width of the right (catches wide viewports). */
-const RIGHT_EDGE_VIEWPORT_MULTIPLIER = 1;
 
 export interface FlowViewProps {
   flowItems: CombinedContent[];

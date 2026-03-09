@@ -4,7 +4,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "@remix-run/react";
-import { Hash, Loader2 } from "lucide-react";
+import { Hash } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { type ToastMessage } from "~/components/types";
@@ -14,7 +14,6 @@ import Toast from "~/components/ui/Toast";
 import {
   type BulkPost,
   type PreparedEvent,
-  type QueueType,
   handleBulkQueueUpdate as handleBulkQueueUpdateHandler,
   handleBulkRecyclableToggle as handleBulkRecyclableToggleHandler,
   handleCaptionChange as handleCaptionChangeHandler,
@@ -38,6 +37,11 @@ import {
 } from "~/features/posts/ui";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
+import { getFileUrlArrayForDraft } from "~/features/posts/utils/bulk-posts.client";
+import {
+  extractLoaderData,
+  type BulkPostsLoaderData,
+} from "~/features/posts/utils/bulkposts-loader.utils";
 import { createBulkPostClientId } from "~/features/posts/utils/client-id";
 import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
@@ -49,82 +53,7 @@ import {
 } from "~/lib/temporal";
 import { isVideoFile } from "~/utils/media-helpers";
 
-function extractLoaderData(data: unknown): {
-  tags: string[];
-  queueTypes: QueueType[];
-  hashTagPresets: Array<{ id: string; name: string; tags: string }>;
-  mode: string | null;
-  groupId: string | null;
-  bulkDraftGroupPosts: Array<{
-    id: string;
-    caption: string;
-    fileUrl: string[];
-    queueTypeId: string | null;
-    queueType: { name: string } | null;
-    scheduledAtUtc: Date | string | null;
-    isRecyclable: boolean;
-  }>;
-} {
-  const tags =
-    data &&
-    typeof data === "object" &&
-    "tags" in data &&
-    Array.isArray(data.tags)
-      ? data.tags
-      : [];
-  const queueTypes =
-    data &&
-    typeof data === "object" &&
-    "queueTypes" in data &&
-    Array.isArray(data.queueTypes)
-      ? data.queueTypes
-      : [];
-  const hashTagPresets =
-    data &&
-    typeof data === "object" &&
-    "hashTagPresets" in data &&
-    Array.isArray(data.hashTagPresets)
-      ? data.hashTagPresets
-      : [];
-  const mode =
-    data && typeof data === "object" && "mode" in data
-      ? (data as { mode?: unknown }).mode
-      : null;
-  const groupId =
-    data && typeof data === "object" && "groupId" in data
-      ? (data as { groupId?: unknown }).groupId
-      : null;
-  const bulkDraftGroupPosts =
-    data &&
-    typeof data === "object" &&
-    "bulkDraftGroupPosts" in data &&
-    Array.isArray(
-      (data as { bulkDraftGroupPosts?: unknown }).bulkDraftGroupPosts
-    )
-      ? (data as { bulkDraftGroupPosts: unknown[] }).bulkDraftGroupPosts
-      : [];
-
-  return {
-    tags: tags as string[],
-    queueTypes: queueTypes as QueueType[],
-    hashTagPresets: hashTagPresets as Array<{
-      id: string;
-      name: string;
-      tags: string;
-    }>,
-    mode: typeof mode === "string" ? mode : null,
-    groupId: typeof groupId === "string" ? groupId : null,
-    bulkDraftGroupPosts: bulkDraftGroupPosts as Array<{
-      id: string;
-      caption: string;
-      fileUrl: string[];
-      queueTypeId: string | null;
-      queueType: { name: string } | null;
-      scheduledAtUtc: Date | string | null;
-      isRecyclable: boolean;
-    }>,
-  };
-}
+import { BulkPostsSubmitButton } from "./BulkPostsSubmitButton";
 
 function getPageTitle(mode: string | null): string {
   if (mode === "recycle") {
@@ -139,112 +68,9 @@ function getPageTitle(mode: string | null): string {
   return "Bulk Schedule Posts";
 }
 
-interface SubmitButtonProps {
-  isSubmitting: boolean;
-  isProcessing: boolean;
-  isPreviewSubmitting: boolean;
-  postsCount: number;
-  preparationProgress?: {
-    current: number;
-    total: number;
-    stage: string;
-  };
-  validationInvalid?: boolean;
-}
-
-function SubmitButton({
-  isSubmitting,
-  isProcessing,
-  isPreviewSubmitting,
-  postsCount,
-  preparationProgress,
-  validationInvalid,
-}: SubmitButtonProps) {
-  const disabled =
-    isSubmitting ||
-    isProcessing ||
-    isPreviewSubmitting ||
-    (validationInvalid ?? false);
-  const showProgress =
-    isPreviewSubmitting &&
-    preparationProgress !== undefined &&
-    preparationProgress.total > 0;
-
-  const getButtonContent = () => {
-    if (isPreviewSubmitting) {
-      return (
-        <div className="flex w-full flex-col items-center gap-2">
-          <span className="flex items-center justify-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-            {preparationProgress?.stage ?? "Validating & Preparing..."}
-          </span>
-          {showProgress ? (
-            <div className="w-full">
-              <div className="mb-1 text-xs text-white/80">
-                Step {preparationProgress.current} of{" "}
-                {preparationProgress.total}
-              </div>
-              <div className="h-2 w-full rounded-full bg-white/20">
-                <div
-                  className="h-2 rounded-full bg-white transition-all duration-300"
-                  style={{
-                    width: `${
-                      (preparationProgress.current /
-                        preparationProgress.total) *
-                      100
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
-          ) : null}
-        </div>
-      );
-    }
-    if (isSubmitting) {
-      return (
-        <span className="flex items-center justify-center gap-2">
-          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-          Uploading Media Files...
-        </span>
-      );
-    }
-    if (isProcessing) {
-      return "Processing Media Files...";
-    }
-    return `Preview ${postsCount} Post${postsCount !== 1 ? "s" : ""}`;
-  };
-
-  return (
-    <button
-      type="submit"
-      disabled={disabled}
-      className="bg-primary text-primary-foreground hover:bg-primary/90 mt-6 w-full min-w-0 flex-1 rounded-lg p-4 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-0"
-    >
-      {getButtonContent()}
-    </button>
-  );
-}
-
-/** Build fileUrl array for a post (for save-as-draft payload). */
-function getFileUrlArrayForDraft(post: BulkPost): string[] {
-  if (Array.isArray(post.fileUrl)) {
-    return post.fileUrl.filter((u): u is string => typeof u === "string");
-  }
-  if (typeof post.fileUrl === "string" && post.fileUrl.trim() !== "") {
-    return [post.fileUrl];
-  }
-  return [];
-}
-
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Page component with many features; splitting would fragment state */
 export default function BulkPostsPage() {
-  const data = useLoaderData<{
-    tags: string[];
-    queueTypes: QueueType[];
-    hashTagPresets: Array<{ id: string; name: string; tags: string }>;
-    mode: string | null;
-  }>();
+  const data = useLoaderData<unknown>();
   const {
     tags,
     queueTypes,
@@ -252,7 +78,7 @@ export default function BulkPostsPage() {
     mode,
     groupId,
     bulkDraftGroupPosts,
-  } = extractLoaderData(data);
+  }: BulkPostsLoaderData = extractLoaderData(data);
   const [posts, setPosts] = useState<BulkPost[]>([]);
   const [displayedHashtags, setDisplayedHashtags] = useState<string | string[]>(
     tags
@@ -1122,7 +948,7 @@ export default function BulkPostsPage() {
                 >
                   Save as draft
                 </Button>
-                <SubmitButton
+                <BulkPostsSubmitButton
                   isSubmitting={isSubmitting}
                   isProcessing={isProcessing}
                   isPreviewSubmitting={isPreviewSubmitting}

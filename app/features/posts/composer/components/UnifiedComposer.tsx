@@ -5,7 +5,7 @@
  */
 
 import { useFetcher, useNavigate } from "@remix-run/react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -15,20 +15,12 @@ import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { DraftPickerModal, usePostScheduling } from "~/features/posts/ui";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
-import {
-  SIGNER_CONFIG_HYDRATED_EVENT,
-  tryBackgroundReconnect,
-} from "~/lib/nostr-signer-manager.client";
+import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
-import type {
-  QueueType,
-  ComposerAttachment,
-  RepostConditions,
-} from "../../types";
-import type { DelayAfterMain } from "../../utils/delay-after-main";
+import type { QueueType, ComposerAttachment } from "../../types";
 import { appendToken, removeToken } from "../../utils/inline-tokens.client";
 import {
   useComposerLocalDraft,
@@ -36,6 +28,7 @@ import {
 } from "../hooks/useComposerLocalDraft";
 import { useComposerState } from "../hooks/useComposerState";
 import { useComposerSubmit } from "../hooks/useComposerSubmit";
+import { useUnifiedComposerState } from "../hooks/useUnifiedComposerState";
 
 import {
   ComposerActionButtons,
@@ -52,8 +45,6 @@ import {
   getScheduleTimeLabel,
   getSummaryLine,
 } from "./composer/composer-helpers";
-
-const SIGNER_LABEL_NIP46 = "NIP-46 (Bunker)";
 
 const ACCEPTED_MEDIA_TYPES = /^image\/|^video\//;
 function filterMediaFiles(files: File[]): File[] {
@@ -122,45 +113,7 @@ export function UnifiedComposer({
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
-  const [draftPickerOpen, setDraftPickerOpen] = React.useState(false);
   const user = useOptionalUser();
-  const [publishSubmitInFlight, setPublishSubmitInFlight] =
-    React.useState(false);
-  const [lastPublishFailed, setLastPublishFailed] = React.useState(false);
-  const [signerLabel, setSignerLabel] = useState<string | null>(null);
-  const [signerReady, setSignerReady] = useState<boolean | null>(null);
-
-  const refreshSignerState = React.useCallback(() => {
-    void (async () => {
-      const { getActiveSignerConfig } =
-        await import("~/lib/nostr-signer-manager.client");
-      const config = getActiveSignerConfig();
-      setSignerReady(!!config);
-      setSignerLabel(
-        config?.type === "nip46"
-          ? SIGNER_LABEL_NIP46
-          : config?.type === "nip07"
-            ? "NIP-07 extension"
-            : null
-      );
-    })();
-  }, []);
-
-  useEffect(() => {
-    refreshSignerState();
-    const handler = () => refreshSignerState();
-    window.addEventListener(SIGNER_CONFIG_HYDRATED_EVENT, handler);
-    return () =>
-      window.removeEventListener(SIGNER_CONFIG_HYDRATED_EVENT, handler);
-  }, [refreshSignerState]);
-
-  const tags: string[] = [];
-  const [selectedHashtags, setSelectedHashtags] = React.useState(
-    () => initialDraft?.tags ?? ""
-  );
-  const [templateName, setTemplateName] = React.useState(
-    () => initialTemplateName ?? ""
-  );
   const isTemplateMode = mode === "template";
   const initialAttachmentsFromDraft = React.useMemo(() => {
     if (!initialDraft?.draftMeta?.attachmentMeta?.length) return [];
@@ -172,34 +125,52 @@ export function UnifiedComposer({
     }));
   }, [initialDraft?.draftMeta?.attachmentMeta]);
 
-  const [attachments, setAttachments] = React.useState<ComposerAttachment[]>(
-    () => initialAttachmentsFromDraft
-  );
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [alsoScheduleRepost, setAlsoScheduleRepost] = React.useState(false);
-  const [repostDelayList, setRepostDelayList] = React.useState<
-    Array<{ id: string; value: number; unit: DelayAfterMain["unit"] }>
-  >([{ id: crypto.randomUUID(), value: 2, unit: "hours" }]);
-  const [repostConditions, setRepostConditions] =
-    React.useState<RepostConditions | null>(null);
-  const [alsoScheduleQuote, setAlsoScheduleQuote] = React.useState(false);
-  const [quoteEntries, setQuoteEntries] = React.useState<
-    Array<{
-      id: string;
-      value: number;
-      unit: DelayAfterMain["unit"];
-      caption: string;
-    }>
-  >([{ id: crypto.randomUUID(), value: 2, unit: "hours", caption: "" }]);
+  const composerState = useUnifiedComposerState({
+    initialTags: initialDraft?.tags ?? "",
+    initialTemplateName: initialTemplateName ?? "",
+    initialAttachments: initialAttachmentsFromDraft,
+  });
+  const {
+    draftPickerOpen,
+    setDraftPickerOpen,
+    publishSubmitInFlight,
+    setPublishSubmitInFlight,
+    lastPublishFailed,
+    setLastPublishFailed,
+    signerLabel,
+    signerReady,
+    selectedHashtags,
+    setSelectedHashtags,
+    templateName,
+    setTemplateName,
+    attachments,
+    setAttachments,
+    fileInputRef,
+    alsoScheduleRepost,
+    setAlsoScheduleRepost,
+    repostDelayList,
+    setRepostDelayList,
+    repostConditions,
+    setRepostConditions,
+    alsoScheduleQuote,
+    setAlsoScheduleQuote,
+    quoteEntries,
+    setQuoteEntries,
+    postOptionsOpen,
+    setPostOptionsOpen,
+    scheduleRandomWindowMinutes,
+    setScheduleRandomWindowMinutes,
+    isThreadMode,
+    setIsThreadMode,
+    threadSegments,
+    setThreadSegments,
+    threadDelayMinutes,
+    setThreadDelayMinutes,
+    draggingOverSegmentId,
+    setDraggingOverSegmentId,
+  } = composerState;
 
-  const [postOptionsOpen, setPostOptionsOpen] = React.useState(false);
-  const [scheduleRandomWindowMinutes, setScheduleRandomWindowMinutes] =
-    React.useState(0);
-  const [isThreadMode, setIsThreadMode] = React.useState(false);
-  const [threadSegments, setThreadSegments] = React.useState<
-    Array<{ id: string; content: string; attachments: ComposerAttachment[] }>
-  >([{ id: crypto.randomUUID(), content: "", attachments: [] }]);
-  const [threadDelayMinutes, setThreadDelayMinutes] = React.useState(1);
+  const tags: string[] = [];
 
   const form = useZodForm(textPostClientSchema, {
     defaultValues: {
@@ -248,7 +219,7 @@ export function UnifiedComposer({
     setScheduleRandomWindowMinutes(
       typeof window === "number" && window >= 0 && window <= 15 ? window : 0
     );
-  }, [selectedQueue, queueTypes]);
+  }, [selectedQueue, queueTypes, setScheduleRandomWindowMinutes]);
 
   const {
     restored: localRestored,
@@ -299,6 +270,8 @@ export function UnifiedComposer({
     skipLocalDraftRestore,
     form,
     setSelectedQueue,
+    setAttachments,
+    setSelectedHashtags,
   ]);
 
   React.useEffect(() => {
@@ -498,7 +471,14 @@ export function UnifiedComposer({
       }
       setPublishSubmitInFlight(false);
     }
-  }, [fetcher.state, fetcher.data, publishSubmitInFlight, setSigningError]);
+  }, [
+    fetcher.state,
+    fetcher.data,
+    publishSubmitInFlight,
+    setSigningError,
+    setLastPublishFailed,
+    setPublishSubmitInFlight,
+  ]);
 
   const _handleHashtagPresetSelect = (
     presetId: string | null,
@@ -557,7 +537,7 @@ export function UnifiedComposer({
         }
       })();
     },
-    [content, form]
+    [content, form, setAttachments]
   );
 
   const processNewFilesForSegment = React.useCallback(
@@ -629,7 +609,7 @@ export function UnifiedComposer({
         }
       })();
     },
-    []
+    [setThreadSegments]
   );
 
   const handleAddAttachment = () => {
@@ -642,10 +622,6 @@ export function UnifiedComposer({
     if (files.length === 0) return;
     processNewFilesForSingleNote(files);
   };
-
-  const [draggingOverSegmentId, setDraggingOverSegmentId] = React.useState<
-    string | null
-  >(null);
 
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {

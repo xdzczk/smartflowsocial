@@ -39,22 +39,19 @@ import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import {
-  difference,
   formatForDisplay,
   fromDate,
   fromISOString,
   fromUnixTimestamp,
-  nowInTimezone,
 } from "~/lib/temporal";
 
-// Helper to safely access formData from a fetcher
-function getFetcherFormData(
-  fetcher: PostFetcher | undefined
-): FormData | null | undefined {
-  return fetcher
-    ? (fetcher as { formData?: FormData | null }).formData
-    : undefined;
-}
+import { useLongFormListingState } from "../hooks/useLongFormListingState";
+import {
+  getDefaultSortKey,
+  getFetcherFormData,
+} from "../utils/longform-listing-utils";
+
+import { LongFormBulkActionsBar } from "./LongFormBulkActionsBar";
 
 interface LongFormListingProps {
   posts: Array<LongFormPostType | LongFormPostData>;
@@ -72,108 +69,6 @@ interface LongFormListingProps {
   sentinelRef?: React.Ref<HTMLDivElement | null>;
   isFetchingNextPage?: boolean;
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
-}
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-function getDefaultSortKey(type: "draft" | "scheduled" | "published"): string {
-  if (type === "published") {
-    return "publishedAt";
-  }
-  if (type === "scheduled") {
-    return "scheduledAtUtc";
-  }
-  return "createdAt";
-}
-
-function getDefaultSortDirection(
-  type: "draft" | "scheduled" | "published"
-): "asc" | "desc" {
-  if (type === "published") {
-    return "desc";
-  }
-  if (type === "scheduled") {
-    return "asc";
-  }
-  return "desc";
-}
-
-function getSortValue(post: LongFormPostType, key: string): number {
-  try {
-    if (key === "publishedAt") {
-      if (!post.publishedAt) return 0;
-      const zoned = fromISOString(
-        post.publishedAt instanceof Date
-          ? post.publishedAt.toISOString()
-          : String(post.publishedAt),
-        "UTC"
-      );
-      return Number(zoned.epochMilliseconds);
-    }
-    if (key === "scheduledAtUtc" || key === "scheduledFor") {
-      const scheduledAt =
-        "scheduledAtUtc" in post && post.scheduledAtUtc instanceof Date
-          ? post.scheduledAtUtc
-          : null;
-      if (!scheduledAt) return 0;
-      const zoned = fromDate(scheduledAt, "UTC");
-      return Number(zoned.epochMilliseconds);
-    }
-    if (key === "createdAt") {
-      const zoned = fromISOString(
-        post.createdAt instanceof Date
-          ? post.createdAt.toISOString()
-          : String(post.createdAt),
-        "UTC"
-      );
-      return Number(zoned.epochMilliseconds);
-    }
-    const val = post[key as keyof LongFormPostType];
-    return typeof val === "number" ? val : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function compareStringValues(
-  a: string,
-  b: string,
-  direction: "asc" | "desc"
-): number {
-  return direction === "asc" ? a.localeCompare(b) : b.localeCompare(a);
-}
-
-function longFormMatchesSearch(
-  post: LongFormPostType | LongFormPostData,
-  searchTerm: string
-): boolean {
-  const term = searchTerm.toLowerCase();
-  return (
-    (post.title?.toLowerCase().includes(term) ?? false) ||
-    (post.summary?.toLowerCase().includes(term) ?? false)
-  );
-}
-
-function sortLongFormPosts(
-  posts: Array<LongFormPostType | LongFormPostData>,
-  sortConfig: { key: string; direction: "asc" | "desc" }
-): Array<LongFormPostType | LongFormPostData> {
-  return [...posts].sort((a, b) => {
-    const aVal =
-      a[sortConfig.key as keyof (LongFormPostType | LongFormPostData)];
-    const bVal =
-      b[sortConfig.key as keyof (LongFormPostType | LongFormPostData)];
-
-    if (typeof aVal === "string" && typeof bVal === "string") {
-      return compareStringValues(aVal, bVal, sortConfig.direction);
-    }
-
-    const aValue = getSortValue(a as LongFormPostType, sortConfig.key);
-    const bValue = getSortValue(b as LongFormPostType, sortConfig.key);
-    return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
-  });
 }
 
 // Desktop table + mobile virtualized cards; complexity from sort/filter/selection and dual layouts
@@ -201,12 +96,23 @@ export default function LongFormListing({
   const useDedicatedScroll =
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
 
-  const [sortConfig, setSortConfig] = useState({
-    key: getDefaultSortKey(type),
-    direction: getDefaultSortDirection(type),
+  const {
+    sortConfig,
+    setSortConfig,
+    requestSort,
+    filteredPosts,
+    selectedPosts,
+    setSelectedPosts,
+    togglePostSelection,
+    toggleSelectAll,
+    countdowns,
+  } = useLongFormListingState({
+    posts,
+    type,
+    searchTerm,
+    userTimezone,
   });
-  const [selectedPosts, setSelectedPosts] = useState(new Set<string>());
-  const [countdowns, setCountdowns] = useState<Record<string, string>>({});
+
   const rootData = useRouteLoaderData("root") as
     | {
         user?: {
@@ -247,19 +153,6 @@ export default function LongFormListing({
     }
   }, [deleteFetcher.state, deleteFetcher.data, queryClient, type]);
 
-  const sortedPosts = sortLongFormPosts(posts, sortConfig);
-  const filteredPosts = sortedPosts.filter((post) =>
-    longFormMatchesSearch(post, searchTerm)
-  );
-
-  const requestSort = (key: string) => {
-    setSortConfig((current) => ({
-      key,
-      direction:
-        current.key === key && current.direction === "asc" ? "desc" : "asc",
-    }));
-  };
-
   const combinedContent = useMemo(
     () =>
       filteredPosts.map((post) =>
@@ -268,6 +161,7 @@ export default function LongFormListing({
     [filteredPosts]
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual useVirtualizer; memoization handled by library
   const rowVirtualizer = useVirtualizer({
     count: combinedContent.length,
     getScrollElement: () =>
@@ -282,6 +176,12 @@ export default function LongFormListing({
   });
   const virtualItems = rowVirtualizer.getVirtualItems();
   const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
+
+  useEffect(() => {
+    if (bulkDeleteFetcher.data?.success) {
+      setSelectedPosts(new Set());
+    }
+  }, [bulkDeleteFetcher.data, setSelectedPosts]);
 
   const formatDate = (
     dateInput?: string | Date | number,
@@ -374,26 +274,6 @@ export default function LongFormListing({
     }
   };
 
-  const togglePostSelection = (postId: string) => {
-    setSelectedPosts((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(postId)) {
-        newSet.delete(postId);
-      } else {
-        newSet.add(postId);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedPosts.size === filteredPosts.length) {
-      setSelectedPosts(new Set());
-    } else {
-      setSelectedPosts(new Set(filteredPosts.map((post) => post.id)));
-    }
-  };
-
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
 
@@ -403,83 +283,6 @@ export default function LongFormListing({
 
     bulkDeleteFetcher.submit(formData, { method: "post" });
   };
-
-  // Memoize post IDs to avoid infinite loops when posts array reference changes
-  const postIds = useMemo(
-    () => posts.map((post) => post.id).join(","),
-    [posts]
-  );
-
-  // Countdown functionality for scheduled posts
-  useEffect(() => {
-    if (type !== "scheduled") return;
-
-    const updateCountdowns = () => {
-      // Get current time in user's timezone using Temporal
-      const now = nowInTimezone(userTimezone);
-      const newCountdowns: Record<string, string> = {};
-
-      posts.forEach((post) => {
-        const scheduledAtUtcRaw = (post as { scheduledAtUtc?: unknown })
-          .scheduledAtUtc;
-        const scheduledAtUtc =
-          scheduledAtUtcRaw instanceof Date
-            ? scheduledAtUtcRaw
-            : typeof scheduledAtUtcRaw === "string"
-              ? new Date(scheduledAtUtcRaw)
-              : null;
-        if (!scheduledAtUtc || isNaN(scheduledAtUtc.getTime())) return;
-
-        try {
-          const scheduledZoned = fromDate(scheduledAtUtc, "UTC");
-          const scheduledInUserTz = scheduledZoned.withTimeZone(userTimezone);
-
-          // Calculate difference
-          const duration = difference(scheduledInUserTz, now);
-
-          if (duration.sign === 1) {
-            // Future time
-            const days = Math.floor(duration.total({ unit: "days" }));
-            const hours = Math.floor(duration.total({ unit: "hours" }) % 24);
-            const minutes = Math.floor(
-              duration.total({ unit: "minutes" }) % 60
-            );
-            newCountdowns[post.id] = `${days}d ${hours}h ${minutes}m`;
-          } else {
-            newCountdowns[post.id] = "Due now";
-          }
-        } catch {
-          // If conversion fails, skip this post
-          newCountdowns[post.id] = "Due now";
-        }
-      });
-
-      setCountdowns((prev) => {
-        // Only update if countdowns actually changed to prevent unnecessary re-renders
-        const hasChanged =
-          Object.keys(newCountdowns).some(
-            (id) => prev[id] !== newCountdowns[id]
-          ) || Object.keys(prev).length !== Object.keys(newCountdowns).length;
-
-        return hasChanged ? newCountdowns : prev;
-      });
-    };
-
-    // Update immediately on mount
-    updateCountdowns();
-
-    const timer = setInterval(updateCountdowns, 60000); // Update every minute
-
-    return () => clearInterval(timer);
-    // Use postIds instead of posts to avoid infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid infinite loops
-  }, [postIds, userTimezone, type]);
-
-  useEffect(() => {
-    if (bulkDeleteFetcher.data?.success) {
-      setSelectedPosts(new Set());
-    }
-  }, [bulkDeleteFetcher.data]);
 
   const getStatusBadge = (_post: LongFormPostType | LongFormPostData) => {
     if (type === "draft") {
@@ -505,34 +308,12 @@ export default function LongFormListing({
 
   return (
     <div>
-      {/* Bulk Actions */}
-      {selectedPosts.size > 0 ? (
-        <div className="border-border bg-muted dark:border-border dark:bg-muted/50 mb-4 flex items-center justify-between rounded-lg border p-4">
-          <span className="text-foreground dark:text-foreground text-sm font-medium">
-            {selectedPosts.size} post{selectedPosts.size !== 1 ? "s" : ""}{" "}
-            selected
-          </span>
-          <div className="flex gap-2">
-            {type === "draft" ? (
-              <Link
-                to="/dashboard/newlongformpost"
-                className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
-              >
-                Create New
-              </Link>
-            ) : null}
-            <button
-              onClick={handleBulkDelete}
-              disabled={bulkDeleteFetcher.state !== "idle"}
-              className="dark:bg-card border-destructive text-destructive hover:border-destructive hover:text-destructive focus:ring-ring/25 active:border-destructive dark:border-destructive dark:text-destructive dark:hover:border-destructive dark:hover:text-destructive dark:focus:ring-ring/40 dark:active:border-destructive inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none disabled:opacity-50"
-            >
-              {bulkDeleteFetcher.state !== "idle"
-                ? "Deleting..."
-                : `Delete ${selectedPosts.size} post${selectedPosts.size !== 1 ? "s" : ""}`}
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <LongFormBulkActionsBar
+        selectedCount={selectedPosts.size}
+        onBulkDelete={handleBulkDelete}
+        deleteFetcherState={bulkDeleteFetcher.state}
+        type={type}
+      />
 
       {/* Desktop: Posts Table (hidden on mobile) */}
       <div className="hidden md:block">
