@@ -25,6 +25,7 @@ import {
   handleRemovePost as handleRemovePostHandler,
   handleScheduleIntervalClick as handleScheduleIntervalClickHandler,
 } from "~/features/posts/server";
+import type { RepostConditions } from "~/features/posts/types";
 import {
   useLocalDraft,
   BulkPostsActionButtons,
@@ -326,6 +327,8 @@ export default function BulkPostsPage() {
     scheduledAtUtc?: string | null;
   } | null>(null);
   const [bulkPostCount, setBulkPostCount] = useState<number | null>(null);
+  const [bulkRepostConditions, setBulkRepostConditions] =
+    useState<RepostConditions | null>(null);
 
   const bulkDraftKey = "bulk-posts-draft";
   const {
@@ -995,6 +998,57 @@ export default function BulkPostsPage() {
 
           {posts.length > 0 ? (
             <>
+              {mode !== "repost" && mode !== "quote" ? (
+                <div className="border-border bg-muted/30 mb-4 rounded-lg border p-4">
+                  <span className="text-muted-foreground mb-2 block text-sm font-medium">
+                    Only repost if original gets (applies to all reposts)
+                  </span>
+                  <div className="flex flex-wrap items-center gap-3 gap-y-2">
+                    {[
+                      { key: "minReactions" as const, label: "Reactions" },
+                      { key: "minZaps" as const, label: "Zaps" },
+                      { key: "minComments" as const, label: "Comments" },
+                      { key: "minReposts" as const, label: "Reposts" },
+                      { key: "minSats" as const, label: "Sats" },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center gap-1.5">
+                        <label
+                          htmlFor={`bulk-repost-cond-${key}`}
+                          className="text-muted-foreground text-xs whitespace-nowrap"
+                        >
+                          {label}
+                        </label>
+                        <input
+                          id={`bulk-repost-cond-${key}`}
+                          type="number"
+                          min={0}
+                          placeholder="—"
+                          value={bulkRepostConditions?.[key] ?? ""}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const v =
+                              raw.trim() === ""
+                                ? undefined
+                                : Math.max(0, parseInt(raw, 10) || 0);
+                            setBulkRepostConditions((prev) => {
+                              if (v === undefined) {
+                                const next = prev ? { ...prev } : {};
+                                delete next[key];
+                                return Object.keys(next).length > 0
+                                  ? next
+                                  : null;
+                              }
+                              return { ...prev, [key]: v };
+                            });
+                          }}
+                          className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                          aria-label={`Min ${label.toLowerCase()}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <BulkPostsTable
                 posts={posts}
                 queueTypes={queueTypes}
@@ -1088,7 +1142,7 @@ export default function BulkPostsPage() {
           groupId={groupId}
           userTimezone={user?.timezone ?? "UTC"}
           userTimeFormat={user?.timeFormat === "24h" ? "24h" : "12h"}
-          repostConditions={undefined}
+          repostConditions={bulkRepostConditions}
         />
       )}
 

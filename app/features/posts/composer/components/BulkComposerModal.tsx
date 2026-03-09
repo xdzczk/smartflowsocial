@@ -26,6 +26,7 @@ import {
   handleRemovePost as handleRemovePostHandler,
   handleScheduleIntervalClick as handleScheduleIntervalClickHandler,
 } from "~/features/posts/server";
+import type { RepostConditions } from "~/features/posts/types";
 import {
   BulkPostsActionButtons,
   BulkPostsSchedulingPanel,
@@ -250,6 +251,10 @@ interface BulkComposerModalContentProps {
   handleMediaClick: (mediaSrc: string) => void;
   handleRowFileSelect: (index: number, file: File | null) => Promise<void>;
   handleRowFileRemove: (index: number, mediaIndex: number) => void;
+  repostConditions: RepostConditions | null;
+  setRepostConditions: React.Dispatch<
+    React.SetStateAction<RepostConditions | null>
+  >;
 }
 
 function BulkComposerModalContent({
@@ -289,6 +294,8 @@ function BulkComposerModalContent({
   handleMediaClick,
   handleRowFileSelect,
   handleRowFileRemove,
+  repostConditions,
+  setRepostConditions,
 }: BulkComposerModalContentProps) {
   const showActions = !isRepostOrQuote(mode);
   const userTimezone = user?.timezone ?? "UTC";
@@ -357,6 +364,56 @@ function BulkComposerModalContent({
             />
           ) : null}
 
+          {posts.length > 0 && showActions ? (
+            <div className="border-border bg-muted/30 mb-4 rounded-lg border p-4">
+              <span className="text-muted-foreground mb-2 block text-sm font-medium">
+                Only repost if original gets (applies to all reposts)
+              </span>
+              <div className="flex flex-wrap items-center gap-3 gap-y-2">
+                {[
+                  { key: "minReactions" as const, label: "Reactions" },
+                  { key: "minZaps" as const, label: "Zaps" },
+                  { key: "minComments" as const, label: "Comments" },
+                  { key: "minReposts" as const, label: "Reposts" },
+                  { key: "minSats" as const, label: "Sats" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex items-center gap-1.5">
+                    <label
+                      htmlFor={`bulk-modal-repost-cond-${key}`}
+                      className="text-muted-foreground text-xs whitespace-nowrap"
+                    >
+                      {label}
+                    </label>
+                    <input
+                      id={`bulk-modal-repost-cond-${key}`}
+                      type="number"
+                      min={0}
+                      placeholder="—"
+                      value={repostConditions?.[key] ?? ""}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const v =
+                          raw.trim() === ""
+                            ? undefined
+                            : Math.max(0, parseInt(raw, 10) || 0);
+                        setRepostConditions((prev) => {
+                          if (v === undefined) {
+                            const next = prev ? { ...prev } : {};
+                            delete next[key];
+                            return Object.keys(next).length > 0 ? next : null;
+                          }
+                          return { ...prev, [key]: v };
+                        });
+                      }}
+                      className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                      aria-label={`Min ${label.toLowerCase()}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {posts.length > 0 ? (
             <BulkComposerFormTableSection
               posts={posts}
@@ -387,7 +444,7 @@ function BulkComposerModalContent({
           postsCount={posts.length}
           submitAction={submitAction}
           extraFormData={extraFormData}
-          repostConditions={undefined}
+          repostConditions={repostConditions}
           fetcher={submitFetcher}
           userTimezone={userTimezone}
           userTimeFormat={user?.timeFormat === "24h" ? "24h" : "12h"}
@@ -415,6 +472,8 @@ export function BulkComposerModal({
   const [preparedEvents, setPreparedEvents] = useState<PreparedEvent[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [repostConditions, setRepostConditions] =
+    useState<RepostConditions | null>(null);
   const [preparationProgress, setPreparationProgress] = useState({
     current: 0,
     total: 0,
@@ -983,6 +1042,8 @@ export function BulkComposerModal({
             handleMediaClick={handleMediaClick}
             handleRowFileSelect={handleRowFileSelect}
             handleRowFileRemove={handleRowFileRemove}
+            repostConditions={repostConditions}
+            setRepostConditions={setRepostConditions}
           />
         </div>
 
