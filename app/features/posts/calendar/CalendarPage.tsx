@@ -4,7 +4,7 @@ import {
   longFormPostsToCalendarPosts,
   mixedPostsToCalendarPosts,
   postsToCalendarPosts,
-} from "~/features/posts/server";
+} from "~/features/posts/calendar/utils/calendar-post-converter";
 import { Calendar, useCalendarData } from "~/features/posts/ui";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 
