@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 import { Card, CardContent } from "~/components/ui/card";
@@ -5,6 +7,13 @@ import { Card, CardContent } from "~/components/ui/card";
 import NostrLoginPanel from "./NostrLoginPanel";
 
 export default function LoginPage() {
+  // NostrLoginPanel uses useLoginPanelState from a .client module; only render it on the client to avoid SSR 500
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only gate for .client hook
+    setMounted(true);
+  }, []);
+
   return (
     <div
       id="page-container"
@@ -30,7 +39,7 @@ export default function LoginPage() {
               </header>
 
               <div className="space-y-6">
-                <NostrLoginPanel />
+                {mounted ? <NostrLoginPanel /> : null}
               </div>
             </CardContent>
 
