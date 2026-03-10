@@ -3,7 +3,7 @@
  * Tests app/lib/helpers.ts
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock nip19
 vi.mock("nostr-tools", () => ({
@@ -24,6 +24,10 @@ import {
 } from "~/lib/helpers";
 
 describe("Helper Utilities", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("getTimeRemaining", () => {
     it("should return days and hours for future dates", () => {
       const future = new Date(

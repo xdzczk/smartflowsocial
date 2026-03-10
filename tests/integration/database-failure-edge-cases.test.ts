@@ -18,6 +18,7 @@ const { mockPrisma } = vi.hoisted(() => {
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
@@ -52,8 +53,12 @@ describe("Database Failure Edge Cases", () => {
 
   describe("Connection Failures", () => {
     it("should handle database connection timeout", async () => {
+      const timeoutError = new Error("Connection timeout after 30s");
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Connection timeout after 30s")
+        timeoutError
+      );
+      (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockRejectedValue(
+        timeoutError
       );
 
       await expect(
@@ -126,8 +131,12 @@ describe("Database Failure Edge Cases", () => {
 
   describe("Query Failures", () => {
     it("should handle query timeout", async () => {
+      const timeoutError = new Error("Query timeout");
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Query timeout")
+        timeoutError
+      );
+      (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockRejectedValue(
+        timeoutError
       );
 
       await expect(

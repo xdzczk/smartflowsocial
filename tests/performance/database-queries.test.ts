@@ -4,7 +4,7 @@
  * Tests to verify query optimization and prevent N+1 query problems.
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use middleware errors
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
@@ -33,6 +33,10 @@ import {
 } from "~/lib/query-batching.server";
 
 describe("Query Batching", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("batchLoadUsers", () => {
     it("should return empty map for empty array", async () => {
       const result = await batchLoadUsers([]);

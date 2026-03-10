@@ -34,9 +34,11 @@ vi.mock("~/lib/env.server", async (importOriginal) => {
 
 // Bypass Redis so compute (doFetch) runs
 vi.mock("~/lib/redis-cache.server", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<Record<string, unknown>>();
+
   return {
-    ...actual,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
+    ...(actual ?? {}),
     getJsonFromRedis: vi.fn().mockResolvedValue({ hit: false }),
     getOrSetJson: vi.fn(async <T>(opts: { compute: () => Promise<T> }) =>
       opts.compute()

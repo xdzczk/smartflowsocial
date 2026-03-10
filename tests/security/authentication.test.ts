@@ -9,8 +9,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used in test description/comments
 import { AuthenticationError } from "~/lib/errors";
-// Set up environment variable before mocking
-process.env["SESSION_SECRET"] = "test-secret-key-for-testing";
+// Set up environment variable before mocking (must be at least 32 chars per env validation)
+process.env["SESSION_SECRET"] =
+  "test-session-secret-very-long-and-secure-32-chars-minimum";
 
 // Mock Prisma to prevent $use middleware errors
 vi.mock("~/lib/prisma.server", () => ({

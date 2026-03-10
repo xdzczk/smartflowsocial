@@ -53,9 +53,11 @@ export const mockPublishLongFormNowExecute = vi.fn();
 export const mockScheduleLongFormPostExecute = vi.fn();
 
 vi.mock("~/features/posts/server", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<Record<string, unknown>>();
+
   return {
-    ...actual,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
+    ...(actual ?? {}),
     CreateLongFormPostUseCase: class {
       execute = mockCreateLongFormPostExecute;
     },

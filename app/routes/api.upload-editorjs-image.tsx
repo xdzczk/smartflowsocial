@@ -103,7 +103,7 @@ export const action = withCSRFProtection(
       // Binary file uploads to Blossom are handled on the client.
       const contentType = request.headers.get("content-type") ?? "";
       if (isBlossomProvider) {
-        return handleBlossomEditorJsRequest(request, contentType, assert);
+        return await handleBlossomEditorJsRequest(request, contentType, assert);
       }
 
       // S3 path for EditorJS (legacy compatibility)

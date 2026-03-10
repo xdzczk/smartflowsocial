@@ -32,6 +32,7 @@ describe("Encryption Functions", () => {
   const originalEnv = process.env["SESSION_SECRET"];
 
   beforeEach(() => {
+    vi.clearAllMocks();
     // Set a test session secret
     process.env["SESSION_SECRET"] =
       "test-session-secret-min-32-chars-long-for-testing";

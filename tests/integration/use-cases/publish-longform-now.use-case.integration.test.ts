@@ -8,12 +8,26 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock Nostr publisher
-const mockPublish = vi.fn();
+const { mockPublish, mockAcquireLease, mockReleaseLease } = vi.hoisted(() => {
+  return {
+    mockPublish: vi.fn(),
+    mockAcquireLease: vi.fn().mockResolvedValue({
+      lockId: "test-lock-id",
+      expiresAt: new Date(Date.now() + 30_000),
+    }),
+    mockReleaseLease: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
 vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
   getNostrPublisher: vi.fn(() => ({
     publish: mockPublish,
   })),
+}));
+
+vi.mock("~/infra/publishing/publish-lease.server", () => ({
+  acquireLongFormPostPublishLease: mockAcquireLease,
+  releaseLongFormPostPublishLease: mockReleaseLease,
 }));
 
 import { createValidSignedEvent } from "../../utils/test-helpers";

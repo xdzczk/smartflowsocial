@@ -44,7 +44,7 @@ vi.mock("~/features/posts/ui", () => ({
   DashboardIndexPage: () => null,
 }));
 
-import { createValidUserMock } from "../utils/test-helpers";
+import { userFactory } from "../factories";
 
 import { requireUserId } from "~/features/auth/session.server";
 import {
@@ -79,7 +79,7 @@ describe("Dashboard Loader Integration", () => {
       hasMoreFuture: false,
       pastCursor: null,
       futureCursor: null,
-      user: createValidUserMock(),
+      user: userFactory.basic({ id: "user-123" }),
       queueTypes: [],
       hashTagPresets: [],
     });
@@ -154,7 +154,10 @@ describe("Dashboard Loader Integration", () => {
     });
 
     it("should return proper Flow data structure", async () => {
-      const mockUser = createValidUserMock({ timezone: "America/New_York" });
+      const mockUser = userFactory.basic({
+        id: "user-123",
+        timezone: "America/New_York",
+      });
       const mockData = {
         flowItems: [],
         hasMorePast: false,

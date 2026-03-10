@@ -18,6 +18,11 @@ vi.mock("~/features/user", () => ({
   getUserUploadProvider: vi.fn(),
 }));
 
+vi.mock("~/models/template.server", () => ({
+  getTemplates: vi.fn().mockResolvedValue([]),
+  getTemplatePrefill: vi.fn().mockResolvedValue(null),
+}));
+
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";

@@ -40,9 +40,11 @@ vi.mock(
 
 // scheduled-posts.server imports ScheduleLongFormPostUseCase from longform/index.server
 vi.mock("~/features/posts/longform/index.server", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<Record<string, unknown>>();
+
   return {
-    ...actual,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
+    ...(actual ?? {}),
     ScheduleLongFormPostUseCase: class {
       execute = mockScheduleLongFormExecute;
     },

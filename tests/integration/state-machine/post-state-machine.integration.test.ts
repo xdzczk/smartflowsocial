@@ -48,6 +48,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
     let stateMachine: PostStateMachine;
 
     beforeEach(async () => {
+      vi.clearAllMocks();
       mockPublish.mockResolvedValue({ results: [] });
       // Create a test user with unique identifier to avoid race conditions
       const uniqueId = `${Date.now()}-${Math.random()}`;

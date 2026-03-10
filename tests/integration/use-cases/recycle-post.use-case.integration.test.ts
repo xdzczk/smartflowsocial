@@ -32,6 +32,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
     let useCase: RecyclePostUseCase;
 
     beforeEach(async () => {
+      vi.clearAllMocks();
       // Create a test user - use upsert to handle duplicates
       const npub = `test-${Date.now()}-${Math.random()}`;
       const user = await prisma.user.upsert({

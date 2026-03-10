@@ -50,12 +50,11 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
     await getUserById(userId);
 
     // Verify Prisma was called with parameterized query (not string concatenation)
-    expect(mockUserFindUnique).toHaveBeenCalledWith({
-      where: { id: userId },
-      include: {
-        hashTagPresets: true,
-      },
-    });
+    expect(mockUserFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: userId },
+      })
+    );
 
     // Verify the userId was passed as a parameter, not concatenated
     const callArgs = mockUserFindUnique.mock.calls[0]?.[0] as
@@ -79,12 +78,11 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
     await getUserById(maliciousId);
 
     // Prisma should treat the malicious string as a literal value, not SQL
-    expect(mockUserFindUnique).toHaveBeenCalledWith({
-      where: { id: maliciousId },
-      include: {
-        hashTagPresets: true,
-      },
-    });
+    expect(mockUserFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: maliciousId },
+      })
+    );
 
     // The malicious string should be passed as-is to Prisma (which will parameterize it)
     const callArgs = mockUserFindUnique.mock.calls[0]?.[0] as

@@ -47,7 +47,7 @@ describe("Dashboard Action Handler", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
-      expect(result).toEqual({ success: true });
+      expect(result).toMatchObject({ success: true, deleted: true });
     });
 
     it("should handle missing postId gracefully", async () => {
@@ -102,7 +102,7 @@ describe("Dashboard Action Handler", () => {
           userId: TEST_USER_ID,
         });
       });
-      expect(result).toEqual({ success: true });
+      expect(result).toMatchObject({ success: true, deletedCount: 3 });
     });
 
     it("should return error for empty postIds array", async () => {
@@ -150,7 +150,7 @@ describe("Dashboard Action Handler", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
-      expect(result).toEqual({ success: true });
+      expect(result).toMatchObject({ success: true, deletedCount: 1 });
     });
   });
 
@@ -284,8 +284,8 @@ describe("Dashboard Action Handler", () => {
         handleDashboardAction(formData2, TEST_USER_ID),
       ]);
 
-      expect(result1).toEqual({ success: true });
-      expect(result2).toEqual({ success: true });
+      expect(result1).toMatchObject({ success: true, deletedCount: 2 });
+      expect(result2).toMatchObject({ success: true, deletedCount: 2 });
       expect(deletePost).toHaveBeenCalledTimes(4);
     });
   });

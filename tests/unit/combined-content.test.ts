@@ -5,6 +5,7 @@
 
 import { describe, it, expect } from "vitest";
 
+import { combinedContentFactory } from "../factories";
 import {
   TEST_USER_ID,
   TEST_POST_ID,
@@ -18,11 +19,7 @@ import {
   combineContent,
   filterCombinedContent,
 } from "~/features/posts/combined.server";
-import type {
-  PostData,
-  LongFormPostData,
-  CombinedContent,
-} from "~/features/posts/types";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 
 describe("Combined Content Utilities", () => {
   describe("nullToUndefined", () => {
@@ -332,60 +329,10 @@ describe("Combined Content Utilities", () => {
   describe("filterCombinedContent", () => {
     it("should filter by caption", () => {
       const content = [
-        {
-          id: "1",
-          type: "post" as const,
-          caption: "Test caption",
-          fileUrl: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          currentState: "DRAFT",
-          status: "DRAFT" as const,
-          userId: TEST_USER_ID,
-          tags: [],
-          manual_override: false,
-          postType: "TEXT" as const,
-          repost: false,
-          isQuotedPost: false,
-          isRecyclable: false,
-        },
-        {
-          id: "2",
-          type: "post" as const,
-          caption: "Other caption",
-          fileUrl: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          currentState: "DRAFT",
-          status: "DRAFT" as const,
-          userId: TEST_USER_ID,
-          tags: [],
-          manual_override: false,
-          postType: "TEXT" as const,
-          repost: false,
-          isQuotedPost: false,
-          isRecyclable: false,
-          originalData: {} as unknown as PostData,
-        },
-        {
-          id: "2",
-          type: "post" as const,
-          caption: "Other caption",
-          fileUrl: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          currentState: "DRAFT",
-          status: "DRAFT" as const,
-          userId: TEST_USER_ID,
-          tags: [],
-          manual_override: false,
-          postType: "TEXT" as const,
-          repost: false,
-          isQuotedPost: false,
-          isRecyclable: false,
-          originalData: {} as unknown as PostData,
-        },
-      ] as unknown as CombinedContent[];
+        combinedContentFactory.post({ id: "1", caption: "Test caption" }),
+        combinedContentFactory.post({ id: "2", caption: "Other caption" }),
+        combinedContentFactory.post({ id: "2", caption: "Other caption" }),
+      ];
 
       const result = filterCombinedContent(content, "Test");
 
@@ -395,20 +342,11 @@ describe("Combined Content Utilities", () => {
 
     it("should filter by title", () => {
       const content = [
-        {
+        combinedContentFactory.longform({
           id: "1",
-          type: "longform" as const,
           title: "Test Title",
-          fileUrl: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          currentState: "DRAFT",
-          status: "DRAFT" as const,
-          userId: TEST_USER_ID,
-          tags: [],
-          originalData: {} as unknown as LongFormPostData,
-        },
-      ] as unknown as CombinedContent[];
+        }),
+      ];
 
       const result = filterCombinedContent(content, "Test");
 
@@ -416,25 +354,7 @@ describe("Combined Content Utilities", () => {
     });
 
     it("should return all content if search term is empty", () => {
-      const content = [
-        {
-          id: "1",
-          type: "post" as const,
-          fileUrl: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          currentState: "DRAFT",
-          status: "DRAFT" as const,
-          userId: TEST_USER_ID,
-          tags: [],
-          manual_override: false,
-          postType: "TEXT" as const,
-          repost: false,
-          isQuotedPost: false,
-          isRecyclable: false,
-          originalData: {} as unknown as PostData,
-        },
-      ] as unknown as CombinedContent[];
+      const content = [combinedContentFactory.post({ id: "1" })];
 
       const result = filterCombinedContent(content, "");
 
@@ -443,25 +363,11 @@ describe("Combined Content Utilities", () => {
 
     it("should be case insensitive", () => {
       const content = [
-        {
+        combinedContentFactory.post({
           id: "1",
-          type: "post" as const,
           caption: "Test Caption",
-          fileUrl: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          currentState: "DRAFT",
-          status: "DRAFT" as const,
-          userId: TEST_USER_ID,
-          tags: [],
-          manual_override: false,
-          postType: "TEXT" as const,
-          repost: false,
-          isQuotedPost: false,
-          isRecyclable: false,
-          originalData: {} as unknown as PostData,
-        },
-      ] as unknown as CombinedContent[];
+        }),
+      ];
 
       const result = filterCombinedContent(content, "test");
 

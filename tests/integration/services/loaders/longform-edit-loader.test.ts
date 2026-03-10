@@ -17,6 +17,11 @@ vi.mock("~/features/user", () => ({
   getUserHashTagPresets: vi.fn(),
 }));
 
+vi.mock("~/features/posts/repositories/draft-version-data.server", () => ({
+  findDraftVersionsByPostId: vi.fn().mockResolvedValue([]),
+  findDraftVersionsByLongFormPostId: vi.fn().mockResolvedValue([]),
+}));
+
 import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../../utils/test-helpers";
 
 import { loadLongFormEditData } from "~/features/posts/server";

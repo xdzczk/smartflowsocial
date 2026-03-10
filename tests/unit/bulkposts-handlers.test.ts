@@ -5,7 +5,7 @@
  * Note: Functions that require React state or fetch are tested separately or in E2E tests
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import {
   handleCaptionChange,
@@ -36,6 +36,10 @@ const createBulkPost = (overrides: Partial<BulkPost> = {}): BulkPost => {
 };
 
 describe("Bulk Posts Handlers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("handleCaptionChange", () => {
     it("should update caption for a post at given index", () => {
       const posts: BulkPost[] = [

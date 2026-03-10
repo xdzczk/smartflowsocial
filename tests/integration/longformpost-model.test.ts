@@ -43,6 +43,24 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
+// So isNostrDeleteEventsEnabled() sees process.env; provide SESSION_SECRET for modules that load it
+vi.mock("~/lib/env.server", () => {
+  const empty: Record<string, unknown> = {};
+  return {
+    env: new Proxy(empty, {
+      get(_, prop: string) {
+        if (prop === "ENABLE_NOSTR_DELETE_EVENTS") {
+          return process.env["ENABLE_NOSTR_DELETE_EVENTS"];
+        }
+        if (prop === "SESSION_SECRET") {
+          return process.env["SESSION_SECRET"] ?? "test-session-secret";
+        }
+        return undefined;
+      },
+    }),
+  };
+});
+
 describe("LongFormPost Model Functions", () => {
   const TEST_USER_ID = "user-123";
   const TEST_LONGFORM_ID = "longform-123";

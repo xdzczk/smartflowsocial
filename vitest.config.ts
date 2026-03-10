@@ -36,6 +36,17 @@ export default defineConfig({
         "app/features/**/utils/**/*.ts",
         "app/infra/**/*.ts",
         "app/utils/**/*.ts",
+        // Auth reconnect and NIP-46 (Phase 2 tests count toward coverage)
+        "app/features/auth/reconnect/**/*.ts",
+        "app/features/auth/nip46/**/*.ts",
+        // Auth signer core (connection-*, sessions, relay utils – unit tests count)
+        "app/features/auth/signer/**/*.ts",
+        // Reconnect lifecycle and helpers (reconnect-lifecycle.test.ts, used by reconnect flows)
+        "app/features/auth/reconnect-lifecycle.client.ts",
+        "app/features/auth/reconnect-dialog-utils.client.ts",
+        "app/features/auth/reconnect-uri.client.ts",
+        // nostr-adapter (nostr-edge-cases.test.ts)
+        "app/lib/nostr-adapter.client.ts",
       ],
       exclude: [
         "node_modules/",
@@ -56,8 +67,34 @@ export default defineConfig({
         "app/routes/**",
         // Exclude hooks (often tested via component tests)
         "app/features/**/hooks/**",
-        // Exclude client-side only files
-        "app/**/*.client.ts",
+        // Exclude client-side only files (except auth/reconnect, auth/nip46, auth/signer, reconnect-*.client, nostr-adapter – included above)
+        "app/lib/nostr-circuit-breaker.client.ts",
+        "app/lib/validation/utils.client.ts",
+        "app/lib/nostr-connection-metrics.client.ts",
+        "app/lib/zap-flow.client.ts",
+        "app/lib/deep-link-handler.client.ts",
+        "app/lib/safe-console.client.ts",
+        "app/lib/sentry.client.ts",
+        "app/lib/clear-client-cache.client.ts",
+        "app/lib/locale-defaults.client.ts",
+        "app/lib/error-handler.client.ts",
+        "app/lib/sync-manager.client.ts",
+        "app/lib/correlation-id.client.ts",
+        "app/lib/nostr-timeout-utils.client.ts",
+        "app/lib/nip07-readiness.client.ts",
+        "app/features/referral/**/*.client.ts",
+        "app/features/posts/**/*.client.ts",
+        "app/features/upload/**/*.client.ts",
+        "app/features/notifications/**/*.client.ts",
+        "app/features/auth/use*.client.ts",
+        "app/features/auth/reconnect-state.client.ts",
+        "app/features/auth/reconnect-health.client.ts",
+        "app/features/auth/login-flow.client.ts",
+        "app/features/auth/nip46-login.client.ts",
+        "app/features/auth/nip07-login.client.ts",
+        "app/features/auth/login-api.client.ts",
+        "app/features/auth/lifecycle-manager.client.ts",
+        "app/features/auth/nostr-signer.client.ts",
         "app/**/*.client.tsx",
         // Exclude type definition files (not testable)
         "app/**/*.types.ts",
@@ -79,16 +116,22 @@ export default defineConfig({
         "app/**/*.client-safe.ts",
         // Exclude client-safe loader-responses wrapper (tested via loader-responses.server.ts)
         "app/lib/validation/loader-responses.ts",
+        // Exclude React hooks that require Remix context / browser (covered by E2E)
+        "app/lib/hooks/**",
+        "app/lib/useNip07Readiness.ts",
+        // remix-utils: only safeRedirect/validateEmail are unit-tested; hooks (useMatchesData, useOptionalUser, useUser) covered by E2E
+        "app/lib/remix-utils.ts",
         // Exclude re-export/index files that only export types
         "app/lib/validation/index.ts",
+        // Exclude auth signer barrel (re-exports only; no executable logic)
+        "app/features/auth/signer/index.ts",
       ],
-      // Coverage thresholds - adjusted to be more realistic
-      // These will be enforced on files that are actually tested
+      // Coverage thresholds - target 80%+ lines/statements
       thresholds: {
-        lines: 70,
-        functions: 70,
-        branches: 65,
-        statements: 70,
+        lines: 80,
+        functions: 87,
+        branches: 72,
+        statements: 80,
       },
       // Report uncovered lines
       reportOnFailure: true,

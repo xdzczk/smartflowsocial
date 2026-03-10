@@ -22,6 +22,10 @@ vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
 }));
 
+vi.mock("~/features/user/services/user-cache.server", () => ({
+  getQueueTypesCached: vi.fn(),
+}));
+
 vi.mock("~/features/giveaway/giveaway.server", () => ({
   fetchGiveawayParticipants: vi.fn(),
 }));
@@ -52,6 +56,7 @@ import {
   getUserById,
   getQueueTypes,
 } from "~/features/user";
+import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import { getRecentPublishedPosts } from "~/models/post.queries.server";
 
@@ -59,6 +64,10 @@ describe("Giveaway Loader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env["PRIMAL_CACHING_URL"] = "https://api.primal.com";
+    // Loader uses getQueueTypesCached; default to one enabled queue type
+    (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([
+      createMockQueueType({ id: "queue-1", name: "posts", isEnabled: true }),
+    ]);
   });
 
   describe("Successful Data Loading", () => {
@@ -540,7 +549,7 @@ describe("Giveaway Loader", () => {
 
     it("should filter out disabled queue types", async () => {
       const mockQueueTypes = [
-        createMockQueueType({ id: "queue-1", isEnabled: true }),
+        createMockQueueType({ id: "queue-1", name: "posts", isEnabled: true }),
         createMockQueueType({
           id: "queue-2",
           name: "disabled",
@@ -554,7 +563,7 @@ describe("Giveaway Loader", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockUser()
       );
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockQueueTypes
       );
 

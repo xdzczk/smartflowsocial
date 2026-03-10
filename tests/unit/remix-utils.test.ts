@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from "vitest";
 
-import { safeRedirect } from "~/lib/remix-utils";
+import { safeRedirect, validateEmail } from "~/lib/remix-utils";
 
 describe("Remix Utils", () => {
   describe("safeRedirect", () => {
@@ -60,6 +60,23 @@ describe("Remix Utils", () => {
 
     it("should handle paths with hash", () => {
       expect(safeRedirect("/dashboard#section")).toBe("/dashboard#section");
+    });
+  });
+
+  describe("validateEmail", () => {
+    it("returns true for string with @ and length > 3", () => {
+      expect(validateEmail("a@b.co")).toBe(true);
+      expect(validateEmail("user@example.com")).toBe(true);
+    });
+    it("returns false for non-string", () => {
+      expect(validateEmail(null)).toBe(false);
+      expect(validateEmail(123)).toBe(false);
+    });
+    it("returns false for string without @", () => {
+      expect(validateEmail("nobody")).toBe(false);
+    });
+    it("returns false for short string with @", () => {
+      expect(validateEmail("a@b")).toBe(false);
     });
   });
 

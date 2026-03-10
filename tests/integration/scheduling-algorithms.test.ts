@@ -722,6 +722,49 @@ describe("Scheduling Algorithms", () => {
       // For interval queues, DB fallback still uses "first slot = now + 15 minutes".
       expect(result.getTime()).toBe(BASE_TIME.getTime() + 15 * 60 * 1000);
     });
+
+    it("should return default future time when queueType has no scheduleType", async () => {
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null
+      );
+
+      const queueType = {
+        id: "queue-1",
+        name: "posts",
+      };
+
+      const result = await calculateNextScheduleTime({
+        // Minimal queueType without scheduleType to hit invalid-queueType path
+        queueType: queueType as Parameters<
+          typeof calculateNextScheduleTime
+        >[0]["queueType"],
+        userId: TEST_USER_ID,
+        baseTime: BASE_TIME,
+      });
+
+      expect(result).toBeInstanceOf(Date);
+      expect(result.getTime()).toBe(BASE_TIME.getTime() + 1000);
+    });
+
+    it("should return valid date when baseTime is invalid (fallback to now)", async () => {
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null
+      );
+
+      const queueType = createIntervalQueueType(4, {
+        id: "queue-1",
+        name: "posts",
+      });
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        baseTime: new Date("invalid") as unknown as Date,
+      });
+
+      expect(result).toBeInstanceOf(Date);
+      expect(!isNaN(result.getTime())).toBe(true);
+    });
   });
 
   describe("Complex Scenarios", () => {

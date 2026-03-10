@@ -107,14 +107,11 @@ describe("Nostr Edge Cases", () => {
         tags: [],
       };
 
-      // Use fake timers to speed up retry logic
       vi.useFakeTimers();
       const promise = signEventFn(eventData);
 
-      // Fast-forward through retries
-      for (let i = 0; i < 5; i++) {
-        await vi.advanceTimersByTimeAsync(500);
-      }
+      // Flush all pending timers so the retry loop runs to completion and the rejection is delivered
+      await vi.runAllTimersAsync();
 
       await expect(promise).rejects.toThrow(
         "Nostr extension not found after retries"

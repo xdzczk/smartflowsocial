@@ -4,13 +4,10 @@
  * Tests the API endpoint in app/routes/api.payment-status.ts
  */
 
+import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const TEST_USER_ID = "test-user-123";
-
-vi.mock("~/models/payment.server", () => ({
-  checkPaymentStatus: vi.fn(),
-}));
 
 vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(() => Promise.resolve(TEST_USER_ID)),
@@ -24,13 +21,22 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+// Route uses these from ~/features/payments
+vi.mock("~/features/payments", () => ({
+  getPaymentUserId: vi.fn(),
+  checkPaymentStatusById: vi.fn(),
+}));
+
+import { getPaymentUserId, checkPaymentStatusById } from "~/features/payments";
 import { prisma } from "~/lib/prisma.server";
-import { checkPaymentStatus } from "~/models/payment.server";
 import { action, loader } from "~/routes/api.payment-status";
 
 describe("API: Payment Status", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (getPaymentUserId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      TEST_USER_ID
+    );
     (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
       userId: TEST_USER_ID,
     });
@@ -40,11 +46,14 @@ describe("API: Payment Status", () => {
     describe("Successful Requests", () => {
       it("should return paid status for completed payment", async () => {
         const paidAt = new Date("2024-01-15T10:00:00Z");
-        (checkPaymentStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
-          paid: true,
-          paidAt,
-          status: "COMPLETED",
-        });
+        (checkPaymentStatusById as ReturnType<typeof vi.fn>).mockResolvedValue(
+          json({
+            success: true,
+            paid: true,
+            paidAt: paidAt.toISOString(),
+            message: "Payment completed successfully!",
+          })
+        );
 
         const formData = new FormData();
         formData.append("paymentId", "payment-123");
@@ -76,7 +85,7 @@ describe("API: Payment Status", () => {
               })
             : {};
 
-        expect(checkPaymentStatus).toHaveBeenCalledWith("payment-123");
+        expect(checkPaymentStatusById).toHaveBeenCalledWith("payment-123");
         // paidAt is serialized to ISO string in JSON response
         expect(data).toEqual({
           success: true,
@@ -88,11 +97,13 @@ describe("API: Payment Status", () => {
       });
 
       it("should return unpaid status for pending payment", async () => {
-        (checkPaymentStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
-          paid: false,
-          paidAt: null,
-          status: "PENDING",
-        });
+        (checkPaymentStatusById as ReturnType<typeof vi.fn>).mockResolvedValue(
+          json({
+            success: true,
+            paid: false,
+            status: "PENDING",
+          })
+        );
 
         const formData = new FormData();
         formData.append("paymentId", "payment-123");
@@ -133,11 +144,13 @@ describe("API: Payment Status", () => {
       });
 
       it("should return unpaid status for failed payment", async () => {
-        (checkPaymentStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
-          paid: false,
-          paidAt: null,
-          status: "FAILED",
-        });
+        (checkPaymentStatusById as ReturnType<typeof vi.fn>).mockResolvedValue(
+          json({
+            success: true,
+            paid: false,
+            status: "FAILED",
+          })
+        );
 
         const formData = new FormData();
         formData.append("paymentId", "payment-123");
@@ -289,7 +302,7 @@ describe("API: Payment Status", () => {
       });
 
       it("should handle database errors", async () => {
-        (checkPaymentStatus as ReturnType<typeof vi.fn>).mockRejectedValue(
+        (checkPaymentStatusById as ReturnType<typeof vi.fn>).mockRejectedValue(
           new Error("Database error")
         );
 
@@ -333,9 +346,7 @@ describe("API: Payment Status", () => {
       });
 
       it("should return 404 when payment does not exist", async () => {
-        (
-          prisma.payment.findUnique as ReturnType<typeof vi.fn>
-        ).mockResolvedValue(null);
+        (getPaymentUserId as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
         const formData = new FormData();
         formData.append("paymentId", "unknown-payment-id");
@@ -366,9 +377,9 @@ describe("API: Payment Status", () => {
       });
 
       it("should return 403 when payment belongs to another user", async () => {
-        (
-          prisma.payment.findUnique as ReturnType<typeof vi.fn>
-        ).mockResolvedValue({ userId: "other-user-id" });
+        (getPaymentUserId as ReturnType<typeof vi.fn>).mockResolvedValue(
+          "other-user-id"
+        );
 
         const formData = new FormData();
         formData.append("paymentId", "payment-123");

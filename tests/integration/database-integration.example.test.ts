@@ -13,7 +13,15 @@
  * if `TEST_DATABASE_URL` is not set or if `SKIP_DATABASE_TESTS=true`.
  */
 import type { PrismaClient } from "@prisma/client";
-import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  vi,
+  beforeEach,
+} from "vitest";
 
 import {
   describeDatabase,
@@ -63,6 +71,10 @@ if (RUN_DATABASE_EXAMPLES) {
 const describeDb = RUN_DATABASE_EXAMPLES ? describeDatabase : describe.skip;
 
 describeDb("Database Integration Example", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("should create and retrieve a user", async () => {
     await withDatabase(async (prisma) => {
       // Create user

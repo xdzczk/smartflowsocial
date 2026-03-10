@@ -27,6 +27,11 @@ vi.mock("~/models/payment.server", () => ({
   getUserSubscription: vi.fn(),
 }));
 
+vi.mock("~/features/user/services/user-cache.server", () => ({
+  invalidateHashTagPresetsCache: vi.fn().mockResolvedValue(undefined),
+  invalidateQueueTypesCache: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
@@ -440,7 +445,12 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data =
+
+        const data: {
+          success?: unknown;
+          error?: unknown;
+          queueType?: unknown;
+        } =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
             ? (dataRaw as { success?: unknown; error?: unknown })
             : {};
@@ -458,11 +468,13 @@ describe("Settings Action Handler", () => {
           description: "Marketing posts",
           hashTagPresetId: "preset-123",
         });
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest expect.any
+
+        /* eslint-disable @typescript-eslint/no-unsafe-assignment -- data from result.json() */
         expect(data).toMatchObject({
           success: true,
           queueType: expect.any(Object),
         });
+        /* eslint-enable @typescript-eslint/no-unsafe-assignment */
       });
 
       it("should create a queue type with FIXED_SLOTS schedule", async () => {
@@ -492,7 +504,12 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data =
+
+        const data: {
+          success?: unknown;
+          error?: unknown;
+          queueType?: unknown;
+        } =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
             ? (dataRaw as { success?: unknown; error?: unknown })
             : {};
@@ -508,11 +525,13 @@ describe("Settings Action Handler", () => {
           description: "Daily posting schedule",
           hashTagPresetId: null,
         });
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest expect.any
+
+        /* eslint-disable @typescript-eslint/no-unsafe-assignment -- data from result.json() */
         expect(data).toMatchObject({
           success: true,
           queueType: expect.any(Object),
         });
+        /* eslint-enable @typescript-eslint/no-unsafe-assignment */
       });
 
       it("should reject queue type creation for free plan users", async () => {

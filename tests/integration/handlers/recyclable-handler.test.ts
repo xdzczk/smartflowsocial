@@ -3,7 +3,7 @@
  * Tests app/features/posts/handlers/recyclable.handler.ts
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import {
   handleIsRecyclableChange,
@@ -12,6 +12,10 @@ import {
 import type { BulkPost } from "~/features/posts/types";
 
 describe("Recyclable Handler", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("handleIsRecyclableChange", () => {
     it("should update recyclable status for a single post", () => {
       const posts: BulkPost[] = [

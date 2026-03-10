@@ -3,7 +3,7 @@
  * Tests pure functions in app/lib/nostr.ts
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { generateArticleIdentifier } from "~/lib/markdown-utils";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -27,6 +27,10 @@ vi.mock("nostr-tools", () => ({
 }));
 
 describe("Nostr Utils", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("hexToNpub", () => {
     it("should convert valid hex to npub", () => {
       const hex = "a".repeat(64);

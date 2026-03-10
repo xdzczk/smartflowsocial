@@ -450,6 +450,10 @@ const post = new PostFactory()
 
 See [Test Factories README](../tests/factories/README.md) for details.
 
+**Rule for new tests:** Prefer factories (or the combined-content factory for
+`CombinedContent`-shaped data) over inline minimal objects and `as unknown as T` for domain data.
+This keeps tests maintainable and resilient to type/contract changes.
+
 ---
 
 ## Testing Patterns
@@ -539,7 +543,9 @@ describe("getPostStats", () => {
 #### Mocking Best Practices
 
 1. **Mock Before Imports**: Place mocks before imports
-2. **Clear Mocks in beforeEach**: Clear mocks between tests
+2. **Clear Mocks in beforeEach**: In every test file that uses mocks (e.g. `vi.fn()`, `vi.mock()`,
+   `mockResolvedValue`), add a local `beforeEach(() => vi.clearAllMocks())` so test order does not
+   matter and each test starts from a clean mock state.
 3. **Use Type-Safe Mocks**: Type mocks correctly
 4. **Mock Return Values Match Types**: Ensure mock return values match expected types
 5. **Use Partial Mocks When Appropriate**: Mock only what you need
@@ -580,6 +586,10 @@ it("should throw ValidationError for invalid input", async () => {
 3. **Over-Mocking**: Only mock external dependencies
 4. **Mocking What You're Testing**: Don't mock the function under test
 5. **Not Clearing Mocks**: Clear mocks between tests
+6. **Assert on outcomes**: Prefer asserting on return values and on boundary calls (e.g. `fetch` or
+   API calls with expected arguments) rather than on internal implementation details. When testing
+   code that invokes callbacks, prefer asserting that the _effect_ of the callback is visible (e.g.
+   state change or side effect) rather than only that the callback was invoked, when feasible.
 
 ---
 

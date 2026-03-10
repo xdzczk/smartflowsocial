@@ -39,6 +39,36 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
 }));
 
+vi.mock("~/features/posts/server", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
+    ...(actual ?? {}),
+    getOrCreateDraftGroup: vi
+      .fn()
+      .mockResolvedValue({ groupId: "draft-group-1" }),
+    deleteDraftGroupPosts: vi.fn().mockResolvedValue(undefined),
+    createDraftGroupVersion: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
+vi.mock("~/lib/rate-limit.server", () => ({
+  checkUserPostCreationLimit: vi.fn().mockResolvedValue({
+    allowed: true,
+    remaining: 100,
+    resetTime: new Date(),
+  }),
+}));
+
+vi.mock("~/features/posts/repositories/draft-data.server", () => ({
+  updateDraftGroup: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("~/features/posts/repositories/post-queries-data.server", () => ({
+  updatePost: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Mock Prisma for PostStateMachine
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {
@@ -159,9 +189,8 @@ describe("Bulk Posts Action Handler", () => {
       const fileUrls = Array.isArray(data["fileUrls"]) ? data["fileUrls"] : [];
       expect(fileUrls).toHaveLength(2);
       expect(fileUrls[0]).toMatchObject({
-        fileUrl: "https://example.com/image1.jpg",
+        fileUrl: ["https://example.com/image1.jpg"],
         scheduledFor: "2024-01-15T10:00:00",
-        queueType: "posts",
       });
     });
 

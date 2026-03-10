@@ -7,7 +7,7 @@
  * Migrated from tests/e2e/unit/engagement-logic.cy.ts
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Prisma to prevent database connection attempts
 vi.mock("~/lib/prisma.server", () => ({
@@ -30,6 +30,10 @@ import {
 } from "~/features/engagement/trust-score";
 
 describe("Engagement Logic Unit Tests", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("groupNotificationsByType", () => {
     it("should correctly categorize reply notifications", () => {
       const notifications = [

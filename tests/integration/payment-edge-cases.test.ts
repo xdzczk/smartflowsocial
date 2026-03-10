@@ -70,6 +70,13 @@ vi.mock("~/features/payments/btc.rate", () => ({
   getBitcoinRate: vi.fn(),
 }));
 
+// So createPlanInvoice gets past the credentials check and hits the LN/network path
+vi.mock("~/lib/env.server", () => ({
+  env: {
+    OWNER_NWC: "nostr+walletconnect://test",
+  },
+}));
+
 // Mock LN as a constructor class
 const { MockLN } = vi.hoisted(() => {
   class MockLN {

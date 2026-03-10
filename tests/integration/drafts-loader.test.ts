@@ -41,10 +41,8 @@ vi.mock("~/features/posts/ui", () => ({
   DraftsPage: () => null,
 }));
 
-import {
-  createValidUserMock,
-  createValidPostDTOMock,
-} from "../utils/test-helpers";
+import { userFactory } from "../factories";
+import { createValidPostDTOMock } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
 import {
@@ -68,7 +66,7 @@ describe("Drafts Loader Integration", () => {
     mockLoadDraftsData.mockResolvedValue({
       posts: [],
       longformPosts: [],
-      user: createValidUserMock(),
+      user: userFactory.basic({ id: "user-123" }),
       queueTypes: [],
       selectedQueueType: "all",
       pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
@@ -123,7 +121,7 @@ describe("Drafts Loader Integration", () => {
           }),
         ],
         longformPosts: [],
-        user: createValidUserMock(),
+        user: userFactory.basic({ id: "user-123" }),
         queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         selectedQueueType: "posts",
         pagination: { total: 1, pages: 1, currentPage: 1, limit: 20 },
@@ -174,7 +172,7 @@ describe("Drafts Loader Integration", () => {
       mockLoadDraftsData.mockResolvedValue({
         posts: [],
         longformPosts: [],
-        user: createValidUserMock(),
+        user: userFactory.basic({ id: "user-123" }),
         queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         selectedQueueType: "all",
         pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },

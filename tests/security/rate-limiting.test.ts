@@ -22,6 +22,7 @@ describe("Rate Limiting", () => {
   let mockNext: NextFunction;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     mockRequest = {
       ip: "127.0.0.1",
       socket: {

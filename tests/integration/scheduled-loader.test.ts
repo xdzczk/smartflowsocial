@@ -34,10 +34,8 @@ vi.mock("~/features/posts/ui", () => ({
   ScheduledPostsPage: () => null,
 }));
 
-import {
-  createValidUserMock,
-  createValidPostDTOMock,
-} from "../utils/test-helpers";
+import { userFactory } from "../factories";
+import { createValidPostDTOMock } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
 import {
@@ -62,7 +60,7 @@ describe("Scheduled Posts Loader Integration", () => {
     (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       longformPosts: [],
-      user: createValidUserMock(),
+      user: userFactory.basic({ id: "user-123" }),
       queueTypes: [],
       selectedQueueType: "all",
       hashTagPresets: [],
@@ -122,7 +120,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const mockData = {
         posts: [createValidPostDTOMock({ id: "1", caption: "Test post" })],
         longformPosts: [],
-        user: createValidUserMock(),
+        user: userFactory.basic({ id: "user-123" }),
         queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         selectedQueueType: "posts",
         hashTagPresets: [],
@@ -183,7 +181,10 @@ describe("Scheduled Posts Loader Integration", () => {
           }),
         ],
         longformPosts: [],
-        user: createValidUserMock({ timezone: "America/New_York" }),
+        user: userFactory.basic({
+          id: "user-123",
+          timezone: "America/New_York",
+        }),
         queueTypes: [
           { id: "1", name: "Default", isEnabled: true },
           { id: "2", name: "Marketing", isEnabled: true },
@@ -232,7 +233,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const mockData = {
         posts: [],
         longformPosts: [],
-        user: createValidUserMock(),
+        user: userFactory.basic({ id: "user-123" }),
         queueTypes: [
           { id: "1", name: "Default", isEnabled: true },
           { id: "2", name: "Disabled", isEnabled: false },

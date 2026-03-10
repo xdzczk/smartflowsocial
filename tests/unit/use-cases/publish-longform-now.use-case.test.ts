@@ -60,9 +60,11 @@ vi.mock("~/lib/prisma.server", () => ({
 
 const mockTransition = vi.fn();
 vi.mock("~/features/posts/server", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<Record<string, unknown>>();
+
   return {
-    ...actual,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
+    ...(actual ?? {}),
     LongFormPostStateMachine: class {
       transition = mockTransition;
     },

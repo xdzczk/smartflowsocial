@@ -14,6 +14,7 @@ import { describe, it, expect } from "vitest";
 import {
   validateUpload,
   MAX_FILE_SIZE,
+  MAX_IMAGE_FILE_SIZE,
 } from "~/features/upload/validation.server";
 import {
   apiLimiter,
@@ -100,17 +101,15 @@ describe("Abuse Cases: Large File Uploads", () => {
   });
 
   it("should handle edge case: file at exactly MAX_FILE_SIZE", async () => {
-    // File at exactly the limit should pass size check
-    const exactSizeBuffer = createValidJPEGBuffer(MAX_FILE_SIZE);
+    // Image at exactly the type limit (10MB) should pass both global and image size checks
+    const exactSizeBuffer = createValidJPEGBuffer(MAX_IMAGE_FILE_SIZE);
 
     const result = await validateUpload(exactSizeBuffer, "exact.jpg");
 
-    // Should pass size validation (may fail MIME detection if buffer is too small)
-    // But size check should pass
+    // Size check should pass (no "exceeds" from size validation)
     if (result.error) {
       expect(result.error).not.toContain("exceeds");
     }
-    // If no error, size check passed (which is expected)
     expect(result).toBeDefined();
   });
 });

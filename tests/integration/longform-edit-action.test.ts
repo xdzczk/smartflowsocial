@@ -57,21 +57,41 @@ const { mockPublishExecute, mockScheduleExecute } = vi.hoisted(() => {
   return { mockPublishExecute, mockScheduleExecute };
 });
 
-vi.mock("~/features/posts/server", () => ({
-  PublishLongFormNowUseCase: class {
-    execute = mockPublishExecute;
-  },
-}));
+vi.mock("~/features/posts/server", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
 
-vi.mock("~/features/posts/server", () => ({
-  ScheduleLongFormPostUseCase: class {
-    execute = mockScheduleExecute;
-  },
-}));
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
+    ...(actual ?? {}),
+    PublishLongFormNowUseCase: class {
+      execute = mockPublishExecute;
+    },
+    ScheduleLongFormPostUseCase: class {
+      execute = mockScheduleExecute;
+    },
+  };
+});
+// Handler imports use cases from these modules directly
+vi.mock(
+  "~/features/posts/longform/use-cases/publish-longform-now.use-case.server",
+  () => ({
+    PublishLongFormNowUseCase: class {
+      execute = mockPublishExecute;
+    },
+  })
+);
+vi.mock(
+  "~/features/posts/longform/use-cases/schedule-longform-post.use-case.server",
+  () => ({
+    ScheduleLongFormPostUseCase: class {
+      execute = mockScheduleExecute;
+    },
+  })
+);
 
 // Note: updateLongFormPost is mocked above, do not import it here
 
-// Mock Prisma for ScheduleLongFormPostUseCase and LongFormPostStateMachine
+// Mock Prisma for ScheduleLongFormPostUseCase, LongFormPostStateMachine, and relay resolution
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {
     longFormPost: {
@@ -80,6 +100,19 @@ const { mockPrisma } = vi.hoisted(() => {
     },
     longFormPostStateTransition: {
       create: vi.fn(),
+    },
+    user: {
+      findUnique: vi
+        .fn()
+        .mockResolvedValue({ userRelays: ["wss://relay.example.com"] }),
+    },
+    subscription: {
+      findUnique: vi.fn().mockResolvedValue({ Plan: { price: 1000 } }),
+    },
+    draftVersion: {
+      aggregate: vi.fn().mockResolvedValue({ _max: { version: null } }),
+      create: vi.fn().mockResolvedValue({ id: "dv-1", version: 1 }),
+      findMany: vi.fn().mockResolvedValue([]),
     },
     $transaction: vi.fn(async (callback) => {
       const tx = {
@@ -456,7 +489,15 @@ describe("Longform Edit Action Handler", () => {
     });
 
     it("should publish updated post", async () => {
-      const mockSignedEvent = { id: "event-123", kind: 30023, pubkey: "pk1" };
+      const mockSignedEvent = {
+        id: "event-123",
+        kind: 30023,
+        pubkey: "pk1",
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [],
+        content: "Updated content",
+        sig: "signed-sig-123",
+      };
       const mockNostrEvent = { id: "event-123", kind: 30023, pubkey: "pk1" };
 
       const formData = createMockFormData({
@@ -591,7 +632,15 @@ describe("Longform Edit Action Handler", () => {
         },
       ]);
 
-      const mockSignedEvent = { id: "event-123", kind: 30023, pubkey: "pk1" };
+      const mockSignedEvent = {
+        id: "event-123",
+        kind: 30023,
+        pubkey: "pk1",
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [],
+        content: "Content",
+        sig: "signed-sig-123",
+      };
       const mockNostrEvent = { id: "event-123", kind: 30023, pubkey: "pk1" };
 
       const formData = createMockFormData({

@@ -25,6 +25,7 @@ const makeEvent = (
 
 describe("runGiveawaySelection", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.spyOn(global.Math, "random").mockReturnValue(0.5);
   });
 
