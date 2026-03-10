@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import type {
   PostData,
   LongFormPostData,
@@ -18,7 +19,6 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import {
   formatForDateTimeLocal,
   formatForDisplay,

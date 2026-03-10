@@ -19,7 +19,12 @@ import { logWarning, logError } from "~/lib/error-logger.server";
 
 import { convertToHex } from "./nostr-conversion";
 import { buildCacheKey, getOrSetJson } from "./redis-cache.server";
-import { DEFAULT_USER_WRITE_RELAYS, relaysArray } from "./relays";
+
+// eslint-disable-next-line import/order -- relay-constants after env/nostr-tools so WebSocket polyfill runs first
+import {
+  DEFAULT_USER_WRITE_RELAYS,
+  relaysArray,
+} from "~/features/relays/relay-constants";
 
 type RelayUrl = string;
 

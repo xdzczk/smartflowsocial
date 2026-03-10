@@ -88,9 +88,8 @@ export function SmartUploadButton({
       _provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS"
     ): Promise<string> => {
       try {
-        // @ts-ignore - Dynamic imports work in client-side Remix bundles
         const { getWindowNostrLikeSigner } =
-          await import("~/lib/nostr-signer-manager.client");
+          await import("~/features/auth/signer");
         const signer = await getWindowNostrLikeSigner();
         if (!signer) {
           throw new Error(

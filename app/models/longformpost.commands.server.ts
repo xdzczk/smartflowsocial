@@ -342,7 +342,6 @@ export async function deleteLongFormPost({
         where: { id, userId },
       });
 
-      // @ts-ignore - Dynamic imports work at runtime in CommonJS
       const { createOutboxEventInTransaction } =
         await import("~/infra/outbox/outbox.server");
 

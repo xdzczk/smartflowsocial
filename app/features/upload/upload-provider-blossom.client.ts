@@ -129,8 +129,7 @@ export async function createBlossomUploader(
   primaryServerUrl: string;
   servers: string[];
 }> {
-  const { getWindowNostrLikeSigner } =
-    await import("~/lib/nostr-signer-manager.client");
+  const { getWindowNostrLikeSigner } = await import("~/features/auth/signer");
   const signer = await getWindowNostrLikeSigner();
   if (!signer) {
     throw new Error(

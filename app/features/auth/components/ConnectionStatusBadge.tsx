@@ -1,5 +1,5 @@
 import { Badge } from "~/components/ui/badge";
-import type { ConnectionStatus } from "~/lib/remote-signer-sessions.client";
+import type { ConnectionStatus } from "~/features/auth/signer";
 
 interface ConnectionStatusBadgeProps {
   status: ConnectionStatus;

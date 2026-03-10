@@ -5,24 +5,25 @@ import {
   connectNip46WithNostrConnectUri,
 } from "~/features/auth/nostr-signer.client";
 import { convertToHex } from "~/lib/nostr-conversion";
+
 import {
   serializeSecretKey,
   setActiveSignerConfig,
   type ActiveSignerConfig,
-} from "~/lib/nostr-signer-manager.client";
-import type { PrimarySignerProfile } from "~/lib/primary-signer-profile";
-import { isPrimarySignerProfile } from "~/lib/primary-signer-profile";
+} from "./nostr-signer-manager.client";
+import type { PrimarySignerProfile } from "./primary-signer-profile";
+import { isPrimarySignerProfile } from "./primary-signer-profile";
 import {
   emitOpenRemoteSignerReconnectDialogEvent,
   emitRemoteSignerTimeoutEvent,
-} from "~/lib/remote-signer-reconnect.client";
+} from "./remote-signer-reconnect.client";
 import {
   detectSignerAppName,
   matchOrCreateSession,
   setActiveSession,
   updateSession,
-} from "~/lib/remote-signer-sessions.client";
-import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
+} from "./remote-signer-sessions.client";
+import { recordConnectionEvent } from "./remote-signer-status.client";
 
 const PRIMARY_SIGNER_PROFILE_API = "/api/primary-signer-profile";
 const PROFILE_CACHE_TTL_MS = 30_000;

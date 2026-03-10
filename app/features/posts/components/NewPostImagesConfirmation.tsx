@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   formatAttemptElapsed,
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   formatForDisplay,

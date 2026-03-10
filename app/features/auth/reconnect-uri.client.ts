@@ -5,11 +5,8 @@
 
 import { parseBunkerInput as nip46ParseBunkerInput } from "nostr-tools/nip46";
 
+import { parseSecretKeyHex, serializeSecretKey } from "~/features/auth/signer";
 import { isStandalonePWA } from "~/lib/is-standalone-pwa";
-import {
-  parseSecretKeyHex,
-  serializeSecretKey,
-} from "~/lib/nostr-signer-manager.client";
 
 import {
   createNip46NostrConnectUri as createUriFromSigner,

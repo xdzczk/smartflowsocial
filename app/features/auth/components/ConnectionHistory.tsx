@@ -10,7 +10,7 @@ import {
 import { useState, useMemo } from "react";
 
 import { Button } from "~/components/ui/button";
-import type { ConnectionLogEntry } from "~/lib/remote-signer-sessions.client";
+import type { ConnectionLogEntry } from "~/features/auth/signer";
 
 interface ConnectionHistoryProps {
   entries: ConnectionLogEntry[];

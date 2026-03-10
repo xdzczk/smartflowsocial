@@ -3,6 +3,10 @@
  * Centralized data fetching for settings page
  */
 
+import {
+  type PrimarySignerProfile,
+  isPrimarySignerProfile,
+} from "~/features/auth/signer";
 import { listReplyTemplates } from "~/features/engagement/engagement-reply-templates.server";
 import type { ProfileData } from "~/features/nostr/types";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
@@ -42,10 +46,6 @@ import {
   getRelayIntentCached,
   getHashTagPresetsCached,
 } from "~/features/user/services/user-cache.server";
-import {
-  type PrimarySignerProfile,
-  isPrimarySignerProfile,
-} from "~/lib/primary-signer-profile";
 import {
   getAllPlans,
   getUserPaymentHistory,

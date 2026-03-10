@@ -1,7 +1,7 @@
 import {
   getActiveSigner,
   getActiveSignerConfig,
-} from "~/lib/nostr-signer-manager.client";
+} from "./nostr-signer-manager.client";
 
 export interface ConnectionHealthResult {
   healthy: boolean;

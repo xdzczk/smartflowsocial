@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { teardownVisibilityHandler } from "~/lib/nostr-signer-manager.client";
+import { teardownVisibilityHandler } from "~/features/auth/signer";
 
 describe("nostr-signer-manager lifecycle", () => {
   it("exports teardownVisibilityHandler", () => {

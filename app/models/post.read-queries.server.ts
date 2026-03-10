@@ -54,7 +54,6 @@ export async function getScheduledPostsFromReadModel({
     // This is a temporary fallback during migration
     // In production, you'd want to ensure read models are always populated
 
-    // @ts-ignore - Dynamic imports work at runtime in CommonJS
     const queriesModule = await import("./post.queries.server");
     const postsResult = await queriesModule.getScheduledPosts({
       userId,
@@ -136,7 +135,6 @@ export async function getPublishedPostsFromReadModel({
 
   // If read model is empty and fallback is enabled, use transactional table
   if (readModelPosts.length === 0 && total === 0 && useFallback) {
-    // @ts-ignore - Dynamic imports work at runtime in CommonJS
     const queriesModule = await import("./post.queries.server");
     const result = await queriesModule.getPublishedPosts({
       userId,

@@ -9,6 +9,7 @@ import type React from "react";
 import { toast } from "react-hot-toast";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import type {
   QueueType,
   UserData,
@@ -23,7 +24,6 @@ import { isVideoFile } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import {
   formatForDateTimeLocal,
   formatForDisplay,

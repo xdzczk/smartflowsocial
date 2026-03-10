@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import {
   delayAfterMainToSeconds,
   isValidDelayAfterMain,
@@ -16,7 +17,6 @@ import {
   generateSummaryFromMarkdown,
 } from "~/lib/markdown-utils";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import {
   fromDate,
   fromISOString,

@@ -1,311 +1,44 @@
-import { convertHexToNpub, convertToHex } from "~/lib/nostr-conversion";
-import type { ActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
-
-export type ConnectionStatus = "active" | "disconnected" | "stale" | "inactive";
-
-export interface ConnectionLogEntry {
-  id: string;
-  timestamp: number;
-  type:
-    | "connect"
-    | "disconnect"
-    | "error"
-    | "health_check"
-    | "reconnect"
-    | "sign";
-  status: "success" | "failure" | "timeout";
-  message: string;
-  details?: Record<string, unknown>;
-}
-
-/** Connection-level metadata (no event history). */
-export interface RemoteSignerConnectionMetadata {
-  status: ConnectionStatus;
-  signerAppName: string | null;
-  pubkey: string | null;
-  relays: string[];
-  connectedAt: number | null;
-  lastActivityAt: number | null;
-  lastError: string | null;
-  createdAt: number;
-  updatedAt: number;
-}
-
-/** A NIP-46 connection (config + metadata). Contains multiple sessions over time. */
-export interface RemoteSignerConnection {
-  id: string;
-  label: string;
-  config: ActiveSignerConfig;
-  metadata: RemoteSignerConnectionMetadata;
-  /** Session we are currently logging to (null if disconnected). */
-  currentSessionId: string | null;
-}
-
-/** One time-bound session under a connection; has its own event log. */
-export interface RemoteSignerSessionRecord {
-  id: string;
-  connectionId: string;
-  startedAt: number;
-  endedAt: number | null;
-  history: ConnectionLogEntry[];
-}
-
 /**
- * Legacy view: connection + current session history. Used by getActiveSession/getSessionById
- * until all call sites use connections and sessions.
+ * Remote signer sessions: public CRUD and legacy session API.
+ * Types and storage live in remote-signer-sessions-types and remote-signer-sessions-storage.
  */
-export interface RemoteSignerSession {
-  id: string;
-  label: string;
-  config: ActiveSignerConfig;
-  metadata: RemoteSignerConnectionMetadata;
-  history: ConnectionLogEntry[];
-}
 
-interface MatchOrCreateSessionOptions {
-  label?: string;
-  signerPubkey?: string | null;
-}
+import { convertToHex } from "~/lib/nostr-conversion";
 
-/** Legacy v1 storage (flat sessions with history on each). */
-interface RemoteSignerSessionsStorageV1 {
-  sessions: RemoteSignerSession[];
-  activeSessionId: string | null;
-  version: 1;
-}
+import type { ActiveSignerConfig } from "./nostr-signer-storage.client";
+import {
+  getStorage,
+  updateStorage,
+  setCurrentUserNpub as storageSetCurrentUserNpub,
+  generateId,
+} from "./remote-signer-sessions-storage.client";
+import type {
+  ConnectionLogEntry,
+  RemoteSignerConnection,
+  RemoteSignerSession,
+  RemoteSignerSessionRecord,
+  MatchOrCreateSessionOptions,
+} from "./remote-signer-sessions-types";
+import {
+  MAX_HISTORY_ENTRIES,
+  MAX_SESSIONS_PER_CONNECTION,
+  ACTIVE_SESSION_CHANGED_EVENT,
+  ACTIVE_CONNECTION_CHANGED_EVENT,
+} from "./remote-signer-sessions-types";
 
-/** V2 storage: connections and sessions. */
-interface RemoteSignerSessionsStorageV2 {
-  version: 2;
-  connections: RemoteSignerConnection[];
-  sessions: RemoteSignerSessionRecord[];
-  activeConnectionId: string | null;
-}
+// Re-export types for consumers
+export type {
+  ConnectionStatus,
+  ConnectionLogEntry,
+  RemoteSignerConnectionMetadata,
+  RemoteSignerConnection,
+  RemoteSignerSessionRecord,
+  RemoteSignerSession,
+} from "./remote-signer-sessions-types";
+export type { MatchOrCreateSessionOptions } from "./remote-signer-sessions-types";
 
-const STORAGE_KEY_PREFIX = "__smartflow_remote_signer_sessions_v1";
-const STORAGE_KEY_V2_PREFIX = "__smartflow_remote_signer_sessions_v2";
-const MAX_HISTORY_ENTRIES = 100;
-const MAX_SESSIONS_PER_CONNECTION = 20;
-const ACTIVE_SESSION_CHANGED_EVENT = "remote-signer-active-session-changed";
-const ACTIVE_CONNECTION_CHANGED_EVENT =
-  "remote-signer-active-connection-changed";
-
-/**
- * Current user npub for per-profile storage. When set, sessions are keyed by
- * this npub so each account has its own list on the same device. When null
- * (e.g. logged out or login page), we use a device-scoped key for backward compat.
- */
-let currentUserNpub: string | null = null;
-
-function normalizeUserIdentifier(userIdentifier: string | null): string | null {
-  if (!userIdentifier) {
-    return null;
-  }
-
-  const trimmed = userIdentifier.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  if (/^[0-9a-fA-F]{64}$/.test(trimmed)) {
-    return convertHexToNpub(trimmed);
-  }
-
-  return trimmed;
-}
-
-function getAlternateUserIdentifiers(userIdentifier: string): string[] {
-  const alternatives: string[] = [];
-
-  if (userIdentifier.startsWith("npub")) {
-    const hex = convertToHex(userIdentifier);
-    if (hex) {
-      alternatives.push(hex);
-    }
-  } else if (/^[0-9a-fA-F]{64}$/.test(userIdentifier)) {
-    const npub = convertHexToNpub(userIdentifier);
-    if (npub !== userIdentifier) {
-      alternatives.push(npub);
-    }
-  }
-
-  return alternatives;
-}
-
-/**
- * Set the current user's npub so session storage is read/written for that profile.
- * Call with the logged-in user's npub; call with null on logout or when no user.
- */
 export function setCurrentUserNpub(npub: string | null): void {
-  currentUserNpub = normalizeUserIdentifier(npub);
-}
-
-function getStorageKey(): string {
-  if (currentUserNpub) {
-    return `${STORAGE_KEY_PREFIX}_${currentUserNpub}`;
-  }
-  return STORAGE_KEY_PREFIX;
-}
-
-function getStorageKeyV2(): string {
-  if (currentUserNpub) {
-    return `${STORAGE_KEY_V2_PREFIX}_${currentUserNpub}`;
-  }
-  return STORAGE_KEY_V2_PREFIX;
-}
-
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-}
-
-const EMPTY_V2: RemoteSignerSessionsStorageV2 = {
-  version: 2,
-  connections: [],
-  sessions: [],
-  activeConnectionId: null,
-};
-
-function migrateV1ToV2(
-  v1: RemoteSignerSessionsStorageV1
-): RemoteSignerSessionsStorageV2 {
-  const connections: RemoteSignerConnection[] = [];
-  const sessions: RemoteSignerSessionRecord[] = [];
-  for (const old of v1.sessions) {
-    const connectionId = old.id;
-    const sessionId = generateId();
-    connections.push({
-      id: connectionId,
-      label: old.label,
-      config: old.config,
-      metadata: old.metadata,
-      currentSessionId: sessionId,
-    });
-    sessions.push({
-      id: sessionId,
-      connectionId,
-      startedAt: old.metadata.createdAt,
-      endedAt: null,
-      history: old.history,
-    });
-  }
-  return {
-    version: 2,
-    connections,
-    sessions,
-    activeConnectionId: v1.activeSessionId,
-  };
-}
-
-function readV1Storage(): RemoteSignerSessionsStorageV1 | null {
-  const key = getStorageKey();
-  const stored = localStorage.getItem(key);
-  if (stored) {
-    try {
-      return JSON.parse(stored) as RemoteSignerSessionsStorageV1;
-    } catch {
-      // fall through
-    }
-  }
-  if (currentUserNpub) {
-    for (const alternate of getAlternateUserIdentifiers(currentUserNpub)) {
-      const alternateKey = `${STORAGE_KEY_PREFIX}_${alternate}`;
-      const alternateStored = localStorage.getItem(alternateKey);
-      if (!alternateStored) continue;
-      try {
-        return JSON.parse(alternateStored) as RemoteSignerSessionsStorageV1;
-      } catch {
-        // continue
-      }
-    }
-  }
-  return null;
-}
-
-function getStorage(): RemoteSignerSessionsStorageV2 {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return { ...EMPTY_V2 };
-  }
-  try {
-    const keyV2 = getStorageKeyV2();
-    const storedV2 = localStorage.getItem(keyV2);
-    if (storedV2) {
-      const parsed = JSON.parse(storedV2) as RemoteSignerSessionsStorageV2;
-      if (Array.isArray(parsed.connections) && Array.isArray(parsed.sessions)) {
-        return parsed;
-      }
-    }
-    const v1 = readV1Storage();
-    if (v1?.version === 1 && Array.isArray(v1.sessions)) {
-      const v2 = migrateV1ToV2(v1);
-      localStorage.setItem(keyV2, JSON.stringify(v2));
-      return v2;
-    }
-    return { ...EMPTY_V2 };
-  } catch {
-    return { ...EMPTY_V2 };
-  }
-}
-
-function saveStorage(storage: RemoteSignerSessionsStorageV2): void {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return;
-  }
-
-  try {
-    localStorage.setItem(getStorageKeyV2(), JSON.stringify(storage));
-  } catch (error) {
-    console.warn("Failed to save remote signer sessions:", error);
-  }
-}
-
-function normalizeActiveConnectionId(
-  storage: RemoteSignerSessionsStorageV2
-): void {
-  if (
-    storage.activeConnectionId &&
-    !storage.connections.some((c) => c.id === storage.activeConnectionId)
-  ) {
-    storage.activeConnectionId = null;
-  }
-}
-
-function normalizeCurrentSessionIds(
-  storage: RemoteSignerSessionsStorageV2
-): void {
-  for (const conn of storage.connections) {
-    if (
-      conn.currentSessionId &&
-      !storage.sessions.some(
-        (s) => s.id === conn.currentSessionId && s.connectionId === conn.id
-      )
-    ) {
-      (conn as { currentSessionId: string | null }).currentSessionId = null;
-    }
-  }
-}
-
-function updateStorage<T>(
-  mutator: (storage: RemoteSignerSessionsStorageV2) => T
-): T {
-  const storage = getStorage();
-  const result = mutator(storage);
-  normalizeActiveConnectionId(storage);
-  normalizeCurrentSessionIds(storage);
-  saveStorage(storage);
-  return result;
-}
-
-function _sessionRecordToLegacyView(
-  conn: RemoteSignerConnection,
-  session: RemoteSignerSessionRecord
-): RemoteSignerSession {
-  return {
-    id: conn.id,
-    label: conn.label,
-    config: conn.config,
-    metadata: conn.metadata,
-    history: session.history,
-  };
+  storageSetCurrentUserNpub(npub);
 }
 
 function connectionToLegacyView(
@@ -572,8 +305,6 @@ export function getSessionHistory(
 }
 
 // ---------- Legacy session APIs (connection + current session view) ----------
-// Prefer getAllConnections, getActiveConnection, getSessionsForConnection, etc.
-// when adding new code. These remain for backward compatibility with existing call sites.
 
 export function getAllSessions(): RemoteSignerSession[] {
   const storage = getStorage();
@@ -784,7 +515,8 @@ export function setActiveSession(id: string): void {
         },
       });
       void (async () => {
-        const mod = await import("~/lib/remote-signer-status.client");
+        const mod =
+          await import("~/features/auth/signer/remote-signer-status.client");
         mod.recordConnectionEvent(previousId, {
           type: "disconnected",
           reason: "Switched to different session",
@@ -803,10 +535,6 @@ export function setActiveSession(id: string): void {
       // ignore
     }
   }
-  // Only clear the signer cache when switching to a *different* connection.
-  // Do not clear when previousId is null (first time setting after login) or when
-  // re-setting the same id (revalidation); otherwise the second sign after login
-  // would see no cached signer and get stuck.
   if (
     typeof window !== "undefined" &&
     previousId != null &&
@@ -814,7 +542,8 @@ export function setActiveSession(id: string): void {
   ) {
     setTimeout(() => {
       void (async () => {
-        const mod = await import("~/lib/nostr-signer-manager.client");
+        const mod =
+          await import("~/features/auth/signer/nostr-signer-manager.client");
         mod.resetCachedSigner();
       })();
     }, 0);
@@ -910,7 +639,6 @@ function detectFromBunkerInput(bunkerInput: string): string | null {
     const url = new URL(bunkerInput);
     return detectAppFromHostname(url.hostname);
   } catch {
-    // Invalid URL, continue
     return null;
   }
 }
@@ -926,7 +654,6 @@ function detectFromNostrConnectUri(
       return name;
     }
 
-    // Check relays for known patterns
     for (const relay of relays) {
       const appName = detectAppFromHostname(relay);
       if (appName) {
@@ -934,7 +661,7 @@ function detectFromNostrConnectUri(
       }
     }
   } catch {
-    // Invalid URL, continue
+    // continue
   }
   return null;
 }
@@ -944,11 +671,9 @@ export function detectSignerAppName(config: ActiveSignerConfig): string | null {
     return "Browser Extension";
   }
 
-  // TypeScript narrows config.type to "nip46" here
   if (config.method === "bunker_input") {
     return detectFromBunkerInput(config.bunkerInput);
   }
-  // TypeScript narrows to "nostrconnect_uri" here
   return detectFromNostrConnectUri(config.uri, config.relays);
 }
 

@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import type { PostData, RepostConditions } from "~/features/posts/types";
 import {
   buildKind6RepostEvent,
@@ -22,7 +23,6 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import {
   getMinDatetimeLocalForSchedule,
   getMinScheduleTimestampMs,

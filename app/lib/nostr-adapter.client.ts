@@ -12,6 +12,14 @@
 import { nip19 } from "nostr-tools";
 import { toast } from "react-hot-toast";
 
+import {
+  addConnectionLog,
+  attemptPrimarySignerFailover,
+  emitRemoteSignerTimeoutEvent,
+  getActiveConnection,
+  recordConnectionEvent,
+  updateSession,
+} from "~/features/auth/signer";
 import type {
   NostrEvent,
   SignedEvent,
@@ -28,14 +36,6 @@ import {
   getExpectedPubkeyHexForGuard,
   getNip07Readiness,
 } from "~/lib/nip07-readiness.client";
-import { attemptPrimarySignerFailover } from "~/lib/primary-signer-failover.client";
-import { emitRemoteSignerTimeoutEvent } from "~/lib/remote-signer-reconnect.client";
-import {
-  addConnectionLog,
-  getActiveConnection,
-  updateSession,
-} from "~/lib/remote-signer-sessions.client";
-import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
 
 import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
 
@@ -220,8 +220,7 @@ function normalizeSignResult(
 
 async function resetSignerCacheBestEffort(): Promise<void> {
   try {
-    // @ts-ignore - Dynamic imports work in client-side Remix bundles
-    const signerManager = await import("~/lib/nostr-signer-manager.client");
+    const signerManager = await import("~/features/auth/signer");
     if (typeof signerManager.resetCachedSigner === "function") {
       signerManager.resetCachedSigner();
     }
@@ -317,8 +316,7 @@ async function trySignWithConfiguredSigner(
   const clearCacheOnError = options?.clearCacheOnError !== false;
   let prefersRemoteSigner = false;
   try {
-    // @ts-ignore - Dynamic imports work in client-side Remix bundles
-    const signerManager = await import("~/lib/nostr-signer-manager.client");
+    const signerManager = await import("~/features/auth/signer");
     const cfg =
       typeof signerManager.getActiveSignerConfig === "function"
         ? signerManager.getActiveSignerConfig()
@@ -437,7 +435,7 @@ async function handleSignAttemptFailure(options: {
     if (config?.type === "nip46") {
       try {
         const { tryBackgroundReconnect } =
-          await import("~/lib/nostr-signer-manager.client");
+          await import("~/features/auth/signer");
         const reconnected = await tryBackgroundReconnect();
         debugSignerTrace("After sign failure, tryBackgroundReconnect result", {
           reconnected,
@@ -461,7 +459,7 @@ async function signEventWithRetryLogic(
   maxRetries = 5,
   options?: SignEventOptions
 ): Promise<SignedEvent> {
-  const signerManager = await import("~/lib/nostr-signer-manager.client");
+  const signerManager = await import("~/features/auth/signer");
   const config =
     typeof signerManager.getActiveSignerConfig === "function"
       ? signerManager.getActiveSignerConfig()
@@ -522,9 +520,7 @@ async function signEventWithRetryLogic(
     if (configured) return configured;
     if (await tryPrimaryFailoverFn()) continue;
 
-    // @ts-ignore - window.nostr is injected by browser extensions at runtime
     if (typeof window !== "undefined" && window.nostr) {
-      // @ts-ignore - window.nostr is injected by browser extensions at runtime
       const signResult = await window.nostr.signEvent(nostrEvent);
       return normalizeSignResult(signResult, nostrEvent);
     }
@@ -540,7 +536,6 @@ async function signEventWithRetryLogic(
 
 async function logErrorIfClient(error: unknown, action: string): Promise<void> {
   if (typeof window !== "undefined") {
-    // @ts-ignore - Dynamic imports work in client-side Remix bundles
     const { logClientError } = await import("~/lib/error-handler.client");
     logClientError(
       error instanceof Error ? error : new Error(String(error)),

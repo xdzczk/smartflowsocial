@@ -61,7 +61,6 @@ export async function calculateQueueScheduleTime(
         error?: { message?: string };
         message?: string;
       };
-      // @ts-ignore - Dynamic imports work in client-side Remix bundles
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
         new Error(
@@ -76,7 +75,6 @@ export async function calculateQueueScheduleTime(
       return Promise.resolve(null);
     }
   } catch (error) {
-    // @ts-ignore - Dynamic imports work in client-side Remix bundles
     const { handleErrorSafely } = await import("~/lib/error-handler.client");
     handleErrorSafely(error, {
       component: COMPONENT_NAME,
@@ -120,7 +118,6 @@ export async function fetchEffectiveHashtags(
       };
       return data.hashtags ?? data.effectiveHashtags?.join(" ") ?? "";
     } else {
-      // @ts-ignore - Dynamic imports work in client-side Remix bundles
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
         new Error("Hashtags API error"),
@@ -133,7 +130,6 @@ export async function fetchEffectiveHashtags(
       return Promise.resolve("");
     }
   } catch (error) {
-    // @ts-ignore - Dynamic imports work in client-side Remix bundles
     const { handleErrorSafely } = await import("~/lib/error-handler.client");
     handleErrorSafely(error, {
       component: COMPONENT_NAME,

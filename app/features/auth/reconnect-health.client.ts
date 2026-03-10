@@ -5,9 +5,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { testConnection } from "~/lib/remote-signer-health.client";
-import { getActiveConnection } from "~/lib/remote-signer-sessions.client";
-import type { RemoteSignerConnection } from "~/lib/remote-signer-sessions.client";
+import {
+  getActiveConnection,
+  testConnection,
+  type RemoteSignerConnection,
+} from "~/features/auth/signer";
 
 const NOSTR_CONNECTION_HEALTHY_EVENT = "nostr-connection-healthy";
 

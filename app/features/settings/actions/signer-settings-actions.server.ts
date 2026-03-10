@@ -1,10 +1,10 @@
 import { json } from "@remix-run/node";
 
+import type { PrimarySignerProfile } from "~/features/auth/signer";
 import {
   clearUserPrimarySignerProfile,
   updateUserPrimarySignerProfile,
 } from "~/features/user";
-import type { PrimarySignerProfile } from "~/lib/primary-signer-profile";
 import {
   updatePrimarySignerProfileSchema,
   validateFormDataOrRespond,

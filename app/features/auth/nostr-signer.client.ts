@@ -30,27 +30,22 @@ export class Nip07Signer implements NostrSigner {
   public readonly type = "nip07" as const;
 
   getStatus(): SignerStatus {
-    // @ts-ignore - injected at runtime by extensions
     return typeof window !== "undefined" && window.nostr
       ? "available"
       : "unavailable";
   }
 
   async getPublicKey(): Promise<string> {
-    // @ts-ignore - injected at runtime by extensions
     if (!window.nostr) {
       throw new Error("SIGNER_NOT_FOUND");
     }
-    // @ts-ignore - injected at runtime by extensions
     return await window.nostr.getPublicKey();
   }
 
   async signEvent(event: NostrEvent): Promise<SignedEvent> {
-    // @ts-ignore - injected at runtime by extensions
     if (!window.nostr) {
       throw new Error("SIGNER_NOT_FOUND");
     }
-    // @ts-ignore - injected at runtime by extensions
     const signed = await window.nostr.signEvent(event);
     return signed as SignedEvent;
   }

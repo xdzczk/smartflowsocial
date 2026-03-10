@@ -9,6 +9,10 @@ import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { RemoteSignerSettings } from "~/features/auth/components/RemoteSignerSettings";
 import {
+  isPrimarySignerProfile,
+  type PrimarySignerProfile,
+} from "~/features/auth/signer";
+import {
   MutedListSettings,
   ReplyTemplatesSettings,
 } from "~/features/engagement";
@@ -31,10 +35,6 @@ import {
   UploadProviderSettings,
 } from "~/features/upload";
 import { AccountsSettings } from "~/features/user";
-import {
-  isPrimarySignerProfile,
-  type PrimarySignerProfile,
-} from "~/lib/primary-signer-profile";
 import {
   validateAccounts,
   validateAvailablePlans,

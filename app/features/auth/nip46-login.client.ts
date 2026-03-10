@@ -1,6 +1,6 @@
-import { generateSecretKey, SimplePool } from "nostr-tools";
 import { useCallback, useRef, useState } from "react";
 
+import { parseSecretKeyHex, serializeSecretKey } from "~/features/auth/signer";
 import {
   canAttemptCircuitBreaker,
   getCircuitBreakerStatus,
@@ -8,29 +8,15 @@ import {
   recordCircuitBreakerSuccess,
 } from "~/lib/nostr-circuit-breaker.client";
 import { recordConnectionAttempt } from "~/lib/nostr-connection-metrics.client";
-import { convertHexToNpub, convertToHex } from "~/lib/nostr-conversion";
-import {
-  parseSecretKeyHex,
-  serializeSecretKey,
-  setActiveSignerConfig,
-} from "~/lib/nostr-signer-manager.client";
-import {
-  detectSignerAppName,
-  matchOrCreateSession,
-  setActiveSession,
-  setCurrentUserNpub,
-  updateSession,
-} from "~/lib/remote-signer-sessions.client";
-import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
 
 import type { LoginError, LoginState } from "./login-flow.client";
 import { normalizeError, PROFILE_MISMATCH_MESSAGE } from "./login-flow.client";
 import {
-  connectNip46WithBunkerInput,
-  connectNip46WithNostrConnectUri,
-  createNip46NostrConnectUri,
-  getNostrConnectAppMetadata,
-} from "./nostr-signer.client";
+  connectNip46WithBunkerInputForLogin,
+  connectNip46WithNostrConnectUriForLogin,
+  connectNip46WithPendingUriForLogin,
+} from "./nip46/nip46-connect.client";
+import { persistNip46LoginSession } from "./nip46/nip46-persist.client";
 import type { NostrSigner } from "./nostr-signer.client";
 import { parseRelayList } from "./parse-relay-list";
 
@@ -228,16 +214,14 @@ export function useNip46Login({
       };
 
       async function runBunkerFlow(): Promise<void> {
-        const clientSecretKey = generateSecretKey();
-        const { signer: nip46Signer, pubkey: pk } =
-          await connectNip46WithBunkerInput({
-            bunkerInput: nip46Input.trim(),
-            clientSecretKey,
+        const { signer, pubkey, config } =
+          await connectNip46WithBunkerInputForLogin({
+            bunkerInput: nip46Input,
             timeoutMs,
             retryCount,
           });
         if (attemptId !== attemptIdRef.current) return;
-        if (checkProfileMismatch(pk)) return;
+        if (checkProfileMismatch(pubkey)) return;
         recordCircuitBreakerSuccess("nip46");
         recordConnectionAttempt({
           signerType: "nip46",
@@ -246,100 +230,57 @@ export function useNip46Login({
           duration: Date.now() - startTime,
           retryCount,
         });
-        setActiveSignerConfig({
-          type: "nip46",
-          method: "bunker_input",
-          bunkerInput: nip46Input.trim(),
-          clientSecretKeyHex: serializeSecretKey(clientSecretKey),
-        });
-        setCurrentUserNpub(convertHexToNpub(pk));
-        const connectionView = matchOrCreateSession(
-          {
-            type: "nip46",
-            method: "bunker_input",
-            bunkerInput: nip46Input.trim(),
-            clientSecretKeyHex: serializeSecretKey(clientSecretKey),
-          },
-          { signerPubkey: pk }
-        );
-        setActiveSession(connectionView.id);
-        const detectedAppName = detectSignerAppName({
-          type: "nip46",
-          method: "bunker_input",
-          bunkerInput: nip46Input.trim(),
-          clientSecretKeyHex: serializeSecretKey(clientSecretKey),
-        });
-        updateSession(connectionView.id, {
-          metadata: {
-            ...connectionView.metadata,
-            pubkey: pk,
-            signerAppName: detectedAppName,
-            status: "active",
-            connectedAt: Date.now(),
-            lastActivityAt: Date.now(),
-          },
-        });
-        recordConnectionEvent(connectionView.id, {
-          type: "connected",
-          pubkey: pk,
-        });
+        persistNip46LoginSession(config, pubkey);
         onConnectionEnd?.();
         setStatus("idle");
         setNostrConnectUriState(null);
-        onSuccess(nip46Signer, pk);
+        onSuccess(signer, pubkey);
       }
 
       async function runNostrConnectFlow(): Promise<void> {
-        const created = createNip46NostrConnectUri({
+        const result = await connectNip46WithNostrConnectUriForLogin({
           relays,
+          timeoutMs,
+          retryCount,
           appName: "SmartFlowSocial",
-          ...getNostrConnectAppMetadata(),
-        });
-        if (attemptId !== attemptIdRef.current) return;
-        setNostrConnectUriState(created.uri);
-        const pending = {
-          uri: created.uri,
-          clientSecretKey: created.clientSecretKey.slice(0),
-          relays: [...created.relays],
-        };
-        pendingNostrConnectRef.current = pending;
-        try {
-          sessionStorage.setItem(
-            PENDING_NIP46_STORAGE_KEY,
-            JSON.stringify({
-              uri: pending.uri,
-              clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
-              relays: pending.relays,
-            })
-          );
-        } catch {
-          // ignore
-        }
-
-        let didCancel = false;
-        cancelRef.current = {
-          cancel: () => {
-            if (didCancel) return;
-            didCancel = true;
+          onUriCreated: (uri, pool, relaysToClose, clientSecretKey) => {
+            setNostrConnectUriState(uri);
+            const pending = {
+              uri,
+              clientSecretKey: clientSecretKey.slice(0),
+              relays: [...relaysToClose],
+            };
+            pendingNostrConnectRef.current = pending;
             try {
-              created.pool.close(created.relays);
+              sessionStorage.setItem(
+                PENDING_NIP46_STORAGE_KEY,
+                JSON.stringify({
+                  uri: pending.uri,
+                  clientSecretKeyHex: serializeSecretKey(
+                    pending.clientSecretKey
+                  ),
+                  relays: pending.relays,
+                })
+              );
             } catch {
               // ignore
             }
+            let didCancel = false;
+            cancelRef.current = {
+              cancel: () => {
+                if (didCancel) return;
+                didCancel = true;
+                try {
+                  pool.close(relaysToClose);
+                } catch {
+                  // ignore
+                }
+              },
+            };
           },
-        };
-
-        const { signer: nip46Signer, pubkey: pk } =
-          await connectNip46WithNostrConnectUri({
-            uri: created.uri,
-            clientSecretKey: created.clientSecretKey,
-            pool: created.pool,
-            timeoutMs,
-            relaysToCloseOnCancel: created.relays,
-            retryCount,
-          });
+        });
         if (attemptId !== attemptIdRef.current) return;
-        if (checkProfileMismatch(pk)) return;
+        if (checkProfileMismatch(result.pubkey)) return;
         recordCircuitBreakerSuccess("nip46");
         recordConnectionAttempt({
           signerType: "nip46",
@@ -352,65 +293,8 @@ export function useNip46Login({
         clearPendingNostrConnectStorage();
         setNostrConnectUriState(null);
         setStatus("idle");
-        const bunkerPointer =
-          "getBunkerPointer" in nip46Signer
-            ? (
-                nip46Signer as {
-                  getBunkerPointer(): {
-                    pubkey: string;
-                    relays: string[];
-                    secret: null | string;
-                  };
-                }
-              ).getBunkerPointer()
-            : undefined;
-        setActiveSignerConfig({
-          type: "nip46",
-          method: "nostrconnect_uri",
-          uri: created.uri,
-          relays: created.relays,
-          clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
-          signerPubkey: convertToHex(pk) ?? pk,
-          ...(bunkerPointer && { bunkerPointer }),
-        });
-        setCurrentUserNpub(convertHexToNpub(pk));
-        const connectionView = matchOrCreateSession(
-          {
-            type: "nip46",
-            method: "nostrconnect_uri",
-            uri: created.uri,
-            relays: created.relays,
-            clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
-            signerPubkey: convertToHex(pk) ?? pk,
-            ...(bunkerPointer && { bunkerPointer }),
-          },
-          { signerPubkey: pk }
-        );
-        setActiveSession(connectionView.id);
-        const detectedAppName = detectSignerAppName({
-          type: "nip46",
-          method: "nostrconnect_uri",
-          uri: created.uri,
-          relays: created.relays,
-          clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
-          signerPubkey: convertToHex(pk) ?? pk,
-          ...(bunkerPointer && { bunkerPointer }),
-        });
-        updateSession(connectionView.id, {
-          metadata: {
-            ...connectionView.metadata,
-            pubkey: pk,
-            signerAppName: detectedAppName,
-            status: "active",
-            connectedAt: Date.now(),
-            lastActivityAt: Date.now(),
-          },
-        });
-        recordConnectionEvent(connectionView.id, {
-          type: "connected",
-          pubkey: pk,
-        });
-        onSuccess(nip46Signer, pk);
+        persistNip46LoginSession(result.config, result.pubkey);
+        onSuccess(result.signer, result.pubkey);
       }
 
       try {
@@ -474,33 +358,29 @@ export function useNip46Login({
     const timeoutMs = 60_000;
     onConnectionStart?.(timeoutMs);
 
-    const pool = new SimplePool();
-    let didCancel = false;
-    cancelRef.current = {
-      cancel: () => {
-        if (didCancel) return;
-        didCancel = true;
-        try {
-          pool.close(pending.relays);
-        } catch {
-          // ignore
-        }
-      },
-    };
-
     try {
-      const { signer: nip46Signer, pubkey: pk } =
-        await connectNip46WithNostrConnectUri({
+      const { signer, pubkey, config } =
+        await connectNip46WithPendingUriForLogin({
           uri: pending.uri,
           clientSecretKey: pending.clientSecretKey,
-          pool,
+          relays: pending.relays,
           timeoutMs,
-          relaysToCloseOnCancel: pending.relays,
           retryCount: 1,
+          onPoolCreated: (pool, relaysToClose) => {
+            cancelRef.current = {
+              cancel: () => {
+                try {
+                  pool.close(relaysToClose);
+                } catch {
+                  // ignore
+                }
+              },
+            };
+          },
         });
       if (attemptId !== attemptIdRef.current) return;
 
-      if (expectedPubkey && pk !== expectedPubkey) {
+      if (expectedPubkey && pubkey !== expectedPubkey) {
         const err: Nip46LoginError = {
           code: "PROFILE_MISMATCH",
           message: PROFILE_MISMATCH_MESSAGE,
@@ -522,65 +402,8 @@ export function useNip46Login({
       clearPendingNostrConnectStorage();
       setNostrConnectUriState(null);
       setStatus("idle");
-      const bunkerPointer =
-        "getBunkerPointer" in nip46Signer
-          ? (
-              nip46Signer as {
-                getBunkerPointer(): {
-                  pubkey: string;
-                  relays: string[];
-                  secret: null | string;
-                };
-              }
-            ).getBunkerPointer()
-          : undefined;
-      setActiveSignerConfig({
-        type: "nip46",
-        method: "nostrconnect_uri",
-        uri: pending.uri,
-        relays: pending.relays,
-        clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
-        signerPubkey: convertToHex(pk) ?? pk,
-        ...(bunkerPointer && { bunkerPointer }),
-      });
-      setCurrentUserNpub(convertHexToNpub(pk));
-      const connectionView = matchOrCreateSession(
-        {
-          type: "nip46",
-          method: "nostrconnect_uri",
-          uri: pending.uri,
-          relays: pending.relays,
-          clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
-          signerPubkey: convertToHex(pk) ?? pk,
-          ...(bunkerPointer && { bunkerPointer }),
-        },
-        { signerPubkey: pk }
-      );
-      setActiveSession(connectionView.id);
-      const detectedAppName = detectSignerAppName({
-        type: "nip46",
-        method: "nostrconnect_uri",
-        uri: pending.uri,
-        relays: pending.relays,
-        clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
-        signerPubkey: convertToHex(pk) ?? pk,
-        ...(bunkerPointer && { bunkerPointer }),
-      });
-      updateSession(connectionView.id, {
-        metadata: {
-          ...connectionView.metadata,
-          pubkey: pk,
-          signerAppName: detectedAppName,
-          status: "active",
-          connectedAt: Date.now(),
-          lastActivityAt: Date.now(),
-        },
-      });
-      recordConnectionEvent(connectionView.id, {
-        type: "connected",
-        pubkey: pk,
-      });
-      onSuccess(nip46Signer, pk);
+      persistNip46LoginSession(config, pubkey);
+      onSuccess(signer, pubkey);
     } catch (e) {
       if (attemptId !== attemptIdRef.current) return;
       const n = normalizeError(e);

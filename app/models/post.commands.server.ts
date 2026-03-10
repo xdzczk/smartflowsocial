@@ -327,7 +327,6 @@ export async function createPostWithOutbox(
     });
 
     // Create read model event for post creation
-    // @ts-ignore - Dynamic imports work at runtime in CommonJS
     const { createOutboxEventInTransaction } =
       await import("~/infra/outbox/outbox.server");
     await createOutboxEventInTransaction(
@@ -412,7 +411,6 @@ export async function deletePost({
         },
       });
 
-      // @ts-ignore - Dynamic imports work at runtime in CommonJS
       const { createOutboxEventInTransaction } =
         await import("~/infra/outbox/outbox.server");
 
@@ -647,7 +645,6 @@ export async function updatePost({
   });
 
   // Emit POST_UPDATED event for read model updates
-  // @ts-ignore - Dynamic imports work at runtime in CommonJS
   const { createOutboxEvent } = await import("~/infra/outbox/outbox.server");
   void createOutboxEvent(
     "POST_UPDATED",

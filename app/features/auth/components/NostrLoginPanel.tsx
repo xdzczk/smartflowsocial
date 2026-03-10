@@ -2,11 +2,11 @@ import { useLocation, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import { clearPersistedState } from "~/features/auth/lifecycle-manager.client";
 import { postJson } from "~/features/auth/login-api.client";
 import {
   getResumeDelayMs,
   normalizeError,
-  type RelayStatus,
 } from "~/features/auth/login-flow.client";
 import { useNip07Login } from "~/features/auth/nip07-login.client";
 import { useNip46Login } from "~/features/auth/nip46-login.client";
@@ -16,22 +16,22 @@ import {
   getNostrConnectAppMetadata,
 } from "~/features/auth/nostr-signer.client";
 import { parseRelayList } from "~/features/auth/parse-relay-list";
+import {
+  cacheNip46SignerFromLogin,
+  clearActiveSignerConfig,
+  getActiveSignerConfig,
+} from "~/features/auth/signer";
 import type { NostrEvent } from "~/features/nostr/types";
 import {
   clearStoredReferralContext,
   getStoredReferralContext,
   setStoredReferralContext,
 } from "~/features/referral/referral-context.client";
-import { clearPersistedState } from "~/lib/lifecycle-manager.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import {
-  cacheNip46SignerFromLogin,
-  clearActiveSignerConfig,
-  getActiveSignerConfig,
-} from "~/lib/nostr-signer-manager.client";
 
 import { appendPrimalCallback } from "../reconnect-uri.client";
 import { useLoginPanelState } from "../useLoginPanelState.client";
+import { useRelayCheck } from "../useRelayCheck.client";
 
 import { LoginAwaitingProfileSelection } from "./LoginAwaitingProfileSelection";
 import { LoginFailed } from "./LoginFailed";
@@ -95,9 +95,10 @@ export default function NostrLoginPanel() {
   } = panelState;
 
   const errorRegionRef = useRef<HTMLDivElement | null>(null);
-  const relayCheckAttemptIdRef = useRef(0);
-  const relaySocketsRef = useRef<Map<string, WebSocket>>(new Map());
   const signerTransferredToManagerRef = useRef(false);
+
+  const { startRelayChecks, closeRelaySockets } =
+    useRelayCheck(setRelayStatuses);
 
   const nip07 = useNip07Login({
     expectedPubkey,
@@ -125,147 +126,6 @@ export default function NostrLoginPanel() {
   }, [location.search]);
 
   const relayUrls = useMemo(() => parseRelayList(relayList), [relayList]);
-
-  const closeRelaySockets = useCallback(() => {
-    relayCheckAttemptIdRef.current += 1;
-    relaySocketsRef.current.forEach((ws) => {
-      try {
-        ws.close();
-      } catch {
-        // ignore
-      }
-    });
-    relaySocketsRef.current.clear();
-  }, []);
-
-  const startRelayChecks = useCallback(
-    (relays: string[]) => {
-      if (typeof window === "undefined") return;
-      const attemptId = (relayCheckAttemptIdRef.current += 1);
-
-      // Close any previous checks before starting a new run.
-      relaySocketsRef.current.forEach((ws) => {
-        try {
-          ws.close();
-        } catch {
-          // ignore
-        }
-      });
-      relaySocketsRef.current.clear();
-
-      const now = Date.now();
-      setRelayStatuses(
-        Object.fromEntries(
-          relays.map((url) => [
-            url,
-            { url, status: "checking", checkedAt: now } satisfies RelayStatus,
-          ])
-        )
-      );
-
-      const timeoutMs = 2500;
-
-      for (const url of relays) {
-        try {
-          const ws = new WebSocket(url);
-          relaySocketsRef.current.set(url, ws);
-
-          let opened = false;
-          let closedByUs = false;
-
-          const timeout = window.setTimeout(() => {
-            if (attemptId !== relayCheckAttemptIdRef.current) return;
-            if (opened) return;
-            setRelayStatuses((prev) => ({
-              ...prev,
-              [url]: {
-                url,
-                status: "failed",
-                checkedAt: Date.now(),
-                error: "Timed out while connecting",
-              },
-            }));
-            try {
-              closedByUs = true;
-              ws.close();
-            } catch {
-              // ignore
-            }
-          }, timeoutMs);
-
-          ws.onopen = () => {
-            opened = true;
-            window.clearTimeout(timeout);
-            if (attemptId !== relayCheckAttemptIdRef.current) {
-              try {
-                closedByUs = true;
-                ws.close();
-              } catch {
-                // ignore
-              }
-              return;
-            }
-            setRelayStatuses((prev) => ({
-              ...prev,
-              [url]: { url, status: "connected", checkedAt: Date.now() },
-            }));
-            // We only need a connectivity check; close immediately to avoid extra open sockets.
-            try {
-              closedByUs = true;
-              ws.close();
-            } catch {
-              // ignore
-            }
-          };
-
-          ws.onerror = () => {
-            window.clearTimeout(timeout);
-            if (attemptId !== relayCheckAttemptIdRef.current) return;
-            setRelayStatuses((prev) => ({
-              ...prev,
-              [url]: {
-                url,
-                status: "failed",
-                checkedAt: Date.now(),
-                error: "Connection error",
-              },
-            }));
-          };
-
-          ws.onclose = (ev) => {
-            window.clearTimeout(timeout);
-            if (attemptId !== relayCheckAttemptIdRef.current) return;
-            if (opened) return;
-            if (closedByUs) return;
-            const reason = ev.reason ? ` (${ev.reason})` : "";
-            setRelayStatuses((prev) => ({
-              ...prev,
-              [url]: {
-                url,
-                status: "failed",
-                checkedAt: Date.now(),
-                error: `Closed before connect (code ${ev.code})${reason}`,
-              },
-            }));
-          };
-        } catch (e) {
-          if (attemptId !== relayCheckAttemptIdRef.current) return;
-          const msg =
-            e instanceof Error ? e.message : "Failed to create WebSocket";
-          setRelayStatuses((prev) => ({
-            ...prev,
-            [url]: {
-              url,
-              status: "failed",
-              checkedAt: Date.now(),
-              error: msg,
-            },
-          }));
-        }
-      }
-    },
-    [setRelayStatuses]
-  );
 
   // ref.current must not be in deps (mutable ref); compiler infers it—omit intentionally
   // eslint-disable-next-line react-hooks/preserve-manual-memoization -- nip46.cancelRef.current and signerTransferredToManagerRef.current are refs

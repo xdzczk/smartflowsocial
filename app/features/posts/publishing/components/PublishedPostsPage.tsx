@@ -47,8 +47,6 @@ import {
   extractPostData,
   extractLongFormPostData,
 } from "~/lib/validation/combined-content";
-import { comparePostDataByProperty } from "~/lib/validation/post-data-properties";
-import { getPostStats, getPostStatsValue } from "~/lib/validation/post-stats";
 
 import type { BulkComposerPayload } from "../hooks/usePublishedPosts";
 import { usePublishedPosts } from "../hooks/usePublishedPosts";
@@ -56,94 +54,9 @@ import {
   usePublishedPostsInfiniteData,
   useBulkDeletePostsMutation,
 } from "../hooks/usePublishedPostsQuery";
+import { sortPublishedPosts } from "../utils/published-posts-sort";
 
 import PublishedPostsTable from "./PublishedPostsTable";
-
-function getDateValue(publishedAt: Date | string | null | undefined): number {
-  if (publishedAt instanceof Date) {
-    return publishedAt.getTime();
-  }
-  if (publishedAt) {
-    return new Date(publishedAt).getTime();
-  }
-  return new Date(0).getTime();
-}
-
-function compareByDate(
-  a: PostData,
-  b: PostData,
-  direction: "asc" | "desc"
-): number {
-  const dateA = getDateValue(a.publishedAt);
-  const dateB = getDateValue(b.publishedAt);
-  return direction === "asc" ? dateA - dateB : dateB - dateA;
-}
-
-function getEventId(post: PostData): string {
-  return post.signedEvent &&
-    typeof post.signedEvent === "object" &&
-    "id" in post.signedEvent &&
-    typeof post.signedEvent.id === "string"
-    ? post.signedEvent.id
-    : "";
-}
-
-function compareByEngagementMetric(
-  a: PostData,
-  b: PostData,
-  sortKey: string,
-  direction: "asc" | "desc",
-  stats: Record<string, unknown> | undefined
-): number {
-  const aEventId = getEventId(a);
-  const bEventId = getEventId(b);
-
-  const aStats = getPostStats(stats, aEventId);
-  const bStats = getPostStats(stats, bEventId);
-  const aValue = getPostStatsValue(aStats, sortKey);
-  const bValue = getPostStatsValue(bStats, sortKey);
-  return direction === "asc" ? aValue - bValue : bValue - aValue;
-}
-
-function isEngagementMetric(key: string): boolean {
-  return [
-    "likes",
-    "replies",
-    "mentions",
-    "reposts",
-    "zaps",
-    "satszapped",
-  ].includes(key);
-}
-
-function sortPosts(
-  posts: PostData[],
-  sortConfig: { key: string; direction: "asc" | "desc" },
-  stats: Record<string, unknown> | undefined
-): PostData[] {
-  return [...posts].sort((a, b) => {
-    if (sortConfig.key === "publishedAt") {
-      return compareByDate(a, b, sortConfig.direction);
-    }
-
-    if (isEngagementMetric(sortConfig.key)) {
-      return compareByEngagementMetric(
-        a,
-        b,
-        sortConfig.key,
-        sortConfig.direction,
-        stats
-      );
-    }
-
-    return comparePostDataByProperty(
-      a,
-      b,
-      sortConfig.key,
-      sortConfig.direction
-    );
-  });
-}
 
 /* eslint-disable sonarjs/cognitive-complexity -- Page orchestrator: tabs, queue filters, table/list content, modals */
 export default function PublishedPostsPage() {
@@ -329,7 +242,7 @@ export default function PublishedPostsPage() {
   // Memoize sorted posts to prevent unnecessary re-sorting on every render
   // Must be called before any early returns to follow React Hooks rules
   const sortedPosts = useMemo(() => {
-    return sortPosts(
+    return sortPublishedPosts(
       posts,
       sortConfig,
       stats as Record<string, unknown> | undefined
@@ -646,5 +559,5 @@ export default function PublishedPostsPage() {
       ) : null}
     </div>
   );
-  /* eslint-enable sonarjs/cognitive-complexity */
 }
+/* eslint-enable sonarjs/cognitive-complexity */

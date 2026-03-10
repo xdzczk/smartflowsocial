@@ -7,26 +7,35 @@ import type {
   PostData,
 } from "~/features/posts/server";
 import {
-  AllContentListing,
-  BulkDraftsListing,
   ContentListPageHeader,
-  DraftBulkResume,
-  DraftsBulkActions,
-  DraftsTable,
   LongFormDetailsModal,
-  LongFormListing,
   PostDetailsModal,
-  PostTypeTabs,
-  QueueSelectionTabs,
   useDraftsInfiniteData,
   useDraftsState,
 } from "~/features/posts/ui";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
-import { convertDraftsPostsToPostDataArray } from "~/lib/validation/drafts-post-conversion";
 
-/* eslint-disable sonarjs/cognitive-complexity -- Page orchestrator: tab content (all/posts/longform), modals, sentinel */
+import { DraftsPageContent } from "./DraftsPageContent";
+
+function convertPostDataToDraftsPost(postData: PostData): {
+  id: string;
+  caption?: string | null;
+  createdAt: string;
+  [key: string]: unknown;
+} {
+  return {
+    ...postData,
+    createdAt:
+      postData.createdAt instanceof Date
+        ? postData.createdAt.toISOString()
+        : typeof postData.createdAt === "string"
+          ? postData.createdAt
+          : new Date().toISOString(),
+  };
+}
+
 export default function DraftsPage() {
   const [selectedLongFormPost, setSelectedLongFormPost] =
     useState<LongFormPostData | null>(null);
@@ -39,7 +48,6 @@ export default function DraftsPage() {
     queueTypes,
     selectedQueueType: _selectedQueueType,
     bulkDraftGroups,
-    isLoading: _isDataLoading,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -56,34 +64,9 @@ export default function DraftsPage() {
       },
     });
 
-  // Conversion function: PostData -> Post (for useDraftsState hook)
-  // useDraftsState expects Post with createdAt: string
-  const convertPostDataToDraftsPost = (
-    postData: PostData
-  ): {
-    id: string;
-    caption?: string | null;
-    createdAt: string;
-    [key: string]: unknown;
-  } => {
-    return {
-      ...postData,
-      createdAt:
-        postData.createdAt instanceof Date
-          ? postData.createdAt.toISOString()
-          : typeof postData.createdAt === "string"
-            ? postData.createdAt
-            : new Date().toISOString(),
-    };
-  };
-
   const params = useParams();
   const [searchParams] = useSearchParams();
-
-  // Check if we're on a child route (like edit)
-  const isChildRoute = params["id"];
-
-  // Get current tab from URL params - default to "all"
+  const isChildRoute = Boolean(params["id"]);
   const currentTab = searchParams.get("tab") ?? "all";
 
   const repostsCount = posts.filter((p) => isRepostPost(p)).length;
@@ -93,26 +76,32 @@ export default function DraftsPage() {
     sortConfig,
     setSortConfig,
     searchTerm,
+    setSearchTerm,
     selectedPost,
     selectedPosts,
     showAdvancedBulkResume,
+    setShowAdvancedBulkResume,
     filteredPosts,
     bulkDeleteFetcher,
     bulkResumeFetcher,
     requestSort,
-    setSearchTerm,
     setSelectedPost,
     togglePostSelection,
     toggleSelectAll,
     handleBulkDelete,
-    setShowAdvancedBulkResume,
   } = useDraftsState({
     posts: posts.map((post) => convertPostDataToDraftsPost(post)),
     allContent: allContent.map((c) => ({ id: c.id, type: c.type })),
     currentTab,
   });
 
-  // If we're on a child route, render the child component
+  const userTimeFormat =
+    user && typeof user === "object" && "timeFormat" in user
+      ? (user as { timeFormat?: string }).timeFormat === "24h"
+        ? "24h"
+        : "12h"
+      : "12h";
+
   if (isChildRoute) {
     return <Outlet />;
   }
@@ -121,138 +110,59 @@ export default function DraftsPage() {
     <div className="flex min-h-screen flex-col">
       <ContentListPageHeader pageType="drafts" currentTab={currentTab} />
 
-      <div className="border-border mb-6 flex flex-row flex-nowrap items-end gap-2 border-b">
-        <PostTypeTabs
-          currentTab={currentTab}
-          basePath="/dashboard/drafts"
-          totalContentCount={allContent.length}
-          totalPostsCount={postsCount}
-          totalRepostsCount={repostsCount}
-          totalLongformCount={longformPosts.length}
-          bulkCount={bulkDraftGroups.length}
-          inRow
-        />
-        {currentTab === "all" ||
-        currentTab === "posts" ||
-        currentTab === "reposts" ||
-        currentTab === "longform" ? (
-          <QueueSelectionTabs
-            currentTab={currentTab}
-            queueTypes={queueTypes}
-            basePath="/dashboard/drafts"
-          />
-        ) : null}
-      </div>
+      <DraftsPageContent
+        currentTab={currentTab}
+        allContentLength={allContent.length}
+        postsCount={postsCount}
+        repostsCount={repostsCount}
+        longformCount={longformPosts.length}
+        bulkCount={bulkDraftGroups.length}
+        queueTypes={queueTypes}
+        bulkDraftGroups={bulkDraftGroups}
+        allContent={allContent}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedPosts={selectedPosts}
+        togglePostSelection={togglePostSelection}
+        toggleSelectAll={toggleSelectAll}
+        handleBulkDelete={handleBulkDelete}
+        bulkDeleteFetcherState={bulkDeleteFetcher.state}
+        onPostSelectFromAll={(content) => {
+          if (content.type === "post") {
+            setSelectedPost(
+              convertPostDataToDraftsPost(content.originalData as PostData)
+            );
+          } else {
+            setSelectedLongFormPost(content.originalData as LongFormPostData);
+          }
+        }}
+        filteredPosts={filteredPosts}
+        sortConfig={sortConfig}
+        requestSort={requestSort}
+        setSortConfig={setSortConfig}
+        showAdvancedBulkResume={showAdvancedBulkResume}
+        setShowAdvancedBulkResume={setShowAdvancedBulkResume}
+        bulkResumeFetcherState={bulkResumeFetcher.state}
+        onPostClick={(post) => {
+          const originalPostData = posts.find((p) => p.id === post.id);
+          if (originalPostData) {
+            setSelectedPost(convertPostDataToDraftsPost(originalPostData));
+          }
+        }}
+        posts={posts}
+        userTimezone={user?.timezone ?? undefined}
+        userTimeFormat={userTimeFormat}
+        longformPosts={longformPosts}
+        onLongFormSelect={(post) =>
+          setSelectedLongFormPost(post as LongFormPostData)
+        }
+        isMobile={isMobile}
+        prefetchSentinelRef={prefetchSentinelRef}
+        sentinelRef={sentinelRef}
+        isFetchingNextPage={isFetchingNextPage}
+        setScrollRoot={setScrollRoot}
+      />
 
-      <div className="flex min-h-0 flex-1 flex-col">
-        {/* Content based on current tab */}
-        {currentTab === "bulk" ? (
-          <BulkDraftsListing groups={bulkDraftGroups} />
-        ) : currentTab === "all" ? (
-          <AllContentListing
-            content={allContent}
-            type="draft"
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            userTimezone={user?.timezone ?? undefined}
-            onPostSelect={(content) => {
-              if (content.type === "post") {
-                const postData = content.originalData as PostData;
-                setSelectedPost(convertPostDataToDraftsPost(postData));
-              } else {
-                setSelectedLongFormPost(
-                  content.originalData as LongFormPostData
-                );
-              }
-            }}
-            selectedItems={selectedPosts}
-            onToggleSelection={togglePostSelection}
-            onToggleSelectAll={toggleSelectAll}
-            showBulkActions={true}
-            onBulkDelete={handleBulkDelete}
-            bulkDeleteState={bulkDeleteFetcher.state}
-            prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-            sentinelRef={isMobile ? sentinelRef : undefined}
-            isFetchingNextPage={isFetchingNextPage}
-            onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-          />
-        ) : currentTab === "posts" || currentTab === "reposts" ? (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <DraftsBulkActions
-              selectedCount={selectedPosts.size}
-              onBulkEdit={() => setShowAdvancedBulkResume(true)}
-              onBulkDelete={handleBulkDelete}
-              isDeleting={bulkDeleteFetcher.state !== "idle"}
-              isResuming={bulkResumeFetcher.state !== "idle"}
-            />
-
-            <DraftsTable
-              posts={filteredPosts}
-              sortConfig={sortConfig}
-              onRequestSort={requestSort}
-              selectedPosts={selectedPosts}
-              onToggleSelection={togglePostSelection}
-              onToggleSelectAll={toggleSelectAll}
-              onPostClick={(post) => {
-                const originalPostData = posts.find((p) => p.id === post.id);
-                if (originalPostData) {
-                  setSelectedPost(
-                    convertPostDataToDraftsPost(originalPostData)
-                  );
-                }
-              }}
-              bulkDeleteState={bulkDeleteFetcher.state}
-              userTimezone={user?.timezone ?? undefined}
-              userTimeFormat={
-                user && typeof user === "object" && "timeFormat" in user
-                  ? user.timeFormat === "24h"
-                    ? "24h"
-                    : "12h"
-                  : "12h"
-              }
-              onSortChange={(key, direction) =>
-                setSortConfig({ key, direction })
-              }
-              prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-              sentinelRef={isMobile ? sentinelRef : undefined}
-              isFetchingNextPage={isFetchingNextPage}
-              onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-            />
-
-            {showAdvancedBulkResume ? (
-              <div className="bg-background fixed inset-0 z-50">
-                <DraftBulkResume
-                  selectedDrafts={convertDraftsPostsToPostDataArray(
-                    filteredPosts.filter((post) => selectedPosts.has(post.id)),
-                    posts
-                  )}
-                  queueTypes={queueTypes}
-                  onCancel={() => setShowAdvancedBulkResume(false)}
-                />
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <>
-            <LongFormListing
-              posts={longformPosts}
-              type="draft"
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              userTimezone={user?.timezone ?? undefined}
-              onPostSelect={(post) => {
-                setSelectedLongFormPost(post as LongFormPostData);
-              }}
-              prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-              sentinelRef={isMobile ? sentinelRef : undefined}
-              isFetchingNextPage={isFetchingNextPage}
-              onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Article detail modal: show when an article draft is selected (all or longform tab) */}
       {(currentTab === "all" || currentTab === "longform") &&
       selectedLongFormPost ? (
         <LongFormDetailsModal
@@ -263,29 +173,22 @@ export default function DraftsPage() {
         />
       ) : null}
 
-      {/* Short post detail modal: show when a draft post is selected (all, posts, or reposts tab) */}
       {(currentTab === "all" ||
         currentTab === "posts" ||
         currentTab === "reposts") &&
-      selectedPost
-        ? (() => {
-            const postData = posts.find((p) => p.id === selectedPost.id);
-            const combinedContent = allContent.find(
-              (c) => c.id === selectedPost.id
-            );
-            const postToShow = postData ?? combinedContent ?? selectedPost;
-            return (
-              <PostDetailsModal
-                post={postToShow as PostData | CombinedContent}
-                onClose={() => setSelectedPost(null)}
-                type="draft"
-                userTimezone={user?.timezone ?? undefined}
-              />
-            );
-          })()
-        : null}
+      selectedPost ? (
+        <PostDetailsModal
+          post={
+            (posts.find((p) => p.id === selectedPost.id) ??
+              allContent.find((c) => c.id === selectedPost.id) ??
+              selectedPost) as PostData | CombinedContent
+          }
+          onClose={() => setSelectedPost(null)}
+          type="draft"
+          userTimezone={user?.timezone ?? undefined}
+        />
+      ) : null}
 
-      {/* Scroll sentinel for infinite scroll (desktop only; on mobile sentinels are inside listing scroll container) */}
       {!isMobile ? (
         <>
           <div ref={prefetchSentinelRef} className="h-4 w-full" />
@@ -299,5 +202,4 @@ export default function DraftsPage() {
       ) : null}
     </div>
   );
-  /* eslint-enable sonarjs/cognitive-complexity */
 }

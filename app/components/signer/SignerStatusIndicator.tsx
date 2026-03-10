@@ -7,11 +7,11 @@ import { CheckCircle, TriangleAlert, Ban } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
+  getActiveConnection,
   getActiveSignerConfig,
   SIGNER_CONFIG_HYDRATED_EVENT,
-} from "~/lib/nostr-signer-manager.client";
-import { getActiveConnection } from "~/lib/remote-signer-sessions.client";
-import type { ConnectionStatus } from "~/lib/remote-signer-sessions.client";
+  type ConnectionStatus,
+} from "~/features/auth/signer";
 import {
   type Nip07Readiness,
   useNip07Readiness,

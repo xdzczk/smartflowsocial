@@ -1,9 +1,9 @@
-import { getActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
+import { getActiveSignerConfig } from "./nostr-signer-storage.client";
 import {
   createSession,
   getAllSessions,
   setActiveSession,
-} from "~/lib/remote-signer-sessions.client";
+} from "./remote-signer-sessions.client";
 
 const MIGRATION_FLAG_KEY = "__smartflow_remote_signer_migrated_v1";
 

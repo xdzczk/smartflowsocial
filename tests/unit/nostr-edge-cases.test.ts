@@ -228,7 +228,7 @@ describe("Nostr Edge Cases", () => {
         recovered: true,
       });
 
-      vi.doMock("~/lib/nostr-signer-manager.client", () => ({
+      vi.doMock("~/features/auth/signer", () => ({
         getActiveSignerConfig: () => ({
           type: "nip46",
           method: "bunker_input",
@@ -236,9 +236,12 @@ describe("Nostr Edge Cases", () => {
           clientSecretKeyHex: "aa",
         }),
         getActiveSigner,
-      }));
-      vi.doMock("~/lib/primary-signer-failover.client", () => ({
         attemptPrimarySignerFailover: mockPrimaryFailover,
+        recordSuccessfulSign: vi.fn(),
+        getActiveConnection: vi.fn().mockReturnValue(null),
+        recordConnectionEvent: vi.fn(),
+        emitRemoteSignerTimeoutEvent: vi.fn(),
+        resetCachedSigner: vi.fn(),
       }));
 
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
@@ -270,11 +273,9 @@ describe("Nostr Edge Cases", () => {
         recovered: false,
       });
 
-      vi.doMock("~/lib/nostr-signer-manager.client", () => ({
+      vi.doMock("~/features/auth/signer", () => ({
         getActiveSignerConfig: () => null,
         getActiveSigner: vi.fn().mockResolvedValue(null),
-      }));
-      vi.doMock("~/lib/primary-signer-failover.client", () => ({
         attemptPrimarySignerFailover: mockPrimaryFailover,
       }));
 
@@ -497,16 +498,17 @@ describe("Nostr Edge Cases", () => {
       vi.resetModules();
       const ping = vi.fn().mockResolvedValue(undefined);
       const getPublicKey = vi.fn().mockResolvedValue("pubkey-fallback");
-      vi.doMock("~/lib/nostr-signer-manager.client", () => ({
+      vi.doMock("~/features/auth/signer/nostr-signer-manager.client", () => ({
         getActiveSigner: vi.fn().mockResolvedValue({
           type: "nip46",
           ping,
           getPublicKey,
         }),
+        getActiveSignerConfig: vi.fn().mockReturnValue({ type: "nip46" }),
       }));
 
       const { testConnection } =
-        await import("~/lib/remote-signer-health.client");
+        await import("~/features/auth/signer/remote-signer-health.client");
       const result = await testConnection(200);
 
       expect(result.healthy).toBe(true);

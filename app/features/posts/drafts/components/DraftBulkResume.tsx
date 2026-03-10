@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
+  NOSTR_CONNECTION_HEALTHY_EVENT,
+  tryBackgroundReconnect,
+} from "~/features/auth/signer";
+import {
   getQueueAccentHex,
   getSelectedQueueStyle,
 } from "~/features/posts/queue-colors";
@@ -15,10 +19,6 @@ import {
 import type { QueueType, PostData } from "~/features/posts/types";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import {
-  NOSTR_CONNECTION_HEALTHY_EVENT,
-  tryBackgroundReconnect,
-} from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {

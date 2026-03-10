@@ -4,10 +4,12 @@ import { useEffect, useRef } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
+import {
+  clearActiveSignerConfig,
+  setCurrentUserNpub,
+} from "~/features/auth/signer";
 import { clearAllClientCacheOnLogout } from "~/lib/clear-client-cache.client";
-import { clearActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-import { setCurrentUserNpub } from "~/lib/remote-signer-sessions.client";
 // ============================================================================
 // Helper Functions
 // ============================================================================

@@ -38,7 +38,7 @@ export function useNip07Readiness(): Nip07Readiness {
         },
         nostrAdapterModule,
       ] = await Promise.all([
-        import("~/lib/nostr-signer-manager.client"),
+        import("~/features/auth/signer"),
         import("~/lib/nip07-readiness.client"),
         import("~/lib/nostr-adapter.client"),
       ]);

@@ -21,8 +21,8 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import type { RemoteSignerConnection } from "~/features/auth/signer";
 import { convertHexToNpub } from "~/lib/nostr-conversion";
-import type { RemoteSignerConnection } from "~/lib/remote-signer-sessions.client";
 
 import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
 

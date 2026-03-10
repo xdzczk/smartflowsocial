@@ -2,7 +2,7 @@ import type {
   ConnectionStatus,
   ConnectionLogEntry,
   RemoteSignerSession,
-} from "~/lib/remote-signer-sessions.client";
+} from "./remote-signer-sessions.client";
 import {
   getActiveConnection,
   getSessionByIdLegacy,
@@ -10,7 +10,7 @@ import {
   endCurrentSessionForConnection,
   updateSession,
   addConnectionLog,
-} from "~/lib/remote-signer-sessions.client";
+} from "./remote-signer-sessions.client";
 
 export type ConnectionEvent =
   | { type: "connected"; pubkey: string; duration?: number }

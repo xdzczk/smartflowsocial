@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import type { SignedEvent } from "~/features/nostr/types";
 import { logClientError } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -12,7 +13,6 @@ import {
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import { fromUnixTimestamp, formatForDisplay } from "~/lib/temporal";
 
 import { getSelectedQueueStyle } from "../queue-colors";

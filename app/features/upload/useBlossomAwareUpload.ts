@@ -118,9 +118,7 @@ export function useBlossomAwareUpload() {
       | "BLOSSOM_SFS"
       | "BLOSSOM_CUSTOM"
   ) => {
-    // @ts-ignore - Dynamic imports work in client-side Remix bundles
-    const { getWindowNostrLikeSigner } =
-      await import("~/lib/nostr-signer-manager.client");
+    const { getWindowNostrLikeSigner } = await import("~/features/auth/signer");
     const signer = await getWindowNostrLikeSigner();
     if (!signer) {
       throw new Error(

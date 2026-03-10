@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { setActiveSignerConfig } from "~/features/auth/signer";
 import {
   canAttemptCircuitBreaker,
   getCircuitBreakerStatus,
@@ -7,7 +8,6 @@ import {
   recordCircuitBreakerSuccess,
 } from "~/lib/nostr-circuit-breaker.client";
 import { recordConnectionAttempt } from "~/lib/nostr-connection-metrics.client";
-import { setActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
 
 import type { LoginError } from "./login-flow.client";
 import { normalizeError, PROFILE_MISMATCH_MESSAGE } from "./login-flow.client";

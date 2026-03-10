@@ -4,11 +4,11 @@
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import {
   formatAttemptElapsed,
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
-import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 
 export interface ComposerErrorsProps {
   /** Show "Waiting for signer approval" banner */

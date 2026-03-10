@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import {
   handleErrorSafely,
   logClientError,
@@ -18,7 +19,6 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
-import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import {
   fromDate,
   getNowForDateTimeLocal,

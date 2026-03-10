@@ -16,7 +16,7 @@ import {
   getCurrentPushSubscription,
   isPushSupported,
   getPushPermission,
-} from "~/lib/push-manager.client";
+} from "~/features/notifications/push-manager.client";
 
 interface NotificationSettingsProps {
   pushNotificationsEnabled: boolean;

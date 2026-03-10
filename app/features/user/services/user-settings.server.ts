@@ -1,3 +1,7 @@
+import {
+  isPrimarySignerProfile,
+  type PrimarySignerProfile,
+} from "~/features/auth/signer";
 import type { MutedListData } from "~/features/engagement/types";
 import { isSubscriptionActiveForGating } from "~/features/payments/subscriptions.server";
 import type {
@@ -49,10 +53,6 @@ import {
   updateRunwaySettingsRow,
   findUserForRunwayFallbackRow,
 } from "~/features/user/repositories/user-settings-data.server";
-import {
-  isPrimarySignerProfile,
-  type PrimarySignerProfile,
-} from "~/lib/primary-signer-profile";
 
 /**
  * Updates user's timezone

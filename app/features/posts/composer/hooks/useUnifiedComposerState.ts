@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { SIGNER_CONFIG_HYDRATED_EVENT } from "~/lib/nostr-signer-manager.client";
+import { SIGNER_CONFIG_HYDRATED_EVENT } from "~/features/auth/signer";
 
 import type { ComposerAttachment, RepostConditions } from "../../types";
 import type { DelayAfterMain } from "../../utils/delay-after-main";
@@ -64,8 +64,7 @@ export function useUnifiedComposerState({
 
   const refreshSignerState = useCallback(() => {
     void (async () => {
-      const { getActiveSignerConfig } =
-        await import("~/lib/nostr-signer-manager.client");
+      const { getActiveSignerConfig } = await import("~/features/auth/signer");
       const config = getActiveSignerConfig();
       setSignerReady(!!config);
       setSignerLabel(

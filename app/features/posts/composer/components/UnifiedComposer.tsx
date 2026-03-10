@@ -9,13 +9,13 @@ import React, { useEffect, useRef } from "react";
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import { ConfidencePanel } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { DraftPickerModal, usePostScheduling } from "~/features/posts/ui";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
-import { tryBackgroundReconnect } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";

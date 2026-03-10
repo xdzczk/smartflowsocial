@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { ActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
+import type { ActiveSignerConfig } from "~/features/auth/signer";
 import {
   addConnectionLog,
   createConnection,
@@ -20,7 +20,7 @@ import {
   setCurrentUserNpub,
   startNewSessionForConnection,
   updateSession,
-} from "~/lib/remote-signer-sessions.client";
+} from "~/features/auth/signer";
 
 class MemoryStorage implements Storage {
   private readonly data = new Map<string, string>();

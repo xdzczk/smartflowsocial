@@ -20,7 +20,7 @@ import { TooltipProvider } from "~/components/ui/tooltip";
 import { getUser, refreshUserProfileIfEmpty } from "~/features/auth";
 import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
 // Import migration to run on app load
-import "~/lib/remote-signer-sessions-migration.client";
+import "~/features/auth/signer/remote-signer-sessions-migration.client";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
 import { QueryProvider } from "~/lib/query/QueryProvider";

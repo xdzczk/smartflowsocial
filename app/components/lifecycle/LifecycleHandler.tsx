@@ -7,24 +7,22 @@ import { useFetcher, useLocation, useRevalidator } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 
-import { getAndClearCorrelationContext } from "~/lib/correlation-id.client";
 import {
   initLifecycleHandlers,
   getPersistedState,
   persistUIState,
   clearPersistedState,
-} from "~/lib/lifecycle-manager.client";
-import { getLocaleTimeAndDateFormat } from "~/lib/locale-defaults.client";
+} from "~/features/auth/lifecycle-manager.client";
 import {
   getActiveSignerConfig,
   setActiveSignerConfig,
   SIGNER_CONFIG_HYDRATED_EVENT,
-} from "~/lib/nostr-signer-manager.client";
-import { useOptionalUser } from "~/lib/remix-utils";
-import {
   getActiveConnection,
   setCurrentUserNpub,
-} from "~/lib/remote-signer-sessions.client";
+} from "~/features/auth/signer";
+import { getAndClearCorrelationContext } from "~/lib/correlation-id.client";
+import { getLocaleTimeAndDateFormat } from "~/lib/locale-defaults.client";
+import { useOptionalUser } from "~/lib/remix-utils";
 import { triggerForegroundSync } from "~/lib/sync-manager.client";
 
 /** Minimum ms between revalidates when app becomes visible (reduces PFP flicker on mobile PWA). */

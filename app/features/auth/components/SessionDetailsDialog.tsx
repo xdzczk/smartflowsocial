@@ -13,16 +13,16 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
-import { convertHexToNpub } from "~/lib/nostr-conversion";
 import {
   getConnectionHistory,
   getSessionHistory,
   getSessionsForConnection,
   maskConnectionUri,
   updateSession,
-} from "~/lib/remote-signer-sessions.client";
-import type { RemoteSignerConnection } from "~/lib/remote-signer-sessions.client";
+} from "~/features/auth/signer";
+import type { RemoteSignerConnection } from "~/features/auth/signer";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import { convertHexToNpub } from "~/lib/nostr-conversion";
 
 import { ConnectionHistory } from "./ConnectionHistory";
 import { ConnectionStatusBadge } from "./ConnectionStatusBadge";

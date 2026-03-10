@@ -1,54 +1,44 @@
-import { getPublicKey, generateSecretKey, SimplePool } from "nostr-tools";
+import { generateSecretKey, SimplePool } from "nostr-tools";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
-import { convertToHex } from "~/lib/nostr-conversion";
 import {
-  cacheNip46SignerFromLogin,
   clearActiveSignerConfig,
-  createNip46SignerFromStoredConfig,
-  getActiveSigner,
-  parseSecretKeyHex,
-  resetCachedSigner,
-  serializeSecretKey,
-  setActiveSignerConfig,
-  syncRelaysWithRemoteSigner,
-  type ActiveSignerConfig,
-} from "~/lib/nostr-signer-manager.client";
-import { attemptPrimarySignerFailover } from "~/lib/primary-signer-failover.client";
-import {
   detectSignerAppName,
   getActiveConnection,
+  getActiveSigner,
   getActiveSession,
   matchOrCreateSession,
+  parseSecretKeyHex,
+  recordConnectionEvent,
+  serializeSecretKey,
   setActiveSession,
+  setActiveSignerConfig,
+  syncRelaysWithRemoteSigner,
   updateSession,
-} from "~/lib/remote-signer-sessions.client";
-import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
+  type ActiveSignerConfig,
+} from "~/features/auth/signer";
+import { convertToHex } from "~/lib/nostr-conversion";
 
 import {
   connectNip46WithBunkerInput,
   connectNip46WithNostrConnectUri,
 } from "./nostr-signer.client";
+import { runExistingBunkerReconnect } from "./reconnect/reconnect-existing-bunker.client";
+import { handleExistingReconnectFailure as handleExistingReconnectFailureImpl } from "./reconnect/reconnect-existing-failure.client";
+import { runExistingNostrConnectReconnect } from "./reconnect/reconnect-existing-nostrconnect.client";
 import {
-  buildRelayUnion,
   DEFAULT_RELAYS,
-  DEFAULT_RELAYS_ARRAY,
   debugReconnectTrace,
-  EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS,
   EXISTING_SESSION_RECONNECT_TIMEOUTS_MS,
   METHOD_BUNKER_INPUT,
   PROFILE_MISMATCH_MESSAGE,
   RECONNECT_SUCCESS_TOAST_RETRY,
-  RELAY_UNION_CAP,
   TOAST_RECONNECT_SUCCESS,
 } from "./reconnect-dialog-utils.client";
 import { useRemoteSignerHealthPolling } from "./reconnect-health.client";
 import {
-  isConnectionLifecycleErrorMessage,
-  isExistingReconnectRunStale,
   shouldCancelExistingReconnectOnHidden,
-  shouldDeferExistingReconnectTerminalError,
   shouldResumeExistingReconnectOnVisible,
   type ExistingReconnectTrigger,
 } from "./reconnect-lifecycle.client";
@@ -145,109 +135,28 @@ export function useReconnectDialogState({
       runId: number;
       trigger: ExistingReconnectTrigger;
     }) => {
-      if (
-        isExistingReconnectRunStale({
-          currentRunId: existingReconnectRunIdRef.current,
-          runId: input.runId,
-        })
-      ) {
-        return;
-      }
-      if (closedByExternalReconnectRef.current) {
-        debugReconnectTrace(
-          "Skipping failure handling: dialog already closed by external reconnect"
-        );
-        return;
-      }
-
-      const errorMessage =
-        input.error instanceof Error
-          ? input.error.message
-          : String(input.error);
-      const lifecycleError = isConnectionLifecycleErrorMessage(errorMessage);
-
-      if (
-        input.trigger !== "foreground_resume" &&
-        shouldDeferExistingReconnectTerminalError({
-          lifecycleError,
-          wasHiddenDuringExistingReconnect:
-            wasHiddenDuringExistingReconnectRef.current,
-          trigger: input.trigger,
-          foregroundResumeAttemptFailed:
-            existingReconnectForegroundAttemptFailedRef.current,
-        })
-      ) {
-        debugReconnectTrace(
-          "Existing-connection reconnect failed during app-switch window; deferring terminal error",
-          { trigger: input.trigger, error: errorMessage }
-        );
-        setState("idle");
-        setExistingReconnectAttempt(0);
-        setError(null);
-        return;
-      }
-
-      debugReconnectTrace(
-        "Existing-connection reconnect failed; trying primary failover",
-        { error: errorMessage }
-      );
-
-      const fallback = await attemptPrimarySignerFailover({
-        expectedPubkey: expectedPubkeyHex,
-        labelFallback: "Primary Home Signer",
+      await handleExistingReconnectFailureImpl({
+        ...input,
+        getCurrentRunId: () => existingReconnectRunIdRef.current,
+        getClosedByExternalReconnect: () =>
+          closedByExternalReconnectRef.current,
+        getWasHiddenDuringExistingReconnect: () =>
+          wasHiddenDuringExistingReconnectRef.current,
+        getForegroundResumeAttemptFailed: () =>
+          existingReconnectForegroundAttemptFailedRef.current,
+        setState,
+        setError,
+        setExistingReconnectAttempt,
+        setForegroundResumeAttemptFailed: (v) => {
+          existingReconnectForegroundAttemptFailedRef.current = v;
+        },
+        syncRelaysAfterReconnect,
+        expectedPubkeyHex,
+        onReconnectSuccess,
+        onOpenChange,
+        toastSuccess: toast.success,
+        debugTrace: debugReconnectTrace,
       });
-      if (
-        isExistingReconnectRunStale({
-          currentRunId: existingReconnectRunIdRef.current,
-          runId: input.runId,
-        })
-      ) {
-        return;
-      }
-      if (fallback.recovered) {
-        debugReconnectTrace("Primary failover recovered reconnect");
-        await syncRelaysAfterReconnect();
-        setExistingReconnectAttempt(0);
-        setState("connected");
-        toast.success(TOAST_RECONNECT_SUCCESS);
-        const recoveredConnection = getActiveSession();
-        if (recoveredConnection) {
-          onReconnectSuccess?.(recoveredConnection.id);
-        }
-        onOpenChange(false);
-        return;
-      }
-      debugReconnectTrace("Primary failover did not recover reconnect", {
-        reason: fallback.reason ?? "unknown",
-      });
-
-      if (input.trigger === "foreground_resume") {
-        existingReconnectForegroundAttemptFailedRef.current = true;
-      } else if (
-        shouldDeferExistingReconnectTerminalError({
-          lifecycleError,
-          wasHiddenDuringExistingReconnect:
-            wasHiddenDuringExistingReconnectRef.current,
-          trigger: input.trigger,
-          foregroundResumeAttemptFailed:
-            existingReconnectForegroundAttemptFailedRef.current,
-        })
-      ) {
-        debugReconnectTrace(
-          "Suppressing terminal reconnect error until foreground resume attempt fails",
-          { trigger: input.trigger }
-        );
-        setState("idle");
-        setExistingReconnectAttempt(0);
-        setError(null);
-        return;
-      }
-
-      setState("idle");
-      setExistingReconnectAttempt(0);
-      setError(
-        "Could not reconnect with existing connection. If the connection is still in your signer app, switch to it, reactivate the connection, then return here — we'll retry automatically. Or generate a new connection string below."
-      );
     },
     [
       expectedPubkeyHex,
@@ -280,261 +189,36 @@ export function useReconnectDialogState({
         wasHiddenDuringExistingReconnectRef.current = false;
       }
 
-      type Nip46NostrConnectConfig = Extract<
-        ActiveSignerConfig,
-        { type: "nip46"; method: "nostrconnect_uri" }
-      >;
-      const ncConfig: Nip46NostrConnectConfig = connectionView.config;
-      const { uri, relays, clientSecretKeyHex } = ncConfig;
-      const signerPubkeyHex =
-        ncConfig.signerPubkey ??
-        (connectionView.metadata.pubkey
-          ? (convertToHex(connectionView.metadata.pubkey) ??
-            connectionView.metadata.pubkey)
-          : null);
-      const clientPubkeyHex = (() => {
-        try {
-          return getPublicKey(parseSecretKeyHex(clientSecretKeyHex));
-        } catch {
-          return null;
-        }
-      })();
-      debugReconnectTrace("Starting existing-connection reconnect", {
-        connectionId: connectionView.id,
-        client_pubkey: clientPubkeyHex,
-        relays,
-        method: "nostrconnect_uri",
-        relayCount: relays.length,
-        timeoutsMs: EXISTING_SESSION_RECONNECT_TIMEOUTS_MS,
-        expectedPubkeyHex,
-        status: connectionView.metadata.status,
-        lastActivityAt: connectionView.metadata.lastActivityAt,
-        trigger,
-      });
-
       setState("reconnecting_existing");
       setError(null);
 
-      let activePool: SimplePool | null = null;
-      const closePool = (pool: SimplePool | null) => {
-        if (!pool) return;
-        try {
-          pool.close(relays);
-        } catch {
-          // ignore
-        }
-      };
-      cancelRef.current = {
-        cancel: () => {
-          closePool(activePool);
-          activePool = null;
-        },
-      };
-
       try {
-        const clientSecretKey = parseSecretKeyHex(clientSecretKeyHex);
-        const tryConnect = async (
-          timeoutMs: number,
-          relaysToUse: string[]
-        ): Promise<{
-          signer: Awaited<
-            ReturnType<typeof createNip46SignerFromStoredConfig>
-          >["signer"];
-          pubkey: string;
-        }> => {
-          closePool(activePool);
-          const attemptPool = new SimplePool();
-          activePool = attemptPool;
-          if (signerPubkeyHex || ncConfig.bunkerPointer) {
-            const config: Nip46NostrConnectConfig = {
-              ...ncConfig,
-              relays: relaysToUse,
-              signerPubkey:
-                ncConfig.signerPubkey ?? signerPubkeyHex ?? undefined,
-              bunkerPointer: ncConfig.bunkerPointer
-                ? { ...ncConfig.bunkerPointer, relays: relaysToUse }
-                : ncConfig.bunkerPointer,
-            };
-            const { signer, pubkey } = await createNip46SignerFromStoredConfig(
-              config,
-              {
-                pool: attemptPool,
-                timeoutMs,
-              }
-            );
-            return { signer, pubkey };
-          }
-          const { signer, pubkey } = await connectNip46WithNostrConnectUri({
-            uri,
-            clientSecretKey,
-            pool: attemptPool,
-            timeoutMs,
-            relaysToCloseOnCancel: relaysToUse,
-          });
-          return { signer, pubkey };
-        };
-
-        let result: Awaited<ReturnType<typeof tryConnect>>;
-        let relaysUsed = relays;
-        try {
-          setExistingReconnectAttempt(1);
-          result = await tryConnect(
-            EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0],
-            relays
-          );
-        } catch (firstError) {
-          debugReconnectTrace(
-            "First existing-connection reconnect attempt failed",
-            {
-              error:
-                firstError instanceof Error
-                  ? firstError.message
-                  : String(firstError),
-            }
-          );
-          let relaysSecond = relays;
-          try {
-            const unionRelays = buildRelayUnion(
-              relays,
-              DEFAULT_RELAYS_ARRAY,
-              RELAY_UNION_CAP
-            );
-            if (unionRelays.length > 0) {
-              relaysSecond = unionRelays;
-            }
-          } catch {
-            // Keep original relays if build fails
-          }
-          await new Promise((resolve) =>
-            setTimeout(resolve, EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS)
-          );
-          try {
-            setExistingReconnectAttempt(2);
-            result = await tryConnect(
-              EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[1],
-              relaysSecond
-            );
-            relaysUsed = relaysSecond;
-          } catch {
-            debugReconnectTrace(
-              "Second existing-connection reconnect attempt failed"
-            );
-            throw firstError;
-          }
-        }
-
-        if (
-          isExistingReconnectRunStale({
-            currentRunId: existingReconnectRunIdRef.current,
-            runId,
-          })
-        ) {
-          try {
-            await result.signer.close();
-          } catch {
-            // ignore
-          }
-          activePool = null;
-          return;
-        }
-        const { signer, pubkey } = result;
-        if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
-          debugReconnectTrace("Existing-connection reconnect pubkey mismatch", {
-            expectedPubkeyHex,
-            receivedPubkey: pubkey,
-          });
-          try {
-            await signer.close();
-          } catch {
-            // ignore
-          }
-          activePool = null;
-          setError(PROFILE_MISMATCH_MESSAGE);
-          setState("failed");
-          return;
-        }
-
-        const config: ActiveSignerConfig = {
-          type: "nip46",
-          method: "nostrconnect_uri",
-          uri,
-          relays: relaysUsed,
-          clientSecretKeyHex,
-          signerPubkey: convertToHex(pubkey) ?? pubkey,
-        };
-
-        const detectedAppName = detectSignerAppName(config);
-        updateSession(connectionView.id, {
-          config: {
-            ...connectionView.config,
-            relays: relaysUsed,
-            signerPubkey: config.signerPubkey,
-            bunkerPointer: connectionView.config.bunkerPointer,
+        await runExistingNostrConnectReconnect({
+          connectionView,
+          expectedPubkeyHex,
+          trigger,
+          runId,
+          getIsRunStale: () => existingReconnectRunIdRef.current !== runId,
+          setCancel: (fn) => {
+            cancelRef.current = { cancel: fn };
           },
-          metadata: {
-            ...connectionView.metadata,
-            pubkey,
-            signerAppName: detectedAppName,
-            status: "active",
-            connectedAt: Date.now(),
-            lastActivityAt: Date.now(),
-            lastError: null,
-            relays: relaysUsed,
+          setState,
+          setError,
+          setExistingReconnectAttempt,
+          syncRelaysAfterReconnect,
+          onSuccess: (connectionId) => {
+            toast.success(TOAST_RECONNECT_SUCCESS);
+            onReconnectSuccess?.(connectionId);
+            onOpenChange(false);
           },
         });
-
-        recordConnectionEvent(connectionView.id, {
-          type: "connected",
-          pubkey,
-        });
-
-        setActiveSignerConfig(config);
-        cacheNip46SignerFromLogin(signer);
-        activePool = null;
-
-        const PING_VERIFY_MS = 5000;
-        if (typeof signer.ping === "function") {
-          try {
-            await Promise.race([
-              signer.ping(),
-              new Promise<never>((_, reject) =>
-                setTimeout(
-                  () => reject(new Error("Ping timeout")),
-                  PING_VERIFY_MS
-                )
-              ),
-            ]);
-          } catch {
-            resetCachedSigner();
-            setError(
-              "Connection could not be verified. Start a new session in your signer app (e.g. Primal), then tap Reconnect again."
-            );
-            setState("idle");
-            return;
-          }
-        }
-
-        await syncRelaysAfterReconnect();
-        if (existingReconnectRunIdRef.current !== runId) {
-          return;
-        }
-        debugReconnectTrace("Existing-connection reconnect succeeded", {
-          connectionId: connectionView.id,
-          pubkey,
-        });
-        setExistingReconnectAttempt(0);
-        setState("connected");
-        toast.success(TOAST_RECONNECT_SUCCESS);
-        onReconnectSuccess?.(connectionView.id);
-        onOpenChange(false);
       } catch (err) {
         await handleExistingReconnectFailure({ error: err, runId, trigger });
       } finally {
         if (existingReconnectRunIdRef.current === runId) {
           inFlightExistingReconnectRef.current = false;
         }
-        closePool(activePool);
-        activePool = null;
+        cancelRef.current?.cancel();
         cancelRef.current = null;
       }
     },
@@ -568,212 +252,37 @@ export function useReconnectDialogState({
         wasHiddenDuringExistingReconnectRef.current = false;
       }
 
-      type Nip46BunkerConfig = Extract<
-        ActiveSignerConfig,
-        { type: "nip46"; method: "bunker_input" }
-      >;
-      const bunkerConfig: Nip46BunkerConfig = connectionView.config;
-      const { bunkerInput: storedBunkerInput, clientSecretKeyHex } =
-        bunkerConfig;
-      const clientPubkeyHexBunker = (() => {
-        try {
-          return getPublicKey(parseSecretKeyHex(clientSecretKeyHex));
-        } catch {
-          return null;
-        }
-      })();
-      debugReconnectTrace("Starting existing-connection bunker reconnect", {
-        connectionId: connectionView.id,
-        client_pubkey: clientPubkeyHexBunker,
-        method: "bunker_input",
-        trigger,
-      });
-
       setState("reconnecting_existing");
       setError(null);
 
-      let activePool: SimplePool | null = null;
-      const bp = await parseBunkerInput(storedBunkerInput);
-      if (!bp) throw new Error("Invalid bunker input");
       try {
-        cancelRef.current = {
-          cancel: () => {
-            if (activePool && bp.relays.length) {
-              try {
-                activePool.close(bp.relays);
-              } catch {
-                // ignore
-              }
-            }
-            activePool = null;
+        await runExistingBunkerReconnect({
+          connectionView,
+          expectedPubkeyHex,
+          trigger,
+          runId,
+          getIsRunStale: () => existingReconnectRunIdRef.current !== runId,
+          setCancel: (fn) => {
+            cancelRef.current = { cancel: fn };
           },
-        };
-
-        const tryConnect = async (timeoutMs: number) => {
-          if (activePool) {
-            try {
-              activePool.close(bp.relays);
-            } catch {
-              // ignore
-            }
-            activePool = null;
-          }
-          const pool = new SimplePool();
-          activePool = pool;
-          const { signer, pubkey } = await createNip46SignerFromStoredConfig(
-            bunkerConfig,
-            {
-              pool,
-              timeoutMs,
-            }
-          );
-          return { signer, pubkey };
-        };
-
-        let result: Awaited<
-          ReturnType<typeof createNip46SignerFromStoredConfig>
-        >;
-        try {
-          setExistingReconnectAttempt(1);
-          result = await tryConnect(EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[0]);
-        } catch (firstError) {
-          debugReconnectTrace(
-            "First existing-connection bunker reconnect attempt failed",
-            {
-              error:
-                firstError instanceof Error
-                  ? firstError.message
-                  : String(firstError),
-            }
-          );
-          await new Promise((resolve) =>
-            setTimeout(resolve, EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS)
-          );
-          try {
-            setExistingReconnectAttempt(2);
-            result = await tryConnect(
-              EXISTING_SESSION_RECONNECT_TIMEOUTS_MS[1]
-            );
-          } catch {
-            debugReconnectTrace(
-              "Second existing-connection bunker reconnect attempt failed"
-            );
-            throw firstError;
-          }
-        }
-
-        if (
-          isExistingReconnectRunStale({
-            currentRunId: existingReconnectRunIdRef.current,
-            runId,
-          })
-        ) {
-          try {
-            await result.signer.close();
-          } catch {
-            // ignore
-          }
-          activePool = null;
-          return;
-        }
-        const { signer, pubkey } = result;
-        if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
-          debugReconnectTrace(
-            "Existing-connection bunker reconnect pubkey mismatch",
-            { expectedPubkeyHex, receivedPubkey: pubkey }
-          );
-          try {
-            await signer.close();
-          } catch {
-            // ignore
-          }
-          activePool = null;
-          setError(PROFILE_MISMATCH_MESSAGE);
-          setState("failed");
-          return;
-        }
-
-        const config: ActiveSignerConfig = {
-          type: "nip46",
-          method: "bunker_input",
-          bunkerInput: storedBunkerInput,
-          clientSecretKeyHex,
-        };
-
-        const detectedAppName = detectSignerAppName(config);
-        updateSession(connectionView.id, {
-          metadata: {
-            ...connectionView.metadata,
-            pubkey,
-            signerAppName: detectedAppName,
-            status: "active",
-            connectedAt: Date.now(),
-            lastActivityAt: Date.now(),
-            lastError: null,
+          setState,
+          setError,
+          setExistingReconnectAttempt,
+          syncRelaysAfterReconnect,
+          onSuccess: (connectionId) => {
+            toast.success(TOAST_RECONNECT_SUCCESS);
+            onReconnectSuccess?.(connectionId);
+            onOpenChange(false);
           },
         });
-
-        recordConnectionEvent(connectionView.id, {
-          type: "connected",
-          pubkey,
-        });
-
-        setActiveSignerConfig(config);
-        cacheNip46SignerFromLogin(signer);
-        activePool = null;
-
-        const PING_VERIFY_MS_BUNKER = 5000;
-        if (typeof signer.ping === "function") {
-          try {
-            await Promise.race([
-              signer.ping(),
-              new Promise<never>((_, reject) =>
-                setTimeout(
-                  () => reject(new Error("Ping timeout")),
-                  PING_VERIFY_MS_BUNKER
-                )
-              ),
-            ]);
-          } catch {
-            resetCachedSigner();
-            setError(
-              "Connection could not be verified. Start a new session in your signer app (e.g. Primal), then tap Reconnect again."
-            );
-            setState("idle");
-            return;
-          }
-        }
-
-        await syncRelaysAfterReconnect();
-        if (existingReconnectRunIdRef.current !== runId) return;
-        debugReconnectTrace("Existing-connection bunker reconnect succeeded", {
-          connectionId: connectionView.id,
-          pubkey,
-        });
-        setExistingReconnectAttempt(0);
-        setState("connected");
-        toast.success(TOAST_RECONNECT_SUCCESS);
-        onReconnectSuccess?.(connectionView.id);
-        onOpenChange(false);
       } catch (err) {
         await handleExistingReconnectFailure({ error: err, runId, trigger });
       } finally {
         if (existingReconnectRunIdRef.current === runId) {
           inFlightExistingReconnectRef.current = false;
         }
+        cancelRef.current?.cancel();
         cancelRef.current = null;
-        const poolToClose = activePool;
-        activePool = null;
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- activePool may be null; poolToClose used in finally
-        if (poolToClose != null) {
-          try {
-            const bpForClose = await parseBunkerInput(storedBunkerInput);
-            if (bpForClose?.relays.length)
-              (poolToClose as SimplePool).close(bpForClose.relays);
-          } catch {
-            // ignore
-          }
-        }
       }
     },
     [

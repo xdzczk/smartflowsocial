@@ -7,6 +7,7 @@ import { getPublicKey } from "nostr-tools";
 
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { isMobile } from "~/lib/is-mobile";
+
 import {
   cacheNip46SignerFromLogin,
   createNip46SignerFromStoredConfig,
@@ -18,19 +19,19 @@ import {
   teardownActiveNip46Signer,
   teardownVisibilityHandler,
   tryBackgroundReconnect,
-} from "~/lib/nostr-signer-connection.client";
+} from "./nostr-signer-connection.client";
 import {
   hexToBytes,
   parseSecretKeyHex,
   serializeSecretKey,
-} from "~/lib/nostr-signer-keys.client";
+} from "./nostr-signer-keys.client";
 import {
   clearActiveSignerConfig as storageClearActiveSignerConfig,
   getActiveSignerConfig as storageGetActiveSignerConfig,
   setActiveSignerConfig as storageSetActiveSignerConfig,
   type ActiveSignerConfig,
   STORAGE_KEY,
-} from "~/lib/nostr-signer-storage.client";
+} from "./nostr-signer-storage.client";
 
 // Re-export types and storage key
 export type { ActiveSignerConfig };
@@ -87,10 +88,11 @@ export async function getWindowNostrLikeSigner(): Promise<{
       signEvent: async (event: NostrEvent) => await active.signEvent(event),
     };
   }
-  // @ts-ignore - injected at runtime by extensions
   if (typeof window !== "undefined" && window.nostr) {
-    // @ts-ignore - injected at runtime by extensions
-    return window.nostr;
+    return window.nostr as {
+      getPublicKey: () => Promise<string>;
+      signEvent: (event: NostrEvent) => Promise<SignedEvent>;
+    };
   }
   return null;
 }

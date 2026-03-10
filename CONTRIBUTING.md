@@ -379,19 +379,24 @@ All features have `index.ts` files that export their public API:
 
 ### 6. **Lint and type suppression policy**
 
-- **Prefer fixing code over adding a suppression.** Only add `eslint-disable`, `@ts-ignore`, or
-  `@ts-expect-error` when necessary (e.g. interop with untyped libs, known safe escape hatches).
-- **Every suppression must have a comment** explaining why it is there. For temporary suppressions
-  (e.g. during a refactor), add a TODO and ticket:
+- **Prefer fixing code over adding a suppression.** Only add `eslint-disable` or `@ts-expect-error`
+  when necessary (e.g. interop with untyped libs, known safe escape hatches). Prefer
+  `@ts-expect-error` over `@ts-ignore` so suppressions are intentional and trackable.
+- **Visa standard:** Every suppression must have a **trailing comment** explaining why. Categories:
+  **Acceptable** (documented interop; no expiry), **Temporary** (migration in progress; must have
+  `TODO(TICKET-XXX): remove after …`), **Must fix** (code smell or missing comment; remove when
+  touching the file or re-categorize with proper comment). Any disable without a comment is Must fix
+  until justified or removed. For temporary suppressions, add a TODO and ticket, e.g.
   `// TODO(REFACTOR-123): remove after splitting queues.server`.
 - **Categorize suppressions** when auditing: **Acceptable** (documented interop), **Temporary**
   (migration in progress), **Must fix** (code smell to remove when touching the file). "Must fix"
   items go into the engineering backlog.
 - **When working in a file** that has "must fix" or "temporary" suppressions, fix or remove them in
   the same PR when feasible.
-- To produce a full audit list: run `./scripts/audit-suppressions.sh [app|tests|all]` (outputs TSV:
-  file, line, match, category). Fill the category column when categorizing (Acceptable / Temporary /
-  Must fix). Maintain the backlog and reduce over time.
+- **Audit:** Run `./scripts/audit-suppressions.sh [app|tests|all]` for raw TSV (file, line, match).
+  For app with rule and comment columns: `node scripts/audit-suppressions-app.js`. See
+  [suppressions audit (app)](docs/reference/suppressions-audit-app.md) for categorization criteria
+  and maintenance.
 
 ### 7. **Logging**
 

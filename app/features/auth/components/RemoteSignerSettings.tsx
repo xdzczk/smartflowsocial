@@ -1,5 +1,4 @@
 import { useFetcher } from "@remix-run/react";
-import { Search, Plus, RefreshCw, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -11,31 +10,28 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
 import { Separator } from "~/components/ui/separator";
-import { teardownActiveNip46Signer } from "~/lib/nostr-signer-manager.client";
-import { testPrimarySignerProfileConnection } from "~/lib/primary-signer-failover.client";
-import {
-  type PrimarySignerProfile,
-  isPrimarySignerProfile,
-} from "~/lib/primary-signer-profile";
-import { useOptionalUser } from "~/lib/remix-utils";
-import { testConnection } from "~/lib/remote-signer-health.client";
-import { REMOTE_SIGNER_TIMEOUT_EVENT } from "~/lib/remote-signer-reconnect.client";
 import {
   clearActiveSession,
   getAllConnections,
   getActiveConnection,
   getConnectionHistory,
+  isPrimarySignerProfile,
+  recordConnectionEvent,
+  REMOTE_SIGNER_TIMEOUT_EVENT,
   removeConnection,
   setActiveConnection,
-} from "~/lib/remote-signer-sessions.client";
-import type { RemoteSignerConnection } from "~/lib/remote-signer-sessions.client";
-import { recordConnectionEvent } from "~/lib/remote-signer-status.client";
+  teardownActiveNip46Signer,
+  testConnection,
+  testPrimarySignerProfileConnection,
+  type PrimarySignerProfile,
+  type RemoteSignerConnection,
+} from "~/features/auth/signer";
+import { useOptionalUser } from "~/lib/remix-utils";
 
-import { ConnectionHistory } from "./ConnectionHistory";
+import { RemoteSignerConnectionList } from "./RemoteSignerConnectionList";
+import { RemoteSignerHealthSection } from "./RemoteSignerHealthSection";
 import { RemoteSignerReconnectDialog } from "./RemoteSignerReconnectController";
-import { SessionCard } from "./SessionCard";
 import { SessionDetailsDialog } from "./SessionDetailsDialog";
 
 interface RemoteSignerSettingsProps {
@@ -181,16 +177,6 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
       clearInterval(healthCheckInterval);
     };
   }, [loadConnections]);
-
-  const filteredConnections = connections.filter((conn) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      conn.label.toLowerCase().includes(query) ||
-      (conn.metadata.signerAppName?.toLowerCase().includes(query) ?? false) ||
-      (conn.metadata.pubkey?.toLowerCase().includes(query) ?? false)
-    );
-  });
 
   const handleReconnect = useCallback(
     (connectionId: string) => {
@@ -340,116 +326,28 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
-              <Input
-                id="remote-signer-sessions-search"
-                name="remote-signer-sessions-search"
-                placeholder="Search connections..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8"
-              />
-              {searchQuery ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              ) : null}
-            </div>
-            <Button
-              onClick={() => setReconnectDialogOpen(true)}
-              className="w-full sm:w-auto"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Connection
-            </Button>
-          </div>
-
-          {filteredConnections.length === 0 ? (
-            <div className="text-muted-foreground rounded-md border p-8 text-center">
-              {searchQuery
-                ? "No connections match your search"
-                : "No remote signer connections. Click 'Add Connection' to create one."}
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {filteredConnections.map((connection) => (
-                <SessionCard
-                  key={connection.id}
-                  connection={connection}
-                  isActive={activeConnection?.id === connection.id}
-                  onReconnect={handleReconnect}
-                  onSetActive={handleSetActive}
-                  onViewDetails={handleViewDetails}
-                  onRemove={handleRemove}
-                />
-              ))}
-            </div>
-          )}
+          <RemoteSignerConnectionList
+            connections={connections}
+            activeConnection={activeConnection}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onReconnect={handleReconnect}
+            onSetActive={handleSetActive}
+            onViewDetails={handleViewDetails}
+            onRemove={handleRemove}
+            onAddClick={() => setReconnectDialogOpen(true)}
+          />
 
           {activeConnection ? (
             <>
               <Separator className="my-4" />
-              <div>
-                <div className="mb-4">
-                  <h3 className="mb-2 text-lg font-semibold">
-                    Active Connection
-                  </h3>
-                  <div className="bg-muted/30 rounded-md border p-4">
-                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="font-medium">
-                          {activeConnection.label}
-                        </div>
-                        <div className="text-muted-foreground text-sm break-words">
-                          {activeConnection.metadata.signerAppName ??
-                            "Unknown Signer"}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            void handleTestConnection();
-                          }}
-                          disabled={isTestingConnection}
-                        >
-                          <RefreshCw
-                            className={`mr-2 h-4 w-4 ${isTestingConnection ? "animate-spin" : ""}`}
-                          />
-                          Test Connection
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleDisconnect}
-                        >
-                          Disconnect
-                        </Button>
-                      </div>
-                    </div>
-
-                    <Separator className="my-3" />
-                    <div>
-                      <h4 className="mb-2 text-sm font-medium">
-                        Recent Runtime Events
-                      </h4>
-                      <ConnectionHistory
-                        entries={getConnectionHistory(
-                          activeConnection.id
-                        ).slice(0, 5)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <RemoteSignerHealthSection
+                activeConnection={activeConnection}
+                isTestingConnection={isTestingConnection}
+                onTestConnection={() => void handleTestConnection()}
+                onDisconnect={handleDisconnect}
+                getConnectionHistory={getConnectionHistory}
+              />
             </>
           ) : null}
         </CardContent>

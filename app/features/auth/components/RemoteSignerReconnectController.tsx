@@ -11,12 +11,12 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { convertToHex } from "~/lib/nostr-conversion";
-import { useOptionalUser } from "~/lib/remix-utils";
 import {
   OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
   type ReconnectDialogOpenMode,
-} from "~/lib/remote-signer-reconnect.client";
+} from "~/features/auth/signer";
+import { convertToHex } from "~/lib/nostr-conversion";
+import { useOptionalUser } from "~/lib/remix-utils";
 
 import { useReconnectDialogState } from "../useReconnectDialogState.client";
 

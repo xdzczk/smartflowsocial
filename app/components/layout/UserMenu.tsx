@@ -15,10 +15,10 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Separator } from "~/components/ui/separator";
+import { clearActiveSignerConfig } from "~/features/auth/signer";
 import type { ProfileData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
 import { formatNpubShort } from "~/lib/nostr-conversion";
-import { clearActiveSignerConfig } from "~/lib/nostr-signer-manager.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 interface UserWithProfile {
