@@ -58,6 +58,9 @@ vi.mock("~/lib/prisma.server", () => ({
     user: {
       findUnique: vi.fn(),
     },
+    subscription: {
+      findUnique: vi.fn(),
+    },
     $use: vi.fn(),
     $transaction: vi.fn((callback) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
@@ -135,6 +138,11 @@ describe("Queue Worker Edge Cases", () => {
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
 
+    // Relay resolution: subscription lookup (isBlastrEnabledForUserFromDb)
+    (
+      prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({ status: "INACTIVE", Plan: null });
+
     // By default, allow lease acquisition/release
     (prisma.post.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({
       count: 1,
@@ -210,8 +218,8 @@ describe("Queue Worker Edge Cases", () => {
         nostrEventId: null,
       });
 
-      // updatePostStatus was removed - state transitions now use PostStateMachine
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      // Relay resolution uses prisma.user.findUnique (getRelayIntentFromDb), not getUserById
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
 
@@ -249,8 +257,7 @@ describe("Queue Worker Edge Cases", () => {
         nostrEventId: null,
       });
 
-      // updatePostStatus was removed - state transitions now use PostStateMachine
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
 
@@ -375,8 +382,7 @@ describe("Queue Worker Edge Cases", () => {
       // in the worker code will handle preventing duplicate processing)
       mockTransition.mockResolvedValue(undefined);
 
-      // updatePostStatus was removed - state transitions now use PostStateMachine
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
 
@@ -486,7 +492,7 @@ describe("Queue Worker Edge Cases", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      // Mock Prisma to return null (post not found)
+      // Mock Prisma to return null (post not found); worker skips and returns success
       (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       );
@@ -494,7 +500,8 @@ describe("Queue Worker Edge Cases", () => {
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
-      await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow();
+      const result = await scheduledPostsWorker.process(mockJob);
+      expect(result).toMatchObject({ success: true, skipped: true });
     });
 
     it("should handle missing signedEvent in job data", async () => {

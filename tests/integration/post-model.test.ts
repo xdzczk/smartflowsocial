@@ -43,6 +43,13 @@ const { mockPrisma } = vi.hoisted(() => {
     longFormPost: {
       findFirst: vi.fn(),
     },
+    outboxEvent: {
+      create: vi.fn().mockResolvedValue({}),
+    },
+    $transaction: vi.fn(
+      async (callback: (tx: typeof mockPrisma) => Promise<unknown>) =>
+        callback(mockPrisma)
+    ),
   };
   return { mockPrisma };
 });
@@ -256,8 +263,14 @@ describe("Post Model Functions", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         content: "Test content",
+        signedEvent: null,
+        nostrEvent: null,
+        nostrEventId: null,
       };
 
+      (
+        mockPrisma.post.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
       (mockPrisma.post.delete as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
       );
@@ -343,33 +356,34 @@ describe("Post Model Functions", () => {
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
       );
+      (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(2);
 
       const result = await getScheduledPosts({
         userId: TEST_USER_ID,
         queueType: "posts",
       });
 
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment -- Vitest expect.objectContaining */
       expect(
         mockPrisma.post.findMany as ReturnType<typeof vi.fn>
-      ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-        where: expect.objectContaining({
-          userId: TEST_USER_ID,
-          currentState: "SCHEDULED",
-          queueType: {
-            name: "posts",
-          },
-        }),
-        include: {
-          queueType: true,
-          hashTagPreset: true,
-          template: true,
-        },
-        orderBy: {
-          scheduledAtUtc: "asc",
-        },
-      });
-      expect(result).toEqual(mockPosts);
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: TEST_USER_ID,
+            currentState: "SCHEDULED",
+            queueType: { name: "posts" },
+          }),
+          include: expect.objectContaining({
+            queueType: true,
+            hashTagPreset: true,
+            template: true,
+          }),
+          orderBy: { scheduledAtUtc: "asc" },
+        })
+      );
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment */
+      expect(result.posts).toEqual(mockPosts);
+      expect(result.pagination).toBeDefined();
     });
 
     it("should get all scheduled posts when queueType is 'all'", async () => {
@@ -385,30 +399,33 @@ describe("Post Model Functions", () => {
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
       );
+      (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const result = await getScheduledPosts({
         userId: TEST_USER_ID,
         queueType: "all",
       });
 
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment -- Vitest expect.objectContaining */
       expect(
         mockPrisma.post.findMany as ReturnType<typeof vi.fn>
-      ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-        where: expect.objectContaining({
-          userId: TEST_USER_ID,
-          currentState: "SCHEDULED",
-        }),
-        include: {
-          queueType: true,
-          hashTagPreset: true,
-          template: true,
-        },
-        orderBy: {
-          scheduledAtUtc: "asc",
-        },
-      });
-      expect(result).toEqual(mockPosts);
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: TEST_USER_ID,
+            currentState: "SCHEDULED",
+          }),
+          include: expect.objectContaining({
+            queueType: true,
+            hashTagPreset: true,
+            template: true,
+          }),
+          orderBy: { scheduledAtUtc: "asc" },
+        })
+      );
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment */
+      expect(result.posts).toEqual(mockPosts);
+      expect(result.pagination).toBeDefined();
     });
   });
 
@@ -436,26 +453,25 @@ describe("Post Model Functions", () => {
         queueType: "posts",
       });
 
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment -- Vitest expect.objectContaining */
       expect(
         mockPrisma.post.findMany as ReturnType<typeof vi.fn>
-      ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-        where: expect.objectContaining({
-          userId: TEST_USER_ID,
-          currentState: "PUBLISHED",
-          queueType: {
-            name: "posts",
-          },
-        }),
-        include: {
-          queueType: true,
-        },
-        orderBy: {
-          publishedAt: "desc",
-        },
-        skip: 0,
-        take: 50,
-      });
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: TEST_USER_ID,
+            currentState: "PUBLISHED",
+            queueType: { name: "posts" },
+          }),
+          include: expect.objectContaining({
+            queueType: true,
+          }),
+          orderBy: { publishedAt: "desc" },
+          skip: 0,
+          take: 50,
+        })
+      );
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment */
       expect(result).toEqual({
         posts: mockPosts,
         pagination: {

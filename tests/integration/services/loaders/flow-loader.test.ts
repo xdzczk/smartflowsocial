@@ -8,11 +8,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("~/models/longformpost.server", () => ({
   getScheduledLongFormPosts: vi.fn(),
   getPastLongFormPosts: vi.fn(),
+  getLatestScheduledLongFormAtUtc: vi.fn(),
 }));
 
 vi.mock("~/models/post.queries.server", () => ({
   getScheduledPosts: vi.fn(),
   getPastPosts: vi.fn(),
+  getLatestScheduledAtUtc: vi.fn(),
 }));
 
 vi.mock("~/features/user/services/user-cache.server", () => ({
@@ -39,14 +41,25 @@ import {
 import {
   getScheduledLongFormPosts,
   getPastLongFormPosts,
+  getLatestScheduledLongFormAtUtc,
 } from "~/models/longformpost.server";
-import { getScheduledPosts, getPastPosts } from "~/models/post.queries.server";
+import {
+  getScheduledPosts,
+  getPastPosts,
+  getLatestScheduledAtUtc,
+} from "~/models/post.queries.server";
 
 describe("Flow Loader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (getPastPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getPastLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getLatestScheduledAtUtc as ReturnType<typeof vi.fn>).mockResolvedValue(
+      null
+    );
+    (
+      getLatestScheduledLongFormAtUtc as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(null);
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       pagination: { total: 0, pages: 0, currentPage: 1, limit: 30 },

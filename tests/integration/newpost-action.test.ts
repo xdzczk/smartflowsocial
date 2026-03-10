@@ -16,17 +16,33 @@ vi.mock("~/features/user", () => ({
   getHashTagPresetById: vi.fn(),
 }));
 
-// Mock use cases: override only these on server so handleNewPostAction remains real
+// Use cases: handlers import CreatePostUseCase from the use-case module, so mock there
 const mockCreatePostExecute = vi.fn();
 const mockPublishNowExecute = vi.fn();
+
+vi.mock(
+  "~/features/posts/composer/use-cases/create-post.use-case.server",
+  () => ({
+    CreatePostUseCase: class {
+      execute = mockCreatePostExecute;
+    },
+  })
+);
+
+// Handlers import PublishNowUseCase from server (which re-exports from publishing); mock at source
+vi.mock(
+  "~/features/posts/publishing/use-cases/publish-now.use-case.server",
+  () => ({
+    PublishNowUseCase: class {
+      execute = mockPublishNowExecute;
+    },
+  })
+);
 
 vi.mock("~/features/posts/server", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, unknown>),
-    CreatePostUseCase: class {
-      execute = mockCreatePostExecute;
-    },
     PublishNowUseCase: class {
       execute = mockPublishNowExecute;
     },
@@ -41,6 +57,14 @@ vi.mock("~/features/upload/s3.server", () => ({
   createUploadHandler: vi.fn(() => vi.fn()),
 }));
 
+// Relay resolution (resolveExecutionRelays) uses prisma.user + subscription
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: {
+    user: { findUnique: vi.fn() },
+    subscription: { findUnique: vi.fn() },
+  },
+}));
+
 // Mock global fetch for Nostr publisher
 global.fetch = vi.fn();
 
@@ -53,6 +77,7 @@ import {
   getQueueTypes,
   getHashTagPresetById,
 } from "~/features/user";
+import { prisma } from "~/lib/prisma.server";
 // Use cases are mocked above
 
 describe("New Post Action Handler", () => {
@@ -60,6 +85,14 @@ describe("New Post Action Handler", () => {
     vi.clearAllMocks();
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
+
+    // Relay resolution (getRelayIntentFromDb, isBlastrEnabledForUserFromDb)
+    (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userRelays: ["wss://relay1.com", "wss://relay2.com"],
+    });
+    (
+      prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({ status: "INACTIVE", Plan: null });
 
     // Default mocks
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({

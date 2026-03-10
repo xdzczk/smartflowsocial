@@ -34,10 +34,22 @@ vi.mock("~/lib/correlation-context.server", () => ({
 }));
 
 const { mockPrisma } = vi.hoisted(() => {
+  const mockLongFormPostUpdate = vi.fn().mockResolvedValue({});
+  const mockLongFormPostStateTransitionCreate = vi.fn().mockResolvedValue({});
   const mockPrisma = {
     longFormPost: {
       findUnique: vi.fn(),
+      update: mockLongFormPostUpdate,
     },
+    $transaction: vi.fn((fn: (tx: unknown) => Promise<unknown>) => {
+      const tx = {
+        longFormPost: { update: mockLongFormPostUpdate },
+        longFormPostStateTransition: {
+          create: mockLongFormPostStateTransitionCreate,
+        },
+      };
+      return fn(tx);
+    }),
   };
   return { mockPrisma };
 });
@@ -47,11 +59,15 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 const mockTransition = vi.fn();
-vi.mock("~/features/posts/server", () => ({
-  LongFormPostStateMachine: class {
-    transition = mockTransition;
-  },
-}));
+vi.mock("~/features/posts/server", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    LongFormPostStateMachine: class {
+      transition = mockTransition;
+    },
+  };
+});
 
 const { mockSendPublishSuccessNotification } = vi.hoisted(() => ({
   mockSendPublishSuccessNotification: vi.fn(),
@@ -186,7 +202,9 @@ describe("PublishLongFormNowUseCase", () => {
           },
           relays: ["wss://relay1.com"],
         })
-      ).rejects.toThrow(`Long form post ${TEST_POST_ID} already published`);
+      ).resolves.toBeUndefined();
+
+      expect(mockPublish).not.toHaveBeenCalled();
     });
 
     it("should use correlation ID if provided", async () => {

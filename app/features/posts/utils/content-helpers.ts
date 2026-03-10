@@ -298,7 +298,8 @@ export function isRepostPost(post: PostData): boolean {
 export function isRepostContent(item: CombinedContent): boolean {
   if (item.type !== "post") return false;
   const kind =
-    item.postKind ?? (item.originalData as { postKind?: string }).postKind;
+    item.postKind ??
+    (item.originalData as { postKind?: string } | undefined)?.postKind;
   return kind === "REPOST";
 }
 
@@ -308,7 +309,8 @@ export function getContentTypeBadge(item: CombinedContent): {
 } {
   // Prefer postKind when present (single source for "what is this post?")
   const postKind =
-    item.postKind ?? (item.originalData as { postKind?: string }).postKind;
+    item.postKind ??
+    (item.originalData as { postKind?: string } | undefined)?.postKind;
   if (postKind === "REPOST") {
     return { className: POST_KIND_BADGE_CLASS, text: "REPOST" };
   }

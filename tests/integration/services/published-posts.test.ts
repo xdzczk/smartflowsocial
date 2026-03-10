@@ -11,12 +11,17 @@ vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
 }));
 
+vi.mock("~/features/user/services/user-cache.server", () => ({
+  getQueueTypesCached: vi.fn(),
+}));
+
 vi.mock("~/models/longformpost.server", () => ({
   getPublishedLongFormPosts: vi.fn(),
 }));
 
 vi.mock("~/models/post.queries.server", () => ({
   getPublishedPosts: vi.fn(),
+  getPublishedRepostsCount: vi.fn(() => Promise.resolve(0)),
 }));
 
 vi.mock("~/features/posts/services/combined.server", () => ({
@@ -34,6 +39,7 @@ import { TEST_USER_ID } from "../../utils/test-helpers";
 
 import { getPublishedDashboardData } from "~/features/posts/publishing/index.server";
 import { getUserById, getQueueTypes } from "~/features/user";
+import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPublishedPosts } from "~/models/post.queries.server";
 
@@ -66,6 +72,9 @@ describe("Posted Posts Service", () => {
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes
+    );
+    (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockQueueTypes
     );
 
@@ -106,6 +115,7 @@ describe("Posted Posts Service", () => {
       id: TEST_USER_ID,
     });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const url = new URL("http://localhost:3000/dashboard/published?page=2");
     await getPublishedDashboardData({
@@ -134,6 +144,7 @@ describe("Posted Posts Service", () => {
       id: TEST_USER_ID,
     });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const url = new URL("http://localhost:3000/dashboard/published");
     const result = await getPublishedDashboardData({
@@ -160,6 +171,7 @@ describe("Posted Posts Service", () => {
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
       "not-an-array"
     );
+    (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const url = new URL("http://localhost:3000/dashboard/published");
     const result = await getPublishedDashboardData({

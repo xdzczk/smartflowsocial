@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// Provide env so sendNostrDirectMessage can reach the fetch path
+vi.mock("~/lib/env.server", () => ({
+  env: {
+    NOSTR_PUBLISHER_URL: "https://publisher.example/publish",
+    NOSTR_NSEC: "nsec1test",
+    NODE_ENV: "test",
+  },
+}));
+
 // Avoid pulling in real Redis / ioredis in tests.
 vi.mock("~/lib/redis-cache.server", () => ({
   buildCacheKey: vi.fn(() => "key"),

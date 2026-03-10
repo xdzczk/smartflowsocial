@@ -6,9 +6,26 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { getPostStats } from "~/features/posts/stats.server";
-// Mock global fetch
 global.fetch = vi.fn();
+
+const mockConnectToPrimalCache = vi.fn();
+vi.mock("~/features/cache/primalCache.server", () => ({
+  connectToPrimalCache: (...args: unknown[]) =>
+    mockConnectToPrimalCache(...args),
+}));
+
+vi.mock("~/lib/redis-cache.server", () => ({
+  buildCacheKey: vi.fn((opts: { parts: Record<string, string> }) =>
+    ["post-stats", opts.parts["eventId"]].join(":")
+  ),
+  getJsonFromRedis: vi.fn().mockResolvedValue({ hit: false }),
+  getOrSetJson: vi.fn(async <T>(opts: { compute: () => Promise<T> }) =>
+    opts.compute()
+  ),
+  setJsonInRedis: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { getPostStats } from "~/features/posts/stats.server";
 
 describe("Statistics Service", () => {
   beforeEach(() => {
@@ -25,7 +42,7 @@ describe("Statistics Service", () => {
       const result = await getPostStats([]);
 
       expect(result).toEqual({});
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockConnectToPrimalCache).not.toHaveBeenCalled();
     });
 
     it("should fetch stats for a single event ID", async () => {
@@ -48,36 +65,13 @@ describe("Statistics Service", () => {
         ],
       ];
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockConnectToPrimalCache.mockResolvedValue(mockResponse);
 
       const result = await getPostStats(["event-1"]);
 
-      // fetchJsonWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
-      expect(global.fetch).toHaveBeenCalled();
-      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0];
-      if (!fetchCall) {
-        throw new Error("fetch was not called");
-      }
-      expect(fetchCall[0]).toBe("https://api.primal.net/v1/cache");
-      const fetchOptions = fetchCall[1] as RequestInit;
-      expect(fetchOptions.method).toBe("POST");
-      const headers = fetchOptions.headers as
-        | Record<string, string>
-        | undefined;
-      expect(headers?.["Content-Type"]).toBe("application/json");
-      expect(fetchOptions.body).toBe(
-        JSON.stringify({
-          requestType: "thread_view",
-          params: {
-            event_id: "event-1",
-          },
-        })
-      );
-
+      expect(mockConnectToPrimalCache).toHaveBeenCalledWith("thread_view", {
+        event_id: "event-1",
+      });
       expect(result).toEqual({
         "event-1": {
           likes: 10,
@@ -91,57 +85,47 @@ describe("Statistics Service", () => {
     });
 
     it("should fetch stats for multiple event IDs", async () => {
-      const mockResponse1 = [
-        [
-          "EVENT",
-          "sub-id",
-          {
-            kind: 10000100,
-            content: JSON.stringify({
-              event_id: "event-1",
-              likes: 10,
-              replies: 5,
-              mentions: 0,
-              reposts: 2,
-              zaps: 0,
-              satszapped: 0,
-            }),
-          },
-        ],
-      ];
-
-      const mockResponse2 = [
-        [
-          "EVENT",
-          "sub-id",
-          {
-            kind: 10000100,
-            content: JSON.stringify({
-              event_id: "event-2",
-              likes: 20,
-              replies: 10,
-              mentions: 1,
-              reposts: 5,
-              zaps: 2,
-              satszapped: 500,
-            }),
-          },
-        ],
-      ];
-
-      (global.fetch as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockResponse1,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockResponse2,
-        });
+      mockConnectToPrimalCache
+        .mockResolvedValueOnce([
+          [
+            "EVENT",
+            "sub-id",
+            {
+              kind: 10000100,
+              content: JSON.stringify({
+                event_id: "event-1",
+                likes: 10,
+                replies: 5,
+                mentions: 0,
+                reposts: 2,
+                zaps: 0,
+                satszapped: 0,
+              }),
+            },
+          ],
+        ])
+        .mockResolvedValueOnce([
+          [
+            "EVENT",
+            "sub-id",
+            {
+              kind: 10000100,
+              content: JSON.stringify({
+                event_id: "event-2",
+                likes: 20,
+                replies: 10,
+                mentions: 1,
+                reposts: 5,
+                zaps: 2,
+                satszapped: 500,
+              }),
+            },
+          ],
+        ]);
 
       const result = await getPostStats(["event-1", "event-2"]);
 
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockConnectToPrimalCache).toHaveBeenCalledTimes(2);
       expect(result).toEqual({
         "event-1": {
           likes: 10,
@@ -163,10 +147,7 @@ describe("Statistics Service", () => {
     });
 
     it("should return zero stats when stats event is not found", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: async () => [], // Empty response
-      });
+      mockConnectToPrimalCache.mockResolvedValue([]);
 
       const result = await getPostStats(["event-1"]);
 
@@ -188,16 +169,13 @@ describe("Statistics Service", () => {
           "EVENT",
           "sub-id",
           {
-            kind: 1, // Wrong kind
+            kind: 1,
             content: "Some content",
           },
         ],
       ];
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockConnectToPrimalCache.mockResolvedValue(mockResponse);
 
       const result = await getPostStats(["event-1"]);
 
@@ -223,16 +201,12 @@ describe("Statistics Service", () => {
             content: JSON.stringify({
               event_id: "event-1",
               likes: 5,
-              // Missing other fields
             }),
           },
         ],
       ];
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockConnectToPrimalCache.mockResolvedValue(mockResponse);
 
       const result = await getPostStats(["event-1"]);
 
@@ -249,9 +223,7 @@ describe("Statistics Service", () => {
     });
 
     it("should handle fetch errors gracefully", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Network error")
-      );
+      mockConnectToPrimalCache.mockRejectedValue(new Error("Network error"));
 
       const result = await getPostStats(["event-1"]);
 
@@ -268,10 +240,9 @@ describe("Statistics Service", () => {
     });
 
     it("should handle non-ok responses", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        statusText: "Internal Server Error",
-      });
+      mockConnectToPrimalCache.mockRejectedValue(
+        new Error("Internal Server Error")
+      );
 
       const result = await getPostStats(["event-1"]);
 
@@ -289,28 +260,10 @@ describe("Statistics Service", () => {
     });
 
     it("should timeout after 5 seconds", async () => {
-      // Mock AbortController
-      const abortSpy = vi.fn();
-      const mockSignal: AbortSignal = {} as unknown as AbortSignal;
-      global.AbortController = vi.fn(() => ({
-        abort: abortSpy,
-        signal: mockSignal,
-      })) as typeof AbortController;
-
-      // Mock setTimeout to trigger timeout immediately
-      const originalSetTimeout = global.setTimeout;
-      global.setTimeout = vi.fn((callback: () => void) => {
-        callback();
-        return 123 as unknown as ReturnType<typeof setTimeout>;
-      }) as unknown as typeof setTimeout;
-
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Timeout")
-      );
+      mockConnectToPrimalCache.mockRejectedValue(new Error("Timeout"));
 
       const result = await getPostStats(["event-1"]);
 
-      // Should return zero stats on timeout
       expect(result).toEqual({
         "event-1": {
           likes: 0,
@@ -321,9 +274,6 @@ describe("Statistics Service", () => {
           satszapped: 0,
         },
       });
-
-      // Restore
-      global.setTimeout = originalSetTimeout;
     });
 
     it("should handle invalid JSON in stats content", async () => {
@@ -338,12 +288,8 @@ describe("Statistics Service", () => {
         ],
       ];
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockConnectToPrimalCache.mockResolvedValue(mockResponse);
 
-      // Should handle gracefully and return default stats
       const result = await getPostStats(["event-1"]);
       expect(result["event-1"]).toEqual({
         likes: 0,
@@ -363,21 +309,17 @@ describe("Statistics Service", () => {
           {
             kind: 10000100,
             content: JSON.stringify({
-              event_id: "event-2", // Different event ID
+              event_id: "event-2",
               likes: 10,
             }),
           },
         ],
       ];
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockConnectToPrimalCache.mockResolvedValue(mockResponse);
 
       const result = await getPostStats(["event-1"]);
 
-      // Should return zero stats if event ID doesn't match
       expect(result).toEqual({
         "event-1": {
           likes: 0,

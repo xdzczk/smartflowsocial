@@ -66,13 +66,24 @@ describe("User Model Functions", () => {
 
       const result = await getUserById(TEST_USER_ID);
 
-      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: TEST_USER_ID },
-        include: {
-          hashTagPresets: true,
-        },
-      });
-      expect(result).toEqual(mockUser);
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment -- Vitest expect.objectContaining */
+      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: TEST_USER_ID },
+          select: expect.objectContaining({
+            hashTagPresets: true,
+            id: true,
+            npub: true,
+            userRelays: true,
+            timezone: true,
+            scheduleInterval: true,
+            showHashTagsinPosts: true,
+          }),
+        })
+      );
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment */
+      expect(result).toMatchObject(mockUser);
+      expect(result).toHaveProperty("hashTagPresets", []);
     });
 
     it("should return null for non-existent user", async () => {
@@ -105,14 +116,10 @@ describe("User Model Functions", () => {
         },
       ];
 
-      mockPrisma.queueType.count.mockResolvedValue(2);
       mockPrisma.queueType.findMany.mockResolvedValue(mockQueueTypes);
 
       const result = await getQueueTypes(TEST_USER_ID);
 
-      expect(mockPrisma.queueType.count).toHaveBeenCalledWith({
-        where: { userId: TEST_USER_ID },
-      });
       expect(mockPrisma.queueType.findMany).toHaveBeenCalledWith({
         where: { userId: TEST_USER_ID },
         include: {

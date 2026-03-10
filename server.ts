@@ -58,28 +58,45 @@ installGlobals();
 
 // Handle uncaught exceptions from stream cancellation errors
 // These can occur when aborting fetch requests whose response streams are already locked
-process.on("uncaughtException", (error: Error) => {
-  // Ignore stream cancellation errors - these are expected when aborting
-  // requests whose response streams are already being consumed
-  if (
-    error.message.includes(
-      "Cannot cancel a stream that already has a reader"
-    ) ||
-    (error.name === "TypeError" &&
-      error.message.includes("stream") &&
-      error.message.includes("reader"))
-  ) {
-    // Log but don't crash - this is a known issue with aborting locked streams
-    logWarning("Stream cancellation error (ignored)", {
-      error: error.message,
-      stack: error.stack,
-    });
-    return;
-  }
+process.on(
+  "uncaughtException",
+  (error: Error & { errno?: number; code?: string; path?: string }) => {
+    // Ignore stream cancellation errors - these are expected when aborting
+    // requests whose response streams are already being consumed
+    if (
+      error.message.includes(
+        "Cannot cancel a stream that already has a reader"
+      ) ||
+      (error.name === "TypeError" &&
+        error.message.includes("stream") &&
+        error.message.includes("reader"))
+    ) {
+      // Log but don't crash - this is a known issue with aborting locked streams
+      logWarning("Stream cancellation error (ignored)", {
+        error: error.message,
+        stack: error.stack,
+      });
+      return;
+    }
 
-  // Re-throw other uncaught exceptions to maintain normal error handling
-  throw error;
-});
+    // Ignore ENOENT for .js.map files - happens in dev when Remix rebuilds client
+    // chunks (new hashes) while the server restarts and something still requests
+    // the previous chunk's source map
+    const isMapEnonent =
+      (error.code === "ENOENT" || error.errno === -2) &&
+      (error.path?.endsWith(".js.map") ?? error.message.includes(".js.map"));
+    if (isMapEnonent) {
+      logWarning("Missing source map (ignored in dev)", {
+        path: error.path,
+        message: error.message,
+      });
+      return;
+    }
+
+    // Re-throw other uncaught exceptions to maintain normal error handling
+    throw error;
+  }
+);
 
 // Suppress DEP0169 deprecation warning from @opentelemetry/instrumentation-http
 // This is a transitive dependency of @sentry/remix that uses url.parse()

@@ -26,6 +26,19 @@ import { handleQueueTypeAction } from "~/features/settings/actions/queue-types-a
 import { updateQueueType } from "~/features/user";
 import { getUserSubscription } from "~/models/payment.server";
 
+/** Minimal queue type returned by updateQueueType/create so queueTypeToClient gets a valid value */
+const MOCK_QUEUE_TYPE = {
+  id: "queue-mock",
+  name: "Test Queue",
+  colorToken: null as string | null,
+  description: null as string | null,
+  scheduleType: "INTERVAL",
+  scheduleConfig: {},
+  isEnabled: true,
+  userId: TEST_USER_ID,
+  hashTagPreset: null,
+};
+
 describe("Queue Types Action Handler - Edge Cases", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -37,7 +50,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
   describe("create_queue_type", () => {
     it("should handle 'none' as hashtag preset ID", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
+        MOCK_QUEUE_TYPE
       );
 
       const formData = createFormData({
@@ -72,12 +85,12 @@ describe("Queue Types Action Handler - Edge Cases", () => {
           hashTagPresetId: null,
         })
       );
-      expect(jsonResult).toEqual({ success: true });
+      expect(jsonResult).toMatchObject({ success: true });
     });
 
     it("should handle empty hashtag preset ID", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
+        MOCK_QUEUE_TYPE
       );
 
       const formData = createFormData({
@@ -112,12 +125,12 @@ describe("Queue Types Action Handler - Edge Cases", () => {
           hashTagPresetId: null,
         })
       );
-      expect(jsonResult).toEqual({ success: true });
+      expect(jsonResult).toMatchObject({ success: true });
     });
 
     it("should handle useGlobalInterval flag for INTERVAL schedule", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
+        MOCK_QUEUE_TYPE
       );
 
       const formData = createFormData({
@@ -159,12 +172,12 @@ describe("Queue Types Action Handler - Edge Cases", () => {
           scheduleConfig: { useGlobalInterval: true },
         })
       );
-      expect(jsonResult).toEqual({ success: true });
+      expect(jsonResult).toMatchObject({ success: true });
     });
 
     it("should handle FIXED_SLOTS with comma-separated slots", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
+        MOCK_QUEUE_TYPE
       );
 
       const formData = createFormData({
@@ -199,12 +212,12 @@ describe("Queue Types Action Handler - Edge Cases", () => {
           scheduleConfig: { slots: ["09:00", "12:00", "15:00", "18:00"] },
         })
       );
-      expect(jsonResult).toEqual({ success: true });
+      expect(jsonResult).toMatchObject({ success: true });
     });
 
     it("should filter out empty slots", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
+        MOCK_QUEUE_TYPE
       );
 
       const formData = createFormData({
@@ -239,7 +252,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
           scheduleConfig: { slots: ["09:00", "12:00", "15:00"] },
         })
       );
-      expect(jsonResult).toEqual({ success: true });
+      expect(jsonResult).toMatchObject({ success: true });
     });
 
     it("should normalize and dedupe weekly slots before saving", async () => {
@@ -293,7 +306,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
   describe("update_queue_type", () => {
     it("should handle isEnabled flag", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
+        MOCK_QUEUE_TYPE
       );
 
       const formData = createFormData({
@@ -302,7 +315,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         name: "Updated Queue",
         scheduleType: "INTERVAL",
         intervalHours: "6",
-        color: "#00FF00",
+        colorToken: "green",
         isEnabled: "on",
       });
 
@@ -330,12 +343,12 @@ describe("Queue Types Action Handler - Edge Cases", () => {
           isEnabled: true,
         })
       );
-      expect(jsonResult).toEqual({ success: true });
+      expect(jsonResult).toMatchObject({ success: true });
     });
 
     it("should handle isEnabled as false when not 'on'", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
+        MOCK_QUEUE_TYPE
       );
 
       const formData = createFormData({
@@ -344,7 +357,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         name: "Updated Queue",
         scheduleType: "INTERVAL",
         intervalHours: "6",
-        color: "#00FF00",
+        colorToken: "green",
         isEnabled: "off",
         hashTagPresetId: "none",
       });
@@ -372,7 +385,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
           isEnabled: false,
         })
       );
-      expect(jsonResult).toEqual({ success: true });
+      expect(jsonResult).toMatchObject({ success: true });
     });
   });
 

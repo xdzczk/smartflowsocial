@@ -167,7 +167,7 @@ describe("PublishNowUseCase", () => {
           isLongForm: false,
           source: "immediate",
           postKind: "POST",
-          queueName: "Growth Queue",
+          queueName: null,
         }
       );
     });
@@ -195,7 +195,7 @@ describe("PublishNowUseCase", () => {
       );
     });
 
-    it("should throw error if post already published", async () => {
+    it("should return without throwing when post already published (idempotent)", async () => {
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
@@ -220,7 +220,9 @@ describe("PublishNowUseCase", () => {
           },
           relays: ["wss://relay1.com"],
         })
-      ).rejects.toThrow(`Post ${TEST_POST_ID} already published`);
+      ).resolves.toBeUndefined();
+
+      expect(mockPublish).not.toHaveBeenCalled();
     });
 
     it("should handle publish failure and transition to FAILED", async () => {

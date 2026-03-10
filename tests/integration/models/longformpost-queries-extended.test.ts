@@ -20,6 +20,9 @@ vi.mock("~/lib/prisma.server", () => {
       create: ReturnType<typeof vi.fn>;
       findMany: ReturnType<typeof vi.fn>;
     };
+    outboxEvent: {
+      create: ReturnType<typeof vi.fn>;
+    };
     $transaction: ReturnType<typeof vi.fn>;
   }
 
@@ -35,6 +38,9 @@ vi.mock("~/lib/prisma.server", () => {
     longFormPostStateTransition: {
       create: vi.fn(),
       findMany: vi.fn(),
+    },
+    outboxEvent: {
+      create: vi.fn().mockResolvedValue({}),
     },
     $transaction: vi.fn(async (fn: (tx: Tx) => Promise<unknown>) => fn(prisma)),
   };
@@ -138,6 +144,9 @@ describe("Longform Post Queries - Extended", () => {
     it("should delete a longform post", async () => {
       const mockPost = { id: TEST_LONGFORM_ID, userId: TEST_USER_ID };
       (
+        prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
+      (
         prisma.longFormPost.delete as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockPost);
 
@@ -220,6 +229,9 @@ describe("Longform Post Queries - Extended", () => {
       (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockPosts);
+      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+        1
+      );
 
       const result = await getDraftLongFormPosts({ userId: TEST_USER_ID });
 
@@ -227,8 +239,16 @@ describe("Longform Post Queries - Extended", () => {
         where: { userId: TEST_USER_ID, currentState: "DRAFT" },
         include: { queueType: true },
         orderBy: { updatedAt: "desc" },
+        skip: 0,
+        take: 20,
       });
-      expect(result).toEqual(mockPosts);
+      expect(result.posts).toEqual(mockPosts);
+      expect(result.pagination).toMatchObject({
+        currentPage: 1,
+        limit: 20,
+        total: 1,
+        pages: 1,
+      });
     });
   });
 
@@ -271,6 +291,9 @@ describe("Longform Post Queries - Extended", () => {
       (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockPosts);
+      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+        5
+      );
 
       const result = await getScheduledLongFormPosts({ userId: TEST_USER_ID });
 
@@ -281,7 +304,13 @@ describe("Longform Post Queries - Extended", () => {
         | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(callArgs?.where?.currentState).toBe("SCHEDULED");
-      expect(result).toEqual(mockPosts);
+      expect(result.posts).toEqual(mockPosts);
+      expect(result.pagination).toMatchObject({
+        currentPage: 1,
+        limit: 20,
+        total: 5,
+        pages: 1,
+      });
     });
   });
 

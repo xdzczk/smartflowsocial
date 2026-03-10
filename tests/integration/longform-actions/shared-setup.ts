@@ -52,17 +52,48 @@ export const mockCreateLongFormPostExecute = vi.fn();
 export const mockPublishLongFormNowExecute = vi.fn();
 export const mockScheduleLongFormPostExecute = vi.fn();
 
-vi.mock("~/features/posts/server", () => ({
-  CreateLongFormPostUseCase: class {
-    execute = mockCreateLongFormPostExecute;
-  },
-  PublishLongFormNowUseCase: class {
-    execute = mockPublishLongFormNowExecute;
-  },
-  ScheduleLongFormPostUseCase: class {
-    execute = mockScheduleLongFormPostExecute;
-  },
-}));
+vi.mock("~/features/posts/server", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    CreateLongFormPostUseCase: class {
+      execute = mockCreateLongFormPostExecute;
+    },
+    PublishLongFormNowUseCase: class {
+      execute = mockPublishLongFormNowExecute;
+    },
+    ScheduleLongFormPostUseCase: class {
+      execute = mockScheduleLongFormPostExecute;
+    },
+    createLongformDraftVersion: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
+// newlongform-action imports use cases from these paths, not from ~/features/posts/server
+vi.mock(
+  "~/features/posts/longform/use-cases/create-longform-post.use-case.server",
+  () => ({
+    CreateLongFormPostUseCase: class {
+      execute = mockCreateLongFormPostExecute;
+    },
+  })
+);
+vi.mock(
+  "~/features/posts/longform/use-cases/publish-longform-now.use-case.server",
+  () => ({
+    PublishLongFormNowUseCase: class {
+      execute = mockPublishLongFormNowExecute;
+    },
+  })
+);
+vi.mock(
+  "~/features/posts/longform/use-cases/schedule-longform-post.use-case.server",
+  () => ({
+    ScheduleLongFormPostUseCase: class {
+      execute = mockScheduleLongFormPostExecute;
+    },
+  })
+);
 
 vi.mock("~/lib/correlation-context.server", () => ({
   extractCorrelationId: vi.fn(() => "test-correlation-id"),
@@ -75,6 +106,16 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
     if (queueType === "Unassigned" || !queueType) return Promise.resolve(null);
     return Promise.resolve(null);
   }),
+}));
+
+vi.mock("~/features/relays/relay-resolution.server", () => ({
+  resolveExecutionRelays: vi
+    .fn()
+    .mockResolvedValue(["wss://relay.example.com"]),
+}));
+
+vi.mock("~/features/posts/drafts/services/draft-version.server", () => ({
+  createLongformDraftVersion: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("~/features/user", () => ({

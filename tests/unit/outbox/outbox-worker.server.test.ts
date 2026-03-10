@@ -20,6 +20,11 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
+// So handlePostDeleteRequested (POST_DELETE_REQUESTED) can call getDeleteSignerSecret() which reads env.NOSTR_NSEC
+vi.mock("~/lib/env.server", () => ({
+  env: { NOSTR_NSEC: "nsec-test" },
+}));
+
 vi.mock("~/infra/outbox/outbox.server", () => ({
   getUnprocessedOutboxEvents: vi.fn(),
   claimOutboxEvent: vi.fn(),
@@ -31,6 +36,8 @@ vi.mock("~/infra/outbox/outbox.server", () => ({
   getOldestReadyOutboxAgeSeconds: vi.fn(),
 }));
 
+// Do not mock outbox-lock.server: worker uses acquireOutboxLock/finalizeOutboxSuccess which
+// delegate to claimOutboxEvent/markOutboxEventSucceeded on outbox.server (mocked above).
 vi.mock("~/infra/queue/queue-client.server", () => ({
   queueClient: {
     enqueue: vi.fn(),

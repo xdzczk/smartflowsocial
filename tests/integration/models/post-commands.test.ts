@@ -4,6 +4,24 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+// Mock env so ENABLE_NOSTR_DELETE_EVENTS can be set per test
+vi.mock("~/lib/env.server", async (importOriginal) => {
+  /* eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vi.mock factory needs module type */
+  const mod = await importOriginal<typeof import("~/lib/env.server")>();
+  const actual = mod;
+  return {
+    env: new Proxy(actual.env, {
+      get(target, prop: string) {
+        const envRecord = target as unknown as Record<string, unknown>;
+        if (prop === "ENABLE_NOSTR_DELETE_EVENTS") {
+          return process.env["ENABLE_NOSTR_DELETE_EVENTS"] ?? envRecord[prop];
+        }
+        return envRecord[prop];
+      },
+    }),
+  };
+});
+
 // Mock Prisma
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {

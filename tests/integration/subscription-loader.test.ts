@@ -30,6 +30,10 @@ vi.mock("~/features/settings/settings-loader.server", () => ({
   loadSettingsData: vi.fn(),
 }));
 
+vi.mock("~/features/settings", () => ({
+  SettingsPage: () => null,
+}));
+
 import { requireUserId } from "~/features/auth/session.server";
 import {
   requireAnySubscription,

@@ -5,8 +5,26 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock fetch
+// Mock fetch (used when PRIMAL_CACHING_URL is HTTP and fetchJsonWithRetry runs)
 global.fetch = vi.fn();
+
+// Stats use Redis + connectToPrimalCache; mock so cache misses and Primal returns mock data
+const mockConnectToPrimalCache = vi.fn();
+vi.mock("~/features/cache/primalCache.server", () => ({
+  connectToPrimalCache: (...args: unknown[]) =>
+    mockConnectToPrimalCache(...args),
+}));
+
+vi.mock("~/lib/redis-cache.server", () => ({
+  buildCacheKey: vi.fn((opts: { parts: Record<string, string> }) =>
+    ["post-stats", opts.parts["eventId"]].join(":")
+  ),
+  getJsonFromRedis: vi.fn().mockResolvedValue({ hit: false }),
+  getOrSetJson: vi.fn(async <T>(opts: { compute: () => Promise<T> }) =>
+    opts.compute()
+  ),
+  setJsonInRedis: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { getPostStats } from "~/features/posts/stats.server";
 
@@ -43,32 +61,13 @@ describe("Stats Service", () => {
       ],
     ];
 
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    mockConnectToPrimalCache.mockResolvedValue(mockResponse);
 
     const result = await getPostStats(["event-123"]);
 
-    // fetchJsonWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
-    expect(fetch).toHaveBeenCalled();
-    const fetchCall = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    if (!fetchCall) {
-      throw new Error("fetch was not called");
-    }
-    expect(fetchCall[0]).toBe("http://test-cache-url");
-    const fetchOptions = fetchCall[1] as RequestInit;
-    expect(fetchOptions.method).toBe("POST");
-    const headers = fetchOptions.headers as Record<string, string> | undefined;
-    expect(headers?.["Content-Type"]).toBe("application/json");
-    expect(fetchOptions.body).toBe(
-      JSON.stringify({
-        requestType: "thread_view",
-        params: {
-          event_id: "event-123",
-        },
-      })
-    );
+    expect(mockConnectToPrimalCache).toHaveBeenCalledWith("thread_view", {
+      event_id: "event-123",
+    });
     expect(result["event-123"]).toEqual({
       likes: 5,
       replies: 2,
@@ -80,10 +79,7 @@ describe("Stats Service", () => {
   });
 
   it("should return zero stats if stats event not found", async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    });
+    mockConnectToPrimalCache.mockResolvedValue([]);
 
     const result = await getPostStats(["event-123"]);
 
@@ -98,9 +94,7 @@ describe("Stats Service", () => {
   });
 
   it("should handle fetch errors gracefully", async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error("Network error")
-    );
+    mockConnectToPrimalCache.mockRejectedValue(new Error("Network error"));
 
     const result = await getPostStats(["event-123"]);
 
@@ -115,10 +109,7 @@ describe("Stats Service", () => {
   });
 
   it("should handle non-ok responses", async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: false,
-      status: 500,
-    });
+    mockConnectToPrimalCache.mockRejectedValue(new Error("500"));
 
     const result = await getPostStats(["event-123"]);
 
@@ -144,10 +135,7 @@ describe("Stats Service", () => {
       ],
     ];
 
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    });
+    mockConnectToPrimalCache.mockResolvedValue(mockResponse);
 
     const result = await getPostStats(["event-123"]);
 
@@ -199,15 +187,9 @@ describe("Stats Service", () => {
       ],
     ];
 
-    (fetch as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse1,
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse2,
-      });
+    mockConnectToPrimalCache
+      .mockResolvedValueOnce(mockResponse1)
+      .mockResolvedValueOnce(mockResponse2);
 
     const result = await getPostStats(["event-1", "event-2"]);
 

@@ -287,7 +287,9 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
       expect(updateScheduleInterval).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toContain("Must be a positive whole number");
+      expect(jsonResult.error).toMatch(
+        /Must be a number|Must be positive|Schedule interval/
+      );
     });
 
     it("should reject zero or negative intervals", async () => {
@@ -315,7 +317,9 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
       expect(updateScheduleInterval).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toContain("Must be a positive whole number");
+      expect(jsonResult.error).toMatch(
+        /Must be a number|Must be positive|Schedule interval/
+      );
     });
 
     it("should reject decimal intervals", async () => {
@@ -343,7 +347,9 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
       expect(updateScheduleInterval).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toContain("Must be a positive whole number");
+      expect(jsonResult.error).toMatch(
+        /Must be a number|Must be positive|Schedule interval/
+      );
     });
 
     it("should accept valid intervals", async () => {

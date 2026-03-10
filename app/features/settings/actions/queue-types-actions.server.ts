@@ -42,6 +42,10 @@ function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
     description?: string | null;
   } | null;
 } {
+  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for callers that may pass null/undefined */
+  if (qt == null) {
+    throw new Error("Queue type is required");
+  }
   const preset = "hashTagPreset" in qt && qt.hashTagPreset;
   const token = qt.colorToken ?? null;
   const bundle = getQueueColorBundle(token);

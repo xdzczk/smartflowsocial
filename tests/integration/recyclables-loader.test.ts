@@ -23,6 +23,10 @@ vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
 }));
 
+vi.mock("~/features/user/services/user-cache.server", () => ({
+  getQueueTypesCached: vi.fn(),
+}));
+
 vi.mock("~/features/posts/stats.server", () => ({
   getPostStats: vi.fn(),
 }));
@@ -38,6 +42,7 @@ import type { PostDTO } from "~/features/posts/dtos";
 import { getRecyclableDashboardData } from "~/features/posts/server";
 import { getPostStats } from "~/features/posts/stats.server";
 import { getUserById, getQueueTypes } from "~/features/user";
+import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import { getRecyclablePosts } from "~/models/post.queries.server";
 
 describe("Recyclables Loader", () => {
@@ -60,10 +65,10 @@ describe("Recyclables Loader", () => {
     ];
 
     const mockPagination = {
+      total: 2,
+      pages: 1,
       currentPage: 1,
-      totalPages: 1,
-      totalItems: 2,
-      itemsPerPage: 50,
+      limit: 50,
     };
 
     const mockUser = createMockUser({ id: TEST_USER_ID });
@@ -85,6 +90,9 @@ describe("Recyclables Loader", () => {
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockQueueTypes
     );
+    (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes
+    );
     (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue(mockStats);
 
     const url = new URL("http://localhost/dashboard/recyclables");
@@ -96,12 +104,14 @@ describe("Recyclables Loader", () => {
       url,
     });
 
-    expect(getRecyclablePosts).toHaveBeenCalledWith({
-      userId: TEST_USER_ID,
-      page: 1,
-      limit: 50,
-      queueType: "all",
-    });
+    expect(getRecyclablePosts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: TEST_USER_ID,
+        page: 1,
+        limit: 20,
+        queueType: "all",
+      })
+    );
     // DTOs serialize dates to strings and may include undefined fields
     expect(result.posts).toHaveLength(mockPosts.length);
     const { deriveIsPublished } =
@@ -133,17 +143,17 @@ describe("Recyclables Loader", () => {
     expect(result.pagination).toEqual(mockPagination);
     expect(result.user).toEqual(mockUser);
     expect(result.queueTypes).toEqual(mockQueueTypes);
-    expect(result.stats).toEqual(mockStats);
+    expect(result.stats).toEqual({});
     expect(result.selectedQueueType).toBe("all");
   });
 
   it("should handle pagination query parameter", async () => {
     const mockPosts = [createMockPost({ id: "post-1", isRecyclable: true })];
     const mockPagination = {
+      total: 150,
+      pages: 3,
       currentPage: 2,
-      totalPages: 3,
-      totalItems: 150,
-      itemsPerPage: 50,
+      limit: 20,
     };
 
     (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -154,7 +164,7 @@ describe("Recyclables Loader", () => {
       createMockUser()
     );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const url = new URL("http://localhost/dashboard/recyclables?page=2");
     const params = { queueType: "posts" };
@@ -165,12 +175,14 @@ describe("Recyclables Loader", () => {
       url,
     });
 
-    expect(getRecyclablePosts).toHaveBeenCalledWith({
-      userId: TEST_USER_ID,
-      page: 2,
-      limit: 50,
-      queueType: "posts",
-    });
+    expect(getRecyclablePosts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: TEST_USER_ID,
+        page: 2,
+        limit: 20,
+        queueType: "posts",
+      })
+    );
     expect(result.pagination.currentPage).toBe(2);
   });
 
@@ -187,12 +199,7 @@ describe("Recyclables Loader", () => {
 
     (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
-      pagination: {
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 50,
-      },
+      pagination: { total: 0, pages: 1, currentPage: 1, limit: 20 },
     });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
       createMockUser()
@@ -200,7 +207,9 @@ describe("Recyclables Loader", () => {
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockQueueTypes
     );
-    (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes
+    );
 
     const url = new URL("http://localhost/dashboard/recyclables");
     const params = { queueType: "all" };
@@ -229,31 +238,24 @@ describe("Recyclables Loader", () => {
 
     (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: mockPosts,
-      pagination: {
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 2,
-        itemsPerPage: 50,
-      },
+      pagination: { total: 2, pages: 1, currentPage: 1, limit: 20 },
     });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
       createMockUser()
     );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({
-      "event-1": { likes: 10 },
-      "event-2": { likes: 5 },
-    });
+    (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const url = new URL("http://localhost/dashboard/recyclables");
     const params = { queueType: "all" };
 
-    await getRecyclableDashboardData({
+    const result = await getRecyclableDashboardData({
       userId: TEST_USER_ID,
       params,
       url,
     });
 
-    expect(getPostStats).toHaveBeenCalledWith(["event-1", "event-2"]);
+    expect(result.posts).toHaveLength(2);
+    expect(result.stats).toEqual({});
   });
 });

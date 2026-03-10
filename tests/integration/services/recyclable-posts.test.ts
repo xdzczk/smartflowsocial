@@ -8,7 +8,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
-  getQueueTypes: vi.fn(),
+}));
+
+vi.mock("~/features/user/services/user-cache.server", () => ({
+  getQueueTypesCached: vi.fn(),
 }));
 
 vi.mock("~/models/post.commands.server", () => ({
@@ -31,7 +34,8 @@ import {
   handleRecyclablePostAction,
 } from "~/features/posts/publishing/index.server";
 import { getPostStats } from "~/features/posts/stats.server";
-import { getUserById, getQueueTypes } from "~/features/user";
+import { getUserById } from "~/features/user";
+import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import { deletePost } from "~/models/post.commands.server";
 import {
   getRecyclablePosts,
@@ -68,16 +72,13 @@ describe("Recyclable Posts Service", () => {
         { id: "queue-1", name: "Queue 1", isEnabled: true },
         { id: "queue-2", name: "Queue 2", isEnabled: false },
       ];
-      const mockStats = { "event-123": { likes: 5, reposts: 2 } };
-
       (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockQueueTypes
       );
-      (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue(mockStats);
 
       const url = new URL("http://localhost:3000/dashboard/recyclables?page=1");
       const result = await getRecyclableDashboardData({
@@ -86,12 +87,24 @@ describe("Recyclable Posts Service", () => {
         url,
       });
 
+      const firstPost = mockPosts.posts[0];
+      expect(firstPost).toBeDefined();
       expect(result.posts).toHaveLength(1);
-      expect(result.posts[0]).toEqual(
-        expect.objectContaining(mockPosts.posts[0])
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment -- Vitest expect.objectContaining */
+      expect(result.posts[0]).toMatchObject(
+        expect.objectContaining({
+          id: firstPost!.id,
+          queueType: expect.objectContaining({
+            id: firstPost!.queueType.id,
+            name: firstPost!.queueType.name,
+          }),
+          signedEvent: firstPost!.signedEvent,
+        })
       );
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment */
       expect(result.pagination).toEqual(mockPosts.pagination);
-      expect(result.stats).toEqual(mockStats);
+      // Stats are loaded client-side; loader returns empty stats
+      expect(result.stats).toEqual({});
       expect(result.user).toEqual(mockUser);
       expect(result.queueTypes).toHaveLength(1); // Only enabled
       expect(result.selectedQueueType).toBe("all");
@@ -138,17 +151,18 @@ describe("Recyclable Posts Service", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_USER_ID,
       });
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
+      (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const url = new URL("http://localhost:3000/dashboard/recyclables");
-      await getRecyclableDashboardData({
+      const result = await getRecyclableDashboardData({
         userId: TEST_USER_ID,
         params: {},
         url,
       });
 
-      expect(getPostStats).toHaveBeenCalledWith(["event-1", "event-2"]);
+      // Stats are loaded client-side; loader returns empty stats
+      expect(result.posts).toHaveLength(3);
+      expect(result.stats).toEqual({});
     });
 
     it("should throw error if user not found", async () => {
@@ -157,7 +171,7 @@ describe("Recyclable Posts Service", () => {
         pagination: { total: 0, pages: 0, currentPage: 1 },
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const url = new URL("http://localhost:3000/dashboard/recyclables");
       await expect(
@@ -177,7 +191,7 @@ describe("Recyclable Posts Service", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_USER_ID,
       });
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
       const url = new URL("http://localhost:3000/dashboard/recyclables?page=2");
@@ -187,12 +201,14 @@ describe("Recyclable Posts Service", () => {
         url,
       });
 
-      expect(getRecyclablePosts).toHaveBeenCalledWith({
-        userId: TEST_USER_ID,
-        page: 2,
-        limit: 50,
-        queueType: "all",
-      });
+      expect(getRecyclablePosts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: TEST_USER_ID,
+          page: 2,
+          limit: 20,
+          queueType: "all",
+        })
+      );
     });
   });
 

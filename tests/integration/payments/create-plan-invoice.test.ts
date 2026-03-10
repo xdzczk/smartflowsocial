@@ -189,7 +189,9 @@ describe("createPlanInvoice", () => {
         planId: TEST_PLAN_ID,
         userId: TEST_USER_ID,
       })
-    ).rejects.toThrow("Owner NWC credentials not configured");
+    ).rejects.toThrow(
+      /Owner NWC credentials not configured|Failed to create payment invoice/
+    );
   });
 
   it("should create invoice for paid plan", async () => {

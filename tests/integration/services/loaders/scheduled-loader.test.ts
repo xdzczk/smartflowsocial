@@ -12,6 +12,7 @@ vi.mock("~/models/longformpost.server", () => ({
 
 vi.mock("~/models/post.queries.server", () => ({
   getScheduledPosts: vi.fn(),
+  getScheduledRepostsCount: vi.fn(),
 }));
 
 vi.mock("~/features/user", () => ({
@@ -45,7 +46,10 @@ import {
   getUserHashTagPresets,
 } from "~/features/user";
 import { getScheduledLongFormPosts } from "~/models/longformpost.server";
-import { getScheduledPosts } from "~/models/post.queries.server";
+import {
+  getScheduledPosts,
+  getScheduledRepostsCount,
+} from "~/models/post.queries.server";
 
 describe("Scheduled Loader", () => {
   beforeEach(() => {
@@ -65,12 +69,16 @@ describe("Scheduled Loader", () => {
     ];
     const mockHashTagPresets = [{ id: "preset-1", name: "Preset 1" }];
 
-    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockPosts
-    );
-    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts
-    );
+    const pagination = { total: 1, pages: 1, currentPage: 1, limit: 20 };
+    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockPosts,
+      pagination,
+    });
+    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockLongformPosts,
+      pagination,
+    });
+    (getScheduledRepostsCount as ReturnType<typeof vi.fn>).mockResolvedValue(0);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockQueueTypes
@@ -82,7 +90,7 @@ describe("Scheduled Loader", () => {
     const result = await loadScheduledData(TEST_USER_ID, "all");
 
     expect(result.posts).toHaveLength(1);
-    expect(result.posts[0]).toEqual(expect.objectContaining(mockPosts[0]));
+    expect(result.posts[0]).toMatchObject(mockPosts[0] as object);
     expect(result.longformPosts).toBeDefined();
     expect(result.user).toEqual(mockUser);
     expect(result.queueTypes).toHaveLength(1);
@@ -99,12 +107,16 @@ describe("Scheduled Loader", () => {
       { id: "longform-2", queueType: { id: "queue-2", name: "Queue 2" } },
     ];
 
-    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockPosts
-    );
-    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts
-    );
+    const pagination = { total: 1, pages: 1, currentPage: 1, limit: 20 };
+    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockPosts,
+      pagination,
+    });
+    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockLongformPosts,
+      pagination,
+    });
+    (getScheduledRepostsCount as ReturnType<typeof vi.fn>).mockResolvedValue(0);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
     });
@@ -113,10 +125,12 @@ describe("Scheduled Loader", () => {
 
     const result = await loadScheduledData(TEST_USER_ID, "Queue 1");
 
-    expect(getScheduledPosts).toHaveBeenCalledWith({
-      userId: TEST_USER_ID,
-      queueType: "Queue 1",
-    });
+    expect(getScheduledPosts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: TEST_USER_ID,
+        queueType: "Queue 1",
+      })
+    );
     expect(result.selectedQueueType).toBe("Queue 1");
   });
 });

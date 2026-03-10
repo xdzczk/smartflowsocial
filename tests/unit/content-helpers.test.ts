@@ -137,42 +137,43 @@ describe("Content Helpers", () => {
   });
 
   describe("getStatusColor", () => {
-    it("should return orange for drafts", () => {
+    it("should return neutral border/foreground for drafts", () => {
       const item: CombinedContent = {
         id: "1",
         currentState: "DRAFT",
       } as unknown as CombinedContent;
       const result = getStatusColor(item);
-      expect(result).toContain("orange");
+      expect(result).toContain("border");
+      expect(result).toContain("foreground");
     });
 
-    it("should return green for posted items", () => {
+    it("should return success styling for posted items", () => {
       const item: CombinedContent = {
         id: "1",
         currentState: "PUBLISHED",
         type: "post",
       } as unknown as CombinedContent;
       const result = getStatusColor(item);
-      expect(result).toContain("green");
+      expect(result).toContain("success");
     });
 
-    it("should return green for published items", () => {
+    it("should return success styling for published items", () => {
       const item: CombinedContent = {
         id: "1",
         currentState: "PUBLISHED",
         type: "longform",
       } as unknown as CombinedContent;
       const result = getStatusColor(item);
-      expect(result).toContain("green");
+      expect(result).toContain("success");
     });
 
-    it("should return blue for scheduled items", () => {
+    it("should return muted styling for scheduled items", () => {
       const item: CombinedContent = {
         id: "1",
         currentState: "SCHEDULED",
       } as unknown as CombinedContent;
       const result = getStatusColor(item);
-      expect(result).toContain("blue");
+      expect(result).toContain("muted");
     });
 
     it("should return gray for unknown status", () => {
@@ -193,13 +194,13 @@ describe("Content Helpers", () => {
       expect(getStatusText(item)).toBe("Draft");
     });
 
-    it("should return 'Posted' for posted items", () => {
+    it("should return 'Published' for posted items", () => {
       const item: CombinedContent = {
         id: "1",
         currentState: "PUBLISHED",
         type: "post",
       } as unknown as CombinedContent;
-      expect(getStatusText(item)).toBe("Posted");
+      expect(getStatusText(item)).toBe("Published");
     });
 
     it("should return 'Published' for published longform items", () => {
@@ -268,8 +269,9 @@ describe("Content Helpers", () => {
       };
       const result = getQueueTypeDisplay(queueType);
       expect(result.name).toBe("Morning");
-      expect(result.style?.backgroundColor).toContain("#EF4444"); // red accent
-      expect(result.style?.color).toBe("#EF4444");
+      // red token: accent #DC2626; surface is rgba(220,38,38,0.12)
+      expect(result.style?.backgroundColor).toMatch(/220|#DC2626/);
+      expect(result.style?.color).toBe("#DC2626");
     });
 
     it("should return display info for queue type without color", () => {
@@ -303,10 +305,10 @@ describe("Content Helpers", () => {
       } as unknown as CombinedContent;
       const result = getContentTypeBadge(item);
       expect(result.text).toBe("REPOST");
-      expect(result.className).toContain("orange");
+      expect(result.className).toContain("inline-flex");
     });
 
-    it("should return LONG-FORM badge for kind 30023", () => {
+    it("should return ARTICLE badge for kind 30023", () => {
       const item: CombinedContent = {
         id: "1",
         signedEvent: {
@@ -314,8 +316,8 @@ describe("Content Helpers", () => {
         },
       } as unknown as CombinedContent;
       const result = getContentTypeBadge(item);
-      expect(result.text).toBe("LONG-FORM");
-      expect(result.className).toContain("purple");
+      expect(result.text).toBe("ARTICLE");
+      expect(result.className).toContain("inline-flex");
     });
 
     it("should return Post badge for regular posts", () => {
@@ -324,8 +326,8 @@ describe("Content Helpers", () => {
         type: "post",
       } as unknown as CombinedContent;
       const result = getContentTypeBadge(item);
-      expect(result.text).toBe("Post");
-      expect(result.className).toContain("blue");
+      expect(result.text).toBe("POST");
+      expect(result.className).toContain("inline-flex");
     });
 
     it("should return Article badge for longform type", () => {
@@ -335,7 +337,7 @@ describe("Content Helpers", () => {
       } as unknown as CombinedContent;
       const result = getContentTypeBadge(item);
       expect(result.text).toBe("Article");
-      expect(result.className).toContain("purple");
+      expect(result.className).toContain("inline-flex");
     });
 
     it("should check originalData.signedEvent for kind", () => {

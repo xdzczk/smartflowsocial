@@ -10,6 +10,40 @@ vi.mock("~/lib/error-logger.server", () => ({
   logError: vi.fn(),
 }));
 
+// Ensure fetchFromCache uses HTTP path (so global.fetch is used)
+vi.mock("~/lib/env.server", async (importOriginal) => {
+  /* eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vi.mock factory needs module type */
+  const mod = await importOriginal<typeof import("~/lib/env.server")>();
+  const actual = mod;
+  return {
+    env: new Proxy(actual.env, {
+      get(target, prop: string) {
+        const envRecord = target as unknown as Record<string, unknown>;
+        if (prop === "PRIMAL_CACHING_URL") {
+          return (
+            process.env["PRIMAL_CACHING_URL"] ??
+            envRecord[prop] ??
+            "https://cache.example.com/api"
+          );
+        }
+        return envRecord[prop];
+      },
+    }),
+  };
+});
+
+// Bypass Redis so compute (doFetch) runs
+vi.mock("~/lib/redis-cache.server", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getJsonFromRedis: vi.fn().mockResolvedValue({ hit: false }),
+    getOrSetJson: vi.fn(async <T>(opts: { compute: () => Promise<T> }) =>
+      opts.compute()
+    ),
+  };
+});
+
 // Mock global fetch
 global.fetch = vi.fn();
 

@@ -133,12 +133,7 @@ describe("Queue Schedule Service", () => {
         !Array.isArray(jsonResultRaw)
           ? (jsonResultRaw as { scheduledTime?: string; error?: string })
           : {};
-      expect(jsonResult).toEqual({
-        success: true,
-        data: {
-          scheduledTime: formattedTime,
-        },
-      });
+      expect(jsonResult).toEqual({ scheduledTime: formattedTime });
     });
 
     it("should calculate schedule time using queueTypeName (backward compatibility)", async () => {
@@ -186,12 +181,7 @@ describe("Queue Schedule Service", () => {
         !Array.isArray(jsonResultRaw)
           ? (jsonResultRaw as { scheduledTime?: string; error?: string })
           : {};
-      expect(jsonResult).toEqual({
-        success: true,
-        data: {
-          scheduledTime: formattedTime,
-        },
-      });
+      expect(jsonResult).toEqual({ scheduledTime: formattedTime });
     });
 
     it("should throw NotFoundError if queue type not found by ID", async () => {

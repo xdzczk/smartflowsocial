@@ -146,7 +146,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         relays: ["wss://relay.example.com"],
       });
 
-      // Try to publish again (should fail)
+      // Try to publish again (idempotent: should resolve without throwing)
       await expect(
         useCase.execute({
           postId,
@@ -154,7 +154,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           signedEvent: createValidSignedEvent({ content: "test 2" }),
           relays: ["wss://relay.example.com"],
         })
-      ).rejects.toThrow("already published");
+      ).resolves.toBeUndefined();
     });
   }
 );

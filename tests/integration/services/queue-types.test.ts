@@ -39,13 +39,10 @@ describe("Queue Types Service", () => {
 
   describe("createDefaultQueueTypes", () => {
     it("should not create any default queue types (unassigned = null queueTypeId)", async () => {
-      (prisma.queueType.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-
       await createDefaultQueueTypes(TEST_USER_ID);
 
-      expect(prisma.queueType.count).toHaveBeenCalledWith({
-        where: { userId: TEST_USER_ID },
-      });
+      // Implementation is a no-op: no default queues; unassigned = null queueTypeId
+      expect(prisma.queueType.count).not.toHaveBeenCalled();
       expect(prisma.queueType.createMany).not.toHaveBeenCalled();
     });
   });

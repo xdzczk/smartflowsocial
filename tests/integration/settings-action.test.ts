@@ -414,8 +414,18 @@ describe("Settings Action Handler", () => {
   describe("Queue Type Actions", () => {
     describe("Create Queue Type", () => {
       it("should create a queue type with INTERVAL schedule", async () => {
+        const createdQueueType = {
+          id: "qt-1",
+          name: "Marketing Queue",
+          colorToken: "#FF5733",
+          description: "Marketing posts",
+          scheduleType: "INTERVAL",
+          scheduleConfig: { intervalHours: 4 },
+          isEnabled: true,
+          userId: TEST_USER_ID,
+        };
         (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined
+          createdQueueType
         );
 
         const formData = createFormData({
@@ -443,16 +453,31 @@ describe("Settings Action Handler", () => {
           name: "Marketing Queue",
           scheduleType: "INTERVAL",
           scheduleConfig: { intervalHours: 4 },
-          color: "#FF5733",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest expect.any
+          colorToken: expect.any(String),
           description: "Marketing posts",
           hashTagPresetId: "preset-123",
         });
-        expect(data).toEqual({ success: true });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest expect.any
+        expect(data).toMatchObject({
+          success: true,
+          queueType: expect.any(Object),
+        });
       });
 
       it("should create a queue type with FIXED_SLOTS schedule", async () => {
+        const createdQueueType = {
+          id: "qt-2",
+          name: "Daily Queue",
+          colorToken: "#33FF57",
+          description: "Daily posting schedule",
+          scheduleType: "FIXED_SLOTS",
+          scheduleConfig: { slots: ["09:00", "12:00", "15:00", "18:00"] },
+          isEnabled: true,
+          userId: TEST_USER_ID,
+        };
         (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined
+          createdQueueType
         );
 
         const formData = createFormData({
@@ -478,11 +503,16 @@ describe("Settings Action Handler", () => {
           scheduleConfig: {
             slots: ["09:00", "12:00", "15:00", "18:00"],
           },
-          color: "#33FF57",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest expect.any
+          colorToken: expect.any(String),
           description: "Daily posting schedule",
           hashTagPresetId: null,
         });
-        expect(data).toEqual({ success: true });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest expect.any
+        expect(data).toMatchObject({
+          success: true,
+          queueType: expect.any(Object),
+        });
       });
 
       it("should reject queue type creation for free plan users", async () => {
@@ -561,7 +591,7 @@ describe("Settings Action Handler", () => {
             : {};
 
         expect(deleteQueueType).toHaveBeenCalledWith(TEST_USER_ID, "queue-123");
-        expect(data).toEqual({ success: true });
+        expect(data).toMatchObject({ success: true });
       });
     });
   });

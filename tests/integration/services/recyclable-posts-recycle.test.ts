@@ -6,21 +6,17 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock dependencies
+// Mock dependencies - mock the use-case so recyclable-posts.server uses it
 const mockRecycleExecute = vi.fn();
 
-vi.mock("~/features/posts/publishing/index.server", async (importOriginal) => {
-  const actual = await importOriginal<
-    // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vi.mock importOriginal() generic
-    typeof import("~/features/posts/publishing/index.server")
-  >();
-  return {
-    ...actual,
+vi.mock(
+  "~/features/posts/publishing/use-cases/recycle-post.use-case.server",
+  () => ({
     RecyclePostUseCase: class {
       execute = mockRecycleExecute;
     },
-  };
-});
+  })
+);
 
 vi.mock("~/lib/validation", () => ({
   recyclableActionSchema: {},

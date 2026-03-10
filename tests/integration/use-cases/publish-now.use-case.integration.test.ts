@@ -175,7 +175,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         relays: ["wss://relay.example.com"],
       });
 
-      // Try to publish again (should fail)
+      // Try to publish again (idempotent: should resolve without throwing)
       const secondSignedEvent = createValidSignedEvent({ content: "test-2" });
       await expect(
         useCase.execute({
@@ -184,7 +184,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           signedEvent: secondSignedEvent,
           relays: ["wss://relay.example.com"],
         })
-      ).rejects.toThrow("already published");
+      ).resolves.toBeUndefined();
     });
   }
 );

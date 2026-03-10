@@ -326,14 +326,14 @@ describe("Engagement Logic Unit Tests", () => {
   });
 
   describe("getTrustScoreBadgeColor", () => {
-    it("should return green classes for scores >= 80", () => {
-      expect(getTrustScoreBadgeColor(80)).toContain("green");
-      expect(getTrustScoreBadgeColor(100)).toContain("green");
+    it("should return success classes for scores >= 80", () => {
+      expect(getTrustScoreBadgeColor(80)).toContain("success");
+      expect(getTrustScoreBadgeColor(100)).toContain("success");
     });
 
-    it("should return blue classes for scores 60-79", () => {
-      expect(getTrustScoreBadgeColor(60)).toContain("blue");
-      expect(getTrustScoreBadgeColor(79)).toContain("blue");
+    it("should return muted/foreground classes for scores 60-79", () => {
+      expect(getTrustScoreBadgeColor(60)).toContain("muted");
+      expect(getTrustScoreBadgeColor(79)).toContain("muted");
     });
 
     it("should return yellow classes for scores 40-59", () => {
@@ -341,9 +341,9 @@ describe("Engagement Logic Unit Tests", () => {
       expect(getTrustScoreBadgeColor(59)).toContain("yellow");
     });
 
-    it("should return orange classes for scores 20-39", () => {
-      expect(getTrustScoreBadgeColor(20)).toContain("orange");
-      expect(getTrustScoreBadgeColor(39)).toContain("orange");
+    it("should return muted classes for scores 20-39", () => {
+      expect(getTrustScoreBadgeColor(20)).toContain("muted");
+      expect(getTrustScoreBadgeColor(39)).toContain("muted");
     });
 
     it("should return gray classes for scores < 20", () => {

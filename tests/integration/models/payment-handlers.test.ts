@@ -42,7 +42,11 @@ const { mockPrisma } = vi.hoisted(() => {
       upsert: vi.fn(),
     },
     user: {
+      findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    referral: {
+      findUnique: vi.fn(),
     },
     $transaction: vi.fn(async (callback) => {
       const tx = {
@@ -50,6 +54,7 @@ const { mockPrisma } = vi.hoisted(() => {
         payment: mockPrisma.payment,
         subscription: mockPrisma.subscription,
         user: mockPrisma.user,
+        referral: mockPrisma.referral,
       };
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
       return await callback(tx);
@@ -76,6 +81,12 @@ describe("Payment Handlers", () => {
 
   describe("handlePaymentCompleted", () => {
     it("should update payment status and subscription", async () => {
+      (
+        mockPrisma.user.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ npub: "npub1test" });
+      (
+        mockPrisma.referral.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
       const mockPlan = createMockPlan({
         price: 10,
       });

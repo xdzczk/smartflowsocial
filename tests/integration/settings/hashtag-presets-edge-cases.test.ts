@@ -12,6 +12,10 @@ vi.mock("~/features/user", () => ({
   deleteHashTagPreset: vi.fn(),
 }));
 
+vi.mock("~/features/user/services/user-cache.server", () => ({
+  invalidateHashTagPresetsCache: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
 import { handleHashtagPresetAction } from "~/features/settings/actions/hashtag-presets-actions.server";

@@ -16,6 +16,7 @@ vi.mock("~/lib/prisma.server", () => ({
     queueType: {
       findFirst: vi.fn(),
     },
+    $queryRawUnsafe: vi.fn(),
   },
 }));
 
@@ -78,10 +79,11 @@ describe("Post Queries", () => {
 
       const result = await getPostStatistics({ userId: TEST_USER_ID });
 
-      expect(prisma.post.count).toHaveBeenCalledWith({
+      expect(prisma.post.count).toHaveBeenNthCalledWith(2, {
         where: {
           userId: TEST_USER_ID,
           currentState: "PUBLISHED",
+          repost: false,
         },
       });
       expect(result.successCount).toBe(8);
@@ -95,16 +97,14 @@ describe("Post Queries", () => {
         scheduleType: "INTERVAL" as const,
         name: "Test Queue",
       };
-      const mockPost = {
-        scheduledAtUtc: new Date(1234567890 * 1000),
-      };
+      const expectedDate = new Date(1234567890 * 1000);
 
       (
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost
-      );
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { effective_at: expectedDate },
+      ]);
 
       const result = await getLastPostTimeForQueue({
         userId: TEST_USER_ID,
@@ -122,7 +122,8 @@ describe("Post Queries", () => {
           name: true,
         },
       });
-      expect(result).toEqual(new Date(1234567890 * 1000));
+      expect(prisma.$queryRawUnsafe).toHaveBeenCalled();
+      expect(result).toEqual(expectedDate);
     });
 
     it("should return last post time for queue by name", async () => {
@@ -131,16 +132,14 @@ describe("Post Queries", () => {
         scheduleType: "FIXED_SLOTS" as const,
         name: "Test Queue",
       };
-      const mockPost = {
-        scheduledAtUtc: new Date(1234567890 * 1000),
-      };
+      const expectedDate = new Date(1234567890 * 1000);
 
       (
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost
-      );
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { effective_at: expectedDate },
+      ]);
 
       const result = await getLastPostTimeForQueue({
         userId: TEST_USER_ID,
@@ -158,7 +157,8 @@ describe("Post Queries", () => {
           name: true,
         },
       });
-      expect(result).toEqual(new Date(1234567890 * 1000));
+      expect(prisma.$queryRawUnsafe).toHaveBeenCalled();
+      expect(result).toEqual(expectedDate);
     });
 
     it("should return null if queue type doesn't exist", async () => {
@@ -172,7 +172,7 @@ describe("Post Queries", () => {
       });
 
       expect(result).toBeNull();
-      expect(prisma.post.findFirst).not.toHaveBeenCalled();
+      expect(prisma.$queryRawUnsafe).not.toHaveBeenCalled();
     });
 
     it("should filter by currentState for INTERVAL schedule type", async () => {
@@ -184,8 +184,8 @@ describe("Post Queries", () => {
       (
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
 
       await getLastPostTimeForQueue({
@@ -193,12 +193,11 @@ describe("Post Queries", () => {
         queueTypeId: "queue-123",
       });
 
-      const callArgs = (prisma.post.findFirst as ReturnType<typeof vi.fn>).mock
-        .calls[0]?.[0] as
-        | { where?: { currentState?: string | { in?: string[] } } }
-        | undefined;
-      // For INTERVAL, should only include SCHEDULED posts
-      expect(callArgs?.where?.currentState).toBe("SCHEDULED");
+      const rawCall = (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mock
+        .calls[0]?.[0] as string | undefined;
+      expect(rawCall).toBeDefined();
+      expect(rawCall).toContain("SCHEDULED");
+      expect(rawCall).not.toContain("PUBLISHED");
     });
 
     it("should include both SCHEDULED and PUBLISHED for FIXED_SLOTS schedule type", async () => {
@@ -210,8 +209,8 @@ describe("Post Queries", () => {
       (
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
 
       await getLastPostTimeForQueue({
@@ -219,19 +218,11 @@ describe("Post Queries", () => {
         queueTypeId: "queue-123",
       });
 
-      const callArgs = (prisma.post.findFirst as ReturnType<typeof vi.fn>).mock
-        .calls[0]?.[0] as
-        | { where?: { currentState?: string | { in?: string[] } } }
-        | undefined;
-      // For FIXED_SLOTS, should include both SCHEDULED and PUBLISHED
-      const currentState = callArgs?.where?.currentState;
-      expect(
-        (typeof currentState === "object" &&
-          "in" in currentState &&
-          (currentState.in ?? false)) ||
-          currentState === "SCHEDULED" ||
-          currentState === "PUBLISHED"
-      ).toBeTruthy();
+      const rawCall = (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mock
+        .calls[0]?.[0] as string | undefined;
+      expect(rawCall).toBeDefined();
+      expect(rawCall).toContain("SCHEDULED");
+      expect(rawCall).toContain("PUBLISHED");
     });
 
     it("should return null if no post found", async () => {
@@ -243,8 +234,8 @@ describe("Post Queries", () => {
       (
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
 
       const result = await getLastPostTimeForQueue({

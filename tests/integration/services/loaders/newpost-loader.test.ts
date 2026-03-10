@@ -15,6 +15,17 @@ vi.mock("~/features/user", () => ({
   getUserHashTagPresets: vi.fn(),
 }));
 
+vi.mock("~/features/relays/relay-resolution.server", () => ({
+  resolveExecutionRelays: vi
+    .fn()
+    .mockResolvedValue(["wss://relay.example.com"]),
+}));
+
+vi.mock("~/models/template.server", () => ({
+  getTemplates: vi.fn().mockResolvedValue([]),
+  getTemplatePrefill: vi.fn().mockResolvedValue(null),
+}));
+
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";

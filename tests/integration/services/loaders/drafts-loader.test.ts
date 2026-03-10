@@ -26,6 +26,10 @@ vi.mock("~/features/posts/services/combined.server", () => ({
   ]),
 }));
 
+vi.mock("~/features/posts/drafts/services/draft-group.server", () => ({
+  listBulkDraftGroups: vi.fn().mockResolvedValue([]),
+}));
+
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { loadDraftsData } from "~/features/posts/server";
@@ -49,11 +53,16 @@ describe("Drafts Loader", () => {
     const mockQueueTypes = [
       { id: "queue-1", name: "Queue 1", isEnabled: true },
     ];
+    const pagination = { total: 1, pages: 1, currentPage: 1, limit: 20 };
 
-    (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
-    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts
-    );
+    (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockPosts,
+      pagination,
+    });
+    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockLongformPosts,
+      pagination,
+    });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockQueueTypes
@@ -96,11 +105,16 @@ describe("Drafts Loader", () => {
       { id: "longform-1", queueType: { id: "queue-1", name: "Queue 1" } },
       { id: "longform-2", queueType: { id: "queue-2", name: "Queue 2" } },
     ];
+    const pagination = { total: 2, pages: 1, currentPage: 1, limit: 20 };
 
-    (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
-    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts
-    );
+    (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockPosts,
+      pagination,
+    });
+    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockLongformPosts,
+      pagination,
+    });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
     });
@@ -118,11 +132,16 @@ describe("Drafts Loader", () => {
       { id: "longform-1", queueType: { id: "queue-1", name: "Queue 1" } },
       { id: "longform-2", queueType: { id: "queue-2", name: "Queue 2" } },
     ];
+    const pagination = { total: 2, pages: 1, currentPage: 1, limit: 20 };
 
-    (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts
-    );
+    (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: [],
+      pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
+    });
+    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockLongformPosts,
+      pagination,
+    });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
     });

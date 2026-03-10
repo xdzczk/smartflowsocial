@@ -12,12 +12,6 @@ const { mockScheduleExecute } = vi.hoisted(() => {
   return { mockScheduleExecute };
 });
 
-vi.mock("~/features/posts/scheduling/index.server", () => ({
-  SchedulePostUseCase: class {
-    execute = mockScheduleExecute;
-  },
-}));
-
 vi.mock("~/models/post.queries.server", () => ({
   getPostById: vi.fn(),
 }));
@@ -35,23 +29,34 @@ vi.mock("~/models/longformpost.server", () => ({
 const mockCancelLongFormExecute = vi.fn();
 const mockScheduleLongFormExecute = vi.fn();
 
-vi.mock("~/features/posts/server", () => ({
-  CancelScheduleLongFormUseCase: class {
-    execute = mockCancelLongFormExecute;
-  },
-  ScheduleLongFormPostUseCase: class {
-    execute = mockScheduleLongFormExecute;
-  },
-}));
+vi.mock(
+  "~/features/posts/scheduling/use-cases/schedule-post.use-case.server",
+  () => ({
+    SchedulePostUseCase: class {
+      execute = mockScheduleExecute;
+    },
+  })
+);
 
-// Use cases are mocked above
+// scheduled-posts.server imports ScheduleLongFormPostUseCase from longform/index.server
+vi.mock("~/features/posts/longform/index.server", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    ScheduleLongFormPostUseCase: class {
+      execute = mockScheduleLongFormExecute;
+    },
+  };
+});
+
+// Use cases are mocked above; import handler from scheduling so it uses mocked use cases
 import {
   TEST_USER_ID,
   TEST_POST_ID,
   TEST_LONGFORM_ID,
 } from "../../utils/test-helpers";
 
-import { handleScheduledPostAction } from "~/features/posts/server";
+import { handleScheduledPostAction } from "~/features/posts/scheduling/index.server";
 import {
   getLongFormPost,
   updateLongFormPost,

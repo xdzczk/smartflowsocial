@@ -157,8 +157,8 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
         );
       });
 
-      it("should deny longformPosts for free users", () => {
-        expect(hasFeatureAccess(freeSubscription, "longformPosts")).toBe(false);
+      it("should allow longformPosts for free users", () => {
+        expect(hasFeatureAccess(freeSubscription, "longformPosts")).toBe(true);
       });
 
       it("should deny templates for free users", () => {
@@ -248,9 +248,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       expect(result).toBe("basic");
     });
 
-    it("should return 'basic' for longformPosts", () => {
+    it("should return 'free' for longformPosts", () => {
       const result = getMinimumPlanForFeature("longformPosts");
-      expect(result).toBe("basic");
+      expect(result).toBe("free");
     });
 
     it("should return 'basic' for templates", () => {
@@ -338,7 +338,8 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       expect(PLAN_FEATURES.free.drafts).toBe(false);
       expect(PLAN_FEATURES.free.calendar).toBe(false);
       expect(PLAN_FEATURES.free.bulkScheduling).toBe(false);
-      expect(PLAN_FEATURES.free.longformPosts).toBe(false);
+      // longformPosts is allowed on free tier
+      expect(PLAN_FEATURES.free.longformPosts).toBe(true);
     });
 
     it("should have paid plans with full features", () => {

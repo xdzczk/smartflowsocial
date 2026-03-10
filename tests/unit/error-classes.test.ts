@@ -456,7 +456,7 @@ describe("Error Classes Unit Tests", () => {
 
     it("should have all error codes as constants", () => {
       const codes = Object.values(ErrorCodes);
-      expect(codes.length).toBe(10);
+      expect(codes.length).toBe(12);
       codes.forEach((code) => {
         expect(code).toBeTypeOf("string");
         expect(code.length).toBeGreaterThan(0);

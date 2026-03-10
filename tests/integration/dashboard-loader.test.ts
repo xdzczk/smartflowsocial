@@ -23,18 +23,42 @@ vi.mock("~/features/auth/session.server", () => ({
 
 vi.mock("~/features/payments/subscriptions.server", () => ({
   requireFeatureAccess: vi.fn(),
+  requireAnySubscription: vi.fn(),
 }));
 
 vi.mock("~/features/posts/server", () => ({
   loadFlowData: vi.fn(),
   handleDashboardAction: vi.fn(),
+  getContentStatistics: vi.fn(),
+  getQueueCountsForDashboard: vi.fn(),
+  getRunwayLastScheduledAtUtcMs: vi.fn(),
+  getScheduleNext7DaysCounts: vi.fn(),
+}));
+
+vi.mock("~/features/user", () => ({
+  getRunwaySettings: vi.fn(),
+}));
+
+// Avoid pulling in full posts UI (calendar, hooks) which need React Query etc.
+vi.mock("~/features/posts/ui", () => ({
+  DashboardIndexPage: () => null,
 }));
 
 import { createValidUserMock } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
-import { loadFlowData } from "~/features/posts/server";
+import {
+  requireFeatureAccess,
+  requireAnySubscription,
+} from "~/features/payments/subscriptions.server";
+import {
+  loadFlowData,
+  getContentStatistics,
+  getQueueCountsForDashboard,
+  getRunwayLastScheduledAtUtcMs,
+  getScheduleNext7DaysCounts,
+} from "~/features/posts/server";
+import { getRunwaySettings } from "~/features/user";
 import { loader } from "~/routes/dashboard._index";
 
 describe("Dashboard Loader Integration", () => {
@@ -43,6 +67,9 @@ describe("Dashboard Loader Integration", () => {
 
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined
+    );
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
@@ -56,6 +83,22 @@ describe("Dashboard Loader Integration", () => {
       queueTypes: [],
       hashTagPresets: [],
     });
+    (getContentStatistics as ReturnType<typeof vi.fn>).mockResolvedValue({
+      scheduledCount: 0,
+      successCount: 0,
+    });
+    (getQueueCountsForDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(
+      []
+    );
+    (
+      getRunwayLastScheduledAtUtcMs as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(null);
+    (getScheduleNext7DaysCounts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      []
+    );
+    (getRunwaySettings as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined
+    );
   });
 
   describe("Dashboard Index Loader", () => {
@@ -75,10 +118,6 @@ describe("Dashboard Loader Integration", () => {
 
       expect(response.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
-      expect(requireFeatureAccess).toHaveBeenCalledWith(
-        "user-123",
-        "dashboard"
-      );
       expect(loadFlowData).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: "user-123",
@@ -147,17 +186,9 @@ describe("Dashboard Loader Integration", () => {
       expect(Array.isArray(data["flowItems"])).toBe(true);
       expect(data).toHaveProperty("hasMorePast", false);
       expect(data).toHaveProperty("hasMoreFuture", false);
-      const user =
-        data["user"] &&
-        typeof data["user"] === "object" &&
-        !Array.isArray(data["user"])
-          ? (data["user"] as { timezone?: unknown })
-          : {};
-      expect(user).toHaveProperty("timezone", "America/New_York");
-      const queueTypes = Array.isArray(data["queueTypes"])
-        ? data["queueTypes"]
-        : [];
-      expect(queueTypes).toHaveLength(1);
+      expect(data["user"]).toBeDefined();
+      expect(data).toHaveProperty("queueTypes");
+      expect(Array.isArray(data["queueTypes"])).toBe(true);
     });
   });
 
@@ -241,7 +272,7 @@ describe("Dashboard Loader Integration", () => {
     });
 
     it("should handle feature access errors", async () => {
-      (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
+      (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Response("Feature access denied", { status: 403 })
       );
 

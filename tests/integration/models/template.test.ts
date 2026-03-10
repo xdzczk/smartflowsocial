@@ -61,7 +61,7 @@ describe("Template Model", () => {
 
       expect(prisma.template.create).toHaveBeenCalledWith({
         data: {
-          userId: TEST_USER_ID,
+          user: { connect: { id: TEST_USER_ID } },
           name: "Test Template",
           templateType: "POST",
           post: { connect: { id: TEST_POST_ID } },
@@ -99,7 +99,7 @@ describe("Template Model", () => {
 
       expect(prisma.template.create).toHaveBeenCalledWith({
         data: {
-          userId: TEST_USER_ID,
+          user: { connect: { id: TEST_USER_ID } },
           name: "Longform Template",
           templateType: "LONGFORM",
           longFormPost: { connect: { id: "lf-1" } },

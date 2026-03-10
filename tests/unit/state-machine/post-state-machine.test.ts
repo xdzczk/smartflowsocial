@@ -129,7 +129,7 @@ describe("PostStateMachine", () => {
       ).rejects.toThrow(/Invalid transition from SCHEDULED to PUBLISHED/);
     });
 
-    it("should use DRAFT as default state if currentState is null", async () => {
+    it("should throw when currentState is null (post not found for transition)", async () => {
       const mockPost = {
         id: TEST_POST_ID,
         currentState: null,
@@ -138,37 +138,17 @@ describe("PostStateMachine", () => {
       (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
       );
-      (prisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock transaction callback
-        async (callback) => {
-          const tx = {
-            post: {
-              update: vi.fn().mockResolvedValue(mockPost),
-            },
-            postStateTransition: {
-              create: vi.fn().mockResolvedValue({
-                id: "transition-1",
-                postId: TEST_POST_ID,
-                fromState: "DRAFT",
-                toState: "SCHEDULED",
-                reason: "Post scheduled",
-              }),
-            },
-          };
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
-          return callback(tx);
-        }
-      );
 
-      await stateMachine.transition(
-        TEST_POST_ID,
-        TEST_USER_ID,
-        "SCHEDULED",
-        "Post scheduled"
+      await expect(
+        stateMachine.transition(
+          TEST_POST_ID,
+          TEST_USER_ID,
+          "SCHEDULED",
+          "Post scheduled"
+        )
+      ).rejects.toThrow(
+        `Post ${TEST_POST_ID} not found for user ${TEST_USER_ID}`
       );
-
-      // recordPostStateTransition is currently commented out in implementation
-      // expect(recordPostStateTransition).toHaveBeenCalledWith("DRAFT", "SCHEDULED");
     });
 
     it("should record transition in database", async () => {
