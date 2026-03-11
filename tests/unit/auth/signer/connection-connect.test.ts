@@ -67,7 +67,11 @@ describe("connection-connect", () => {
     const result = await createNip46SignerFromStoredConfig(config);
     expect(mockConnectReconnect).toHaveBeenCalledWith(
       expect.objectContaining({
-        bunkerPointer: { pubkey: "bp-pk", relays: ["wss://r.com"] },
+        bunkerPointer: {
+          pubkey: "bp-pk",
+          relays: ["wss://r.com"],
+          secret: null,
+        },
         relays: ["wss://r.com"],
       })
     );

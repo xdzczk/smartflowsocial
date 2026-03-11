@@ -252,7 +252,8 @@ export async function getActiveSigner(
       setLastActivityTime(Date.now());
       return cachedSigner;
     }
-    return cachedSigner;
+    clearCachedNip46Signer();
+    return null;
   }
 
   const config = getActiveSignerConfig();

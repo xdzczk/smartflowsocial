@@ -32,6 +32,28 @@ describe("remote-signer-health", () => {
     );
   });
 
+  it("calls getActiveSigner with allowReconnect true when no signer and tryReconnect true", async () => {
+    mockGetActiveSigner.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      type: "nip46",
+      ping: vi.fn().mockResolvedValue(undefined),
+      getPublicKey: vi.fn().mockResolvedValue("pk"),
+    });
+    mockGetActiveSignerConfig.mockReturnValue({
+      type: "nip46",
+      method: "nostrconnect_uri",
+      uri: "nostrconnect://x",
+      clientSecretKeyHex: "ab",
+      relays: ["wss://x"],
+    });
+    const result = await testConnection(2000, {
+      tryReconnectIfDisconnected: true,
+    });
+    expect(result.healthy).toBe(true);
+    expect(mockGetActiveSigner).toHaveBeenCalledWith({
+      allowReconnect: true,
+    });
+  });
+
   it("returns healthy false with generic message when no signer and no nip46 config", async () => {
     mockGetActiveSigner.mockResolvedValue(null);
     mockGetActiveSignerConfig.mockReturnValue(null);

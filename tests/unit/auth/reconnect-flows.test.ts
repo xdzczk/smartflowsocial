@@ -28,9 +28,8 @@ vi.mock("~/features/auth/signer", () => ({
 }));
 
 vi.mock("~/lib/nostr-conversion", () => ({
-  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain -- x is string, optional chain triggers no-unnecessary-condition
   convertToHex: vi.fn((x: string) =>
-    x && x.startsWith("npub") ? "pubkey-hex-123" : x
+    x.startsWith("npub") ? "pubkey-hex-123" : x
   ),
 }));
 

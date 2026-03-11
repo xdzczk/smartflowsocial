@@ -9,7 +9,6 @@ import React, { useEffect, useRef } from "react";
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
 import { ConfidencePanel } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
@@ -26,6 +25,7 @@ import {
   useComposerLocalDraft,
   type ComposerLocalSnapshot,
 } from "../hooks/useComposerLocalDraft";
+import { useComposerSignerReconnect } from "../hooks/useComposerSignerReconnect";
 import { useComposerState } from "../hooks/useComposerState";
 import { useComposerSubmit } from "../hooks/useComposerSubmit";
 import { useUnifiedComposerState } from "../hooks/useUnifiedComposerState";
@@ -116,8 +116,9 @@ export function UnifiedComposer({
   const user = useOptionalUser();
   const isTemplateMode = mode === "template";
   const initialAttachmentsFromDraft = React.useMemo(() => {
-    if (!initialDraft?.draftMeta?.attachmentMeta?.length) return [];
-    return initialDraft.draftMeta.attachmentMeta.map((a) => ({
+    const meta = initialDraft?.draftMeta?.attachmentMeta;
+    if (!meta?.length) return [];
+    return meta.map((a) => ({
       localId: a.localId,
       url: a.url,
       status: "done" as const,
@@ -403,28 +404,7 @@ export function UnifiedComposer({
     defaultTags: tags,
   });
 
-  // After successful remote signer reconnect, clear stuck "Waiting for signer approval"
-  useEffect(() => {
-    const handler = () => clearSigningState();
-    window.addEventListener("nostr-connection-healthy", handler);
-    return () =>
-      window.removeEventListener("nostr-connection-healthy", handler);
-  }, [clearSigningState]);
-
-  // When awaiting signer approval, try background reconnect periodically
-  const AWAITING_SIGNER_RECONNECT_INTERVAL_MS = 10_000;
-  const AWAITING_SIGNER_MAX_RECONNECT_ATTEMPTS = 5;
-  useEffect(() => {
-    if (!isSigning) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= AWAITING_SIGNER_MAX_RECONNECT_ATTEMPTS)
-        clearInterval(interval);
-    }, AWAITING_SIGNER_RECONNECT_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [isSigning]);
+  useComposerSignerReconnect(clearSigningState, isSigning);
 
   const handleSubmit = form.handleSubmit((data, event) => {
     void runSubmit(data, event);

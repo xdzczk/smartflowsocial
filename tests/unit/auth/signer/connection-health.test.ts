@@ -1,4 +1,5 @@
 /**
+ * @vitest-environment jsdom
  * Unit tests for connection health (verifySignerConnection, startHealthCheckMonitoring).
  * Tests app/features/auth/signer/connection-health.client.ts
  */
@@ -35,6 +36,10 @@ vi.mock("~/features/auth/signer/connection-relay-utils.client", () => ({
 import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import {
   getCachedSigner,
+  getConnectionEstablishedAt,
+  getLastActivityTime,
+  getLastRelaySyncAt,
+  getLastVerificationTime,
   setLastActivityTime,
   setLastVerificationTime,
 } from "~/features/auth/signer/connection-cache.client";
@@ -102,6 +107,46 @@ describe("connection-health", () => {
   });
 
   describe("startHealthCheckMonitoring", () => {
+    it("dispatches NOSTR_CONNECTION_STALE_EVENT when verification fails and cache still has same signer", async () => {
+      vi.useFakeTimers();
+      const nip46Config = {
+        type: "nip46" as const,
+        method: "nostrconnect_uri" as const,
+        uri: "nostrconnect://x?relay=wss://x&secret=s",
+        clientSecretKeyHex: "ab",
+        relays: ["wss://x"],
+      };
+      const staleSigner = {
+        type: "nip46" as const,
+        ping: vi.fn().mockRejectedValue(new Error("Ping failed")),
+      };
+      vi.mocked(getActiveSignerConfig).mockReturnValue(nip46Config);
+      vi.mocked(getCachedSigner).mockReturnValue(
+        staleSigner as unknown as NostrSigner
+      );
+      vi.mocked(getConnectionEstablishedAt).mockReturnValue(
+        Date.now() - 30 * 60 * 1000
+      );
+      vi.mocked(getLastVerificationTime).mockReturnValue(
+        Date.now() - 10 * 60 * 1000
+      );
+      vi.mocked(getLastActivityTime).mockReturnValue(
+        Date.now() - 10 * 60 * 1000
+      );
+      vi.mocked(getLastRelaySyncAt).mockReturnValue(null);
+
+      const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+      startHealthCheckMonitoring();
+      await vi.advanceTimersByTimeAsync(2 * 60 * 1000 + 100);
+
+      const staleCalls = dispatchSpy.mock.calls.filter(
+        (c) => (c[0] as CustomEvent).type === "nostr-connection-stale"
+      );
+      expect(staleCalls.length).toBeGreaterThanOrEqual(1);
+      vi.useRealTimers();
+      dispatchSpy.mockRestore();
+    });
+
     it("clears interval when no active config", async () => {
       vi.useFakeTimers();
       vi.mocked(getActiveSignerConfig).mockReturnValue(null);

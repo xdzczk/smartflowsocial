@@ -131,26 +131,24 @@ describe("Longform Listing Utils", () => {
 
   describe("longFormMatchesSearch", () => {
     it("matches title", () => {
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double
-      expect(
-        longFormMatchesSearch({ title: "Hello World" } as never, "hello")
-      ).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double
-      expect(
-        longFormMatchesSearch({ title: "Hello World" } as never, "xyz")
-      ).toBe(false);
+      // Minimal stub; function only reads title/summary for search
+      /* eslint-disable @typescript-eslint/consistent-type-assertions -- minimal test double */
+      const withTitle = { title: "Hello World" } as never;
+      /* eslint-enable @typescript-eslint/consistent-type-assertions */
+      expect(longFormMatchesSearch(withTitle, "hello")).toBe(true);
+      expect(longFormMatchesSearch(withTitle, "xyz")).toBe(false);
     });
     it("matches summary", () => {
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double
-      expect(
-        longFormMatchesSearch({ summary: "Some summary" } as never, "summary")
-      ).toBe(true);
+      /* eslint-disable @typescript-eslint/consistent-type-assertions -- minimal test double */
+      const withSummary = { summary: "Some summary" } as never;
+      /* eslint-enable @typescript-eslint/consistent-type-assertions */
+      expect(longFormMatchesSearch(withSummary, "summary")).toBe(true);
     });
     it("returns false when no match", () => {
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double
-      expect(
-        longFormMatchesSearch({ title: "Hi", summary: "Bye" } as never, "xyz")
-      ).toBe(false);
+      /* eslint-disable @typescript-eslint/consistent-type-assertions -- minimal test double */
+      const withTitleSummary = { title: "Hi", summary: "Bye" } as never;
+      /* eslint-enable @typescript-eslint/consistent-type-assertions */
+      expect(longFormMatchesSearch(withTitleSummary, "xyz")).toBe(false);
     });
     it("handles null title/summary", () => {
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double

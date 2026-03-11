@@ -87,11 +87,12 @@ describe("connection-visibility", () => {
     });
 
     initVisibilityHandler(opts as VisibilityHandlerOptions);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn .mock */
     const visibilityCalls: Array<[string, unknown]> =
       docAddSpy.mock.calls.filter(
         (c: [string, unknown]) => c[0] === "visibilitychange"
       );
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     expect(visibilityCalls.length).toBeGreaterThanOrEqual(1);
     const handleVisibilityChange = visibilityCalls[0]![1] as () => void;
     handleVisibilityChange();
@@ -115,11 +116,12 @@ describe("connection-visibility", () => {
     });
 
     initVisibilityHandler(opts as VisibilityHandlerOptions);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn .mock */
     const visibilityCalls: Array<[string, unknown]> =
       docAddSpy.mock.calls.filter(
         (c: [string, unknown]) => c[0] === "visibilitychange"
       );
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     const handleVisibilityChange = visibilityCalls[0]![1] as () => void;
     handleVisibilityChange();
 
@@ -143,11 +145,12 @@ describe("connection-visibility", () => {
     });
 
     initVisibilityHandler(opts as VisibilityHandlerOptions);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn .mock */
     const visibilityCalls: Array<[string, unknown]> =
       docAddSpy.mock.calls.filter(
         (c: [string, unknown]) => c[0] === "visibilitychange"
       );
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     (visibilityCalls[0]![1] as () => void)();
 
     expect(opts.onTeardown).not.toHaveBeenCalled();
@@ -156,10 +159,11 @@ describe("connection-visibility", () => {
   it("cleanup removes listeners", () => {
     const opts = defaultOptions();
     const cleanup = initVisibilityHandler(opts as VisibilityHandlerOptions);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn .mock */
     const visCall = docAddSpy.mock.calls.find(
       (c: [string, unknown]) => c[0] === "visibilitychange"
     );
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     expect(visCall).toBeDefined();
 
     cleanup();
@@ -172,6 +176,36 @@ describe("connection-visibility", () => {
     expect(winRemoveSpy).toHaveBeenCalledWith("focus", expect.any(Function));
     expect(winRemoveSpy).toHaveBeenCalledWith("pageshow", expect.any(Function));
     expect(winRemoveSpy).toHaveBeenCalledWith("online", expect.any(Function));
+  });
+
+  it("does not call onResume when throttle has not passed since last visibility reconnect", () => {
+    const opts = defaultOptions();
+    (opts.getWasHidden as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    (opts.getTeardownInProgress as ReturnType<typeof vi.fn>).mockReturnValue(
+      false
+    );
+    (
+      opts.getLastVisibilityReconnectAt as ReturnType<typeof vi.fn>
+    ).mockReturnValue(Date.now() - 100);
+    opts.visibilityReconnectThrottleMs = 10_000;
+
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: false,
+      writable: true,
+    });
+
+    initVisibilityHandler(opts as VisibilityHandlerOptions);
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn .mock */
+    const visibilityCalls: Array<[string, unknown]> =
+      docAddSpy.mock.calls.filter(
+        (c: [string, unknown]) => c[0] === "visibilitychange"
+      );
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    (visibilityCalls[0]![1] as () => void)();
+
+    expect(opts.setWasHidden).toHaveBeenCalledWith(false);
+    expect(opts.onResume).not.toHaveBeenCalled();
   });
 
   it("does not call onResume when getTeardownInProgress is true", () => {
@@ -192,11 +226,12 @@ describe("connection-visibility", () => {
     });
 
     initVisibilityHandler(opts as VisibilityHandlerOptions);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn .mock */
     const visibilityCalls: Array<[string, unknown]> =
       docAddSpy.mock.calls.filter(
         (c: [string, unknown]) => c[0] === "visibilitychange"
       );
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     (visibilityCalls[0]![1] as () => void)();
 
     expect(opts.setWasHidden).toHaveBeenCalledWith(false);
@@ -218,10 +253,11 @@ describe("connection-visibility", () => {
         writable: true,
       });
       initVisibilityHandler(opts as VisibilityHandlerOptions);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn .mock */
       const freezeCalls: Array<[string, unknown]> = docAddSpy.mock.calls.filter(
         (c: [string, unknown]) => c[0] === "freeze"
       );
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
       if (freezeCalls.length > 0) {
         (freezeCalls[0]![1] as () => void)();
         expect(opts.onTeardown).toHaveBeenCalled();
