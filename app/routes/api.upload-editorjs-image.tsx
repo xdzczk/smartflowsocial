@@ -106,7 +106,7 @@ export const action = withCSRFProtection(
         return await handleBlossomEditorJsRequest(request, contentType, assert);
       }
 
-      // S3 path for EditorJS (legacy compatibility)
+      // S3 path for EditorJS
       assert(
         contentType.includes(CONTENT_TYPE_MULTIPART_FORM_DATA),
         "Request must be multipart/form-data",

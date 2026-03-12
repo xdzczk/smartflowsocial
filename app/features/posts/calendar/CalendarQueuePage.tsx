@@ -1,12 +1,8 @@
 import { Link, useParams, useRevalidator } from "@remix-run/react";
 
-import { postsToCalendarPosts } from "~/features/posts/server";
-import {
-  Calendar,
-  getQueueAccentHex,
-  getQueueColor,
-  useCalendarQueueData,
-} from "~/features/posts/ui";
+import { Calendar, useCalendarQueueData } from "~/features/posts/calendar";
+import { postsToCalendarPosts } from "~/features/posts/server/calendar";
+import { getQueueAccentHex, getQueueColor } from "~/features/posts/ui";
 import { validateUserData } from "~/lib/validation/user-data";
 
 export default function CalendarQueuePage() {

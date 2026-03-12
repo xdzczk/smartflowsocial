@@ -1,5 +1,5 @@
 /**
- * User notification preferences – queries for cron and workers.
+ * User notification preferences data access. Prisma confined to feature repositories/ per architecture.
  */
 
 import { prisma } from "~/lib/prisma.server";

@@ -10,11 +10,9 @@ vi.mock("~/infra/queue", () => ({
   cancelPostJob: vi.fn(),
 }));
 
-vi.mock("~/models/post.queries.server", () => ({
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
   getPostById: vi.fn(),
-}));
-
-vi.mock("~/models/post.commands.server", () => ({
   updatePost: vi.fn(),
 }));
 
@@ -41,10 +39,10 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { CancelScheduleUseCase } from "~/features/posts/scheduling/index.server";
+import { updatePost } from "~/features/posts/server";
+import { getPostById } from "~/features/posts/server";
 import { cancelPostJob } from "~/infra/queue";
 import { recordPostCancelled } from "~/lib/metrics/business-metrics.server";
-import { updatePost } from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
 
 describe("CancelScheduleUseCase", () => {
   let useCase: CancelScheduleUseCase;
@@ -83,8 +81,7 @@ describe("CancelScheduleUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         data: {
-          scheduledFor: null,
-          // Note: isScheduled flag removed - state machine handles state transitions
+          scheduledAtUtc: null,
         },
       });
       expect(mockTransition).toHaveBeenCalledWith(

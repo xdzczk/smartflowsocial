@@ -4,8 +4,8 @@
  */
 
 import { requireUser } from "~/features/auth/session.server";
+import { getAllPlans, getUserSubscription } from "~/features/payments/data";
 import { isSubscriptionPeriodExpired } from "~/features/payments/types";
-import { getAllPlans, getUserSubscription } from "~/models/payment.server";
 
 /**
  * Load plans data

@@ -157,7 +157,7 @@ app/features/
 
 ### Layer Boundaries
 
-#### Models (`app/models/*`)
+#### Data layer (`app/features/*/data/`)
 
 - **Purpose:** Database access layer
 - **Contains:** Prisma queries, CRUD operations
@@ -199,7 +199,8 @@ import { useState } from "react";
 import { getUserById } from "~/features/user";
 import { requireUserId } from "~/features/auth";
 
-// 3. Internal utilities
+// 3. Internal utilities (for date formatting prefer useFormattedDate() in components,
+//    or formatDateForServer() from ~/lib/date-formatting.server.ts on the server)
 import { formatDate } from "~/lib/helpers";
 
 // 4. Types
@@ -247,6 +248,9 @@ describe("formatDate", () => {
   });
 });
 ```
+
+**Note:** `formatDate` from `~/lib/helpers` is deprecated for app code. Use `useFormattedDate()` in
+components and `formatDateForServer()` from `~/lib/date-formatting.server.ts` on the server.
 
 See [Testing Guide](./testing.md) for complete testing documentation.
 

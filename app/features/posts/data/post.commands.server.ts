@@ -87,31 +87,13 @@ function extractEventReference(
   return null;
 }
 
-/**
- * Convert scheduledFor (string or Date) to DateTime
- */
-function convertScheduledForToDateTime(
-  scheduledFor?: Date | string | number | null
+/** Convert scheduledAtUtc (Date or Unix seconds) to Date for DB. */
+function toScheduledAtUtcDate(
+  v: Date | number | null | undefined
 ): Date | undefined {
-  if (!scheduledFor) return undefined;
-
-  if (scheduledFor instanceof Date) {
-    return scheduledFor;
-  }
-
-  if (typeof scheduledFor === "number") {
-    // Assume Unix timestamp in seconds
-    return new Date(scheduledFor * 1000);
-  }
-
-  if (typeof scheduledFor === "string") {
-    const timestamp = parseInt(scheduledFor, 10);
-    if (!isNaN(timestamp)) {
-      // Assume Unix timestamp in seconds
-      return new Date(timestamp * 1000);
-    }
-  }
-
+  if (v == null) return undefined;
+  if (v instanceof Date) return v;
+  if (typeof v === "number") return new Date(v * 1000);
   return undefined;
 }
 
@@ -122,8 +104,7 @@ function convertScheduledForToDateTime(
  * resolve queueTypeId in the feature layer before calling this function.
  * Use resolveQueueTypeId() from app/features/posts/services/queue-type-resolver.server.ts
  *
- * This function supports dual-write: writes to both scheduledFor (string) and scheduledAtUtc (DateTime)
- * for backward compatibility during migration period.
+ * Writes scheduledAtUtc from scheduledFor input.
  */
 export function createPost(data: CreatePostData): Promise<Post> {
   const {
@@ -131,7 +112,7 @@ export function createPost(data: CreatePostData): Promise<Post> {
     content,
     publishedAt,
     fileUrl,
-    scheduledFor,
+    scheduledAtUtc: scheduledAtUtcInput,
     nostrEventId,
     signedEvent,
     nostrEvent,
@@ -154,11 +135,8 @@ export function createPost(data: CreatePostData): Promise<Post> {
     replyToPostId,
   } = data;
 
-  // Convert scheduledFor to DateTime for new field
-  const scheduledAtUtc = convertScheduledForToDateTime(scheduledFor);
-
-  // Determine initial state based on whether scheduledFor is provided
-  const initialState = scheduledFor ? "SCHEDULED" : "DRAFT";
+  const scheduledAtUtc = toScheduledAtUtcDate(scheduledAtUtcInput);
+  const initialState = scheduledAtUtc ? "SCHEDULED" : "DRAFT";
 
   return prisma.post.create({
     data: {
@@ -235,17 +213,17 @@ export async function createPostWithOutbox(
   const { userId, signedEvent, creationIdempotencyKey } = data;
 
   return prisma.$transaction(async (tx) => {
-    // Determine initial state based on whether scheduledFor is provided
-    const initialState = data.scheduledFor ? "SCHEDULED" : "DRAFT";
+    const scheduledAtUtcDate = toScheduledAtUtcDate(data.scheduledAtUtc);
+    const initialState = scheduledAtUtcDate ? "SCHEDULED" : "DRAFT";
 
     // Create post
     const post = await tx.post.create({
       data: {
         content: data.content,
         fileUrl: data.fileUrl,
-        scheduledAtUtc: convertScheduledForToDateTime(data.scheduledFor),
+        scheduledAtUtc: scheduledAtUtcDate ?? null,
         nominalScheduledAtUtc: data.nominalScheduledAtUtc
-          ? convertScheduledForToDateTime(data.nominalScheduledAtUtc)
+          ? (toScheduledAtUtcDate(data.nominalScheduledAtUtc) ?? null)
           : null,
         nostrEventId: data.nostrEventId,
         signedEvent: data.signedEvent,
@@ -342,7 +320,7 @@ export async function createPostWithOutbox(
     );
 
     // If scheduled and has signed event, create outbox event
-    if (scheduledForUnix && signedEvent && data.scheduledFor) {
+    if (scheduledForUnix && signedEvent && scheduledAtUtcDate) {
       const scheduledAtUtc = new Date(scheduledForUnix * 1000);
       const enqueueIdempotencyKey = generateEnqueueIdempotencyKey(
         post.id,
@@ -493,7 +471,7 @@ export async function deletePost({
 export function reschedulePost({
   id,
   userId,
-  newScheduledFor,
+  scheduledAtUtc: scheduledAtUtcInput,
   overrideQueue,
   signedEvent,
   nostrEvent,
@@ -501,15 +479,19 @@ export function reschedulePost({
 }: {
   id: string;
   userId: string;
-  newScheduledFor: string;
+  /** New schedule time: Date or Unix seconds. */
+  scheduledAtUtc: Date | number;
   overrideQueue: boolean;
   signedEvent?: SignedEvent;
   nostrEvent?: NostrEvent;
   queueTypeId?: string | null;
 }): Promise<Post> {
-  const scheduledAtUtc = convertScheduledForToDateTime(newScheduledFor);
+  const scheduledAtUtc = toScheduledAtUtcDate(scheduledAtUtcInput);
+  if (!scheduledAtUtc) {
+    throw new Error("reschedulePost: scheduledAtUtc is required");
+  }
   const updateData: Prisma.PostUpdateInput = {
-    scheduledAtUtc, // Also update new field
+    scheduledAtUtc,
     manual_override: overrideQueue,
     updatedAt: new Date(),
   };
@@ -565,21 +547,17 @@ export async function updatePost({
     updatedAt: new Date(),
   };
 
-  // Only include defined fields
-  if (data.scheduledFor !== undefined) {
-    // Explicitly clear both fields when null, otherwise set them
-    if (data.scheduledFor === null) {
+  if (data.scheduledAtUtc !== undefined) {
+    if (data.scheduledAtUtc === null) {
       updateData.scheduledAtUtc = null;
     } else {
-      // TypeScript narrows to Date | string | number here (null excluded)
-      // Update scheduledAtUtc only (scheduledFor legacy field removed)
-      const scheduledAtUtc = convertScheduledForToDateTime(data.scheduledFor);
-      updateData.scheduledAtUtc = scheduledAtUtc ?? null;
+      updateData.scheduledAtUtc =
+        toScheduledAtUtcDate(data.scheduledAtUtc) ?? null;
     }
   }
   if (data.nominalScheduledAtUtc !== undefined) {
     updateData.nominalScheduledAtUtc = data.nominalScheduledAtUtc
-      ? convertScheduledForToDateTime(data.nominalScheduledAtUtc)
+      ? (toScheduledAtUtcDate(data.nominalScheduledAtUtc) ?? null)
       : null;
   }
   if (data.userId !== undefined)

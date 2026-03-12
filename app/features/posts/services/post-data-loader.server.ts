@@ -3,8 +3,7 @@
  * Used by API routes to avoid direct model imports
  */
 
-import { getLongFormPost } from "~/models/longformpost.server";
-import { getPostById } from "~/models/post.queries.server";
+import { getLongFormPost, getPostById } from "~/features/posts/server";
 
 export async function getPostDataForModal(postId: string, userId: string) {
   // Try to fetch as regular post first

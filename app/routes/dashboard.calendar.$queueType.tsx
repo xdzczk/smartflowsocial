@@ -1,13 +1,15 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 
 import { requireSession, requireUserId } from "~/features/auth";
+import { CalendarQueuePage } from "~/features/posts/calendar";
+import type {
+  UserData as _UserData,
+  QueueType as _QueueType,
+} from "~/features/posts/server";
 import {
   handleCalendarAction,
   loadCalendarQueueData,
-  type UserData as _UserData,
-  type QueueType as _QueueType,
-} from "~/features/posts/server";
-import { CalendarQueuePage } from "~/features/posts/ui";
+} from "~/features/posts/server/calendar";
 import { withCSRFProtection } from "~/lib/csrf";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { calendarQueueLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";

@@ -16,7 +16,7 @@ import {
   TEST_PAYMENT_ID,
 } from "../../utils/payment-test-helpers";
 
-import { handlePaymentCompleted } from "~/models/payment.server";
+import { handlePaymentCompleted } from "~/features/payments/data";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 // Create mock inline to avoid circular dependency
@@ -109,7 +109,7 @@ describe("handlePaymentCompleted", () => {
     ).mockResolvedValue(null);
 
     vi.resetModules();
-    const paymentModule = await import("~/models/payment.server");
+    const paymentModule = await import("~/features/payments/data");
 
     await paymentModule.handlePaymentCompleted(
       TEST_PAYMENT_ID,

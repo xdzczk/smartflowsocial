@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getPostsByIds: vi.fn(),
 }));
 
@@ -37,12 +37,12 @@ vi.mock("~/lib/errors", () => ({
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
+import { getPostsByIds } from "~/features/posts/server";
 import {
   getBatchPosts,
   parseBatchPostsRequest,
 } from "~/features/posts/services/batch-posts.server";
 import { ValidationError } from "~/lib/errors";
-import { getPostsByIds } from "~/models/post.queries.server";
 
 describe("Batch Posts Service", () => {
   beforeEach(() => {

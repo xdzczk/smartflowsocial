@@ -1,6 +1,6 @@
 /**
  * Unit tests for encryption/decryption functions
- * Tests AES-256-GCM encryption with backward compatibility for legacy CBC
+ * Tests AES-256-GCM encryption
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -150,22 +150,6 @@ describe("Encryption Functions", () => {
 
       // First byte should be version 2 (GCM)
       expect(buffer[0]).toBe(0x02);
-    });
-  });
-
-  describe("Backward compatibility", () => {
-    it("should decrypt legacy CBC format (simulated)", () => {
-      // This test verifies that the decryption function can handle
-      // the legacy format structure (no version byte)
-      // Note: We can't easily create a real legacy encrypted value without
-      // the old code, but we can verify the detection logic works
-
-      const plaintext = "legacy-test";
-      const encrypted = encrypt(plaintext);
-
-      // Verify new format can be decrypted
-      const decrypted = decrypt(encrypted);
-      expect(decrypted).toBe(plaintext);
     });
   });
 

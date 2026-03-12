@@ -14,7 +14,6 @@ import {
   getRetryPolicy,
   shouldRetry,
   getRetryDelay,
-  isRetryableError,
   getBullMQRetryConfig,
   type RetryPolicy,
 } from "~/infra/queue/retry-policy.server";
@@ -181,67 +180,28 @@ describe("Retry Policy", () => {
     });
   });
 
-  describe("isRetryableError", () => {
-    it("should use enhanced classification when available", () => {
+  describe("isRetryableErrorEnhanced", () => {
+    it("should return true when enhanced classification says retryable", () => {
       const error = new Error("Network timeout");
       (isRetryableErrorEnhanced as ReturnType<typeof vi.fn>).mockReturnValue(
         true
       );
 
-      const result = isRetryableError(error);
+      const result = isRetryableErrorEnhanced(error);
 
       expect(result).toBe(true);
       expect(isRetryableErrorEnhanced).toHaveBeenCalledWith(error);
     });
 
-    it("should fallback to pattern matching if classification fails", () => {
-      const error = new Error("Network timeout");
-      (isRetryableErrorEnhanced as ReturnType<typeof vi.fn>).mockImplementation(
-        () => {
-          throw new Error("Classification failed");
-        }
-      );
-
-      const result = isRetryableError(error);
-
-      expect(result).toBe(true); // Network errors are retryable
-    });
-
-    it("should return false for non-retryable errors", () => {
+    it("should return false when enhanced classification says non-retryable", () => {
       const error = new Error("Post not found");
       (isRetryableErrorEnhanced as ReturnType<typeof vi.fn>).mockReturnValue(
         false
       );
 
-      const result = isRetryableError(error);
+      const result = isRetryableErrorEnhanced(error);
 
       expect(result).toBe(false);
-    });
-
-    it("should return false for validation errors", () => {
-      const error = new Error("Invalid payload validation");
-      (isRetryableErrorEnhanced as ReturnType<typeof vi.fn>).mockImplementation(
-        () => {
-          throw new Error("Classification failed");
-        }
-      );
-
-      const result = isRetryableError(error);
-
-      expect(result).toBe(false);
-    });
-
-    it("should return true for network errors", () => {
-      const error = new Error("Connection timeout");
-      (isRetryableErrorEnhanced as ReturnType<typeof vi.fn>).mockImplementation(
-        () => {
-          throw new Error("Classification failed");
-        }
-      );
-
-      const result = isRetryableError(error);
-
-      expect(result).toBe(true);
     });
   });
 

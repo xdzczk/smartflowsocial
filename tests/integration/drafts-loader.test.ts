@@ -29,12 +29,10 @@ vi.mock("~/features/payments/subscriptions.server", () => ({
 const { mockLoadDraftsData } = vi.hoisted(() => ({
   mockLoadDraftsData: vi.fn(),
 }));
-vi.mock("~/features/posts/server", async (importOriginal) => {
+// Route imports from ~/features/posts/server/drafts, so mock that path
+vi.mock("~/features/posts/server/drafts", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    loadDraftsData: mockLoadDraftsData,
-  };
+  return { ...actual, loadDraftsData: mockLoadDraftsData };
 });
 
 vi.mock("~/features/posts/ui", () => ({

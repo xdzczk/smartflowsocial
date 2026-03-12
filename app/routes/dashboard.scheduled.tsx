@@ -9,13 +9,15 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { ScheduledPostsPage } from "~/features/posts/scheduling";
+import type {
+  LongFormPostType as _LongFormPostType,
+  UserData as _UserData,
+} from "~/features/posts/server";
 import {
   handleScheduledAction,
   loadScheduledData,
-  type LongFormPostType as _LongFormPostType,
-  type UserData as _UserData,
-} from "~/features/posts/server";
-import { ScheduledPostsPage } from "~/features/posts/ui";
+} from "~/features/posts/server/scheduling";
 import { withCSRFProtection } from "~/lib/csrf";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { scheduledPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";

@@ -6,8 +6,10 @@
 import { processLongFormPost } from "~/features/posts/queue-handlers/longform-job.server";
 import { processPost } from "~/features/posts/queue-handlers/post-job.server";
 import { extractPostData } from "~/features/posts/queue-payload.server";
-import { getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
-import { getCronDueScheduledPosts } from "~/models/post.queries.server";
+import {
+  getCronDueScheduledLongFormPosts,
+  getCronDueScheduledPosts,
+} from "~/features/posts/server";
 
 /**
  * Run the post checker: load due scheduled posts and longform posts, then for each

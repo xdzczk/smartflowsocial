@@ -21,7 +21,7 @@ vi.mock("~/features/relays/relay-resolution.server", () => ({
     .mockResolvedValue(["wss://relay.example.com"]),
 }));
 
-vi.mock("~/models/template.server", () => ({
+vi.mock("~/features/templates/services/template-data.server", () => ({
   getTemplates: vi.fn().mockResolvedValue([]),
   getTemplatePrefill: vi.fn().mockResolvedValue(null),
 }));
@@ -29,7 +29,7 @@ vi.mock("~/models/template.server", () => ({
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { loadNewPostData } from "~/features/posts/server";
+import { loadNewPostData } from "~/features/posts/server/composer";
 import {
   getScheduleInterval,
   getQueueTypes,

@@ -40,3 +40,8 @@ the public API stays stable.
 - Connection-health and connection-connect can be tested with mocked storage/sessions.
 - Remote-signer-sessions-storage (migration, normalize) and relay utils (`buildRelayUnion`,
   `normalizeRelayList`, `relayListsEqual`) are pure and easy to test.
+
+## Reconnect risk areas and guards
+
+For reconnect loops, stale session state, visibility/background behaviour, and partial failure after
+reconnect, see [Auth / signer reconnect: risk areas and guards](./auth-signer-reconnect.md).

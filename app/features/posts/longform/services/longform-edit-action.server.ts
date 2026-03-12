@@ -10,10 +10,11 @@ import {
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
+import { updateLongFormPost } from "~/features/posts/server";
 import {
   createLongformDraftVersion,
   LONGFORM_SNAPSHOT_SCHEMA_VERSION,
-} from "~/features/posts/server";
+} from "~/features/posts/server/drafts";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import {
@@ -36,7 +37,6 @@ import {
   newLongformPostActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { updateLongFormPost } from "~/models/longformpost.server";
 
 import { LongFormPostStateMachine } from "../state-machine/longform-post-state-machine.server";
 import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
@@ -235,11 +235,9 @@ async function handleSaveDraft(
     userId,
     title,
     summary: finalSummary,
-    content: sanitizedContent, // Save as markdown for consistency
+    content: sanitizedContent,
     image,
     tags,
-    // Note: Flag fields (isPublished, isScheduled, draft) have been removed.
-    // Use LongFormPostStateMachine.transition() to change state instead.
     queueTypeId,
     hashTagPresetId,
   });
@@ -513,7 +511,7 @@ async function handleScheduleLongform(
     tags,
     signedEvent: signedEventJson,
     nostrEvent: nostrEventJson,
-    scheduledFor: scheduledForTimestamp?.toString() ?? null,
+    scheduledAtUtc: scheduledForTimestamp ?? null,
     queueTypeId,
     hashTagPresetId,
   });
@@ -585,7 +583,7 @@ export async function handleLongFormEditAction(
     const versionId = formData.get("versionId");
     if (typeof versionId === "string" && versionId) {
       const { restoreLongformDraftVersion } =
-        await import("~/features/posts/server");
+        await import("~/features/posts/server/drafts");
       const restoredId = await restoreLongformDraftVersion(versionId, userId);
       if (restoredId) {
         return redirect(`/dashboard/drafts/longform/edit/${restoredId}`);

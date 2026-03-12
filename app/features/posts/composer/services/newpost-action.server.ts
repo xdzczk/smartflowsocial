@@ -91,7 +91,7 @@ export async function handleNewPostAction(
     (value) => value instanceof File
   );
   if (isMultipart && hasBinaryFile) {
-    logWarning("Deprecated multipart media upload attempt on newpost route", {
+    logWarning("Multipart media upload on newpost route rejected", {
       userId,
       action: _action || "unknown",
       route: "/dashboard/newpost",
@@ -99,8 +99,7 @@ export async function handleNewPostAction(
     return json(
       {
         success: false,
-        error:
-          "Direct multipart media upload is deprecated. Upload media client-side via Blossom first, then submit URLs.",
+        error: "Upload media client-side via Blossom first, then submit URLs.",
       },
       { status: 410 }
     );

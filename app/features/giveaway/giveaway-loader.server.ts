@@ -8,6 +8,7 @@ import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { calculateTrustScore } from "~/features/engagement/trust-score";
 import type { User } from "~/features/engagement/trust-score";
 import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
+import { getRecentPublishedPosts } from "~/features/posts/server";
 import { getPostStats } from "~/features/posts/stats.server";
 import type { PostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
@@ -17,7 +18,6 @@ import { getUserProfileWithCache } from "~/features/user/services/user-profile-c
 import { logError } from "~/lib/error-logger.server";
 import { convertToHex } from "~/lib/helpers";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
-import { getRecentPublishedPosts } from "~/models/post.queries.server";
 
 import { getPostsInScope } from "./giveaway-scope.server";
 import { fetchGiveawayParticipants } from "./giveaway.server";

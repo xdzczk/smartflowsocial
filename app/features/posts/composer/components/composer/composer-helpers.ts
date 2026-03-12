@@ -1,6 +1,14 @@
 /**
- * Composer UI helpers: schedule time label, relative time, summary line.
+ * Composer UI helpers: schedule time label, relative time, summary line, media filter.
  */
+
+/** Regex for accepted attachment MIME types (image/*, video/*). */
+export const ACCEPTED_MEDIA_TYPES = /^image\/|^video\//;
+
+/** Filter file list to accepted image/video types for composer attachments. */
+export function filterMediaFiles(files: File[]): File[] {
+  return files.filter((f) => ACCEPTED_MEDIA_TYPES.test(f.type));
+}
 
 export function getScheduleTimeLabel(scheduledForStr: string): string | null {
   const s = scheduledForStr.trim();

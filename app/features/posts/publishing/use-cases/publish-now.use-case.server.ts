@@ -4,6 +4,7 @@
  * Publishes a post immediately to Nostr relays.
  */
 
+import { getPostById } from "~/features/posts/server";
 import { deriveIsPublished } from "~/features/posts/state-machine/post-state";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import type { PublishNowInput } from "~/features/posts/use-cases/types";
@@ -25,7 +26,6 @@ import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
 import { buildObsContext } from "~/lib/observability-context.server";
 import { nowMillis } from "~/lib/temporal";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
-import { getPostById } from "~/models/post.queries.server";
 
 export class PublishNowUseCase {
   private readonly stateMachine = new PostStateMachine();

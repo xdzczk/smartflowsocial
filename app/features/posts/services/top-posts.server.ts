@@ -2,12 +2,12 @@
  * Top posts by engagement for dashboard
  */
 
+import { getRecentPublishedPosts } from "~/features/posts/server";
+import type { PostWithQueueType } from "~/features/posts/server";
 import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
-import { getRecentPublishedPosts } from "~/models/post.queries.server";
-import type { PostWithQueueType } from "~/models/post.types";
 
 import { toPostDTO, type PostDTO } from "../dtos";
 import type { PostStats } from "../stats.server";

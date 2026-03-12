@@ -21,7 +21,7 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
-vi.mock("~/models/post.commands.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   createPostWithOutbox: vi.fn(),
 }));
 
@@ -55,13 +55,13 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { CreatePostUseCase } from "~/features/posts/server";
+import { createPostWithOutbox } from "~/features/posts/server";
+import { CreatePostUseCase } from "~/features/posts/server/composer";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
 // recordPostCreated and recordPostScheduled are commented out in implementation
 // import { recordPostCreated, recordPostScheduled } from "~/lib/metrics/business-metrics.server";
 import { prisma } from "~/lib/prisma.server";
-import { createPostWithOutbox } from "~/models/post.commands.server";
 
 describe("CreatePostUseCase", () => {
   let useCase: CreatePostUseCase;

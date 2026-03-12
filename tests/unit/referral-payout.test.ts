@@ -23,7 +23,7 @@ vi.mock("~/lib/error-logger.server", () => ({
   logError: vi.fn(),
 }));
 
-vi.mock("~/models/payment.server", () => ({
+vi.mock("~/features/payments/data", () => ({
   getOwnerNwcWithRelayOverrides: vi.fn(() => ({
     credentials: "nostr+walletconnect://test",
   })),

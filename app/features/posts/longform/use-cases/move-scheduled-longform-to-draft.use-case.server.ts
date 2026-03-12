@@ -4,11 +4,8 @@
  * Moves a scheduled longform post back to draft: cancels the queue job, clears scheduledAtUtc, and transitions to DRAFT.
  */
 
+import { getLongFormPost, updateLongFormPost } from "~/features/posts/server";
 import { cancelLongFormPostJob } from "~/infra/queue";
-import {
-  getLongFormPost,
-  updateLongFormPost,
-} from "~/models/longformpost.server";
 
 import { deriveIsScheduledLongForm } from "../state-machine/longform-post-state";
 import { LongFormPostStateMachine } from "../state-machine/longform-post-state-machine.server";
@@ -44,7 +41,7 @@ export class MoveScheduledLongFormToDraftUseCase {
     await updateLongFormPost({
       id: input.postId,
       userId: input.userId,
-      scheduledFor: null,
+      scheduledAtUtc: null,
     });
 
     await this.stateMachine.transition(

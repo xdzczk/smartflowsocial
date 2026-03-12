@@ -7,12 +7,13 @@ import { z } from "zod";
 
 import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import { createPostWithOutbox, updatePost } from "~/features/posts/server";
 import {
   createDraftGroupVersion,
   deleteDraftGroupPosts,
   getOrCreateDraftGroup,
   type BulkDraftSnapshotRow,
-} from "~/features/posts/server";
+} from "~/features/posts/server/drafts";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { RateLimitError } from "~/lib/errors";
@@ -24,10 +25,6 @@ import {
   saveAsDraftSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import {
-  createPostWithOutbox,
-  updatePost,
-} from "~/models/post.commands.server";
 import { isVideoUrl } from "~/utils/media-helpers";
 
 import { CreatePostUseCase } from "./composer/index.server";
@@ -37,25 +34,8 @@ import { resolveQueueTypeId } from "./services/queue-type-resolver.server";
 import { PostStateMachine } from "./state-machine/post-state-machine.server";
 
 /**
- * Upload result from client-side upload system
- */
-interface UploadResult {
-  success: boolean;
-  file?: {
-    url: string;
-    size: number;
-    name: string;
-    extension: string;
-    sha256?: string;
-    mimeType?: string;
-    provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS";
-  };
-  error?: string;
-}
-
-/**
- * Handle file upload preview results from client-side upload system.
- * Accepts either fileUrls (array of URL arrays per post) or legacy uploadResults.
+ * Handle file upload preview: accepts fileUrls (array of URL arrays per post).
+ * Returns 400 if fileUrls is missing or invalid.
  */
 export async function handleUploadImagesPreview(formData: FormData) {
   const startTime = nowMillis();
@@ -64,86 +44,47 @@ export async function handleUploadImagesPreview(formData: FormData) {
     const queueTypes = formData.getAll("queueTypes");
 
     const fileUrlsRaw = formData.get("fileUrls");
-    if (typeof fileUrlsRaw === "string") {
-      try {
-        const parsed = JSON.parse(fileUrlsRaw) as unknown;
-        if (!Array.isArray(parsed)) {
-          return json({ error: "Invalid fileUrls format" }, { status: 400 });
-        }
-        const fileUrlsPerPost = parsed as string[][];
-        if (
-          fileUrlsPerPost.length !== scheduledDates.length ||
-          fileUrlsPerPost.length !== queueTypes.length
-        ) {
-          return json(
-            { error: "Mismatch between fileUrls and post data" },
-            { status: 400 }
-          );
-        }
-        const fileUrls = fileUrlsPerPost.map((urls, index) => ({
-          fileUrl: Array.isArray(urls)
-            ? urls.filter((u): u is string => typeof u === "string")
-            : [],
-          scheduledFor: String(scheduledDates[index] ?? ""),
-        }));
-        const totalTime = nowMillis() - startTime;
-        logInfo("[BulkPosts] handleUploadImagesPreview (fileUrls) completed", {
-          postCount: fileUrls.length,
-          totalTimeMs: totalTime,
-        });
-        return json({ success: true, fileUrls });
-      } catch {
-        return json({ error: "Invalid fileUrls JSON" }, { status: 400 });
-      }
-    }
-
-    // Legacy: uploadResults (one URL per post)
-    const uploadResultsRaw = formData.get("uploadResults");
-    let uploadResults: UploadResult[] = [];
-    if (typeof uploadResultsRaw === "string") {
-      try {
-        const parsed = JSON.parse(uploadResultsRaw) as unknown;
-        if (Array.isArray(parsed)) {
-          uploadResults = parsed as UploadResult[];
-        } else {
-          return json(
-            { error: "Invalid upload results format" },
-            { status: 400 }
-          );
-        }
-      } catch {
-        return json({ error: "Invalid upload results JSON" }, { status: 400 });
-      }
-    } else {
+    if (typeof fileUrlsRaw !== "string") {
       return json(
-        { error: "Upload results or fileUrls missing" },
+        { error: "fileUrls is required (JSON array of URL arrays per post)" },
         { status: 400 }
       );
     }
 
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(fileUrlsRaw);
+    } catch {
+      return json({ error: "Invalid fileUrls JSON" }, { status: 400 });
+    }
+
+    if (!Array.isArray(parsed)) {
+      return json({ error: "Invalid fileUrls format" }, { status: 400 });
+    }
+
+    const fileUrlsPerPost = parsed as string[][];
     if (
-      scheduledDates.length !== uploadResults.length ||
-      queueTypes.length !== uploadResults.length
+      fileUrlsPerPost.length !== scheduledDates.length ||
+      fileUrlsPerPost.length !== queueTypes.length
     ) {
       return json(
-        { error: "Mismatch between upload results and post data" },
+        { error: "Mismatch between fileUrls and post data" },
         { status: 400 }
       );
     }
 
-    const fileUrls = uploadResults.map(
-      (result: UploadResult, index: number) => ({
-        fileUrl: (result.file?.url ?? "") ? [result.file?.url ?? ""] : [],
-        scheduledFor: String(scheduledDates[index] ?? ""),
-      })
-    );
+    const fileUrls = fileUrlsPerPost.map((urls, index) => ({
+      fileUrl: Array.isArray(urls)
+        ? urls.filter((u): u is string => typeof u === "string")
+        : [],
+      scheduledFor: String(scheduledDates[index] ?? ""),
+    }));
 
     const totalTime = nowMillis() - startTime;
     logInfo("[BulkPosts] handleUploadImagesPreview completed", {
-      uploadResultsCount: uploadResults.length,
+      postCount: fileUrls.length,
       totalTimeMs: totalTime,
     });
-
     return json({ success: true, fileUrls });
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
@@ -378,7 +319,7 @@ export async function handleSignAndSchedule(
                   queueTypeId,
                   isRecyclable,
                   signedEvent: normalizedRepostSignedEvent,
-                  scheduledFor: repostScheduledForDate,
+                  scheduledAtUtc: repostScheduledForDate ?? item.scheduledFor,
                   tags: [],
                   repost: true,
                   isQuotedPost: false,
@@ -445,7 +386,7 @@ export async function handleSignAndSchedule(
                   queueTypeId,
                   isRecyclable,
                   signedEvent: normalizedQuoteSignedEvent,
-                  scheduledFor: quoteScheduledForDate,
+                  scheduledAtUtc: quoteScheduledForDate ?? item.scheduledFor,
                   tags: [],
                   repost: false,
                   isQuotedPost: true,

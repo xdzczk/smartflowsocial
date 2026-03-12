@@ -24,7 +24,7 @@ import {
 } from "../utils/payment-test-helpers";
 
 import { getBitcoinRate } from "~/features/payments/btc.rate";
-import { createPlanInvoice } from "~/models/payment.server";
+import { createPlanInvoice } from "~/features/payments/data";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 // Create mock inline to avoid circular dependency
@@ -229,7 +229,7 @@ describe("Payment Processing Edge Cases", () => {
       );
 
       vi.resetModules();
-      const paymentModule = await import("~/models/payment.server");
+      const paymentModule = await import("~/features/payments/data");
 
       // Now when handlePaymentCompleted calls updateUserSubscription, the transaction will fail
       await expect(
@@ -297,8 +297,8 @@ describe("Payment Processing Edge Cases", () => {
         createMockPayment({ status: "PENDING" })
       );
 
-      const { createPlanInvoice } = await import("~/models/payment.server");
-      const paymentModule = await import("~/models/payment.server");
+      const { createPlanInvoice } = await import("~/features/payments/data");
+      const paymentModule = await import("~/features/payments/data");
       vi.spyOn(paymentModule, "updateUserSubscription").mockResolvedValue();
 
       await createPlanInvoice({
@@ -363,8 +363,8 @@ describe("Payment Processing Edge Cases", () => {
         createMockPayment({ status: "PENDING" })
       );
 
-      const { createPlanInvoice } = await import("~/models/payment.server");
-      const paymentModule = await import("~/models/payment.server");
+      const { createPlanInvoice } = await import("~/features/payments/data");
+      const paymentModule = await import("~/features/payments/data");
       vi.spyOn(paymentModule, "updateUserSubscription").mockResolvedValue();
 
       const result = await createPlanInvoice({
@@ -424,8 +424,8 @@ describe("Payment Processing Edge Cases", () => {
         createMockPayment({ status: "PENDING" })
       );
 
-      const { createPlanInvoice } = await import("~/models/payment.server");
-      const paymentModule = await import("~/models/payment.server");
+      const { createPlanInvoice } = await import("~/features/payments/data");
+      const paymentModule = await import("~/features/payments/data");
       vi.spyOn(paymentModule, "updateUserSubscription").mockResolvedValue();
 
       const result = await createPlanInvoice({
@@ -476,8 +476,8 @@ describe("Payment Processing Edge Cases", () => {
         createMockPayment({ status: "PENDING" })
       );
 
-      const { createPlanInvoice } = await import("~/models/payment.server");
-      const paymentModule = await import("~/models/payment.server");
+      const { createPlanInvoice } = await import("~/features/payments/data");
+      const paymentModule = await import("~/features/payments/data");
       vi.spyOn(paymentModule, "updateUserSubscription").mockResolvedValue();
 
       const result = await createPlanInvoice({
@@ -535,8 +535,8 @@ describe("Payment Processing Edge Cases", () => {
         createMockPayment({ status: "PENDING" })
       );
 
-      const { createPlanInvoice } = await import("~/models/payment.server");
-      const paymentModule = await import("~/models/payment.server");
+      const { createPlanInvoice } = await import("~/features/payments/data");
+      const paymentModule = await import("~/features/payments/data");
       vi.spyOn(paymentModule, "updateUserSubscription").mockResolvedValue();
 
       // Simulate concurrent requests
@@ -595,7 +595,7 @@ describe("Payment Processing Edge Cases", () => {
 
       // Import the module - it should use the real function with mocked prisma
       vi.resetModules();
-      const paymentModule = await import("~/models/payment.server");
+      const paymentModule = await import("~/features/payments/data");
 
       await expect(
         paymentModule.updateUserSubscription(
@@ -649,7 +649,7 @@ describe("Payment Processing Edge Cases", () => {
 
       // Import the module - it should use the real function with mocked prisma
       vi.resetModules();
-      const paymentModule = await import("~/models/payment.server");
+      const paymentModule = await import("~/features/payments/data");
 
       await expect(
         paymentModule.updateUserSubscription(
@@ -705,8 +705,8 @@ describe("Payment Processing Edge Cases", () => {
         createMockPayment({ status: "PENDING" })
       );
 
-      const { createPlanInvoice } = await import("~/models/payment.server");
-      const paymentModule = await import("~/models/payment.server");
+      const { createPlanInvoice } = await import("~/features/payments/data");
+      const paymentModule = await import("~/features/payments/data");
       vi.spyOn(paymentModule, "updateUserSubscription").mockResolvedValue();
 
       const result = await createPlanInvoice({
@@ -750,8 +750,8 @@ describe("Payment Processing Edge Cases", () => {
         mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockPlan);
 
-      const { createPlanInvoice } = await import("~/models/payment.server");
-      const paymentModule = await import("~/models/payment.server");
+      const { createPlanInvoice } = await import("~/features/payments/data");
+      const paymentModule = await import("~/features/payments/data");
       vi.spyOn(paymentModule, "updateUserSubscription").mockResolvedValue();
 
       // Should still work even with malformed invoice (uses amount from response)

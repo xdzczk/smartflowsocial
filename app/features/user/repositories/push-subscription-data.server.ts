@@ -1,6 +1,5 @@
 /**
- * Push Subscription Model
- * Database operations for push subscriptions
+ * Push subscription data access. Prisma confined to feature repositories/ per architecture.
  */
 
 import type { PushSubscription } from "@prisma/client";

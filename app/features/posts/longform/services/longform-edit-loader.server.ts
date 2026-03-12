@@ -3,14 +3,14 @@
  * Centralized data fetching for longform edit page
  */
 
-import { getDraftVersions } from "~/features/posts/server";
+import { getLongFormPost } from "~/features/posts/server";
+import { getDraftVersions } from "~/features/posts/server/drafts";
 import {
   getUserById,
   getScheduleInterval,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { getLongFormPost } from "~/models/longformpost.server";
 
 /**
  * Load longform edit page data

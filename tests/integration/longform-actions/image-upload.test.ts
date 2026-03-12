@@ -14,7 +14,7 @@ import {
 
 import { formDataStore } from "./shared-setup";
 
-import { handleNewLongFormAction } from "~/features/posts/server";
+import { handleNewLongFormAction } from "~/features/posts/server/longform";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import {
   getUserById,

@@ -227,11 +227,11 @@ Remix uses file-based routing with dot notation:
 ### Server vs Client Code
 
 - Files with `.server.ts` run only on the server
-- **Data access (Prisma):** Prisma may be used only in `app/models/`, in `app/features/<name>/data/`
-  or `app/features/<name>/repositories/` (feature data layer), and in `app/infra/outbox/`. Routes
-  and feature UI/hooks must not import `prisma` or `~/lib/prisma.server`; they use feature public
-  APIs or models. Migrate existing feature code that uses Prisma into a `data/` or `repositories/`
-  subfolder per feature, or move logic into `app/models/`.
+- **Data access (Prisma):** Prisma may be used only in `app/features/<name>/data/` or
+  `app/features/<name>/repositories/` (feature data layer), and in `app/infra/outbox/`. Routes and
+  feature UI/hooks must not import `prisma` or `~/lib/prisma.server`; they use feature public APIs
+  or models. Migrate existing feature code that uses Prisma into a `data/` or `repositories/`
+  subfolder per feature (e.g. `app/features/<name>/data/`).
 - Use `loader` functions for data fetching, `action` functions for mutations
 - **Runtime configuration:** Read config only from `~/lib/env.server` (typed `env` object). Do not
   use `process.env` in app or infra code; add new variables to `EnvConfig` in

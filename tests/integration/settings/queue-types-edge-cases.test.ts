@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/payment.server", () => ({
+vi.mock("~/features/payments/data", () => ({
   getUserSubscription: vi.fn(),
 }));
 
@@ -22,9 +22,9 @@ vi.mock("~/features/user/services/user-cache.server", () => ({
 
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
+import { getUserSubscription } from "~/features/payments/data";
 import { handleQueueTypeAction } from "~/features/settings/actions/queue-types-actions.server";
 import { updateQueueType } from "~/features/user";
-import { getUserSubscription } from "~/models/payment.server";
 
 /** Minimal queue type returned by updateQueueType/create so queueTypeToClient gets a valid value */
 const MOCK_QUEUE_TYPE = {

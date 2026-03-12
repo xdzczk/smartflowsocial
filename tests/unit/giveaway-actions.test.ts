@@ -25,7 +25,7 @@ vi.mock("~/features/user", () => ({
   getUserById: (...args: unknown[]) => mockGetUserById(...args),
 }));
 
-vi.mock("~/models/payment.server", () => ({
+vi.mock("~/features/payments/data", () => ({
   getUserSubscription: (...args: unknown[]) => mockGetUserSubscription(...args),
 }));
 

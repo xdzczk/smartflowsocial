@@ -15,7 +15,7 @@ const mockGetUserSubscription = vi.fn();
 const mockGetGiveawayPlanLimits = vi.fn();
 const mockGetUserPlanType = vi.fn();
 
-vi.mock("~/models/payment.server", () => ({
+vi.mock("~/features/payments/data", () => ({
   getUserSubscription: (...args: unknown[]) => mockGetUserSubscription(...args),
 }));
 

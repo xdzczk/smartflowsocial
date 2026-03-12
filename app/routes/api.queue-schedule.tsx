@@ -4,7 +4,7 @@ import { requireUserId } from "~/features/auth";
 import {
   calculateQueueScheduleTime,
   parseQueueScheduleRequest,
-} from "~/features/posts/server";
+} from "~/features/posts/server/scheduling";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
 
@@ -36,14 +36,9 @@ export const action = withCSRFProtection(
         });
       }
 
-      const { queueTypeName, queueTypeId } =
-        parseQueueScheduleRequest(requestBody);
+      const { queueTypeId } = parseQueueScheduleRequest(requestBody);
 
-      return await calculateQueueScheduleTime(
-        userId,
-        queueTypeName,
-        queueTypeId
-      );
+      return await calculateQueueScheduleTime(userId, queueTypeId);
     } catch (error) {
       // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {

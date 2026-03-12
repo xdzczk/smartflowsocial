@@ -125,7 +125,7 @@ describe("createPlanInvoice", () => {
   it("should create invoice for free plan", async () => {
     paymentScenarios.freePlanInvoice(mockPrisma);
 
-    const { createPlanInvoice } = await import("~/models/payment.server");
+    const { createPlanInvoice } = await import("~/features/payments/data");
 
     const result = await createPlanInvoice({
       planId: TEST_PLAN_ID,
@@ -155,7 +155,7 @@ describe("createPlanInvoice", () => {
   it("should throw error for non-existent plan", async () => {
     paymentScenarios.nonExistentPlan(mockPrisma);
 
-    const { createPlanInvoice } = await import("~/models/payment.server");
+    const { createPlanInvoice } = await import("~/features/payments/data");
 
     await expect(
       createPlanInvoice({
@@ -168,7 +168,7 @@ describe("createPlanInvoice", () => {
   it("should throw error for inactive plan", async () => {
     paymentScenarios.inactivePlan(mockPrisma);
 
-    const { createPlanInvoice } = await import("~/models/payment.server");
+    const { createPlanInvoice } = await import("~/features/payments/data");
 
     await expect(
       createPlanInvoice({
@@ -182,7 +182,7 @@ describe("createPlanInvoice", () => {
     paymentScenarios.paidPlanInvoice(mockPrisma, 10);
     delete process.env["OWNER_NWC"];
 
-    const { createPlanInvoice } = await import("~/models/payment.server");
+    const { createPlanInvoice } = await import("~/features/payments/data");
 
     await expect(
       createPlanInvoice({
@@ -238,10 +238,10 @@ describe("createPlanInvoice", () => {
       })
     );
 
-    const { createPlanInvoice } = await import("~/models/payment.server");
+    const { createPlanInvoice } = await import("~/features/payments/data");
 
     // Mock updateUserSubscription for free plan path
-    const paymentModule = await import("~/models/payment.server");
+    const paymentModule = await import("~/features/payments/data");
     vi.spyOn(paymentModule, "updateUserSubscription").mockResolvedValue();
 
     const result = await createPlanInvoice({
@@ -294,7 +294,7 @@ describe("createPlanInvoice", () => {
 
     paymentScenarios.paidPlanInvoice(mockPrisma, 10);
 
-    const { createPlanInvoice } = await import("~/models/payment.server");
+    const { createPlanInvoice } = await import("~/features/payments/data");
 
     await expect(
       createPlanInvoice({
@@ -328,7 +328,7 @@ describe("createPlanInvoice", () => {
 
     paymentScenarios.paidPlanInvoice(mockPrisma, 10);
 
-    const { createPlanInvoice } = await import("~/models/payment.server");
+    const { createPlanInvoice } = await import("~/features/payments/data");
 
     await expect(
       createPlanInvoice({

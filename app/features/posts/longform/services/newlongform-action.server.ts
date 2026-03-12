@@ -12,9 +12,12 @@ import {
 
 import {
   resolveQueueTypeId,
+  createPostWithOutbox,
+} from "~/features/posts/server";
+import {
   createLongformDraftVersion,
   LONGFORM_SNAPSHOT_SCHEMA_VERSION,
-} from "~/features/posts/server";
+} from "~/features/posts/server/drafts";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
@@ -35,7 +38,6 @@ import {
   newLongformPostActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { createPostWithOutbox } from "~/models/post.commands.server";
 
 import { CreateLongFormPostUseCase } from "../use-cases/create-longform-post.use-case.server";
 import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
@@ -501,7 +503,7 @@ async function handlePublish(
           isRecyclable: false,
           signedEvent: item.signedEvent,
           nostrEvent: undefined,
-          scheduledFor: item.scheduledFor,
+          scheduledAtUtc: item.scheduledFor,
           tags: [],
           repost: false,
           isQuotedPost: true,
@@ -683,7 +685,7 @@ async function handleScheduleLongform(
           isRecyclable: false,
           signedEvent: item.signedEvent,
           nostrEvent: undefined,
-          scheduledFor: item.scheduledFor,
+          scheduledAtUtc: item.scheduledFor,
           tags: [],
           repost: false,
           isQuotedPost: true,

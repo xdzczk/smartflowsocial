@@ -14,11 +14,9 @@ vi.mock("~/features/user/services/user-cache.server", () => ({
   getQueueTypesCached: vi.fn(),
 }));
 
-vi.mock("~/models/post.commands.server", () => ({
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
   deletePost: vi.fn(),
-}));
-
-vi.mock("~/models/post.queries.server", () => ({
   getRecyclablePosts: vi.fn(),
   getPostsByIds: vi.fn(),
 }));
@@ -33,14 +31,11 @@ import {
   getRecyclableDashboardData,
   handleRecyclablePostAction,
 } from "~/features/posts/publishing/index.server";
+import { deletePost } from "~/features/posts/server";
+import { getRecyclablePosts, getPostsByIds } from "~/features/posts/server";
 import { getPostStats } from "~/features/posts/stats.server";
 import { getUserById } from "~/features/user";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
-import { deletePost } from "~/models/post.commands.server";
-import {
-  getRecyclablePosts,
-  getPostsByIds,
-} from "~/models/post.queries.server";
 
 describe("Recyclable Posts Service", () => {
   beforeEach(() => {

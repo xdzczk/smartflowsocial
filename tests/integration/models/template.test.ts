@@ -1,6 +1,6 @@
 /**
  * Integration tests for template model
- * Tests app/models/template.server.ts
+ * Tests app/features/templates/services/template-data.server.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -20,7 +20,6 @@ vi.mock("~/lib/prisma.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { prisma } from "~/lib/prisma.server";
 import {
   createTemplate,
   getTemplates,
@@ -28,7 +27,8 @@ import {
   updateTemplate,
   deleteTemplate,
   getTemplatePrefill,
-} from "~/models/template.server";
+} from "~/features/templates/services/template-data.server";
+import { prisma } from "~/lib/prisma.server";
 
 describe("Template Model", () => {
   beforeEach(() => {

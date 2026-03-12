@@ -74,9 +74,9 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
-vi.mock("~/models/post.commands.server", () => ({}));
+vi.mock("~/features/posts/server", () => ({}));
 
-vi.mock("~/models/longformpost.server", () => ({}));
+vi.mock("~/features/posts/server", () => ({}));
 
 const { mockTransition } = vi.hoisted(() => {
   const mockTransition = vi.fn();

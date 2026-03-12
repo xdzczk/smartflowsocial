@@ -6,7 +6,7 @@
 import { redirect } from "@remix-run/node";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
-import { PublishNowUseCase } from "~/features/posts/server";
+import { PublishNowUseCase } from "~/features/posts/server/publishing";
 import { assertMediaUrlsReady } from "~/features/upload/services/media-readiness.server";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";

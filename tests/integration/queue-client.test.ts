@@ -187,32 +187,30 @@ describe("Queue Client", () => {
   });
 
   describe("Cancel Operations", () => {
-    it("should cancel job by data key", async () => {
+    it("should cancel job by job ID", async () => {
       const mockJob = {
-        id: "job-123",
+        id: "post-123",
         data: { postId: "post-123" },
         remove: vi.fn().mockResolvedValue(undefined),
       } as unknown as Job;
 
-      mockQueue.getJobs.mockResolvedValue([mockJob]);
+      mockQueue.getJob.mockResolvedValue(mockJob);
 
-      const result = await queueClient.cancelByData(
+      const result = await queueClient.cancelByJobId(
         "scheduled-posts",
-        "postId",
         "post-123"
       );
 
-      expect(mockQueue.getJobs).toHaveBeenCalledWith(["waiting", "delayed"]);
+      expect(mockQueue.getJob).toHaveBeenCalledWith("post-123");
       expect(mockJob.remove).toHaveBeenCalled();
       expect(result).toBe(true);
     });
 
     it("should return false when job not found", async () => {
-      mockQueue.getJobs.mockResolvedValue([]);
+      mockQueue.getJob.mockResolvedValue(undefined);
 
-      const result = await queueClient.cancelByData(
+      const result = await queueClient.cancelByJobId(
         "scheduled-posts",
-        "postId",
         "post-123"
       );
 
@@ -220,11 +218,10 @@ describe("Queue Client", () => {
     });
 
     it("should handle cancel errors gracefully", async () => {
-      mockQueue.getJobs.mockRejectedValue(new Error("Redis error"));
+      mockQueue.getJob.mockRejectedValue(new Error("Redis error"));
 
-      const result = await queueClient.cancelByData(
+      const result = await queueClient.cancelByJobId(
         "scheduled-posts",
-        "postId",
         "post-123"
       );
 

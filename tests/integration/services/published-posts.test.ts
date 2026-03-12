@@ -15,11 +15,9 @@ vi.mock("~/features/user/services/user-cache.server", () => ({
   getQueueTypesCached: vi.fn(),
 }));
 
-vi.mock("~/models/longformpost.server", () => ({
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
   getPublishedLongFormPosts: vi.fn(),
-}));
-
-vi.mock("~/models/post.queries.server", () => ({
   getPublishedPosts: vi.fn(),
   getPublishedRepostsCount: vi.fn(() => Promise.resolve(0)),
 }));
@@ -38,10 +36,10 @@ vi.mock("~/features/posts/services/stats.server", () => ({
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
 import { getPublishedDashboardData } from "~/features/posts/publishing/index.server";
+import { getPublishedLongFormPosts } from "~/features/posts/server";
+import { getPublishedPosts } from "~/features/posts/server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
-import { getPublishedLongFormPosts } from "~/models/longformpost.server";
-import { getPublishedPosts } from "~/models/post.queries.server";
 
 describe("Posted Posts Service", () => {
   beforeEach(() => {

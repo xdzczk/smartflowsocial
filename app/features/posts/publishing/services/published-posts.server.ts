@@ -10,6 +10,11 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "~/features/posts/dtos";
+import {
+  getPublishedLongFormPosts,
+  getPublishedPosts,
+  getPublishedRepostsCount,
+} from "~/features/posts/server";
 import type { PostStats } from "~/features/posts/stats.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
@@ -20,11 +25,6 @@ import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
-import { getPublishedLongFormPosts } from "~/models/longformpost.server";
-import {
-  getPublishedPosts,
-  getPublishedRepostsCount,
-} from "~/models/post.queries.server";
 
 import type { PostType, Prisma } from "../../data/posts-prisma-types.server";
 

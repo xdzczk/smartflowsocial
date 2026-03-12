@@ -9,6 +9,17 @@ import { json } from "@remix-run/node";
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { combineContent } from "~/features/posts/combined.server";
 import { ScheduleLongFormPostUseCase } from "~/features/posts/longform/index.server";
+import {
+  getScheduledLongFormPosts,
+  deleteLongFormPost,
+  updateLongFormPost,
+  getLongFormPost as getLongFormPostModel,
+  deletePost,
+  reschedulePost,
+  updatePost,
+  getScheduledPosts,
+  getPostById,
+} from "~/features/posts/server";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
 import {
@@ -18,18 +29,6 @@ import {
 } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { fromUnixTimestamp, toDate, toPrismaDate } from "~/lib/temporal";
-import {
-  getScheduledLongFormPosts,
-  deleteLongFormPost,
-  updateLongFormPost,
-  getLongFormPost as getLongFormPostModel,
-} from "~/models/longformpost.server";
-import {
-  deletePost,
-  reschedulePost,
-  updatePost,
-} from "~/models/post.commands.server";
-import { getScheduledPosts, getPostById } from "~/models/post.queries.server";
 
 import type { Prisma } from "../../data/posts-prisma-types.server";
 import { SchedulePostUseCase } from "../use-cases/schedule-post.use-case.server";
@@ -37,10 +36,6 @@ import { SchedulePostUseCase } from "../use-cases/schedule-post.use-case.server"
 const ERROR_POST_NOT_FOUND = "Post not found";
 const ERROR_LONGFORM_POST_NOT_FOUND = "Article not found";
 const ERROR_PARSING_SIGNED_EVENTS = "Error parsing signed events";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Reserved for future use
-const QUEUE_SCHEDULED_POSTS = "scheduled-posts";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Reserved for future use
-const QUEUE_SCHEDULED_LONGFORM_POSTS = "scheduled-longform-posts";
 
 /**
  * Get scheduled posts dashboard data
@@ -326,7 +321,7 @@ async function handleReschedule(formData: FormData, userId: string) {
   const updatedPost = await reschedulePost({
     id: postId,
     userId,
-    newScheduledFor: newTime,
+    scheduledAtUtc: parseInt(newTime, 10),
     overrideQueue,
     queueTypeId,
     signedEvent: parsedSignedEvent as unknown as SignedEvent | undefined,
@@ -451,7 +446,9 @@ async function handleEditPost(formData: FormData, userId: string) {
             .filter((tag) => tag.trim())
         : [],
       queueTypeId,
-      scheduledFor: scheduledFor ? String(Number(scheduledFor)) : undefined,
+      scheduledAtUtc: scheduledFor
+        ? parseInt(String(scheduledFor), 10)
+        : undefined,
       signedEvent: parsedSignedEvent ?? undefined,
       nostrEvent: parsedNostrEvent ?? undefined,
       hashTagPresetId,

@@ -245,6 +245,52 @@ describe("nostr-signer-connection", () => {
       );
     });
 
+    it("returns null and does not overwrite cache when config changes while connect is in flight", async () => {
+      const nip46Config: ActiveSignerConfig = {
+        type: "nip46",
+        method: "nostrconnect_uri",
+        uri: "nostrconnect://x?relay=wss://x&secret=s",
+        clientSecretKeyHex: "ab",
+        relays: ["wss://x"],
+        bunkerPointer: { pubkey: "pk", relays: ["wss://x"], secret: null },
+      };
+      mockGetActiveSignerConfig.mockReturnValue(nip46Config);
+      mockGetCachedSigner.mockReturnValue(null);
+      const { createNip46SignerFromStoredConfig } =
+        await import("~/features/auth/signer/connection-connect.client");
+      let resolveConnect!: (v: { signer: NostrSigner; pubkey: string }) => void;
+      const connectPromise = new Promise<{
+        signer: NostrSigner;
+        pubkey: string;
+      }>((r) => {
+        resolveConnect = r;
+      });
+      (
+        createNip46SignerFromStoredConfig as ReturnType<typeof vi.fn>
+      ).mockReturnValue(connectPromise);
+      const { getActiveConnection } =
+        await import("~/features/auth/signer/remote-signer-sessions.client");
+      (getActiveConnection as ReturnType<typeof vi.fn>).mockReturnValue({
+        id: "conn-1",
+        config: nip46Config,
+        metadata: {},
+      });
+
+      const resultPromise = getActiveSigner({ allowReconnect: true });
+      mockGetActiveSignerConfig.mockReturnValue(null);
+      const signerWithClose = {
+        ...mockCachedSigner,
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      resolveConnect({
+        signer: signerWithClose,
+        pubkey: "pk",
+      });
+      const result = await resultPromise;
+      expect(result).toBeNull();
+      expect(mockSetCachedSigner).not.toHaveBeenCalled();
+    });
+
     it("deduplicates concurrent getActiveSigner calls with same config", async () => {
       const nip46Config: ActiveSignerConfig = {
         type: "nip46",
@@ -306,6 +352,15 @@ describe("nostr-signer-connection", () => {
       const { getActiveConnection } =
         await import("~/features/auth/signer/remote-signer-sessions.client");
       (getActiveConnection as ReturnType<typeof vi.fn>).mockReturnValue(null);
+      const result = await tryBackgroundReconnect();
+      expect(result).toBe(false);
+      expect(mockSetCachedSigner).not.toHaveBeenCalled();
+    });
+
+    it("returns false when getActiveSignerConfig is null", async () => {
+      const { tryBackgroundReconnect } =
+        await import("~/features/auth/signer/nostr-signer-connection.client");
+      mockGetActiveSignerConfig.mockReturnValue(null);
       const result = await tryBackgroundReconnect();
       expect(result).toBe(false);
       expect(mockSetCachedSigner).not.toHaveBeenCalled();

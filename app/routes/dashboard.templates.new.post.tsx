@@ -15,13 +15,14 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
-import { loadNewPostData } from "~/features/posts/server";
+import { UnifiedComposer } from "~/features/posts/composer";
+import { loadNewPostData } from "~/features/posts/server/composer";
 import {
   convertJsonValueToScheduleConfig,
   type HashTagPreset,
   type QueueType,
 } from "~/features/posts/types";
-import { NewPostHeader, UnifiedComposer } from "~/features/posts/ui";
+import { NewPostHeader } from "~/features/posts/ui";
 import { handleCreateTemplateFromScratchPost } from "~/features/templates";
 import { withCSRFProtection } from "~/lib/csrf";
 

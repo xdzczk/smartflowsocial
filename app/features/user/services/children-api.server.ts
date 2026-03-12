@@ -6,13 +6,13 @@
 import { json } from "@remix-run/node";
 
 import type { ProfileData } from "~/features/nostr/types";
+import { getUserSubscription } from "~/features/payments/data";
 import {
   getConfirmedChildrenForParent,
   getUserBasicInfo,
 } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
-import { getUserSubscription } from "~/models/payment.server";
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile) {
     return {

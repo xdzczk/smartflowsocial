@@ -5,6 +5,7 @@
  */
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { createPostWithOutbox } from "~/features/posts/server";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
@@ -13,7 +14,6 @@ import {
   recordPostScheduled,
 } from "~/lib/metrics/business-metrics.server";
 import { fromUnixTimestamp, toPrismaDate } from "~/lib/temporal";
-import { createPostWithOutbox } from "~/models/post.commands.server";
 
 import type { Post } from "../../data/posts-prisma-types.server";
 import { findPostByCreationIdempotencyKey } from "../../repositories/post-queries-data.server";
@@ -115,8 +115,9 @@ export class CreatePostUseCase {
         isRecyclable: input.isRecyclable,
         signedEvent: input.signedEvent,
         nostrEvent: input.nostrEvent,
-        scheduledFor: input.scheduledFor
-          ? toPrismaDate(fromUnixTimestamp(input.scheduledFor, "UTC"))
+        scheduledAtUtc: input.scheduledFor
+          ? (toPrismaDate(fromUnixTimestamp(input.scheduledFor, "UTC")) ??
+            new Date(input.scheduledFor * 1000))
           : undefined,
         nominalScheduledAtUtc:
           input.nominalScheduledFor != null
@@ -230,7 +231,8 @@ export class CreatePostUseCase {
 
           signedEvent: repostSignedEv,
           nostrEvent: undefined,
-          scheduledFor: repostScheduledForDate,
+          scheduledAtUtc:
+            repostScheduledForDate ?? new Date(item.scheduledFor * 1000),
           tags: [],
           repost: true,
           isQuotedPost: false,
@@ -270,7 +272,8 @@ export class CreatePostUseCase {
 
           signedEvent: quoteSignedEv,
           nostrEvent: undefined,
-          scheduledFor: quoteScheduledForDate,
+          scheduledAtUtc:
+            quoteScheduledForDate ?? new Date(item.scheduledFor * 1000),
           tags: [],
           repost: false,
           isQuotedPost: true,

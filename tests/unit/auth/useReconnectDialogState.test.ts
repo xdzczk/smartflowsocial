@@ -1,21 +1,23 @@
 /**
  * @vitest-environment jsdom
  * Tests useReconnectDialogState: poll tryBackgroundReconnect while modal open,
- * visibilitychange triggers reconnect once, cleanup on close/unmount.
+ * visibilitychange triggers reconnect once, cleanup on close/unmount,
+ * visibility hidden during reconnecting_existing cancels and sets idle.
  */
 
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockTryBackgroundReconnect = vi.fn();
 const mockOnConnectionHealthy = vi.fn();
+const mockGetActiveSession = vi.fn().mockReturnValue(null);
 
 vi.mock("~/features/auth/signer", () => ({
   clearActiveSignerConfig: vi.fn(),
   detectSignerAppName: vi.fn(),
   getActiveConnection: vi.fn().mockReturnValue(null),
   getActiveSigner: vi.fn(),
-  getActiveSession: vi.fn().mockReturnValue(null),
+  getActiveSession: (...args: unknown[]) => mockGetActiveSession(...args),
   matchOrCreateSession: vi.fn(),
   parseSecretKeyHex: vi.fn(),
   recordConnectionEvent: vi.fn(),
@@ -37,10 +39,12 @@ vi.mock("~/features/auth/reconnect-health.client", () => ({
   })),
 }));
 
+const mockRunExistingNostrConnectReconnect = vi.fn();
 vi.mock(
   "~/features/auth/reconnect/reconnect-existing-nostrconnect.client",
   () => ({
-    runExistingNostrConnectReconnect: vi.fn(),
+    runExistingNostrConnectReconnect: (...args: unknown[]) =>
+      mockRunExistingNostrConnectReconnect(...args),
   })
 );
 vi.mock("~/features/auth/reconnect/reconnect-existing-bunker.client", () => ({
@@ -198,6 +202,51 @@ describe("useReconnectDialogState", () => {
       removeSpy.mockRestore();
 
       expect(removesAfter).toBeGreaterThan(removesBefore);
+    });
+
+    it("when visibility goes hidden during reconnecting_existing, state becomes idle (cancel in-flight, no reconnect loop)", async () => {
+      const nostrConnectSession = {
+        connection: {
+          id: "conn-1",
+          config: {
+            type: "nip46" as const,
+            method: "nostrconnect_uri" as const,
+            uri: "nostrconnect://x?relay=wss://a&secret=s",
+            relays: ["wss://a"],
+          },
+          metadata: {},
+        },
+        currentSession: null,
+      };
+      mockGetActiveSession.mockReturnValue(nostrConnectSession);
+      mockRunExistingNostrConnectReconnect.mockReturnValue(
+        new Promise<void>(() => {})
+      );
+
+      const { result } = renderHook(() =>
+        useReconnectDialogState({
+          ...defaultParams,
+          open: true,
+          openMode: "default",
+        })
+      );
+
+      await act(async () => {
+        await result.current.tryReconnectWithExistingConnection("initial");
+      });
+
+      expect(result.current.state).toBe("reconnecting_existing");
+
+      act(() => {
+        Object.defineProperty(document, "visibilityState", {
+          value: "hidden",
+          writable: true,
+          configurable: true,
+        });
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+
+      expect(result.current.state).toBe("idle");
     });
   });
 });

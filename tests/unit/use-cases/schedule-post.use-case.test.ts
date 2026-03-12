@@ -20,7 +20,7 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getPostById: vi.fn(),
 }));
 
@@ -47,12 +47,12 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { SchedulePostUseCase } from "~/features/posts/scheduling/index.server";
+import { getPostById } from "~/features/posts/server";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { recordPostScheduled } from "~/lib/metrics/business-metrics.server";
 import { prisma } from "~/lib/prisma.server";
 import { fromDate } from "~/lib/temporal";
-import { getPostById } from "~/models/post.queries.server";
 
 describe("SchedulePostUseCase", () => {
   let useCase: SchedulePostUseCase;

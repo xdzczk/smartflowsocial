@@ -311,8 +311,8 @@ describe("remote-signer-mock-relay integration", () => {
     const connectionView = getActiveSession();
     expect(connectionView).not.toBeNull();
     expect(
-      connectionView!.config.type === "nip46" &&
-        connectionView!.config.method === "nostrconnect_uri"
+      connectionView!.connection.config.type === "nip46" &&
+        connectionView!.connection.config.method === "nostrconnect_uri"
     ).toBe(true);
 
     let successConnectionId: string | null = null;

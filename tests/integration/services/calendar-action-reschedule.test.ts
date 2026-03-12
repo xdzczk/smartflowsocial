@@ -18,11 +18,9 @@ vi.mock("~/features/posts/scheduling/index.server", () => ({
   },
 }));
 
-vi.mock("~/models/post.queries.server", () => ({
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
   getPostById: vi.fn(),
-}));
-
-vi.mock("~/models/post.commands.server", () => ({
   reschedulePost: vi.fn(),
 }));
 
@@ -35,9 +33,9 @@ vi.mock("~/lib/validation", () => ({
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { handleCalendarReschedule } from "~/features/posts/calendar/index.server";
+import { reschedulePost } from "~/features/posts/server";
+import { getPostById } from "~/features/posts/server";
 import { validateFormDataOrRespond } from "~/lib/validation";
-import { reschedulePost } from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
 
 const TEST_SESSION_PUBKEY = "pk-123";
 

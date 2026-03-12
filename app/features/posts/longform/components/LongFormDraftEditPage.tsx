@@ -7,15 +7,14 @@ import {
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { DraftPickerModal, DraftVersionHistory } from "~/features/posts/drafts";
 import {
-  DraftPickerModal,
-  DraftVersionHistory,
-  ErrorMessage,
   LongFormEditHeader,
   LongFormPost,
   LongFormPreviewModal,
   useLongFormEditState,
-} from "~/features/posts/ui";
+} from "~/features/posts/longform";
+import { ErrorMessage } from "~/features/posts/ui";
 import { getActionErrorMessage } from "~/lib/errors";
 
 export default function LongFormDraftEditPage() {

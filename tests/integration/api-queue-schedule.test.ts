@@ -27,7 +27,7 @@ import { requireUserId } from "~/features/auth/session.server";
 import {
   calculateNextScheduleTime,
   formatScheduleTimeForInput,
-} from "~/features/posts/server";
+} from "~/features/posts/server/scheduling";
 import {
   getQueueTypes,
   getUserTimezone,
@@ -110,21 +110,19 @@ describe("API: Queue Schedule", () => {
       expect(data).toEqual({ scheduledTime: formattedTime });
     });
 
-    it("should calculate schedule time using queueTypeName (backward compatibility)", async () => {
-      const mockQueueTypes = [
-        {
-          id: "queue-1",
-          name: "posts",
-          scheduleType: "INTERVAL",
-          scheduleConfig: { intervalHours: 4 },
-        },
-      ];
+    it("should calculate schedule time using queueTypeId", async () => {
+      const mockQueueType = {
+        id: "queue-1",
+        name: "posts",
+        scheduleType: "INTERVAL",
+        scheduleConfig: { intervalHours: 4 },
+      };
 
       const mockNextTime = new Date("2024-01-15T14:00:00Z");
       const formattedTime = "2024-01-15T10:00";
 
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes
+      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType
       );
       (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockNextTime
@@ -136,7 +134,7 @@ describe("API: Queue Schedule", () => {
       const request = new Request("http://localhost:3000/api/queue-schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeName: "posts" }),
+        body: JSON.stringify({ queueTypeId: "queue-1" }),
       });
 
       interface ActionArgs {
@@ -157,10 +155,14 @@ describe("API: Queue Schedule", () => {
               success?: unknown;
               nextScheduleTime?: unknown;
               error?: unknown;
+              scheduledTime?: unknown;
             })
           : {};
 
-      expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
+      expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "queue-1"
+      );
       expect(data).toEqual({ scheduledTime: formattedTime });
     });
 
@@ -168,7 +170,7 @@ describe("API: Queue Schedule", () => {
       const request = new Request("http://localhost:3000/api/queue-schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeName: "unassigned" }),
+        body: JSON.stringify({ queueTypeId: "unassigned" }),
       });
 
       interface ActionArgs {
@@ -189,13 +191,12 @@ describe("API: Queue Schedule", () => {
               success?: unknown;
               nextScheduleTime?: unknown;
               error?: unknown;
+              scheduledTime?: unknown;
             })
           : {};
 
-      expect(getQueueTypes).not.toHaveBeenCalled();
+      expect(getUserTimezone).not.toHaveBeenCalled();
       expect(calculateNextScheduleTime).not.toHaveBeenCalled();
-      // When unassigned, the function returns json({ scheduledTime: "" }) directly
-      // This is not wrapped in createSuccessResponse, so it's a plain object
       expect(data).toEqual({ scheduledTime: "" });
     });
 

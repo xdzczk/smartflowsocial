@@ -20,27 +20,27 @@ vi.mock("~/features/posts/scheduling/index.server", () => ({
   },
 }));
 
-vi.mock("~/features/posts/server", () => ({
+vi.mock("~/lib/error-logger.server", () => ({
+  logWarning: vi.fn(),
+  logError: vi.fn(),
+}));
+
+// Handler imports from ~/features/posts/server and ~/features/posts/server/longform
+vi.mock("~/features/posts/server", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    getLongFormPost: vi.fn(),
+    updateLongFormPost: vi.fn(),
+    reschedulePost: vi.fn(),
+    getPostById: vi.fn(),
+  };
+});
+
+vi.mock("~/features/posts/server/longform", () => ({
   ScheduleLongFormPostUseCase: class {
     execute = mockScheduleLongFormExecute;
   },
-}));
-
-vi.mock("~/lib/error-logger.server", () => ({
-  logWarning: vi.fn(),
-}));
-
-vi.mock("~/models/longformpost.server", () => ({
-  getLongFormPost: vi.fn(),
-  updateLongFormPost: vi.fn(),
-}));
-
-vi.mock("~/models/post.commands.server", () => ({
-  reschedulePost: vi.fn(),
-}));
-
-vi.mock("~/models/post.queries.server", () => ({
-  getPostById: vi.fn(),
 }));
 
 import {
@@ -55,12 +55,9 @@ import {
   handleCalendarReschedule,
   handleCalendarRescheduleLongform,
 } from "~/features/posts/calendar/index.server";
-import {
-  getLongFormPost,
-  updateLongFormPost,
-} from "~/models/longformpost.server";
-import { reschedulePost } from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
+import { getLongFormPost, updateLongFormPost } from "~/features/posts/server";
+import { reschedulePost } from "~/features/posts/server";
+import { getPostById } from "~/features/posts/server";
 
 const TEST_SESSION_PUBKEY = "pk-123";
 
@@ -207,7 +204,7 @@ describe("Calendar Action Handler", () => {
       expect(reschedulePost).toHaveBeenCalledWith({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        newScheduledFor: newTime,
+        scheduledAtUtc: parseInt(newTime, 10),
         overrideQueue: false,
       });
 
@@ -500,7 +497,7 @@ describe("Calendar Action Handler", () => {
       expect(updateLongFormPost).toHaveBeenCalledWith({
         id: TEST_LONGFORM_ID,
         userId: TEST_USER_ID,
-        scheduledFor: newTime,
+        scheduledAtUtc: parseInt(newTime, 10),
         signedEvent: null,
         nostrEvent: null,
       });
@@ -570,7 +567,7 @@ describe("Calendar Action Handler", () => {
       expect(updateLongFormPost).toHaveBeenCalledWith({
         id: TEST_LONGFORM_ID,
         userId: TEST_USER_ID,
-        scheduledFor: newTime,
+        scheduledAtUtc: parseInt(newTime, 10),
         signedEvent,
         nostrEvent,
       });

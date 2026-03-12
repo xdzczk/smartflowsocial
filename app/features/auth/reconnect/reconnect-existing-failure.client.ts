@@ -119,9 +119,11 @@ export async function handleExistingReconnectFailure(
     setExistingReconnectAttempt(0);
     setState("connected");
     toastSuccess(TOAST_RECONNECT_SUCCESS);
-    const recoveredConnection = getActiveSession();
-    if (recoveredConnection) {
-      onReconnectSuccess?.(recoveredConnection.id);
+    const recoveredView = getActiveSession();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- recoveredView may be null
+    const connectionId = recoveredView?.connection?.id;
+    if (connectionId) {
+      onReconnectSuccess?.(connectionId);
     }
     onOpenChange(false);
     return;

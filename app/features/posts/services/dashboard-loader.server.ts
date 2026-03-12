@@ -3,6 +3,11 @@
  * Centralized data fetching for dashboard index page
  */
 
+import {
+  getScheduledLongFormPosts,
+  getScheduledPosts,
+  getPostStatistics,
+} from "~/features/posts/server";
 import { getUserById } from "~/features/user";
 import {
   getQueueTypesCached,
@@ -12,11 +17,6 @@ import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
-import { getScheduledLongFormPosts } from "~/models/longformpost.server";
-import {
-  getScheduledPosts,
-  getPostStatistics,
-} from "~/models/post.queries.server";
 
 import { combineContent as _combineContent } from "../combined.server";
 import {

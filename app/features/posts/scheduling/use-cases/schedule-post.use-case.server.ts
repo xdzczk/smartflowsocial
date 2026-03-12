@@ -5,6 +5,7 @@
  */
 
 import type { Prisma } from "~/features/posts/data/posts-prisma-types.server";
+import { getPostById } from "~/features/posts/server";
 import type { SchedulePostInput } from "~/features/posts/use-cases/types";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import type { PostScheduledPayload } from "~/infra/outbox/outbox.server";
@@ -13,7 +14,6 @@ import { logInfo } from "~/lib/error-logger.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { recordPostScheduled } from "~/lib/metrics/business-metrics.server";
 import { toPrismaDate, toUnixTimestamp } from "~/lib/temporal";
-import { getPostById } from "~/models/post.queries.server";
 
 import {
   runTransaction,

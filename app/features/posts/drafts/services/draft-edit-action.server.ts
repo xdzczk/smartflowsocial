@@ -4,17 +4,17 @@
  */
 
 import type { SignedEvent } from "~/features/nostr/types";
+import {
+  createPostWithOutbox,
+  updatePost,
+  getPostById,
+} from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import {
   draftEditActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import {
-  createPostWithOutbox,
-  updatePost,
-} from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
 
 import { restoreShortDraftVersion } from "./draft-version.server";
 
@@ -134,6 +134,16 @@ export async function handleDraftEditAction(
     nominalScheduledAtUtc = undefined;
   }
 
+  const scheduledAtUtcFromResume = resumeData.scheduledFor
+    ? parseInt(resumeData.scheduledFor, 10)
+    : undefined;
+  if (
+    scheduledAtUtcFromResume !== undefined &&
+    Number.isNaN(scheduledAtUtcFromResume)
+  ) {
+    throw new Error("Invalid scheduledFor in resume data");
+  }
+
   // Update post data (flags will be set by state machine transition)
   await updatePost({
     id: postId,
@@ -142,7 +152,9 @@ export async function handleDraftEditAction(
       content: resumeData.content,
       caption: resumeData.caption,
       queueTypeId: resolvedQueueTypeId,
-      scheduledFor: resumeData.scheduledFor,
+      ...(scheduledAtUtcFromResume !== undefined
+        ? { scheduledAtUtc: scheduledAtUtcFromResume }
+        : {}),
       ...(nominalScheduledAtUtc != null ? { nominalScheduledAtUtc } : {}),
       signedEvent: resumeData.signedEvent,
       nostrEvent: resumeData.nostrEvent,
@@ -206,7 +218,7 @@ async function createRepostAndQuotePostsFromResume(
         fileUrl: [],
         postType: sourcePost.postType,
         queueTypeId: sourcePost.queueTypeId,
-        scheduledFor: scheduledAtUtc,
+        scheduledAtUtc,
         tags: [],
         repost: true,
         isQuotedPost: false,
@@ -236,7 +248,7 @@ async function createRepostAndQuotePostsFromResume(
         fileUrl: [],
         postType: sourcePost.postType,
         queueTypeId: sourcePost.queueTypeId,
-        scheduledFor: scheduledAtUtc,
+        scheduledAtUtc,
         tags: [],
         repost: false,
         isQuotedPost: true,

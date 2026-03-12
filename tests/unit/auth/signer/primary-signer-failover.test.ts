@@ -67,8 +67,10 @@ describe("primary-signer-failover", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockMatchOrCreateSession.mockReturnValue({
-      id: "conn-1",
-      metadata: { pubkey: null, status: "active" },
+      connection: {
+        id: "conn-1",
+        metadata: { pubkey: null, status: "active" },
+      },
     });
     mockDetectSignerAppName.mockReturnValue("Primal");
   });

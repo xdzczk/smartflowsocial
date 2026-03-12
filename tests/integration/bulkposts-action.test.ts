@@ -11,12 +11,6 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
 }));
 
-vi.mock("~/models/post.commands.server", () => ({
-  createPost: vi.fn(),
-  createPostWithOutbox: vi.fn(),
-  updatePost: vi.fn(),
-}));
-
 const { mockExecute } = vi.hoisted(() => {
   const mockExecute = vi.fn();
   return { mockExecute };
@@ -31,20 +25,19 @@ vi.mock(
   })
 );
 
-vi.mock("~/models/post.queries.server", () => ({
-  getPostsByIds: vi.fn(),
-}));
-
 vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
 }));
 
+// Single mock so all used exports are available
 vi.mock("~/features/posts/server", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
-
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
-    ...(actual ?? {}),
+    ...actual,
+    createPost: vi.fn(),
+    createPostWithOutbox: vi.fn(),
+    updatePost: vi.fn(),
+    getPostsByIds: vi.fn(),
     getOrCreateDraftGroup: vi
       .fn()
       .mockResolvedValue({ groupId: "draft-group-1" }),
@@ -67,6 +60,14 @@ vi.mock("~/features/posts/repositories/draft-data.server", () => ({
 
 vi.mock("~/features/posts/repositories/post-queries-data.server", () => ({
   updatePost: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("~/features/posts/server/drafts", () => ({
+  getOrCreateDraftGroup: vi
+    .fn()
+    .mockResolvedValue({ groupId: "draft-group-1" }),
+  deleteDraftGroupPosts: vi.fn().mockResolvedValue(undefined),
+  createDraftGroupVersion: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock Prisma for PostStateMachine
@@ -110,9 +111,9 @@ import {
 
 import { requireUserId } from "~/features/auth/session.server";
 import { bulkPostsAction } from "~/features/posts/bulkposts.action.server";
+import { updatePost } from "~/features/posts/server";
+import { getPostsByIds } from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { updatePost } from "~/models/post.commands.server";
-import { getPostsByIds } from "~/models/post.queries.server";
 
 describe("Bulk Posts Action Handler", () => {
   beforeEach(() => {
@@ -141,34 +142,16 @@ describe("Bulk Posts Action Handler", () => {
 
   describe("Upload Images Preview Action", () => {
     it("should handle upload images preview", async () => {
-      const uploadResults = [
-        {
-          success: true,
-          file: {
-            url: "https://example.com/image1.jpg",
-            size: 1000,
-            name: "image1.jpg",
-            extension: "jpg",
-            provider: "S3" as const,
-          },
-        },
-        {
-          success: true,
-          file: {
-            url: "https://example.com/image2.jpg",
-            size: 2000,
-            name: "image2.jpg",
-            extension: "jpg",
-            provider: "S3" as const,
-          },
-        },
+      // Handler expects fileUrls = JSON array of URL arrays per post, plus scheduledDates and queueTypes
+      const fileUrlsPerPost = [
+        ["https://example.com/image1.jpg"],
+        ["https://example.com/image2.jpg"],
       ];
-
       const scheduledDates = ["2024-01-15T10:00:00", "2024-01-15T14:00:00"];
       const queueTypes = ["posts", "all"];
 
       const formData = createActionFormData("_upload_images_preview", {
-        uploadResults: JSON.stringify(uploadResults),
+        fileUrls: JSON.stringify(fileUrlsPerPost),
         scheduledDates,
         queueTypes,
       });

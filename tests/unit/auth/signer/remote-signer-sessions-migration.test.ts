@@ -160,18 +160,15 @@ describe("remote-signer-sessions-migration", () => {
       };
       mockGetActiveSignerConfig.mockReturnValue(nip46Config);
       mockCreateSession.mockReturnValue({
-        id: "session-1",
-        connectionId: "conn-1",
-        startedAt: Date.now(),
-        endedAt: null,
-        history: [],
+        connection: { id: "conn-1" },
+        currentSession: null,
       });
       migrateExistingConfig();
       expect(mockCreateSession).toHaveBeenCalledWith(
         nip46Config,
         "Migrated Session"
       );
-      expect(mockSetActiveSession).toHaveBeenCalledWith("session-1");
+      expect(mockSetActiveSession).toHaveBeenCalledWith("conn-1");
       expect(localStorage.getItem(MIGRATION_FLAG_KEY)).toBe("true");
     });
 

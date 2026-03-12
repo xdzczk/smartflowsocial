@@ -36,15 +36,9 @@ vi.mock("bullmq", () => {
   };
 });
 
-// Mock dependencies
-// updatePostStatus was removed - state transitions now use PostStateMachine
-vi.mock("~/models/post.commands.server", () => ({}));
-
-vi.mock("~/models/post.queries.server", () => ({
+// Mock dependencies (single mock so all used exports are available)
+vi.mock("~/features/posts/server", () => ({
   getCronDueScheduledPosts: vi.fn(),
-}));
-
-vi.mock("~/models/longformpost.server", () => ({
   getCronDueScheduledLongFormPosts: vi.fn(),
 }));
 
@@ -172,14 +166,14 @@ vi.mock("~/lib/prisma.server", () => ({
 
 import { TEST_USER_ID, createValidSignedEvent } from "../utils/test-helpers";
 
+import { getCronDueScheduledLongFormPosts } from "~/features/posts/server";
+import { getCronDueScheduledPosts } from "~/features/posts/server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { relaysArray as systemDefaultRelays } from "~/features/relays/relay-constants";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { getUserById } from "~/features/user";
 import { enqueuePostJob } from "~/infra/queue";
 import { prisma } from "~/lib/prisma.server";
-import { getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
-import { getCronDueScheduledPosts } from "~/models/post.queries.server";
 
 // Import workers after mocks are set up
 interface MockWorkerType {
@@ -664,18 +658,19 @@ describe("Queue Workers", () => {
       const signedEvent1 = createValidSignedEvent({ content: "event-1" });
       const signedEvent2 = createValidSignedEvent({ content: "event-2" });
 
+      // extractPostData expects scheduledAtUtc (Date); scheduledFor is ignored
       const mockPosts = [
         {
           id: "post-1",
           userId: TEST_USER_ID,
           signedEvent: signedEvent1,
-          scheduledFor: dueTime.toString(),
+          scheduledAtUtc: new Date(dueTime * 1000),
         },
         {
           id: "post-2",
           userId: TEST_USER_ID,
           signedEvent: signedEvent2,
-          scheduledFor: (now + 100).toString(), // Future post
+          scheduledAtUtc: new Date((now + 100) * 1000), // Future post
         },
       ];
 
@@ -761,7 +756,7 @@ describe("Queue Workers", () => {
           id: "longform-1",
           userId: TEST_USER_ID,
           signedEvent: signedEvent,
-          scheduledFor: dueTime.toString(),
+          scheduledAtUtc: new Date(dueTime * 1000),
         },
       ];
 
@@ -792,7 +787,7 @@ describe("Queue Workers", () => {
           id: "post-1",
           userId: TEST_USER_ID,
           signedEvent: signedEvent,
-          scheduledFor: pastTime.toString(),
+          scheduledAtUtc: new Date(pastTime * 1000),
         },
       ];
 

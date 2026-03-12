@@ -92,9 +92,9 @@ describe("remote-signer-sessions identity + storage consistency", () => {
       makeNostrConnectConfig("nostrconnect://client1?secret=one", "11"),
       "Home signer"
     );
-    updateSession(first.id, {
+    updateSession(first.connection.id, {
       metadata: {
-        ...first.metadata,
+        ...first.connection.metadata,
         pubkey,
       },
     });
@@ -104,9 +104,11 @@ describe("remote-signer-sessions identity + storage consistency", () => {
       { signerPubkey: pubkey }
     );
 
-    expect(reused.id).toBe(first.id);
+    expect(reused.connection.id).toBe(first.connection.id);
     expect(getAllSessions()).toHaveLength(1);
-    expect(getSessionByIdLegacy(first.id)?.config).toMatchObject({
+    expect(
+      getSessionByIdLegacy(first.connection.id)?.connection.config
+    ).toMatchObject({
       method: "nostrconnect_uri",
       uri: "nostrconnect://client2?secret=two",
       clientSecretKeyHex: "22",
@@ -122,20 +124,20 @@ describe("remote-signer-sessions identity + storage consistency", () => {
       makeNostrConnectConfig("nostrconnect://client2?secret=two", "22"),
       "Second"
     );
-    updateSession(first.id, {
+    updateSession(first.connection.id, {
       metadata: {
-        ...first.metadata,
+        ...first.connection.metadata,
         status: "active",
       },
     });
 
-    setActiveSession(first.id);
-    setActiveSession(second.id);
+    setActiveSession(first.connection.id);
+    setActiveSession(second.connection.id);
 
-    expect(getSessionByIdLegacy(first.id)?.metadata.status).toBe(
-      "disconnected"
-    );
-    expect(getActiveSession()?.id).toBe(second.id);
+    expect(
+      getSessionByIdLegacy(first.connection.id)?.connection.metadata.status
+    ).toBe("disconnected");
+    expect(getActiveSession()?.connection.id).toBe(second.connection.id);
   });
 
   it("keeps active-session pointer consistent after removing active", () => {
@@ -143,11 +145,13 @@ describe("remote-signer-sessions identity + storage consistency", () => {
       makeNostrConnectConfig("nostrconnect://client1?secret=one", "11"),
       "First"
     );
-    setActiveSession(first.id);
-    removeSession(first.id);
+    setActiveSession(first.connection.id);
+    removeSession(first.connection.id);
 
     expect(getActiveSession()).toBeNull();
-    expect(getAllSessions().every((s) => s.id !== first.id)).toBe(true);
+    expect(
+      getAllSessions().every((s) => s.connection.id !== first.connection.id)
+    ).toBe(true);
   });
 });
 

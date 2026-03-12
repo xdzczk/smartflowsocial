@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getPostById: vi.fn(),
 }));
 
@@ -22,13 +22,13 @@ vi.mock("~/features/posts/repositories/draft-version-data.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../../utils/test-helpers";
 
-import { loadDraftEditData } from "~/features/posts/server";
+import { getPostById } from "~/features/posts/server";
+import { loadDraftEditData } from "~/features/posts/server/drafts";
 import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { getPostById } from "~/models/post.queries.server";
 
 describe("Draft Edit Loader", () => {
   beforeEach(() => {

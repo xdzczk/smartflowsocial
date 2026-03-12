@@ -12,16 +12,11 @@ const { mockScheduleExecute } = vi.hoisted(() => {
   return { mockScheduleExecute };
 });
 
-vi.mock("~/models/post.queries.server", () => ({
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
   getPostById: vi.fn(),
-}));
-
-vi.mock("~/models/post.commands.server", () => ({
   reschedulePost: vi.fn(),
   updatePost: vi.fn(),
-}));
-
-vi.mock("~/models/longformpost.server", () => ({
   getLongFormPost: vi.fn(),
   updateLongFormPost: vi.fn(),
 }));
@@ -59,12 +54,9 @@ import {
 } from "../../utils/test-helpers";
 
 import { handleScheduledPostAction } from "~/features/posts/scheduling/index.server";
-import {
-  getLongFormPost,
-  updateLongFormPost,
-} from "~/models/longformpost.server";
-import { reschedulePost, updatePost } from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
+import { getLongFormPost, updateLongFormPost } from "~/features/posts/server";
+import { reschedulePost, updatePost } from "~/features/posts/server";
+import { getPostById } from "~/features/posts/server";
 
 describe("Scheduled Posts Service Action Handlers", () => {
   beforeEach(() => {

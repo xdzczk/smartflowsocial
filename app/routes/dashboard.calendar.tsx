@@ -5,11 +5,11 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { CalendarPage } from "~/features/posts/calendar";
 import {
   handleCalendarAction,
   loadCalendarData,
-} from "~/features/posts/server";
-import { CalendarPage } from "~/features/posts/ui";
+} from "~/features/posts/server/calendar";
 import { withCSRFProtection } from "~/lib/csrf";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { calendarLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";

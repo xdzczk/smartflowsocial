@@ -5,11 +5,11 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { RecyclablesPage } from "~/features/posts/publishing";
 import {
   getRecyclableDashboardData,
   handleRecyclablePostAction,
-} from "~/features/posts/server";
-import { RecyclablesPage } from "~/features/posts/ui";
+} from "~/features/posts/server/publishing";
 import { withCSRFProtection } from "~/lib/csrf";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { recyclablesLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";

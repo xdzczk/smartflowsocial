@@ -117,12 +117,6 @@ const importOrderRule = [
 const featureBoundaryRestrictions = [
   {
     target: "app/routes/**/*",
-    from: "app/models/**",
-    message:
-      "Routes cannot import from ~/models/* directly. Use feature service layers instead.",
-  },
-  {
-    target: "app/routes/**/*",
     from: "app/features/**/services/**",
     message:
       "Routes must use feature public API (index.ts), not internal services",
@@ -200,24 +194,6 @@ const featureBoundaryRestrictions = [
     except: ["app/features/*/stats.server", "app/features/**/stats.server"],
     message:
       "Features must use other features' public API (index.ts), not internal stats. Use relative imports for same-feature imports.",
-  },
-  {
-    target: "app/models/**/*",
-    from: "app/features/**/services/**",
-    message:
-      "Models must use feature public API (index.ts), not internal services",
-  },
-  {
-    target: "app/models/**/*",
-    from: "app/features/**/hooks/**",
-    message:
-      "Models must use feature public API (index.ts), not internal hooks",
-  },
-  {
-    target: "app/models/**/*",
-    from: "app/features/**/components/**",
-    message:
-      "Models must use feature public API (index.ts), not internal components",
   },
 ];
 

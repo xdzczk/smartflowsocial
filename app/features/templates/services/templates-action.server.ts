@@ -3,13 +3,16 @@
  * Centralized action processing for templates page
  */
 
+import {
+  deleteTemplate,
+  getTemplates,
+} from "~/features/templates/services/template-data.server";
 import { getUserTimezone } from "~/features/user/services/user-settings.server";
 import { formatForDateTimeLocal, nowInTimezone } from "~/lib/temporal";
 import {
   templatesActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { deleteTemplate, getTemplates } from "~/models/template.server";
 
 const ACTION_DELETE = "delete";
 const ACTION_BULK_DELETE = "bulkDelete";

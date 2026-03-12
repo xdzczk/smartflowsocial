@@ -8,17 +8,15 @@ import { redirect } from "@remix-run/node";
 import { parseAttachmentMeta } from "~/features/posts/composer/services/newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "~/features/posts/composer/services/newpost-action/hashtag-preset-utils.server";
 import { resolveContentWithTokens } from "~/features/posts/composer/services/newpost-action/inline-tokens.server";
-import {
-  CreateLongFormPostUseCase,
-  CreatePostUseCase,
-} from "~/features/posts/server";
+import { CreatePostUseCase } from "~/features/posts/server/composer";
+import { CreateLongFormPostUseCase } from "~/features/posts/server/longform";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
+import { createTemplate } from "~/features/templates/services/template-data.server";
 import { validateFormDataOrRespond } from "~/lib/validation";
 import {
   createTemplateFromScratchPostSchema,
   createTemplateFromScratchLongformSchema,
 } from "~/lib/validation/schemas/templates.schemas";
-import { createTemplate } from "~/models/template.server";
 
 /**
  * Create a post-type template from scratch: create draft Post, then Template.

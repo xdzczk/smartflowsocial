@@ -1,7 +1,7 @@
 /**
  * Integration tests for LongFormPost model functions
  *
- * Tests the database operations in app/models/longformpost.server.ts
+ * Tests the database operations in app/features/posts/data longformpost
  * Uses mocked Prisma to test business logic without requiring a real database.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -14,7 +14,7 @@ import {
   getDraftLongFormPosts,
   getPublishedLongFormPosts,
   getScheduledLongFormPosts,
-} from "~/models/longformpost.server";
+} from "~/features/posts/server";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 const { mockPrisma } = vi.hoisted(() => {
@@ -158,14 +158,14 @@ describe("LongFormPost Model Functions", () => {
 
     it("should handle scheduled longform posts", async () => {
       const scheduledDate = new Date("2024-01-15T10:00:00Z");
-      const scheduledForUnix = Math.floor(scheduledDate.getTime() / 1000);
+      const scheduledAtUtcUnix = Math.floor(scheduledDate.getTime() / 1000);
       const postData = {
         userId: TEST_USER_ID,
         title: "Scheduled Article",
         content: "Scheduled content",
         tags: [],
-        isPublished: false, // Parameter kept for backward compatibility
-        scheduledFor: String(scheduledForUnix),
+        isPublished: false,
+        scheduledAtUtc: scheduledAtUtcUnix,
       };
 
       (

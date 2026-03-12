@@ -12,8 +12,8 @@ import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
 import PostTypeTabs from "~/features/posts/components/PostTypeTabs";
 import QueueSelectionTabs from "~/features/posts/components/QueueSelectionTabs";
 import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
+import { LongFormDetailsModal } from "~/features/posts/longform";
 import type { QueueType, UserData } from "~/features/posts/types";
-import { LongFormDetailsModal } from "~/features/posts/ui";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import {
@@ -35,18 +35,9 @@ import { DayViewSidebar, useIsLg } from "./DayViewSidebar";
 import { MonthlyView } from "./MonthlyView";
 import type { CalendarPost } from "./PostBlock.types";
 import { getPostScheduleInstant } from "./PostBlock.utils";
-import { RescheduleModal } from "./RescheduleModal";
+import { type RescheduleData, RescheduleModal } from "./RescheduleModal";
 import { DayView } from "./views/DayView";
 import { WeekView } from "./views/WeekView";
-
-interface RescheduleData {
-  post: CalendarPost;
-  newDateTime: Date;
-  wasAutoScheduled: boolean;
-  queueName: string | null;
-  isEdit: boolean;
-  isLongform: boolean;
-}
 
 interface CalendarProps {
   scheduledPosts: CalendarPost[];

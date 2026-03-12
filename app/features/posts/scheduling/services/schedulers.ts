@@ -1,3 +1,4 @@
+import { getLastPostTimeForQueue } from "~/features/posts/server";
 import {
   isIntervalScheduleConfig,
   isFixedSlotsScheduleConfig,
@@ -16,7 +17,6 @@ import {
   nowUTC,
   toDate,
 } from "~/lib/temporal";
-import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 
 import type { QueueType } from "../../data/posts-prisma-types.server";
 

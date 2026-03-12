@@ -5,13 +5,11 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("~/models/longformpost.server", () => ({
+// Single mock so all exports are available
+vi.mock("~/features/posts/server", () => ({
   getScheduledLongFormPosts: vi.fn(),
   getPastLongFormPosts: vi.fn(),
   getLatestScheduledLongFormAtUtc: vi.fn(),
-}));
-
-vi.mock("~/models/post.queries.server", () => ({
   getScheduledPosts: vi.fn(),
   getPastPosts: vi.fn(),
   getLatestScheduledAtUtc: vi.fn(),
@@ -32,22 +30,22 @@ vi.mock("~/features/posts/services/post-filtering.server", () => ({
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
+import {
+  getScheduledLongFormPosts,
+  getPastLongFormPosts,
+  getLatestScheduledLongFormAtUtc,
+} from "~/features/posts/server";
+import {
+  getScheduledPosts,
+  getPastPosts,
+  getLatestScheduledAtUtc,
+} from "~/features/posts/server";
 import { loadFlowData } from "~/features/posts/services/flow-loader.server";
 import { getUserById } from "~/features/user";
 import {
   getQueueTypesCached,
   getHashTagPresetsCached,
 } from "~/features/user/services/user-cache.server";
-import {
-  getScheduledLongFormPosts,
-  getPastLongFormPosts,
-  getLatestScheduledLongFormAtUtc,
-} from "~/models/longformpost.server";
-import {
-  getScheduledPosts,
-  getPastPosts,
-  getLatestScheduledAtUtc,
-} from "~/models/post.queries.server";
 
 describe("Flow Loader", () => {
   beforeEach(() => {

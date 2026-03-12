@@ -7,7 +7,7 @@ import type { LongFormPost, Prisma } from "@prisma/client";
 import {
   calculateLongFormStatus,
   LongFormPostStateMachine,
-} from "~/features/posts/server";
+} from "~/features/posts/server/longform";
 import { logError, logInfo } from "~/lib/error-logger.server";
 import { generatePublishAttemptId } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
@@ -25,36 +25,38 @@ import {
 // Update LongFormPost Helper Functions (command-only)
 // ============================================================================
 
+/** Convert scheduledAtUtc (Date | number | null) to Unix seconds string for internal use. */
+function toScheduledAtUtcUnix(
+  v: Date | number | null | undefined
+): string | null | undefined {
+  if (v == null) return v === null ? null : undefined;
+  if (typeof v === "number") return String(v);
+  if (v instanceof Date) return Math.floor(v.getTime() / 1000).toString();
+  return undefined;
+}
+
 function extractScheduledForFromTags(
-  scheduledFor: string | null | undefined,
+  scheduledAtUtcUnix: string | null | undefined,
   isPublished: boolean | undefined,
   signedEvent: unknown
 ): string | null | undefined {
-  if (scheduledFor !== undefined) {
-    return scheduledFor;
-  }
-  if (isPublished) {
-    return scheduledFor;
-  }
+  if (scheduledAtUtcUnix !== undefined) return scheduledAtUtcUnix;
+  if (isPublished) return scheduledAtUtcUnix;
   if (
     !signedEvent ||
     typeof signedEvent !== "object" ||
     !("tags" in signedEvent)
   ) {
-    return scheduledFor;
+    return scheduledAtUtcUnix;
   }
   const tags = signedEvent["tags"];
-  if (!Array.isArray(tags)) {
-    return scheduledFor;
-  }
+  if (!Array.isArray(tags)) return scheduledAtUtcUnix;
   const publishedAtTag = tags.find(
     (tag: unknown): tag is string[] =>
       Array.isArray(tag) && tag[0] === "published_at"
   );
-  if (publishedAtTag && Array.isArray(publishedAtTag) && publishedAtTag[1]) {
-    return String(publishedAtTag[1]);
-  }
-  return scheduledFor;
+  if (publishedAtTag?.[1]) return String(publishedAtTag[1]);
+  return scheduledAtUtcUnix;
 }
 
 function buildBasicUpdateData(
@@ -81,7 +83,6 @@ function buildBasicUpdateData(
     updateData.tags = tagsArray;
   }
   if (finalScheduledFor !== undefined) {
-    // scheduledFor legacy column removed; store only scheduledAtUtc
     const timestamp = finalScheduledFor ? parseInt(finalScheduledFor, 10) : NaN;
     updateData.scheduledAtUtc = !isNaN(timestamp)
       ? new Date(timestamp * 1000)
@@ -150,7 +151,7 @@ export async function createLongFormPost({
   isPublished = false,
   signedEvent,
   nostrEvent,
-  scheduledFor,
+  scheduledAtUtc: scheduledAtUtcInput,
   queueTypeId,
   hashTagPresetId,
 }: {
@@ -160,31 +161,28 @@ export async function createLongFormPost({
   content: LongFormPost["content"];
   image?: LongFormPost["image"];
   tags?: LongFormPost["tags"];
-  isPublished?: boolean; // Parameter kept for backward compatibility, but flags removed from schema
+  isPublished?: boolean;
   signedEvent?: LongFormPost["signedEvent"];
   nostrEvent?: LongFormPost["nostrEvent"];
-  scheduledFor?: string | null;
+  /** When to publish (UTC). Date or Unix seconds. Null to clear. */
+  scheduledAtUtc?: Date | number | null;
   queueTypeId?: LongFormPost["queueTypeId"];
   hashTagPresetId?: LongFormPost["hashTagPresetId"];
 }) {
-  // Calculate status and related fields using business logic from feature layer
-  // Convert Prisma JsonValue to SignedEvent type
   const typedSignedEvent = signedEvent ? toSignedEvent(signedEvent) : null;
+  const scheduledAtUtcUnix = toScheduledAtUtcUnix(scheduledAtUtcInput);
 
   const { status, publishedAt, nostrEventId, finalScheduledFor } =
     calculateLongFormStatus({
       isPublished,
-      scheduledFor,
+      scheduledFor: scheduledAtUtcUnix,
       signedEvent: typedSignedEvent,
     });
 
-  // Convert scheduledFor string to DateTime for new field
   let scheduledAtUtc: Date | undefined;
   if (finalScheduledFor) {
     const timestamp = parseInt(finalScheduledFor, 10);
-    if (!isNaN(timestamp)) {
-      scheduledAtUtc = new Date(timestamp * 1000);
-    }
+    if (!isNaN(timestamp)) scheduledAtUtc = new Date(timestamp * 1000);
   }
 
   // Determine initial state based on status calculation
@@ -229,7 +227,7 @@ export async function updateLongFormPost({
   isPublished,
   signedEvent,
   nostrEvent,
-  scheduledFor,
+  scheduledAtUtc: scheduledAtUtcInput,
   queueTypeId,
   publishedAt: _publishedAt,
   status: _status,
@@ -241,17 +239,19 @@ export async function updateLongFormPost({
   content?: LongFormPost["content"];
   image?: LongFormPost["image"];
   tags?: LongFormPost["tags"];
-  isPublished?: boolean; // Parameter kept for backward compatibility, but flags removed from schema
+  isPublished?: boolean;
   signedEvent?: LongFormPost["signedEvent"];
   nostrEvent?: LongFormPost["nostrEvent"];
-  scheduledFor?: string | null;
+  /** When to publish (UTC). Date or Unix seconds. Null to clear. */
+  scheduledAtUtc?: Date | number | null;
   queueTypeId?: LongFormPost["queueTypeId"];
   publishedAt?: Date | null;
   status?: LongFormPost["status"];
   hashTagPresetId?: string | null;
 }) {
+  const scheduledAtUtcUnix = toScheduledAtUtcUnix(scheduledAtUtcInput);
   const finalScheduledFor = extractScheduledForFromTags(
-    scheduledFor,
+    scheduledAtUtcUnix,
     isPublished,
     signedEvent
   );

@@ -39,9 +39,9 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
+import { createPost, updatePost } from "~/features/posts/server";
+import { getScheduledPosts } from "~/features/posts/server";
 import { getUserById } from "~/features/user";
-import { createPost, updatePost } from "~/models/post.commands.server";
-import { getScheduledPosts } from "~/models/post.queries.server";
 
 describe("Database Failure Edge Cases", () => {
   const TEST_USER_ID = "user-123";

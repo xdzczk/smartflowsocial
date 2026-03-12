@@ -7,6 +7,7 @@ export { default as DraftEditPage } from "./components/DraftEditPage";
 export { default as DraftBulkResume } from "./components/DraftBulkResume";
 export { DraftsBulkActions } from "./components/DraftsBulkActions";
 export { DraftsTable } from "./components/DraftsTable";
+export { BulkDraftsListing } from "../components/BulkDraftsListing";
 export { DraftEditForm } from "./components/DraftEditForm";
 export { DraftPreview } from "./components/DraftPreview";
 export {
@@ -26,6 +27,7 @@ export {
   useDraftsInfiniteData,
   draftsKeys,
 } from "../hooks/useDraftsQuery";
+export { useDraftsState } from "../hooks/useDraftsState";
 
 // signDraftForScheduling is used by useDraftEditState (client hook) for signing
 export { signDraftForScheduling } from "./services/draft-sign.server";

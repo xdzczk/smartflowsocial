@@ -125,7 +125,7 @@ SmartFlowSocial supports NIP-23 for publishing long-form articles.
 
 - `app/lib/nostr-adapter.client.ts` - `signLongFormEvent()`
 - `app/features/posts/services/newlongform-action.server.ts` - Long-form creation
-- `app/models/longformpost.server.ts` - Long-form post model
+- `app/features/posts/data/longformpost.server.ts` - Long-form post data
 
 ### NIP-01: Basic protocol flow
 
@@ -501,7 +501,7 @@ Profiles are cached in database:
 
 - `app/features/nostr/types.ts` - Profile types
 - `app/features/auth/profile.server.ts` - Profile fetching
-- `app/models/user.server.ts` - User model
+- User data via `~/features/user` - User feature
 
 ---
 

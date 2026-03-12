@@ -4,7 +4,7 @@
  */
 
 import type { SignedEvent } from "~/features/nostr/types";
-import { createPostWithOutbox } from "~/models/post.commands.server";
+import { createPostWithOutbox } from "~/features/posts/server";
 
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 

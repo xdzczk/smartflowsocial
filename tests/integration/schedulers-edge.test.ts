@@ -15,7 +15,7 @@ vi.mock("~/lib/temporal", async (importOriginal) => {
   };
 });
 
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getLastPostTimeForQueue: vi.fn().mockResolvedValue(null),
 }));
 
@@ -23,7 +23,7 @@ vi.mock("~/features/user", () => ({
   getScheduleInterval: vi.fn().mockResolvedValue([4]),
 }));
 
-import { calculateNextScheduleTime } from "~/features/posts/server";
+import { calculateNextScheduleTime } from "~/features/posts/server/scheduling";
 
 const BASE_TIME = new Date("2024-01-15T10:00:00Z");
 

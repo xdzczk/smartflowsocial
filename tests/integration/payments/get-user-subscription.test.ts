@@ -14,7 +14,7 @@ import {
   TEST_PLAN_ID,
 } from "../../utils/payment-test-helpers";
 
-import { getUserSubscription } from "~/models/payment.server";
+import { getUserSubscription } from "~/features/payments/data";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 // Create mock inline to avoid circular dependency

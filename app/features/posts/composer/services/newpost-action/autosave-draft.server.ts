@@ -1,15 +1,16 @@
 /**
- * Save-draft and (legacy) autosave-draft: create or update Post (DRAFT) with draftMeta.
- * Save-draft redirects to /dashboard/drafts; autosave-draft returns JSON (no longer used from UI).
+ * Save-draft and autosave-draft: create or update Post (DRAFT) with draftMeta.
+ * Save-draft redirects to /dashboard/drafts; autosave-draft returns JSON and is used by the
+ * composer autosave flow (useComposerAutosave) for background saves.
  */
 
 import { json, redirect } from "@remix-run/node";
 
+import { resolveQueueTypeId } from "~/features/posts/server";
 import {
   createShortDraftVersion,
   SHORT_SNAPSHOT_SCHEMA_VERSION,
-  resolveQueueTypeId,
-} from "~/features/posts/server";
+} from "~/features/posts/server/drafts";
 
 import {
   findFirstPost,
@@ -29,7 +30,7 @@ function getFormString(formData: FormData, key: string): string {
 
 /**
  * Create or update a short-post draft. Returns draftId on success.
- * Used by both save-draft (redirect) and legacy autosave-draft (json).
+ * Used by both save-draft (redirect) and autosave-draft (JSON response via useComposerAutosave).
  */
 export async function persistShortDraft(
   userId: string,
@@ -165,7 +166,7 @@ export async function handleSaveDraft(
   return redirect("/dashboard/drafts");
 }
 
-/** Legacy autosave-draft (no longer used from UI; kept for any remaining callers). */
+/** Autosave-draft: persists draft and returns JSON; used by composer autosave (useComposerAutosave). */
 export async function handleAutosaveDraft(
   userId: string,
   formData: FormData

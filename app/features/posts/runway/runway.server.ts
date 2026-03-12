@@ -2,13 +2,15 @@
  * Runway KPI computation from user settings (which queues count, last-post vs first-queue-empty).
  */
 
+import {
+  getLatestScheduledLongFormAtUtc,
+  getLatestScheduledAtUtc,
+} from "~/features/posts/server";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import {
   getRunwaySettings,
   type RunwaySettings,
 } from "~/features/user/services/user-settings.server";
-import { getLatestScheduledLongFormAtUtc } from "~/models/longformpost.server";
-import { getLatestScheduledAtUtc } from "~/models/post.queries.server";
 
 /**
  * Returns the latest scheduled date (ms) used for the Runway KPI based on user settings.

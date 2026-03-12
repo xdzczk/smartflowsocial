@@ -4,9 +4,12 @@
  */
 
 import { requireUser } from "~/features/auth/session.server";
+import {
+  checkPaymentStatus,
+  createPlanInvoice,
+} from "~/features/payments/data";
 import { logError } from "~/lib/error-logger.server";
 import { plansActionSchema, validateFormDataOrRespond } from "~/lib/validation";
-import { checkPaymentStatus, createPlanInvoice } from "~/models/payment.server";
 
 export async function handlePlansAction(formData: FormData, request: Request) {
   const result = validateFormDataOrRespond(formData, plansActionSchema);

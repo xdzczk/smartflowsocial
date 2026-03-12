@@ -5,8 +5,11 @@ import {
 } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import { handleNewPostAction, loadNewPostData } from "~/features/posts/server";
-import { NewPostPage } from "~/features/posts/ui";
+import { NewPostPage } from "~/features/posts/composer";
+import {
+  handleNewPostAction,
+  loadNewPostData,
+} from "~/features/posts/server/composer";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request }: LoaderFunctionArgs) {

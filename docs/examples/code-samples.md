@@ -12,7 +12,7 @@ SmartFlowSocial follows a **layered architecture**:
 
 1. **Routes** (`app/routes/*`) - HTTP handling, use feature public APIs
 2. **Features** (`app/features/*`) - Business logic, expose public APIs via `index.ts`
-3. **Models** (`app/models/*`) - Database access, used internally by features
+3. **Data** (`app/features/*/data/`) - Database access, used internally by features
 
 **✅ DO:** Import from feature public APIs
 
@@ -24,7 +24,7 @@ import { requireUserId } from "~/features/auth";
 **❌ DON'T:** Import from models or feature internals
 
 ```typescript
-import { createPost } from "~/models/post.commands.server"; // ❌ Bad
+import { createPost } from "~/features/posts/server"; // ❌ Bad
 import { getPosts } from "~/features/posts/services/..."; // ❌ Bad
 ```
 
@@ -93,7 +93,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 directly.
 
 ```typescript
-// app/models/post.commands.server.ts
+// app/features/posts/data/post.commands.server.ts
 // This is the model layer - used internally by features
 import type { CreatePostData } from "./post.types";
 import { prisma } from "~/lib/prisma.server";
@@ -119,7 +119,7 @@ export function createPost(data: CreatePostData): Promise<Post> {
 ```
 
 ```typescript
-// app/models/post.queries.server.ts
+// app/features/posts/data/post.queries.server.ts
 // Query operations (reads only)
 import { prisma } from "~/lib/prisma.server";
 
@@ -399,8 +399,8 @@ async function signEvent(content: string) {
 
 ```typescript
 // app/features/posts/services/publishing.server.ts
-import { getPostById } from "~/models/post.queries.server";
-import { updatePost } from "~/models/post.commands.server";
+import { getPostById } from "~/features/posts/server";
+import { updatePost } from "~/features/posts/server";
 
 export async function publishPost(postId: string) {
   // Get post from model (read)
@@ -556,7 +556,7 @@ export async function bulkPublishPosts(postIds: string[]) {
 ```typescript
 // app/features/posts/services/scheduling.server.ts
 import { prisma } from "~/lib/prisma.server";
-import { createPost } from "~/models/post.commands.server";
+import { createPost } from "~/features/posts/server";
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 export async function schedulePostWithQueue(
@@ -656,7 +656,7 @@ export async function updateUser(userId: string, data: UserUpdate) {
 import { Worker, type Job } from "bullmq";
 import { getQueueInstance, redis } from "~/infra/queue";
 import type { PostJobData } from "~/infra/queue";
-import { updatePostStatus } from "~/models/post.commands.server";
+import { updatePostStatus } from "~/features/posts/server";
 import { fetchWithRetry } from "~/lib/fetch.server";
 import { env } from "~/lib/env.server";
 

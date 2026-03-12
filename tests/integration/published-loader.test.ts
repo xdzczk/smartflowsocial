@@ -28,7 +28,8 @@ vi.mock("~/features/payments/subscriptions.server", () => ({
 const { mockGetPublishedDashboardData } = vi.hoisted(() => ({
   mockGetPublishedDashboardData: vi.fn(),
 }));
-vi.mock("~/features/posts/server", async (importOriginal) => {
+// Route imports from ~/features/posts/server/publishing
+vi.mock("~/features/posts/server/publishing", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
@@ -38,6 +39,12 @@ vi.mock("~/features/posts/server", async (importOriginal) => {
 
 vi.mock("~/features/posts/ui", () => ({
   PublishedPostsPage: () => null,
+}));
+
+// Avoid circular import chain (PublishedPostsPage etc. -> useRefreshPostViews -> keys)
+vi.mock("~/features/posts/hooks/useRefreshPostViews", () => ({
+  useRefreshPostViews: () => () => {},
+  refreshPostViews: () => {},
 }));
 
 import {

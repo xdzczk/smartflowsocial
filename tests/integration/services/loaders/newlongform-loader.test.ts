@@ -18,7 +18,7 @@ vi.mock("~/features/user", () => ({
   getUserUploadProvider: vi.fn(),
 }));
 
-vi.mock("~/models/template.server", () => ({
+vi.mock("~/features/templates/services/template-data.server", () => ({
   getTemplates: vi.fn().mockResolvedValue([]),
   getTemplatePrefill: vi.fn().mockResolvedValue(null),
 }));
@@ -26,7 +26,7 @@ vi.mock("~/models/template.server", () => ({
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
-import { loadNewLongFormData } from "~/features/posts/server";
+import { loadNewLongFormData } from "~/features/posts/server/longform";
 import {
   getUserById,
   getScheduleInterval,

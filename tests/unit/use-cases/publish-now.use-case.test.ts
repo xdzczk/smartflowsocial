@@ -5,13 +5,10 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock dependencies
-vi.mock("~/models/post.queries.server", () => ({
+// Mock dependencies (single mock so all used exports are available)
+vi.mock("~/features/posts/server", () => ({
   getPostById: vi.fn(),
 }));
-
-// updatePostStatus was removed - state transitions now use PostStateMachine
-vi.mock("~/models/post.commands.server", () => ({}));
 
 const mockPublish = vi.fn();
 vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
@@ -70,12 +67,12 @@ import {
 } from "../../utils/test-helpers";
 
 import { PublishNowUseCase } from "~/features/posts/publishing/index.server";
+import { getPostById } from "~/features/posts/server";
 import {
   recordPostPublished,
   recordPostPublishFailed,
 } from "~/lib/metrics/business-metrics.server";
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
-import { getPostById } from "~/models/post.queries.server";
 
 describe("PublishNowUseCase", () => {
   let useCase: PublishNowUseCase;

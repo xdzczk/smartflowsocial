@@ -4,12 +4,12 @@
  * Apply preset: load by id, resolve queue by queueId if present (warn if missing).
  */
 
+import { getUserSubscription } from "~/features/payments/data";
 import type { UserSubscription } from "~/features/payments/types";
 import {
   getUserPlanType,
   getGiveawayPlanLimits,
 } from "~/features/payments/types";
-import { getUserSubscription } from "~/models/payment.server";
 
 import type {
   GiveawayPreset,

@@ -3,8 +3,8 @@
  * Centralized data fetching for templates page
  */
 
+import { getTemplates } from "~/features/templates/services/template-data.server";
 import { getUserById } from "~/features/user";
-import { getTemplates } from "~/models/template.server";
 
 /**
  * Load templates data

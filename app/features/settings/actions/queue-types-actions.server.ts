@@ -4,6 +4,7 @@
 
 import { json } from "@remix-run/node";
 
+import { getUserSubscription } from "~/features/payments/data";
 import { getQueueColorBundle } from "~/features/posts/queue-colors";
 import {
   deleteQueueType,
@@ -17,7 +18,6 @@ import {
   deleteQueueTypeSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { getUserSubscription } from "~/models/payment.server";
 
 // ============================================================================
 // Helper Functions

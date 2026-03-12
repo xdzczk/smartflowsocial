@@ -6,10 +6,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/longformpost.server", () => ({
-  getLongFormPost: vi.fn(),
-}));
-
 const mockPublish = vi.fn();
 vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
   getNostrPublisher: vi.fn(() => ({
@@ -36,9 +32,11 @@ vi.mock("~/lib/correlation-context.server", () => ({
 const { mockPrisma } = vi.hoisted(() => {
   const mockLongFormPostUpdate = vi.fn().mockResolvedValue({});
   const mockLongFormPostStateTransitionCreate = vi.fn().mockResolvedValue({});
+  const mockFindFirst = vi.fn();
   const mockPrisma = {
     longFormPost: {
       findUnique: vi.fn(),
+      findFirst: mockFindFirst,
       update: mockLongFormPostUpdate,
     },
     $transaction: vi.fn((fn: (tx: unknown) => Promise<unknown>) => {
@@ -61,10 +59,8 @@ vi.mock("~/lib/prisma.server", () => ({
 const mockTransition = vi.fn();
 vi.mock("~/features/posts/server", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
-
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
-    ...(actual ?? {}),
+    ...actual,
     LongFormPostStateMachine: class {
       transition = mockTransition;
     },
@@ -81,8 +77,7 @@ vi.mock("~/infra/notifications/push-notification.server", () => ({
 import { createValidSignedEvent } from "../../utils/nostr-test-helpers";
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { PublishLongFormNowUseCase } from "~/features/posts/server";
-import { getLongFormPost } from "~/models/longformpost.server";
+import { PublishLongFormNowUseCase } from "~/features/posts/server/longform";
 
 describe("PublishLongFormNowUseCase", () => {
   let useCase: PublishLongFormNowUseCase;
@@ -102,6 +97,10 @@ describe("PublishLongFormNowUseCase", () => {
       userId: TEST_USER_ID,
       currentState: "DRAFT",
     });
+    // getLongFormPost uses findFirst; mock so real getLongFormPost works when not mocked at server level
+    (
+      mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(null);
     useCase = new PublishLongFormNowUseCase();
   });
 
@@ -119,7 +118,9 @@ describe("PublishLongFormNowUseCase", () => {
 
       const relays = ["wss://relay1.com", "wss://relay2.com"];
 
-      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (
+        mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
       mockPublish.mockResolvedValue({ results: [] });
 
       await useCase.execute({
@@ -129,10 +130,11 @@ describe("PublishLongFormNowUseCase", () => {
         relays,
       });
 
-      expect(getLongFormPost).toHaveBeenCalledWith({
-        id: TEST_POST_ID,
-        userId: TEST_USER_ID,
-      });
+      expect(mockPrisma.longFormPost.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: TEST_POST_ID, userId: TEST_USER_ID },
+        })
+      );
       // State transitions now use LongFormPostStateMachine, not updateLongFormPostStatus
       expect(mockPublish).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -157,7 +159,9 @@ describe("PublishLongFormNowUseCase", () => {
     });
 
     it("should throw error if post not found", async () => {
-      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       await expect(
         useCase.execute({
@@ -180,14 +184,14 @@ describe("PublishLongFormNowUseCase", () => {
     });
 
     it("should throw error if post already published", async () => {
-      const mockPost = {
+      (
+        mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         title: "Test Title",
         currentState: "PUBLISHED",
-      };
-
-      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      });
 
       await expect(
         useCase.execute({
@@ -219,7 +223,9 @@ describe("PublishLongFormNowUseCase", () => {
 
       const signedEvent = createValidSignedEvent({ content: "test" });
 
-      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (
+        mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
       mockPublish.mockResolvedValue({ results: [] });
 
       await useCase.execute({
@@ -254,7 +260,9 @@ describe("PublishLongFormNowUseCase", () => {
 
       const publishError = new Error("Publish failed");
 
-      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (
+        mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
       mockPublish.mockRejectedValue(publishError);
 
       await expect(

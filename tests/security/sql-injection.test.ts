@@ -7,9 +7,9 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { getPostById } from "~/features/posts/server";
 import { getUserById } from "~/features/user";
 import { prisma } from "~/lib/prisma.server";
-import { getPostById } from "~/models/post.queries.server";
 // Mock Prisma client
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {

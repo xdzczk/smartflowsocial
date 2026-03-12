@@ -12,11 +12,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { UnifiedComposer } from "~/features/posts/composer";
+import { LongFormPost } from "~/features/posts/longform";
 import type { HashTagPreset, QueueType } from "~/features/posts/types";
 import {
   NewPostHeader,
-  UnifiedComposer,
-  LongFormPost,
   convertJsonValueToScheduleConfig,
 } from "~/features/posts/ui";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";

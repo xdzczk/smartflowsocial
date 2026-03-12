@@ -201,7 +201,7 @@ export function QueueTypeDialog({
       typeof fetcherData === "object" &&
       !Array.isArray(fetcherData)
     ) {
-      const data = fetcherData as QueueTypeDialogFetcherData;
+      const data = fetcherData;
       if (typeof data.success === "boolean" && data.success) {
         if (lastHandledSuccessRef.current !== fetcherData) {
           lastHandledSuccessRef.current = fetcherData;

@@ -5,6 +5,10 @@
 import { json } from "@remix-run/node";
 
 import {
+  updateUserSubscription,
+  getUserSubscription,
+} from "~/features/payments/data";
+import {
   getUserBasicInfo,
   searchUsersByProfileName,
   requestChildLink,
@@ -21,10 +25,6 @@ import {
   unlinkChildSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import {
-  updateUserSubscription,
-  getUserSubscription,
-} from "~/models/payment.server";
 
 // ============================================================================
 // Action Handlers

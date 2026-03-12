@@ -27,7 +27,6 @@ export default defineConfig({
         "app/**/*.server.ts",
         "app/**/*.server.tsx",
         "app/lib/**/*.ts",
-        "app/models/**/*.ts",
         "app/features/**/*.server.ts",
         "app/features/**/services/**/*.ts",
         "app/features/**/queries/**/*.ts",
@@ -99,11 +98,9 @@ export default defineConfig({
         // Exclude type definition files (not testable)
         "app/**/*.types.ts",
         "app/**/types.ts",
-        "app/models/**/post.types.ts",
         "app/infra/**/queue-types.ts",
         // Exclude example/reference files
         "app/**/*.example.ts",
-        "app/lib/error-handler.example.ts",
         // Exclude re-export/index files that only export types
         "app/infra/queue/index.ts",
         // Exclude React hooks that require browser environment

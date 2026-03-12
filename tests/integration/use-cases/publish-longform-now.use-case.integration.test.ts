@@ -32,8 +32,10 @@ vi.mock("~/infra/publishing/publish-lease.server", () => ({
 
 import { createValidSignedEvent } from "../../utils/test-helpers";
 
-import { CreateLongFormPostUseCase } from "~/features/posts/server";
-import { PublishLongFormNowUseCase } from "~/features/posts/server";
+import {
+  CreateLongFormPostUseCase,
+  PublishLongFormNowUseCase,
+} from "~/features/posts/server/longform";
 import { prisma } from "~/lib/prisma.server";
 
 // Skip if no test database configured
@@ -107,6 +109,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         relays: ["wss://relay.example.com"],
         correlationId,
       });
+
+      // Allow publish transition transaction to be visible (integration DB)
+      await new Promise((r) => setTimeout(r, 50));
 
       // Verify post is published
       const publishedPost = await prisma.longFormPost.findUnique({

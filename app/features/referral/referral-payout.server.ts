@@ -5,11 +5,11 @@
 
 import { NWCClient } from "@getalby/sdk";
 
+import { getOwnerNwcWithRelayOverrides } from "~/features/payments/data";
 import { ReferralEarningStatus } from "~/features/referral/data/referral-prisma-types.server";
 import { fetchInvoiceFromLnurlPay } from "~/features/referral/lnurl-pay.server";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
-import { getOwnerNwcWithRelayOverrides } from "~/models/payment.server";
 
 import {
   aggregatePendingCommissionByReferrer,

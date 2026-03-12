@@ -40,11 +40,13 @@ vi.mock("nostr-tools", () => ({
   getPublicKey: vi.fn((sk: Uint8Array) => Promise.resolve("pk-" + sk.length)),
 }));
 
+import { getActiveSigner as getActiveSignerFromConnection } from "~/features/auth/signer/nostr-signer-connection.client";
 import {
   getActiveSignerConfig,
   setActiveSignerConfig,
   clearActiveSignerConfig,
   getActiveSignerPubkeyHint,
+  getWindowNostrLikeSigner,
 } from "~/features/auth/signer/nostr-signer-manager.client";
 
 describe("nostr-signer-manager", () => {
@@ -106,6 +108,29 @@ describe("nostr-signer-manager", () => {
       const hint = await getActiveSignerPubkeyHint();
       expect(hint).toBeDefined();
       expect(typeof hint).toBe("string");
+    });
+  });
+
+  describe("getWindowNostrLikeSigner", () => {
+    it("returns signer wrapper when getActiveSigner returns signer", async () => {
+      const mockSigner = {
+        getPublicKey: vi.fn().mockResolvedValue("pk"),
+        signEvent: vi.fn().mockResolvedValue({ sig: "sig" }),
+      };
+      vi.mocked(getActiveSignerFromConnection).mockResolvedValue(
+        mockSigner as never
+      );
+      const result = await getWindowNostrLikeSigner();
+      expect(result).not.toBeNull();
+      expect(result).toHaveProperty("getPublicKey");
+      expect(result).toHaveProperty("signEvent");
+      expect(await result!.getPublicKey()).toBe("pk");
+    });
+
+    it("returns null when getActiveSigner returns null and no window.nostr", async () => {
+      vi.mocked(getActiveSignerFromConnection).mockResolvedValue(null);
+      const result = await getWindowNostrLikeSigner();
+      expect(result).toBeNull();
     });
   });
 });

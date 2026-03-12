@@ -5,12 +5,9 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock dependencies
-vi.mock("~/models/longformpost.server", () => ({
+// Mock dependencies (single mock so all exports are available)
+vi.mock("~/features/posts/server", () => ({
   getScheduledLongFormPosts: vi.fn(),
-}));
-
-vi.mock("~/models/post.queries.server", () => ({
   getScheduledPosts: vi.fn(),
   getPostStatistics: vi.fn(),
 }));
@@ -42,17 +39,14 @@ vi.mock("~/features/posts/services/combined.server", () => ({
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
+import { getScheduledLongFormPosts } from "~/features/posts/server";
+import { getScheduledPosts, getPostStatistics } from "~/features/posts/server";
 import { loadDashboardData } from "~/features/posts/services/dashboard-loader.server";
 import { getUserById } from "~/features/user";
 import {
   getQueueTypesCached,
   getHashTagPresetsCached,
 } from "~/features/user/services/user-cache.server";
-import { getScheduledLongFormPosts } from "~/models/longformpost.server";
-import {
-  getScheduledPosts,
-  getPostStatistics,
-} from "~/models/post.queries.server";
 
 describe("Dashboard Loader", () => {
   beforeEach(() => {

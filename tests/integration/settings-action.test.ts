@@ -23,7 +23,7 @@ vi.mock("~/features/user", () => ({
   hashTagPresetExistsForUser: vi.fn(),
 }));
 
-vi.mock("~/models/payment.server", () => ({
+vi.mock("~/features/payments/data", () => ({
   getUserSubscription: vi.fn(),
 }));
 
@@ -34,6 +34,7 @@ vi.mock("~/features/user/services/user-cache.server", () => ({
 
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
+import { getUserSubscription } from "~/features/payments/data";
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
 import {
   updateUserTimezone,
@@ -47,7 +48,6 @@ import {
   deleteHashTagPreset,
   hashTagPresetExistsForUser,
 } from "~/features/user";
-import { getUserSubscription } from "~/models/payment.server";
 
 describe("Settings Action Handler", () => {
   beforeEach(() => {

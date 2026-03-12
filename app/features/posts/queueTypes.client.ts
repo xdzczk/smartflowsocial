@@ -47,7 +47,6 @@ export async function calculateQueueScheduleTime(
       },
       body: JSON.stringify({
         queueTypeId,
-        queueTypeName, // Keep for backward compatibility
         userId,
       }),
     });

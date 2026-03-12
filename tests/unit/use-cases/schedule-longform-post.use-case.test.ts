@@ -21,7 +21,7 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
-vi.mock("~/models/longformpost.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getLongFormPost: vi.fn(),
 }));
 
@@ -35,12 +35,12 @@ vi.mock("~/lib/idempotency.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { ScheduleLongFormPostUseCase } from "~/features/posts/server";
+import { getLongFormPost } from "~/features/posts/server";
+import { ScheduleLongFormPostUseCase } from "~/features/posts/server/longform";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
 import { fromDate } from "~/lib/temporal";
-import { getLongFormPost } from "~/models/longformpost.server";
 
 describe("ScheduleLongFormPostUseCase", () => {
   let useCase: ScheduleLongFormPostUseCase;

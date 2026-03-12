@@ -1,11 +1,11 @@
 import { useSearchParams } from "@remix-run/react";
 
+import { Calendar, useCalendarData } from "~/features/posts/calendar";
 import {
   longFormPostsToCalendarPosts,
   mixedPostsToCalendarPosts,
   postsToCalendarPosts,
 } from "~/features/posts/calendar/utils/calendar-post-converter";
-import { Calendar, useCalendarData } from "~/features/posts/ui";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 
 export default function CalendarPage() {

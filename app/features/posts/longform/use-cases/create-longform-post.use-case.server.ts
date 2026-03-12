@@ -5,9 +5,11 @@
  */
 
 import type { Prisma } from "~/features/posts/data/posts-prisma-types.server";
-import { resolveQueueTypeId } from "~/features/posts/server";
+import {
+  resolveQueueTypeId,
+  createLongFormPost,
+} from "~/features/posts/server";
 import { fromUnixTimestamp, toPrismaDate } from "~/lib/temporal";
-import { createLongFormPost } from "~/models/longformpost.server";
 
 import { runCreateScheduledLongFormPostInTransaction } from "../../repositories/longform-data.server";
 import { calculateLongFormStatus } from "../services/longform-status-calculator.server";
@@ -92,9 +94,7 @@ export class CreateLongFormPostUseCase {
       isPublished: input.isPublished ?? false,
       signedEvent: input.signedEvent as unknown as Prisma.JsonValue | undefined,
       nostrEvent: input.nostrEvent as unknown as Prisma.JsonValue | undefined,
-      scheduledFor: input.scheduledFor
-        ? input.scheduledFor.toString()
-        : undefined,
+      scheduledAtUtc: input.scheduledFor ?? undefined,
     });
 
     // Set initial state using state machine

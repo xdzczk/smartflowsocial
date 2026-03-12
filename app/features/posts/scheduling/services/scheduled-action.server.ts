@@ -6,17 +6,17 @@
 import { json } from "@remix-run/node";
 
 import { MoveScheduledLongFormToDraftUseCase } from "~/features/posts/longform/index.server";
+import {
+  createPostWithOutbox,
+  deleteLongFormPost,
+  deletePost,
+  getPostById,
+} from "~/features/posts/server";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import {
   scheduledActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { deleteLongFormPost } from "~/models/longformpost.server";
-import {
-  createPostWithOutbox,
-  deletePost,
-} from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
 
 import { MoveScheduledToDraftUseCase } from "../use-cases/move-scheduled-to-draft.use-case.server";
 
@@ -171,7 +171,7 @@ async function handleScheduleRepost(
       fileUrl: [],
       postType: sourcePost.postType,
       queueTypeId: sourcePost.queueTypeId,
-      scheduledFor: scheduledAtUtc,
+      scheduledAtUtc,
       tags: [],
       repost: true,
       isQuotedPost: false,
@@ -223,7 +223,7 @@ async function handleScheduleQuote(
       fileUrl: [],
       postType: sourcePost.postType,
       queueTypeId: sourcePost.queueTypeId,
-      scheduledFor: scheduledAtUtc,
+      scheduledAtUtc,
       tags: [],
       repost: false,
       isQuotedPost: true,

@@ -17,8 +17,6 @@ import {
   getConnectionStatus,
   updateConnectionStatus,
   recordConnectionEvent,
-  getSessionStatus,
-  updateSessionStatus,
 } from "~/features/auth/signer/remote-signer-status.client";
 
 class MemoryStorage implements Storage {
@@ -103,15 +101,15 @@ describe("remote-signer-status", () => {
     });
   });
 
-  describe("getSessionStatus / updateSessionStatus (deprecated)", () => {
-    it("getSessionStatus returns same as getConnectionStatus", () => {
+  describe("getConnectionStatus / updateConnectionStatus", () => {
+    it("getConnectionStatus returns initial status for new connection", () => {
       const conn = createConnection(makeConfig(), "Test");
-      expect(getSessionStatus(conn.id)).toBe(getConnectionStatus(conn.id));
+      expect(getConnectionStatus(conn.id)).toBe("disconnected");
     });
 
-    it("updateSessionStatus updates status", () => {
+    it("updateConnectionStatus updates status", () => {
       const conn = createConnection(makeConfig(), "Test");
-      updateSessionStatus(conn.id, "stale");
+      updateConnectionStatus(conn.id, "stale");
       expect(getConnectionStatus(conn.id)).toBe("stale");
     });
   });
@@ -133,8 +131,8 @@ describe("remote-signer-status", () => {
         pubkey: "a".repeat(64),
       });
       const view = getSessionByIdLegacy(conn.id);
-      expect(view?.metadata.status).toBe("active");
-      expect(view?.metadata.pubkey).toBe("a".repeat(64));
+      expect(view?.connection.metadata.status).toBe("active");
+      expect(view?.connection.metadata.pubkey).toBe("a".repeat(64));
     });
 
     it("records disconnected event", () => {
@@ -145,7 +143,7 @@ describe("remote-signer-status", () => {
       });
       recordConnectionEvent(conn.id, { type: "disconnected", reason: "Test" });
       const view = getSessionByIdLegacy(conn.id);
-      expect(view?.metadata.status).toBe("disconnected");
+      expect(view?.connection.metadata.status).toBe("disconnected");
     });
 
     it("records health_check event", () => {
@@ -156,7 +154,7 @@ describe("remote-signer-status", () => {
         healthy: true,
       });
       const view = getSessionByIdLegacy(conn.id);
-      expect(view?.metadata.status).toBe("active");
+      expect(view?.connection.metadata.status).toBe("active");
     });
 
     it("records error event", () => {
@@ -167,8 +165,8 @@ describe("remote-signer-status", () => {
         error: "Something failed",
       });
       const view = getSessionByIdLegacy(conn.id);
-      expect(view?.metadata.status).toBe("disconnected");
-      expect(view?.metadata.lastError).toBe("Something failed");
+      expect(view?.connection.metadata.status).toBe("disconnected");
+      expect(view?.connection.metadata.lastError).toBe("Something failed");
     });
 
     it("records signed event", () => {
@@ -176,7 +174,7 @@ describe("remote-signer-status", () => {
       setActiveConnection(conn.id);
       recordConnectionEvent(conn.id, { type: "signed", kind: 1 });
       const view = getSessionByIdLegacy(conn.id);
-      expect(view?.metadata.lastActivityAt).toBeDefined();
+      expect(view?.connection.metadata.lastActivityAt).toBeDefined();
     });
   });
 });

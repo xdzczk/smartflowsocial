@@ -19,6 +19,7 @@ import {
 import { GiveawayBlacklistSettings } from "~/features/giveaway";
 import { NWCSettings, SubscriptionSettings } from "~/features/payments";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
+import { ScheduleIntervalsSettings } from "~/features/posts/scheduling";
 import {
   type HashTagPreset,
   type QueueType,
@@ -27,7 +28,6 @@ import {
 import {
   HashtagPresetsSettings,
   QueueTypesSettings,
-  ScheduleIntervalsSettings,
 } from "~/features/posts/ui";
 import { ReferralSettings } from "~/features/referral/components/ReferralSettings";
 import {

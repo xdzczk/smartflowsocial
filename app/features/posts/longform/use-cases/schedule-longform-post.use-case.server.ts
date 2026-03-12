@@ -4,9 +4,9 @@
  * Schedules a long form post for future publication.
  */
 
+import { getLongFormPost } from "~/features/posts/server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { toPrismaDate, toUnixTimestamp } from "~/lib/temporal";
-import { getLongFormPost } from "~/models/longformpost.server";
 
 import { runScheduleLongFormPostInTransaction } from "../../repositories/longform-data.server";
 

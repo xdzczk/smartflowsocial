@@ -344,9 +344,8 @@ async function handleCancelledEvent(
     event.eventType === "POST_CANCELLED"
       ? QUEUE_SCHEDULED_POSTS
       : QUEUE_SCHEDULED_LONGFORM_POSTS;
-  const cancelled = await queueClient.cancelByData(
+  const cancelled = await queueClient.cancelByJobId(
     queueName,
-    "postId",
     event.aggregateId
   );
 

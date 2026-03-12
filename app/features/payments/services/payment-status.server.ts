@@ -5,12 +5,12 @@
 
 import { json } from "@remix-run/node";
 
-import { DatabaseError } from "~/lib/errors";
 import {
   checkPaymentStatus,
   getPaymentUserId,
   manuallyVerifyPayment,
-} from "~/models/payment.server";
+} from "~/features/payments/data";
+import { DatabaseError } from "~/lib/errors";
 
 export { getPaymentUserId };
 /**

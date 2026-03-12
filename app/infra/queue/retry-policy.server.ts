@@ -4,8 +4,6 @@
  * Defines retry policies for different job types with exponential backoff and jitter.
  */
 
-import { isRetryableErrorEnhanced } from "~/lib/error-classification.server";
-
 import type { QueueType } from "./queue-types";
 
 /**
@@ -129,63 +127,6 @@ export function shouldRetry(attempt: number, policy: RetryPolicy): boolean {
 export function getRetryDelay(queueType: QueueType, attempt: number): number {
   const policy = getRetryPolicy(queueType);
   return calculateRetryDelay(attempt, policy);
-}
-
-/**
- * Check if error is retryable
- * Some errors should not be retried (e.g., validation errors)
- *
- * @deprecated Use isRetryableErrorEnhanced from error-classification.server.ts instead
- * This function is kept for backward compatibility
- */
-export function isRetryableError(error: Error): boolean {
-  // Use enhanced classification if available
-  try {
-    return isRetryableErrorEnhanced(error);
-  } catch {
-    // Fallback to simple pattern matching if classification fails
-    const errorMessage = error.message.toLowerCase();
-
-    // Non-retryable errors
-    const nonRetryablePatterns = [
-      "not found",
-      "unauthorized",
-      "forbidden",
-      "validation",
-      "invalid",
-      "already posted",
-      "already published",
-    ];
-
-    for (const pattern of nonRetryablePatterns) {
-      if (errorMessage.includes(pattern)) {
-        return false;
-      }
-    }
-
-    // Retryable errors (network, temporary failures)
-    const retryablePatterns = [
-      "timeout",
-      "network",
-      "connection",
-      "econnrefused",
-      "etimedout",
-      "eai_again",
-      "temporary",
-      "503",
-      "502",
-      "504",
-    ];
-
-    for (const pattern of retryablePatterns) {
-      if (errorMessage.includes(pattern)) {
-        return true;
-      }
-    }
-
-    // Default: retryable (conservative approach)
-    return true;
-  }
 }
 
 /**

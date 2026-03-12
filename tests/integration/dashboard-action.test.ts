@@ -6,12 +6,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-// Mock dependencies
-vi.mock("~/models/post.commands.server", () => ({
+// Mock dependencies (single mock so all used exports are available)
+vi.mock("~/features/posts/server", () => ({
   deletePost: vi.fn(),
-}));
-
-vi.mock("~/models/longformpost.server", () => ({
   deleteLongFormPost: vi.fn(),
 }));
 
@@ -24,9 +21,9 @@ import {
   createPostIds,
 } from "../utils/test-helpers";
 
+import { deleteLongFormPost } from "~/features/posts/server";
+import { deletePost } from "~/features/posts/server";
 import { handleDashboardAction } from "~/features/posts/services/dashboard-action.server";
-import { deleteLongFormPost } from "~/models/longformpost.server";
-import { deletePost } from "~/models/post.commands.server";
 
 describe("Dashboard Action Handler", () => {
   beforeEach(() => {

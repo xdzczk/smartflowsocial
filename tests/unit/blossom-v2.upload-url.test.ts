@@ -16,7 +16,7 @@ vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
-vi.mock("~/models/payment.server", () => ({
+vi.mock("~/features/payments/data", () => ({
   getUserSubscription: vi.fn(),
 }));
 
@@ -39,11 +39,11 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+import { getUserSubscription } from "~/features/payments/data";
 import { issueBlossomBulkTokens } from "~/features/upload/services/blossom-v2.server";
 import { getCanonicalOwnedBytesForUser } from "~/features/upload/services/media.server";
 import { getUserById } from "~/features/user";
 import { prisma } from "~/lib/prisma.server";
-import { getUserSubscription } from "~/models/payment.server";
 
 describe("issueBlossomBulkTokens uploadUrl normalization", () => {
   beforeEach(() => {

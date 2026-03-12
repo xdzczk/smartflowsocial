@@ -55,6 +55,12 @@ vi.mock("~/features/posts/queueColors", () => ({
   getQueueColor: vi.fn(),
 }));
 
+// Avoid circular import chain (Calendar -> useRefreshPostViews -> calendarKeys etc.)
+vi.mock("~/features/posts/hooks/useRefreshPostViews", () => ({
+  useRefreshPostViews: () => () => {},
+  refreshPostViews: () => {},
+}));
+
 vi.mock("~/infra/queue", () => ({
   cancelPostJob: vi.fn(),
   enqueuePostJob: vi.fn(),
@@ -74,15 +80,13 @@ vi.mock("~/features/posts/calendar/services/calendar-loader.server", () => ({
   loadCalendarQueueData: vi.fn(),
 }));
 
-vi.mock("~/models/post.queries.server", () => ({
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
   getScheduledPosts: vi.fn(),
   getScheduledLongFormPosts: vi.fn(),
   getPastPosts: vi.fn(),
   getPastLongFormPosts: vi.fn(),
   getPostById: vi.fn(),
-}));
-
-vi.mock("~/models/post.commands.server", () => ({
   reschedulePost: vi.fn(),
 }));
 

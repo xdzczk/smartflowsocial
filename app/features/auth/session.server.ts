@@ -17,7 +17,6 @@ invariant(env.SESSION_SECRET, "SESSION_SECRET must be set");
 
 interface CookieSessionData {
   sessionId?: string;
-  userId?: string;
 }
 
 export const sessionStorage = createCookieSessionStorage<CookieSessionData>({
@@ -32,7 +31,6 @@ export const sessionStorage = createCookieSessionStorage<CookieSessionData>({
 });
 
 const SESSION_ID_KEY: keyof CookieSessionData = "sessionId";
-const LEGACY_USER_SESSION_KEY: keyof CookieSessionData = "userId";
 
 export async function getSession(request: Request) {
   const cookie = request.headers.get("Cookie");
@@ -64,13 +62,6 @@ export async function getSessionPubkey(
     return dbSession.pubkey;
   }
 
-  // Legacy compatibility: derive pubkey from the legacy userId session cookie
-  const legacyUserId = session.get(LEGACY_USER_SESSION_KEY);
-  if (typeof legacyUserId === "string" && legacyUserId.length > 0) {
-    const user = await getUserById(legacyUserId);
-    return user?.npub;
-  }
-
   return undefined;
 }
 
@@ -89,11 +80,7 @@ export async function getUserId(
     return dbSession.userId;
   }
 
-  // Legacy compatibility
-  const legacyUserId = session.get(LEGACY_USER_SESSION_KEY);
-  return typeof legacyUserId === "string" && legacyUserId.length > 0
-    ? legacyUserId
-    : undefined;
+  return undefined;
 }
 
 export async function getUser(request: Request) {
@@ -128,14 +115,6 @@ export async function requireSession(
       pubkey: dbSession.pubkey,
       sessionId: dbSession.id,
     };
-  }
-
-  // Legacy compatibility: allow old cookie sessions during rollout
-  const legacyUserId = session.get(LEGACY_USER_SESSION_KEY);
-  if (typeof legacyUserId === "string" && legacyUserId.length > 0) {
-    const user = await getUserById(legacyUserId);
-    if (!user) throw await logout(request);
-    return { userId: legacyUserId, pubkey: user.npub, sessionId: "legacy" };
   }
 
   throw redirect("/login");
@@ -184,8 +163,6 @@ export async function createUserSession({
   });
 
   session.set(SESSION_ID_KEY, dbSession.id);
-  // Explicitly clear legacy key (defense-in-depth)
-  session.unset(LEGACY_USER_SESSION_KEY);
 
   return redirect(redirectTo, {
     headers: {
@@ -206,8 +183,6 @@ export async function logout(request: Request) {
     await revokeSessionById(sessionId);
   }
 
-  // Explicitly clear legacy session key (defense-in-depth)
-  session.unset(LEGACY_USER_SESSION_KEY);
   session.unset(SESSION_ID_KEY);
 
   return redirect("/", {

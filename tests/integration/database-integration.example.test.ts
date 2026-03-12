@@ -32,8 +32,8 @@ import {
 } from "../database/database-test-helpers";
 import { getTestPrisma } from "../database/test-db";
 
+import { createPost } from "~/features/posts/server";
 import { getUserById } from "~/features/user";
-import { createPost } from "~/models/post.commands.server";
 
 // This file is an example. Run when test DB is configured (same as other DB tests)
 // or when explicitly enabled via RUN_DATABASE_EXAMPLES=true.

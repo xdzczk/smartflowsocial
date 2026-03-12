@@ -10,6 +10,7 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "~/features/posts/dtos";
+import { getDraftLongFormPosts, getDraftPosts } from "~/features/posts/server";
 import { filterPostsByQueueType } from "~/features/posts/services/post-filtering.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
@@ -18,8 +19,6 @@ import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
-import { getDraftLongFormPosts } from "~/models/longformpost.server";
-import { getDraftPosts } from "~/models/post.queries.server";
 
 import { listBulkDraftGroups } from "./draft-group.server";
 

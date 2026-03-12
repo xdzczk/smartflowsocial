@@ -81,7 +81,7 @@ Every documentation file should include:
 ✅ Good:
 
 ```typescript
-// app/models/user.server.ts
+// app/features/user/... (data or services)
 export async function getUserById(id: string) {
   return prisma.user.findUnique({ where: { id } });
 }
@@ -139,7 +139,7 @@ getUserById(id) {
 ```typescript
 // app/routes/dashboard.posts.tsx
 import { json } from "@remix-run/node";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // Fetch user from database

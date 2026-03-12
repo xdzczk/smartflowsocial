@@ -1,7 +1,7 @@
 /**
  * Integration tests for Post model functions
  *
- * Tests the database operations in app/models/post.queries.server.ts and app/models/post.commands.server.ts
+ * Tests the database operations in app/features/posts/data (post queries and commands)
  * Uses mocked Prisma to test business logic without requiring a real database.
  */
 
@@ -13,17 +13,13 @@ import {
   TEST_QUEUE_TYPE_ID,
 } from "../utils/test-helpers";
 
-import {
-  createPost,
-  deletePost,
-  updatePost,
-} from "~/models/post.commands.server";
+import { createPost, deletePost, updatePost } from "~/features/posts/server";
 import {
   getScheduledPosts,
   getPublishedPosts,
   getPostById,
   getPostStatistics,
-} from "~/models/post.queries.server";
+} from "~/features/posts/server";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 const { mockPrisma } = vi.hoisted(() => {
@@ -65,7 +61,7 @@ describe("Post Model Functions", () => {
 
   describe("createPost", () => {
     it("should create a post with all fields", async () => {
-      const scheduledForUnix = Math.floor(Date.now() / 1000) + 3600;
+      const scheduledAtUtcUnix = Math.floor(Date.now() / 1000) + 3600;
       const postData = {
         userId: TEST_USER_ID,
         content: "Test content",
@@ -73,14 +69,16 @@ describe("Post Model Functions", () => {
         fileUrl: ["https://example.com/image.jpg"],
         postType: "IMAGE" as const,
         tags: ["tag1", "tag2"],
-        scheduledFor: scheduledForUnix,
+        scheduledAtUtc: scheduledAtUtcUnix,
         queueTypeId: TEST_QUEUE_TYPE_ID,
       };
 
+      const scheduledAtUtcDate = new Date(scheduledAtUtcUnix * 1000);
       const mockPost = {
         id: TEST_POST_ID,
         currentState: "SCHEDULED",
         ...postData,
+        scheduledAtUtc: scheduledAtUtcDate,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -101,6 +99,7 @@ describe("Post Model Functions", () => {
           fileUrl: ["https://example.com/image.jpg"],
           postType: "IMAGE",
           tags: ["tag1", "tag2"],
+          scheduledAtUtc: scheduledAtUtcDate,
           currentState: "SCHEDULED",
           queueType: {
             connect: {
@@ -196,16 +195,16 @@ describe("Post Model Functions", () => {
       });
     });
 
-    it("should convert scheduledFor to string", async () => {
+    it("should convert scheduledAtUtc (Unix seconds) to Date", async () => {
       const scheduledDate = new Date("2024-01-15T10:00:00Z");
-      const scheduledForUnix = Math.floor(scheduledDate.getTime() / 1000);
+      const scheduledAtUtcUnix = Math.floor(scheduledDate.getTime() / 1000);
       const postData = {
         userId: TEST_USER_ID,
         content: "Test content",
         postType: "TEXT" as const,
         tags: [],
         fileUrl: [],
-        scheduledFor: scheduledForUnix,
+        scheduledAtUtc: scheduledAtUtcUnix,
       };
 
       (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue({

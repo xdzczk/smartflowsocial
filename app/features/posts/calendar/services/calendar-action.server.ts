@@ -6,7 +6,13 @@
 import { json } from "@remix-run/node";
 
 import { SchedulePostUseCase } from "~/features/posts/scheduling/index.server";
-import { ScheduleLongFormPostUseCase } from "~/features/posts/server";
+import {
+  getLongFormPost,
+  updateLongFormPost,
+  reschedulePost,
+  getPostById,
+} from "~/features/posts/server";
+import { ScheduleLongFormPostUseCase } from "~/features/posts/server/longform";
 import { logWarning } from "~/lib/error-logger.server";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import { fromUnixTimestamp } from "~/lib/temporal";
@@ -15,12 +21,6 @@ import {
   calendarRescheduleLongformSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import {
-  getLongFormPost,
-  updateLongFormPost,
-} from "~/models/longformpost.server";
-import { reschedulePost } from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
 
 /**
  * Handle calendar reschedule action for regular posts
@@ -80,7 +80,7 @@ export async function handleCalendarReschedule(
   const updatedPost = await reschedulePost({
     id: postId,
     userId,
-    newScheduledFor: newTime,
+    scheduledAtUtc: parseInt(newTime, 10),
     overrideQueue,
     ...(parsedSignedEvent &&
       parsedNostrEvent && {
@@ -180,7 +180,7 @@ export async function handleCalendarRescheduleLongform(
   const updatedPost = await updateLongFormPost({
     id: postId,
     userId,
-    scheduledFor: newTime,
+    scheduledAtUtc: parseInt(newTime, 10),
     signedEvent: parsedSignedEvent,
     nostrEvent: parsedNostrEvent,
   });

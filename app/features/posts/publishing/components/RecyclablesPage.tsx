@@ -3,15 +3,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { EngagementFilter } from "~/features/posts/components/EngagementFilter";
 import { OlderThanFilter } from "~/features/posts/components/OlderThanFilter";
+import {
+  BulkComposerModal,
+  type BulkComposerUser,
+} from "~/features/posts/composer";
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { CombinedContent, PostData } from "~/features/posts/server";
 import type { BulkPost } from "~/features/posts/types";
-import {
-  BulkComposerModal,
-  type BulkComposerUser,
-  PostDetailsModal,
-} from "~/features/posts/ui";
+import { PostDetailsModal } from "~/features/posts/ui";
 import { loadScheduledRepostDataAsBulkPosts } from "~/features/posts/utils/bulk-composer-data";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 

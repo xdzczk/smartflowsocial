@@ -4,6 +4,7 @@
  * Cancels a scheduled post by removing it from the queue and updating its state.
  */
 
+import { updatePost, getPostById } from "~/features/posts/server";
 import { deriveIsScheduled } from "~/features/posts/state-machine/post-state";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import type { CancelPostInput } from "~/features/posts/use-cases/types";
@@ -11,8 +12,6 @@ import { cancelPostJob } from "~/infra/queue";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo, logError } from "~/lib/error-logger.server";
 import { recordPostCancelled } from "~/lib/metrics/business-metrics.server";
-import { updatePost } from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
 
 export class CancelScheduleUseCase {
   private readonly stateMachine = new PostStateMachine();
@@ -69,8 +68,7 @@ export class CancelScheduleUseCase {
       id: input.postId,
       userId: input.userId,
       data: {
-        scheduledFor: null,
-        // @deprecated - isScheduled flag removed. State machine will set it via transition.
+        scheduledAtUtc: null,
       },
     });
 

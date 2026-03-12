@@ -7,7 +7,7 @@ import {
   upsertPushSubscription as upsertSubscription,
   getUserPushSubscriptions as getUserSubscriptions,
   deletePushSubscription as deleteSubscription,
-} from "~/models/push-subscription.server";
+} from "~/features/user/services/push-subscription.server";
 
 export interface CreatePushSubscriptionInput {
   userId: string;

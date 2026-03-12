@@ -5,7 +5,6 @@ import {
   forwardRef,
   useCallback,
   useEffect,
-  useImperativeHandle,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -17,6 +16,7 @@ import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 
 import type { CombinedContent } from "../types";
 
+import { useFlowViewOverscroll, useFlowViewScroll } from "./flow-view";
 import {
   CARD_MIN_HEIGHT,
   CARD_MIN_HEIGHT_MOBILE,
@@ -25,20 +25,11 @@ import {
   getGoLiveAt,
   LOADING_LABEL,
   MOBILE_BREAKPOINT_PX,
-  OVERSCROLL_EDGE_PX,
-  OVERSCROLL_MAX_PX,
-  OVERSCROLL_MIN_SCROLL_RANGE_PX,
-  OVERSCROLL_RESISTANCE,
-  OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS,
-  OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX,
   OVERSCROLL_SPRING_CURVE,
   OVERSCROLL_SPRING_MS,
   PAST_FETCH_DEBOUNCE_MS,
   PREFERS_REDUCED_MOTION_QUERY,
-  RIGHT_EDGE_FETCH_THRESHOLD_PX,
-  RIGHT_EDGE_VIEWPORT_MULTIPLIER,
   SCROLL_EDGE_OFFSET_PX,
-  SCROLL_VIEWPORT_THROTTLE_MS,
   SENTINEL_PREFETCH_ROOT_MARGIN_PX,
   SENTINEL_WIDTH,
   SLOT_CTA,
@@ -119,312 +110,21 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         : false
     );
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-    const initialScrollDoneRef = useRef(false);
-    /** Id of the item that was the first future (next scheduled) last render; used to detect when it gets published and trigger smooth scroll */
-    const prevFirstFutureIdRef = useRef<string | null>(null);
-    /** Rubber-band overscroll offset (px); negative = pulled from left, positive = from right */
-    const [overscrollPx, setOverscrollPx] = useState(0);
-    const [isOverscrollSpringing, setIsOverscrollSpringing] = useState(false);
-    const overscrollPxRef = useRef(0);
-    const overscrollRafIdRef = useRef<number | null>(null);
-    const springBackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-      null
-    );
-    const rubberBandWrapperRef = useRef<HTMLDivElement | null>(null);
-    const touchStartXRef = useRef(0);
-    const pointerStartXRef = useRef(0);
-    const pointerStartScrollLeftRef = useRef(0);
-    /** Block load-more until initial scroll has had time; prevents request loop when scrollToIndex fails */
-    const allowFetchRef = useRef(false);
-    /** State so fetch effect re-runs when we allow fetch (ref alone doesn't trigger re-render) */
-    const [allowFetch, setAllowFetch] = useState(false);
-    /** Only fetch past when we've scrolled away from left (initial scroll succeeded); prevents loop when stuck at scroll 0 */
-    const hasScrolledAwayFromLeftRef = useRef(false);
-    /** When set, scroll to default position after next flowItems update (filter change from parent). */
-    const scrollToNextWhenReadyRef = useRef(false);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
       null
     );
-    /** Viewport for visibility: only items in this range get tabIndex (focusable). Avoids tabbing through entire virtual list. */
-    const [scrollViewport, setScrollViewport] = useState({
-      scrollLeft: 0,
-      clientWidth: 2000,
-    });
-    const scrollViewportRafRef = useRef<number | null>(null);
-
-    useEffect(() => {
-      overscrollPxRef.current = overscrollPx;
-    }, [overscrollPx]);
-
-    // Throttle scrollViewport updates so we don't re-render every frame during scroll (reduces lag/flicker on mobile).
-    const scrollViewportLastMsRef = useRef(0);
-    const scrollEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-      null
-    );
-    useEffect(() => {
-      const el = scrollElement ?? scrollContainerRef.current;
-      if (!el) return;
-      const updateViewport = () => {
-        setScrollViewport({
-          scrollLeft: el.scrollLeft,
-          clientWidth: el.clientWidth,
-        });
-      };
-      const onScroll = () => {
-        const now = Date.now();
-        const elapsed = now - scrollViewportLastMsRef.current;
-        if (scrollViewportRafRef.current != null)
-          cancelAnimationFrame(scrollViewportRafRef.current);
-        scrollViewportRafRef.current = requestAnimationFrame(() => {
-          scrollViewportRafRef.current = null;
-          if (elapsed >= SCROLL_VIEWPORT_THROTTLE_MS) {
-            scrollViewportLastMsRef.current = now;
-            updateViewport();
-          }
-        });
-        if (scrollEndTimeoutRef.current)
-          clearTimeout(scrollEndTimeoutRef.current);
-        scrollEndTimeoutRef.current = setTimeout(() => {
-          scrollEndTimeoutRef.current = null;
-          scrollViewportLastMsRef.current = 0;
-          updateViewport();
-        }, 150);
-      };
-      const resizeObserver = new ResizeObserver(updateViewport);
-      resizeObserver.observe(el);
-      el.addEventListener("scroll", onScroll, { passive: true });
-      updateViewport();
-      return () => {
-        resizeObserver.disconnect();
-        el.removeEventListener("scroll", onScroll);
-        if (scrollViewportRafRef.current != null)
-          cancelAnimationFrame(scrollViewportRafRef.current);
-        if (scrollEndTimeoutRef.current)
-          clearTimeout(scrollEndTimeoutRef.current);
-      };
-    }, [scrollElement]);
-
-    const scheduleOverscrollSpringBack = useCallback(() => {
-      if (springBackTimeoutRef.current)
-        clearTimeout(springBackTimeoutRef.current);
-      const delay =
-        Math.abs(overscrollPxRef.current) >=
-        OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX
-          ? 0
-          : OVERSCROLL_SPRING_BACK_DELAY_SLOW_MS;
-      springBackTimeoutRef.current = setTimeout(() => {
-        springBackTimeoutRef.current = null;
-        const current = overscrollPxRef.current;
-        if (current !== 0) {
-          if (overscrollRafIdRef.current !== null) {
-            cancelAnimationFrame(overscrollRafIdRef.current);
-            overscrollRafIdRef.current = null;
-          }
-          setOverscrollPx(current);
-          requestAnimationFrame(() => {
-            setIsOverscrollSpringing(true);
-            setOverscrollPx(0);
-          });
-        }
-      }, delay);
+    const setScrollContainerRef = useCallback((node: HTMLDivElement | null) => {
+      scrollContainerRef.current = node;
+      setScrollElement(node);
     }, []);
-
-    // Rubber-band overscroll: depend on scrollElement so we attach when the scroll container exists.
-    // 1) Document-level wheel in capture so we see events before Chrome/macOS native rubber-band (Chrome may not target our div).
-    // 2) Pointer events for click-and-drag overscroll (works when wheel doesn't fire deltaX).
-    useEffect(() => {
-      const el = scrollElement ?? scrollContainerRef.current;
-      if (!el) return;
-
-      const applyOverscroll = (deltaX: number) => {
-        const current = overscrollPxRef.current;
-        const next =
-          deltaX < 0
-            ? Math.min(
-                OVERSCROLL_MAX_PX,
-                current - deltaX * OVERSCROLL_RESISTANCE
-              )
-            : Math.max(
-                -OVERSCROLL_MAX_PX,
-                current - deltaX * OVERSCROLL_RESISTANCE
-              );
-        overscrollPxRef.current = next;
-        overscrollRafIdRef.current ??= requestAnimationFrame(() => {
-          overscrollRafIdRef.current = null;
-          setOverscrollPx(overscrollPxRef.current);
-        });
-        scheduleOverscrollSpringBack();
-      };
-
-      const handleWheel = (e: WheelEvent) => {
-        const target = e.target as Node;
-        if (!el.contains(target)) return;
-        const { scrollLeft, scrollWidth, clientWidth } = el;
-        const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
-        if (maxScrollLeft < OVERSCROLL_MIN_SCROLL_RANGE_PX) return;
-        const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
-        const atRight = scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
-        const deltaX = e.deltaX;
-        if (deltaX === 0) return;
-        if (atLeft && deltaX < 0) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (el.scrollLeft > 0) el.scrollLeft = 0;
-          applyOverscroll(deltaX);
-        } else if (atRight && deltaX > 0) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (el.scrollLeft < maxScrollLeft) el.scrollLeft = maxScrollLeft;
-          applyOverscroll(deltaX);
-        }
-      };
-
-      const handlePointerDown = (e: PointerEvent) => {
-        if (e.button !== 0) return;
-        const { scrollLeft, scrollWidth, clientWidth } = el;
-        const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
-        if (maxScrollLeft < OVERSCROLL_MIN_SCROLL_RANGE_PX) return;
-        pointerStartXRef.current = e.clientX;
-        pointerStartScrollLeftRef.current = el.scrollLeft;
-        const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
-        const atRight = scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
-        if (atLeft || atRight) {
-          el.setPointerCapture(e.pointerId);
-        }
-      };
-
-      const handlePointerMove = (e: PointerEvent) => {
-        const { scrollLeft, scrollWidth, clientWidth } = el;
-        const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
-        if (maxScrollLeft < OVERSCROLL_MIN_SCROLL_RANGE_PX) return;
-        const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
-        const atRight = scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
-        const deltaX = e.clientX - pointerStartXRef.current;
-        if (atLeft && deltaX > 0) {
-          e.preventDefault();
-          if (el.scrollLeft > 0) el.scrollLeft = 0;
-          applyOverscroll(-deltaX);
-          pointerStartXRef.current = e.clientX;
-        } else if (atRight && deltaX < 0) {
-          e.preventDefault();
-          if (el.scrollLeft < maxScrollLeft) el.scrollLeft = maxScrollLeft;
-          applyOverscroll(-deltaX);
-          pointerStartXRef.current = e.clientX;
-        }
-      };
-
-      const handlePointerUp = (e: PointerEvent) => {
-        if (el.hasPointerCapture(e.pointerId)) {
-          el.releasePointerCapture(e.pointerId);
-        }
-        if (overscrollPxRef.current !== 0) {
-          setIsOverscrollSpringing(true);
-          requestAnimationFrame(() => setOverscrollPx(0));
-        }
-      };
-
-      const handleTouchStart = (e: TouchEvent) => {
-        touchStartXRef.current = e.touches[0]?.clientX ?? 0;
-        if (springBackTimeoutRef.current) {
-          clearTimeout(springBackTimeoutRef.current);
-          springBackTimeoutRef.current = null;
-        }
-      };
-
-      const handleTouchMove = (e: TouchEvent) => {
-        const { scrollLeft, scrollWidth, clientWidth } = el;
-        const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
-        if (maxScrollLeft < OVERSCROLL_MIN_SCROLL_RANGE_PX) return;
-        const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
-        const atRight = scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
-        const touch = e.touches[0];
-        if (!touch) return;
-        const prevX = touchStartXRef.current;
-        touchStartXRef.current = touch.clientX;
-        const moveX = touch.clientX - prevX;
-        const current = overscrollPxRef.current;
-
-        if (atLeft && moveX > 0) {
-          if (el.scrollLeft > 0) el.scrollLeft = 0;
-          const next = Math.min(
-            OVERSCROLL_MAX_PX,
-            current + moveX * OVERSCROLL_RESISTANCE
-          );
-          overscrollPxRef.current = next;
-          overscrollRafIdRef.current ??= requestAnimationFrame(() => {
-            overscrollRafIdRef.current = null;
-            setOverscrollPx(overscrollPxRef.current);
-          });
-          scheduleOverscrollSpringBack();
-        } else if (atRight && moveX < 0) {
-          if (el.scrollLeft < maxScrollLeft) el.scrollLeft = maxScrollLeft;
-          const next = Math.max(
-            -OVERSCROLL_MAX_PX,
-            current + moveX * OVERSCROLL_RESISTANCE
-          );
-          overscrollPxRef.current = next;
-          overscrollRafIdRef.current ??= requestAnimationFrame(() => {
-            overscrollRafIdRef.current = null;
-            setOverscrollPx(overscrollPxRef.current);
-          });
-          scheduleOverscrollSpringBack();
-        }
-      };
-
-      const handleTouchEnd = () => {
-        if (overscrollPxRef.current !== 0) {
-          setIsOverscrollSpringing(true);
-          requestAnimationFrame(() => setOverscrollPx(0));
-        }
-      };
-
-      const wheelOpts: AddEventListenerOptions = {
-        passive: false,
-        capture: true,
-      };
-      document.addEventListener("wheel", handleWheel, wheelOpts);
-      el.addEventListener("pointerdown", handlePointerDown, { passive: true });
-      el.addEventListener("pointermove", handlePointerMove, {
-        passive: false,
-      });
-      el.addEventListener("pointerup", handlePointerUp, { passive: true });
-      el.addEventListener("pointercancel", handlePointerUp, { passive: true });
-      el.addEventListener("touchstart", handleTouchStart, { passive: true });
-      el.addEventListener("touchmove", handleTouchMove, { passive: true });
-      el.addEventListener("touchend", handleTouchEnd, { passive: true });
-
-      return () => {
-        document.removeEventListener("wheel", handleWheel, wheelOpts);
-        el.removeEventListener("pointerdown", handlePointerDown);
-        el.removeEventListener("pointermove", handlePointerMove);
-        el.removeEventListener("pointerup", handlePointerUp);
-        el.removeEventListener("pointercancel", handlePointerUp);
-        el.removeEventListener("touchstart", handleTouchStart);
-        el.removeEventListener("touchmove", handleTouchMove);
-        el.removeEventListener("touchend", handleTouchEnd);
-        if (overscrollRafIdRef.current !== null)
-          cancelAnimationFrame(overscrollRafIdRef.current);
-        if (springBackTimeoutRef.current)
-          clearTimeout(springBackTimeoutRef.current);
-      };
-    }, [scheduleOverscrollSpringBack, scrollElement]);
-
-    const handleOverscrollTransitionEnd = useCallback(
-      (e: React.TransitionEvent) => {
-        if (e.propertyName === "transform") setIsOverscrollSpringing(false);
-      },
-      []
-    );
+    /** Id of the item that was the first future (next scheduled) last render; used to detect when it gets published and trigger smooth scroll */
+    const prevFirstFutureIdRef = useRef<string | null>(null);
 
     useEffect(() => {
       const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`);
       const fn = () => setIsMobile(mq.matches);
       mq.addEventListener("change", fn);
       return () => mq.removeEventListener("change", fn);
-    }, []);
-    const setScrollContainerRef = useCallback((node: HTMLDivElement | null) => {
-      scrollContainerRef.current = node;
-      setScrollElement(node);
     }, []);
 
     const firstFutureIndex = flowItems.findIndex(
@@ -454,6 +154,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       return result;
     }, [flowItems, firstFutureIndex, hasMorePast, hasMoreFuture, cardSlotSize]);
 
+    // TanStack Virtual returns unstable refs; React Compiler skips this component by design.
+    // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer API
     const rowVirtualizer = useVirtualizer({
       count: slots.length,
       getScrollElement: () => scrollContainerRef.current,
@@ -473,6 +175,39 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     const futureSentinelIndex = hasMoreFuture
       ? slots.length - 2
       : -1; /* CTA is last */
+
+    const hasLiveEdge = firstFutureIndex >= 0;
+    const scrollToLiveIndex =
+      firstFutureIndex <= 0 ? 0 : (hasMorePast ? 1 : 0) + firstFutureIndex - 1;
+    const scrollToFirstFutureIndex =
+      firstFutureIndex < 0 ? 0 : (hasMorePast ? 1 : 0) + firstFutureIndex;
+    const initialScrollIndex = isMobile
+      ? scrollToFirstFutureIndex
+      : scrollToLiveIndex;
+
+    const scrollHookResult = useFlowViewScroll(
+      {
+        scrollContainerRef,
+        scrollElement,
+        slots,
+        rowVirtualizer,
+        isMobile,
+        hasLiveEdge,
+        scrollToLiveIndex,
+        scrollToFirstFutureIndex,
+        initialScrollIndex,
+        cardSlotSize,
+        flowItemsLength: flowItems.length,
+        hasMoreFuture,
+        isLoadingMoreFuture,
+        onFetchMoreFuture,
+      },
+      ref
+    );
+    const { scrollViewport, allowFetch } = scrollHookResult;
+
+    const { overscrollPx, isOverscrollSpringing, onOverscrollTransitionEnd } =
+      useFlowViewOverscroll(scrollElement);
 
     const { ref: pastSentinelRef, isIntersecting: isPastSentinelVisible } =
       useIntersectionObserver({
@@ -548,206 +283,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       hasMoreFuture,
       isLoadingMoreFuture,
       onFetchMoreFuture,
-    ]);
-
-    const hasLiveEdge = firstFutureIndex >= 0;
-    const scrollToLiveIndex =
-      firstFutureIndex <= 0 ? 0 : (hasMorePast ? 1 : 0) + firstFutureIndex - 1;
-    // On mobile, show next scheduled first (first future card at start)
-    const scrollToFirstFutureIndex =
-      firstFutureIndex < 0 ? 0 : (hasMorePast ? 1 : 0) + firstFutureIndex;
-    const initialScrollIndex = isMobile
-      ? scrollToFirstFutureIndex
-      : scrollToLiveIndex;
-
-    // On first load, scroll: desktop = live edge (last past + first future); mobile = next scheduled first.
-    // Defer scroll so virtualizer/scroll container can measure; only allow past-fetch when we've scrolled away from left to avoid request loop when scroll fails.
-    useEffect(() => {
-      if (
-        initialScrollDoneRef.current ||
-        flowItems.length === 0 ||
-        !hasLiveEdge
-      ) {
-        return;
-      }
-      initialScrollDoneRef.current = true;
-      const scrollDelay = 200;
-      const allowFetchDelay = 600;
-      let offsetId: ReturnType<typeof setTimeout> | null = null;
-      const scrollId = setTimeout(() => {
-        rowVirtualizer.scrollToIndex(initialScrollIndex, {
-          align: "start",
-          behavior: "auto",
-        });
-        offsetId = setTimeout(() => {
-          const el = scrollContainerRef.current;
-          if (el) {
-            el.scrollLeft = Math.max(0, el.scrollLeft - SCROLL_EDGE_OFFSET_PX);
-          }
-        }, 50);
-      }, scrollDelay);
-      const allowId = setTimeout(() => {
-        allowFetchRef.current = true;
-        setAllowFetch(true);
-      }, allowFetchDelay);
-      // Allow past-fetch when scroll has moved away from 0 (initial scroll succeeded)
-      const checkScrollId = setTimeout(() => {
-        const el = scrollContainerRef.current;
-        if (el && el.scrollLeft > 10) {
-          hasScrolledAwayFromLeftRef.current = true;
-        }
-      }, scrollDelay + 350);
-      // Fallback: if initial scroll didn't move (e.g. virtualizer slow), allow past-fetch after 1.5s so scrolling left can load older posts
-      const fallbackId = setTimeout(() => {
-        hasScrolledAwayFromLeftRef.current = true;
-      }, 1500);
-      return () => {
-        clearTimeout(scrollId);
-        if (offsetId !== null) clearTimeout(offsetId);
-        clearTimeout(allowId);
-        clearTimeout(checkScrollId);
-        clearTimeout(fallbackId);
-      };
-    }, [flowItems.length, hasLiveEdge, initialScrollIndex, rowVirtualizer]);
-
-    // Scroll: (1) mark scrolled away from left for past-fetch; (2) trigger future-fetch when near right edge (future sentinel may not be in DOM due to virtualizer).
-    // Poll when we can load more future; read scroll container from ref each time so dimensions are fresh.
-    useEffect(() => {
-      if (!scrollElement) return;
-      const checkNearRight = () => {
-        if (!allowFetch || !hasMoreFuture || isLoadingMoreFuture) return;
-        const el = scrollContainerRef.current;
-        if (!el) return;
-        const distanceFromRight =
-          el.scrollWidth - (el.scrollLeft + el.clientWidth);
-        const threshold = Math.max(
-          RIGHT_EDGE_FETCH_THRESHOLD_PX,
-          el.clientWidth * RIGHT_EDGE_VIEWPORT_MULTIPLIER
-        );
-        if (distanceFromRight <= threshold) {
-          onFetchMoreFuture();
-        }
-      };
-      const onScroll = () => {
-        const el = scrollContainerRef.current;
-        if (el && el.scrollLeft > 10) {
-          hasScrolledAwayFromLeftRef.current = true;
-        }
-        checkNearRight();
-      };
-      checkNearRight();
-      scrollElement.addEventListener("scroll", onScroll, { passive: true });
-      const pollId = setInterval(checkNearRight, 300);
-      return () => {
-        scrollElement.removeEventListener("scroll", onScroll);
-        clearInterval(pollId);
-      };
-    }, [
-      scrollElement,
-      allowFetch,
-      hasMoreFuture,
-      isLoadingMoreFuture,
-      onFetchMoreFuture,
-    ]);
-
-    // When there's no live edge (only past or only future), allow load-more after a short delay so fetch isn't blocked
-    useEffect(() => {
-      if (flowItems.length === 0) return;
-      if (hasLiveEdge) return;
-      const allowId = setTimeout(() => {
-        allowFetchRef.current = true;
-        setAllowFetch(true);
-        hasScrolledAwayFromLeftRef.current = true;
-      }, 500);
-      return () => clearTimeout(allowId);
-    }, [flowItems.length, hasLiveEdge]);
-
-    const handleScrollToNext = useCallback(() => {
-      const el = scrollContainerRef.current;
-      if (!el) return;
-      const reduceMotion =
-        typeof window !== "undefined" &&
-        window.matchMedia(PREFERS_REDUCED_MOTION_QUERY).matches;
-      // When no scheduled posts, scroll to Flow Card CTA (last slot); otherwise to next/live edge
-      const index = hasLiveEdge
-        ? isMobile
-          ? scrollToFirstFutureIndex
-          : scrollToLiveIndex
-        : slots.length - 1; /* CTA slot */
-      let offsetPx = 0;
-      for (let i = 0; i < index; i++) {
-        offsetPx += slots[i]?.size ?? cardSlotSize;
-      }
-      const targetScrollLeft = Math.max(0, offsetPx - SCROLL_EDGE_OFFSET_PX);
-      el.scrollTo({
-        left: targetScrollLeft,
-        behavior: reduceMotion ? "auto" : "smooth",
-      });
-    }, [
-      hasLiveEdge,
-      isMobile,
-      scrollToFirstFutureIndex,
-      scrollToLiveIndex,
-      slots,
-      cardSlotSize,
-    ]);
-
-    const handleScrollToInitial = useCallback(() => {
-      const el = scrollContainerRef.current;
-      if (el) {
-        el.scrollLeft = 0;
-      }
-      rowVirtualizer.scrollToIndex(0, { align: "start", behavior: "auto" });
-    }, [rowVirtualizer]);
-
-    const scrollToNextWhenReady = useCallback(() => {
-      scrollToNextWhenReadyRef.current = true;
-    }, []);
-
-    useImperativeHandle(
-      ref,
-      () => ({
-        scrollToNext: handleScrollToNext,
-        scrollToInitial: handleScrollToInitial,
-        scrollToNextWhenReady,
-      }),
-      [handleScrollToNext, handleScrollToInitial, scrollToNextWhenReady]
-    );
-
-    // When parent requested scroll after filter change, run scroll once flowItems have updated so we use new slots
-    useEffect(() => {
-      if (!scrollToNextWhenReadyRef.current) return;
-      scrollToNextWhenReadyRef.current = false;
-      const rafId = requestAnimationFrame(() => {
-        const el = scrollContainerRef.current;
-        if (!el) return;
-        const reduceMotion =
-          typeof window !== "undefined" &&
-          window.matchMedia(PREFERS_REDUCED_MOTION_QUERY).matches;
-        const index = hasLiveEdge
-          ? isMobile
-            ? scrollToFirstFutureIndex
-            : scrollToLiveIndex
-          : slots.length - 1;
-        let offsetPx = 0;
-        for (let i = 0; i < index; i++) {
-          offsetPx += slots[i]?.size ?? cardSlotSize;
-        }
-        const targetScrollLeft = Math.max(0, offsetPx - SCROLL_EDGE_OFFSET_PX);
-        el.scrollTo({
-          left: targetScrollLeft,
-          behavior: reduceMotion ? "auto" : "auto",
-        });
-      });
-      return () => cancelAnimationFrame(rafId);
-    }, [
-      flowItems,
-      hasLiveEdge,
-      isMobile,
-      scrollToFirstFutureIndex,
-      scrollToLiveIndex,
-      slots,
-      cardSlotSize,
     ]);
 
     useEffect(() => {
@@ -942,7 +477,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           }}
         >
           <div
-            ref={rubberBandWrapperRef}
             role="presentation"
             style={{
               transform: `translateX(${overscrollPx}px)`,
@@ -959,7 +493,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               position: "relative",
               minWidth: "100%",
             }}
-            onTransitionEnd={handleOverscrollTransitionEnd}
+            onTransitionEnd={onOverscrollTransitionEnd}
           >
             {virtualItems.map((virtualColumn) => {
               const slot = slots[virtualColumn.index];

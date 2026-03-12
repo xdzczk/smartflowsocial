@@ -32,10 +32,6 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
-vi.mock("~/models/longformpost.server", () => ({
-  createLongFormPost: vi.fn(),
-}));
-
 vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
 }));
@@ -58,25 +54,35 @@ vi.mock(
     },
   })
 );
+
+vi.mock(
+  "~/features/posts/longform/services/longform-status-calculator.server",
+  () => ({
+    calculateLongFormStatus: vi.fn(),
+  })
+);
+
+const { mockCreateLongFormPost, mockResolveQueueTypeId } = vi.hoisted(() => ({
+  mockCreateLongFormPost: vi.fn(),
+  mockResolveQueueTypeId: vi.fn(),
+}));
+// Single mock: use case needs createLongFormPost and resolveQueueTypeId as vi.fn() (hoisted so same ref is used)
 vi.mock("~/features/posts/server", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
-
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
-    ...(actual ?? {}),
-    calculateLongFormStatus: vi.fn(),
+    ...actual,
+    createLongFormPost: mockCreateLongFormPost,
+    resolveQueueTypeId: mockResolveQueueTypeId,
   };
 });
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { calculateLongFormStatus } from "~/features/posts/server";
-import { CreateLongFormPostUseCase } from "~/features/posts/server";
-import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
+import { calculateLongFormStatus } from "~/features/posts/longform/services/longform-status-calculator.server";
+import { CreateLongFormPostUseCase } from "~/features/posts/server/longform";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
-import { createLongFormPost } from "~/models/longformpost.server";
 
 describe("CreateLongFormPostUseCase", () => {
   let useCase: CreateLongFormPostUseCase;
@@ -104,12 +110,8 @@ describe("CreateLongFormPostUseCase", () => {
         currentState: "DRAFT",
       };
 
-      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "queue-1"
-      );
-      (createLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost
-      );
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
+      mockCreateLongFormPost.mockResolvedValue(mockPost);
 
       const result = await useCase.execute({
         userId: TEST_USER_ID,
@@ -119,7 +121,7 @@ describe("CreateLongFormPostUseCase", () => {
 
       expect(result.post).toEqual(mockPost);
       expect(result.needsScheduling).toBe(false);
-      expect(createLongFormPost).toHaveBeenCalledWith(
+      expect(mockCreateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
           title: "Test Title",
@@ -152,9 +154,7 @@ describe("CreateLongFormPostUseCase", () => {
         sig: "test-sig",
       };
 
-      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "queue-1"
-      );
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
       (calculateLongFormStatus as ReturnType<typeof vi.fn>).mockReturnValue({
         status: "SCHEDULED",
         isScheduled: true,
@@ -219,12 +219,8 @@ describe("CreateLongFormPostUseCase", () => {
         currentState: "DRAFT",
       };
 
-      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "queue-1"
-      );
-      (createLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost
-      );
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
+      mockCreateLongFormPost.mockResolvedValue(mockPost);
 
       await useCase.execute({
         userId: TEST_USER_ID,
@@ -233,7 +229,7 @@ describe("CreateLongFormPostUseCase", () => {
         queueType: "posts",
       });
 
-      expect(resolveQueueTypeId).toHaveBeenCalledWith(
+      expect(mockResolveQueueTypeId).toHaveBeenCalledWith(
         TEST_USER_ID,
         undefined,
         "posts"
@@ -250,12 +246,8 @@ describe("CreateLongFormPostUseCase", () => {
         currentState: "PUBLISHED",
       };
 
-      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "queue-1"
-      );
-      (createLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost
-      );
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
+      mockCreateLongFormPost.mockResolvedValue(mockPost);
 
       const result = await useCase.execute({
         userId: TEST_USER_ID,

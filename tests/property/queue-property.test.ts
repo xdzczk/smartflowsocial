@@ -20,7 +20,7 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 // updatePostStatus was removed - state transitions now use PostStateMachine
-vi.mock("~/models/post.commands.server", () => ({}));
+vi.mock("~/features/posts/server", () => ({}));
 
 vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),

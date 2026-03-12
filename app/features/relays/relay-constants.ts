@@ -49,4 +49,4 @@ export const DEFAULT_USER_WRITE_RELAYS: string[] = [
   "wss://nos.lol/",
 ];
 
-export const blastrRelay = "wss://blastr.smartflowsocial.com";
+export const blastrRelay = "wss://blastr.smartflow.social";

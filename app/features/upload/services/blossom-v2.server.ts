@@ -1,8 +1,8 @@
 import { createHmac, randomUUID } from "node:crypto";
 
+import { getUserSubscription } from "~/features/payments/data";
 import { getUserById } from "~/features/user";
 import { env } from "~/lib/env.server";
-import { getUserSubscription } from "~/models/payment.server";
 
 import {
   aggregateReservedSizeForPubkey,

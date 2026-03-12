@@ -1,3 +1,7 @@
+/**
+ * Login challenge data access. Prisma confined to feature repositories/ per architecture.
+ */
+
 import { bindReferralIfEligible } from "~/features/referral/referral-binding.server";
 import type { ReferralContext } from "~/features/referral/referral-context.server";
 import { ValidationError } from "~/lib/errors";

@@ -2,15 +2,13 @@
  * Content statistics (posts + longform) for dashboard
  */
 
-import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import {
   getLongFormStatistics,
   getScheduledLongFormCountByQueue,
-} from "~/models/longformpost.server";
-import {
   getPostStatistics,
   getScheduledPostsCountByQueue,
-} from "~/models/post.queries.server";
+} from "~/features/posts/server";
+import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 
 export interface ContentStatistics {
   scheduledCount: number;

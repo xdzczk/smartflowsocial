@@ -41,7 +41,7 @@ vi.mock("~/infra/outbox/outbox.server", () => ({
 vi.mock("~/infra/queue/queue-client.server", () => ({
   queueClient: {
     enqueue: vi.fn(),
-    cancelByData: vi.fn(),
+    cancelByJobId: vi.fn(),
   },
 }));
 
@@ -328,7 +328,7 @@ describe("Outbox Worker", () => {
       (
         getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
       ).mockResolvedValue([mockEvent]);
-      (queueClient.cancelByData as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
         true
       );
 
@@ -336,9 +336,8 @@ describe("Outbox Worker", () => {
 
       expect(result.processed).toBe(1);
       expect(result.errors).toBe(0);
-      expect(queueClient.cancelByData).toHaveBeenCalledWith(
+      expect(queueClient.cancelByJobId).toHaveBeenCalledWith(
         "scheduled-posts",
-        "postId",
         "post-1"
       );
       expect(markOutboxEventSucceeded).toHaveBeenCalled();
@@ -362,7 +361,7 @@ describe("Outbox Worker", () => {
       (
         getUnprocessedOutboxEvents as ReturnType<typeof vi.fn>
       ).mockResolvedValue([mockEvent]);
-      (queueClient.cancelByData as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
         true
       );
 
@@ -370,9 +369,8 @@ describe("Outbox Worker", () => {
 
       expect(result.processed).toBe(1);
       expect(result.errors).toBe(0);
-      expect(queueClient.cancelByData).toHaveBeenCalledWith(
+      expect(queueClient.cancelByJobId).toHaveBeenCalledWith(
         "scheduled-longform-posts",
-        "postId",
         "longform-1"
       );
       expect(markOutboxEventSucceeded).toHaveBeenCalled();
@@ -838,7 +836,7 @@ describe("Outbox Worker", () => {
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
       });
-      (queueClient.cancelByData as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
         true
       );
 

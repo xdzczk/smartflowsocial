@@ -5,11 +5,11 @@ import {
 } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
+import { NewLongFormPostPage } from "~/features/posts/longform";
 import {
   handleNewLongFormAction,
   loadNewLongFormData,
-} from "~/features/posts/server";
-import { NewLongFormPostPage } from "~/features/posts/ui";
+} from "~/features/posts/server/longform";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request }: LoaderFunctionArgs) {

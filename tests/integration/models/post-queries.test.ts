@@ -1,6 +1,6 @@
 /**
  * Integration tests for post query operations
- * Tests app/models/post.queries.server.ts
+ * Tests app/features/posts/data post queries
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -22,14 +22,14 @@ vi.mock("~/lib/prisma.server", () => ({
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
-import { prisma } from "~/lib/prisma.server";
 import {
   getPostStatistics,
   getLastPostTimeForQueue,
   getPostsByIds,
   getRecentPublishedPosts,
   getCronDueScheduledPosts,
-} from "~/models/post.queries.server";
+} from "~/features/posts/server";
+import { prisma } from "~/lib/prisma.server";
 
 describe("Post Queries", () => {
   beforeEach(() => {

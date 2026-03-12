@@ -9,19 +9,22 @@ vi.mock("~/features/auth/signer", () => ({
   setActiveSignerConfig: vi.fn(),
   setCurrentUserNpub: vi.fn(),
   matchOrCreateSession: vi.fn().mockReturnValue({
-    id: "conn-1",
-    config: {
-      type: "nip46",
-      method: "bunker_input",
-      bunkerInput: "x",
-      clientSecretKeyHex: "ab",
+    connection: {
+      id: "conn-1",
+      config: {
+        type: "nip46",
+        method: "bunker_input",
+        bunkerInput: "x",
+        clientSecretKeyHex: "ab",
+      },
+      metadata: {
+        pubkey: "hex",
+        status: "active",
+        connectedAt: 0,
+        lastActivityAt: 0,
+      },
     },
-    metadata: {
-      pubkey: "hex",
-      status: "active",
-      connectedAt: 0,
-      lastActivityAt: 0,
-    },
+    currentSession: null,
   }),
   setActiveSession: vi.fn(),
   detectSignerAppName: vi.fn().mockReturnValue("Primal"),
@@ -49,19 +52,22 @@ describe("nip46-persist", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (matchOrCreateSession as ReturnType<typeof vi.fn>).mockReturnValue({
-      id: "conn-1",
-      config: {
-        type: "nip46",
-        method: "bunker_input",
-        bunkerInput: "x",
-        clientSecretKeyHex: "ab",
+      connection: {
+        id: "conn-1",
+        config: {
+          type: "nip46",
+          method: "bunker_input",
+          bunkerInput: "x",
+          clientSecretKeyHex: "ab",
+        },
+        metadata: {
+          pubkey: "hex",
+          status: "active",
+          connectedAt: 0,
+          lastActivityAt: 0,
+        },
       },
-      metadata: {
-        pubkey: "hex",
-        status: "active",
-        connectedAt: 0,
-        lastActivityAt: 0,
-      },
+      currentSession: null,
     });
   });
 
@@ -102,7 +108,7 @@ describe("nip46-persist", () => {
       type: "connected",
       pubkey,
     });
-    expect(result.id).toBe("conn-1");
-    expect(result.config.type).toBe("nip46");
+    expect(result.connection.id).toBe("conn-1");
+    expect(result.connection.config.type).toBe("nip46");
   });
 });

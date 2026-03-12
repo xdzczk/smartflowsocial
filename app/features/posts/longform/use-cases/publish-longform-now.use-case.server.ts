@@ -4,6 +4,7 @@
  * Publishes a long form post immediately to Nostr relays.
  */
 
+import { getLongFormPost } from "~/features/posts/server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import {
@@ -17,7 +18,6 @@ import { generatePublishAttemptId } from "~/lib/idempotency.server";
 import { buildObsContext } from "~/lib/observability-context.server";
 import { nowMillis } from "~/lib/temporal";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
-import { getLongFormPost } from "~/models/longformpost.server";
 
 import { deriveIsPublishedLongForm } from "../state-machine/longform-post-state";
 import { LongFormPostStateMachine } from "../state-machine/longform-post-state-machine.server";

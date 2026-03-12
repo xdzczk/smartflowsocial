@@ -5,11 +5,7 @@
 
 import { json } from "@remix-run/node";
 
-import {
-  getQueueTypes,
-  getUserTimezone,
-  getQueueTypeByIdForUser,
-} from "~/features/user";
+import { getUserTimezone, getQueueTypeByIdForUser } from "~/features/user";
 import { NotFoundError, ValidationError } from "~/lib/errors";
 
 import {
@@ -18,35 +14,21 @@ import {
 } from "./schedulers";
 
 /**
- * Calculate next schedule time for a queue type
- * Supports both queueTypeName (legacy) and queueTypeId (preferred)
+ * Calculate next schedule time for a queue type by ID.
  */
 export async function calculateQueueScheduleTime(
   userId: string,
-  queueTypeName?: string,
-  queueTypeId?: string
+  queueTypeId: string
 ) {
-  if ((!queueTypeName && !queueTypeId) || queueTypeName === "unassigned") {
+  if (!queueTypeId || queueTypeId === "unassigned") {
     return json({ scheduledTime: "" });
   }
 
-  // Get user timezone
   const userTimezone = await getUserTimezone(userId);
-
-  let selectedQueue;
-
-  if (queueTypeId) {
-    // Use queue type ID for direct lookup (preferred method)
-    selectedQueue = await getQueueTypeByIdForUser(userId, queueTypeId);
-  } else if (queueTypeName) {
-    // Fallback to name-based lookup for backward compatibility
-    const queueTypes = await getQueueTypes(userId);
-    selectedQueue = queueTypes.find((qt) => qt.name === queueTypeName);
-  }
+  const selectedQueue = await getQueueTypeByIdForUser(userId, queueTypeId);
 
   if (!selectedQueue) {
     throw new NotFoundError("Queue type not found", {
-      queueTypeName,
       queueTypeId,
       userId,
     });
@@ -69,11 +51,10 @@ export async function calculateQueueScheduleTime(
 }
 
 /**
- * Parse and validate queue schedule request body
+ * Parse and validate queue schedule request body (queueTypeId required).
  */
 export function parseQueueScheduleRequest(body: unknown): {
-  queueTypeName?: string;
-  queueTypeId?: string;
+  queueTypeId: string;
 } {
   if (typeof body !== "object" || body === null) {
     throw new ValidationError("Request body must be an object", {
@@ -81,10 +62,15 @@ export function parseQueueScheduleRequest(body: unknown): {
     });
   }
 
-  const requestBody = body as { queueTypeName?: string; queueTypeId?: string };
+  const requestBody = body as { queueTypeId?: string };
+  const queueTypeId =
+    typeof requestBody.queueTypeId === "string"
+      ? requestBody.queueTypeId.trim()
+      : "";
 
-  return {
-    queueTypeName: requestBody.queueTypeName,
-    queueTypeId: requestBody.queueTypeId,
-  };
+  if (!queueTypeId) {
+    throw new ValidationError("queueTypeId is required", { body: requestBody });
+  }
+
+  return { queueTypeId };
 }

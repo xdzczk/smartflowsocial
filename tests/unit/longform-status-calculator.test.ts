@@ -6,7 +6,7 @@
 import { describe, it, expect } from "vitest";
 
 import type { SignedEvent } from "~/features/nostr/types";
-import { calculateLongFormStatus } from "~/features/posts/server";
+import { calculateLongFormStatus } from "~/features/posts/server/longform";
 
 describe("Longform Status Calculator", () => {
   describe("calculateLongFormStatus", () => {

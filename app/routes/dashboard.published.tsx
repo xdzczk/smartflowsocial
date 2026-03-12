@@ -1,10 +1,8 @@
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
-import {
-  getPublishedDashboardData,
-  type LongFormPostType as _LongFormPostType,
-} from "~/features/posts/server";
-import { PublishedPostsPage } from "~/features/posts/ui";
+import { PublishedPostsPage } from "~/features/posts/publishing";
+import type { LongFormPostType as _LongFormPostType } from "~/features/posts/server";
+import { getPublishedDashboardData } from "~/features/posts/server/publishing";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { publishedPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 // Re-export action from server module

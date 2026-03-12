@@ -2,6 +2,10 @@
  * Next 7 days schedule overview: post counts per day in user timezone (scheduled + past/published).
  */
 
+import {
+  getScheduledLongFormPostsInDateRange,
+  getScheduledPostsInDateRange,
+} from "~/features/posts/server";
 import type { Temporal } from "~/lib/temporal";
 import {
   addDays,
@@ -11,8 +15,6 @@ import {
   startOfDay,
   toPrismaDate,
 } from "~/lib/temporal";
-import { getScheduledLongFormPostsInDateRange } from "~/models/longformpost.server";
-import { getScheduledPostsInDateRange } from "~/models/post.queries.server";
 
 export interface ScheduleDayCount {
   dateKey: string;

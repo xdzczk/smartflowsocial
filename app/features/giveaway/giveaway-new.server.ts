@@ -1,9 +1,9 @@
 /**
  * Giveaway "new" page: data for custom create form (recent posts, etc.).
- * Routes use this instead of importing from ~/models directly.
+ * Routes use this instead of importing from feature data layers directly.
  */
 
-import { getRecentPublishedPosts } from "~/models/post.queries.server";
+import { getRecentPublishedPosts } from "~/features/posts/server";
 
 const DEFAULT_RECENT_POSTS_LIMIT = 50;
 

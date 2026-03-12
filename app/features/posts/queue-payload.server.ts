@@ -16,49 +16,16 @@ export interface PostData {
 }
 
 /**
- * Extract scheduledFor value from post object, handling both legacy and new fields
+ * Extract scheduled time as Unix seconds string from post (scheduledAtUtc only).
  */
-export async function extractScheduledFor(
+export function extractScheduledFor(
   post: Record<string, unknown>
-): Promise<string | null> {
-  if ("scheduledAtUtc" in post && post["scheduledAtUtc"] instanceof Date) {
-    return Math.floor(post["scheduledAtUtc"].getTime() / 1000).toString();
+): string | null {
+  if (!("scheduledAtUtc" in post)) return null;
+  const v = post["scheduledAtUtc"];
+  if (v instanceof Date) {
+    return Math.floor(v.getTime() / 1000).toString();
   }
-
-  if (!("scheduledFor" in post)) {
-    return null;
-  }
-
-  const scheduledForValue = post["scheduledFor"];
-  if (scheduledForValue instanceof Date) {
-    return Math.floor(scheduledForValue.getTime() / 1000).toString();
-  }
-
-  if (typeof scheduledForValue !== "string") {
-    return null;
-  }
-
-  if (/^\d+$/.test(scheduledForValue)) {
-    return scheduledForValue;
-  }
-
-  try {
-    const { fromISOString } = await import("~/lib/temporal");
-    const zonedDateTime = fromISOString(scheduledForValue, "UTC");
-    return String(toUnixTimestamp(zonedDateTime));
-  } catch {
-    try {
-      const { fromDate } = await import("~/lib/temporal");
-      const date = new Date(scheduledForValue);
-      if (!isNaN(date.getTime())) {
-        const zonedDateTime = fromDate(date, "UTC");
-        return String(toUnixTimestamp(zonedDateTime));
-      }
-    } catch {
-      // If parsing fails, leave as is
-    }
-  }
-
   return null;
 }
 
@@ -72,9 +39,7 @@ export async function extractPostData(post: unknown): Promise<PostData | null> {
     "userId" in post && typeof post.userId === "string" ? post.userId : null;
   const postSignedEvent = "signedEvent" in post ? post.signedEvent : null;
 
-  const postScheduledFor = await extractScheduledFor(
-    post as Record<string, unknown>
-  );
+  const postScheduledFor = extractScheduledFor(post as Record<string, unknown>);
 
   if (!postUserId || !postSignedEvent || !postScheduledFor || !postId) {
     return null;

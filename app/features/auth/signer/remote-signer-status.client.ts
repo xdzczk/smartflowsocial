@@ -1,7 +1,8 @@
 import type {
   ConnectionStatus,
   ConnectionLogEntry,
-  RemoteSignerSession,
+  RemoteSignerConnectionMetadata,
+  ConnectionWithCurrentSession,
 } from "./remote-signer-sessions.client";
 import {
   getActiveConnection,
@@ -21,46 +22,30 @@ export type ConnectionEvent =
   | { type: "signed"; kind?: number };
 
 export function getConnectionStatus(connectionId: string): ConnectionStatus {
-  const connectionView = getSessionByIdLegacy(connectionId);
-  return connectionView?.metadata.status ?? "inactive";
+  const view = getSessionByIdLegacy(connectionId);
+  return view?.connection.metadata.status ?? "inactive";
 }
 
 export function updateConnectionStatus(
   connectionId: string,
   status: ConnectionStatus,
-  metadata?: Partial<RemoteSignerSession["metadata"]>
+  metadata?: Partial<RemoteSignerConnectionMetadata>
 ): void {
-  const connectionView = getSessionByIdLegacy(connectionId);
-  if (!connectionView) {
-    return;
-  }
+  const view = getSessionByIdLegacy(connectionId);
+  if (!view) return;
 
   updateSession(connectionId, {
     metadata: {
-      ...connectionView.metadata,
+      ...view.connection.metadata,
       ...metadata,
       status,
     },
   });
 }
 
-/** @deprecated Use getConnectionStatus(connectionId). */
-export function getSessionStatus(connectionId: string): ConnectionStatus {
-  return getConnectionStatus(connectionId);
-}
-
-/** @deprecated Use updateConnectionStatus(connectionId, ...). */
-export function updateSessionStatus(
-  connectionId: string,
-  status: ConnectionStatus,
-  metadata?: Partial<RemoteSignerSession["metadata"]>
-): void {
-  updateConnectionStatus(connectionId, status, metadata);
-}
-
 function handleConnectedEvent(
   connectionId: string,
-  connectionView: RemoteSignerSession,
+  view: ConnectionWithCurrentSession,
   event: Extract<ConnectionEvent, { type: "connected" }>
 ): {
   logType: ConnectionLogEntry["type"];
@@ -70,13 +55,11 @@ function handleConnectedEvent(
 } {
   const message = `Connected successfully${event.duration ? ` (${event.duration}ms)` : ""}`;
   const details: Record<string, unknown> = { pubkey: event.pubkey };
-  if (event.duration) {
-    details["duration"] = event.duration;
-  }
+  if (event.duration) details["duration"] = event.duration;
 
   updateSession(connectionId, {
     metadata: {
-      ...connectionView.metadata,
+      ...view.connection.metadata,
       status: "active",
       pubkey: event.pubkey,
       connectedAt: Date.now(),
@@ -85,17 +68,12 @@ function handleConnectedEvent(
     },
   });
 
-  return {
-    logType: "connect",
-    logStatus: "success",
-    message,
-    details,
-  };
+  return { logType: "connect", logStatus: "success", message, details };
 }
 
 function handleDisconnectedEvent(
   connectionId: string,
-  connectionView: RemoteSignerSession,
+  view: ConnectionWithCurrentSession,
   event: Extract<ConnectionEvent, { type: "disconnected" }>
 ): {
   logType: ConnectionLogEntry["type"];
@@ -107,29 +85,22 @@ function handleDisconnectedEvent(
     ? `Disconnected: ${event.reason}`
     : "Disconnected";
   const details: Record<string, unknown> = {};
-  if (event.reason) {
-    details["reason"] = event.reason;
-  }
+  if (event.reason) details["reason"] = event.reason;
 
   updateSession(connectionId, {
     metadata: {
-      ...connectionView.metadata,
+      ...view.connection.metadata,
       status: "disconnected",
       lastActivityAt: Date.now(),
     },
   });
 
-  return {
-    logType: "disconnect",
-    logStatus: "success",
-    message,
-    details,
-  };
+  return { logType: "disconnect", logStatus: "success", message, details };
 }
 
 function handleErrorEvent(
   connectionId: string,
-  connectionView: RemoteSignerSession,
+  view: ConnectionWithCurrentSession,
   event: Extract<ConnectionEvent, { type: "error" }>
 ): {
   logType: ConnectionLogEntry["type"];
@@ -142,7 +113,7 @@ function handleErrorEvent(
 
   updateSession(connectionId, {
     metadata: {
-      ...connectionView.metadata,
+      ...view.connection.metadata,
       status: "disconnected",
       lastError: event.error,
       lastActivityAt: Date.now(),
@@ -159,7 +130,7 @@ function handleErrorEvent(
 
 function handleHealthCheckEvent(
   connectionId: string,
-  connectionView: RemoteSignerSession,
+  view: ConnectionWithCurrentSession,
   event: Extract<ConnectionEvent, { type: "health_check" }>
 ): {
   logType: ConnectionLogEntry["type"];
@@ -171,14 +142,12 @@ function handleHealthCheckEvent(
     ? "Health check passed"
     : `Health check failed${event.error ? `: ${event.error}` : ""}`;
   const details: Record<string, unknown> = {};
-  if (event.error) {
-    details["error"] = event.error;
-  }
+  if (event.error) details["error"] = event.error;
 
   if (event.healthy) {
     updateSession(connectionId, {
       metadata: {
-        ...connectionView.metadata,
+        ...view.connection.metadata,
         status: "active",
         lastActivityAt: Date.now(),
         lastError: null,
@@ -187,7 +156,7 @@ function handleHealthCheckEvent(
   } else {
     updateSession(connectionId, {
       metadata: {
-        ...connectionView.metadata,
+        ...view.connection.metadata,
         status: "stale",
         lastError: event.error ?? "Health check failed",
         lastActivityAt: Date.now(),
@@ -205,7 +174,7 @@ function handleHealthCheckEvent(
 
 function handleReconnectEvent(
   connectionId: string,
-  connectionView: RemoteSignerSession,
+  view: ConnectionWithCurrentSession,
   event: Extract<ConnectionEvent, { type: "reconnect" }>
 ): {
   logType: ConnectionLogEntry["type"];
@@ -217,14 +186,12 @@ function handleReconnectEvent(
     ? "Reconnected successfully"
     : `Reconnect failed${event.error ? `: ${event.error}` : ""}`;
   const details: Record<string, unknown> = {};
-  if (event.error) {
-    details["error"] = event.error;
-  }
+  if (event.error) details["error"] = event.error;
 
   if (event.success) {
     updateSession(connectionId, {
       metadata: {
-        ...connectionView.metadata,
+        ...view.connection.metadata,
         status: "active",
         lastActivityAt: Date.now(),
         lastError: null,
@@ -233,7 +200,7 @@ function handleReconnectEvent(
   } else {
     updateSession(connectionId, {
       metadata: {
-        ...connectionView.metadata,
+        ...view.connection.metadata,
         status: "disconnected",
         lastError: event.error ?? "Reconnect failed",
         lastActivityAt: Date.now(),
@@ -266,7 +233,7 @@ function signKindToLabel(kind: number): string {
 
 function handleSignedEvent(
   connectionId: string,
-  connectionView: RemoteSignerSession,
+  view: ConnectionWithCurrentSession,
   event: Extract<ConnectionEvent, { type: "signed" }>
 ): {
   logType: ConnectionLogEntry["type"];
@@ -281,7 +248,7 @@ function handleSignedEvent(
 
   updateSession(connectionId, {
     metadata: {
-      ...connectionView.metadata,
+      ...view.connection.metadata,
       lastActivityAt: Date.now(),
     },
   });
@@ -303,19 +270,15 @@ export function recordConnectionEvent(
   connectionId: string,
   event: ConnectionEvent
 ): void {
-  const connectionView = getSessionByIdLegacy(connectionId);
-  if (!connectionView) {
-    return;
-  }
+  const view = getSessionByIdLegacy(connectionId);
+  if (!view) return;
 
   if (event.type === "connected") {
     startNewSessionForConnection(connectionId);
   }
 
-  const connectionViewAfterConnect = getSessionByIdLegacy(connectionId);
-  if (!connectionViewAfterConnect) {
-    return;
-  }
+  const viewAfterConnect = getSessionByIdLegacy(connectionId);
+  if (!viewAfterConnect) return;
 
   let result: {
     logType: ConnectionLogEntry["type"];
@@ -326,46 +289,22 @@ export function recordConnectionEvent(
 
   switch (event.type) {
     case "connected":
-      result = handleConnectedEvent(
-        connectionId,
-        connectionViewAfterConnect,
-        event
-      );
+      result = handleConnectedEvent(connectionId, viewAfterConnect, event);
       break;
     case "disconnected":
-      result = handleDisconnectedEvent(
-        connectionId,
-        connectionViewAfterConnect,
-        event
-      );
+      result = handleDisconnectedEvent(connectionId, viewAfterConnect, event);
       break;
     case "error":
-      result = handleErrorEvent(
-        connectionId,
-        connectionViewAfterConnect,
-        event
-      );
+      result = handleErrorEvent(connectionId, viewAfterConnect, event);
       break;
     case "health_check":
-      result = handleHealthCheckEvent(
-        connectionId,
-        connectionViewAfterConnect,
-        event
-      );
+      result = handleHealthCheckEvent(connectionId, viewAfterConnect, event);
       break;
     case "reconnect":
-      result = handleReconnectEvent(
-        connectionId,
-        connectionViewAfterConnect,
-        event
-      );
+      result = handleReconnectEvent(connectionId, viewAfterConnect, event);
       break;
     case "signed":
-      result = handleSignedEvent(
-        connectionId,
-        connectionViewAfterConnect,
-        event
-      );
+      result = handleSignedEvent(connectionId, viewAfterConnect, event);
       break;
   }
 

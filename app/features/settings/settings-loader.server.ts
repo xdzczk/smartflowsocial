@@ -9,6 +9,11 @@ import {
 } from "~/features/auth/signer";
 import { listReplyTemplates } from "~/features/engagement/engagement-reply-templates.server";
 import type { ProfileData } from "~/features/nostr/types";
+import {
+  getAllPlans,
+  getUserPaymentHistory,
+  getUserSubscription,
+} from "~/features/payments/data";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type {
   HashTagPreset,
@@ -46,11 +51,6 @@ import {
   getRelayIntentCached,
   getHashTagPresetsCached,
 } from "~/features/user/services/user-cache.server";
-import {
-  getAllPlans,
-  getUserPaymentHistory,
-  getUserSubscription,
-} from "~/models/payment.server";
 
 import { findLatestPublishRelayAcksByUserAndUrls } from "./repositories/settings-loader-data.server";
 

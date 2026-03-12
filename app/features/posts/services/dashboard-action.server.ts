@@ -3,6 +3,7 @@
  * Centralized action processing for dashboard index page
  */
 
+import { deleteLongFormPost, deletePost } from "~/features/posts/server";
 import {
   getRunwaySettings,
   updateRunwaySettings,
@@ -12,8 +13,6 @@ import {
   dashboardActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { deleteLongFormPost } from "~/models/longformpost.server";
-import { deletePost } from "~/models/post.commands.server";
 
 export async function handleDashboardAction(
   formData: FormData,

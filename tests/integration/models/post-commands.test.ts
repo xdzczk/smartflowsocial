@@ -1,6 +1,6 @@
 /**
  * Integration tests for post command operations
- * Tests app/models/post.commands.server.ts
+ * Tests app/features/posts/data post commands
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -40,13 +40,13 @@ vi.mock("~/lib/prisma.server", () => ({
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
-import { prisma } from "~/lib/prisma.server";
 import {
   createPost,
   updatePost,
   reschedulePost,
   deletePost,
-} from "~/models/post.commands.server";
+} from "~/features/posts/server";
+import { prisma } from "~/lib/prisma.server";
 
 describe("Post Commands", () => {
   beforeEach(() => {
@@ -167,21 +167,20 @@ describe("Post Commands", () => {
       );
     });
 
-    it("should handle scheduled post with scheduledFor", async () => {
+    it("should handle scheduled post with scheduledAtUtc", async () => {
       const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID };
       (prisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
       );
 
-      const scheduledFor = new Date("2024-12-31T12:00:00Z");
-      const scheduledForUnix = Math.floor(scheduledFor.getTime() / 1000);
+      const scheduledAtUtc = new Date("2024-12-31T12:00:00Z");
       const postData = {
         userId: TEST_USER_ID,
         content: "Test",
         fileUrl: [],
         postType: "TEXT" as const,
         tags: [],
-        scheduledFor: scheduledForUnix,
+        scheduledAtUtc: scheduledAtUtc.getTime() / 1000, // Unix seconds
       };
 
       await createPost(postData);
@@ -190,8 +189,8 @@ describe("Post Commands", () => {
         expect.objectContaining({
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           data: expect.objectContaining({
-            scheduledAtUtc: scheduledFor,
-            currentState: "SCHEDULED", // State determined by scheduledFor (non-null = SCHEDULED)
+            scheduledAtUtc,
+            currentState: "SCHEDULED",
           }),
         })
       );
@@ -211,7 +210,7 @@ describe("Post Commands", () => {
       const result = await reschedulePost({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        newScheduledFor: "1234567890",
+        scheduledAtUtc: 1234567890,
         overrideQueue: false,
       });
 
@@ -263,7 +262,7 @@ describe("Post Commands", () => {
       await reschedulePost({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        newScheduledFor: "1234567890",
+        scheduledAtUtc: 1234567890,
         overrideQueue: true,
         signedEvent,
         nostrEvent,
@@ -292,7 +291,7 @@ describe("Post Commands", () => {
       await reschedulePost({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        newScheduledFor: "1234567890",
+        scheduledAtUtc: 1234567890,
         overrideQueue: false,
         queueTypeId: "queue-123",
       });
@@ -320,7 +319,7 @@ describe("Post Commands", () => {
       await reschedulePost({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        newScheduledFor: "1234567890",
+        scheduledAtUtc: 1234567890,
         overrideQueue: false,
         queueTypeId: null,
       });

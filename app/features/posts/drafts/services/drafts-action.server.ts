@@ -3,14 +3,17 @@
  * Centralized action processing for drafts page
  */
 
+import {
+  deleteLongFormPost,
+  deletePost,
+  updatePost,
+} from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import {
   draftsActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { deleteLongFormPost } from "~/models/longformpost.server";
-import { deletePost, updatePost } from "~/models/post.commands.server";
 
 export async function handleDraftsAction(formData: FormData, userId: string) {
   const result = validateFormDataOrRespond(formData, draftsActionSchema);
@@ -78,6 +81,15 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
         bulkData.queueTypes[index] ?? null
       );
 
+      const rawScheduled = bulkData.scheduledFors[index];
+      const scheduledAtUtc =
+        rawScheduled != null && String(rawScheduled).trim() !== ""
+          ? parseInt(String(rawScheduled), 10)
+          : undefined;
+      if (scheduledAtUtc !== undefined && Number.isNaN(scheduledAtUtc)) {
+        throw new Error("Invalid scheduledFor in bulk resume data");
+      }
+
       // Update post data (without flags - flags will be set by state machine)
       await updatePost({
         id,
@@ -86,10 +98,9 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
           content: bulkData.contents[index],
           caption: bulkData.captions[index],
           queueTypeId: resolvedQueueTypeId,
-          scheduledFor: bulkData.scheduledFors[index],
+          ...(scheduledAtUtc !== undefined && { scheduledAtUtc }),
           signedEvent: bulkData.signedEvents[index],
           nostrEvent: bulkData.nostrEvents[index],
-          // @deprecated - Flags removed. State machine will set them via transition.
         },
       });
 

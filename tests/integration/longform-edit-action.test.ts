@@ -45,24 +45,20 @@ const {
   };
 });
 
-vi.mock("~/models/longformpost.server", () => ({
-  updateLongFormPost: mockUpdateLongFormPost,
-  getLongFormPost: mockGetLongFormPost,
-  updateLongFormPostStatus: mockUpdateLongFormPostStatus,
-}));
-
 const { mockPublishExecute, mockScheduleExecute } = vi.hoisted(() => {
   const mockPublishExecute = vi.fn();
   const mockScheduleExecute = vi.fn();
   return { mockPublishExecute, mockScheduleExecute };
 });
 
+// Single mock so all used exports are available
 vi.mock("~/features/posts/server", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
-
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
-    ...(actual ?? {}),
+    ...actual,
+    updateLongFormPost: mockUpdateLongFormPost,
+    getLongFormPost: mockGetLongFormPost,
+    updateLongFormPostStatus: mockUpdateLongFormPostStatus,
     PublishLongFormNowUseCase: class {
       execute = mockPublishExecute;
     },
@@ -220,7 +216,7 @@ vi.mock("@remix-run/node", async () => {
 
 import { TEST_USER_ID, createMockFormData } from "../utils/test-helpers";
 
-import { handleLongFormEditAction } from "~/features/posts/server";
+import { handleLongFormEditAction } from "~/features/posts/server/longform";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import {
   getUserById,
@@ -745,7 +741,7 @@ describe("Longform Edit Action Handler", () => {
       expect(mockUpdateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           id: POST_ID,
-          scheduledFor: "1704067200",
+          scheduledAtUtc: 1704067200,
           // Note: currentState is set by state machine via ScheduleLongFormPostUseCase
         })
       );

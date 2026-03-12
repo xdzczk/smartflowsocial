@@ -1,9 +1,9 @@
-import type { ReferralContext } from "~/features/referral/referral-context.server";
 import {
   consumeChallengeAndCreateSession,
   createLoginChallenge,
   findLoginChallengeForVerify,
-} from "~/models/login-challenge.server";
+} from "~/features/auth/services/login-challenge.server";
+import type { ReferralContext } from "~/features/referral/referral-context.server";
 
 export async function issueLoginChallenge(input: {
   nonce: string;

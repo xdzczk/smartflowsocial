@@ -10,11 +10,8 @@ import {
   type NostrPublishResult,
 } from "~/infra/publishers/nostr-publisher.server";
 import type { QueueType } from "~/infra/queue/queue-types";
-import {
-  getRetryPolicy,
-  isRetryableError,
-  shouldRetry,
-} from "~/infra/queue/retry-policy.server";
+import { getRetryPolicy, shouldRetry } from "~/infra/queue/retry-policy.server";
+import { isRetryableErrorEnhanced } from "~/lib/error-classification.server";
 import { withSentrySpan } from "~/lib/sentry.server";
 import { nowMillis } from "~/lib/temporal";
 
@@ -69,6 +66,7 @@ export function computeWillRetry(input: {
 }): boolean {
   const policy = getRetryPolicy(input.queueName);
   return (
-    shouldRetry(input.attemptsMade, policy) && isRetryableError(input.error)
+    shouldRetry(input.attemptsMade, policy) &&
+    isRetryableErrorEnhanced(input.error)
   );
 }

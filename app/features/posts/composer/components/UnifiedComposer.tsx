@@ -12,7 +12,8 @@ import { Label } from "~/components/ui/label";
 import { ConfidencePanel } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
-import { DraftPickerModal, usePostScheduling } from "~/features/posts/ui";
+import { DraftPickerModal } from "~/features/posts/drafts";
+import { usePostScheduling } from "~/features/posts/scheduling";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -32,24 +33,19 @@ import { useUnifiedComposerState } from "../hooks/useUnifiedComposerState";
 
 import {
   ComposerActionButtons,
-  ComposerContentField,
   ComposerErrors,
-  ComposerMediaField,
   ComposerQueueField,
   ComposerScheduleField,
-  ComposerThreadField,
 } from "./composer";
 import {
+  ACCEPTED_MEDIA_TYPES,
+  filterMediaFiles,
   getQueueNextSlotLabel,
   getRelativeTime,
   getScheduleTimeLabel,
   getSummaryLine,
 } from "./composer/composer-helpers";
-
-const ACCEPTED_MEDIA_TYPES = /^image\/|^video\//;
-function filterMediaFiles(files: File[]): File[] {
-  return files.filter((f) => ACCEPTED_MEDIA_TYPES.test(f.type));
-}
+import { UnifiedComposerContentSection } from "./composer/unified-composer-sections";
 
 export interface UnifiedComposerProps {
   queueTypes?: Array<string | QueueType>;
@@ -709,45 +705,35 @@ export function UnifiedComposer({
           signerReady={signerReady}
         />
         <div className="my-8">
-          {isThreadMode ? (
-            <ComposerThreadField
-              segments={threadSegments}
-              onSegmentsChange={setThreadSegments}
-              threadDelayMinutes={threadDelayMinutes}
-              onThreadDelayMinutesChange={setThreadDelayMinutes}
-              onFilesDropped={processNewFilesForSegment}
-              onAddSegmentClick={(segmentId) => {
-                (
-                  window as unknown as { __threadSegmentId?: string }
-                ).__threadSegmentId = segmentId;
-                document.getElementById("thread-segment-file-input")?.click();
-              }}
-              disabled={disabled}
-              draggingOverSegmentId={draggingOverSegmentId}
-              onDraggingOverSegmentIdChange={setDraggingOverSegmentId}
-            />
-          ) : (
-            <>
-              <ComposerContentField
-                value={
-                  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive default when form state resets */
-                  content ?? ""
-                }
-                onChange={(v) => form.setValue("content", v)}
-                error={form.formState.errors.content ?? undefined}
-                disabled={disabled}
-                showDraftButton={!isTemplateMode}
-                onOpenDraft={() => setDraftPickerOpen(true)}
-              />
-              <ComposerMediaField
-                attachments={attachments}
-                onRemove={handleRemoveAttachment}
-                onAdd={handleAddAttachment}
-                onFilesDropped={processNewFilesForSingleNote}
-                disabled={disabled}
-              />
-            </>
-          )}
+          <UnifiedComposerContentSection
+            isThreadMode={isThreadMode}
+            content={
+              /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- form state can be undefined */
+              content ?? ""
+            }
+            onContentChange={(v) => form.setValue("content", v)}
+            contentError={form.formState.errors.content?.message ?? undefined}
+            disabled={disabled}
+            showDraftButton={!isTemplateMode}
+            onOpenDraft={() => setDraftPickerOpen(true)}
+            attachments={attachments}
+            onRemoveAttachment={handleRemoveAttachment}
+            onAddAttachment={handleAddAttachment}
+            onFilesDroppedSingle={processNewFilesForSingleNote}
+            threadSegments={threadSegments}
+            onThreadSegmentsChange={setThreadSegments}
+            threadDelayMinutes={threadDelayMinutes}
+            onThreadDelayMinutesChange={setThreadDelayMinutes}
+            onFilesDroppedSegment={processNewFilesForSegment}
+            onThreadSegmentFileClick={(segmentId) => {
+              (
+                window as unknown as { __threadSegmentId?: string }
+              ).__threadSegmentId = segmentId;
+              document.getElementById("thread-segment-file-input")?.click();
+            }}
+            draggingOverSegmentId={draggingOverSegmentId}
+            onDraggingOverSegmentIdChange={setDraggingOverSegmentId}
+          />
         </div>
         <input
           id="thread-segment-file-input"

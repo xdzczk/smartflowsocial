@@ -62,8 +62,8 @@ export function migrateExistingConfig(): void {
 
   // Create connection from existing config
   try {
-    const session = createSession(existingConfig, "Migrated Session");
-    setActiveSession(session.id);
+    const view = createSession(existingConfig, "Migrated Session");
+    setActiveSession(view.connection.id);
 
     // Mark as migrated
     localStorage.setItem(MIGRATION_FLAG_KEY, "true");

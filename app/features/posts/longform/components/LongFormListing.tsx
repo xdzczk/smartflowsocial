@@ -1,57 +1,36 @@
-import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
+import { useFetcher, useRouteLoaderData } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { MoreHorizontal } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, type Key } from "react";
 
-import { Checkbox } from "~/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { longFormPostToCombinedContent } from "~/features/posts/combined";
 import {
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
-  MOBILE_FILTER_LABEL_CLASS,
-  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "~/features/posts/components/constants";
-import { ContentListCard } from "~/features/posts/components/ContentListCard";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
 import type { LongFormPostType } from "~/features/posts/server";
 import type { PostFetcher, LongFormPostData } from "~/features/posts/types";
-import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
-import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
-import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
-import {
-  formatForDisplay,
-  fromDate,
-  fromISOString,
-  fromUnixTimestamp,
-} from "~/lib/temporal";
 
 import { useLongFormListingState } from "../hooks/useLongFormListingState";
+import {
+  formatDateCell,
+  getReadingTime,
+  getStatusBadge,
+} from "../utils/longform-listing-format.utils";
 import {
   getDefaultSortKey,
   getFetcherFormData,
 } from "../utils/longform-listing-utils";
 
 import { LongFormBulkActionsBar } from "./LongFormBulkActionsBar";
+import { LongFormCardListMobile } from "./LongFormCardListMobile";
+import { LongFormTableDesktop } from "./LongFormTableDesktop";
 
 interface LongFormListingProps {
   posts: Array<LongFormPostType | LongFormPostData>;
@@ -71,8 +50,6 @@ interface LongFormListingProps {
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
 }
 
-// Desktop table + mobile virtualized cards; complexity from sort/filter/selection and dual layouts
-// eslint-disable-next-line sonarjs/cognitive-complexity -- slightly over 30 due to table + card branches
 export default function LongFormListing({
   posts,
   type,
@@ -183,97 +160,6 @@ export default function LongFormListing({
     }
   }, [bulkDeleteFetcher.data, setSelectedPosts]);
 
-  const formatDate = (
-    dateInput?: string | Date | number,
-    _isUnixTimestamp = false
-  ) => {
-    if (!dateInput) return "—";
-
-    // Handle different input formats
-    try {
-      let zonedDateTime;
-      if (typeof dateInput === "string") {
-        // Check if it's a Unix timestamp string
-        const unixTimestamp = parseInt(dateInput, 10);
-        if (!isNaN(unixTimestamp) && dateInput.length <= 13) {
-          // Unix timestamp (seconds or milliseconds)
-          const timestamp =
-            dateInput.length <= 10 ? unixTimestamp : unixTimestamp;
-          zonedDateTime = fromUnixTimestamp(
-            dateInput.length <= 10 ? timestamp : Math.floor(timestamp / 1000),
-            "UTC"
-          );
-        } else {
-          // ISO string
-          zonedDateTime = fromISOString(String(dateInput), "UTC");
-        }
-      } else if (typeof dateInput === "number") {
-        // Unix timestamp (seconds or milliseconds)
-        const timestamp =
-          dateInput.toString().length <= 10
-            ? dateInput
-            : Math.floor(dateInput / 1000);
-        zonedDateTime = fromUnixTimestamp(timestamp, "UTC");
-      } else {
-        // Date object
-        zonedDateTime = fromDate(new Date(dateInput), "UTC");
-      }
-
-      // Convert to user's timezone for display
-      const userZoned = zonedDateTime.withTimeZone(userTimezone);
-      return formatForDisplay(
-        userZoned,
-        userTimezone,
-        {
-          month: "2-digit",
-          day: "2-digit",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: userTimeFormat === "12h",
-        },
-        userTimeFormat,
-        dateLocale
-      );
-    } catch (error) {
-      handleErrorSafely(error, {
-        component: "LongFormListing",
-        action: "formatDate",
-      });
-      // Fallback to simple date formatting
-      try {
-        const dateObj =
-          typeof dateInput === "string"
-            ? new Date(dateInput)
-            : typeof dateInput === "number"
-              ? new Date(dateInput * 1000)
-              : dateInput;
-        return dateObj.toLocaleDateString(dateLocale, {
-          month: "2-digit",
-          day: "2-digit",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: userTimeFormat === "12h",
-        });
-      } catch {
-        return "—";
-      }
-    }
-  };
-
-  const getReadingTime = (content?: string) => {
-    if (!content) return "0 min read";
-    try {
-      const plain = stripMarkdownToPlainText(content);
-      const wordCount = plain.trim().split(/\s+/).filter(Boolean).length;
-      const readingTime = Math.ceil(wordCount / 200);
-      return `${readingTime} min read`;
-    } catch {
-      return "— min read";
-    }
-  };
-
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
 
@@ -282,28 +168,6 @@ export default function LongFormListing({
     formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
     bulkDeleteFetcher.submit(formData, { method: "post" });
-  };
-
-  const getStatusBadge = (_post: LongFormPostType | LongFormPostData) => {
-    if (type === "draft") {
-      return (
-        <div className="bg-muted text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
-          Draft
-        </div>
-      );
-    } else if (type === "scheduled") {
-      return (
-        <div className="bg-muted text-foreground dark:border-border/75 dark:bg-primary/90/10 dark:text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
-          Scheduled
-        </div>
-      );
-    } else {
-      return (
-        <div className="bg-success/20 text-success dark:border-success/75 dark:bg-success/10 dark:text-success inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
-          Published
-        </div>
-      );
-    }
   };
 
   return (
@@ -315,624 +179,64 @@ export default function LongFormListing({
         type={type}
       />
 
-      {/* Desktop: Posts Table (hidden on mobile) */}
       <div className="hidden md:block">
-        <div className="dark:border-border bg-card border-border min-w-full overflow-x-auto rounded border bg-white">
-          <table className="min-w-full align-middle text-sm whitespace-nowrap">
-            <thead>
-              <tr>
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                  <Checkbox
-                    id="longform-select-all"
-                    checked={
-                      filteredPosts.length > 0
-                        ? selectedPosts.size === filteredPosts.length
-                        : false
-                    }
-                    onCheckedChange={() => toggleSelectAll()}
-                  />
-                </th>
-                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                  Cover
-                </th>
-                <th
-                  className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
-                  onClick={() => requestSort("title")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      requestSort("title");
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Sort by title"
-                >
-                  Title{" "}
-                  {sortConfig.key === "title"
-                    ? sortConfig.direction === "asc"
-                      ? "↑"
-                      : "↓"
-                    : null}
-                </th>
-                <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
-                  Summary
-                </th>
-                <th
-                  className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
-                  onClick={() =>
-                    requestSort(
-                      type === "published"
-                        ? "publishedAt"
-                        : type === "scheduled"
-                          ? "scheduledAtUtc"
-                          : "createdAt"
-                    )
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      requestSort(
-                        type === "published"
-                          ? "publishedAt"
-                          : type === "scheduled"
-                            ? "scheduledAtUtc"
-                            : "createdAt"
-                      );
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Sort by ${type === "published" ? "published date" : type === "scheduled" ? "scheduled date" : "created date"}`}
-                >
-                  {type === "published"
-                    ? "Published"
-                    : type === "scheduled"
-                      ? "Scheduled For"
-                      : "Created"}{" "}
-                  {sortConfig.key ===
-                  (type === "published"
-                    ? "publishedAt"
-                    : type === "scheduled"
-                      ? "scheduledAtUtc"
-                      : "createdAt")
-                    ? sortConfig.direction === "asc"
-                      ? "↑"
-                      : "↓"
-                    : null}
-                </th>
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                  Reading Time
-                </th>
-                {type === "scheduled" ? (
-                  <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                    Time Remaining
-                  </th>
-                ) : null}
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                  Status
-                </th>
-                <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredPosts.map((post) => (
-                <tr
-                  key={post.id}
-                  className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted cursor-pointer"
-                  onClick={() => onPostSelect?.(post)}
-                  onKeyDown={(e) => {
-                    if ((e.key === "Enter" || e.key === " ") && onPostSelect) {
-                      e.preventDefault();
-                      onPostSelect(post);
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Select ${post.title ?? "post"}`}
-                >
-                  <td className="p-3 text-center">
-                    <Checkbox
-                      id={`longform-select-${post.id}`}
-                      checked={selectedPosts.has(post.id)}
-                      onCheckedChange={() => togglePostSelection(post.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </td>
-                  <td className="p-3">
-                    {post.image ? (
-                      <img
-                        src={post.image}
-                        alt="Cover"
-                        className="h-12 w-16 rounded object-cover"
-                      />
-                    ) : (
-                      <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-muted-foreground flex h-12 w-16 items-center justify-center rounded text-xs font-medium">
-                        ARTICLE
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <p className="font-medium">
-                      {post.title && post.title.length > 40
-                        ? post.title.substring(0, 40) + "..."
-                        : (post.title ?? "Untitled")}
-                    </p>
-                  </td>
-                  <td className="max-w-xs p-3">
-                    <p className="dark:text-muted-foreground text-foreground line-clamp-2 text-sm">
-                      {post.summary && post.summary.length > 60
-                        ? post.summary.substring(0, 60) + "..."
-                        : (post.summary ?? "No summary")}
-                    </p>
-                  </td>
-                  <td className="p-3">
-                    {formatDate(
-                      type === "published"
-                        ? (post.publishedAt ?? undefined)
-                        : type === "scheduled"
-                          ? ((post as { scheduledAtUtc?: unknown })
-                              .scheduledAtUtc as
-                              | string
-                              | Date
-                              | number
-                              | undefined)
-                          : post.createdAt,
-                      false
-                    )}
-                  </td>
-                  <td className="p-3 text-center">
-                    <span className="dark:text-muted-foreground text-muted-foreground text-sm">
-                      {getReadingTime(post.content ?? undefined)}
-                    </span>
-                  </td>
-                  {type === "scheduled" ? (
-                    <td className="p-3 text-center">
-                      <div className="text-muted-foreground text-sm font-medium">
-                        {countdowns[post.id] ?? "—"}
-                      </div>
-                    </td>
-                  ) : null}
-                  <td className="p-3 text-center">{getStatusBadge(post)}</td>
-                  <td className="p-3 text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={(e) => e.stopPropagation()}
-                          className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
-                          aria-label="Actions"
-                        >
-                          <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {type === "draft" ? (
-                          <DropdownMenuItem asChild>
-                            <Link
-                              to={`/dashboard/drafts/longform/edit/${post.id}`}
-                            >
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                        ) : null}
-                        {type === "scheduled" && onEditPost ? (
-                          <>
-                            <DropdownMenuItem onSelect={() => onEditPost(post)}>
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onSelect={() => onReschedulePost?.(post)}
-                            >
-                              Reschedule
-                            </DropdownMenuItem>
-                            <deleteFetcher.Form method="post">
-                              <input
-                                type="hidden"
-                                name="postId"
-                                value={post.id}
-                              />
-                              <input
-                                type="hidden"
-                                name="_action"
-                                value="moveToDraft"
-                              />
-                              <input
-                                type="hidden"
-                                name="type"
-                                value="longform"
-                              />
-                              <DropdownMenuItem asChild>
-                                <button
-                                  type="submit"
-                                  disabled={
-                                    deleteFetcher.state !== "idle" ||
-                                    bulkDeleteFetcher.state !== "idle"
-                                  }
-                                >
-                                  {deleteFetcher.state !== "idle" &&
-                                  deleteFetcher.formData?.get("_action") ===
-                                    "moveToDraft" &&
-                                  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
-                                  deleteFetcher.formData?.get("postId") ===
-                                    post.id
-                                    ? "Moving..."
-                                    : "Move to drafts"}
-                                </button>
-                              </DropdownMenuItem>
-                            </deleteFetcher.Form>
-                          </>
-                        ) : null}
-                        {type === "published" &&
-                        (post.nostrEventId ??
-                          (post.signedEvent &&
-                          typeof post.signedEvent === "object" &&
-                          "id" in post.signedEvent
-                            ? (post.signedEvent as { id?: string }).id
-                            : undefined)) ? (
-                          <>
-                            <DropdownMenuItem asChild>
-                              <Link
-                                to={nostrUrls.articleUrl(
-                                  String(
-                                    post.nostrEventId ??
-                                      (post.signedEvent &&
-                                      typeof post.signedEvent === "object" &&
-                                      "id" in post.signedEvent
-                                        ? (post.signedEvent as { id?: string })
-                                            .id
-                                        : "") ??
-                                      ""
-                                  )
-                                )}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                View Article
-                              </Link>
-                            </DropdownMenuItem>
-                            {longformRepostFetcher
-                              ? (() => {
-                                  const fetcher = longformRepostFetcher;
-                                  const formData = getFetcherFormData(fetcher);
-                                  return (
-                                    <fetcher.Form method="post">
-                                      <input
-                                        type="hidden"
-                                        name="postId"
-                                        value={post.id}
-                                      />
-                                      <input
-                                        type="hidden"
-                                        name="_action"
-                                        value="longformRepost"
-                                      />
-                                      <DropdownMenuItem asChild>
-                                        <button
-                                          type="submit"
-                                          disabled={
-                                            fetcher.state !== "idle" ||
-                                            (formData
-                                              ? (formData.get("postId") as
-                                                  | string
-                                                  | null) === post.id
-                                              : false)
-                                          }
-                                        >
-                                          {fetcher.state !== "idle" &&
-                                          (formData
-                                            ? (formData.get("postId") as
-                                                | string
-                                                | null) === post.id
-                                            : false)
-                                            ? "Reposting..."
-                                            : "Repost"}
-                                        </button>
-                                      </DropdownMenuItem>
-                                    </fetcher.Form>
-                                  );
-                                })()
-                              : null}
-                            {longformQuoteFetcher
-                              ? (() => {
-                                  const fetcher = longformQuoteFetcher;
-                                  const formData = getFetcherFormData(fetcher);
-                                  return (
-                                    <fetcher.Form method="post">
-                                      <input
-                                        type="hidden"
-                                        name="postId"
-                                        value={post.id}
-                                      />
-                                      <input
-                                        type="hidden"
-                                        name="_action"
-                                        value="longformQuote"
-                                      />
-                                      <DropdownMenuItem asChild>
-                                        <button
-                                          type="submit"
-                                          disabled={
-                                            fetcher.state !== "idle" ||
-                                            (formData
-                                              ? (formData.get("postId") as
-                                                  | string
-                                                  | null) === post.id
-                                              : false)
-                                          }
-                                        >
-                                          {fetcher.state !== "idle" &&
-                                          (fetcher.formData
-                                            ? (fetcher.formData.get(
-                                                "postId"
-                                              ) as string | null) === post.id
-                                            : false)
-                                            ? "Quoting..."
-                                            : "Quote Post"}
-                                        </button>
-                                      </DropdownMenuItem>
-                                    </fetcher.Form>
-                                  );
-                                })()
-                              : null}
-                          </>
-                        ) : null}
-                        <DropdownMenuSeparator />
-                        <deleteFetcher.Form method="post">
-                          <input type="hidden" name="postId" value={post.id} />
-                          <input
-                            type="hidden"
-                            name="_action"
-                            value="deleteLongForm"
-                          />
-                          <DropdownMenuItem asChild>
-                            <button
-                              type="submit"
-                              disabled={
-                                deleteFetcher.state !== "idle" ||
-                                bulkDeleteFetcher.state !== "idle"
-                              }
-                              className="text-destructive focus:text-destructive"
-                            >
-                              {deleteFetcher.state !== "idle" &&
-                              deleteFetcher.formData?.get("postId") === post.id
-                                ? "Deleting..."
-                                : "Delete"}
-                            </button>
-                          </DropdownMenuItem>
-                        </deleteFetcher.Form>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <LongFormTableDesktop
+          filteredPosts={filteredPosts}
+          selectedPosts={selectedPosts}
+          togglePostSelection={togglePostSelection}
+          toggleSelectAll={toggleSelectAll}
+          sortConfig={sortConfig}
+          requestSort={requestSort}
+          type={type}
+          formatDateCell={formatDateCell}
+          getReadingTime={getReadingTime}
+          getStatusBadge={getStatusBadge}
+          countdowns={countdowns}
+          onPostSelect={onPostSelect}
+          onEditPost={onEditPost}
+          onReschedulePost={onReschedulePost}
+          deleteFetcher={deleteFetcher}
+          bulkDeleteFetcher={bulkDeleteFetcher}
+          nostrUrls={nostrUrls}
+          longformRepostFetcher={longformRepostFetcher}
+          longformQuoteFetcher={longformQuoteFetcher}
+          getFetcherFormData={getFetcherFormData}
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
+          dateLocale={dateLocale}
+        />
       </div>
 
-      {/* Mobile: virtualized longform card list */}
       {isMobile ? (
-        <div className="block flex min-h-0 flex-1 flex-col md:hidden">
-          <div className="mt-3 flex items-center gap-2">
-            <span
-              className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
-            >
-              Sort:
-            </span>
-            <Select
-              value={
-                sortConfig.key === "title"
-                  ? `title-${sortConfig.direction}`
-                  : `date-${sortConfig.direction}`
-              }
-              onValueChange={(value) => {
-                if (
-                  value === "date-asc" ||
-                  value === "date-desc" ||
-                  value === "title-asc" ||
-                  value === "title-desc"
-                ) {
-                  const [key, dir] = value.split("-") as [
-                    string,
-                    "asc" | "desc",
-                  ];
-                  setSortConfig({
-                    key: key === "date" ? getDefaultSortKey(type) : "title",
-                    direction: dir,
-                  });
-                }
-              }}
-            >
-              <SelectTrigger
-                className={`w-[11rem] ${MOBILE_FILTER_SELECT_TRIGGER_CLASS}`}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date-desc">Date (newest first)</SelectItem>
-                <SelectItem value="date-asc">Date (oldest first)</SelectItem>
-                <SelectItem value="title-asc">Title (A–Z)</SelectItem>
-                <SelectItem value="title-desc">Title (Z–A)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {useDedicatedScroll ? (
-            <div
-              ref={(el) => {
-                mobileScrollContainerRef.current = el;
-                onScrollContainerReady?.(el ?? null);
-              }}
-              className="mt-2 min-h-0 flex-1 overflow-auto"
-            >
-              {combinedContent.length > 0 ? (
-                <>
-                  <div
-                    style={{
-                      height: rowVirtualizer.getTotalSize(),
-                      position: "relative",
-                      width: "100%",
-                    }}
-                  >
-                    {virtualItems.map((virtualRow) => {
-                      const item = combinedContent[virtualRow.index];
-                      if (!item) return null;
-                      return (
-                        <div
-                          key={virtualRow.key}
-                          data-index={virtualRow.index}
-                          className="pb-2"
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            transform: `translateY(${virtualRow.start}px)`,
-                            zIndex:
-                              openMenuRowKey === virtualRow.key
-                                ? 50
-                                : undefined,
-                          }}
-                        >
-                          <ContentListCard
-                            item={item}
-                            type={type}
-                            userTimezone={userTimezone}
-                            userTimeFormat={userTimeFormat}
-                            showBulkActions={true}
-                            selectedItems={selectedPosts}
-                            onToggleSelection={togglePostSelection}
-                            onPostSelect={(content) =>
-                              onPostSelect?.(
-                                content.originalData as LongFormPostData
-                              )
-                            }
-                            onEditPost={
-                              onEditPost
-                                ? (post) =>
-                                    onEditPost(
-                                      post as
-                                        | LongFormPostType
-                                        | LongFormPostData
-                                    )
-                                : undefined
-                            }
-                            onReschedulePost={
-                              onReschedulePost
-                                ? (post) =>
-                                    onReschedulePost(
-                                      post as
-                                        | LongFormPostType
-                                        | LongFormPostData
-                                    )
-                                : undefined
-                            }
-                            deleteFetcher={
-                              deleteFetcher as Parameters<
-                                typeof ContentListCard
-                              >[0]["deleteFetcher"]
-                            }
-                            longformRepostFetcher={longformRepostFetcher}
-                            longformQuoteFetcher={longformQuoteFetcher}
-                            onMenuOpenChange={(open) =>
-                              setOpenMenuRowKey(open ? virtualRow.key : null)
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {prefetchSentinelRef ? (
-                    <div ref={prefetchSentinelRef} className="h-4 w-full" />
-                  ) : null}
-                  {sentinelRef ? (
-                    <div ref={sentinelRef} className="h-4 w-full" />
-                  ) : null}
-                  {isFetchingNextPage ? (
-                    <div className="text-muted-foreground py-4 text-center text-sm">
-                      Loading more...
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-            </div>
-          ) : combinedContent.length > 0 ? (
-            <div
-              className="mt-2"
-              style={{
-                height: rowVirtualizer.getTotalSize(),
-                position: "relative",
-                width: "100%",
-              }}
-            >
-              {virtualItems.map((virtualRow) => {
-                const item = combinedContent[virtualRow.index];
-                if (!item) return null;
-                return (
-                  <div
-                    key={virtualRow.key}
-                    data-index={virtualRow.index}
-                    className="pb-2"
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      transform: `translateY(${virtualRow.start}px)`,
-                      zIndex:
-                        openMenuRowKey === virtualRow.key ? 50 : undefined,
-                    }}
-                  >
-                    <ContentListCard
-                      item={item}
-                      type={type}
-                      userTimezone={userTimezone}
-                      userTimeFormat={userTimeFormat}
-                      showBulkActions={true}
-                      selectedItems={selectedPosts}
-                      onToggleSelection={togglePostSelection}
-                      onPostSelect={(content) =>
-                        onPostSelect?.(content.originalData as LongFormPostData)
-                      }
-                      onEditPost={
-                        onEditPost
-                          ? (post) =>
-                              onEditPost(
-                                post as LongFormPostType | LongFormPostData
-                              )
-                          : undefined
-                      }
-                      onReschedulePost={
-                        onReschedulePost
-                          ? (post) =>
-                              onReschedulePost(
-                                post as LongFormPostType | LongFormPostData
-                              )
-                          : undefined
-                      }
-                      deleteFetcher={
-                        deleteFetcher as Parameters<
-                          typeof ContentListCard
-                        >[0]["deleteFetcher"]
-                      }
-                      longformRepostFetcher={longformRepostFetcher}
-                      longformQuoteFetcher={longformQuoteFetcher}
-                      onMenuOpenChange={(open) =>
-                        setOpenMenuRowKey(open ? virtualRow.key : null)
-                      }
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
+        <LongFormCardListMobile
+          useDedicatedScroll={useDedicatedScroll}
+          scrollContainerRef={(el) => {
+            mobileScrollContainerRef.current = el;
+            onScrollContainerReady?.(el ?? null);
+          }}
+          sortConfig={sortConfig}
+          setSortConfig={setSortConfig}
+          type={type}
+          getDefaultSortKey={getDefaultSortKey}
+          combinedContent={combinedContent}
+          rowVirtualizer={rowVirtualizer}
+          virtualItems={virtualItems}
+          openMenuRowKey={openMenuRowKey}
+          setOpenMenuRowKey={setOpenMenuRowKey}
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
+          selectedPosts={selectedPosts}
+          togglePostSelection={togglePostSelection}
+          onPostSelect={onPostSelect}
+          onEditPost={onEditPost}
+          onReschedulePost={onReschedulePost}
+          deleteFetcher={deleteFetcher}
+          longformRepostFetcher={longformRepostFetcher}
+          longformQuoteFetcher={longformQuoteFetcher}
+          prefetchSentinelRef={prefetchSentinelRef}
+          sentinelRef={sentinelRef}
+          isFetchingNextPage={isFetchingNextPage}
+        />
       ) : null}
     </div>
   );

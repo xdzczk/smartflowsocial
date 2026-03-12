@@ -4,6 +4,7 @@
  */
 
 import { toPostDTO, type PostDTO } from "~/features/posts/dtos";
+import { getPostById } from "~/features/posts/server";
 import { deriveIsDraft } from "~/features/posts/state-machine/post-state";
 import type { PostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
@@ -12,7 +13,6 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { getPostById } from "~/models/post.queries.server";
 
 import { getDraftVersions } from "./draft-version.server";
 

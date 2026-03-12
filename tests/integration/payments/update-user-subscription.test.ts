@@ -95,7 +95,7 @@ describe("updateUserSubscription", () => {
     });
 
     vi.resetModules();
-    const paymentModule = await import("~/models/payment.server");
+    const paymentModule = await import("~/features/payments/data");
     expect(paymentModule.updateUserSubscription).toBeDefined();
     expect(typeof paymentModule.updateUserSubscription).toBe("function");
 
@@ -150,7 +150,7 @@ describe("updateUserSubscription", () => {
     });
 
     vi.resetModules();
-    const paymentModule = await import("~/models/payment.server");
+    const paymentModule = await import("~/features/payments/data");
     await paymentModule.updateUserSubscription(
       TEST_USER_ID,
       TEST_PLAN_ID,
@@ -210,7 +210,7 @@ describe("updateUserSubscription", () => {
     });
 
     vi.resetModules();
-    const paymentModule = await import("~/models/payment.server");
+    const paymentModule = await import("~/features/payments/data");
     await paymentModule.updateUserSubscription(
       TEST_USER_ID,
       TEST_PLAN_ID,
@@ -252,7 +252,7 @@ describe("updateUserSubscription", () => {
     });
 
     // Free plan payment ID starts with "free_"
-    const paymentModule = await import("~/models/payment.server");
+    const paymentModule = await import("~/features/payments/data");
     await paymentModule.updateUserSubscription(
       TEST_USER_ID,
       TEST_PLAN_ID,
@@ -271,7 +271,7 @@ describe("updateUserSubscription", () => {
     );
 
     vi.resetModules();
-    const paymentModule = await import("~/models/payment.server");
+    const paymentModule = await import("~/features/payments/data");
     await expect(
       paymentModule.updateUserSubscription(
         TEST_USER_ID,
@@ -308,7 +308,7 @@ describe("updateUserSubscription", () => {
     });
 
     vi.resetModules();
-    const paymentModule = await import("~/models/payment.server");
+    const paymentModule = await import("~/features/payments/data");
     await paymentModule.updateUserSubscription(
       TEST_USER_ID,
       TEST_PLAN_ID,
@@ -346,7 +346,7 @@ describe("updateUserSubscription", () => {
     });
 
     vi.resetModules();
-    const paymentModule = await import("~/models/payment.server");
+    const paymentModule = await import("~/features/payments/data");
     await expect(
       paymentModule.updateUserSubscription(
         TEST_USER_ID,

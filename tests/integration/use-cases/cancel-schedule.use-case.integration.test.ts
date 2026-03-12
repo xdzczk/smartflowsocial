@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 import { CancelScheduleUseCase } from "~/features/posts/scheduling/index.server";
 import { SchedulePostUseCase } from "~/features/posts/scheduling/index.server";
-import { CreatePostUseCase } from "~/features/posts/server";
+import { CreatePostUseCase } from "~/features/posts/server/composer";
 import { prisma } from "~/lib/prisma.server";
 
 // Skip if no test database configured
@@ -80,6 +80,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
 
       const postId = createResult.post.id;
 
+      // Allow transaction commit to be visible to subsequent reads (integration DB)
+      await new Promise((r) => setTimeout(r, 50));
+
       // Schedule the post
       const scheduleUseCase = new SchedulePostUseCase();
       const { fromDate } = await import("~/lib/temporal");
@@ -98,6 +101,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           sig: "test-sig",
         },
       });
+
+      // Allow schedule transaction to be visible
+      await new Promise((r) => setTimeout(r, 50));
 
       // Verify post is scheduled
       const scheduledPost = await prisma.post.findUnique({

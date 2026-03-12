@@ -17,3 +17,5 @@ export { LongFormActionButtons } from "./components/LongFormActionButtons";
 export { LongFormCoverImage } from "./components/LongFormCoverImage";
 export { LongFormContentEditor } from "./components/LongFormContentEditor";
 export { LongFormPostFields } from "./components/LongFormPostFields";
+
+export { useLongFormEditState } from "../hooks/useLongFormEditState";

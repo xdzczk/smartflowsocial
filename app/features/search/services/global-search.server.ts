@@ -3,13 +3,13 @@
  * Searches across all content types: drafts, scheduled, publishing, posted, failed, cancelled, templates, external posts, and features
  */
 
+import { getUserSubscription } from "~/features/payments/data";
 import {
   hasFeatureAccess,
   type FeatureName,
   type UserSubscription,
 } from "~/features/payments/types";
 import { extractNostrIdentifier } from "~/lib/extract-nostr-identifier";
-import { getUserSubscription } from "~/models/payment.server";
 
 import {
   findCancelledLongforms,

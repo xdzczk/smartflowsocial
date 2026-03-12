@@ -51,8 +51,7 @@ export function useBlossomAwareUpload() {
         mirrorUploadUrls = [],
       } = data;
 
-      // Handle legacy BLOSSOM value as BLOSSOM_PRIMAL
-      if (provider === "BLOSSOM" || provider === "BLOSSOM_PRIMAL") {
+      if (provider === "BLOSSOM_PRIMAL") {
         return {
           provider: "BLOSSOM_PRIMAL",
           isUsingBlossom: true,

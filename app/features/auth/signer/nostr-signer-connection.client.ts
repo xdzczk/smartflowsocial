@@ -3,21 +3,11 @@
  * visibility handling, health checks, and signer cache.
  */
 
-import { SimplePool } from "nostr-tools";
-import {
-  BunkerSigner,
-  createNostrConnectURI,
-  parseNostrConnectURI,
-} from "nostr-tools/nip46";
-
 import {
   Nip07Signer,
-  Nip46Signer,
   type NostrSigner,
 } from "~/features/auth/nostr-signer.client";
-import { RemoteSignerTimeoutError } from "~/lib/errors";
 import { isMobile } from "~/lib/is-mobile";
-import { convertToHex } from "~/lib/nostr-conversion";
 
 import {
   cacheNip46SignerFromLogin as cacheNip46SignerFromLoginImpl,
@@ -53,18 +43,14 @@ import {
 import { createNip46SignerFromStoredConfig as createNip46SignerFromStoredConfigImpl } from "./connection-connect.client";
 import {
   CONNECTION_FRESH_MS,
-  DEFAULT_RELAYS_CONNECT,
   NIP46_SIGNER_TYPE,
   NOSTR_CONNECTION_HEALTHY_EVENT,
   NOSTR_CONNECTION_STALE_EVENT,
   RECENT_ACTIVITY_WINDOW_MS,
   RECONNECT_GRACE_MS,
-  RELAY_UNION_CAP,
   VERIFY_BEFORE_USE_TIMEOUT_MS,
   VERIFY_COOLDOWN_MS,
   VISIBILITY_RECONNECT_THROTTLE_MS,
-  PROBE_ON_FIRST_USE_TIMEOUT_MS,
-  PROBE_FAILED_AFTER_RESUME_MESSAGE,
 } from "./connection-constants";
 import {
   startHealthCheckMonitoring,
@@ -72,17 +58,12 @@ import {
   syncRelaysWithRemoteSigner,
   verifySignerConnection,
 } from "./connection-health.client";
-import {
-  buildRelayUnion,
-  relayListsEqual,
-} from "./connection-relay-utils.client";
+import { resolveNip46SignerFromConfig } from "./connection-resolve.client";
 import { initVisibilityHandler as initVisibilityHandlerImpl } from "./connection-visibility.client";
-import { hexToBytes } from "./nostr-signer-keys.client";
 import {
   getActiveSignerConfig,
   persistActiveSignerConfigWithoutReset,
   setActiveSignerConfig,
-  type ActiveSignerConfig,
 } from "./nostr-signer-storage.client";
 import {
   detectSignerAppName,
@@ -207,6 +188,91 @@ export function recordSuccessfulSign(): void {
 
 export { createNip46SignerFromStoredConfigImpl as createNip46SignerFromStoredConfig };
 
+/** Returns the cached signer if still valid (skip verify or verify passed); null otherwise. */
+async function tryGetValidCachedSigner(): Promise<NostrSigner | null> {
+  const cachedSigner = getCachedSigner();
+  if (!cachedSigner) return null;
+
+  const now = Date.now();
+  const connectionEstablishedAt = getConnectionEstablishedAt();
+  const connectionAge = connectionEstablishedAt
+    ? now - connectionEstablishedAt
+    : 0;
+  const withinReconnectGrace = connectionAge < RECONNECT_GRACE_MS;
+  const _lastVerificationTime = getLastVerificationTime();
+  const recentlyVerified =
+    _lastVerificationTime != null &&
+    now - _lastVerificationTime <= VERIFY_COOLDOWN_MS;
+  const connectionFresh = connectionAge < CONNECTION_FRESH_MS;
+  const _lastActivityTime = getLastActivityTime();
+  const activityRecent =
+    _lastActivityTime != null &&
+    now - _lastActivityTime <= RECENT_ACTIVITY_WINDOW_MS;
+  const shouldVerify =
+    !withinReconnectGrace &&
+    !activityRecent &&
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for null
+    (!recentlyVerified || !connectionFresh || _lastVerificationTime == null);
+
+  if (!shouldVerify) {
+    setLastActivityTime(now);
+    return cachedSigner;
+  }
+
+  const isValid = await verifySignerConnection(
+    cachedSigner,
+    VERIFY_BEFORE_USE_TIMEOUT_MS
+  );
+  if (isValid) {
+    setLastActivityTime(Date.now());
+    return cachedSigner;
+  }
+  clearCachedNip46Signer();
+  return null;
+}
+
+function isConnectionRelatedError(err: unknown): boolean {
+  const msg =
+    err instanceof Error
+      ? err.message.toLowerCase()
+      : String(err).toLowerCase();
+  const keywords = [
+    "subscription closed",
+    "websocket",
+    "closed",
+    "connection",
+    "connecting",
+    "timeout",
+    "too long",
+  ];
+  return keywords.some((k) => msg.includes(k));
+}
+
+function handleSignerConnectionError(err: unknown, now: number): void {
+  resetCachedSigner();
+  setConnectionEstablishedAt(null);
+  setLastActivityTime(null);
+  setNeedsReprobe(true);
+
+  const activeConnection = getActiveConnection();
+  if (activeConnection) {
+    const fullErrorMessage = err instanceof Error ? err.message : String(err);
+    recordConnectionEvent(activeConnection.id, {
+      type: "error",
+      error: fullErrorMessage,
+    });
+    recordConnectionEvent(activeConnection.id, {
+      type: "disconnected",
+      reason: fullErrorMessage,
+    });
+  }
+
+  if (isMobile()) {
+    const errorCooldown = isIOS() ? 2000 : 1500;
+    setConnectionCooldownUntil(now + errorCooldown);
+  }
+}
+
 export async function getActiveSigner(
   options?: GetActiveSignerOptions
 ): Promise<NostrSigner | null> {
@@ -216,45 +282,8 @@ export async function getActiveSigner(
     clearCachedNip46Signer();
   }
 
-  const cachedSigner = getCachedSigner();
-  if (cachedSigner) {
-    const now = Date.now();
-    const connectionEstablishedAt = getConnectionEstablishedAt();
-    const connectionAge = connectionEstablishedAt
-      ? now - connectionEstablishedAt
-      : 0;
-    const withinReconnectGrace = connectionAge < RECONNECT_GRACE_MS;
-    const _lastVerificationTime = getLastVerificationTime();
-    const recentlyVerified =
-      _lastVerificationTime != null &&
-      now - _lastVerificationTime <= VERIFY_COOLDOWN_MS;
-    const connectionFresh = connectionAge < CONNECTION_FRESH_MS;
-    const _lastActivityTime = getLastActivityTime();
-    const activityRecent =
-      _lastActivityTime != null &&
-      now - _lastActivityTime <= RECENT_ACTIVITY_WINDOW_MS;
-    const shouldVerify =
-      !withinReconnectGrace &&
-      !activityRecent &&
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for null
-      (!recentlyVerified || !connectionFresh || _lastVerificationTime == null);
-
-    if (!shouldVerify) {
-      setLastActivityTime(now);
-      return cachedSigner;
-    }
-
-    const isValid = await verifySignerConnection(
-      cachedSigner,
-      VERIFY_BEFORE_USE_TIMEOUT_MS
-    );
-    if (isValid) {
-      setLastActivityTime(Date.now());
-      return cachedSigner;
-    }
-    clearCachedNip46Signer();
-    return null;
-  }
+  const fromCache = await tryGetValidCachedSigner();
+  if (fromCache) return fromCache;
 
   const config = getActiveSignerConfig();
   if (!config) return null;
@@ -272,11 +301,9 @@ export async function getActiveSigner(
   const nip46Config = config;
   const configJson = JSON.stringify(config);
   if (!allowReconnect) return null;
-  if (
-    getInFlightSignerPromise() &&
-    getInFlightSignerConfigJson() === configJson
-  ) {
-    return await getInFlightSignerPromise()!;
+  const inFlight = getInFlightSignerPromise();
+  if (inFlight && getInFlightSignerConfigJson() === configJson) {
+    return await inFlight;
   }
 
   const requestId = incrementSignerResolutionRequestId();
@@ -286,402 +313,38 @@ export async function getActiveSigner(
     return latest !== null && JSON.stringify(latest) === configJson;
   };
 
-  const connectPromise = (async (): Promise<NostrSigner | null> => {
-    const now = Date.now();
-    const cooldownUntil = getConnectionCooldownUntil();
-    if (now < cooldownUntil) {
-      await new Promise((resolve) => setTimeout(resolve, cooldownUntil - now));
-    }
-
-    const myGen = getSignerGeneration();
-    const clientSecretKey = hexToBytes(nip46Config.clientSecretKeyHex);
-    let pool: SimplePool | undefined = new SimplePool();
-    let relaysToClose: string[] = [];
-
-    async function connectViaBunker(
-      cfg: Extract<ActiveSignerConfig, { type: "nip46" }>
-    ): Promise<NostrSigner | null> {
-      const result = await createNip46SignerFromStoredConfigImpl(cfg, {
-        pool,
-        timeoutMs: 90_000,
-      });
-      if (!isRequestCurrent()) {
-        await result.signer.close();
-        return null;
-      }
-      const signer = result.signer;
-      setCachedSigner(signer);
-      pool = undefined;
-      const nowEst = Date.now();
-      setConnectionEstablishedAt(nowEst);
-      setLastActivityTime(nowEst);
-      setLastVerificationTime(nowEst);
-      startHealthCheckMonitoring();
-
-      if (getNeedsReprobe()) {
-        const probeOk = await verifySignerConnection(
-          signer,
-          PROBE_ON_FIRST_USE_TIMEOUT_MS
-        );
-        if (!probeOk) {
-          try {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- NostrSigner.close is optional in type
-            await signer.close?.();
-          } catch {
-            // ignore
-          }
-          resetCachedSigner();
-          setConnectionEstablishedAt(null);
-          setLastActivityTime(null);
-          const activeConnection = getActiveConnection();
-          if (activeConnection) {
-            recordConnectionEvent(activeConnection.id, {
-              type: "health_check",
-              healthy: false,
-              error: PROBE_FAILED_AFTER_RESUME_MESSAGE,
-            });
-            recordConnectionEvent(activeConnection.id, {
-              type: "disconnected",
-              reason: PROBE_FAILED_AFTER_RESUME_MESSAGE,
-            });
-          }
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(
-              new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
-                detail: { signerType: NIP46_SIGNER_TYPE },
-              })
-            );
-          }
-          throw new RemoteSignerTimeoutError();
-        }
-        setNeedsReprobe(false);
-      }
-
-      if (myGen !== getSignerGeneration()) {
-        const s = getCachedSigner();
-        resetCachedSigner();
-        setConnectionEstablishedAt(null);
-        setLastActivityTime(null);
-        stopHealthCheckMonitoring();
-        try {
-          if (s) await s.close?.();
-        } catch {
-          // ignore
-        }
-        return null;
-      }
-
-      const pubkey = await signer.getPublicKey();
-      const activeConnection = getActiveConnection();
-      if (activeConnection) {
-        updateSession(activeConnection.id, {
-          metadata: {
-            ...activeConnection.metadata,
-            status: "active",
-            pubkey,
-            connectedAt: Date.now(),
-            lastActivityAt: Date.now(),
-            lastError: null,
-          },
-        });
-        recordConnectionEvent(activeConnection.id, {
-          type: "connected",
-          pubkey,
-        });
-      }
-
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent(NOSTR_CONNECTION_HEALTHY_EVENT, {
-            detail: { signerType: NIP46_SIGNER_TYPE },
-          })
-        );
-      }
-
-      try {
-        await syncRelaysWithRemoteSigner(getCachedSigner()!);
-      } catch {
-        // best-effort
-      }
-
-      return getCachedSigner();
-    }
-
-    type NostrConnectConfig = Extract<
-      ActiveSignerConfig,
-      { type: "nip46"; method: "nostrconnect_uri" }
-    >;
-
-    async function runNostrConnectPostConnectSteps(
-      signer: NostrSigner,
-      cfg: NostrConnectConfig
-    ): Promise<boolean> {
-      const nowEst = Date.now();
-      setConnectionEstablishedAt(nowEst);
-      setLastActivityTime(nowEst);
-      setLastVerificationTime(nowEst);
-      startHealthCheckMonitoring();
-
-      if (getNeedsReprobe()) {
-        const probeOk = await verifySignerConnection(
-          signer,
-          PROBE_ON_FIRST_USE_TIMEOUT_MS
-        );
-        if (!probeOk) {
-          try {
-            await signer.close?.();
-          } catch {
-            // ignore
-          }
-          resetCachedSigner();
-          setConnectionEstablishedAt(null);
-          setLastActivityTime(null);
-          const activeConnection = getActiveConnection();
-          if (activeConnection) {
-            recordConnectionEvent(activeConnection.id, {
-              type: "health_check",
-              healthy: false,
-              error: PROBE_FAILED_AFTER_RESUME_MESSAGE,
-            });
-            recordConnectionEvent(activeConnection.id, {
-              type: "disconnected",
-              reason: PROBE_FAILED_AFTER_RESUME_MESSAGE,
-            });
-          }
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(
-              new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
-                detail: { signerType: NIP46_SIGNER_TYPE },
-              })
-            );
-          }
-          throw new RemoteSignerTimeoutError();
-        }
-        setNeedsReprobe(false);
-      }
-
-      if (myGen !== getSignerGeneration()) {
-        const s = signer;
-        resetCachedSigner();
-        setConnectionEstablishedAt(null);
-        setLastActivityTime(null);
-        stopHealthCheckMonitoring();
-        try {
-          await s.close?.();
-        } catch {
-          // ignore
-        }
-        return false;
-      }
-
-      if (
-        relaysToClose.length > 0 &&
-        !relayListsEqual(relaysToClose, cfg.relays)
-      ) {
-        persistActiveSignerConfigWithoutReset({
-          ...cfg,
-          relays: relaysToClose,
-        });
-        const connectionForRelays = getActiveConnection();
-        if (
-          connectionForRelays?.config.type === NIP46_SIGNER_TYPE &&
-          connectionForRelays.config.method === "nostrconnect_uri"
-        ) {
-          updateSession(connectionForRelays.id, {
-            config: { ...connectionForRelays.config, relays: relaysToClose },
-            metadata: {
-              ...connectionForRelays.metadata,
-              relays: relaysToClose,
-              lastActivityAt: Date.now(),
-            },
-          });
-        }
-      }
-
-      const pubkey = await signer.getPublicKey();
-
-      const configUpdates: Partial<NostrConnectConfig> = {};
-      if (!cfg.signerPubkey) {
-        configUpdates.signerPubkey = convertToHex(pubkey) ?? pubkey;
-      }
-      if (signer.type === NIP46_SIGNER_TYPE && "getBunkerPointer" in signer) {
-        configUpdates.bunkerPointer = (
-          signer as Nip46Signer
-        ).getBunkerPointer();
-      }
-      if (Object.keys(configUpdates).length > 0) {
-        persistActiveSignerConfigWithoutReset({ ...cfg, ...configUpdates });
-      }
-
-      const activeConnection = getActiveConnection();
-      if (activeConnection) {
-        updateSession(activeConnection.id, {
-          metadata: {
-            ...activeConnection.metadata,
-            status: "active",
-            pubkey,
-            connectedAt: Date.now(),
-            lastActivityAt: Date.now(),
-            lastError: null,
-          },
-        });
-        recordConnectionEvent(activeConnection.id, {
-          type: "connected",
-          pubkey,
-        });
-      }
-
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent(NOSTR_CONNECTION_HEALTHY_EVENT, {
-            detail: { signerType: NIP46_SIGNER_TYPE },
-          })
-        );
-      }
-
-      try {
-        await syncRelaysWithRemoteSigner(signer);
-      } catch {
-        // best-effort
-      }
-      return true;
-    }
-
-    async function connectViaNostrConnect(
-      cfg: Extract<ActiveSignerConfig, { type: "nip46" }>
-    ): Promise<NostrSigner | null> {
-      if (cfg.method !== "nostrconnect_uri") return null;
-      relaysToClose = cfg.relays;
-      try {
-        const unionRelays = buildRelayUnion(
-          cfg.relays,
-          DEFAULT_RELAYS_CONNECT,
-          RELAY_UNION_CAP
-        );
-        if (unionRelays.length > 0) relaysToClose = unionRelays;
-      } catch {
-        // keep original
-      }
-
-      if (cfg.bunkerPointer || (cfg.signerPubkey && cfg.relays.length > 0)) {
-        if (cfg.bunkerPointer?.relays.length) {
-          relaysToClose = cfg.bunkerPointer.relays
-            .map((r: string) => r.trim())
-            .filter((r: string) => r.startsWith("wss://"));
-        }
-        const result = await createNip46SignerFromStoredConfigImpl(cfg, {
-          pool,
-          timeoutMs: 90_000,
-        });
-        if (!isRequestCurrent()) {
-          await result.signer.close();
-          return null;
-        }
-        setCachedSigner(result.signer);
-        pool = undefined;
-      } else {
-        if (!pool) return null;
-        let uriToUse = cfg.uri;
-        try {
-          const parsed = parseNostrConnectURI(cfg.uri);
-          const unionRelays = buildRelayUnion(
-            cfg.relays,
-            DEFAULT_RELAYS_CONNECT,
-            RELAY_UNION_CAP
-          );
-          if (unionRelays.length > 0) {
-            uriToUse = createNostrConnectURI({
-              clientPubkey: parsed.clientPubkey,
-              relays: unionRelays,
-              secret: parsed.params.secret,
-              perms: parsed.params.perms,
-            });
-            relaysToClose = unionRelays;
-          }
-        } catch {
-          // keep original
-        }
-        const inner = await BunkerSigner.fromURI(
-          clientSecretKey,
-          uriToUse,
-          { pool },
-          90_000
-        );
-        if (!isRequestCurrent()) {
-          await inner.close();
-          return null;
-        }
-        setCachedSigner(new Nip46Signer({ pool, inner }));
-        pool = undefined;
-      }
-
-      const currentSigner = getCachedSigner();
-      const ok = currentSigner
-        ? await runNostrConnectPostConnectSteps(currentSigner, cfg)
-        : false;
-      if (!ok) return null;
-      return getCachedSigner();
-    }
-
-    try {
-      if (nip46Config.method === "bunker_input") {
-        return await connectViaBunker(nip46Config);
-      }
-      return await connectViaNostrConnect(nip46Config);
-    } catch (err) {
-      try {
-        if (nip46Config.method === "nostrconnect_uri") {
-          pool.close(relaysToClose);
-        }
-      } catch {
-        // ignore
-      }
-
-      const errorMessage =
-        err instanceof Error
-          ? err.message.toLowerCase()
-          : String(err).toLowerCase();
-      if (
-        errorMessage.includes("subscription closed") ||
-        errorMessage.includes("websocket") ||
-        errorMessage.includes("closed") ||
-        errorMessage.includes("connection") ||
-        errorMessage.includes("connecting") ||
-        errorMessage.includes("timeout") ||
-        errorMessage.includes("too long")
-      ) {
-        resetCachedSigner();
-        setConnectionEstablishedAt(null);
-        setLastActivityTime(null);
-        setNeedsReprobe(true);
-
-        const activeConnection = getActiveConnection();
-        if (activeConnection) {
-          const fullErrorMessage =
-            err instanceof Error ? err.message : String(err);
-          recordConnectionEvent(activeConnection.id, {
-            type: "error",
-            error: fullErrorMessage,
-          });
-          recordConnectionEvent(activeConnection.id, {
-            type: "disconnected",
-            reason: fullErrorMessage,
-          });
-        }
-
-        if (isMobile()) {
-          const errorCooldown = isIOS() ? 2000 : 1500;
-          setConnectionCooldownUntil(now + errorCooldown);
-        }
-      }
-      throw err;
-    }
-  })();
+  const now = Date.now();
+  const connectPromise = resolveNip46SignerFromConfig(nip46Config, {
+    getConnectionCooldownUntil,
+    isRequestCurrent,
+    getSignerGeneration,
+    setCachedSigner,
+    getCachedSigner,
+    setConnectionEstablishedAt,
+    setLastActivityTime,
+    setLastVerificationTime,
+    startHealthCheckMonitoring,
+    stopHealthCheckMonitoring,
+    getNeedsReprobe,
+    setNeedsReprobe,
+    verifySignerConnection,
+    resetCachedSigner,
+    getActiveConnection,
+    updateSession,
+    recordConnectionEvent,
+    syncRelaysWithRemoteSigner,
+    persistActiveSignerConfigWithoutReset,
+  });
 
   setInFlightSignerPromise(connectPromise);
   setInFlightSignerConfigJson(configJson);
   try {
     return await connectPromise;
+  } catch (err: unknown) {
+    if (isConnectionRelatedError(err)) {
+      handleSignerConnectionError(err, now);
+    }
+    throw err;
   } finally {
     if (getInFlightSignerPromise() === connectPromise) {
       setInFlightSignerPromise(null);

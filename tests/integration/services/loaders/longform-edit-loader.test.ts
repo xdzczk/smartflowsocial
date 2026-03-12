@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/longformpost.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getLongFormPost: vi.fn(),
 }));
 
@@ -24,14 +24,14 @@ vi.mock("~/features/posts/repositories/draft-version-data.server", () => ({
 
 import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../../utils/test-helpers";
 
-import { loadLongFormEditData } from "~/features/posts/server";
+import { getLongFormPost } from "~/features/posts/server";
+import { loadLongFormEditData } from "~/features/posts/server/longform";
 import {
   getUserById,
   getScheduleInterval,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { getLongFormPost } from "~/models/longformpost.server";
 
 describe("Longform Edit Loader", () => {
   beforeEach(() => {

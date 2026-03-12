@@ -3,11 +3,8 @@
  * Used by loader and selection to derive eligible posts.
  */
 
-import {
-  getRecentPublishedPosts,
-  getPostById,
-} from "~/models/post.queries.server";
-import type { PostWithQueueType } from "~/models/post.types";
+import { getRecentPublishedPosts, getPostById } from "~/features/posts/server";
+import type { PostWithQueueType } from "~/features/posts/server";
 
 import {
   findQueueTypeByIdAndUser,

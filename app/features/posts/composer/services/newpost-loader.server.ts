@@ -4,14 +4,17 @@
  */
 
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { loadDraftEditData } from "~/features/posts/server";
+import { loadDraftEditData } from "~/features/posts/server/drafts";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import {
+  getTemplatePrefill,
+  getTemplates,
+} from "~/features/templates/services/template-data.server";
 import {
   getScheduleInterval,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import { getTemplatePrefill, getTemplates } from "~/models/template.server";
 
 /**
  * Load new post page data. When draftId or templateId is in the URL, load that for composer prefill.

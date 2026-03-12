@@ -1,56 +1,28 @@
-import {
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useSearchParams,
-} from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { Hash } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo } from "react";
 
-import { type ToastMessage } from "~/components/types";
 import { Button } from "~/components/ui/button";
 import MediaModal from "~/components/ui/MediaModal";
 import Toast from "~/components/ui/Toast";
+import { DraftPickerModal } from "~/features/posts/drafts";
+import { useBulkPostsPageState } from "~/features/posts/hooks/useBulkPostsPageState";
 import {
-  type BulkPost,
-  type PreparedEvent,
-  handleBulkQueueUpdate as handleBulkQueueUpdateHandler,
-  handleBulkRecyclableToggle as handleBulkRecyclableToggleHandler,
-  handleCaptionChange as handleCaptionChangeHandler,
-  handleDateChange as handleDateChangeHandler,
-  handleFileChange as handleFileChangeHandler,
-  handleIsRecyclableChange as handleIsRecyclableChangeHandler,
-  handleQueueTypeChange as handleQueueTypeChangeHandler,
-  handleRemovePost as handleRemovePostHandler,
-  handleScheduleIntervalClick as handleScheduleIntervalClickHandler,
-} from "~/features/posts/server";
-import type { RepostConditions } from "~/features/posts/types";
-import {
-  useLocalDraft,
   BulkPostsActionButtons,
   BulkPostsSchedulingPanel,
   BulkPostsTable,
   BulkPostsUploadArea,
-  DraftPickerModal,
   PostConfirmation,
   PublishResultModal,
 } from "~/features/posts/ui";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
-import { getFileUrlArrayForDraft } from "~/features/posts/utils/bulk-posts.client";
 import {
   extractLoaderData,
   type BulkPostsLoaderData,
 } from "~/features/posts/utils/bulkposts-loader.utils";
-import { createBulkPostClientId } from "~/features/posts/utils/client-id";
 import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
-import { useOptionalUser } from "~/lib/remix-utils";
-import {
-  addHours,
-  formatForDateTimeLocal,
-  nowInTimezone,
-} from "~/lib/temporal";
 import { isVideoFile } from "~/utils/media-helpers";
 
 import { BulkPostsSubmitButton } from "./BulkPostsSubmitButton";
@@ -79,172 +51,65 @@ export default function BulkPostsPage() {
     groupId,
     bulkDraftGroupPosts,
   }: BulkPostsLoaderData = extractLoaderData(data);
-  const [posts, setPosts] = useState<BulkPost[]>([]);
-  const [displayedHashtags, setDisplayedHashtags] = useState<string | string[]>(
-    tags
-  );
-  const [_selectedQueueType, setSelectedQueueType] = useState("unassigned");
-  const fetcher = useFetcher<{
-    success?: boolean;
-    fileUrls?: Array<{
-      fileUrl: string;
-      scheduledFor: string;
-      queueType: string;
-    }>;
-  }>();
-  const isSubmitting = fetcher.state !== "idle";
-  const userOptional = useOptionalUser();
-  const user = userOptional ?? null;
-  const scheduleIntervals = user?.scheduleInterval
-    ? Array.isArray(user.scheduleInterval)
-      ? user.scheduleInterval
-          .map((s) => (typeof s === "string" ? parseInt(s, 10) : s))
-          .filter((n): n is number => !isNaN(n))
-      : []
-    : undefined;
 
-  const [preparedEvents, setPreparedEvents] = useState<PreparedEvent[]>([]);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState({
-    current: 0,
-    total: 0,
+  const { state, handlers } = useBulkPostsPageState({
+    tags,
+    queueTypes,
+    hashTagPresets,
+    mode,
+    groupId,
+    bulkDraftGroupPosts,
   });
-  const [preparationProgress, setPreparationProgress] = useState({
-    current: 0,
-    total: 0,
-    stage: "",
-  });
-  const [firstItemTimeManuallyChanged, setFirstItemTimeManuallyChanged] =
-    useState(false);
-  const [isPreviewSubmitting, setIsPreviewSubmitting] = useState(false);
-  const [toast, setToast] = useState<ToastMessage | null>(null);
-  const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
-  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
-  const [uploadProvider, setUploadProvider] = useState<string | null>(null);
-  const [useHashtagPresets, setUseHashtagPresets] = useState(false);
-  const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState<
-    string | null
-  >(null);
-  const [selectedHashtags, setSelectedHashtags] = useState("");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-
-  // Modal state for bulk scheduling success
-  const [showPublishModal, setShowPublishModal] = useState(false);
-  const [modalPostId, setModalPostId] = useState<string | null>(null);
-  const [bulkSuccessLastAt, setBulkSuccessLastAt] = useState<string | null>(
-    null
-  );
-  const [bulkSuccessQueueSummary, setBulkSuccessQueueSummary] = useState<Record<
-    string,
-    number
-  > | null>(null);
-  const [modalPost, setModalPost] = useState<{
-    id: string;
-    publishAttemptId: string | null;
-    currentState?: string | null;
-    scheduledAtUtc?: string | null;
-  } | null>(null);
-  const [modalLongFormPost, setModalLongFormPost] = useState<{
-    id: string;
-    publishAttemptId: string | null;
-    currentState?: string | null;
-    scheduledAtUtc?: string | null;
-  } | null>(null);
-  const [bulkPostCount, setBulkPostCount] = useState<number | null>(null);
-  const [bulkRepostConditions, setBulkRepostConditions] =
-    useState<RepostConditions | null>(null);
-
-  const bulkDraftKey = "bulk-posts-draft";
   const {
-    restored: bulkLocalRestored,
-    saveSnapshot: saveBulkLocalSnapshot,
-    clearSnapshot: clearBulkLocalSnapshot,
-  } = useLocalDraft<{
-    rows: Array<{
-      caption: string;
-      queueType: string;
-      scheduledFor: string;
-      fileUrl?: string | string[];
-      isRecyclable: boolean;
-    }>;
-    savedAt: number;
-  }>(bulkDraftKey, !!groupId, 2000);
+    posts,
+    setPosts,
+    displayedHashtags,
+    preparedEvents,
+    setPreparedEvents,
+    showConfirmation,
+    setShowConfirmation,
+    isProcessing,
+    setIsProcessing,
+    isPreviewSubmitting,
+    setIsPreviewSubmitting,
+    preparationProgress,
+    setPreparationProgress,
+    firstItemTimeManuallyChanged: _firstItemTimeManuallyChanged,
+    toast,
+    setToast,
+    selectedMedia,
+    isMediaModalOpen,
+    uploadProvider,
+    useHashtagPresets,
+    setUseHashtagPresets,
+    selectedHashtagPresetId,
+    selectedHashtags,
+    showPublishModal,
+    setShowPublishModal,
+    modalPostId,
+    setModalPostId,
+    modalPost,
+    setModalPost,
+    modalLongFormPost,
+    setModalLongFormPost,
+    bulkPostCount,
+    setBulkPostCount,
+    bulkSuccessLastAt,
+    setBulkSuccessLastAt,
+    bulkSuccessQueueSummary,
+    setBulkSuccessQueueSummary,
+    bulkRepostConditions,
+    setBulkRepostConditions,
+    bulkDraftPickerOpen,
+    setBulkDraftPickerOpen,
+    scheduleIntervals,
+    user,
+    fetcher,
+    isSubmitting,
+    navigate,
+    processingProgress,
+  } = state;
 
-  const bulkLocalRestoredAppliedRef = useRef(false);
-  useEffect(() => {
-    if (
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive: restored can be partial
-      !bulkLocalRestored?.rows?.length ||
-      groupId ||
-      bulkLocalRestoredAppliedRef.current
-    )
-      return;
-    bulkLocalRestoredAppliedRef.current = true;
-    const initialPosts: BulkPost[] = bulkLocalRestored.rows.map((r) => ({
-      clientId: createBulkPostClientId(),
-      files: [],
-      caption: r.caption,
-      queueType: r.queueType,
-      scheduledFor: r.scheduledFor,
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for parsed JSON
-      isRecyclable: r.isRecyclable ?? false,
-      fileUrl: r.fileUrl,
-    }));
-    setPosts(initialPosts);
-  }, [bulkLocalRestored, groupId, setPosts]);
-
-  useEffect(() => {
-    if (groupId) return;
-    saveBulkLocalSnapshot({
-      rows: posts.map((p) => ({
-        caption: p.caption,
-        queueType: p.queueType,
-        scheduledFor: p.scheduledFor,
-        fileUrl: p.fileUrl,
-        isRecyclable: p.isRecyclable,
-      })),
-    });
-  }, [groupId, posts, saveBulkLocalSnapshot]);
-
-  useEffect(() => {
-    if (fetcher.state === "submitting") {
-      clearBulkLocalSnapshot();
-    }
-  }, [fetcher.state, clearBulkLocalSnapshot]);
-
-  // Prefill table when opening a bulk draft group
-  useEffect(() => {
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- API/DB types may be optional */
-    if (bulkDraftGroupPosts.length > 0) {
-      const initialPosts: BulkPost[] = bulkDraftGroupPosts.map((p) => {
-        const scheduledAt =
-          p.scheduledAtUtc instanceof Date
-            ? p.scheduledAtUtc
-            : typeof p.scheduledAtUtc === "string"
-              ? new Date(p.scheduledAtUtc)
-              : null;
-        return {
-          clientId: createBulkPostClientId(),
-          files: [],
-          caption: p.caption ?? "",
-          queueType: p.queueType?.name ?? "unassigned",
-          scheduledFor: scheduledAt
-            ? String(Math.floor(scheduledAt.getTime() / 1000))
-            : "",
-          isRecyclable: p.isRecyclable ?? false,
-          fileUrl: Array.isArray(p.fileUrl)
-            ? p.fileUrl
-            : (p.fileUrl ?? undefined),
-        };
-      });
-      setPosts(initialPosts);
-    }
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-  }, [bulkDraftGroupPosts.length]); // eslint-disable-line react-hooks/exhaustive-deps -- only run when opening a group
-
-  // Use extracted hooks
   useBulkPostsState({ mode, posts, setPosts });
   const { prepareEvents, validatePostsForPreview } = useBulkPostEvents({
     posts,
@@ -266,224 +131,6 @@ export default function BulkPostsPage() {
     [validatePostsForPreview]
   );
 
-  // Fetch upload provider on component mount
-  useEffect(() => {
-    void (async () => {
-      try {
-        const res = await fetch("/api/user-upload-provider");
-        const data: unknown = await res.json();
-        const provider =
-          data &&
-          typeof data === "object" &&
-          !Array.isArray(data) &&
-          "provider" in data &&
-          typeof (data as { provider?: unknown }).provider === "string"
-            ? (data as { provider: string }).provider
-            : null;
-        setUploadProvider(provider);
-      } catch (err: unknown) {
-        const { handleErrorSafely } = require("~/lib/error-handler.client") as {
-          handleErrorSafely: (
-            error: unknown,
-            context: { component: string; action: string }
-          ) => void;
-        };
-        handleErrorSafely(err, {
-          component: "BulkPosts",
-          action: "fetchUploadProvider",
-        });
-      }
-    })();
-  }, []);
-
-  // Wrapper functions that delegate to extracted handlers
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const userDeps = user
-      ? {
-          id: user.id,
-          timezone: user.timezone ?? undefined,
-          scheduleInterval: scheduleIntervals,
-        }
-      : null;
-    void handleFileChangeHandler(e, {
-      posts,
-      setPosts,
-      user: userDeps,
-      scheduleIntervals,
-      setIsProcessing,
-      setProcessingProgress,
-      setFirstItemTimeManuallyChanged,
-    });
-  };
-
-  const handleCaptionChange = (index: number, value: string) => {
-    handleCaptionChangeHandler(index, value, posts, setPosts);
-  };
-
-  const handleDateChange = (index: number, value: string) => {
-    handleDateChangeHandler(
-      index,
-      value,
-      posts,
-      setPosts,
-      setFirstItemTimeManuallyChanged
-    );
-
-    // When the first post time is manually changed, re-anchor interval expansion
-    // so subsequent posts follow the queue interval from this new first time.
-    if (index !== 0 || !value || value.trim() === "") {
-      return;
-    }
-    const firstQueueType = posts[0]?.queueType;
-    if (!firstQueueType || firstQueueType === "unassigned") {
-      return;
-    }
-    const updatedPosts = posts.map((post, postIndex) =>
-      postIndex === 0 ? { ...post, scheduledFor: value } : post
-    );
-    const userDeps = user
-      ? {
-          id: user.id,
-          timezone: user.timezone ?? undefined,
-          scheduleInterval: scheduleIntervals,
-        }
-      : null;
-    void handleBulkQueueUpdateHandler(firstQueueType, {
-      posts: updatedPosts,
-      setPosts,
-      queueTypes,
-      tags,
-      user: userDeps,
-      setDisplayedHashtags,
-      setSelectedQueueType,
-      firstItemTimeManuallyChanged: true,
-    });
-  };
-
-  const handleIsRecyclableChange = (index: number, checked: boolean) => {
-    handleIsRecyclableChangeHandler(index, checked, posts, setPosts);
-  };
-
-  const handleMediaClick = (mediaSrc: string) => {
-    setSelectedMedia(mediaSrc);
-    setIsMediaModalOpen(true);
-  };
-
-  const handleCloseMediaModal = () => {
-    setIsMediaModalOpen(false);
-    setSelectedMedia(null);
-  };
-
-  const handleHashtagPresetSelect = (
-    presetId: string | null,
-    hashtags: string
-  ) => {
-    setSelectedHashtagPresetId(presetId);
-    setSelectedHashtags(hashtags);
-  };
-
-  const handleBulkRecyclableToggle = () => {
-    handleBulkRecyclableToggleHandler(posts, setPosts);
-  };
-
-  const handleRepostSchedulesChange = (
-    index: number,
-    list: Array<{ value: number; unit: "hours" | "minutes" }>
-  ) => {
-    setPosts((prev) =>
-      prev.map((p, i) => (i === index ? { ...p, repostSchedules: list } : p))
-    );
-  };
-
-  const handleQuoteSchedulesChange = (
-    index: number,
-    list: Array<{
-      value: number;
-      unit: "hours" | "minutes";
-      caption?: string;
-    }>
-  ) => {
-    setPosts((prev) =>
-      prev.map((p, i) => (i === index ? { ...p, quoteSchedules: list } : p))
-    );
-  };
-
-  const handleRepostAll = (delay: {
-    value: number;
-    unit: "hours" | "minutes";
-  }) => {
-    setPosts((prev) =>
-      prev.map((p) => ({
-        ...p,
-        repostSchedules: [{ value: delay.value, unit: delay.unit }],
-      }))
-    );
-  };
-
-  const handleQueueTypeChange = async (index: number, value: string) => {
-    const userDeps = user
-      ? {
-          id: user.id,
-          timezone: user.timezone ?? undefined,
-          scheduleInterval: scheduleIntervals,
-        }
-      : null;
-    await handleQueueTypeChangeHandler(index, value, {
-      posts,
-      setPosts,
-      queueTypes,
-      tags,
-      user: userDeps,
-      setDisplayedHashtags,
-      setSelectedQueueType,
-    });
-  };
-
-  const handleRemovePost = (index: number) => {
-    handleRemovePostHandler(index, posts, setPosts);
-  };
-
-  const handleScheduleIntervalClick = (interval: number) => {
-    handleScheduleIntervalClickHandler(
-      interval,
-      posts,
-      setPosts,
-      firstItemTimeManuallyChanged
-    );
-  };
-
-  const handleBulkQueueUpdate = async (queueType: string) => {
-    const userDeps = user
-      ? {
-          id: user.id,
-          timezone: user.timezone ?? undefined,
-          scheduleInterval: scheduleIntervals,
-        }
-      : null;
-    const count = posts.length;
-    await handleBulkQueueUpdateHandler(queueType, {
-      posts,
-      setPosts,
-      queueTypes,
-      tags,
-      user: userDeps,
-      setDisplayedHashtags,
-      setSelectedQueueType,
-      firstItemTimeManuallyChanged,
-    });
-    setToast({
-      type: "success",
-      message: `Applied ${queueType} to ${count} post${count !== 1 ? "s" : ""}`,
-    });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  // Posts changes now silent for production
-  useEffect(() => {
-    // State tracking disabled for production
-  }, [posts]);
-
-  // Memoize preview URLs and file types (one array per row)
   const previewData = useMemo(() => {
     const data = new Map<
       number,
@@ -518,179 +165,6 @@ export default function BulkPostsPage() {
     };
   }, [previewData]);
 
-  // Check for bulk scheduling success URL param
-  useEffect(() => {
-    const bulkScheduled = searchParams.get("bulkScheduled");
-    const count = searchParams.get("count");
-    const firstPostId = searchParams.get("firstPostId");
-    const lastScheduledAt = searchParams.get("lastScheduledAt");
-    const queueSummaryRaw = searchParams.get("queueSummary");
-
-    if (
-      bulkScheduled === "true" &&
-      firstPostId &&
-      !modalPostId &&
-      !showPublishModal
-    ) {
-      const postCount = count ? parseInt(count, 10) : null;
-      setBulkPostCount(postCount);
-      setBulkSuccessLastAt(lastScheduledAt ?? null);
-      try {
-        setBulkSuccessQueueSummary(
-          queueSummaryRaw
-            ? (JSON.parse(queueSummaryRaw) as Record<string, number>)
-            : null
-        );
-      } catch {
-        setBulkSuccessQueueSummary(null);
-      }
-
-      // Use setTimeout to avoid setState in effect warning
-      setTimeout(() => {
-        setModalPostId(firstPostId);
-      }, 0);
-
-      // Fetch post data using fetch directly for API routes
-      void (async () => {
-        try {
-          const res = await fetch(`/api/posts/${firstPostId}`);
-          if (!res.ok) {
-            throw new Error(`Failed to fetch: ${res.status}`);
-          }
-          const data = (await res.json()) as {
-            post?: {
-              id: string;
-              publishAttemptId: string | null;
-              currentState?: string | null;
-              scheduledAtUtc?: string | null;
-            };
-            longFormPost?: {
-              id: string;
-              publishAttemptId: string | null;
-              currentState?: string | null;
-              scheduledAtUtc?: string | null;
-            };
-            error?: string;
-          };
-
-          if (data.post || data.longFormPost) {
-            setTimeout(() => {
-              setModalPost(data.post ?? null);
-              setModalLongFormPost(data.longFormPost ?? null);
-              setShowPublishModal(true);
-            }, 0);
-            // Clear URL params to prevent re-showing on refresh
-            const newSearchParams = new URLSearchParams(searchParams);
-            newSearchParams.delete("bulkScheduled");
-            newSearchParams.delete("count");
-            newSearchParams.delete("firstPostId");
-            newSearchParams.delete("lastScheduledAt");
-            newSearchParams.delete("queueSummary");
-            setSearchParams(newSearchParams, { replace: true });
-          }
-        } catch (error) {
-          console.error("Failed to fetch post data:", error);
-          // Reset state on error
-          setTimeout(() => {
-            setModalPostId(null);
-          }, 0);
-        }
-      })();
-    }
-  }, [searchParams, modalPostId, showPublishModal, setSearchParams]);
-
-  const [bulkDraftPickerOpen, setBulkDraftPickerOpen] = useState(false);
-
-  const addEmptyRows = (count: number) => {
-    const userTimezone = user?.timezone ?? "UTC";
-    const now = nowInTimezone(userTimezone);
-    const newPosts: BulkPost[] = Array.from({ length: count }, (_, i) => ({
-      clientId: createBulkPostClientId(),
-      files: [],
-      caption: "",
-      queueType: "unassigned",
-      scheduledFor:
-        posts.length === 0 && i === 0
-          ? formatForDateTimeLocal(addHours(now, 1), userTimezone)
-          : "",
-      isRecyclable: false,
-    }));
-    setPosts((prev) => [...prev, ...newPosts]);
-  };
-
-  const handleRowFileSelect = async (index: number, file: File | null) => {
-    if (!file) return;
-    const { isVideoFile } = await import("~/utils/media-helpers");
-    const MAX_IMAGE = 10 * 1024 * 1024;
-    const MAX_VIDEO = 100 * 1024 * 1024;
-    const isVideo = isVideoFile(file);
-    if (isVideo && file.size > MAX_VIDEO) {
-      alert("Video exceeds 100MB limit.");
-      return;
-    }
-    if (!isVideo && file.size > MAX_IMAGE) {
-      alert("Image exceeds 10MB limit.");
-      return;
-    }
-    let processed: File = file;
-    if (!isVideo) {
-      const { resizeImage } = await import("~/features/upload/image-resize");
-      processed = await resizeImage(file);
-    }
-    setPosts((prev) =>
-      prev.map((p, i) =>
-        i === index ? { ...p, files: [...p.files, processed] } : p
-      )
-    );
-  };
-
-  const handleRowFileRemove = (index: number, mediaIndex: number) => {
-    setPosts((prev) =>
-      prev.map((p, i) => {
-        if (i !== index) return p;
-        const files = p.files;
-        const fileUrlArr = Array.isArray(p.fileUrl)
-          ? p.fileUrl
-          : typeof p.fileUrl === "string" && p.fileUrl
-            ? [p.fileUrl]
-            : [];
-        if (mediaIndex < files.length) {
-          return { ...p, files: files.filter((_, j) => j !== mediaIndex) };
-        }
-        const urlIndex = mediaIndex - files.length;
-        if (urlIndex >= 0 && urlIndex < fileUrlArr.length) {
-          const next = fileUrlArr.filter((_, j) => j !== urlIndex);
-          return { ...p, fileUrl: next.length > 0 ? next : undefined };
-        }
-        return p;
-      })
-    );
-  };
-
-  const handleSaveDraftFromTable = () => {
-    if (posts.length === 0) return;
-    const formData = new FormData();
-    posts.forEach((p) => {
-      formData.append("fileUrl", JSON.stringify(getFileUrlArrayForDraft(p)));
-      formData.append("caption", JSON.stringify(p.caption));
-      formData.append("queueType", p.queueType);
-      formData.append("scheduledFor", p.scheduledFor);
-      formData.append("isRecyclable", p.isRecyclable ? "true" : "false");
-      formData.append("originalPostId", p.originalPostId ?? "");
-    });
-    formData.append("_action", "save_as_draft");
-    if (groupId) {
-      formData.append("groupId", groupId);
-    }
-    const currentUrl = new URL(window.location.href);
-    const actionUrl = `/dashboard/bulkposts${currentUrl.search}`;
-    fetcher.submit(formData, {
-      method: "post",
-      encType: "multipart/form-data",
-      action: actionUrl,
-    });
-  };
-
   return (
     <div className="p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
@@ -702,7 +176,7 @@ export default function BulkPostsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => addEmptyRows(1)}
+                onClick={() => handlers.addEmptyRows(1)}
                 disabled={isProcessing}
               >
                 + Add 1 Post
@@ -711,7 +185,7 @@ export default function BulkPostsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => addEmptyRows(5)}
+                onClick={() => handlers.addEmptyRows(5)}
                 disabled={isProcessing}
               >
                 + Add 5
@@ -720,7 +194,7 @@ export default function BulkPostsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => addEmptyRows(10)}
+                onClick={() => handlers.addEmptyRows(10)}
                 disabled={isProcessing}
               >
                 + Add 10
@@ -766,7 +240,7 @@ export default function BulkPostsPage() {
             <BulkPostsUploadArea
               isProcessing={isProcessing}
               processingProgress={processingProgress}
-              onFileChange={handleFileChange}
+              onFileChange={handlers.handleFileChange}
               uploadProvider={uploadProvider}
             />
           ) : null}
@@ -779,16 +253,16 @@ export default function BulkPostsPage() {
             hashTagPresets={hashTagPresets}
             selectedHashtagPresetId={selectedHashtagPresetId}
             useHashtagPresets={useHashtagPresets}
-            handleScheduleIntervalClick={handleScheduleIntervalClick}
+            handleScheduleIntervalClick={handlers.handleScheduleIntervalClick}
             handleBulkQueueUpdate={(queueType) =>
-              void handleBulkQueueUpdate(queueType)
+              void handlers.handleBulkQueueUpdate(queueType)
             }
-            handleHashtagPresetSelect={handleHashtagPresetSelect}
+            handleHashtagPresetSelect={handlers.handleHashtagPresetSelect}
             setUseHashtagPresets={setUseHashtagPresets}
-            handleBulkRecyclableToggle={handleBulkRecyclableToggle}
+            handleBulkRecyclableToggle={handlers.handleBulkRecyclableToggle}
             onRepostAll={
               mode !== "repost" && mode !== "quote"
-                ? handleRepostAll
+                ? handlers.handleRepostAll
                 : undefined
             }
           />
@@ -879,33 +353,34 @@ export default function BulkPostsPage() {
                 posts={posts}
                 queueTypes={queueTypes}
                 previewData={previewData}
-                handleCaptionChange={handleCaptionChange}
-                handleDateChange={handleDateChange}
-                handleIsRecyclableChange={handleIsRecyclableChange}
-                handleRemovePost={handleRemovePost}
+                handleCaptionChange={handlers.handleCaptionChange}
+                handleDateChange={handlers.handleDateChange}
+                handleIsRecyclableChange={handlers.handleIsRecyclableChange}
+                handleRemovePost={handlers.handleRemovePost}
                 handleQueueTypeChange={(index, value) =>
-                  void handleQueueTypeChange(index, value)
+                  void handlers.handleQueueTypeChange(index, value)
                 }
-                handleMediaClick={handleMediaClick}
+                handleMediaClick={handlers.handleMediaClick}
                 validationErrorsByIndex={validationResult.byPost}
                 onRowFileSelect={
                   mode !== "repost" && mode !== "quote"
-                    ? (idx, file) => void handleRowFileSelect(idx, file)
+                    ? (idx, file) =>
+                        void handlers.handleRowFileSelect(idx, file)
                     : undefined
                 }
                 onRowFileRemove={
                   mode !== "repost" && mode !== "quote"
-                    ? handleRowFileRemove
+                    ? handlers.handleRowFileRemove
                     : undefined
                 }
                 onRepostSchedulesChange={
                   mode !== "repost" && mode !== "quote"
-                    ? handleRepostSchedulesChange
+                    ? handlers.handleRepostSchedulesChange
                     : undefined
                 }
                 onQuoteSchedulesChange={
                   mode !== "repost" && mode !== "quote"
-                    ? handleQuoteSchedulesChange
+                    ? handlers.handleQuoteSchedulesChange
                     : undefined
                 }
                 showAlsoSchedule={Boolean(
@@ -943,7 +418,7 @@ export default function BulkPostsPage() {
                     isProcessing ||
                     isPreviewSubmitting
                   }
-                  onClick={handleSaveDraftFromTable}
+                  onClick={() => handlers.handleSaveDraftFromTable(groupId)}
                   className="w-full sm:w-auto"
                 >
                   Save as draft
@@ -981,7 +456,7 @@ export default function BulkPostsPage() {
           src={selectedMedia}
           alt="Media content"
           isOpen={isMediaModalOpen}
-          onClose={handleCloseMediaModal}
+          onClose={handlers.handleCloseMediaModal}
         />
       ) : null}
 

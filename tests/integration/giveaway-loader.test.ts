@@ -12,7 +12,7 @@ vi.mock("~/lib/nostrwebsocket.server", () => ({
   connectToPrimalCache: vi.fn(),
 }));
 
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getRecentPublishedPosts: vi.fn(),
 }));
 
@@ -51,6 +51,7 @@ import {
 import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";
 import { fetchGiveawayParticipants } from "~/features/giveaway/giveaway.server";
 import type { RelatedEvent } from "~/features/giveaway/types";
+import { getRecentPublishedPosts } from "~/features/posts/server";
 import {
   getGiveawayBlacklist,
   getUserById,
@@ -58,7 +59,6 @@ import {
 } from "~/features/user";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
-import { getRecentPublishedPosts } from "~/models/post.queries.server";
 
 describe("Giveaway Loader", () => {
   beforeEach(() => {

@@ -1,6 +1,7 @@
 import { useLoaderData, useSearchParams, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
+import { UnifiedComposer } from "~/features/posts/composer";
 import {
   convertJsonValueToScheduleConfig,
   type HashTagPreset,
@@ -11,7 +12,6 @@ import {
   NewPostHeader,
   PublishResultModal,
   RelaySelectorModal,
-  UnifiedComposer,
 } from "~/features/posts/ui";
 
 import {

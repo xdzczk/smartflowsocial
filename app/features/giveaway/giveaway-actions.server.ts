@@ -2,13 +2,13 @@
  * Giveaway CRUD and lifecycle actions: create, preview, reroll, exclude, lock, cancel, markPaidOut.
  */
 
+import { getUserSubscription } from "~/features/payments/data";
 import type { UserSubscription } from "~/features/payments/types";
 import {
   getUserPlanType,
   getGiveawayPlanLimits,
 } from "~/features/payments/types";
 import { getUserById } from "~/features/user";
-import { getUserSubscription } from "~/models/payment.server";
 
 import { Prisma } from "./data/giveaway-prisma-types.server";
 import type {

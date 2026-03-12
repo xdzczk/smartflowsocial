@@ -1,6 +1,6 @@
 /**
  * Integration tests for payment model queries
- * Tests app/models/payment.server.ts query functions
+ * Tests app/features/payments/data payment query functions
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -21,7 +21,7 @@ import {
   getUserSubscription,
   getUserPaymentHistory,
   getPlanById,
-} from "~/models/payment.server";
+} from "~/features/payments/data";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 // Create mock inline to avoid circular dependency

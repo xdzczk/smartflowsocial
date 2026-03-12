@@ -1,5 +1,5 @@
 /**
- * Unit tests for remote-signer-sessions-storage (getStorageKey, generateId, migrateV1ToV2, normalize helpers).
+ * Unit tests for remote-signer-sessions-storage (getStorageKey, generateId, getStorage V1→V2 migration, normalize helpers).
  * Tests app/features/auth/signer/remote-signer-sessions-storage.client.ts
  */
 
@@ -120,6 +120,18 @@ describe("remote-signer-sessions-storage", () => {
           globalThis as unknown as { localStorage: Storage }
         ).localStorage.getItem(keyV2)
       ).toBeTruthy();
+    });
+
+    it("clears V1 keys after migrating to V2", () => {
+      setCurrentUserNpub("npub1abc");
+      const keyV1 = getStorageKey();
+      const v1 = { version: 1 as const, sessions: [] as unknown[] };
+      const ls = (globalThis as unknown as { localStorage: Storage })
+        .localStorage as MemoryStorage;
+      ls.setItem(keyV1, JSON.stringify(v1));
+      getStorage();
+      expect(ls.getItem(keyV1)).toBeNull();
+      expect(ls.getItem(getStorageKeyV2())).toBeTruthy();
     });
   });
 

@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("~/models/template.server", () => ({
+vi.mock("~/features/templates/services/template-data.server", () => ({
   getTemplates: vi.fn(),
 }));
 
@@ -16,9 +16,9 @@ vi.mock("~/features/user", () => ({
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
+import { getTemplates } from "~/features/templates/services/template-data.server";
 import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
 import { getUserById } from "~/features/user";
-import { getTemplates } from "~/models/template.server";
 
 describe("Templates Loader", () => {
   beforeEach(() => {

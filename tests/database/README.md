@@ -111,8 +111,8 @@ describeDatabase("Post Model", () => {
 ### Testing Model Functions
 
 ```typescript
-import { createPost } from "~/models/post.commands.server";
-import { getUserById } from "~/models/user.server";
+import { createPost } from "~/features/posts/server";
+import { getUserById } from "~/features/user";
 import { withDatabase } from "~/tests/database/database-test-helpers";
 
 it("should create post using model function", async () => {

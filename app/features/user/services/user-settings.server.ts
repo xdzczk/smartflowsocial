@@ -144,16 +144,16 @@ function resolveFallbackBlossomProvider(isPaidActive: boolean): UploadProvider {
   return isPaidActive ? "BLOSSOM_SFS" : "BLOSSOM_PRIMAL";
 }
 
-function normalizeLegacyUploadProvider(
+function normalizeUploadProvider(
   provider: string | null | undefined
-): UploadProvider | "BLOSSOM" | null {
+): UploadProvider | null {
   if (!provider) {
     return null;
   }
 
   const providerStr = String(provider);
   if (providerStr === "BLOSSOM") {
-    return "BLOSSOM";
+    return "BLOSSOM_PRIMAL";
   }
   if (
     providerStr === "S3" ||
@@ -171,9 +171,8 @@ export function resolveUploadProviderWithTierDefaults(params: {
   persistedProvider: string | null | undefined;
   isPaidActive: boolean;
 }): UploadProvider {
-  const normalized = normalizeLegacyUploadProvider(params.persistedProvider);
+  const normalized = normalizeUploadProvider(params.persistedProvider);
 
-  // Preserve explicit Blossom choices.
   if (
     normalized === "BLOSSOM_PRIMAL" ||
     normalized === "BLOSSOM_BLOSSTR" ||
@@ -183,21 +182,12 @@ export function resolveUploadProviderWithTierDefaults(params: {
     return normalized;
   }
 
-  // Legacy plain "BLOSSOM" maps to Primal.
-  if (normalized === "BLOSSOM") {
-    return "BLOSSOM_PRIMAL";
-  }
-
-  // Legacy/implicit S3 (or missing) resolves by tier defaults.
   return resolveFallbackBlossomProvider(params.isPaidActive);
 }
 
 /**
- * Gets user's upload provider
- * Resolves legacy and tier defaults:
- * - explicit Blossom choice wins
- * - legacy BLOSSOM => BLOSSOM_PRIMAL
- * - S3/missing => tier default (free => BLOSSOM_PRIMAL, paid => BLOSSOM_SFS)
+ * Gets user's upload provider.
+ * Explicit Blossom choice wins; S3/missing resolves by tier default (free => BLOSSOM_PRIMAL, paid => BLOSSOM_SFS).
  */
 export async function getUserUploadProvider(
   userId: string
@@ -337,7 +327,7 @@ export async function getUserMutedList(userId: string): Promise<{
 /**
  * Gets user's push notification preferences
  */
-export { getUserIdWithRunwayLowNotificationEnabled } from "~/models/user-notifications.server";
+export { getUserIdWithRunwayLowNotificationEnabled } from "~/features/user/services/user-notifications.server";
 
 export async function getUserPushNotificationPreferences(
   userId: string

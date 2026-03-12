@@ -10,7 +10,7 @@ const mockGetPostById = vi.fn();
 const mockFindQueueTypeByIdAndUser = vi.fn();
 const mockFindQueueTypeFullByIdAndUser = vi.fn();
 
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getRecentPublishedPosts: (...args: unknown[]) =>
     mockGetRecentPublishedPosts(...args),
   getPostById: (...args: unknown[]) => mockGetPostById(...args),

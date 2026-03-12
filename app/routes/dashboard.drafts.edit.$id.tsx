@@ -6,7 +6,7 @@ import {
 } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import { handleDraftEditAction } from "~/features/posts/server";
+import { handleDraftEditAction } from "~/features/posts/server/drafts";
 import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireUserId(request);

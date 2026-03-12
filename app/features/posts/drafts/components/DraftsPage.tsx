@@ -1,18 +1,14 @@
 import { Outlet, useParams, useSearchParams } from "@remix-run/react";
 import { useState } from "react";
 
+import { useDraftsInfiniteData, useDraftsState } from "~/features/posts/drafts";
+import { LongFormDetailsModal } from "~/features/posts/longform";
 import type {
   CombinedContent,
   LongFormPostData,
   PostData,
 } from "~/features/posts/server";
-import {
-  ContentListPageHeader,
-  LongFormDetailsModal,
-  PostDetailsModal,
-  useDraftsInfiniteData,
-  useDraftsState,
-} from "~/features/posts/ui";
+import { ContentListPageHeader, PostDetailsModal } from "~/features/posts/ui";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";

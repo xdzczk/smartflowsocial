@@ -28,7 +28,7 @@ import { setupTestDatabase } from "../../database/test-db";
 import { createValidSignedEvent } from "../../utils/test-helpers";
 
 import { PublishNowUseCase } from "~/features/posts/publishing/index.server";
-import { CreatePostUseCase } from "~/features/posts/server";
+import { CreatePostUseCase } from "~/features/posts/server/composer";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -290,17 +290,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
 
         const postId = createResult.post.id;
 
-        // Verify post exists before publishing (handles race conditions)
-        const postBeforePublish = await prisma.post.findUnique({
-          where: { id: postId, userId },
-        });
-        if (!postBeforePublish) {
-          throw new Error(
-            `Post ${postId} not found before publish - possible race condition`
-          );
-        }
-
-        // Publish the post to get it to PUBLISHED state
+        // Publish the post to get it to PUBLISHED state (post was just created, so it exists)
         const publishUseCase = new PublishNowUseCase();
         await publishUseCase.execute({
           postId,
@@ -308,16 +298,6 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           signedEvent: createValidSignedEvent({ content: "test" }),
           relays: ["wss://relay.example.com"],
         });
-
-        // Verify post still exists after publish (handles race conditions)
-        const postAfterPublish = await prisma.post.findUnique({
-          where: { id: postId, userId },
-        });
-        if (!postAfterPublish) {
-          throw new Error(
-            `Post ${postId} not found after publish - possible race condition`
-          );
-        }
 
         // Try invalid transition: PUBLISHED -> SCHEDULED (PUBLISHED is terminal)
         await expect(

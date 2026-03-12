@@ -9,6 +9,7 @@ import { getThreadViewWithCache } from "~/features/cache/thread-view-cache.serve
 import type { SignedEvent } from "~/features/nostr/types";
 import { toPostDTOArray } from "~/features/posts/dtos";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
+import { getPublishedPosts } from "~/features/posts/server";
 import type { PostData, QueueType } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
@@ -20,7 +21,6 @@ import {
 } from "~/features/user/services/user-settings.server";
 import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
-import { getPublishedPosts } from "~/models/post.queries.server";
 
 import { ENGAGEMENT_FEED_PAGE_SIZE } from "../constants";
 import { getEngagementItemStates } from "../engagement-mark-state.server";

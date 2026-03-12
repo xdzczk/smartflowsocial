@@ -6,6 +6,11 @@
 import { NWCClient } from "@getalby/sdk";
 import { LN, USD } from "@getalby/sdk/lnclient";
 
+import {
+  createRenewalPayment,
+  getOwnerNwcWithRelayOverrides,
+  updateUserSubscription,
+} from "~/features/payments/data";
 import { recordReferralEarningIfAny } from "~/features/referral/record-referral-earning.server";
 import {
   disableUserAccount,
@@ -17,11 +22,6 @@ import { createErrorResponse } from "~/lib/error-handler.server";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
-import {
-  createRenewalPayment,
-  getOwnerNwcWithRelayOverrides,
-  updateUserSubscription,
-} from "~/models/payment.server";
 
 import { getBitcoinRate } from "../btc.rate";
 import {

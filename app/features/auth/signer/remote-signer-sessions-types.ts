@@ -55,8 +55,17 @@ export interface RemoteSignerSessionRecord {
 }
 
 /**
- * Legacy view: connection + current session history. Used by getActiveSession/getSessionById
- * until all call sites use connections and sessions.
+ * Canonical view: connection plus its current session (if any).
+ * Use this instead of the flat RemoteSignerSession legacy view.
+ */
+export interface ConnectionWithCurrentSession {
+  connection: RemoteSignerConnection;
+  currentSession: RemoteSignerSessionRecord | null;
+}
+
+/**
+ * Legacy view: connection + current session history (flat). Prefer ConnectionWithCurrentSession.
+ * @deprecated Use ConnectionWithCurrentSession and read connection.* / currentSession?.history.
  */
 export interface RemoteSignerSession {
   id: string;

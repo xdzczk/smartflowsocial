@@ -16,20 +16,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { LongFormDetailsModal } from "~/features/posts/longform";
+import {
+  ScheduleNext7DaysCard,
+  ScheduleOverviewTargetModal,
+  SimpleRescheduleModal,
+} from "~/features/posts/scheduling";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { CombinedContent, QueueType } from "~/features/posts/types";
 import {
   ContentListPageHeader,
   EditPostModal,
   FlowView,
-  LongFormDetailsModal,
   PostDetailsModal,
   QueueHealth,
   QueueSelectionTabs,
   RunwaySettingsModal,
-  ScheduleNext7DaysCard,
-  ScheduleOverviewTargetModal,
-  SimpleRescheduleModal,
   Statistics,
   SuccessMessage,
   type FlowViewHandle,

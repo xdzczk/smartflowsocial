@@ -7,7 +7,8 @@
  *   - import { ... } from "~/features/posts/ui" for client-side code
  *
  * Usage:
- *   import { getScheduledDashboardData } from "~/features/posts/server";
+ *   import { loadDashboardData } from "~/features/posts/server";
+ *   import { loadScheduledData } from "~/features/posts/server/scheduling";
  *   import { AllContentListing } from "~/features/posts/ui";
  *
  * Legacy usage (still works but not recommended):

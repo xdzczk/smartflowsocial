@@ -11,6 +11,12 @@ import {
   type LongFormPostDTO,
 } from "~/features/posts/dtos";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
+import {
+  getScheduledLongFormPosts,
+  getPastLongFormPosts,
+  getScheduledPosts,
+  getPastPosts,
+} from "~/features/posts/server";
 import { filterPostsByQueueType } from "~/features/posts/services/post-filtering.server";
 import type {
   PostData,
@@ -24,11 +30,6 @@ import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
-import {
-  getScheduledLongFormPosts,
-  getPastLongFormPosts,
-} from "~/models/longformpost.server";
-import { getScheduledPosts, getPastPosts } from "~/models/post.queries.server";
 
 import type { PostType, Prisma } from "../../data/posts-prisma-types.server";
 

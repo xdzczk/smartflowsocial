@@ -14,7 +14,8 @@ export interface CreatePostData {
   content?: string;
   publishedAt?: Date;
   fileUrl: string[];
-  scheduledFor?: Date | string | number | null; // Supports string (legacy), Date, Unix timestamp, or null to clear
+  /** When to publish (UTC). Date or Unix seconds. Null to clear. */
+  scheduledAtUtc?: Date | number | null;
   nostrEventId?: string;
   signedEvent?: SignedEvent;
   nostrEvent?: NostrEvent;

@@ -1,3 +1,10 @@
+import {
+  BulkDraftsListing,
+  DraftBulkResume,
+  DraftsBulkActions,
+  DraftsTable,
+} from "~/features/posts/drafts";
+import { LongFormListing } from "~/features/posts/longform";
 import type {
   CombinedContent,
   LongFormPostData,
@@ -7,11 +14,6 @@ import type { QueueType } from "~/features/posts/types";
 import type { LongFormPostType } from "~/features/posts/ui";
 import {
   AllContentListing,
-  BulkDraftsListing,
-  DraftBulkResume,
-  DraftsBulkActions,
-  DraftsTable,
-  LongFormListing,
   PostTypeTabs,
   QueueSelectionTabs,
 } from "~/features/posts/ui";

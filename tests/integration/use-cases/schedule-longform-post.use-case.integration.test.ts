@@ -8,8 +8,10 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { CreateLongFormPostUseCase } from "~/features/posts/server";
-import { ScheduleLongFormPostUseCase } from "~/features/posts/server";
+import {
+  CreateLongFormPostUseCase,
+  ScheduleLongFormPostUseCase,
+} from "~/features/posts/server/longform";
 import { prisma } from "~/lib/prisma.server";
 import { fromDate } from "~/lib/temporal";
 

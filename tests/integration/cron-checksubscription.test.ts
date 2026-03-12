@@ -15,7 +15,7 @@ vi.mock("~/features/user", () => ({
   disableUserAccount: vi.fn(),
 }));
 
-vi.mock("~/models/payment.server", () => ({
+vi.mock("~/features/payments/data", () => ({
   createRenewalPayment: vi.fn(),
   getOwnerNwcWithRelayOverrides: vi.fn((ownerNwc: string) => ({
     credentials: ownerNwc,
@@ -64,15 +64,15 @@ vi.mock("~/features/payments/btc.rate", () => ({
 }));
 
 import {
+  createRenewalPayment,
+  updateUserSubscription,
+} from "~/features/payments/data";
+import {
   getEnabledUsersWithSubscriptions,
   disableUserAccount,
 } from "~/features/user";
 import { decrypt } from "~/lib/encryption.server";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
-import {
-  createRenewalPayment,
-  updateUserSubscription,
-} from "~/models/payment.server";
 
 describe("Cron Subscription Checker", () => {
   const TEST_USER_ID = "user-123";

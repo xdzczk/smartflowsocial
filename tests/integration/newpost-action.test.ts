@@ -70,7 +70,7 @@ global.fetch = vi.fn();
 
 import { createActionFormData, TEST_USER_ID } from "../utils/test-helpers";
 
-import { handleNewPostAction } from "~/features/posts/server";
+import { handleNewPostAction } from "~/features/posts/server/composer";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import {
   getUserById,

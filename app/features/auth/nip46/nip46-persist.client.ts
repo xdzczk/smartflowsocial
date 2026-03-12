@@ -12,7 +12,7 @@ import {
   setCurrentUserNpub,
   updateSession,
   type ActiveSignerConfig,
-  type RemoteSignerSession,
+  type ConnectionWithCurrentSession,
 } from "~/features/auth/signer";
 import { convertHexToNpub } from "~/lib/nostr-conversion";
 
@@ -22,15 +22,16 @@ import { convertHexToNpub } from "~/lib/nostr-conversion";
 export function persistNip46LoginSession(
   config: ActiveSignerConfig,
   pubkey: string
-): RemoteSignerSession {
+): ConnectionWithCurrentSession {
   setActiveSignerConfig(config);
   setCurrentUserNpub(convertHexToNpub(pubkey));
-  const connectionView = matchOrCreateSession(config, { signerPubkey: pubkey });
-  setActiveSession(connectionView.id);
+  const view = matchOrCreateSession(config, { signerPubkey: pubkey });
+  const connectionId = view.connection.id;
+  setActiveSession(connectionId);
   const detectedAppName = detectSignerAppName(config);
-  updateSession(connectionView.id, {
+  updateSession(connectionId, {
     metadata: {
-      ...connectionView.metadata,
+      ...view.connection.metadata,
       pubkey,
       signerAppName: detectedAppName,
       status: "active",
@@ -38,6 +39,6 @@ export function persistNip46LoginSession(
       lastActivityAt: Date.now(),
     },
   });
-  recordConnectionEvent(connectionView.id, { type: "connected", pubkey });
-  return connectionView;
+  recordConnectionEvent(connectionId, { type: "connected", pubkey });
+  return view;
 }

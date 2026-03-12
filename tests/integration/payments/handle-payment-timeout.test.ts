@@ -12,7 +12,7 @@ import {
   TEST_PAYMENT_ID,
 } from "../../utils/payment-test-helpers";
 
-import { handlePaymentTimeout } from "~/models/payment.server";
+import { handlePaymentTimeout } from "~/features/payments/data";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 // Create mock inline to avoid circular dependency

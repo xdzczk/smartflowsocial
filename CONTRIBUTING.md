@@ -137,7 +137,8 @@ To ensure a consistent and maintainable codebase, please follow these coding sta
 
 - **Routes**: `app/routes/` - Follow Remix file-based routing
 - **Components**: `app/components/` - Reusable UI components
-- **Models**: `app/models/` - Database models and server logic
+- **Data**: Database access lives in `app/features/*/data/` or `app/features/*/services/` (no
+  top-level models folder)
 - **Utils**: `app/utils/` - Utility functions and helpers
 - **Styles**: `app/tailwind.css` - Global styles
 
@@ -145,52 +146,17 @@ To ensure a consistent and maintainable codebase, please follow these coding sta
 
 To maintain clear separation of concerns, follow these strict boundaries:
 
-#### **`app/models/*` - Database Access Layer**
+#### **`app/features/*/data/` and `app/features/*/services/` - Data & Business Logic**
 
-- **Purpose**: Pure database access and persistence primitives
-- **What belongs here**:
-  - Prisma queries (CRUD operations)
-  - Database transactions
-  - Raw SQL queries (if needed)
-  - Data access patterns (find, create, update, delete)
+- **Purpose**: Data access and business logic live inside each feature. Use `data/` for
+  Prisma-backed reads/writes and `services/` for orchestration, loaders, and actions.
+- **What belongs in data/services**:
+  - Prisma queries (CRUD), transactions, data access
+  - Business workflows, permission checks, plan enforcement
+  - Feature-specific loaders, actions, and handlers
 - **What does NOT belong here**:
-  - Business logic or workflows
-  - Permission checks or authorization
-  - Plan enforcement or subscription validation
-  - Scheduling decisions or business rules
-  - Complex calculations or statistics (unless purely data aggregation)
-
-**Example**:
-
-```typescript
-// ✅ Good: Pure data access
-async function createPost(data: CreatePostData) {
-  return prisma.post.create({ data });
-}
-
-// ❌ Bad: Business logic in model
-async function createPostWithLogic(data: CreatePostData) {
-  if (user.subscription.status !== "active") {
-    throw new Error("Subscription required");
-  }
-  // ... business logic
-}
-```
-
-#### **`app/features/*` - Business Logic Layer**
-
-- **Purpose**: Business workflows, policies, and feature-specific logic
-- **What belongs here**:
-  - Business workflows and orchestration
-  - Permission checks and authorization
-  - Plan enforcement and subscription validation
-  - Scheduling decisions and business rules
-  - Feature-specific services and handlers
-  - Complex calculations and business logic
-- **What does NOT belong here**:
-  - Direct Prisma queries (use models instead)
-  - Database schema definitions
-  - Raw database operations
+  - Direct Prisma in routes (use feature APIs)
+  - Cross-feature internal imports (use feature public API)
 
 **Example**:
 
@@ -246,15 +212,11 @@ async function action({ request }: ActionFunctionArgs) {
   return handleCalendarAction(formData, userId, pubkey);
 }
 
-// ❌ Bad: Direct model imports in routes
+// ❌ Bad: Bypassing feature API (deep imports)
 async function badLoader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-
-  // ❌ Don't import models directly
-  const posts = await getScheduledPosts({ userId }); // BAD
-  const user = await getUserById(userId); // BAD
-
-  return json({ posts, user });
+  // Use feature loaders / public API, not raw data functions from other features
+  return json({ posts: [], user: null });
 }
 
 // ❌ Bad: Business logic in routes
@@ -280,11 +242,10 @@ async function badAction({ request }: ActionFunctionArgs) {
 
 #### **Summary Table**
 
-| Directory        | Purpose         | Contains                                             | Does NOT Contain                       |
-| ---------------- | --------------- | ---------------------------------------------------- | -------------------------------------- |
-| `app/models/*`   | Database access | Prisma queries, transactions, data access            | Business logic, permissions, workflows |
-| `app/features/*` | Business logic  | Workflows, permissions, plan enforcement, scheduling | Direct Prisma queries, HTTP handling   |
-| `app/routes/*`   | HTTP wiring     | Request parsing, response formatting, UI composition | Business logic, database queries       |
+| Directory        | Purpose               | Contains                                                                 | Does NOT Contain                 |
+| ---------------- | --------------------- | ------------------------------------------------------------------------ | -------------------------------- |
+| `app/features/*` | Data + business logic | data/: Prisma, CRUD; services/: loaders, actions, workflows, permissions | HTTP handling, route-only logic  |
+| `app/routes/*`   | HTTP wiring           | Request parsing, response formatting, UI composition                     | Business logic, direct DB access |
 
 **When in doubt**: Ask yourself "Is this about data access, business rules, or HTTP handling?" and
 place it accordingly.
@@ -326,10 +287,8 @@ import { getScheduledDashboardData } from "~/features/posts/services/dashboard-l
 
 ESLint rules automatically enforce these boundaries:
 
-- **Routes** cannot import from `~/models/*` directly (must use service layers)
 - **Routes** cannot import from feature internals (services/, hooks/, components/, utils/)
-- **Features** cannot import from other features' internals
-- **Models** cannot import from feature internals
+- **Features** cannot import from other features' internals (use public API)
 
 If you see an ESLint error about restricted imports, use the feature's public API or service layers
 instead.
@@ -337,11 +296,11 @@ instead.
 **Example ESLint Errors:**
 
 ```
-Routes cannot import from ~/models/* directly. Use feature service layers instead (e.g., ~/features/*/services/*.server.ts)
+Routes must use feature public API (index.ts), not internal services
 ```
 
-**Fix**: Change `import { getUserById } from "~/models/user.server"` to
-`import { loadUserData } from "~/features/user/services/user-profile.server"`
+**Fix**: Prefer feature loaders and public API, e.g.
+`import { loadUserData } from "~/features/user"` or the feature's server/loader entry point.
 
 ```
 Routes must use feature public API (index.ts), not internal services

@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 import { SchedulePostUseCase } from "~/features/posts/scheduling/index.server";
-import { CreatePostUseCase } from "~/features/posts/server";
+import { CreatePostUseCase } from "~/features/posts/server/composer";
 import {
   createOutboxEvent,
   getUnprocessedOutboxEvents,

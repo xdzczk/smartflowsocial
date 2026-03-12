@@ -5,13 +5,16 @@
 
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
 import {
+  getTemplatePrefill,
+  getTemplates,
+} from "~/features/templates/services/template-data.server";
+import {
   getUserById,
   getScheduleInterval,
   getQueueTypes,
   getUserHashTagPresets,
   getUserUploadProvider,
 } from "~/features/user";
-import { getTemplatePrefill, getTemplates } from "~/models/template.server";
 
 /**
  * Load new longform post page data. When templateId is in the URL, load that template for prefill.

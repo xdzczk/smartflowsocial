@@ -9,7 +9,7 @@ import { TEST_USER_ID, createMockFormData } from "../../utils/test-helpers";
 import "./shared-setup";
 import { mockPrisma, mockCreateLongFormPostExecute } from "./shared-setup";
 
-import { handleNewLongFormAction } from "~/features/posts/server";
+import { handleNewLongFormAction } from "~/features/posts/server/longform";
 import {
   getQueueTypes,
   getHashTagPresetById,

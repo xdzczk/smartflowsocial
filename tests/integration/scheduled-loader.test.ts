@@ -42,7 +42,7 @@ import {
   requireAnySubscription,
   requireFeatureAccess,
 } from "~/features/payments/subscriptions.server";
-import { loadScheduledData } from "~/features/posts/server";
+import { loadScheduledData } from "~/features/posts/server/scheduling";
 import { loader } from "~/routes/dashboard.scheduled";
 
 describe("Scheduled Posts Loader Integration", () => {

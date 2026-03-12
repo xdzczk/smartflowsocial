@@ -7,12 +7,10 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
-vi.mock("~/models/post.commands.server", () => ({
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
   deletePost: vi.fn(),
   updatePost: vi.fn(),
-}));
-
-vi.mock("~/models/longformpost.server", () => ({
   deleteLongFormPost: vi.fn(),
 }));
 
@@ -58,10 +56,10 @@ import {
   createPostIds,
 } from "../utils/test-helpers";
 
-import { handleDraftsAction } from "~/features/posts/server";
+import { deleteLongFormPost } from "~/features/posts/server";
+import { deletePost, updatePost } from "~/features/posts/server";
+import { handleDraftsAction } from "~/features/posts/server/drafts";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { deleteLongFormPost } from "~/models/longformpost.server";
-import { deletePost, updatePost } from "~/models/post.commands.server";
 
 describe("Drafts Action Handler", () => {
   beforeEach(() => {
@@ -161,7 +159,10 @@ describe("Drafts Action Handler", () => {
       const contents = ["Content 1", "Content 2"];
       const captions = ["Caption 1", "Caption 2"];
       const queueTypes = ["queue-1", "queue-2"];
-      const scheduledFors = ["2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z"];
+      // Handler expects scheduledFors as Unix timestamp strings (seconds)
+      const scheduledAtUtc1 = 1704092400; // 2024-01-01T10:00:00Z
+      const scheduledAtUtc2 = 1704096000; // 2024-01-01T11:00:00Z
+      const scheduledFors = [String(scheduledAtUtc1), String(scheduledAtUtc2)];
       const signedEvents = [
         JSON.stringify({ id: "event-1", pubkey: "pk1" }),
         JSON.stringify({ id: "event-2", pubkey: "pk2" }),
@@ -206,10 +207,9 @@ describe("Drafts Action Handler", () => {
           content: "Content 1",
           caption: "Caption 1",
           queueTypeId: "queue-1",
-          scheduledFor: "2024-01-01T10:00:00Z",
+          scheduledAtUtc: scheduledAtUtc1,
           signedEvent: { id: "event-1", pubkey: "pk1" },
           nostrEvent: { id: "nostr-1" },
-          // Note: draft, isScheduled, isPosted flags removed - state machine handles transitions
         },
       });
       expect(updatePost).toHaveBeenCalledWith({
@@ -219,10 +219,9 @@ describe("Drafts Action Handler", () => {
           content: "Content 2",
           caption: "Caption 2",
           queueTypeId: "queue-2",
-          scheduledFor: "2024-01-01T11:00:00Z",
+          scheduledAtUtc: scheduledAtUtc2,
           signedEvent: { id: "event-2", pubkey: "pk2" },
           nostrEvent: { id: "nostr-2" },
-          // Note: draft, isScheduled, isPosted flags removed - state machine handles transitions
         },
       });
       expect(result).toEqual({ success: true });

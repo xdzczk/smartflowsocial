@@ -51,6 +51,12 @@ export type { LongFormPost as LongFormPostType } from "./data/posts-prisma-types
 export { convertJsonValueToScheduleConfig } from "./types";
 
 // ============================================================================
+// Post and longform data layer (commands, queries, types)
+// ============================================================================
+
+export * from "./data/index.server";
+
+// ============================================================================
 // Core Business Logic - Dashboard Data
 // ============================================================================
 

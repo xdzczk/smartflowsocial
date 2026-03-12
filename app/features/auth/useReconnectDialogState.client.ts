@@ -1,58 +1,48 @@
-import { generateSecretKey, SimplePool } from "nostr-tools";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import {
   clearActiveSignerConfig,
-  detectSignerAppName,
   getActiveConnection,
   getActiveSigner,
   getActiveSession,
   matchOrCreateSession,
-  parseSecretKeyHex,
   recordConnectionEvent,
-  serializeSecretKey,
   setActiveSession,
   setActiveSignerConfig,
   syncRelaysWithRemoteSigner,
   tryBackgroundReconnect,
   updateSession,
-  type ActiveSignerConfig,
+  detectSignerAppName,
+  parseSecretKeyHex,
+  serializeSecretKey,
 } from "~/features/auth/signer";
 import { convertToHex } from "~/lib/nostr-conversion";
 
 import {
-  connectNip46WithBunkerInput,
-  connectNip46WithNostrConnectUri,
-} from "./nostr-signer.client";
-import { runExistingBunkerReconnect } from "./reconnect/reconnect-existing-bunker.client";
-import { handleExistingReconnectFailure as handleExistingReconnectFailureImpl } from "./reconnect/reconnect-existing-failure.client";
-import { runExistingNostrConnectReconnect } from "./reconnect/reconnect-existing-nostrconnect.client";
+  connectWithBunker,
+  connectWithNostrConnectUri,
+  resumeWithPendingUri,
+} from "./reconnect/reconnect-connect-actions.client";
+import {
+  getCanRetryExisting,
+  getHandlePrimaryAction,
+  getReconnectStartLabel,
+} from "./reconnect/reconnect-dialog-derived.client";
+import { useExistingReconnectFlow } from "./reconnect/useExistingReconnectFlow.client";
+import { useReconnectVisibilityEffect } from "./reconnect/useReconnectVisibilityEffect.client";
 import {
   DEFAULT_RELAYS,
   debugReconnectTrace,
   EXISTING_SESSION_RECONNECT_TIMEOUTS_MS,
-  METHOD_BUNKER_INPUT,
-  PROFILE_MISMATCH_MESSAGE,
-  RECONNECT_SUCCESS_TOAST_RETRY,
   TOAST_RECONNECT_SUCCESS,
 } from "./reconnect-dialog-utils.client";
 import { useRemoteSignerHealthPolling } from "./reconnect-health.client";
-import {
-  shouldCancelExistingReconnectOnHidden,
-  shouldResumeExistingReconnectOnVisible,
-  type ExistingReconnectTrigger,
-} from "./reconnect-lifecycle.client";
 import type { ReconnectState } from "./reconnect-state.client";
 import {
   appendPrimalCallback,
-  bunkerCanonicalKey,
   clearPendingReconnectStorage,
-  createNip46NostrConnectUri,
   getPendingReconnect,
-  parseBunkerInput,
-  parseRelayList,
-  setPendingReconnect,
 } from "./reconnect-uri.client";
 
 export interface UseReconnectDialogStateParams {
@@ -83,35 +73,8 @@ export function useReconnectDialogState({
 
   const cancelRef = useRef<{ cancel: () => void } | null>(null);
   const inFlightNostrConnectRef = useRef(false);
-  const inFlightExistingReconnectRef = useRef(false);
-  const existingReconnectRunIdRef = useRef(0);
   const triedExistingRef = useRef(false);
-  const wasHiddenDuringExistingReconnectRef = useRef(false);
-  const existingReconnectForegroundAttemptFailedRef = useRef(false);
   const closedByExternalReconnectRef = useRef(false);
-
-  const { onConnectionHealthy } = useRemoteSignerHealthPolling({
-    subscribe: true,
-  });
-
-  const resetLocal = useCallback(() => {
-    existingReconnectRunIdRef.current += 1;
-    inFlightExistingReconnectRef.current = false;
-    cancelRef.current?.cancel();
-    cancelRef.current = null;
-    inFlightNostrConnectRef.current = false;
-    triedExistingRef.current = false;
-    wasHiddenDuringExistingReconnectRef.current = false;
-    existingReconnectForegroundAttemptFailedRef.current = false;
-    closedByExternalReconnectRef.current = false;
-    clearPendingReconnectStorage();
-    setState("idle");
-    setNostrConnectUri(null);
-    setError(null);
-    setCopyOk(false);
-    setConnectionLabel("");
-    setExistingReconnectAttempt(0);
-  }, []);
 
   const syncRelaysAfterReconnect = useCallback(async () => {
     try {
@@ -130,171 +93,40 @@ export function useReconnectDialogState({
     }
   }, []);
 
-  const handleExistingReconnectFailure = useCallback(
-    async (input: {
-      error: unknown;
-      runId: number;
-      trigger: ExistingReconnectTrigger;
-    }) => {
-      await handleExistingReconnectFailureImpl({
-        ...input,
-        getCurrentRunId: () => existingReconnectRunIdRef.current,
-        getClosedByExternalReconnect: () =>
-          closedByExternalReconnectRef.current,
-        getWasHiddenDuringExistingReconnect: () =>
-          wasHiddenDuringExistingReconnectRef.current,
-        getForegroundResumeAttemptFailed: () =>
-          existingReconnectForegroundAttemptFailedRef.current,
-        setState,
-        setError,
-        setExistingReconnectAttempt,
-        setForegroundResumeAttemptFailed: (v) => {
-          existingReconnectForegroundAttemptFailedRef.current = v;
-        },
-        syncRelaysAfterReconnect,
-        expectedPubkeyHex,
-        onReconnectSuccess,
-        onOpenChange,
-        toastSuccess: toast.success,
-        debugTrace: debugReconnectTrace,
-      });
-    },
-    [
-      expectedPubkeyHex,
-      onOpenChange,
-      onReconnectSuccess,
-      syncRelaysAfterReconnect,
-    ]
-  );
+  const existingFlow = useExistingReconnectFlow({
+    expectedPubkeyHex,
+    setState,
+    setError,
+    setExistingReconnectAttempt,
+    syncRelaysAfterReconnect,
+    onReconnectSuccess,
+    onOpenChange,
+    cancelRef,
+    getClosedByExternalReconnect: () => closedByExternalReconnectRef.current,
+  });
 
-  const tryReconnectWithExistingConnection = useCallback(
-    async (trigger: ExistingReconnectTrigger = "initial") => {
-      if (inFlightExistingReconnectRef.current) {
-        return;
-      }
-      const connectionView = getActiveSession();
-      if (
-        connectionView?.config.type !== "nip46" ||
-        connectionView.config.method !== "nostrconnect_uri"
-      ) {
-        return;
-      }
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        setError("You're offline. Check your connection and try again.");
-        setState("failed");
-        return;
-      }
-      inFlightExistingReconnectRef.current = true;
-      const runId = ++existingReconnectRunIdRef.current;
-      if (trigger === "foreground_resume") {
-        wasHiddenDuringExistingReconnectRef.current = false;
-      }
+  const resetLocal = useCallback(() => {
+    existingFlow.existingReconnectRunIdRef.current += 1;
+    existingFlow.inFlightExistingReconnectRef.current = false;
+    if (cancelRef.current) cancelRef.current.cancel();
+    cancelRef.current = null;
+    inFlightNostrConnectRef.current = false;
+    triedExistingRef.current = false;
+    existingFlow.wasHiddenDuringExistingReconnectRef.current = false;
+    existingFlow.existingReconnectForegroundAttemptFailedRef.current = false;
+    closedByExternalReconnectRef.current = false;
+    clearPendingReconnectStorage();
+    setState("idle");
+    setNostrConnectUri(null);
+    setError(null);
+    setCopyOk(false);
+    setConnectionLabel("");
+    setExistingReconnectAttempt(0);
+  }, [existingFlow]);
 
-      setState("reconnecting_existing");
-      setError(null);
-
-      try {
-        await runExistingNostrConnectReconnect({
-          connectionView,
-          expectedPubkeyHex,
-          trigger,
-          runId,
-          getIsRunStale: () => existingReconnectRunIdRef.current !== runId,
-          setCancel: (fn) => {
-            cancelRef.current = { cancel: fn };
-          },
-          setState,
-          setError,
-          setExistingReconnectAttempt,
-          syncRelaysAfterReconnect,
-          onSuccess: (connectionId) => {
-            toast.success(TOAST_RECONNECT_SUCCESS);
-            onReconnectSuccess?.(connectionId);
-            onOpenChange(false);
-          },
-        });
-      } catch (err) {
-        await handleExistingReconnectFailure({ error: err, runId, trigger });
-      } finally {
-        if (existingReconnectRunIdRef.current === runId) {
-          inFlightExistingReconnectRef.current = false;
-        }
-        cancelRef.current?.cancel();
-        cancelRef.current = null;
-      }
-    },
-    [
-      handleExistingReconnectFailure,
-      expectedPubkeyHex,
-      onReconnectSuccess,
-      onOpenChange,
-      syncRelaysAfterReconnect,
-    ]
-  );
-
-  const tryReconnectWithExistingBunkerConnection = useCallback(
-    async (trigger: ExistingReconnectTrigger = "initial") => {
-      if (inFlightExistingReconnectRef.current) return;
-      const connectionView = getActiveSession();
-      if (
-        connectionView?.config.type !== "nip46" ||
-        connectionView.config.method !== "bunker_input"
-      ) {
-        return;
-      }
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        setError("You're offline. Check your connection and try again.");
-        setState("failed");
-        return;
-      }
-      inFlightExistingReconnectRef.current = true;
-      const runId = ++existingReconnectRunIdRef.current;
-      if (trigger === "foreground_resume") {
-        wasHiddenDuringExistingReconnectRef.current = false;
-      }
-
-      setState("reconnecting_existing");
-      setError(null);
-
-      try {
-        await runExistingBunkerReconnect({
-          connectionView,
-          expectedPubkeyHex,
-          trigger,
-          runId,
-          getIsRunStale: () => existingReconnectRunIdRef.current !== runId,
-          setCancel: (fn) => {
-            cancelRef.current = { cancel: fn };
-          },
-          setState,
-          setError,
-          setExistingReconnectAttempt,
-          syncRelaysAfterReconnect,
-          onSuccess: (connectionId) => {
-            toast.success(TOAST_RECONNECT_SUCCESS);
-            onReconnectSuccess?.(connectionId);
-            onOpenChange(false);
-          },
-        });
-      } catch (err) {
-        await handleExistingReconnectFailure({ error: err, runId, trigger });
-      } finally {
-        if (existingReconnectRunIdRef.current === runId) {
-          inFlightExistingReconnectRef.current = false;
-        }
-        cancelRef.current?.cancel();
-        cancelRef.current = null;
-      }
-    },
-    [
-      handleExistingReconnectFailure,
-      expectedPubkeyHex,
-      onReconnectSuccess,
-      onOpenChange,
-      syncRelaysAfterReconnect,
-    ]
-  );
-
+  const { onConnectionHealthy } = useRemoteSignerHealthPolling({
+    subscribe: true,
+  });
   useEffect(() => {
     if (!open) return;
     return onConnectionHealthy(() => {
@@ -321,8 +153,6 @@ export function useReconnectDialogState({
     onConnectionHealthy,
   ]);
 
-  // When user reconnects in the signer app (new session within existing connection),
-  // poll tryBackgroundReconnect so we establish a fresh signer, dispatch healthy, and auto-close.
   const RECONNECT_POLL_MS = 12_000;
   useEffect(() => {
     if (!open) return;
@@ -332,7 +162,6 @@ export function useReconnectDialogState({
     return () => clearInterval(id);
   }, [open]);
 
-  // When user returns to the app (e.g. from signer app), try reconnect once so modal can close.
   useEffect(() => {
     if (!open || typeof document === "undefined") return;
     const handleVisibilityChange = () => {
@@ -350,32 +179,178 @@ export function useReconnectDialogState({
       resetLocal();
       return;
     }
-
     if (openMode === "new_session") {
       triedExistingRef.current = true;
-      if (tab !== "nostrconnect") {
-        setTab("nostrconnect");
-      }
+      if (tab !== "nostrconnect") setTab("nostrconnect");
       return;
     }
-
     if (triedExistingRef.current) return;
-    const connectionView = getActiveSession();
-    if (connectionView?.config.type !== "nip46") return;
-    if (connectionView.config.method === "nostrconnect_uri") {
+    const view = getActiveSession();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- view may be null
+    const config = view?.connection?.config;
+    if (config?.type !== "nip46") return;
+    if (config.method === "nostrconnect_uri") {
       triedExistingRef.current = true;
-      void tryReconnectWithExistingConnection("initial");
+      void existingFlow.tryReconnectWithExistingConnection("initial");
       return;
     }
     triedExistingRef.current = true;
-    void tryReconnectWithExistingBunkerConnection("initial");
+    void existingFlow.tryReconnectWithExistingBunkerConnection("initial");
+  }, [open, openMode, resetLocal, existingFlow, tab]);
+
+  const resumeReconnectWithPendingUri = useCallback(async () => {
+    if (getPendingReconnect() === null) return;
+    if (inFlightNostrConnectRef.current) return;
+    inFlightNostrConnectRef.current = true;
+    try {
+      await resumeWithPendingUri({
+        connectionLabel,
+        expectedPubkeyHex,
+        getPendingReconnect,
+        getActiveSession,
+        setState,
+        setError,
+        setNostrConnectUri,
+        setCancel: (fn) => {
+          cancelRef.current = { cancel: fn };
+        },
+        currentState: state,
+        matchOrCreateSession,
+        setActiveSession,
+        updateSession,
+        recordConnectionEvent,
+        setActiveSignerConfig,
+        detectSignerAppName,
+        serializeSecretKey,
+        syncRelaysAfterReconnect,
+        onReconnectSuccess,
+        onOpenChange,
+        toastSuccess: toast.success,
+      });
+    } finally {
+      inFlightNostrConnectRef.current = false;
+      cancelRef.current = null;
+    }
   }, [
+    connectionLabel,
+    expectedPubkeyHex,
+    state,
+    onReconnectSuccess,
+    onOpenChange,
+    syncRelaysAfterReconnect,
+  ]);
+
+  const resumeRef = useRef(resumeReconnectWithPendingUri);
+  resumeRef.current = resumeReconnectWithPendingUri;
+
+  useReconnectVisibilityEffect({
     open,
     openMode,
-    resetLocal,
-    tryReconnectWithExistingConnection,
-    tryReconnectWithExistingBunkerConnection,
+    state,
+    setState,
+    setExistingReconnectAttempt,
+    wasHiddenDuringExistingReconnectRef:
+      existingFlow.wasHiddenDuringExistingReconnectRef,
+    inFlightExistingReconnectRef: existingFlow.inFlightExistingReconnectRef,
+    existingReconnectRunIdRef: existingFlow.existingReconnectRunIdRef,
+    triedExistingRef,
+    cancelRef,
+    tryReconnectWithExistingConnection: (trigger) => {
+      void existingFlow.tryReconnectWithExistingConnection(trigger);
+    },
+    tryReconnectWithExistingBunkerConnection: (trigger) => {
+      void existingFlow.tryReconnectWithExistingBunkerConnection(trigger);
+    },
+    resumeReconnectWithPendingUriRef: resumeRef,
+    inFlightNostrConnectRef,
+  });
+
+  const connect = useCallback(async () => {
+    setError(null);
+    setCopyOk(false);
+    try {
+      if (tab === "bunker") {
+        await connectWithBunker({
+          bunkerInput,
+          connectionLabel,
+          expectedPubkeyHex,
+          getActiveSession,
+          setState,
+          setError,
+          matchOrCreateSession,
+          setActiveSession,
+          updateSession,
+          recordConnectionEvent,
+          setActiveSignerConfig,
+          detectSignerAppName,
+          parseSecretKeyHex,
+          serializeSecretKey,
+          syncRelaysAfterReconnect,
+          onReconnectSuccess,
+          onOpenChange,
+          toastSuccess: toast.success,
+        });
+        return;
+      }
+      if (inFlightNostrConnectRef.current) return;
+      inFlightNostrConnectRef.current = true;
+      await connectWithNostrConnectUri({
+        relayList,
+        connectionLabel,
+        expectedPubkeyHex,
+        getActiveSession,
+        setState,
+        setError,
+        setNostrConnectUri,
+        setCancel: (fn) => {
+          cancelRef.current = { cancel: fn };
+        },
+        currentState: state,
+        matchOrCreateSession,
+        setActiveSession,
+        updateSession,
+        recordConnectionEvent,
+        setActiveSignerConfig,
+        detectSignerAppName,
+        serializeSecretKey,
+        syncRelaysAfterReconnect,
+        onReconnectSuccess,
+        onOpenChange,
+        toastSuccess: toast.success,
+      });
+    } catch (e) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to reconnect signer";
+      const msgLower = errorMessage.toLowerCase();
+      const isConnectionError =
+        msgLower.includes("subscription closed") ||
+        msgLower.includes("websocket") ||
+        msgLower.includes("connection");
+      const hasPending = getPendingReconnect() !== null;
+      if (isConnectionError && hasPending && state === "waiting") return;
+      setError(errorMessage);
+      setState("failed");
+      const activeView = getActiveSession();
+      if (activeView) {
+        recordConnectionEvent(activeView.connection.id, {
+          type: "error",
+          error: errorMessage,
+        });
+      }
+    } finally {
+      inFlightNostrConnectRef.current = false;
+      cancelRef.current = null;
+    }
+  }, [
     tab,
+    bunkerInput,
+    relayList,
+    connectionLabel,
+    expectedPubkeyHex,
+    state,
+    onReconnectSuccess,
+    onOpenChange,
+    syncRelaysAfterReconnect,
   ]);
 
   const copyUri = useCallback(async () => {
@@ -394,477 +369,52 @@ export function useReconnectDialogState({
     window.location.href = appendPrimalCallback(nostrConnectUri);
   }, [nostrConnectUri]);
 
-  const connect = useCallback(async () => {
-    setError(null);
-    setCopyOk(false);
+  const canRetryExisting = useMemo(
+    () =>
+      getCanRetryExisting(state, error, getActiveSession, getPendingReconnect),
+    [state, error]
+  );
 
-    try {
-      if (tab === "bunker") {
-        setState("waiting");
-        const trimmedBunker = bunkerInput.trim();
-        const activeConnectionForBunker = getActiveSession();
-        const bunkerConfig =
-          activeConnectionForBunker?.config.type === "nip46" &&
-          activeConnectionForBunker.config.method === "bunker_input"
-            ? activeConnectionForBunker.config
-            : null;
-        let isReconnectExisting = false;
-        let reconnectBunkerConfig: typeof bunkerConfig = null;
-        if (bunkerConfig) {
-          const storedBp = await parseBunkerInput(bunkerConfig.bunkerInput);
-          const pastedBp = await parseBunkerInput(trimmedBunker);
-          if (
-            storedBp &&
-            pastedBp &&
-            bunkerCanonicalKey(storedBp) === bunkerCanonicalKey(pastedBp)
-          ) {
-            isReconnectExisting = true;
-            reconnectBunkerConfig = bunkerConfig;
-          }
-        }
-        const clientSecretKey =
-          isReconnectExisting && reconnectBunkerConfig
-            ? parseSecretKeyHex(reconnectBunkerConfig.clientSecretKeyHex)
-            : generateSecretKey();
-        const { pubkey } = await connectNip46WithBunkerInput({
-          bunkerInput: trimmedBunker,
-          clientSecretKey,
-          timeoutMs: 2 * 60 * 1000,
-        });
+  const reconnectStartLabel = useMemo(
+    () => getReconnectStartLabel(state, tab, canRetryExisting, nostrConnectUri),
+    [state, tab, canRetryExisting, nostrConnectUri]
+  );
 
-        if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
-          setError(PROFILE_MISMATCH_MESSAGE);
-          setState("failed");
-          return;
-        }
-
-        const config: ActiveSignerConfig = {
-          type: "nip46",
-          method: "bunker_input",
-          bunkerInput: trimmedBunker,
-          clientSecretKeyHex:
-            isReconnectExisting && reconnectBunkerConfig
-              ? reconnectBunkerConfig.clientSecretKeyHex
-              : serializeSecretKey(clientSecretKey),
-        };
-
-        const connectionView = matchOrCreateSession(config, {
-          label: connectionLabel || undefined,
-          signerPubkey: pubkey,
-        });
-        setActiveSession(connectionView.id);
-
-        const detectedAppName = detectSignerAppName(config);
-        updateSession(connectionView.id, {
-          metadata: {
-            ...connectionView.metadata,
-            pubkey,
-            signerAppName: detectedAppName,
-            status: "active",
-            connectedAt: Date.now(),
-            lastActivityAt: Date.now(),
-          },
-        });
-
-        recordConnectionEvent(connectionView.id, {
-          type: "connected",
-          pubkey,
-        });
-
-        setActiveSignerConfig(config);
-        await syncRelaysAfterReconnect();
-        setState("connected");
-        toast.success(RECONNECT_SUCCESS_TOAST_RETRY);
-        onReconnectSuccess?.(connectionView.id);
-        onOpenChange(false);
-        return;
-      }
-
-      if (inFlightNostrConnectRef.current) {
-        return;
-      }
-      inFlightNostrConnectRef.current = true;
-      const relays = parseRelayList(relayList);
-      const created = createNip46NostrConnectUri(relays);
-
-      setNostrConnectUri(created.uri);
-      setState("waiting");
-      setPendingReconnect(created.uri, created.clientSecretKey, created.relays);
-
-      cancelRef.current = {
-        cancel: () => {
-          try {
-            created.pool.close(created.relays);
-          } catch {
-            // ignore
-          }
+  const handlePrimaryAction = useMemo(
+    () =>
+      getHandlePrimaryAction(
+        canRetryExisting,
+        tab,
+        getPendingReconnect,
+        getActiveSession,
+        (trigger) => {
+          void existingFlow.tryReconnectWithExistingConnection(trigger);
         },
-      };
-
-      const { pubkey } = await connectNip46WithNostrConnectUri({
-        uri: created.uri,
-        clientSecretKey: created.clientSecretKey,
-        pool: created.pool,
-        timeoutMs: 2 * 60 * 1000,
-        relaysToCloseOnCancel: created.relays,
-      });
-
-      if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
-        setError(PROFILE_MISMATCH_MESSAGE);
-        setState("failed");
-        return;
-      }
-
-      const config: ActiveSignerConfig = {
-        type: "nip46",
-        method: "nostrconnect_uri",
-        uri: created.uri,
-        relays: created.relays,
-        clientSecretKeyHex: serializeSecretKey(created.clientSecretKey),
-      };
-
-      const connectionView = matchOrCreateSession(config, {
-        label: connectionLabel || undefined,
-        signerPubkey: pubkey,
-      });
-      setActiveSession(connectionView.id);
-
-      const detectedAppName = detectSignerAppName(config);
-      updateSession(connectionView.id, {
-        metadata: {
-          ...connectionView.metadata,
-          pubkey,
-          signerAppName: detectedAppName,
-          status: "active",
-          connectedAt: Date.now(),
-          lastActivityAt: Date.now(),
+        (trigger) => {
+          void existingFlow.tryReconnectWithExistingBunkerConnection(trigger);
         },
-      });
-
-      recordConnectionEvent(connectionView.id, {
-        type: "connected",
-        pubkey,
-      });
-
-      setActiveSignerConfig(config);
-      await syncRelaysAfterReconnect();
-      clearPendingReconnectStorage();
-      setState("connected");
-      toast.success(RECONNECT_SUCCESS_TOAST_RETRY);
-      onReconnectSuccess?.(connectionView.id);
-      onOpenChange(false);
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : "Failed to reconnect signer";
-      const msgLower = errorMessage.toLowerCase();
-      const isConnectionError =
-        msgLower.includes("subscription closed") ||
-        msgLower.includes("websocket") ||
-        msgLower.includes("connection");
-      const hasPending = getPendingReconnect() !== null;
-
-      if (isConnectionError && hasPending && state === "waiting") {
-        return;
-      }
-
-      setError(errorMessage);
-      setState("failed");
-
-      const activeConnectionView = getActiveSession();
-      if (activeConnectionView) {
-        recordConnectionEvent(activeConnectionView.id, {
-          type: "error",
-          error: errorMessage,
-        });
-      }
-    } finally {
-      inFlightNostrConnectRef.current = false;
-      cancelRef.current = null;
-    }
-  }, [
-    bunkerInput,
-    expectedPubkeyHex,
-    onOpenChange,
-    onReconnectSuccess,
-    relayList,
-    connectionLabel,
-    syncRelaysAfterReconnect,
-    state,
-    tab,
-  ]);
-
-  const resumeReconnectWithPendingUri = useCallback(async () => {
-    const pending = getPendingReconnect();
-    if (!pending) return;
-    if (inFlightNostrConnectRef.current) return;
-    inFlightNostrConnectRef.current = true;
-
-    setError(null);
-    setNostrConnectUri(pending.uri);
-    setState("waiting");
-
-    const pool = new SimplePool();
-    cancelRef.current = {
-      cancel: () => {
-        try {
-          pool.close(pending.relays);
-        } catch {
-          // ignore
-        }
-      },
-    };
-
-    try {
-      const { pubkey } = await connectNip46WithNostrConnectUri({
-        uri: pending.uri,
-        clientSecretKey: pending.clientSecretKey,
-        pool,
-        timeoutMs: 60_000,
-        relaysToCloseOnCancel: pending.relays,
-      });
-
-      if (expectedPubkeyHex && pubkey !== expectedPubkeyHex) {
-        setError(PROFILE_MISMATCH_MESSAGE);
-        setState("failed");
-        return;
-      }
-
-      const config: ActiveSignerConfig = {
-        type: "nip46",
-        method: "nostrconnect_uri",
-        uri: pending.uri,
-        relays: pending.relays,
-        clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
-      };
-
-      const connectionView = matchOrCreateSession(config, {
-        label: connectionLabel || undefined,
-        signerPubkey: pubkey,
-      });
-      setActiveSession(connectionView.id);
-
-      const detectedAppName = detectSignerAppName(config);
-      updateSession(connectionView.id, {
-        metadata: {
-          ...connectionView.metadata,
-          pubkey,
-          signerAppName: detectedAppName,
-          status: "active",
-          connectedAt: Date.now(),
-          lastActivityAt: Date.now(),
+        () => {
+          void resumeReconnectWithPendingUri();
         },
-      });
-
-      recordConnectionEvent(connectionView.id, {
-        type: "connected",
-        pubkey,
-      });
-
-      setActiveSignerConfig(config);
-      await syncRelaysAfterReconnect();
-      clearPendingReconnectStorage();
-      setState("connected");
-      toast.success(RECONNECT_SUCCESS_TOAST_RETRY);
-      onReconnectSuccess?.(connectionView.id);
-      onOpenChange(false);
-    } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : "Failed to reconnect signer";
-      const msgLower = errorMessage.toLowerCase();
-      const isConnectionError =
-        msgLower.includes("subscription closed") ||
-        msgLower.includes("websocket") ||
-        msgLower.includes("connection");
-      const hasPending = getPendingReconnect() !== null;
-
-      if (isConnectionError && hasPending && state === "waiting") {
-        return;
-      }
-
-      setError(errorMessage);
-      setState("failed");
-
-      const activeConnectionView = getActiveSession();
-      if (activeConnectionView) {
-        recordConnectionEvent(activeConnectionView.id, {
-          type: "error",
-          error: errorMessage,
-        });
-      }
-    } finally {
-      inFlightNostrConnectRef.current = false;
-      cancelRef.current = null;
-    }
-  }, [
-    expectedPubkeyHex,
-    onOpenChange,
-    onReconnectSuccess,
-    connectionLabel,
-    syncRelaysAfterReconnect,
-    state,
-  ]);
-
-  const resumeRef = useRef(resumeReconnectWithPendingUri);
-  resumeRef.current = resumeReconnectWithPendingUri;
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handleVisibility = () => {
-      if (document.visibilityState !== "visible") {
-        if (shouldCancelExistingReconnectOnHidden(state)) {
-          wasHiddenDuringExistingReconnectRef.current = true;
-          existingReconnectRunIdRef.current += 1;
-          inFlightExistingReconnectRef.current = false;
-          cancelRef.current?.cancel();
-          cancelRef.current = null;
-          setState("idle");
-          setExistingReconnectAttempt(0);
-          debugReconnectTrace(
-            "Visibility hidden: cancelled in-flight existing-connection reconnect"
-          );
+        () => {
+          void connect();
         }
-        return;
-      }
-
-      const activeConnectionView = getActiveSession();
-      const hasValidExistingConnection =
-        activeConnectionView?.config.type === "nip46" &&
-        (activeConnectionView.config.method === "nostrconnect_uri" ||
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- method union; both branches needed for type narrowing
-          activeConnectionView.config.method === METHOD_BUNKER_INPUT);
-      if (
-        shouldResumeExistingReconnectOnVisible({
-          openMode,
-          wasHiddenDuringExistingReconnect:
-            wasHiddenDuringExistingReconnectRef.current,
-          inFlightExistingReconnect: inFlightExistingReconnectRef.current,
-          hasValidExistingSession: hasValidExistingConnection,
-        })
-      ) {
-        setTimeout(() => {
-          const method =
-            activeConnectionView?.config.type === "nip46"
-              ? activeConnectionView.config.method
-              : undefined;
-
-          if (method === METHOD_BUNKER_INPUT) {
-            void tryReconnectWithExistingBunkerConnection("foreground_resume");
-          } else {
-            void tryReconnectWithExistingConnection("foreground_resume");
-          }
-        }, 500);
-        return;
-      }
-
-      if (state === "waiting" && getPendingReconnect()) {
-        if (inFlightNostrConnectRef.current) {
-          cancelRef.current?.cancel();
-          cancelRef.current = null;
-          inFlightNostrConnectRef.current = false;
-          debugReconnectTrace(
-            "Visibility return: cancelled stale in-flight connect before resume"
-          );
-        }
-        setTimeout(() => {
-          if (getPendingReconnect()) {
-            void resumeRef.current();
-          }
-        }, 500);
-        return;
-      }
-
-      if (
-        openMode !== "new_session" &&
-        state === "idle" &&
-        triedExistingRef.current
-      ) {
-        const connectionView = getActiveSession();
-        const method =
-          connectionView?.config.type === "nip46" &&
-          "method" in connectionView.config
-            ? connectionView.config.method
-            : undefined;
-
-        if (method === METHOD_BUNKER_INPUT) {
-          setTimeout(() => {
-            void tryReconnectWithExistingBunkerConnection("foreground_resume");
-          }, 500);
-        } else if (connectionView?.config.type === "nip46") {
-          setTimeout(() => {
-            void tryReconnectWithExistingConnection("foreground_resume");
-          }, 500);
-        }
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibility);
-  }, [
-    open,
-    openMode,
-    tab,
-    state,
-    tryReconnectWithExistingConnection,
-    tryReconnectWithExistingBunkerConnection,
-  ]);
-
-  const canRetryExisting =
-    state === "idle" &&
-    error?.includes("Could not reconnect with existing connection") &&
-    (() => {
-      const connectionView = getActiveSession();
-      return (
-        connectionView?.config.type === "nip46" &&
-        (connectionView.config.method === "nostrconnect_uri" ||
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- method union; both branches needed
-          connectionView.config.method === METHOD_BUNKER_INPUT)
-      );
-    })() &&
-    !getPendingReconnect();
-
-  const reconnectStartLabel = useMemo(() => {
-    if (state === "reconnecting_existing") return "Reconnecting…";
-    if (state === "waiting") return "Waiting for signer…";
-    if (tab === "bunker") return "Connect";
-    if (canRetryExisting) return "Try again with existing connection";
-    return nostrConnectUri ? "Retry" : "Generate & wait";
-  }, [canRetryExisting, nostrConnectUri, state, tab]);
-
-  const isReconnectingExisting = state === "reconnecting_existing";
+      ),
+    [
+      canRetryExisting,
+      tab,
+      existingFlow,
+      resumeReconnectWithPendingUri,
+      connect,
+    ]
+  );
 
   const clearSavedSigner = useCallback(() => {
-    cancelRef.current?.cancel();
+    if (cancelRef.current) cancelRef.current.cancel();
     cancelRef.current = null;
     clearActiveSignerConfig();
     resetLocal();
   }, [resetLocal]);
-
-  const handlePrimaryAction = useCallback(() => {
-    if (canRetryExisting) {
-      const connectionView = getActiveSession();
-      if (
-        connectionView?.config.type === "nip46" &&
-        connectionView.config.method === "bunker_input"
-      ) {
-        void tryReconnectWithExistingBunkerConnection("manual_retry");
-      } else {
-        void tryReconnectWithExistingConnection("manual_retry");
-      }
-    } else if (tab === "nostrconnect" && getPendingReconnect()) {
-      void resumeReconnectWithPendingUri();
-    } else {
-      void connect();
-    }
-  }, [
-    canRetryExisting,
-    tab,
-    tryReconnectWithExistingConnection,
-    tryReconnectWithExistingBunkerConnection,
-    resumeReconnectWithPendingUri,
-    connect,
-  ]);
 
   return {
     state,
@@ -884,14 +434,16 @@ export function useReconnectDialogState({
     copyUri,
     handleLoginWithPrimal,
     connect,
-    tryReconnectWithExistingConnection,
-    tryReconnectWithExistingBunkerConnection,
+    tryReconnectWithExistingConnection:
+      existingFlow.tryReconnectWithExistingConnection,
+    tryReconnectWithExistingBunkerConnection:
+      existingFlow.tryReconnectWithExistingBunkerConnection,
     resumeReconnectWithPendingUri,
     clearSavedSigner,
     handlePrimaryAction,
     canRetryExisting,
     reconnectStartLabel,
-    isReconnectingExisting,
+    isReconnectingExisting: state === "reconnecting_existing",
     cancelRef,
     EXISTING_SESSION_RECONNECT_TIMEOUTS_MS,
   };

@@ -15,12 +15,14 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { LongFormPost } from "~/features/posts/longform";
 import {
-  loadNewLongFormData,
   convertJsonValueToScheduleConfig,
+  type HashTagPreset,
+  type QueueType,
 } from "~/features/posts/server";
-import type { HashTagPreset, QueueType } from "~/features/posts/server";
-import { LongFormPost, getQueueAccentHex } from "~/features/posts/ui";
+import { loadNewLongFormData } from "~/features/posts/server/longform";
+import { getQueueAccentHex } from "~/features/posts/ui";
 import { handleCreateTemplateFromScratchLongform } from "~/features/templates";
 import { withCSRFProtection } from "~/lib/csrf";
 

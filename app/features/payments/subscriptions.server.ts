@@ -1,12 +1,12 @@
 import { redirect } from "@remix-run/node";
 
-import { getUserById } from "~/features/user";
 import {
   ensureUserHasFreePlan,
   getUserSubscription,
-} from "~/models/payment.server";
+} from "~/features/payments/data";
+import { getUserById } from "~/features/user";
 
-export { ensureUserHasFreePlan } from "~/models/payment.server";
+export { ensureUserHasFreePlan } from "~/features/payments/data";
 
 import type { FeatureName, SubscriptionData } from "./types";
 import { hasFeatureAccess } from "./types";

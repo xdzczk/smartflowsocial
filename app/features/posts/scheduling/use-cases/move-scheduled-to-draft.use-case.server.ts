@@ -4,11 +4,10 @@
  * Moves a scheduled post back to draft: cancels the queue job, clears scheduledAtUtc, and transitions to DRAFT.
  */
 
+import { updatePost, getPostById } from "~/features/posts/server";
 import { deriveIsScheduled } from "~/features/posts/state-machine/post-state";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import { cancelPostJob } from "~/infra/queue";
-import { updatePost } from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
 
 export interface MoveScheduledToDraftInput {
   postId: string;
@@ -39,7 +38,7 @@ export class MoveScheduledToDraftUseCase {
     await updatePost({
       id: input.postId,
       userId: input.userId,
-      data: { scheduledFor: null },
+      data: { scheduledAtUtc: null },
     });
 
     await this.stateMachine.transition(

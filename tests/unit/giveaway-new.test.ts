@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockGetRecentPublishedPosts = vi.fn();
 
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getRecentPublishedPosts: (...args: unknown[]) =>
     mockGetRecentPublishedPosts(...args),
 }));

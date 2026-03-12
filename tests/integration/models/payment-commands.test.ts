@@ -1,6 +1,6 @@
 /**
  * Integration tests for payment model commands
- * Tests app/models/payment.server.ts command functions
+ * Tests app/features/payments/data payment command functions
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -13,7 +13,7 @@ import {
   TEST_PAYMENT_ID,
 } from "../../utils/payment-test-helpers";
 
-import { createRenewalPayment } from "~/models/payment.server";
+import { createRenewalPayment } from "~/features/payments/data";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 // Create mock inline to avoid circular dependency

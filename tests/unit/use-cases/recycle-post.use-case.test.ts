@@ -5,12 +5,9 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock dependencies
-vi.mock("~/models/post.queries.server", () => ({
+// Mock dependencies (single mock so all used exports are available)
+vi.mock("~/features/posts/server", () => ({
   getPostById: vi.fn(),
-}));
-
-vi.mock("~/models/post.commands.server", () => ({
   createPostWithOutbox: vi.fn(),
   updatePost: vi.fn(),
 }));
@@ -58,14 +55,11 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { RecyclePostUseCase } from "~/features/posts/publishing/index.server";
+import { createPostWithOutbox, updatePost } from "~/features/posts/server";
+import { getPostById } from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { recordPostRecycled } from "~/lib/metrics/business-metrics.server";
 import { prisma } from "~/lib/prisma.server";
-import {
-  createPostWithOutbox,
-  updatePost,
-} from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
 
 describe("RecyclePostUseCase", () => {
   let useCase: RecyclePostUseCase;

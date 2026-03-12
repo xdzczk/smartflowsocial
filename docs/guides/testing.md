@@ -382,6 +382,10 @@ test.prop([fc.date()])("formatDate handles all dates", (date) => {
 });
 ```
 
+**Note:** `formatDate` from `~/lib/helpers` is deprecated. In app code, use `useFormattedDate()` in
+components and `formatDateForServer()` from `~/lib/date-formatting.server.ts` for server-side
+formatting.
+
 ### Test Organization Best Practices
 
 **Scenario-Driven Test Files**: Large test files are split into scenario-driven files for better

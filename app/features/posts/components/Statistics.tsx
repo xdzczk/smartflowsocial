@@ -3,8 +3,8 @@ import { CalendarDays, Check, Clock, Plus } from "lucide-react";
 import type { CSSProperties } from "react";
 
 import { Card, CardContent } from "~/components/ui/card";
+import type { PostStatistics } from "~/features/posts/server";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
-import type { PostStatistics } from "~/models/post.types";
 
 const KPI_COLOR_CSS_VAR = "--kpi-color";
 

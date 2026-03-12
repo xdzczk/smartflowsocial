@@ -14,7 +14,7 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 // Mock dependencies
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getRecyclablePosts: vi.fn(),
 }));
 
@@ -39,11 +39,11 @@ import {
 } from "../utils/test-helpers";
 
 import type { PostDTO } from "~/features/posts/dtos";
-import { getRecyclableDashboardData } from "~/features/posts/server";
+import { getRecyclablePosts } from "~/features/posts/server";
+import { getRecyclableDashboardData } from "~/features/posts/server/publishing";
 import { getPostStats } from "~/features/posts/stats.server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
-import { getRecyclablePosts } from "~/models/post.queries.server";
 
 describe("Recyclables Loader", () => {
   beforeEach(() => {

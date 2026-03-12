@@ -4,6 +4,14 @@
  * Supports cursor-based load more in both directions.
  */
 
+import {
+  getScheduledLongFormPosts,
+  getPastLongFormPosts,
+  getLatestScheduledLongFormAtUtc,
+  getScheduledPosts,
+  getPastPosts,
+  getLatestScheduledAtUtc,
+} from "~/features/posts/server";
 import { getUserById } from "~/features/user";
 import {
   getQueueTypesCached,
@@ -14,16 +22,6 @@ import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
-import {
-  getScheduledLongFormPosts,
-  getPastLongFormPosts,
-  getLatestScheduledLongFormAtUtc,
-} from "~/models/longformpost.server";
-import {
-  getScheduledPosts,
-  getPastPosts,
-  getLatestScheduledAtUtc,
-} from "~/models/post.queries.server";
 
 import {
   postToCombinedContent,

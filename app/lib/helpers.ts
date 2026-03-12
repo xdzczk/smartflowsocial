@@ -28,14 +28,9 @@ export function convertToHex(key: string): string | null {
 }
 
 /**
- * @deprecated This function is deprecated. Use `useFormattedDate()` hook in React components
- * or `formatDateForServer()` from `~/lib/date-formatting.server.ts` for server-side code.
- *
- * This function uses native Date operations instead of Temporal and doesn't respect user preferences.
- *
- * Migration:
- * - Client components: `const { formatDate } = useFormattedDate(); formatDate(date)`
- * - Server code: `formatDateForServer(date, timezone, timeFormat)`
+ * @deprecated Kept for legacy tests and property tests only; do not use in new code.
+ * Use `useFormattedDate()` in React components or `formatDateForServer()` from
+ * `~/lib/date-formatting.server.ts` for server-side code.
  */
 export const formatDate = (date: string | Date): string => {
   return new Date(date).toLocaleString("en-GB", {

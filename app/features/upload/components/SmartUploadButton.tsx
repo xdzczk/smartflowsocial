@@ -40,8 +40,7 @@ export function SmartUploadButton({
       if (!response.ok) throw new Error("Failed to check provider");
       const data = (await response.json()) as { provider?: string };
 
-      // Handle legacy BLOSSOM value as BLOSSOM_PRIMAL
-      if (data.provider === "BLOSSOM" || data.provider === "BLOSSOM_PRIMAL") {
+      if (data.provider === "BLOSSOM_PRIMAL") {
         return { provider: "BLOSSOM_PRIMAL", isUsingBlossom: true };
       }
       if (data.provider === "BLOSSOM_BLOSSTR") {

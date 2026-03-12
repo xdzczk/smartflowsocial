@@ -13,7 +13,7 @@ import {
 import "./shared-setup";
 import { mockPrisma, mockCreateLongFormPostExecute } from "./shared-setup";
 
-import { handleNewLongFormAction } from "~/features/posts/server";
+import { handleNewLongFormAction } from "~/features/posts/server/longform";
 import {
   getQueueTypeByNameForUser,
   getQueueTypes,

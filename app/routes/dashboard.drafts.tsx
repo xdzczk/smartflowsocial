@@ -9,12 +9,12 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { DraftsPage } from "~/features/posts/drafts";
+import type { LongFormPostType as _LongFormPostType } from "~/features/posts/server";
 import {
   handleDraftsAction,
   loadDraftsData,
-  type LongFormPostType as _LongFormPostType,
-} from "~/features/posts/server";
-import { DraftsPage } from "~/features/posts/ui";
+} from "~/features/posts/server/drafts";
 import { withCSRFProtection } from "~/lib/csrf";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { draftsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";

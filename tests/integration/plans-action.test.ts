@@ -11,7 +11,7 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUser: vi.fn(),
 }));
 
-vi.mock("~/models/payment.server", () => ({
+vi.mock("~/features/payments/data", () => ({
   createPlanInvoice: vi.fn(),
   checkPaymentStatus: vi.fn(),
 }));
@@ -19,8 +19,11 @@ vi.mock("~/models/payment.server", () => ({
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireUser } from "~/features/auth/session.server";
+import {
+  createPlanInvoice,
+  checkPaymentStatus,
+} from "~/features/payments/data";
 import { handlePlansAction } from "~/features/payments/services/plans-action.server";
-import { createPlanInvoice, checkPaymentStatus } from "~/models/payment.server";
 
 describe("Plans Action Handler", () => {
   beforeEach(() => {

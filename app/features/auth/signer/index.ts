@@ -50,6 +50,8 @@ export {
   getSessionHistory,
   getAllSessions,
   getActiveSession,
+  getConnectionWithCurrentSession,
+  getActiveConnectionWithCurrentSession,
   getSessionByIdLegacy,
   findMatchingConnectionForConfig,
   findMatchingSessionForConfig,
@@ -71,6 +73,7 @@ export type {
   RemoteSignerConnection,
   RemoteSignerSessionRecord,
   RemoteSignerSession,
+  ConnectionWithCurrentSession,
 } from "./remote-signer-sessions.client";
 
 // Remote signer status
@@ -78,8 +81,6 @@ export {
   getConnectionStatus,
   updateConnectionStatus,
   recordConnectionEvent,
-  getSessionStatus,
-  updateSessionStatus,
 } from "./remote-signer-status.client";
 export type { ConnectionEvent } from "./remote-signer-status.client";
 

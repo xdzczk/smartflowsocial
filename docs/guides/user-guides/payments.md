@@ -15,7 +15,7 @@ with the selected plan features.
 
 ## Architecture
 
-### Models (`app/models/payment.server.ts`)
+### Data layer (`app/features/payments/data/`)
 
 - `createPlanInvoice()` - Generates Lightning invoices using owner's NWC
 - `handlePaymentCompleted()` - Processes successful payments
@@ -50,7 +50,7 @@ OWNER_NWC_RELAYS=wss://relay1.example.com,wss://relay2.example.com
 ### Basic Invoice Creation
 
 ```typescript
-import { createPlanInvoice } from "~/models/payment.server";
+import { createPlanInvoice } from "~/features/payments/data";
 
 const invoice = await createPlanInvoice({
   planId: "basic", // plan ID from database
@@ -72,7 +72,7 @@ const invoice = await createPlanInvoice({
 ### Check Payment Status
 
 ```typescript
-import { checkPaymentStatus } from "~/models/payment.server";
+import { checkPaymentStatus } from "~/features/payments/data";
 
 const status = await checkPaymentStatus("basic_1697123456_user123");
 
@@ -87,7 +87,7 @@ const status = await checkPaymentStatus("basic_1697123456_user123");
 ### Get User Subscription
 
 ```typescript
-import { getUserSubscription } from "~/models/payment.server";
+import { getUserSubscription } from "~/features/payments/data";
 
 const subscription = await getUserSubscription("user123");
 

@@ -9,7 +9,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("~/infra/queue/queue-client.server", () => ({
   queueClient: {
     enqueue: vi.fn(),
-    cancelByData: vi.fn(),
     cancelByJobId: vi.fn(),
   },
 }));

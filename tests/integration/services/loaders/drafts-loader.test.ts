@@ -5,12 +5,9 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock dependencies
-vi.mock("~/models/longformpost.server", () => ({
+// Mock dependencies (single mock so all exports are available)
+vi.mock("~/features/posts/server", () => ({
   getDraftLongFormPosts: vi.fn(),
-}));
-
-vi.mock("~/models/post.queries.server", () => ({
   getDraftPosts: vi.fn(),
 }));
 
@@ -32,10 +29,10 @@ vi.mock("~/features/posts/drafts/services/draft-group.server", () => ({
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
-import { loadDraftsData } from "~/features/posts/server";
+import { getDraftLongFormPosts } from "~/features/posts/server";
+import { getDraftPosts } from "~/features/posts/server";
+import { loadDraftsData } from "~/features/posts/server/drafts";
 import { getUserById, getQueueTypes } from "~/features/user";
-import { getDraftLongFormPosts } from "~/models/longformpost.server";
-import { getDraftPosts } from "~/models/post.queries.server";
 
 describe("Drafts Loader", () => {
   beforeEach(() => {

@@ -5,16 +5,16 @@
 import { json } from "@remix-run/node";
 
 import {
+  getPlanById,
+  getUserSubscription,
+  updateUserSubscription,
+} from "~/features/payments/data";
+import {
   cancelAtPeriodEndSchema,
   scheduleDowngradeSchema,
   switchToFreePlanSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import {
-  getPlanById,
-  getUserSubscription,
-  updateUserSubscription,
-} from "~/models/payment.server";
 
 import {
   updateSubscriptionCancelAtPeriodEnd,

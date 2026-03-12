@@ -7,6 +7,11 @@
 import { json } from "@remix-run/node";
 
 import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
+import {
+  deletePost,
+  getRecyclablePosts,
+  getPostsByIds,
+} from "~/features/posts/server";
 import type { PostStats } from "~/features/posts/stats.server";
 import type { PostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
@@ -18,11 +23,6 @@ import {
   recyclableActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { deletePost } from "~/models/post.commands.server";
-import {
-  getRecyclablePosts,
-  getPostsByIds,
-} from "~/models/post.queries.server";
 
 import { RecyclePostUseCase } from "../use-cases/recycle-post.use-case.server";
 

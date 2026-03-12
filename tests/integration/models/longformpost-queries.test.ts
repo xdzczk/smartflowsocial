@@ -1,6 +1,6 @@
 /**
  * Integration tests for longform post queries
- * Tests app/models/longformpost.server.ts query functions
+ * Tests app/features/posts/data longformpost query functions
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -39,11 +39,11 @@ vi.mock("~/features/posts", () => ({
 
 import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../utils/test-helpers";
 
-import { prisma } from "~/lib/prisma.server";
 import {
   getLongFormPost,
   getLongFormPostByEventId,
-} from "~/models/longformpost.server";
+} from "~/features/posts/server";
+import { prisma } from "~/lib/prisma.server";
 
 describe("Longform Post Queries", () => {
   beforeEach(() => {

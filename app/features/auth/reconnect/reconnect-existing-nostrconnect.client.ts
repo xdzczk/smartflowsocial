@@ -14,8 +14,10 @@ import {
   resetCachedSigner,
   setActiveSignerConfig,
   updateSession,
-  type ActiveSignerConfig,
-  type RemoteSignerSession,
+} from "~/features/auth/signer";
+import type {
+  ActiveSignerConfig,
+  ConnectionWithCurrentSession,
 } from "~/features/auth/signer";
 import { convertToHex } from "~/lib/nostr-conversion";
 
@@ -34,7 +36,7 @@ import type { ExistingReconnectTrigger } from "../reconnect-lifecycle.client";
 const PING_VERIFY_MS = 5000;
 
 export interface RunExistingNostrConnectReconnectOptions {
-  connectionView: RemoteSignerSession;
+  connectionView: ConnectionWithCurrentSession;
   expectedPubkeyHex: string | null;
   trigger: ExistingReconnectTrigger;
   runId: number;
@@ -70,13 +72,13 @@ export async function runExistingNostrConnectReconnect(
     ActiveSignerConfig,
     { type: "nip46"; method: "nostrconnect_uri" }
   >;
-  const ncConfig = connectionView.config as Nip46NostrConnectConfig;
+  const conn = connectionView.connection;
+  const ncConfig = conn.config as Nip46NostrConnectConfig;
   const { uri, relays, clientSecretKeyHex } = ncConfig;
   const signerPubkeyHex =
     ncConfig.signerPubkey ??
-    (connectionView.metadata.pubkey
-      ? (convertToHex(connectionView.metadata.pubkey) ??
-        connectionView.metadata.pubkey)
+    (conn.metadata.pubkey
+      ? (convertToHex(conn.metadata.pubkey) ?? conn.metadata.pubkey)
       : null);
 
   setState("reconnecting_existing");
@@ -219,10 +221,11 @@ export async function runExistingNostrConnectReconnect(
     relays: relaysUsed,
     signerPubkey: config.signerPubkey,
   };
-  updateSession(connectionView.id, {
+  const connectionId = conn.id;
+  updateSession(connectionId, {
     config: updatedConfig,
     metadata: {
-      ...connectionView.metadata,
+      ...conn.metadata,
       pubkey,
       signerAppName: detectedAppName,
       status: "active",
@@ -233,7 +236,7 @@ export async function runExistingNostrConnectReconnect(
     },
   });
 
-  recordConnectionEvent(connectionView.id, { type: "connected", pubkey });
+  recordConnectionEvent(connectionId, { type: "connected", pubkey });
 
   setActiveSignerConfig(config);
   cacheNip46SignerFromLogin(signer);
@@ -261,10 +264,10 @@ export async function runExistingNostrConnectReconnect(
   if (getIsRunStale()) return;
 
   debugReconnectTrace("Existing-connection reconnect succeeded", {
-    connectionId: connectionView.id,
+    connectionId,
     pubkey,
   });
   setExistingReconnectAttempt(0);
   setState("connected");
-  onSuccess(connectionView.id);
+  onSuccess(connectionId);
 }

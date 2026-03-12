@@ -1,7 +1,7 @@
 /**
- * Storage and migration layer for remote signer sessions.
- * Pure storage: get/save, V1→V2 migration, user identity for keys.
- * API layer (remote-signer-sessions.client.ts) uses this for CRUD.
+ * Storage layer for remote signer sessions (V2 only).
+ * On first access, if V2 is missing, any existing V1 data is migrated once to V2
+ * and V1 keys are cleared. Thereafter only V2 is read.
  */
 
 import { convertHexToNpub, convertToHex } from "~/lib/nostr-conversion";
@@ -92,9 +92,51 @@ const EMPTY_V2: RemoteSignerSessionsStorageV2 = {
   activeConnectionId: null,
 };
 
-function migrateV1ToV2(
-  v1: RemoteSignerSessionsStorageV1
+/**
+ * One-time migration from V1 to V2. Reads V1 from storage, writes V2, and clears V1 keys.
+ * Only used when V2 is missing so that the read path is V2-only after first load.
+ */
+function migrateV1ToV2OnceAndClearV1(
+  keyV2: string
 ): RemoteSignerSessionsStorageV2 {
+  const keyV1 = getStorageKey();
+  let v1: RemoteSignerSessionsStorageV1 | null = null;
+  let v1KeyReadFrom: string | null = null;
+
+  const stored = localStorage.getItem(keyV1);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored) as RemoteSignerSessionsStorageV1;
+      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime check for v1 shape */
+      if (parsed?.version === 1 && Array.isArray(parsed.sessions)) {
+        v1 = parsed;
+        v1KeyReadFrom = keyV1;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  if (!v1 && currentUserNpub) {
+    for (const alternate of getAlternateUserIdentifiers(currentUserNpub)) {
+      const altKey = `${STORAGE_KEY_PREFIX}_${alternate}`;
+      const altStored = localStorage.getItem(altKey);
+      if (!altStored) continue;
+      try {
+        const parsed = JSON.parse(altStored) as RemoteSignerSessionsStorageV1;
+        /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime check for v1 shape */
+        if (parsed?.version === 1 && Array.isArray(parsed.sessions)) {
+          v1 = parsed;
+          v1KeyReadFrom = altKey;
+          break;
+        }
+      } catch {
+        // continue
+      }
+    }
+  }
+
+  if (!v1) return { ...EMPTY_V2 };
+
   const connections: RemoteSignerConnection[] = [];
   const sessions: RemoteSignerSessionRecord[] = [];
   for (const old of v1.sessions) {
@@ -115,37 +157,21 @@ function migrateV1ToV2(
       history: old.history,
     });
   }
-  return {
+  const v2: RemoteSignerSessionsStorageV2 = {
     version: 2,
     connections,
     sessions,
     activeConnectionId: v1.activeSessionId,
   };
-}
-
-function readV1Storage(): RemoteSignerSessionsStorageV1 | null {
-  const key = getStorageKey();
-  const stored = localStorage.getItem(key);
-  if (stored) {
-    try {
-      return JSON.parse(stored) as RemoteSignerSessionsStorageV1;
-    } catch {
-      // fall through
-    }
-  }
+  localStorage.setItem(keyV2, JSON.stringify(v2));
+  if (v1KeyReadFrom) localStorage.removeItem(v1KeyReadFrom);
+  localStorage.removeItem(keyV1);
   if (currentUserNpub) {
     for (const alternate of getAlternateUserIdentifiers(currentUserNpub)) {
-      const alternateKey = `${STORAGE_KEY_PREFIX}_${alternate}`;
-      const alternateStored = localStorage.getItem(alternateKey);
-      if (!alternateStored) continue;
-      try {
-        return JSON.parse(alternateStored) as RemoteSignerSessionsStorageV1;
-      } catch {
-        // continue
-      }
+      localStorage.removeItem(`${STORAGE_KEY_PREFIX}_${alternate}`);
     }
   }
-  return null;
+  return v2;
 }
 
 export function getStorage(): RemoteSignerSessionsStorageV2 {
@@ -161,13 +187,7 @@ export function getStorage(): RemoteSignerSessionsStorageV2 {
         return parsed;
       }
     }
-    const v1 = readV1Storage();
-    if (v1?.version === 1 && Array.isArray(v1.sessions)) {
-      const v2 = migrateV1ToV2(v1);
-      localStorage.setItem(keyV2, JSON.stringify(v2));
-      return v2;
-    }
-    return { ...EMPTY_V2 };
+    return migrateV1ToV2OnceAndClearV1(keyV2);
   } catch {
     return { ...EMPTY_V2 };
   }

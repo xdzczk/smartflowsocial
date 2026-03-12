@@ -26,7 +26,7 @@ vi.mock("~/features/engagement/engagement.server", () => ({
   processQuoteReposts: vi.fn(),
 }));
 
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getPublishedPosts: vi.fn(),
 }));
 
@@ -44,8 +44,8 @@ import {
   processQuoteReposts,
 } from "~/features/engagement/engagement.server";
 import { loadEngagementFeedData } from "~/features/engagement/services/engagement-loader.server";
+import { getPublishedPosts } from "~/features/posts/server";
 import { getUserById } from "~/features/user";
-import { getPublishedPosts } from "~/models/post.queries.server";
 
 describe("Engagement Loader", () => {
   beforeEach(() => {

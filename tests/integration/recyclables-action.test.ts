@@ -28,11 +28,9 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 // Mock dependencies
-vi.mock("~/models/post.commands.server", () => ({
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
   deletePost: vi.fn(),
-}));
-
-vi.mock("~/models/post.queries.server", () => ({
   getPostsByIds: vi.fn(),
 }));
 
@@ -44,9 +42,9 @@ import {
   createMockPost,
 } from "../utils/test-helpers";
 
-import { handleRecyclablePostAction } from "~/features/posts/server";
-import { deletePost } from "~/models/post.commands.server";
-import { getPostsByIds } from "~/models/post.queries.server";
+import { deletePost } from "~/features/posts/server";
+import { getPostsByIds } from "~/features/posts/server";
+import { handleRecyclablePostAction } from "~/features/posts/server/publishing";
 
 describe("Recyclables Action Handler", () => {
   beforeEach(() => {

@@ -8,7 +8,14 @@ import { json } from "@remix-run/node";
 import { parseAttachmentMeta } from "~/features/posts/composer/services/newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "~/features/posts/composer/services/newpost-action/hashtag-preset-utils.server";
 import { resolveContentWithTokens } from "~/features/posts/composer/services/newpost-action/inline-tokens.server";
+import { updateLongFormPost, updatePost } from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
+import {
+  getTemplateById,
+  getTemplatePrefill,
+  updateTemplate,
+  deleteTemplate,
+} from "~/features/templates/services/template-data.server";
 import { getQueueTypeByNameForUser } from "~/features/user";
 import { getUserTimezone } from "~/features/user/services/user-settings.server";
 import { ValidationError } from "~/lib/errors";
@@ -21,14 +28,6 @@ import {
   templateEditActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { updateLongFormPost } from "~/models/longformpost.server";
-import { updatePost } from "~/models/post.commands.server";
-import {
-  getTemplateById,
-  getTemplatePrefill,
-  updateTemplate,
-  deleteTemplate,
-} from "~/models/template.server";
 
 const ACTION_UPDATE_NAME = "updateName";
 
@@ -109,8 +108,9 @@ export async function loadTemplateEditData(templateId: string, userId: string) {
     throw new ValidationError("Template not found", { templateId, userId });
   }
 
-  const { loadNewPostData } = await import("~/features/posts/server");
-  const { loadNewLongFormData } = await import("~/features/posts/server");
+  const { loadNewPostData } = await import("~/features/posts/server/composer");
+  const { loadNewLongFormData } =
+    await import("~/features/posts/server/longform");
 
   const prefill = await getTemplatePrefill({ id: templateId, userId });
 

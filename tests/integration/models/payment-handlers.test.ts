@@ -1,6 +1,6 @@
 /**
  * Integration tests for payment handlers
- * Tests app/models/payment.server.ts handler functions
+ * Tests app/features/payments/data payment handler functions
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -20,7 +20,7 @@ import {
   handlePaymentTimeout,
   updateUserSubscription,
   getAllPlans,
-} from "~/models/payment.server";
+} from "~/features/payments/data";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 // Create mock inline to avoid circular dependency

@@ -6,6 +6,11 @@
  */
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import {
+  createPostWithOutbox,
+  updatePost,
+  getPostById,
+} from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import {
   deriveIsPublished,
@@ -21,11 +26,6 @@ import {
   formatForDisplay,
   toPrismaDate,
 } from "~/lib/temporal";
-import {
-  createPostWithOutbox,
-  updatePost,
-} from "~/models/post.commands.server";
-import { getPostById } from "~/models/post.queries.server";
 
 export interface RecyclePostInput {
   originalPostId: string;
@@ -150,8 +150,9 @@ export class RecyclePostUseCase {
         nostrEvent: originalPost.nostrEvent as unknown as
           | NostrEvent
           | undefined,
-        scheduledFor: input.scheduledFor
-          ? toPrismaDate(fromUnixTimestamp(input.scheduledFor, "UTC"))
+        scheduledAtUtc: input.scheduledFor
+          ? (toPrismaDate(fromUnixTimestamp(input.scheduledFor, "UTC")) ??
+            new Date(input.scheduledFor * 1000))
           : undefined,
         tags: originalPost.tags,
         repost: originalPost.repost,

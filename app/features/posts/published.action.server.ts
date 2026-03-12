@@ -6,6 +6,12 @@ import { json } from "@remix-run/node";
 import { nip19 } from "nostr-tools";
 
 import { requireUserId } from "~/features/auth/session.server";
+import {
+  deleteLongFormPost,
+  getLongFormPostsByIds,
+  deletePost,
+  getPostsByIds,
+} from "~/features/posts/server";
 import { logError } from "~/lib/error-logger.server";
 import { nowSeconds } from "~/lib/temporal";
 import {
@@ -23,12 +29,6 @@ import {
   bulkDeleteMixedSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import {
-  deleteLongFormPost,
-  getLongFormPostsByIds,
-} from "~/models/longformpost.server";
-import { deletePost } from "~/models/post.commands.server";
-import { getPostsByIds } from "~/models/post.queries.server";
 
 const ERROR_POST_NOT_FOUND = "Post not found";
 const ERROR_LONGFORM_POST_NOT_FOUND = "Article not found";

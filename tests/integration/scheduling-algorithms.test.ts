@@ -12,7 +12,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/post.queries.server", () => ({
+vi.mock("~/features/posts/server", () => ({
   getLastPostTimeForQueue: vi.fn(),
 }));
 
@@ -32,9 +32,9 @@ import {
   createDateAtTime,
 } from "../utils/scheduling-test-helpers";
 
-import { calculateNextScheduleTime } from "~/features/posts/server";
+import { getLastPostTimeForQueue } from "~/features/posts/server";
+import { calculateNextScheduleTime } from "~/features/posts/server/scheduling";
 import { getScheduleInterval } from "~/features/user";
-import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 
 describe("Scheduling Algorithms", () => {
   beforeEach(() => {

@@ -21,7 +21,10 @@ vi.mock("~/features/auth/signer", () => ({
   recordConnectionEvent: vi.fn(),
   detectSignerAppName: vi.fn().mockReturnValue("Primal"),
   parseSecretKeyHex: vi.fn().mockReturnValue(new Uint8Array(32)),
-  getActiveSession: vi.fn().mockReturnValue({ id: "conn-1" }),
+  getActiveSession: vi.fn().mockReturnValue({
+    connection: { id: "conn-1" },
+    currentSession: null,
+  }),
   attemptPrimarySignerFailover: vi
     .fn()
     .mockResolvedValue({ recovered: false, reason: "no_fallback" }),
@@ -82,28 +85,31 @@ import {
 
 const baseNostrConnectOptions: RunExistingNostrConnectReconnectOptions = {
   connectionView: {
-    id: "conn-1",
-    label: "",
-    history: [],
-    config: {
-      type: "nip46",
-      method: "nostrconnect_uri",
-      uri: "nostrconnect://...",
-      relays: ["wss://relay.example.com"],
-      clientSecretKeyHex: "ab".repeat(32),
-      signerPubkey: "pubkey-hex-123",
+    connection: {
+      id: "conn-1",
+      label: "",
+      config: {
+        type: "nip46",
+        method: "nostrconnect_uri",
+        uri: "nostrconnect://...",
+        relays: ["wss://relay.example.com"],
+        clientSecretKeyHex: "ab".repeat(32),
+        signerPubkey: "pubkey-hex-123",
+      },
+      metadata: {
+        pubkey: "npub1abc",
+        status: "active",
+        connectedAt: 0,
+        lastActivityAt: 0,
+        signerAppName: null,
+        relays: [],
+        lastError: null,
+        createdAt: 0,
+        updatedAt: 0,
+      },
+      currentSessionId: null,
     },
-    metadata: {
-      pubkey: "npub1abc",
-      status: "active",
-      connectedAt: 0,
-      lastActivityAt: 0,
-      signerAppName: null,
-      relays: [],
-      lastError: null,
-      createdAt: 0,
-      updatedAt: 0,
-    },
+    currentSession: null,
   },
   expectedPubkeyHex: "pubkey-hex-123",
   trigger: "manual_retry",
@@ -119,26 +125,29 @@ const baseNostrConnectOptions: RunExistingNostrConnectReconnectOptions = {
 
 const baseBunkerOptions: RunExistingBunkerReconnectOptions = {
   connectionView: {
-    id: "conn-1",
-    label: "",
-    history: [],
-    config: {
-      type: "nip46",
-      method: "bunker_input",
-      bunkerInput: "bunker+nostr://...",
-      clientSecretKeyHex: "ab".repeat(32),
+    connection: {
+      id: "conn-1",
+      label: "",
+      config: {
+        type: "nip46",
+        method: "bunker_input",
+        bunkerInput: "bunker+nostr://...",
+        clientSecretKeyHex: "ab".repeat(32),
+      },
+      metadata: {
+        pubkey: "npub1abc",
+        status: "active",
+        connectedAt: 0,
+        lastActivityAt: 0,
+        signerAppName: null,
+        relays: [],
+        lastError: null,
+        createdAt: 0,
+        updatedAt: 0,
+      },
+      currentSessionId: null,
     },
-    metadata: {
-      pubkey: "npub1abc",
-      status: "active",
-      connectedAt: 0,
-      lastActivityAt: 0,
-      signerAppName: null,
-      relays: [],
-      lastError: null,
-      createdAt: 0,
-      updatedAt: 0,
-    },
+    currentSession: null,
   },
   expectedPubkeyHex: "pubkey-hex-123",
   trigger: "manual_retry",

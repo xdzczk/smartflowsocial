@@ -13,8 +13,10 @@ import {
   resetCachedSigner,
   setActiveSignerConfig,
   updateSession,
-  type ActiveSignerConfig,
-  type RemoteSignerSession,
+} from "~/features/auth/signer";
+import type {
+  ActiveSignerConfig,
+  ConnectionWithCurrentSession,
 } from "~/features/auth/signer";
 
 import {
@@ -29,7 +31,7 @@ import { parseBunkerInput } from "../reconnect-uri.client";
 const PING_VERIFY_MS = 5000;
 
 export interface RunExistingBunkerReconnectOptions {
-  connectionView: RemoteSignerSession;
+  connectionView: ConnectionWithCurrentSession;
   expectedPubkeyHex: string | null;
   trigger: ExistingReconnectTrigger;
   runId: number;
@@ -64,7 +66,7 @@ export async function runExistingBunkerReconnect(
     ActiveSignerConfig,
     { type: "nip46"; method: "bunker_input" }
   >;
-  const bunkerConfig = connectionView.config as Nip46BunkerConfig;
+  const bunkerConfig = connectionView.connection.config as Nip46BunkerConfig;
   const { bunkerInput: storedBunkerInput } = bunkerConfig;
 
   const bp = await parseBunkerInput(storedBunkerInput);
@@ -170,10 +172,11 @@ export async function runExistingBunkerReconnect(
     clientSecretKeyHex: bunkerConfig.clientSecretKeyHex,
   };
 
+  const connectionId = connectionView.connection.id;
   const detectedAppName = detectSignerAppName(config);
-  updateSession(connectionView.id, {
+  updateSession(connectionId, {
     metadata: {
-      ...connectionView.metadata,
+      ...connectionView.connection.metadata,
       pubkey,
       signerAppName: detectedAppName,
       status: "active",
@@ -183,7 +186,7 @@ export async function runExistingBunkerReconnect(
     },
   });
 
-  recordConnectionEvent(connectionView.id, { type: "connected", pubkey });
+  recordConnectionEvent(connectionId, { type: "connected", pubkey });
 
   setActiveSignerConfig(config);
   cacheNip46SignerFromLogin(signer);
@@ -211,10 +214,10 @@ export async function runExistingBunkerReconnect(
   if (getIsRunStale()) return;
 
   debugReconnectTrace("Existing-connection bunker reconnect succeeded", {
-    connectionId: connectionView.id,
+    connectionId,
     pubkey,
   });
   setExistingReconnectAttempt(0);
   setState("connected");
-  onSuccess(connectionView.id);
+  onSuccess(connectionId);
 }

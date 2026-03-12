@@ -4,7 +4,7 @@
  */
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
-import { PublishNowUseCase } from "~/features/posts/server";
+import { PublishNowUseCase } from "~/features/posts/server/publishing";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 
 import { CreatePostUseCase } from "../../../use-cases/create-post.use-case.server";

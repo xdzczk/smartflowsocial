@@ -104,43 +104,6 @@ class BullMQClient implements QueueClient {
     }
   }
 
-  async cancelByData(
-    queueName: QueueType,
-    dataKey: string,
-    dataValue: string
-  ): Promise<boolean> {
-    try {
-      const queue = getQueue(queueName);
-      const jobs = await queue.getJobs(["waiting", "delayed"]);
-      const job = jobs.find((j) => {
-        const jobData: unknown = j.data;
-        if (
-          jobData &&
-          typeof jobData === "object" &&
-          !Array.isArray(jobData) &&
-          dataKey in jobData
-        ) {
-          const dataValueInJob = (jobData as Record<string, unknown>)[dataKey];
-          return String(dataValueInJob) === dataValue;
-        }
-        return false;
-      });
-
-      if (job) {
-        await job.remove();
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), {
-        queueName,
-        message: "Error canceling job",
-      });
-      return false;
-    }
-  }
-
   async cancelByJobId(queueName: QueueType, jobId: string): Promise<boolean> {
     try {
       const queue = getQueue(queueName);
