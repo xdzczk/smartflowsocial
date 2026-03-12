@@ -2,7 +2,7 @@
 
 **Estimated time:** 10 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Learn how to use the visual calendar interface to schedule and manage your posts with drag-and-drop
 functionality.

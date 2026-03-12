@@ -2,7 +2,7 @@
 
 **Estimated time:** 15 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete guide to searching for Nostr events, viewing engagement statistics, and scheduling quote
 posts or reposts.

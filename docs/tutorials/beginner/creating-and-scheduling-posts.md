@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-03
+**Last updated:** 2025-03-12
 
 Complete step-by-step tutorial to create posts (with or without images) and schedule them for future
 publication on SmartFlowSocial.

@@ -1,6 +1,6 @@
 # Tutorials
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Step-by-step tutorials organized by difficulty level to help you master SmartFlowSocial.
 

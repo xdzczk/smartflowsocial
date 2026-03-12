@@ -1,6 +1,6 @@
 # Contributing to Documentation
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 How to contribute to SmartFlowSocial documentation.
 

@@ -2,7 +2,7 @@
 
 **Estimated time:** 5 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-03
+**Last updated:** 2025-03-12
 
 This guide is for **hosted customers** using SmartFlowSocial at
 [smartflow.social](https://smartflow.social).

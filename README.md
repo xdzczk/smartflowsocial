@@ -250,7 +250,7 @@ See [Contributing Guide](./CONTRIBUTING.md) for detailed guidelines.
 - ✅ **Community Driven**: Open to contributions
 - ✅ **API Available**: Full REST API for automation and integrations
 
-**Current Version**: v1.0.0 — See [CHANGELOG](./CHANGELOG.md) for latest changes.
+**Current version:** See [CHANGELOG](./CHANGELOG.md) for latest changes.
 
 ---
 

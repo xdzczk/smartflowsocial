@@ -2,9 +2,7 @@
 
 **Estimated time:** 45 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-03  
-**Note**: Test structure updated - large test files split into scenario-driven files (see
-[Test Suite Refactoring](../test-suite-refactoring-complete.md))
+**Last updated:** 2025-03-12
 
 Comprehensive guide to testing in SmartFlowSocial, covering strategy, patterns, and best practices.
 

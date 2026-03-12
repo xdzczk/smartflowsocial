@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Learn advanced strategies for optimizing your posting schedule, maximizing engagement, and
 efficiently managing content.

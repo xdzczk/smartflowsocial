@@ -2,7 +2,7 @@
 
 **Estimated time:** 45 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete guide for deploying SmartFlowSocial to production environments, including platform-specific
 instructions and best practices.

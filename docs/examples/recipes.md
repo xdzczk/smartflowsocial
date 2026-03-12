@@ -1,6 +1,6 @@
 # Recipes
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Common use case patterns and recipes for SmartFlowSocial.
 

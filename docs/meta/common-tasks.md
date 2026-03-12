@@ -1,6 +1,6 @@
 # Common Tasks Quick Reference
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Quick reference for common SmartFlowSocial tasks.
 

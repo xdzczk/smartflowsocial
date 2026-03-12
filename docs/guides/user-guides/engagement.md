@@ -2,7 +2,7 @@
 
 **Estimated time:** 15 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Learn how to track and manage engagement with your Nostr posts, including replies, mentions, and
 interactions.
@@ -244,6 +244,30 @@ When viewing search results or your own posts, you can see:
 
 ---
 
+## Viewing threads
+
+A **thread** is the conversation under a single note: the root note and its replies in order.
+SmartFlowSocial can load and show a thread so you can read the full context before replying.
+
+**How to open a thread:**
+
+1. From the **Engagement** feed, click a reply or the "View thread" (or "View note") action on an
+   item.
+2. The app loads the thread (root event plus replies) and displays it in a threaded view.
+3. You can scroll through the conversation and use **Reply** to answer from the app.
+
+**What the thread view shows:**
+
+- The root note (the post that started the conversation)
+- Replies in chronological or threaded order
+- Option to reply, like, or open the note in your preferred Nostr client
+
+Thread data is fetched from the cache/relays (see
+[API: thread-view](../reference/api.md#thread-view) for the backend endpoint). If a thread is long,
+only part of it may be loaded.
+
+---
+
 ## Types of Engagement
 
 ### Replies
@@ -258,7 +282,7 @@ When viewing search results or your own posts, you can see:
 
 1. Go to **Engagement** feed
 2. Filter by **Replies**
-3. Click on a reply to view thread
+3. Click on a reply to view thread (see [Viewing threads](#viewing-threads))
 
 **How to respond:**
 

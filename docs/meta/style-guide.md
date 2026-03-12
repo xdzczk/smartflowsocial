@@ -1,6 +1,6 @@
 # Documentation Style Guide
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Standards and conventions for writing SmartFlowSocial documentation.
 

@@ -2,7 +2,7 @@
 
 **Estimated time:** 25 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete guide to managing multiple Nostr accounts with parent/child relationships in
 SmartFlowSocial.

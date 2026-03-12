@@ -2,7 +2,7 @@
 
 **Estimated time:** 40 minutes  
 **Difficulty:** Advanced  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete guide to using the SmartFlowSocial API for programmatic access, automation, and custom
 integrations.

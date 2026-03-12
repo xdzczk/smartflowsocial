@@ -3,6 +3,8 @@
 This document describes all API endpoints available in SmartFlowSocial, including request/response
 formats, authentication, error handling, and usage examples.
 
+**Last verified:** 2025-03 (against `app/routes/api.*`, `app/routes/internal.*`, and `cron.*`).
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -312,6 +314,50 @@ Upload images from the EditorJS rich text editor.
 
 ---
 
+#### POST `/api/media/intents`
+
+Create a media ingest intent (declare files before upload). Returns provider and upload
+instructions.
+
+**Request:**
+
+```json
+{
+  "files": [
+    { "fileName": "image.png", "size": 12345, "mimeType": "image/png", "sha256": "optional_hex" }
+  ]
+}
+```
+
+**Response:** Intent object with `provider` and per-provider upload details.
+
+---
+
+#### POST `/api/media/commit`
+
+Commit media after successful upload (register URLs and metadata for the current user).
+
+**Request:**
+
+```json
+{
+  "items": [
+    {
+      "fileName": "image.png",
+      "url": "https://...",
+      "size": 12345,
+      "mimeType": "image/png",
+      "provider": "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS" | "BLOSSOM_CUSTOM",
+      "sha256": "optional_hex"
+    }
+  ]
+}
+```
+
+**Response:** `{ "committed": [ ... ], ... }` with committed items.
+
+---
+
 ### Posts
 
 #### POST `/api/publish`
@@ -351,14 +397,65 @@ signed client-side before sending.
 
 #### POST `/api/posts/batch`
 
-Batch operations on multiple posts.
+Fetch multiple posts by ID for the current user.
 
 **Request:**
 
 ```json
 {
-  "action": "delete|schedule",
   "postIds": ["post_1", "post_2"]
+}
+```
+
+**Response:** Array of post data for the given IDs (only posts owned by the user).
+
+---
+
+#### GET `/api/posts/:id`
+
+Fetch a single post by ID for the current user.
+
+**Response:** Post data (caption, content, fileUrl, scheduledFor, currentState, etc.) or 404 if not
+found or not owned.
+
+---
+
+#### POST `/api/post-stats`
+
+Fetch post stats (engagement counts) for multiple Nostr event IDs.
+
+**Request:**
+
+```json
+{
+  "eventIds": ["event_id_1", "event_id_2"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "stats": {
+    "event_id_1": { "replies": 5, "reposts": 2, "likes": 10, ... },
+    "event_id_2": { ... }
+  }
+}
+```
+
+---
+
+#### GET `/api/publish-result`
+
+Poll relay acknowledgements for a publish attempt.
+
+**Query Parameters:** `postId` (required), `publishAttemptId` (required).
+
+**Response:**
+
+```json
+{
+  "acks": [{ "relayUrl": "wss://...", "status": "...", "receivedAt": "...", "createdAt": "..." }]
 }
 ```
 
@@ -418,6 +515,29 @@ Get the effective hashtags for a post based on queue and preset settings.
 
 ---
 
+### Search
+
+#### GET `/api/global-search` / POST `/api/global-search`
+
+Search across the application (posts, queues, etc.) for the current user.
+
+**Query (GET):** `q` (required, min 2 characters), `context` (optional).
+
+**Body (POST):** FormData with `q` (required, min 2 characters), `context` (optional).
+
+**Response:**
+
+```json
+{
+  "results": [ ... ],
+  "total": 10
+}
+```
+
+**Note:** Requires authentication. Returns up to 5 results per request.
+
+---
+
 ### User Management
 
 #### GET `/api/user-upload-provider`
@@ -431,6 +551,22 @@ Get the current user's upload provider setting.
   "provider": "S3"
 }
 ```
+
+---
+
+#### GET `/api/primary-signer-profile`
+
+Get the current user's preferred NIP-46 signer profile (non-secret metadata only).
+
+**Response:**
+
+```json
+{
+  "primarySignerProfile": { ... } | null
+}
+```
+
+**Note:** Used for account-level preferred remote signer display/settings.
 
 ---
 
@@ -465,7 +601,91 @@ Manage parent-child account relationships.
 
 ---
 
+### Push Notifications
+
+#### GET `/api/push-subscribe`
+
+Get the VAPID public key for Web Push subscription. No request body. Used by the client before
+calling POST to subscribe.
+
+**Response:**
+
+```json
+{
+  "publicKey": "BEl62iUYgUivxIkv69yViEuiHIa-I0..."
+}
+```
+
+**Note:** Returns 503 if VAPID keys are not configured.
+
+---
+
+#### POST `/api/push-subscribe`
+
+Subscribe to push notifications for the current user.
+
+**Request:**
+
+```json
+{
+  "endpoint": "https://...",
+  "keys": { "p256dh": "...", "auth": "..." }
+}
+```
+
+**Response:** `200` on success.
+
+---
+
+#### POST `/api/push-unsubscribe`
+
+Unsubscribe from push notifications.
+
+**Request:**
+
+```json
+{
+  "endpoint": "https://..."
+}
+```
+
+**Response:** `{ "success": true }` or 404 if subscription not found.
+
+---
+
 ### External Data
+
+#### GET `/api/zap-profile`
+
+Get Lightning address (lud16) for a Nostr pubkey for NIP-57 zap flow. No authentication required.
+
+**Query Parameters:** `npub` (required) — Nostr public key (npub or hex).
+
+**Response:**
+
+```json
+{
+  "lud16": "user@domain.com" | null
+}
+```
+
+---
+
+#### GET `/api/profile-display-name`
+
+Get display name for a Nostr pubkey (e.g. for "Signing in as username"). No authentication required.
+
+**Query Parameters:** `pubkey` (optional) — Nostr public key (npub or hex).
+
+**Response:**
+
+```json
+{
+  "displayName": "username" | null
+}
+```
+
+---
 
 #### GET `/api/link-preview`
 
@@ -503,6 +723,44 @@ Fetch a Nostr thread from the cache or relays.
   "rootEvent": { ... }
 }
 ```
+
+---
+
+### Engagement
+
+#### POST `/api/engagement/mark-state`
+
+Mark an engagement item (e.g. reply/mention) as handled or update replied-from-app state.
+
+**Request:**
+
+```json
+{
+  "eventId": "nostr_event_id",
+  "repliedFromApp": true
+}
+```
+
+**Response:** `{ "success": true }` or 400.
+
+---
+
+#### GET `/api/engagement/reply-templates` / POST `/api/engagement/reply-templates`
+
+List (GET) or manage (POST) reply templates for the engagement feed.
+
+**GET Response:**
+
+```json
+{
+  "templates": [ { "slug": "...", "body": "..." }, ... ]
+}
+```
+
+**POST Request:** JSON body with `action`: `"create"` (requires `slug`, `body`), `"update"`
+(requires `id`, `slug` or `body`), or `"delete"` (requires `id`).
+
+**Response:** `{ "success": true }` or 400.
 
 ---
 
@@ -571,13 +829,12 @@ Get error metrics and statistics.
 
 ### Payments
 
-#### GET `/api/payment-status`
+#### POST `/api/payment-status`
 
-Check the status of a Lightning payment.
+Check the status of a Lightning payment. Accepts JSON or FormData.
 
-**Query Parameters:**
-
-- `paymentId` - Payment ID
+**Request (JSON):** `{ "paymentId": "payment_123" }`  
+**Request (FormData):** `paymentId` field.
 
 **Response:**
 
@@ -588,6 +845,8 @@ Check the status of a Lightning payment.
   "paidAt": "2024-01-15T10:00:00Z"
 }
 ```
+
+**Note:** GET returns 405; use POST with `paymentId` in body.
 
 ---
 

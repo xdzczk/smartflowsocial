@@ -2,7 +2,7 @@
 
 **Estimated time:** 15 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Learn how to add images to your posts to make them more engaging and visually appealing.
 

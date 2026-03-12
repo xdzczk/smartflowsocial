@@ -1,6 +1,6 @@
 # Link Verification Guide
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Guide for verifying and maintaining links in the documentation.
 

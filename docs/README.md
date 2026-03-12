@@ -77,7 +77,7 @@ Comprehensive guides organized by role and topic.
 
 - [Developer Guide](./guides/developer-guide.md) - Development workflow
 - [Testing Guide](./guides/testing.md) - Testing strategies and patterns
-- [Contributing Guide](./guides/contributing.md) - How to contribute
+- [Contributing Guide](../CONTRIBUTING.md) - How to contribute
 - [API Development](./guides/api-development.md) - Building API endpoints
 
 #### Operations Guides
@@ -85,7 +85,7 @@ Comprehensive guides organized by role and topic.
 - [Deployment Guide](./guides/deployment.md) - Production deployment
 - [Operations Guide](./guides/operations.md) - Monitoring and maintenance
 - [Security Guide](./guides/security.md) - Security best practices
-- [Scaling Guide](./guides/scaling.md) - Scaling strategies
+- [Scaling Guide](./guides/deployment.md#scaling) - Scaling strategies
 
 ### Reference
 
@@ -145,7 +145,7 @@ Help when things go wrong.
 [Deployment Guide](./guides/deployment.md) → [Operations Guide](./guides/operations.md)
 
 **Build a custom feature** → [Architecture](./getting-started/architecture.md) →
-[Developer Guide](./guides/developer-guide.md) → [Contributing](./guides/contributing.md)
+[Developer Guide](./guides/developer-guide.md) → [Contributing](../CONTRIBUTING.md)
 
 **Understand how it works** → [Core Concepts](./getting-started/concepts.md) →
 [Architecture](./getting-started/architecture.md) → [Nostr Integration](./reference/nostr.md)
@@ -203,12 +203,12 @@ We welcome contributions! See our [Documentation Contributing Guide](./meta/cont
 
 | Section          | Status         | Last Updated |
 | ---------------- | -------------- | ------------ |
-| Getting Started  | ✅ Complete    | 2026-01-02   |
-| User Guides      | ✅ Complete    | 2026-01-02   |
-| Developer Guides | ✅ Complete    | 2026-01-02   |
-| Reference        | ✅ Complete    | 2026-01-02   |
-| Examples         | 🚧 In Progress | 2026-01-02   |
-| Troubleshooting  | ✅ Complete    | 2026-01-02   |
+| Getting Started  | ✅ Complete    | 2025-03-12   |
+| User Guides      | ✅ Complete    | 2025-03-12   |
+| Developer Guides | ✅ Complete    | 2025-03-12   |
+| Reference        | ✅ Complete    | 2025-03-12   |
+| Examples         | 🚧 In Progress | 2025-03-12   |
+| Troubleshooting  | ✅ Complete    | 2025-03-12   |
 
 ---
 

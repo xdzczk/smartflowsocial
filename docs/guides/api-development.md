@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Guide for building and maintaining API endpoints in SmartFlowSocial.
 

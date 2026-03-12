@@ -2,7 +2,7 @@
 
 **Estimated time:** 45 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete guide to operating SmartFlowSocial in production, including monitoring, logging, alerting,
 and maintenance.

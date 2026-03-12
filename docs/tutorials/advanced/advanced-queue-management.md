@@ -2,7 +2,7 @@
 
 **Estimated time:** 35 minutes  
 **Difficulty:** Advanced  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Master advanced queue management techniques, complex configurations, optimization strategies, and
 troubleshooting.
@@ -100,6 +100,35 @@ troubleshooting.
 - Different frequencies per queue
 - Content-specific timing
 - Campaign-specific schedules
+
+### Random posting interval (schedule window)
+
+You can add **randomness** to when a post is actually published: instead of an exact time, the app
+posts at a **random time within ±N minutes** of the chosen time. This avoids all posts going out at
+the same clock minute and can feel more natural.
+
+**Where to set it:**
+
+- **Queue configuration:** When creating or editing a queue (interval or fixed slots), look for
+  **Random window** or **Schedule random window (minutes)**. Set the number of minutes (e.g. 5, 15,
+  30). The "next slot" time shown for the queue will be the nominal time; the actual post time is
+  chosen at schedule time within ±N minutes.
+- **Composer:** When scheduling a single post, you may see a random-window option that applies to
+  that post’s scheduled time.
+
+**How it works:**
+
+- You (or the queue) choose a nominal time (e.g. 13:00). With a 10-minute random window, the system
+  will publish at a random time between 12:50 and 13:10.
+- The nominal time is stored so the queue’s "next slot" display stays consistent; only the actual
+  publish time is randomized.
+- For **interval** queues, the next slot is still calculated from the last post; the random window
+  applies to that slot. For **fixed slots** and **weekly slots**, the same idea applies to the
+  chosen slot time.
+
+**Semantics:** See
+[Time Semantics: Random Schedule Window](../../reference/time-semantics.md#random-schedule-window)
+for the exact behavior and edge cases.
 
 ---
 

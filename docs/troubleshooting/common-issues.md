@@ -1,6 +1,6 @@
 # Common Issues
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Solutions to frequently encountered problems when using SmartFlowSocial.
 
@@ -12,6 +12,7 @@ Solutions to frequently encountered problems when using SmartFlowSocial.
 - [Database Issues](#database-issues)
 - [Redis Issues](#redis-issues)
 - [Storage Issues](#storage-issues)
+- [Push notification issues](#push-notification-issues)
 - [Posting Issues](#posting-issues)
 - [Authentication Issues](#authentication-issues)
 - [Performance Issues](#performance-issues)
@@ -350,6 +351,58 @@ aws s3 cp test.jpg s3://your-bucket/test.jpg
 
 - Ensure region matches bucket region
 - Use `auto` for Cloudflare R2
+
+---
+
+### Blossom upload failed
+
+**Problem:** Uploads to Blossom (vibe-cdn) fail with quota, token, or policy errors.
+
+**Solutions:**
+
+1. **Check Blossom configuration:**
+   - Ensure `BLOSSOM_SFS_API_URL` and `BLOSSOM_INTERNAL_SECRET` (and optionally
+     `BLOSSOM_UPLOAD_TOKEN_SECRET`) are set and match the Blossom server.
+   - For token-based uploads, the app requests tokens from the Blossom API; ensure the Blossom
+     server can reach your app’s internal endpoints if required.
+
+2. **Quota or subscription:**
+   - Errors like `quota_exceeded` or `allowCompatUpload: false` mean the user’s plan or subscription
+     does not allow more uploads. Check subscription status and plan limits.
+
+3. **Internal endpoint:**
+   - If Blossom calls back to your app (e.g. commit-batch), ensure `APP_URL` and any firewall allow
+     the Blossom server to reach your app and that `BLOSSOM_INTERNAL_SECRET` matches on both sides.
+
+---
+
+## Push notification issues
+
+### Push subscription fails or notifications not received
+
+**Problem:** Browser push subscription fails, or push notifications never appear after subscribing.
+
+**Solutions:**
+
+1. **VAPID keys:**
+   - Set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in the environment (generate with
+     `npx web-push generate-vapid-keys`). If missing, the subscribe endpoint returns 503.
+
+2. **HTTPS:**
+   - Push requires a secure context (HTTPS or localhost). Ensure the app is served over HTTPS in
+     production.
+
+3. **Browser permissions:**
+   - User must allow notifications when prompted. If they block or dismiss, resubscribe from
+     Settings or the prompt when the app requests permission again.
+
+4. **Endpoint validity:**
+   - Subscriptions can expire or be invalidated. If notifications stop, the user may need to
+     unsubscribe and subscribe again (e.g. from Settings).
+
+5. **Worker or server:**
+   - Notifications are sent from the server when events occur (e.g. publish success). Ensure the app
+     and any worker processes are running and can send Web Push payloads.
 
 ---
 

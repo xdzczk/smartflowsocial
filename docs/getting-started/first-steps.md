@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Your first 30 minutes with SmartFlowSocial. Learn the basics and create your first scheduled post.
 

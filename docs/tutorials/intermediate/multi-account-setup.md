@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Step-by-step guide to setting up and managing parent/child account relationships for managing
 multiple Nostr accounts.

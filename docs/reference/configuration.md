@@ -1,6 +1,6 @@
 # Configuration Reference
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete reference for all environment variables and configuration options in SmartFlowSocial.
 
@@ -321,6 +321,126 @@ OWNER_NWC=nostr+walletconnect://npub1...?relay=wss://relay.example.com&secret=..
 
 - Accepting Lightning payments
 - Subscription management
+
+---
+
+### APP_URL
+
+Canonical application URL. Used for CSRF origin validation and links in emails/push.
+
+**Format:** Full URL including scheme, no trailing slash.
+
+**Example:**
+
+```env
+APP_URL=http://localhost:3000
+APP_URL=https://smartflow.social
+```
+
+**Default:** Not set (some features may fall back to request host).
+
+**Required for:**
+
+- CSRF protection (origin check)
+- Web Push VAPID subject when `VAPID_SUBJECT` is not set
+
+---
+
+### ALLOWED_ORIGINS
+
+Comma-separated list of allowed origins for CSRF protection. Use when the app is accessed from
+multiple domains (e.g. main domain + www).
+
+**Example:**
+
+```env
+ALLOWED_ORIGINS=https://smartflow.social,https://www.smartflow.social
+```
+
+**Default:** If not set, only the same origin as the request is allowed.
+
+---
+
+### NOSTR_AUTH_V2_ENABLED
+
+Enable server-issued Nostr login (challenge/verify flow). When enabled, the app exposes
+`POST /auth/nostr/challenge` and `POST /auth/nostr/verify`.
+
+**Values:** `true` | `false`
+
+**Example:**
+
+```env
+NOSTR_AUTH_V2_ENABLED=true
+```
+
+**Default:** `true`
+
+---
+
+### ENFORCE_NOSTR_SESSION_PUBKEY
+
+Enforce that every signed Nostr event’s pubkey matches the active session pubkey. Prevents using one
+session to sign as another identity.
+
+**Values:** `true` | `false`
+
+**Example:**
+
+```env
+ENFORCE_NOSTR_SESSION_PUBKEY=true
+```
+
+**Default:** `true`
+
+---
+
+### VAPID_PUBLIC_KEY
+
+Public key for Web Push (VAPID). Required for browser push notifications.
+
+**How to generate:**
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+**Example:**
+
+```env
+VAPID_PUBLIC_KEY=BEl62iUYgUivxIkv69yViEuiHIa-I0...
+```
+
+**Required for:** Push notifications (optional feature).
+
+---
+
+### VAPID_PRIVATE_KEY
+
+Private key for Web Push (VAPID). Keep secret.
+
+**Example:**
+
+```env
+VAPID_PRIVATE_KEY=...
+```
+
+**Security:** Never commit to version control. Store in secret manager.
+
+---
+
+### VAPID_SUBJECT
+
+Subject for Web Push (mailto or URL). Shown to users in push subscription UI.
+
+**Example:**
+
+```env
+VAPID_SUBJECT=mailto:admin@smartflow.social
+VAPID_SUBJECT=https://smartflow.social
+```
+
+**Default:** Falls back to `APP_URL` or a default mailto if unset.
 
 ---
 

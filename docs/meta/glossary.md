@@ -1,6 +1,6 @@
 # Glossary
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Terminology and definitions for SmartFlowSocial.
 
@@ -20,6 +20,12 @@ The process of verifying user identity using Nostr signatures (NIP-07).
 ---
 
 ## B
+
+### Blossom
+
+A media/CDN service (e.g. vibe-cdn) used for image and file uploads. SmartFlowSocial can use Blossom
+as an upload provider; uploads may be token-based and quota-tracked. See configuration and storage
+docs.
 
 ### BullMQ
 
@@ -97,6 +103,12 @@ When someone references your Nostr public key (npub) in a post.
 ### NIP-07
 
 A Nostr Improvement Proposal that defines browser extension authentication for Nostr.
+
+### NIP-46
+
+A Nostr Improvement Proposal that defines remote signer protocol: the app communicates with an
+external signer (e.g. another device or service) to sign events without the private key in the
+browser. Used for "remote signer" or "signer profile" flows in SmartFlowSocial.
 
 ### NIP-23
 

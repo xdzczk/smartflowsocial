@@ -1,6 +1,6 @@
 # Visual Aids Guide
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Guide for adding visual aids to documentation, including screenshots, diagrams, and flowcharts.
 

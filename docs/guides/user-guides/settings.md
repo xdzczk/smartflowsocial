@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete guide to configuring all settings in SmartFlowSocial, from timezone to storage to
 engagement filters.
@@ -110,6 +110,33 @@ SmartFlowSocial settings are organized into tabs:
 - Hashtags automatically added to posts
 - Uses queue default or selected preset
 - Can be overridden per post
+
+### Preferred Nostr client for external links
+
+**Purpose:** Choose which Nostr client opens when you click "View on Nostr" or similar links (e.g.
+after publishing a post). The app builds the note URL using this setting.
+
+**How to configure:**
+
+1. Go to **Settings** → **General**
+2. Find **Preferred Nostr client** (or "Default Nostr client for external links")
+3. Select one of:
+   - **PRIMAL** – Primal.net
+   - **DAMUS** – Damus
+   - **AMETHYST** – Amethyst
+   - **NOSTUR** – Nostr client
+   - **NOSTRUDEL** – Nostr client
+   - **IRIS** – Iris
+   - **YAKIHONNE** – Yakihonne
+   - **CUSTOM** – Your own client URL (see below)
+4. If you choose **CUSTOM**, set **Custom client base URL** (e.g. `https://example.com`) so note
+   links look like `https://example.com/e/<event_id>`.
+5. Click **"Save"**
+
+**Impact:**
+
+- "View on Nostr" and similar links open in the selected client (or your custom URL).
+- Only affects link targets; the app does not change how you sign or publish.
 
 ---
 

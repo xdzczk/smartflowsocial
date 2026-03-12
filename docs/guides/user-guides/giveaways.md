@@ -2,7 +2,7 @@
 
 **Estimated time:** 20 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete guide to creating and managing Nostr giveaways with fair winner selection in
 SmartFlowSocial.
@@ -184,6 +184,61 @@ SmartFlowSocial uses a fair random selection process:
 - **All Queues** - All posts
 - **Specific Queue** - Posts from one queue
 - **Unassigned** - Posts without queue
+
+---
+
+## Giveaway presets and complex giveaways
+
+### Giveaway presets
+
+You can save a giveaway configuration as a **preset** and reuse it for future giveaways. Presets
+store scope (e.g. last 7 days, single post, queue), engagement types (reactions, reposts, comments,
+zaps), winner count, selection mode, and optional filters.
+
+**How to use presets:**
+
+1. When creating a giveaway, configure scope, engagement types, winner count, and filters as
+   desired.
+2. Save as a preset (if the option is available): give it a name (e.g. "Weekly repost giveaway").
+3. Next time, choose that preset to pre-fill the same configuration; adjust only what you need (e.g.
+   time range or post).
+
+**Use cases:**
+
+- Run the same style of giveaway every week with one click.
+- Keep multiple presets for different campaigns (repost-only vs. comment-only vs. mixed).
+
+### Multiple winner pools and engagement config
+
+**Complex giveaways** let you define **per-engagement-type** winner counts and sats per winner
+instead of a single global winner count. For example:
+
+- 3 winners from **reposts**, 2,000 sats each
+- 3 winners from **reactions**, 1,000 sats each
+- 2 winners from **comments**, 1,500 sats each
+
+**How to configure:**
+
+1. When creating or editing a giveaway, look for **Engagement config** or **Per-type winners**
+   (wording may vary).
+2. For each engagement type (Reaction, Repost, Comment, Zap), set:
+   - **Winner count** – how many winners from that type
+   - **Sats per winner** (optional) – amount each winner receives
+3. The total winner count is the sum across types. Lock the giveaway when ready; the system selects
+   random winners from each pool and can include them in the winner announcement.
+
+**Selection mode:**
+
+- **Unique user** – each winner is a distinct account (no duplicate winners across pools if the same
+  user qualified in multiple types; implementation may vary).
+- **Weighted by engagement** – optional weights per engagement type so that some actions (e.g.
+  repost) count more than others when drawing winners. Use this for "reposts get 2x entries" style
+  giveaways.
+
+**Filters:**
+
+- Exclude muted or blacklisted accounts, minimum account age, minimum followers, etc., so only
+  eligible participants are included. Configure under giveaway filters or blacklist settings.
 
 ---
 

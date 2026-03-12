@@ -2,7 +2,7 @@
 
 **Estimated time:** 20 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Guide to identifying and resolving performance issues in SmartFlowSocial.
 

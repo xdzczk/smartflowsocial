@@ -1,6 +1,6 @@
 # Integration Examples
 
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete examples for integrating SmartFlowSocial with external services, custom applications, and
 automation tools.

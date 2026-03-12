@@ -2,7 +2,7 @@
 
 **Estimated time:** 10 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Step-by-step tutorial to create and publish your first post on SmartFlowSocial.
 

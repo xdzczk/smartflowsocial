@@ -250,6 +250,334 @@ Payment transaction records.
 
 ---
 
+### Auth and session
+
+#### LoginChallenge
+
+Server-issued Nostr login challenge (NIP-XX challenge/verify flow).
+
+| Field        | Type      | Description                 |
+| ------------ | --------- | --------------------------- |
+| `id`         | String    | Unique identifier (CUID)    |
+| `nonce`      | String    | Challenge nonce             |
+| `purpose`    | String    | Challenge purpose           |
+| `expiresAt`  | DateTime  | When the challenge expires  |
+| `consumedAt` | DateTime? | When the challenge was used |
+| `pubkey`     | String?   | Associated pubkey           |
+| `createdAt`  | DateTime  | Creation time               |
+
+#### Session
+
+User session for authenticated requests (cookie-based).
+
+| Field       | Type      | Description              |
+| ----------- | --------- | ------------------------ |
+| `id`        | String    | Unique identifier        |
+| `userId`    | String    | User ID                  |
+| `pubkey`    | String    | Nostr pubkey             |
+| `createdAt` | DateTime  | Creation time            |
+| `expiresAt` | DateTime  | Expiration time          |
+| `revokedAt` | DateTime? | When session was revoked |
+
+---
+
+### Engagement
+
+#### EngagementItemState
+
+Tracks which engagement feed items (replies, mentions) the user has handled.
+
+| Field            | Type     | Description                   |
+| ---------------- | -------- | ----------------------------- |
+| `id`             | String   | Unique identifier             |
+| `userId`         | String   | User ID                       |
+| `eventId`        | String   | Nostr event ID                |
+| `state`          | Enum     | HANDLED                       |
+| `repliedFromApp` | Boolean  | Whether user replied from app |
+| `updatedAt`      | DateTime | Last update                   |
+
+Unique on `(userId, eventId)`.
+
+#### EngagementReplyTemplate
+
+Reusable reply templates for the engagement feed.
+
+| Field       | Type     | Description       |
+| ----------- | -------- | ----------------- |
+| `id`        | String   | Unique identifier |
+| `userId`    | String   | User ID           |
+| `slug`      | String   | Template slug     |
+| `body`      | String   | Template body     |
+| `createdAt` | DateTime | Creation time     |
+
+Unique on `(userId, slug)`.
+
+---
+
+### Drafts
+
+#### DraftVersion
+
+Single draft version (content snapshot) for a post or long-form.
+
+| Field            | Type   | Description                 |
+| ---------------- | ------ | --------------------------- |
+| `id`             | String | Unique identifier           |
+| (content fields) | ...    | Snapshot of content at save |
+
+#### DraftGroup
+
+Group of drafts (e.g. thread segments or bulk) shared for editing.
+
+| Field | Type   | Description       |
+| ----- | ------ | ----------------- |
+| `id`  | String | Unique identifier |
+
+#### DraftGroupVersion
+
+Version snapshot of a draft group.
+
+| Field | Type   | Description       |
+| ----- | ------ | ----------------- |
+| `id`  | String | Unique identifier |
+
+---
+
+### Giveaways
+
+#### Giveaway
+
+Nostr giveaway: scope, eligibility window, engagement types, winner selection.
+
+| Field               | Type      | Description                                      |
+| ------------------- | --------- | ------------------------------------------------ |
+| `id`                | String    | Unique identifier                                |
+| `userId`            | String    | Owner user ID                                    |
+| `name`              | String?   | Optional label                                   |
+| `scopeType`         | Enum      | PERIOD, SINGLE_POST, QUEUE, FOLLOWERS, FOLLOWING |
+| `scopeReference`    | Json      | e.g. days, postId, queueId                       |
+| `eligibilityFrom`   | DateTime? | Eligibility window start                         |
+| `eligibilityTo`     | DateTime? | Eligibility window end                           |
+| `engagementTypes`   | Json      | REACTION, REPOST, COMMENT, ZAP                   |
+| `winnerCount`       | Int       | Total winners (or sum when engagementConfig set) |
+| `engagementConfig`  | Json?     | Per-type winner count and sats per winner        |
+| `selectionMode`     | Enum      | UNIQUE_USER, WEIGHTED_BY_ENGAGEMENT              |
+| `engagementWeights` | Json?     | Weights per engagement type                      |
+| `filters`           | Json?     | excludeMuted, minAccountAgeDays, etc.            |
+| `status`            | Enum      | DRAFT, PREVIEWED, LOCKED, PAID_OUT, CANCELLED    |
+| `lockedAt`          | DateTime? | When giveaway was locked                         |
+| `winnerSnapshot`    | Json?     | Locked winner list                               |
+
+#### GiveawayPreset
+
+Reusable giveaway configuration (scope, engagement types, winner count).
+
+| Field               | Type   | Description (same as Giveaway for scope/engagement) |
+| ------------------- | ------ | --------------------------------------------------- |
+| `id`                | String | Unique identifier                                   |
+| `userId`            | String | Owner user ID                                       |
+| `name`              | String | Preset name (unique per user)                       |
+| `scopeType`         | Enum   | As in Giveaway                                      |
+| `scopeReference`    | Json   | As in Giveaway                                      |
+| `engagementTypes`   | Json   | As in Giveaway                                      |
+| `winnerCount`       | Int    | As in Giveaway                                      |
+| `engagementConfig`  | Json?  | As in Giveaway                                      |
+| `selectionMode`     | Enum   | As in Giveaway                                      |
+| `engagementWeights` | Json?  | As in Giveaway                                      |
+| `filters`           | Json?  | As in Giveaway                                      |
+
+---
+
+### Outbox and workers
+
+#### OutboxEvent
+
+Outbox pattern: events to be processed by workers (e.g. publish to relays).
+
+| Field                       | Type   | Description                         |
+| --------------------------- | ------ | ----------------------------------- |
+| `id`                        | String | Unique identifier                   |
+| (payload and status fields) | ...    | Event payload and processing status |
+
+#### PostStateTransition
+
+Audit trail of post state machine transitions.
+
+| Field                      | Type   | Description        |
+| -------------------------- | ------ | ------------------ |
+| `id`                       | String | Unique identifier  |
+| `postId`                   | String | Post ID            |
+| (from/to state, timestamp) | ...    | Transition details |
+
+#### LongFormPostStateTransition
+
+Audit trail of long-form post state transitions.
+
+| Field            | Type   | Description       |
+| ---------------- | ------ | ----------------- |
+| `id`             | String | Unique identifier |
+| `longFormPostId` | String | Long-form post ID |
+
+#### PublishRelayAck
+
+Relay acknowledgement for a publish attempt (per-relay status).
+
+| Field        | Type      | Description       |
+| ------------ | --------- | ----------------- |
+| `id`         | String    | Unique identifier |
+| `relayUrl`   | String    | Relay URL         |
+| `status`     | String    | Ack status        |
+| `receivedAt` | DateTime? | When ack received |
+
+#### DeadLetterJob
+
+Failed job record for debugging (e.g. publish failures).
+
+| Field                   | Type   | Description        |
+| ----------------------- | ------ | ------------------ |
+| `id`                    | String | Unique identifier  |
+| (job payload and error) | ...    | Failed job details |
+
+---
+
+### Analytics and reads
+
+#### ScheduledPostRead
+
+Read-model: scheduled posts (for calendar/queue views).
+
+| Field                                 | Type | Description         |
+| ------------------------------------- | ---- | ------------------- |
+| (denormalized post + schedule fields) | ...  | Optimized for reads |
+
+#### PublishedPostRead
+
+Read-model: published posts (for published feed).
+
+| Field                                | Type | Description         |
+| ------------------------------------ | ---- | ------------------- |
+| (denormalized post + publish fields) | ...  | Optimized for reads |
+
+#### PostAnalyticsDaily
+
+Daily aggregated analytics per post (engagement counts).
+
+| Field                  | Type | Description        |
+| ---------------------- | ---- | ------------------ |
+| (postId, date, counts) | ...  | Aggregated metrics |
+
+---
+
+### Push
+
+#### PushSubscription
+
+Web Push subscription for browser notifications.
+
+| Field               | Type   | Description        |
+| ------------------- | ------ | ------------------ |
+| `id`                | String | Unique identifier  |
+| `userId`            | String | User ID            |
+| `endpoint`          | String | Push endpoint URL  |
+| (keys and metadata) | ...    | p256dh, auth, etc. |
+
+---
+
+### Media and Blossom
+
+#### Media
+
+Logical media entity (can have multiple assets/variants).
+
+| Field    | Type   | Description       |
+| -------- | ------ | ----------------- |
+| `id`     | String | Unique identifier |
+| `userId` | String | Owner user ID     |
+
+#### MediaAsset
+
+Concrete asset (file) belonging to a Media entity.
+
+| Field                       | Type   | Description       |
+| --------------------------- | ------ | ----------------- |
+| `id`                        | String | Unique identifier |
+| `mediaId`                   | String | Parent Media ID   |
+| (url, size, mimeType, etc.) | ...    | Asset metadata    |
+
+#### MediaVariant
+
+Variant of a media asset (e.g. resized image).
+
+| Field                        | Type   | Description       |
+| ---------------------------- | ------ | ----------------- |
+| `id`                         | String | Unique identifier |
+| (assetId, variant type, url) | ...    | Variant metadata  |
+
+#### BlossomReservationBatch
+
+Batch of Blossom upload reservations (quota-safe uploads).
+
+| Field | Type   | Description       |
+| ----- | ------ | ----------------- |
+| `id`  | String | Unique identifier |
+
+#### BlossomReservationItem
+
+Single item in a Blossom reservation batch.
+
+| Field     | Type   | Description       |
+| --------- | ------ | ----------------- |
+| `id`      | String | Unique identifier |
+| `batchId` | String | Parent batch ID   |
+
+#### BlossomCommit
+
+Committed Blossom upload (after successful upload).
+
+| Field | Type   | Description       |
+| ----- | ------ | ----------------- |
+| `id`  | String | Unique identifier |
+
+#### BlossomUploadUsagePeriod
+
+Usage period for Blossom upload quota (per user/plan).
+
+| Field | Type   | Description       |
+| ----- | ------ | ----------------- |
+| `id`  | String | Unique identifier |
+
+---
+
+### Referrals
+
+#### Referral
+
+Referral code or link (user refers others).
+
+| Field    | Type   | Description       |
+| -------- | ------ | ----------------- |
+| `id`     | String | Unique identifier |
+| `userId` | String | Referrer user ID  |
+
+#### ReferralEarning
+
+Earning record when a referred user converts.
+
+| Field        | Type   | Description       |
+| ------------ | ------ | ----------------- |
+| `id`         | String | Unique identifier |
+| `referralId` | String | Referral ID       |
+
+#### ReferrerPayoutConfig
+
+Configuration for payouts to referrers.
+
+| Field | Type   | Description       |
+| ----- | ------ | ----------------- |
+| `id`  | String | Unique identifier |
+
+---
+
 ## Enums
 
 ### PostType

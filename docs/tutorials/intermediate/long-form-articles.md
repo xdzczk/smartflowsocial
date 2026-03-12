@@ -2,7 +2,7 @@
 
 **Estimated time:** 35 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete guide to creating, formatting, and publishing long-form articles using NIP-23 (Kind 30023)
 in SmartFlowSocial.

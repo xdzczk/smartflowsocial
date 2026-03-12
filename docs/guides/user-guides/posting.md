@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Complete guide to creating, managing, and optimizing posts in SmartFlowSocial.
 
@@ -755,6 +755,36 @@ Full articles with rich text formatting (NIP-23).
 ---
 
 ## Advanced Features
+
+### Also repost or quote this
+
+When creating or scheduling a post, you can optionally **also schedule a repost or quote** of
+another Nostr note. Your main post and the repost/quote are scheduled together (e.g. same time or
+back-to-back).
+
+**Where to find it:**
+
+- **Composer:** In the post composer, look for the "Also repost/quote this" block (or similar). Add
+  a Nostr event (by ID or URL); choose "Repost" (Kind 6) or "Quote" (Kind 1 with quote tag). When
+  you schedule or publish the main post, the repost/quote is scheduled too.
+- **Bulk / calendar:** When editing a scheduled post or using bulk actions, you can attach an "also
+  schedule" repost or quote of a note. The calendar will show both the main post and the linked
+  repost/quote.
+
+**Steps (composer):**
+
+1. Create your main post (content, media, queue, time) as usual.
+2. In the composer, add the "Also repost/quote this" section.
+3. Paste or enter the Nostr note ID or link to the note you want to repost or quote.
+4. Choose **Repost** (share as-is) or **Quote** (share with your commentary).
+5. Schedule or publish. Both the main post and the repost/quote are scheduled; the repost/quote
+   appears on the calendar as a separate item linked to the same flow.
+
+**Use cases:**
+
+- Share someone else’s post with your audience at an optimal time.
+- Quote a note and add context when scheduling.
+- Bundle your new post with a repost in one action.
 
 ### Templates
 

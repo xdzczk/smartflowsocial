@@ -2,7 +2,7 @@
 
 **Estimated time:** 45 minutes  
 **Difficulty:** Advanced  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Learn how to build custom integrations with SmartFlowSocial, including webhooks, third-party
 services, and automation workflows.

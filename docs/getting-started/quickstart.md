@@ -2,7 +2,7 @@
 
 **Estimated time:** 5 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Get SmartFlowSocial up and running in 5 minutes.
 

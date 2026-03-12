@@ -1,6 +1,6 @@
 # Error Troubleshooting Guide
 
-**Last updated:** 2026-01-03
+**Last updated:** 2025-03-12
 
 This guide helps you diagnose and resolve errors and issues with SmartFlowSocial, including
 debugging techniques and tools.

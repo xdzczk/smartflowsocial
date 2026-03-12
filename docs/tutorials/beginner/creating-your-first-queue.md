@@ -2,7 +2,7 @@
 
 **Estimated time:** 20 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2026-01-02
+**Last updated:** 2025-03-12
 
 Learn how to create and configure queues to organize your posts and automate scheduling.
 
