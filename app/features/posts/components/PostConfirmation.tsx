@@ -1,11 +1,12 @@
 import { useFetcher, type FetcherWithComponents } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { tryBackgroundReconnect } from "~/features/auth/signer";
 import type { SignedEvent } from "~/features/nostr/types";
+import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import { logClientError } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
@@ -165,33 +166,23 @@ export default function PostConfirmation({
     }
   }, [actionError]);
 
-  // After successful remote signer reconnect, clear stuck signing state so user can retry.
-  useEffect(() => {
-    const handler = () => {
-      setIsSigning(false);
-      setSigningError(null);
-    };
-    window.addEventListener("nostr-connection-healthy", handler);
-    return () =>
-      window.removeEventListener("nostr-connection-healthy", handler);
-  }, []);
-
-  // When awaiting signer approval, try background reconnect periodically.
-  useEffect(() => {
-    if (!isSigning) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= 5) clearInterval(interval);
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, [isSigning]);
+  const pendingRetryRef = useRef<(() => void) | null>(null);
+  const clearSigningState = () => {
+    setIsSigning(false);
+    setSigningError(null);
+  };
+  const retryLastSign = () => {
+    const fn = pendingRetryRef.current;
+    pendingRetryRef.current = null;
+    fn?.();
+  };
+  useComposerSignerReconnect(clearSigningState, isSigning, retryLastSign);
 
   const handleSignAndSubmit = async () => {
     try {
       setSigningError(null);
       setIsSigning(true);
+      pendingRetryRef.current = () => void handleSignAndSubmit();
       setSigningProgress({ current: 0, total: preparedEvents.length });
 
       // Sign sequentially to avoid flooding remote signers with concurrent requests
@@ -314,6 +305,7 @@ export default function PostConfirmation({
         submitActionProp ??
         `/dashboard/bulkposts${new URL(window.location.href).search}`;
 
+      pendingRetryRef.current = null;
       fetcher.submit(finalFormData, {
         method: "post",
         encType: "multipart/form-data",
@@ -335,6 +327,7 @@ export default function PostConfirmation({
           : "Failed to sign posts. Please try again."
       );
     } finally {
+      pendingRetryRef.current = null;
       setIsSigning(false);
       setSigningProgress(null);
     }
@@ -421,6 +414,7 @@ export default function PostConfirmation({
               size="sm"
               className="text-muted-foreground hover:text-foreground shrink-0"
               onClick={() => {
+                pendingRetryRef.current = null;
                 setIsSigning(false);
                 setSigningError(null);
                 void tryBackgroundReconnect();

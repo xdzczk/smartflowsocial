@@ -9,8 +9,9 @@
  * - Or set `SKIP_DATABASE_TESTS=true` to skip these tests
  * - Database must be running and accessible
  *
- * **Note:** This is an example test file. It will be automatically skipped
- * if `TEST_DATABASE_URL` is not set or if `SKIP_DATABASE_TESTS=true`.
+ * **Note:** This example runs when a test database is configured
+ * (`TEST_DATABASE_URL` or `DATABASE_URL` set and `SKIP_DATABASE_TESTS` not true),
+ * or when `RUN_DATABASE_EXAMPLES=true`.
  */
 import type { PrismaClient } from "@prisma/client";
 import {
@@ -34,9 +35,15 @@ import { getTestPrisma } from "../database/test-db";
 import { getUserById } from "~/features/user";
 import { createPost } from "~/models/post.commands.server";
 
-// This file is an example and should not affect the rest of the suite.
-// Only run it when explicitly enabled.
-const RUN_DATABASE_EXAMPLES = process.env["RUN_DATABASE_EXAMPLES"] === "true";
+// This file is an example. Run when test DB is configured (same as other DB tests)
+// or when explicitly enabled via RUN_DATABASE_EXAMPLES=true.
+const testDatabaseUrl =
+  process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
+const shouldSkipDatabaseExamples =
+  process.env["SKIP_DATABASE_TESTS"] === "true" || !testDatabaseUrl;
+const RUN_DATABASE_EXAMPLES =
+  process.env["RUN_DATABASE_EXAMPLES"] === "true" ||
+  !shouldSkipDatabaseExamples;
 
 // Don't mock Prisma - this test uses the real database
 // Model functions will use the real Prisma client from getTestPrisma()
@@ -67,7 +74,7 @@ if (RUN_DATABASE_EXAMPLES) {
   });
 }
 
-// Example: Test with database using transactions
+// Example: Test with database using transactions (runs when DB is configured)
 const describeDb = RUN_DATABASE_EXAMPLES ? describeDatabase : describe.skip;
 
 describeDb("Database Integration Example", () => {
@@ -182,12 +189,7 @@ describeDb("Database Integration Example", () => {
 });
 
 // Example: Test without transactions (for testing transaction behavior)
-const testDatabaseUrl =
-  process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
-const shouldSkipDatabaseTests =
-  !testDatabaseUrl || process.env["SKIP_DATABASE_TESTS"] === "true";
-
-if (shouldSkipDatabaseTests) {
+if (shouldSkipDatabaseExamples) {
   describe.skip("Database Tests Without Transactions", () => {
     it("should persist data without transactions", () => {
       // Skipped - database not configured

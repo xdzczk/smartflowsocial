@@ -4,6 +4,26 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+// Allow tests to override env values (e.g. SESSION_SECRET) so encryption sees them at call time
+const { envOverrides } = vi.hoisted(() => {
+  const envOverrides: Record<string, string | undefined> = {};
+  return { envOverrides };
+});
+
+vi.mock("~/lib/env.server", () => ({
+  get env() {
+    return new Proxy(process.env as Record<string, string | undefined>, {
+      get(target, key: string) {
+        if (Object.prototype.hasOwnProperty.call(envOverrides, key)) {
+          return envOverrides[key];
+        }
+        return target[key];
+      },
+    });
+  },
+}));
+
 // Mock secrets-sanitizer before importing encryption
 // This is required because encryption.server.ts uses require() for this module
 // The require() uses a relative path "./secrets-sanitizer.server" which vitest
@@ -109,18 +129,12 @@ describe("Encryption Functions", () => {
       expect(decrypted).toBe(plaintext);
     });
 
-    it.skip("should throw error when SESSION_SECRET is missing", () => {
-      // env.SESSION_SECRET comes from ~/lib/env.server, validated at load time, so it is cached.
-      // Deleting process.env in this test does not change the already-loaded env object.
-      // To test the missing-secret path we would need to mock env.server; skip for now.
-      const originalSecret = process.env["SESSION_SECRET"];
-      delete process.env["SESSION_SECRET"];
-      expect(() => encrypt("test")).toThrow();
-      if (originalSecret) {
-        process.env["SESSION_SECRET"] = originalSecret;
-      } else {
-        process.env["SESSION_SECRET"] =
-          "test-session-secret-min-32-chars-long-for-testing";
+    it("should throw error when SESSION_SECRET is missing", () => {
+      envOverrides["SESSION_SECRET"] = undefined;
+      try {
+        expect(() => encrypt("test")).toThrow();
+      } finally {
+        delete envOverrides["SESSION_SECRET"];
       }
     });
 

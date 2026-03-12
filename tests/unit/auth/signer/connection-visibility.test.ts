@@ -268,4 +268,84 @@ describe("connection-visibility", () => {
       }
     }
   });
+
+  it("calls onResume when focus fires and getWasHidden was true", () => {
+    const opts = defaultOptions();
+    (opts.getWasHidden as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    (
+      opts.getLastVisibilityReconnectAt as ReturnType<typeof vi.fn>
+    ).mockReturnValue(0);
+    opts.visibilityReconnectThrottleMs = 0;
+
+    initVisibilityHandler(opts as VisibilityHandlerOptions);
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn return type .mock.calls */
+    const focusCalls = winAddSpy.mock.calls.filter(
+      (c: [string, unknown]) => c[0] === "focus"
+    );
+    expect(focusCalls.length).toBeGreaterThanOrEqual(1);
+    (focusCalls[0]![1] as () => void)();
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    expect(opts.setWasHidden).toHaveBeenCalledWith(false);
+    expect(opts.onResume).toHaveBeenCalled();
+  });
+
+  it("calls onResume when pageshow fires and getWasHidden was true", () => {
+    const opts = defaultOptions();
+    (opts.getWasHidden as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    (
+      opts.getLastVisibilityReconnectAt as ReturnType<typeof vi.fn>
+    ).mockReturnValue(0);
+    opts.visibilityReconnectThrottleMs = 0;
+
+    initVisibilityHandler(opts as VisibilityHandlerOptions);
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn .mock.calls */
+    const pageshowCalls = winAddSpy.mock.calls.filter(
+      (c: [string, unknown]) => c[0] === "pageshow"
+    );
+    expect(pageshowCalls.length).toBeGreaterThanOrEqual(1);
+    (pageshowCalls[0]![1] as () => void)();
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    expect(opts.setWasHidden).toHaveBeenCalledWith(false);
+    expect(opts.onResume).toHaveBeenCalled();
+  });
+
+  it("cleanup removes freeze and resume listeners when supportsFreezeResume", () => {
+    const desc = Object.getOwnPropertyDescriptor(document, "onfreeze");
+    try {
+      Object.defineProperty(document, "onfreeze", {
+        configurable: true,
+        value: null,
+        writable: true,
+      });
+      const opts = defaultOptions();
+      const cleanup = initVisibilityHandler(opts as VisibilityHandlerOptions);
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- vi.spyOn .mock.calls */
+      const freezeAdd = docAddSpy.mock.calls.find(
+        (c: [string, unknown]) => c[0] === "freeze"
+      );
+      const resumeAdd = docAddSpy.mock.calls.find(
+        (c: [string, unknown]) => c[0] === "resume"
+      );
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+      cleanup();
+      if (freezeAdd) {
+        expect(docRemoveSpy).toHaveBeenCalledWith(
+          "freeze",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- freezeAdd from vi.spyOn.mock.calls
+          freezeAdd[1]
+        );
+      }
+      if (resumeAdd) {
+        expect(docRemoveSpy).toHaveBeenCalledWith(
+          "resume",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- resumeAdd from vi.spyOn.mock.calls
+          resumeAdd[1]
+        );
+      }
+    } finally {
+      if (desc) {
+        Object.defineProperty(document, "onfreeze", desc);
+      }
+    }
+  });
 });

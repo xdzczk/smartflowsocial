@@ -1,10 +1,10 @@
 import { useFetcher } from "@remix-run/react";
 import { CalendarDays, Info, X } from "lucide-react";
-import React, { useEffect } from "react";
-import type { z } from "zod";
+import React, { useEffect, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
 import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import type {
   PostData,
   LongFormPostData,
@@ -98,29 +98,21 @@ export function SimpleRescheduleModal({
   const [signingError, setSigningError] = React.useState<string | null>(null);
   const { signAttempt, signElapsedSeconds } =
     useSignAttemptProgress(isSigningEvent);
+  const lastRescheduleDataRef = useRef<{
+    scheduledFor: Date;
+    queueTypeId?: string;
+  } | null>(null);
 
-  // After successful remote signer reconnect, clear stuck signing state so user can retry.
-  React.useEffect(() => {
-    const handler = () => {
-      setIsSigningEvent(false);
-      setSigningError(null);
-    };
-    window.addEventListener("nostr-connection-healthy", handler);
-    return () =>
-      window.removeEventListener("nostr-connection-healthy", handler);
-  }, []);
-
-  // When awaiting signer approval, try background reconnect periodically.
-  React.useEffect(() => {
-    if (!isSigningEvent) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= 5) clearInterval(interval);
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, [isSigningEvent]);
+  const clearSigningState = () => {
+    setIsSigningEvent(false);
+    setSigningError(null);
+  };
+  const retryLastSign = () => {
+    const data = lastRescheduleDataRef.current;
+    lastRescheduleDataRef.current = null;
+    if (data) void runRescheduleWithData(data);
+  };
+  useComposerSignerReconnect(clearSigningState, isSigningEvent, retryLastSign);
 
   // Determine if this is a longform post
   const isLongform = "title" in post;
@@ -169,16 +161,17 @@ export function SimpleRescheduleModal({
     return formatForDateTimeLocal(zonedDateTime, userTimezone);
   };
 
-  const handleSubmit = form.handleSubmit(async (data) => {
+  const runRescheduleWithData = async (data: {
+    scheduledFor: Date;
+    queueTypeId?: string;
+  }) => {
     try {
       setIsSigningEvent(true);
       setSigningError(null);
 
-      // Use Temporal for Unix timestamp conversion
       const scheduledZoned = fromDate(data.scheduledFor, "UTC");
       const newTimeUnix = toUnixTimestamp(scheduledZoned);
 
-      // Use the exact same content and tags from the original signed event
       const originalSignedEvent = post.signedEvent;
       const originalNostrEvent = post.nostrEvent;
 
@@ -188,15 +181,14 @@ export function SimpleRescheduleModal({
         );
       }
 
-      // Re-sign with the same content but new timestamp
       const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
-        content: originalSignedEvent.content, // Use exact same content
-        created_at: newTimeUnix, // Only change the timestamp
+        content: originalSignedEvent.content,
+        created_at: newTimeUnix,
         kind: originalSignedEvent.kind,
-        tags: originalSignedEvent.tags, // Use exact same tags
+        tags: originalSignedEvent.tags,
       });
 
-      // Submit the reschedule action with signed event
+      lastRescheduleDataRef.current = null;
       const formData = new FormData();
       formData.append(
         "_action",
@@ -208,10 +200,9 @@ export function SimpleRescheduleModal({
       formData.append("nostrEvent", JSON.stringify(nostrEvent));
 
       if (!isLongform) {
-        const regularData = data as z.infer<typeof rescheduleModalClientSchema>;
         formData.append("overrideQueue", "false");
-        if (regularData.queueTypeId) {
-          formData.append("queueTypeId", regularData.queueTypeId);
+        if (data.queueTypeId) {
+          formData.append("queueTypeId", data.queueTypeId);
         }
       }
 
@@ -226,13 +217,19 @@ export function SimpleRescheduleModal({
           component: "SimpleRescheduleModal",
           action: "handleReschedule",
         },
-        false // Don't show toast, we set signingError instead
+        false
       );
+      lastRescheduleDataRef.current = null;
       setIsSigningEvent(false);
       setSigningError(
         getErrorMessage(error) || "Failed to sign event. Please try again."
       );
     }
+  };
+
+  const handleSubmit = form.handleSubmit(async (data) => {
+    lastRescheduleDataRef.current = data;
+    await runRescheduleWithData(data);
   });
 
   const getFirstImage = () => {
@@ -479,6 +476,7 @@ export function SimpleRescheduleModal({
                   size="sm"
                   className="text-muted-foreground hover:text-foreground shrink-0"
                   onClick={() => {
+                    lastRescheduleDataRef.current = null;
                     setIsSigningEvent(false);
                     setSigningError(null);
                     void tryBackgroundReconnect();

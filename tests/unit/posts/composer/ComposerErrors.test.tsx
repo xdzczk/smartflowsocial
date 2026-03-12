@@ -4,7 +4,7 @@
  */
 /// <reference types="@testing-library/jest-dom" />
 
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockTryBackgroundReconnect = vi.fn();
@@ -55,7 +55,7 @@ describe("ComposerErrors", () => {
 
   it("calls onCancelSigning and tryBackgroundReconnect when Cancel is clicked", () => {
     const onCancelSigning = vi.fn();
-    render(
+    const { container } = render(
       <ComposerErrors
         isSigning={true}
         signerLabel="Remote signer"
@@ -65,7 +65,9 @@ describe("ComposerErrors", () => {
         onRetry={vi.fn()}
       />
     );
-    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    const cancelButton = within(container).getByRole("button", {
+      name: /cancel/i,
+    });
     fireEvent.click(cancelButton);
 
     expect(onCancelSigning).toHaveBeenCalledTimes(1);

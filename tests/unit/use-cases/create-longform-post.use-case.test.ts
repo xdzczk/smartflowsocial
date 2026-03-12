@@ -48,7 +48,16 @@ vi.mock("~/lib/idempotency.server", () => ({
   generateEnqueueIdempotencyKey: vi.fn(),
 }));
 
+// Use case imports state machine from this path; mock so we don't need a full tx for isPublished path
 const mockTransition = vi.fn();
+vi.mock(
+  "~/features/posts/longform/state-machine/longform-post-state-machine.server",
+  () => ({
+    LongFormPostStateMachine: class {
+      transition = mockTransition;
+    },
+  })
+);
 vi.mock("~/features/posts/server", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
 
@@ -56,9 +65,6 @@ vi.mock("~/features/posts/server", async (importOriginal) => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
     ...(actual ?? {}),
     calculateLongFormStatus: vi.fn(),
-    LongFormPostStateMachine: class {
-      transition = mockTransition;
-    },
   };
 });
 
@@ -234,9 +240,7 @@ describe("CreateLongFormPostUseCase", () => {
       );
     });
 
-    it.skip("should not create outbox event if isPublished is true", async () => {
-      // TODO: tx from prisma.$transaction mock is not received by longform-data runTransaction;
-      // state machine transition calls updateLongFormPostInTx(tx,...) and tx.longFormPost.update is undefined.
+    it("should not create outbox event if isPublished is true", async () => {
       const scheduledFor = Math.floor(Date.now() / 1000) + 3600;
       const mockPost = {
         id: TEST_POST_ID,
@@ -271,6 +275,7 @@ describe("CreateLongFormPostUseCase", () => {
       });
 
       expect(result.needsScheduling).toBe(false);
+      // State machine is mocked (mockTransition); real runTransaction not used for this path
       expect(prisma.$transaction).not.toHaveBeenCalled();
       expect(createOutboxEventInTransaction).not.toHaveBeenCalled();
     });

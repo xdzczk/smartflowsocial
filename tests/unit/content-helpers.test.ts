@@ -214,6 +214,24 @@ describe("Content Helpers", () => {
       expect(result).toContain("muted");
     });
 
+    it("should return destructive for longform FAILED state", () => {
+      const item = combinedContentFactory.longform({
+        id: "1",
+        currentState: "FAILED",
+      });
+      const result = getStatusColor(item);
+      expect(result).toContain("destructive");
+    });
+
+    it("should return muted for longform CANCELLED state", () => {
+      const item = combinedContentFactory.longform({
+        id: "1",
+        currentState: "CANCELLED",
+      });
+      const result = getStatusColor(item);
+      expect(result).toContain("muted");
+    });
+
     it("should use currentState from originalData when item.currentState missing", () => {
       const item = combinedContentFactory.post({
         id: "1",

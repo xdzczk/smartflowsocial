@@ -15,6 +15,7 @@ import {
   setActiveSession,
   setActiveSignerConfig,
   syncRelaysWithRemoteSigner,
+  tryBackgroundReconnect,
   updateSession,
   type ActiveSignerConfig,
 } from "~/features/auth/signer";
@@ -319,6 +320,30 @@ export function useReconnectDialogState({
     onOpenChange,
     onConnectionHealthy,
   ]);
+
+  // When user reconnects in the signer app (new session within existing connection),
+  // poll tryBackgroundReconnect so we establish a fresh signer, dispatch healthy, and auto-close.
+  const RECONNECT_POLL_MS = 12_000;
+  useEffect(() => {
+    if (!open) return;
+    const id = setInterval(() => {
+      void tryBackgroundReconnect();
+    }, RECONNECT_POLL_MS);
+    return () => clearInterval(id);
+  }, [open]);
+
+  // When user returns to the app (e.g. from signer app), try reconnect once so modal can close.
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void tryBackgroundReconnect();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [open]);
 
   useEffect(() => {
     if (!open) {

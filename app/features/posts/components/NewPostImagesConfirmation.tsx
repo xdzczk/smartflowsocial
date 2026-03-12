@@ -1,10 +1,11 @@
 import { useFetcher } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   formatAttemptElapsed,
@@ -205,29 +206,18 @@ export default function NewPostImagesConfirmation({
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
   const user = useOptionalUser();
   const { dateLocale } = useFormattedDate();
+  const lastSubmitRef = useRef<{ isImmediate: boolean } | null>(null);
 
-  // After successful remote signer reconnect, clear stuck signing state so user can retry.
-  useEffect(() => {
-    const handler = () => {
-      setIsSigning(false);
-      setSigningError(null);
-    };
-    window.addEventListener("nostr-connection-healthy", handler);
-    return () =>
-      window.removeEventListener("nostr-connection-healthy", handler);
-  }, []);
-
-  // When awaiting signer approval, try background reconnect periodically.
-  useEffect(() => {
-    if (!isSigning) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= 5) clearInterval(interval);
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, [isSigning]);
+  const clearSigningState = () => {
+    setIsSigning(false);
+    setSigningError(null);
+  };
+  const retryLastSign = () => {
+    const p = lastSubmitRef.current;
+    lastSubmitRef.current = null;
+    if (p) void handleSignAndSubmit(p.isImmediate);
+  };
+  useComposerSignerReconnect(clearSigningState, isSigning, retryLastSign);
 
   // Calculate addTags for display
   const addTags = user?.showHashTagsinPosts ? `\n${tags}` : "";
@@ -240,6 +230,7 @@ export default function NewPostImagesConfirmation({
   const handleSignAndSubmit = async (isImmediate: boolean) => {
     try {
       setSigningError(null);
+      lastSubmitRef.current = { isImmediate };
       const queueType = getQueueTypeFromEvent(events);
       const effectiveHashtags = await fetchEffectiveHashtags(
         user?.id,
@@ -274,6 +265,7 @@ export default function NewPostImagesConfirmation({
       setIsSigning(true);
       const { signedEvent, nostrEvent } =
         await nostrAdapter.signEvent(eventData);
+      lastSubmitRef.current = null;
 
       const formData = new FormData();
       formData.append("_action", isImmediate ? "post-media" : "schedule-media");
@@ -317,13 +309,14 @@ export default function NewPostImagesConfirmation({
           action: "handleSignAndSubmit",
         },
         false
-      ); // Don't show toast, let component handle it
+      );
       setSigningError(
         error instanceof Error
           ? error.message
           : "Failed to sign post. Please try again."
       );
     } finally {
+      lastSubmitRef.current = null;
       setIsSigning(false);
     }
   };
@@ -397,6 +390,7 @@ export default function NewPostImagesConfirmation({
               size="sm"
               className="text-muted-foreground hover:text-foreground shrink-0"
               onClick={() => {
+                lastSubmitRef.current = null;
                 setIsSigning(false);
                 setSigningError(null);
                 void tryBackgroundReconnect();

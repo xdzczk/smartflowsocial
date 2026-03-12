@@ -85,6 +85,16 @@ describe("Longform Listing Utils", () => {
       expect(getSortValue({} as never, "publishedAt")).toBe(0);
     });
 
+    it("returns 0 when getSortValue throws (e.g. invalid date)", () => {
+      // Invalid date string can cause temporal parsing to throw; catch returns 0
+      const post = { publishedAt: "not-a-valid-date" };
+      const result = getSortValue(
+        post as unknown as Parameters<typeof getSortValue>[0],
+        "publishedAt"
+      );
+      expect(result).toBe(0);
+    });
+
     it("returns epoch ms for scheduledAtUtc Date", () => {
       const d = new Date("2025-02-01T09:00:00.000Z");
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double

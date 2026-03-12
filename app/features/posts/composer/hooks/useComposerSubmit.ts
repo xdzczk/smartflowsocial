@@ -119,6 +119,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
 
   const [isSigning, setIsSigning] = React.useState(false);
   const [signingError, setSigningError] = React.useState<string | null>(null);
+  const lastSubmitForRetryRef = React.useRef<{
+    data: TextPostFormData;
+    event: React.BaseSyntheticEvent | undefined;
+  } | null>(null);
 
   const runSubmit = React.useCallback(
     async (data: TextPostFormData, event?: React.BaseSyntheticEvent) => {
@@ -228,6 +232,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             .filter((tag) => tag.length > 0)
             .map((tag) => ["t", tag.replace("#", "")]);
 
+          lastSubmitForRetryRef.current = { data, event };
           setIsSigning(true);
           const signedEvents: SignedEvent[] = [];
           let rootEventId: string | null = null;
@@ -261,6 +266,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             if (i === 0) rootEventId = signedEvent.id;
             previousEventId = signedEvent.id;
           }
+          lastSubmitForRetryRef.current = null;
           setIsSigning(false);
 
           const threadPayload: FormData = new FormData();
@@ -312,6 +318,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           setPublishSubmitInFlight(true);
           fetcher.submit(threadPayload, { method: "post" });
         } catch (err) {
+          lastSubmitForRetryRef.current = null;
           setIsSigning(false);
           const { handleAsyncError } =
             await import("~/lib/error-handler.client");
@@ -390,6 +397,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             ? `${contentResolvedForSign}\n${effectiveHashtags}`
             : contentResolvedForSign;
 
+          lastSubmitForRetryRef.current = { data, event };
           setIsSigning(true);
           const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
             content: contentToSign,
@@ -397,6 +405,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             kind: 1,
             tags: tagArray,
           });
+          lastSubmitForRetryRef.current = null;
           setIsSigning(false);
 
           const payload: Record<string, string> = {
@@ -491,6 +500,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               : "Failed to sign post. Please try again."
           );
         } finally {
+          lastSubmitForRetryRef.current = null;
           setIsSigning(false);
         }
       }
@@ -535,9 +545,17 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
   );
 
   const clearSigningState = React.useCallback(() => {
+    lastSubmitForRetryRef.current = null;
     setSigningError(null);
     setIsSigning(false);
   }, []);
+
+  const retryLastSubmit = React.useCallback(() => {
+    const pending = lastSubmitForRetryRef.current;
+    if (!pending) return;
+    lastSubmitForRetryRef.current = null;
+    void runSubmit(pending.data, pending.event);
+  }, [runSubmit]);
 
   return {
     runSubmit,
@@ -545,5 +563,6 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     signingError,
     setSigningError,
     clearSigningState,
+    retryLastSubmit,
   };
 }

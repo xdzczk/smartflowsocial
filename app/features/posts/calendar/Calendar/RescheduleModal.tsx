@@ -9,7 +9,7 @@ import type React from "react";
 import { toast } from "react-hot-toast";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import type {
   QueueType,
   UserData,
@@ -472,7 +472,8 @@ async function handleSignAndSubmitLogic(
     error?: string;
   }>,
   setIsSigningEvent: (isSigning: boolean) => void,
-  setSigningError: (error: string | null) => void
+  setSigningError: (error: string | null) => void,
+  clearPendingRetry?: () => void
 ): Promise<void> {
   // Use Temporal for Unix timestamp conversion
   const editableZoned = fromDate(editableDateTime, "UTC");
@@ -513,6 +514,7 @@ async function handleSignAndSubmitLogic(
       formData.append("queueTypeId", selectedQueueType);
     }
 
+    clearPendingRetry?.();
     fetcher.submit(formData, { method: "post" });
   } catch (error) {
     handleErrorSafely(error, {
@@ -520,6 +522,7 @@ async function handleSignAndSubmitLogic(
       action: "reSignEvent",
       message: "Error re-signing event",
     });
+    clearPendingRetry?.();
     setIsSigningEvent(false);
     const errorMessage =
       error instanceof Error
@@ -589,28 +592,17 @@ export function RescheduleModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  // After successful remote signer reconnect, clear stuck signing state so user can retry.
-  useEffect(() => {
-    const handler = () => {
-      setIsSigningEvent(false);
-      setSigningError(null);
-    };
-    window.addEventListener("nostr-connection-healthy", handler);
-    return () =>
-      window.removeEventListener("nostr-connection-healthy", handler);
-  }, []);
-
-  // When awaiting signer approval, try background reconnect periodically.
-  useEffect(() => {
-    if (!isSigningEvent) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= 5) clearInterval(interval);
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, [isSigningEvent]);
+  const pendingRetryRef = useRef<(() => void) | null>(null);
+  const clearSigningState = () => {
+    setIsSigningEvent(false);
+    setSigningError(null);
+  };
+  const retryLastSign = () => {
+    const fn = pendingRetryRef.current;
+    pendingRetryRef.current = null;
+    fn?.();
+  };
+  useComposerSignerReconnect(clearSigningState, isSigningEvent, retryLastSign);
 
   const FOCUSABLE_SELECTOR =
     'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -718,12 +710,12 @@ export function RescheduleModal({
   };
 
   const handleConfirm = async (shouldOverride = false) => {
-    // Validate the selected time
     if (!editableDateTime) return;
     if (!validateDateTime(editableDateTime, userTimezone, setValidationError)) {
       return;
     }
 
+    pendingRetryRef.current = () => void handleConfirm(shouldOverride);
     await handleSignAndSubmitLogic(
       editableDateTime,
       post,
@@ -731,7 +723,10 @@ export function RescheduleModal({
       shouldOverride,
       fetcher,
       setIsSigningEvent,
-      setSigningError
+      setSigningError,
+      () => {
+        pendingRetryRef.current = null;
+      }
     );
   };
 

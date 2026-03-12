@@ -1,6 +1,7 @@
 /**
  * Composer signer reconnect: clear stuck "Waiting for signer approval" on healthy event,
- * and try background reconnect periodically while awaiting signer.
+ * optionally retry the in-flight sign with the new signer, and try background reconnect
+ * periodically while awaiting signer.
  * Used by UnifiedComposer, DraftBulkResume, SimpleRescheduleModal.
  */
 
@@ -13,14 +14,19 @@ const AWAITING_SIGNER_MAX_RECONNECT_ATTEMPTS = 5;
 
 export function useComposerSignerReconnect(
   clearSigningState: () => void,
-  isSigning: boolean
+  isSigning: boolean,
+  /** When provided, called after clearSigningState on healthy event so the composer can retry the in-flight sign with the new signer. */
+  onHealthyWhileSigning?: () => void
 ): void {
   useEffect(() => {
-    const handler = () => clearSigningState();
+    const handler = () => {
+      clearSigningState();
+      onHealthyWhileSigning?.();
+    };
     window.addEventListener("nostr-connection-healthy", handler);
     return () =>
       window.removeEventListener("nostr-connection-healthy", handler);
-  }, [clearSigningState]);
+  }, [clearSigningState, onHealthyWhileSigning]);
 
   useEffect(() => {
     if (!isSigning) return;

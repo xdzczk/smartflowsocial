@@ -3,7 +3,7 @@
  * Extracts the complex submission logic from LongFormPost component
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { tryBackgroundReconnect } from "~/features/auth/signer";
 import {
@@ -126,17 +126,27 @@ export function useLongFormSubmission({
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
+  const lastScheduleActionRef = useRef<"schedule" | "publish" | null>(null);
+  const handleScheduleRef =
+    useRef<(actionType: "schedule" | "publish") => Promise<void>>(null);
 
-  // After successful remote signer reconnect, clear stuck signing state so user can retry.
+  // After successful remote signer reconnect, clear stuck signing state and retry in-flight sign.
+  const retryLastSchedule = useCallback(() => {
+    const action = lastScheduleActionRef.current;
+    lastScheduleActionRef.current = null;
+    if (action) void handleScheduleRef.current?.(action);
+  }, []);
+
   useEffect(() => {
     const handler = () => {
       setIsSigning(false);
       setSigningError(null);
+      retryLastSchedule();
     };
     window.addEventListener("nostr-connection-healthy", handler);
     return () =>
       window.removeEventListener("nostr-connection-healthy", handler);
-  }, []);
+  }, [retryLastSchedule]);
 
   // When awaiting signer approval, try background reconnect periodically.
   useEffect(() => {
@@ -193,6 +203,7 @@ export function useLongFormSubmission({
           actionType === "publish" ? nowSeconds() : scheduledTimestamp,
       };
 
+      lastScheduleActionRef.current = actionType;
       setIsSigning(true);
       const { nostrEvent, signedEvent } =
         await nostrAdapter.signLongFormEvent(eventData);
@@ -309,11 +320,17 @@ export function useLongFormSubmission({
           : "Failed to sign article. Please try again."
       );
     } finally {
+      lastScheduleActionRef.current = null;
       setIsSigning(false);
     }
   };
 
+  useEffect(() => {
+    handleScheduleRef.current = handleSchedule;
+  });
+
   const cancelSigning = () => {
+    lastScheduleActionRef.current = null;
     setIsSigning(false);
     setSigningError(null);
     void tryBackgroundReconnect();

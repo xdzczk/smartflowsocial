@@ -19,6 +19,7 @@ import {
   getStorageKey,
   getStorageKeyV2,
   getStorage,
+  saveStorage,
   generateId,
   updateStorage,
   normalizeActiveConnectionId,
@@ -99,6 +100,65 @@ describe("remote-signer-sessions-storage", () => {
       expect(storage.connections).toEqual([]);
       expect(storage.sessions).toEqual([]);
       expect(storage.activeConnectionId).toBeNull();
+    });
+
+    it("migrates V1 to V2 and persists when V1 data exists at storage key", () => {
+      setCurrentUserNpub("npub1abc");
+      const keyV1 = getStorageKey();
+      const v1 = { version: 1 as const, sessions: [] as unknown[] };
+      (globalThis as unknown as { localStorage: Storage }).localStorage.setItem(
+        keyV1,
+        JSON.stringify(v1)
+      );
+      const storage = getStorage();
+      expect(storage.version).toBe(2);
+      expect(storage.connections).toEqual([]);
+      expect(storage.sessions).toEqual([]);
+      const keyV2 = getStorageKeyV2();
+      expect(
+        (
+          globalThis as unknown as { localStorage: Storage }
+        ).localStorage.getItem(keyV2)
+      ).toBeTruthy();
+    });
+  });
+
+  describe("saveStorage", () => {
+    it("returns early when window is undefined", () => {
+      const win = globalThis.window;
+      const ls = (globalThis as unknown as { localStorage: Storage })
+        .localStorage as MemoryStorage;
+      const setItemSpy = vi.spyOn(ls, "setItem");
+      try {
+        (globalThis as unknown as { window: undefined }).window = undefined;
+        saveStorage({
+          version: 2,
+          connections: [],
+          sessions: [],
+          activeConnectionId: null,
+        });
+        expect(setItemSpy).not.toHaveBeenCalled();
+      } finally {
+        setItemSpy.mockRestore();
+        (globalThis as unknown as { window: unknown }).window = win;
+      }
+    });
+
+    it("calls console.warn when localStorage.setItem throws", () => {
+      const ls = (globalThis as unknown as { localStorage: Storage })
+        .localStorage as MemoryStorage;
+      vi.spyOn(ls, "setItem").mockImplementationOnce(() => {
+        throw new Error("setItem failed");
+      });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      saveStorage({
+        version: 2,
+        connections: [],
+        sessions: [],
+        activeConnectionId: null,
+      });
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
   });
 

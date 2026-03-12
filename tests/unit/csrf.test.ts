@@ -35,6 +35,24 @@ describe("CSRF Protection Middleware", () => {
   });
 
   describe("withCSRFProtection", () => {
+    it("should throw when withCSRFProtection is called on the client (window defined)", async () => {
+      (global as unknown as { window: unknown }).window = {};
+      const actionFn = vi.fn().mockResolvedValue({ success: true });
+      const protectedAction = withCSRFProtection(actionFn);
+      const request = new Request("http://localhost:3000/test", {
+        method: "POST",
+      });
+      const args: ActionFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+
+      await expect(protectedAction(args)).rejects.toThrow(
+        "withCSRFProtection should never be called on the client"
+      );
+    });
+
     it("should allow non-state-changing methods without validation", async () => {
       const actionFn = vi.fn().mockResolvedValue({ success: true });
       const protectedAction = withCSRFProtection(actionFn);

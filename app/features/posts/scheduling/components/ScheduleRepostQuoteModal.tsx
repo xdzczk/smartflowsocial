@@ -5,12 +5,13 @@
 
 import { useFetcher } from "@remix-run/react";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
 import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import type { PostData, RepostConditions } from "~/features/posts/types";
 import {
   buildKind6RepostEvent,
@@ -191,28 +192,17 @@ export function ScheduleRepostQuoteModal({
   const [isSigning, setIsSigning] = useState(false);
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
-  // After successful remote signer reconnect, clear stuck signing state so user can retry.
-  useEffect(() => {
-    const handler = () => {
-      setIsSigning(false);
-      setSigningError(null);
-    };
-    window.addEventListener("nostr-connection-healthy", handler);
-    return () =>
-      window.removeEventListener("nostr-connection-healthy", handler);
+  const pendingRetryRef = useRef<(() => void) | null>(null);
+  const clearSigningState = useCallback(() => {
+    setIsSigning(false);
+    setSigningError(null);
   }, []);
-
-  // When awaiting signer approval, try background reconnect periodically.
-  useEffect(() => {
-    if (!isSigning) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= 5) clearInterval(interval);
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, [isSigning]);
+  const retryLastSign = useCallback(() => {
+    const fn = pendingRetryRef.current;
+    pendingRetryRef.current = null;
+    fn?.();
+  }, []);
+  useComposerSignerReconnect(clearSigningState, isSigning, retryLastSign);
 
   const fetcher = useFetcher<{
     success?: boolean;
@@ -253,6 +243,7 @@ export function ScheduleRepostQuoteModal({
     try {
       setSigningError(null);
       setIsSigning(true);
+      pendingRetryRef.current = () => void handleConfirm();
       if (mode === "repost") {
         await signAndSubmitRepost(
           post,
@@ -282,6 +273,7 @@ export function ScheduleRepostQuoteModal({
       setSigningError(msg);
       toast.error(msg);
     } finally {
+      pendingRetryRef.current = null;
       setIsSigning(false);
     }
   };
@@ -452,6 +444,7 @@ export function ScheduleRepostQuoteModal({
                       size="sm"
                       className="text-muted-foreground hover:text-foreground shrink-0"
                       onClick={() => {
+                        pendingRetryRef.current = null;
                         setIsSigning(false);
                         setSigningError(null);
                         void tryBackgroundReconnect();

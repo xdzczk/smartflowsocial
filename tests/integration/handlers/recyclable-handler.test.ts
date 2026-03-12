@@ -60,6 +60,24 @@ describe("Recyclable Handler", () => {
       ]);
     });
 
+    it("returns without calling setPosts when index is out of range", () => {
+      const posts: BulkPost[] = [
+        {
+          clientId: "post-1",
+          files: [],
+          caption: "",
+          queueType: "unassigned",
+          scheduledFor: "",
+          isRecyclable: false,
+        },
+      ];
+      const setPosts = vi.fn();
+
+      handleIsRecyclableChange(5, true, posts, setPosts);
+
+      expect(setPosts).not.toHaveBeenCalled();
+    });
+
     it("should set recyclable to false", () => {
       const posts: BulkPost[] = [
         {

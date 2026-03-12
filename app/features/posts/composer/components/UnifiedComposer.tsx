@@ -369,6 +369,7 @@ export function UnifiedComposer({
     signingError,
     setSigningError,
     clearSigningState,
+    retryLastSubmit,
   } = useComposerSubmit({
     form,
     fetcher,
@@ -404,7 +405,7 @@ export function UnifiedComposer({
     defaultTags: tags,
   });
 
-  useComposerSignerReconnect(clearSigningState, isSigning);
+  useComposerSignerReconnect(clearSigningState, isSigning, retryLastSubmit);
 
   const handleSubmit = form.handleSubmit((data, event) => {
     void runSubmit(data, event);

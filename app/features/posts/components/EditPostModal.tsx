@@ -1,12 +1,13 @@
 import { useFetcher } from "@remix-run/react";
 import { Info, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import {
   handleErrorSafely,
   logClientError,
@@ -283,29 +284,18 @@ export function EditPostModal({
   const [signingError, setSigningError] = useState<string | null>(null);
   const { signAttempt, signElapsedSeconds } =
     useSignAttemptProgress(isSigningEvent);
+  const pendingRetryRef = useRef<(() => void) | null>(null);
 
-  // After successful remote signer reconnect, clear stuck signing state so user can retry.
-  useEffect(() => {
-    const handler = () => {
-      setIsSigningEvent(false);
-      setSigningError(null);
-    };
-    window.addEventListener("nostr-connection-healthy", handler);
-    return () =>
-      window.removeEventListener("nostr-connection-healthy", handler);
-  }, []);
-
-  // When awaiting signer approval, try background reconnect periodically.
-  useEffect(() => {
-    if (!isSigningEvent) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= 5) clearInterval(interval);
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, [isSigningEvent]);
+  const clearSigningState = () => {
+    setIsSigningEvent(false);
+    setSigningError(null);
+  };
+  const retryLastSign = () => {
+    const fn = pendingRetryRef.current;
+    pendingRetryRef.current = null;
+    fn?.();
+  };
+  useComposerSignerReconnect(clearSigningState, isSigningEvent, retryLastSign);
 
   // "Also schedule repost/quote" (only for regular posts) – hours after main post (multiple)
   const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
@@ -413,6 +403,7 @@ export function EditPostModal({
     try {
       setIsSigningEvent(true);
       setSigningError(null);
+      pendingRetryRef.current = () => void handleSubmit();
       setIsUploadingImages(true);
 
       // Flush Tiptap editor to form so content is current when longform
@@ -449,6 +440,7 @@ export function EditPostModal({
           : null;
 
       // Signing complete; proceed to submit
+      pendingRetryRef.current = null;
       setIsSigningEvent(false);
       setIsUploadingImages(false);
       fetcher.submit(formData, { method: "post" });
@@ -465,6 +457,7 @@ export function EditPostModal({
         repostConditions
       );
     } catch (error: unknown) {
+      pendingRetryRef.current = null;
       logClientError(
         error instanceof Error ? error : new Error(String(error)),
         {
@@ -912,6 +905,7 @@ export function EditPostModal({
                     size="sm"
                     className="text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => {
+                      pendingRetryRef.current = null;
                       setIsSigningEvent(false);
                       setSigningError(null);
                       void tryBackgroundReconnect();

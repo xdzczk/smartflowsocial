@@ -1,12 +1,10 @@
 import { useFetcher } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
-import {
-  NOSTR_CONNECTION_HEALTHY_EVENT,
-  tryBackgroundReconnect,
-} from "~/features/auth/signer";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import {
   getQueueAccentHex,
   getSelectedQueueStyle,
@@ -53,30 +51,18 @@ export default function DraftBulkResume({
       : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
+  const pendingRetryRef = useRef<(() => void) | null>(null);
 
-  // After successful remote signer reconnect, clear stuck signing state so user can retry.
-  useEffect(() => {
-    const handler = () => {
-      setIsSubmitting(false);
-      setSigningError(null);
-    };
-    window.addEventListener(NOSTR_CONNECTION_HEALTHY_EVENT, handler);
-    return () =>
-      window.removeEventListener(NOSTR_CONNECTION_HEALTHY_EVENT, handler);
-  }, []);
-
-  // When awaiting signer approval, try background reconnect after a delay.
-  // When signing drafts, try background reconnect periodically.
-  useEffect(() => {
-    if (!isSubmitting) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= 5) clearInterval(interval);
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, [isSubmitting]);
+  const clearSigningState = () => {
+    setIsSubmitting(false);
+    setSigningError(null);
+  };
+  const retryLastSign = () => {
+    const fn = pendingRetryRef.current;
+    pendingRetryRef.current = null;
+    fn?.();
+  };
+  useComposerSignerReconnect(clearSigningState, isSubmitting, retryLastSign);
 
   // State for bulk operations similar to bulkposts
   const [posts, setPosts] = useState(
@@ -505,6 +491,7 @@ export default function DraftBulkResume({
   const handleSignAndResume = async () => {
     setIsSubmitting(true);
     setSigningError(null);
+    pendingRetryRef.current = () => void handleSignAndResume();
     try {
       // First, collect unique queue types and fetch hashtags in batch
       // This prevents making one API call per post, which can be very slow for bulk operations
@@ -626,6 +613,7 @@ export default function DraftBulkResume({
         formData.append("nostrEvents", post.nostrEvent);
       });
 
+      pendingRetryRef.current = null;
       fetcher.submit(formData, { method: "post", action: "/dashboard/drafts" });
     } catch (error) {
       logClientError(
@@ -640,6 +628,7 @@ export default function DraftBulkResume({
           ? error.message
           : "Error signing drafts. Please try again."
       );
+      pendingRetryRef.current = null;
       setIsSubmitting(false);
     }
   };
@@ -699,6 +688,7 @@ export default function DraftBulkResume({
               size="sm"
               className="text-muted-foreground hover:text-foreground shrink-0"
               onClick={() => {
+                pendingRetryRef.current = null;
                 setIsSubmitting(false);
                 setSigningError(null);
                 void tryBackgroundReconnect();
