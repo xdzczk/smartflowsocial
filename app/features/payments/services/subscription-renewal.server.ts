@@ -16,6 +16,7 @@ import {
   disableUserAccount,
   getEnabledUsersWithSubscriptions,
 } from "~/features/user";
+import { afterSubscriptionUpdated } from "~/infra/blastr/entitlement-sync.server";
 import { decrypt } from "~/lib/encryption.server";
 import { env } from "~/lib/env.server";
 import { createErrorResponse } from "~/lib/error-handler.server";
@@ -367,6 +368,7 @@ async function handleRenewalWithNWC(
     );
 
     await disableUserAccount(user.id);
+    await afterSubscriptionUpdated(user.id);
     results.disabled++;
 
     const planName = getPlanName(subscription);
@@ -387,6 +389,7 @@ async function handleRenewalWithoutNWC(
   results: RenewalResults
 ): Promise<void> {
   await disableUserAccount(user.id);
+  await afterSubscriptionUpdated(user.id);
   results.disabled++;
 
   const planName = getPlanName(subscription);
@@ -467,6 +470,7 @@ async function processUserSubscription(
       cancelAtPeriodEnd: false,
     });
     await disableUserAccount(user.id);
+    await afterSubscriptionUpdated(user.id);
     results.disabled++;
     return;
   }

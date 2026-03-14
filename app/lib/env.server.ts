@@ -71,6 +71,10 @@ interface EnvConfig {
   BLOSSOM_SFS_API_URL?: string;
   BLOSSOM_UPLOAD_TOKEN_SECRET?: string;
 
+  // SFS Blastr: admin API for entitlement and policy sync (optional; no-op when unset)
+  BLASTR_ADMIN_URL?: string;
+  BLASTR_ADMIN_API_TOKEN?: string;
+
   // Referral
   REFERRAL_LANDING_URL?: string;
   REFERRAL_MANUAL_PAYOUT_SECRET?: string;
@@ -201,6 +205,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "BLOSSOM_INTERNAL_SECRET",
     "BLOSSOM_SFS_API_URL",
     "BLOSSOM_UPLOAD_TOKEN_SECRET",
+    "BLASTR_ADMIN_URL",
+    "BLASTR_ADMIN_API_TOKEN",
     "STORAGE_CDN_URL",
     "REFERRAL_LANDING_URL",
     "REFERRAL_MANUAL_PAYOUT_SECRET",

@@ -1,5 +1,6 @@
 import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
 
+import { BlastrPolicySettings } from "~/components/settings/BlastrPolicySettings";
 import { DateFormatSettings } from "~/components/settings/DateFormatSettings";
 import { NostrClientSettings } from "~/components/settings/NostrClientSettings";
 import { NotificationSettings } from "~/components/settings/NotificationSettings";
@@ -337,6 +338,10 @@ export default function SettingsPage() {
     preferredNostrClient?: unknown;
     customNostrClientBaseUrl?: unknown;
     primarySignerProfile?: unknown;
+    blastrRelayEnabled?: unknown;
+    canToggleBlastr?: unknown;
+    blastrPolicy?: unknown;
+    blastrSystemRelays?: unknown;
     referral?: {
       referralLink: string;
       commissionRatePercent: number;
@@ -386,6 +391,10 @@ export default function SettingsPage() {
     preferredNostrClient: preferredNostrClientRaw,
     customNostrClientBaseUrl: customNostrClientBaseUrlRaw,
     primarySignerProfile: primarySignerProfileRaw,
+    blastrRelayEnabled,
+    canToggleBlastr,
+    blastrPolicy: blastrPolicyRaw,
+    blastrSystemRelays: blastrSystemRelaysRaw,
     referral: referralRaw,
   } = data;
 
@@ -629,7 +638,44 @@ export default function SettingsPage() {
               relays={relaysList}
               managedRelays={managedRelaysList}
               relayAcks={relayAcksMap}
+              blastrRelayEnabled={asBoolean(blastrRelayEnabled, true)}
+              canToggleBlastr={asBoolean(canToggleBlastr, false)}
             />
+            {asBoolean(canToggleBlastr, false) &&
+            blastrPolicyRaw != null &&
+            Array.isArray(blastrSystemRelaysRaw) ? (
+              <BlastrPolicySettings
+                policy={
+                  typeof blastrPolicyRaw === "object" &&
+                  "policy" in blastrPolicyRaw &&
+                  (blastrPolicyRaw as { policy: unknown }).policy != null
+                    ? (
+                        blastrPolicyRaw as {
+                          policy: {
+                            mode: "blacklist" | "whitelist";
+                            enabled: boolean;
+                          } | null;
+                        }
+                      ).policy
+                    : null
+                }
+                relays={
+                  typeof blastrPolicyRaw === "object" &&
+                  "relays" in blastrPolicyRaw &&
+                  Array.isArray((blastrPolicyRaw as { relays: unknown }).relays)
+                    ? (
+                        blastrPolicyRaw as {
+                          relays: Array<{
+                            relay_url: string;
+                            action: "allow" | "block";
+                          }>;
+                        }
+                      ).relays
+                    : []
+                }
+                systemRelays={blastrSystemRelaysRaw as string[]}
+              />
+            ) : null}
             <GiveawayBlacklistSettings
               giveawayBlacklist={giveawayBlacklistList}
             />

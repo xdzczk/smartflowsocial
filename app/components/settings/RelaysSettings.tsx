@@ -12,6 +12,8 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { updateRelaysClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
@@ -33,6 +35,8 @@ interface RelaysSettingsProps {
     string,
     { status: string; createdAt: string; receivedAt: string | null }
   >;
+  blastrRelayEnabled?: boolean;
+  canToggleBlastr?: boolean;
 }
 
 interface FetcherData {
@@ -55,8 +59,11 @@ export function RelaysSettings({
   relays,
   managedRelays,
   relayAcks,
+  blastrRelayEnabled = true,
+  canToggleBlastr = false,
 }: RelaysSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
+  const blastrFetcher = useFetcher<FetcherData>();
   const form = useZodForm(updateRelaysClientSchema, {
     defaultValues: {
       relays: relays.length > 0 ? relays : [""],
@@ -128,6 +135,8 @@ export function RelaysSettings({
             <div className="text-sm font-medium">Managed relays</div>
             {managedRelays.map((mr) => {
               const ack = relayAcks[mr.relayUrl];
+              const isBlastr = mr.id === "blastr";
+              const showBlastrToggle = isBlastr && canToggleBlastr;
               return (
                 <div
                   key={mr.id}
@@ -143,6 +152,33 @@ export function RelaysSettings({
                     <div className="text-muted-foreground mt-1 text-xs">
                       Last ACK: {formatAck(ack)}
                     </div>
+                    {showBlastrToggle ? (
+                      <div className="mt-3 flex items-center gap-2">
+                        <Switch
+                          id="blastr-relay-enabled"
+                          checked={blastrRelayEnabled}
+                          onCheckedChange={(checked) => {
+                            const formData = new FormData();
+                            formData.set(
+                              "_action",
+                              "update_blastr_relay_enabled"
+                            );
+                            formData.set(
+                              "blastrRelayEnabled",
+                              checked ? "true" : "false"
+                            );
+                            blastrFetcher.submit(formData, { method: "post" });
+                          }}
+                          disabled={blastrFetcher.state === "submitting"}
+                        />
+                        <Label
+                          htmlFor="blastr-relay-enabled"
+                          className="cursor-pointer text-sm font-normal"
+                        >
+                          Use SFS Blastr relay
+                        </Label>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="shrink-0 text-sm">
                     {mr.enabled ? (

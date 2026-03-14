@@ -56,6 +56,10 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
+vi.mock("~/infra/blastr/entitlement-sync.server", () => ({
+  afterSubscriptionUpdated: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe("updateUserSubscription", () => {
   beforeEach(() => {
     vi.clearAllMocks();

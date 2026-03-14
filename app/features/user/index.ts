@@ -55,6 +55,8 @@ export {
   resolveUploadProviderWithTierDefaults,
   getUserEnableMirrorBlossom,
   updateUserEnableMirrorBlossom,
+  getUserBlastrRelayEnabled,
+  updateUserBlastrRelayEnabled,
   getUserMirrorUploadUrls,
   updateUserMirrorUploadUrls,
   updateUserMutedList,

@@ -8,6 +8,7 @@
 import { json } from "@remix-run/node";
 
 import { handleAccountsAction } from "./actions/accounts-actions.server";
+import { handleBlastrPolicyAction } from "./actions/blastr-policy-actions.server";
 import { handleEngagementAction } from "./actions/engagement-actions.server";
 import { handleGeneralSettingsAction } from "./actions/general-settings-actions.server";
 import { handleHashtagPresetAction } from "./actions/hashtag-presets-actions.server";
@@ -31,6 +32,7 @@ export async function handleSettingsAction(userId: string, formData: FormData) {
   // Try each handler category
   const handlers = [
     handleHashtagPresetAction,
+    handleBlastrPolicyAction,
     handleGeneralSettingsAction,
     handleQueueTypeAction,
     handleStorageSettingsAction,

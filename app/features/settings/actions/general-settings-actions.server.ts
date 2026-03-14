@@ -9,6 +9,7 @@ import {
   updateScheduleInterval,
   updateUserPushNotificationPreferences,
   updateUserRelays,
+  updateUserBlastrRelayEnabled,
   updateUserTimezone,
   updateUserTimeFormat,
   updateUserDateFormat,
@@ -128,6 +129,13 @@ export async function handleGeneralSettingsAction(
     const result = validateFormDataOrRespond(formData, updateRelaysSchema);
     if (!result.success) return result.response;
     await updateUserRelays(userId, result.data.relays);
+    return json({ success: true });
+  }
+
+  if (action === "update_blastr_relay_enabled") {
+    const value = formData.get("blastrRelayEnabled");
+    const enabled = String(value ?? "") === "true";
+    await updateUserBlastrRelayEnabled(userId, enabled);
     return json({ success: true });
   }
 

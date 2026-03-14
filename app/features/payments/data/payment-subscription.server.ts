@@ -3,6 +3,7 @@
  * Isolated to avoid circular dependency between commands and handlers.
  */
 
+import { afterSubscriptionUpdated } from "~/infra/blastr/entitlement-sync.server";
 import { prisma } from "~/lib/prisma.server";
 
 /**
@@ -96,4 +97,6 @@ export async function updateUserSubscription(
       },
     });
   });
+
+  await afterSubscriptionUpdated(userId);
 }

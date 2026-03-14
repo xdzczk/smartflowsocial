@@ -63,6 +63,10 @@ vi.mock("~/features/payments/btc.rate", () => ({
   getBitcoinRate: vi.fn(),
 }));
 
+vi.mock("~/infra/blastr/entitlement-sync.server", () => ({
+  afterSubscriptionUpdated: vi.fn().mockResolvedValue(undefined),
+}));
+
 import {
   createRenewalPayment,
   updateUserSubscription,

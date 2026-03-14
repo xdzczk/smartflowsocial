@@ -50,3 +50,17 @@ export const DEFAULT_USER_WRITE_RELAYS: string[] = [
 ];
 
 export const blastrRelay = "wss://blastr.smartflow.social";
+
+/**
+ * Known system relays that Blastr may fan out to (for policy whitelist/blacklist UI).
+ * Used when Blastr does not expose GET /admin/system-relays.
+ */
+export const BLASTR_KNOWN_SYSTEM_RELAYS: string[] = [
+  ...DEFAULT_USER_WRITE_RELAYS,
+  "wss://relay.nostr.band",
+  "wss://relay.orangepill.dev",
+  "wss://nos.lol",
+  "wss://nostr.walletofsatoshi.com",
+  "wss://relay.lexingtonbitcoin.org",
+  "wss://purplepag.es",
+];

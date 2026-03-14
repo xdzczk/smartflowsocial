@@ -21,6 +21,7 @@ import type {
   ScheduleConfig,
 } from "~/features/posts/types";
 import { getReferralSettingsData } from "~/features/referral/referral-settings.server";
+import { BLASTR_KNOWN_SYSTEM_RELAYS } from "~/features/relays/relay-constants";
 import type { ManagedRelay } from "~/features/relays/relay-resolution.server";
 import { getEffectiveWriteRelays } from "~/features/relays/relay-resolution.server";
 import {
@@ -30,6 +31,7 @@ import {
   getScheduleInterval,
   getShowHashTagsInPosts,
   getUserBasicInfo,
+  getUserBlastrRelayEnabled,
   getUserByNpubWithProfile,
   getUserEnableMirrorBlossom,
   getUserFilterMuted,
@@ -51,6 +53,10 @@ import {
   getRelayIntentCached,
   getHashTagPresetsCached,
 } from "~/features/user/services/user-cache.server";
+import {
+  getUserPolicy as getBlastrUserPolicy,
+  resolvePubkeyHex as resolveBlastrPubkeyHex,
+} from "~/infra/blastr/blastr-admin.client.server";
 
 import { findLatestPublishRelayAcksByUserAndUrls } from "./repositories/settings-loader-data.server";
 
@@ -152,6 +158,13 @@ export interface SettingsLoaderData {
   preferredNostrClient: string;
   customNostrClientBaseUrl: string | null;
   primarySignerProfile: PrimarySignerProfile | null;
+  blastrRelayEnabled: boolean;
+  canToggleBlastr: boolean;
+  blastrPolicy: {
+    policy: { mode: "blacklist" | "whitelist"; enabled: boolean } | null;
+    relays: Array<{ relay_url: string; action: "allow" | "block" }>;
+  } | null;
+  blastrSystemRelays: string[];
   referral: {
     referralLink: string;
     commissionRatePercent: number;
@@ -205,6 +218,7 @@ export async function loadSettingsData(
     preferredNostrClient,
     customNostrClientBaseUrl,
     primarySignerProfile,
+    blastrRelayEnabled,
   ] = await Promise.all([
     getUserTimezone(userId),
     getRelayIntentCached(userId),
@@ -228,6 +242,7 @@ export async function loadSettingsData(
     getUserPreferredNostrClient(userId),
     getUserCustomNostrClientBaseUrl(userId),
     getUserPrimarySignerProfile(userId),
+    getUserBlastrRelayEnabled(userId),
   ]);
 
   const relays = relayIntent.writeRelays;
@@ -300,6 +315,24 @@ export async function loadSettingsData(
     getUserPaymentHistory(userId),
     getReferralSettingsData(myNpub),
   ]);
+
+  const canToggleBlastr = !!(
+    subscription?.status === "ACTIVE" && subscription.Plan?.enableRelayBlast
+  );
+  let blastrPolicy: SettingsLoaderData["blastrPolicy"] = null;
+  if (canToggleBlastr && myNpub) {
+    const pubkeyHex = resolveBlastrPubkeyHex(myNpub);
+    if (pubkeyHex) {
+      const policyRes = await getBlastrUserPolicy(pubkeyHex);
+      if (policyRes) {
+        blastrPolicy = {
+          policy: policyRes.policy,
+          relays: policyRes.relays,
+        };
+      }
+    }
+  }
+  const blastrSystemRelays = BLASTR_KNOWN_SYSTEM_RELAYS;
 
   return {
     timezone,
@@ -395,6 +428,10 @@ export async function loadSettingsData(
     primarySignerProfile: isPrimarySignerProfile(primarySignerProfile)
       ? primarySignerProfile
       : null,
+    blastrRelayEnabled,
+    canToggleBlastr,
+    blastrPolicy,
+    blastrSystemRelays,
     referral,
   };
 }

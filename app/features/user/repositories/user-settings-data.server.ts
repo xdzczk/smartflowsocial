@@ -170,9 +170,7 @@ export function updateUserUploadProviderSettingsRow(
   });
 }
 
-export function findUserUploadProviderSettingsRow(
-  userId: string
-): Promise<{
+export function findUserUploadProviderSettingsRow(userId: string): Promise<{
   uploadProvider: UploadProvider;
   customBlossomUrl: string | null;
 } | null> {
@@ -199,6 +197,25 @@ export function updateUserEnableMirrorBlossomRow(
   return prisma.user.update({
     where: { id: userId },
     data: { enableMirrorBlossom },
+  });
+}
+
+export function findUserBlastrRelayEnabledRow(
+  userId: string
+): Promise<{ blastrRelayEnabled: boolean } | null> {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { blastrRelayEnabled: true },
+  });
+}
+
+export function updateUserBlastrRelayEnabledRow(
+  userId: string,
+  blastrRelayEnabled: boolean
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { blastrRelayEnabled },
   });
 }
 

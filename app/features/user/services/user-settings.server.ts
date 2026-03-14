@@ -24,6 +24,8 @@ import {
   findUserUploadProviderSettingsRow,
   findUserEnableMirrorBlossomRow,
   updateUserEnableMirrorBlossomRow,
+  findUserBlastrRelayEnabledRow,
+  updateUserBlastrRelayEnabledRow,
   findUserMirrorUploadUrlsRow,
   updateUserMirrorUploadUrlsRow,
   updateUserMutedListRow,
@@ -264,6 +266,26 @@ export function updateUserEnableMirrorBlossom(
   enableMirrorBlossom: boolean
 ): Promise<User> {
   return updateUserEnableMirrorBlossomRow(userId, enableMirrorBlossom);
+}
+
+/**
+ * Gets whether user has SFS Blastr relay enabled (when eligible)
+ */
+export async function getUserBlastrRelayEnabled(
+  userId: string
+): Promise<boolean> {
+  const user = await findUserBlastrRelayEnabledRow(userId);
+  return user?.blastrRelayEnabled ?? true;
+}
+
+/**
+ * Updates whether user has SFS Blastr relay enabled (when eligible)
+ */
+export function updateUserBlastrRelayEnabled(
+  userId: string,
+  blastrRelayEnabled: boolean
+): Promise<User> {
+  return updateUserBlastrRelayEnabledRow(userId, blastrRelayEnabled);
 }
 
 /**

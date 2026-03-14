@@ -56,6 +56,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       filterMuted: false,
       hidePostsFromLowTrustUsers: false,
       primarySignerProfile: null,
+      blastrRelayEnabled: true,
+      canToggleBlastr: false,
+      blastrPolicy: null,
+      blastrSystemRelays: [],
       referral: {
         referralLink: "",
         commissionRatePercent: 20,

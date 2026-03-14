@@ -32,12 +32,20 @@ export async function getRelayIntentFromDb(
 export async function isBlastrEnabledForUserFromDb(
   userId: string
 ): Promise<boolean> {
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId },
-    include: { Plan: true },
-  });
+  const [user, subscription] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { blastrRelayEnabled: true },
+    }),
+    prisma.subscription.findUnique({
+      where: { userId },
+      include: { Plan: true },
+    }),
+  ]);
 
   return !!(
-    subscription?.status === "ACTIVE" && subscription.Plan?.enableRelayBlast
+    user?.blastrRelayEnabled === true &&
+    subscription?.status === "ACTIVE" &&
+    subscription.Plan?.enableRelayBlast
   );
 }
