@@ -113,7 +113,7 @@ async function main() {
     where: { status: "ACTIVE" },
     include: {
       Plan: true,
-      user: {
+      User: {
         select: { id: true, npub: true, isEnabled: true },
       },
     },
@@ -122,8 +122,8 @@ async function main() {
   const eligible = subscriptions.filter(
     (s) =>
       s.Plan?.enableRelayBlast === true &&
-      s.user?.isEnabled === true &&
-      s.user?.npub
+      s.User?.isEnabled === true &&
+      s.User?.npub
   );
 
   log(`Found ${eligible.length} eligible user(s).`);
@@ -131,7 +131,7 @@ async function main() {
   let synced = 0;
   let failed = 0;
   for (const s of eligible) {
-    const user = s.user!;
+    const user = s.User!;
     const pubkeyHex = resolvePubkeyHex(user.npub!);
     if (!pubkeyHex) {
       log(`Skip user ${user.id}: could not resolve npub to hex`);
