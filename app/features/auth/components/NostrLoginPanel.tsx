@@ -187,16 +187,17 @@ export default function NostrLoginPanel() {
   }, [cleanup]);
 
   useEffect(() => {
-    // Only perform relay health checks when the user is working with the NIP-46
-    // nostrconnect method (either configuring relays or waiting for approval).
+    // Only perform relay health checks when configuring relays (signer_initializing).
+    // Skip when awaiting approval so we don't open extra WebSockets alongside the
+    // NIP-46 pool and hit browser "Insufficient resources" limits.
     if (typeof window === "undefined") return;
     const shouldCheck =
-      nip46Tab === "nostrconnect" &&
-      (state === "signer_initializing" ||
-        state === "awaiting_profile_selection");
+      nip46Tab === "nostrconnect" && state === "signer_initializing";
     if (!shouldCheck) {
       closeRelaySockets();
-      queueMicrotask(() => setRelayStatuses({}));
+      if (state !== "awaiting_profile_selection") {
+        queueMicrotask(() => setRelayStatuses({}));
+      }
       return;
     }
 
@@ -605,6 +606,9 @@ export default function NostrLoginPanel() {
     setNip46AttemptCount((c) => c + 1);
     setActiveSignerFlow("nip46");
     setState("awaiting_profile_selection");
+    // Free relay-check WebSockets before NIP-46 pool connects to avoid hitting
+    // browser connection limits (Insufficient resources).
+    closeRelaySockets();
     void nip46.connect({
       relayList,
       nip46Tab,
@@ -622,6 +626,7 @@ export default function NostrLoginPanel() {
     setActiveSignerFlow,
     setNip46AttemptCount,
     setState,
+    closeRelaySockets,
   ]);
 
   return (
