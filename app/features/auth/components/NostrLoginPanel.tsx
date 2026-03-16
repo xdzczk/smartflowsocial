@@ -109,6 +109,10 @@ export default function NostrLoginPanel() {
     expectedPubkey,
     ...nip46Callbacks,
   });
+  const nip46Ref = useRef(nip46);
+  useEffect(() => {
+    nip46Ref.current = nip46;
+  }, [nip46]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -127,14 +131,12 @@ export default function NostrLoginPanel() {
 
   const relayUrls = useMemo(() => parseRelayList(relayList), [relayList]);
 
-  // ref.current must not be in deps (mutable ref); compiler infers it—omit intentionally
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- nip46.cancelRef.current and signerTransferredToManagerRef.current are refs
   const cleanup = useCallback(async () => {
-    nip46.cancelRef.current?.cancel();
+    nip46Ref.current.cancelRef.current?.cancel();
     if (signer?.type === "nip46" && !signerTransferredToManagerRef.current) {
       await signer.close?.();
     }
-  }, [signer, nip46]);
+  }, [signer]);
 
   const resetToSelection = useCallback(async () => {
     closeRelaySockets();
@@ -195,7 +197,8 @@ export default function NostrLoginPanel() {
       nip46Tab === "nostrconnect" && state === "signer_initializing";
     if (!shouldCheck) {
       closeRelaySockets();
-      if (state !== "awaiting_profile_selection") {
+      // Keep relay statuses when awaiting approval or on failed screen so the UI shows last known status.
+      if (state !== "awaiting_profile_selection" && state !== "failed") {
         queueMicrotask(() => setRelayStatuses({}));
       }
       return;
@@ -416,15 +419,16 @@ export default function NostrLoginPanel() {
     setWasHiddenDuringConnection,
   ]);
 
-  // After full page load (e.g. redirect back from Primal), restore pending NIP-46 and resume connection
+  // After full page load (e.g. redirect back from Primal), restore pending NIP-46 and resume connection.
+  // Run once on mount only; use ref so we don't depend on nip46 (new ref every render would reset the timeout).
   useEffect(() => {
-    const pending = nip46.getPendingNostrConnect();
+    const pending = nip46Ref.current.getPendingNostrConnect();
     if (!pending) return;
     const t = setTimeout(() => {
-      void nip46.resume();
+      void nip46Ref.current.resume();
     }, getResumeDelayMs());
     return () => clearTimeout(t);
-  }, [nip46]);
+  }, []);
 
   const performLogin = useCallback(async () => {
     if (!signer || !pubkey) return;

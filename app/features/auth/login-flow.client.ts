@@ -250,7 +250,10 @@ export function normalizeError(err: unknown): {
       msgLower.includes("subscription closed") ||
       msgLower.includes("websocket") ||
       msgLower.includes("closing") ||
-      msgLower.includes("closed state")
+      msgLower.includes("closed state") ||
+      msgLower.includes("signer is not open") ||
+      msgLower.includes("not open anymore") ||
+      msgLower.includes("create a new one")
     ) {
       return {
         code: "SIGNER_CONNECTION_DROPPED",
