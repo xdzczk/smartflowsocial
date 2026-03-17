@@ -398,6 +398,27 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             : contentResolvedForSign;
 
           lastSubmitForRetryRef.current = { data, event };
+          // #region agent log
+          fetch(
+            "http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Debug-Session-Id": "995736",
+              },
+              body: JSON.stringify({
+                sessionId: "995736",
+                location:
+                  "useComposerSubmit.ts:runSinglePostSubmit:setSigningTrue",
+                message: "setIsSigning(true) single post",
+                data: {},
+                timestamp: Date.now(),
+                hypothesisId: "H3",
+              }),
+            }
+          ).catch(() => {});
+          // #endregion
           setIsSigning(true);
           const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
             content: contentToSign,
@@ -406,6 +427,27 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             tags: tagArray,
           });
           lastSubmitForRetryRef.current = null;
+          // #region agent log
+          fetch(
+            "http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Debug-Session-Id": "995736",
+              },
+              body: JSON.stringify({
+                sessionId: "995736",
+                location:
+                  "useComposerSubmit.ts:runSinglePostSubmit:setSigningFalseSuccess",
+                message: "setIsSigning(false) after sign success",
+                data: {},
+                timestamp: Date.now(),
+                hypothesisId: "H3",
+              }),
+            }
+          ).catch(() => {});
+          // #endregion
           setIsSigning(false);
 
           const payload: Record<string, string> = {
@@ -500,6 +542,26 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               : "Failed to sign post. Please try again."
           );
         } finally {
+          // #region agent log
+          fetch(
+            "http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Debug-Session-Id": "995736",
+              },
+              body: JSON.stringify({
+                sessionId: "995736",
+                location: "useComposerSubmit.ts:runSinglePostSubmit:finally",
+                message: "runSinglePostSubmit finally, setIsSigning(false)",
+                data: {},
+                timestamp: Date.now(),
+                hypothesisId: "H3",
+              }),
+            }
+          ).catch(() => {});
+          // #endregion
           lastSubmitForRetryRef.current = null;
           setIsSigning(false);
         }

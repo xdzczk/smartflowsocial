@@ -282,8 +282,53 @@ export async function getActiveSigner(
     clearCachedNip46Signer();
   }
 
+  // #region agent log
+  if (typeof fetch !== "undefined") {
+    fetch("http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "995736",
+      },
+      body: JSON.stringify({
+        sessionId: "995736",
+        location:
+          "nostr-signer-connection.client.ts:getActiveSigner:beforeCache",
+        message: "getActiveSigner about to tryGetValidCachedSigner",
+        data: {},
+        timestamp: Date.now(),
+        hypothesisId: "H1",
+      }),
+    }).catch(() => {});
+  }
+  // #endregion
   const fromCache = await tryGetValidCachedSigner();
-  if (fromCache) return fromCache;
+  if (fromCache) {
+    // #region agent log
+    if (typeof fetch !== "undefined") {
+      fetch(
+        "http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "995736",
+          },
+          body: JSON.stringify({
+            sessionId: "995736",
+            location:
+              "nostr-signer-connection.client.ts:getActiveSigner:fromCache",
+            message: "getActiveSigner returning from cache",
+            data: {},
+            timestamp: Date.now(),
+            hypothesisId: "H4",
+          }),
+        }
+      ).catch(() => {});
+    }
+    // #endregion
+    return fromCache;
+  }
 
   const config = getActiveSignerConfig();
   if (!config) return null;
@@ -339,6 +384,29 @@ export async function getActiveSigner(
   setInFlightSignerPromise(connectPromise);
   setInFlightSignerConfigJson(configJson);
   try {
+    // #region agent log
+    if (typeof fetch !== "undefined") {
+      fetch(
+        "http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "995736",
+          },
+          body: JSON.stringify({
+            sessionId: "995736",
+            location:
+              "nostr-signer-connection.client.ts:getActiveSigner:awaitConnect",
+            message: "getActiveSigner awaiting connectPromise",
+            data: {},
+            timestamp: Date.now(),
+            hypothesisId: "H4",
+          }),
+        }
+      ).catch(() => {});
+    }
+    // #endregion
     return await connectPromise;
   } catch (err: unknown) {
     if (isConnectionRelatedError(err)) {
