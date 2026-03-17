@@ -37,6 +37,7 @@ const PRESET_OPTIONS: Array<{
   { value: "NOSTRUDEL", label: "noStrudel" },
   { value: "IRIS", label: "Iris" },
   { value: "YAKIHONNE", label: "Yakihonne" },
+  { value: "JUMBLE", label: "Jumble Social" },
   { value: "CUSTOM", label: "Custom URL" },
 ];
 

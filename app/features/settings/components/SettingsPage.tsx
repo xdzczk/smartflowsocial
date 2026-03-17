@@ -1,6 +1,5 @@
 import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
 
-import { BlastrPolicySettings } from "~/components/settings/BlastrPolicySettings";
 import { DateFormatSettings } from "~/components/settings/DateFormatSettings";
 import { NostrClientSettings } from "~/components/settings/NostrClientSettings";
 import { NotificationSettings } from "~/components/settings/NotificationSettings";
@@ -640,42 +639,47 @@ export default function SettingsPage() {
               relayAcks={relayAcksMap}
               blastrRelayEnabled={asBoolean(blastrRelayEnabled, true)}
               canToggleBlastr={asBoolean(canToggleBlastr, false)}
+              canShowBlastrPolicyModal={
+                asBoolean(canToggleBlastr, false) && blastrPolicyRaw != null
+                  ? Array.isArray(blastrSystemRelaysRaw)
+                  : undefined
+              }
+              blastrPolicy={
+                typeof blastrPolicyRaw === "object" &&
+                blastrPolicyRaw != null &&
+                "policy" in blastrPolicyRaw &&
+                (blastrPolicyRaw as { policy: unknown }).policy != null
+                  ? (
+                      blastrPolicyRaw as {
+                        policy: {
+                          mode: "blacklist" | "whitelist";
+                          enabled: boolean;
+                        } | null;
+                      }
+                    ).policy
+                  : null
+              }
+              blastrPolicyRelays={
+                typeof blastrPolicyRaw === "object" &&
+                blastrPolicyRaw != null &&
+                "relays" in blastrPolicyRaw &&
+                Array.isArray((blastrPolicyRaw as { relays: unknown }).relays)
+                  ? (
+                      blastrPolicyRaw as {
+                        relays: Array<{
+                          relay_url: string;
+                          action: "allow" | "block";
+                        }>;
+                      }
+                    ).relays
+                  : []
+              }
+              blastrSystemRelays={
+                Array.isArray(blastrSystemRelaysRaw)
+                  ? (blastrSystemRelaysRaw as string[])
+                  : []
+              }
             />
-            {asBoolean(canToggleBlastr, false) &&
-            blastrPolicyRaw != null &&
-            Array.isArray(blastrSystemRelaysRaw) ? (
-              <BlastrPolicySettings
-                policy={
-                  typeof blastrPolicyRaw === "object" &&
-                  "policy" in blastrPolicyRaw &&
-                  (blastrPolicyRaw as { policy: unknown }).policy != null
-                    ? (
-                        blastrPolicyRaw as {
-                          policy: {
-                            mode: "blacklist" | "whitelist";
-                            enabled: boolean;
-                          } | null;
-                        }
-                      ).policy
-                    : null
-                }
-                relays={
-                  typeof blastrPolicyRaw === "object" &&
-                  "relays" in blastrPolicyRaw &&
-                  Array.isArray((blastrPolicyRaw as { relays: unknown }).relays)
-                    ? (
-                        blastrPolicyRaw as {
-                          relays: Array<{
-                            relay_url: string;
-                            action: "allow" | "block";
-                          }>;
-                        }
-                      ).relays
-                    : []
-                }
-                systemRelays={blastrSystemRelaysRaw as string[]}
-              />
-            ) : null}
             <GiveawayBlacklistSettings
               giveawayBlacklist={giveawayBlacklistList}
             />

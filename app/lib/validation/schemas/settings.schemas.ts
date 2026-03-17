@@ -106,6 +106,7 @@ const PREFERRED_NOSTR_CLIENT_ENUM = z.enum([
   "NOSTRUDEL",
   "IRIS",
   "YAKIHONNE",
+  "JUMBLE",
   "CUSTOM",
 ]);
 

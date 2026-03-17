@@ -23,10 +23,10 @@ export interface RescheduleModalContentProps {
     date: Date,
     tz: string,
     timeFormat: "12h" | "24h",
-    dateLocale: "en-GB" | "en-US" | "sv"
+    dateLocale: "en-GB" | "en-US" | "en-CA"
   ) => string;
   userTimeFormat: "12h" | "24h";
-  dateLocale: "en-GB" | "en-US" | "sv";
+  dateLocale: "en-GB" | "en-US" | "en-CA";
   handleDateTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   selectedQueueType: string | null;
   setSelectedQueueType: (value: string | null) => void;

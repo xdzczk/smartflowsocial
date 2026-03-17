@@ -559,6 +559,7 @@ export const PREFERRED_NOSTR_CLIENT_PRESETS = [
   "NOSTRUDEL",
   "IRIS",
   "YAKIHONNE",
+  "JUMBLE",
   "CUSTOM",
 ] as const;
 export type PreferredNostrClientPreset =

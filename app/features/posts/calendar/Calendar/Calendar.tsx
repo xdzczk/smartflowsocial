@@ -663,7 +663,7 @@ interface MiniCalendarGridProps {
   displayedMonth: Date;
   currentDate: Date;
   userTimezone: string;
-  dateLocale: "en-GB" | "en-US" | "sv";
+  dateLocale: "en-GB" | "en-US" | "en-CA";
   onMonthChange: (date: Date) => void;
   onSelectDate: (date: Date) => void;
 }

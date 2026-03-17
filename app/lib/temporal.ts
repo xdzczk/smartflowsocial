@@ -212,11 +212,11 @@ export function addMonths(
 }
 
 /** User date format key → Intl locale for display (dd/mm, mm/dd, yyyy-mm-dd) */
-export type DateDisplayLocale = "en-GB" | "en-US" | "sv";
+export type DateDisplayLocale = "en-GB" | "en-US" | "en-CA";
 
 /**
  * Map user date format preference to Intl locale
- * ddmmyyyy → en-GB (DD/MM/YYYY), mmddyyyy → en-US (MM/DD/YYYY), yyyymmdd → sv (YYYY-MM-DD)
+ * ddmmyyyy → en-GB (DD/MM/YYYY), mmddyyyy → en-US (MM/DD/YYYY), yyyymmdd → en-CA (YYYY-MM-DD, English)
  */
 export function dateFormatToLocale(
   dateFormat: "ddmmyyyy" | "mmddyyyy" | "yyyymmdd"
@@ -225,7 +225,7 @@ export function dateFormatToLocale(
     case "mmddyyyy":
       return "en-US";
     case "yyyymmdd":
-      return "sv";
+      return "en-CA";
     default:
       return "en-GB";
   }

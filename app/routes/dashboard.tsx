@@ -4,7 +4,7 @@ import {
   type ActionFunctionArgs,
 } from "@remix-run/node";
 
-import { requireUser } from "~/features/auth";
+import { refreshUserProfileIfEmpty, requireUser } from "~/features/auth";
 import {
   requireActiveSubscription,
   ensureUserHasFreePlan,
@@ -19,7 +19,8 @@ import {
 import { withCSRFProtection } from "~/lib/csrf";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const user = await requireUser(request);
+  let user = await requireUser(request);
+  user = await refreshUserProfileIfEmpty(user);
 
   // New and existing users without a subscription get free plan so they land on dashboard first
   await ensureUserHasFreePlan(user.id);
@@ -37,7 +38,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json({
     userId: user.id,
-    user: subscriptionData.user,
+    user,
     currentSubscription: subscriptionData.currentSubscription,
     ...dashboardData,
     referredBy: referredBy ?? undefined,

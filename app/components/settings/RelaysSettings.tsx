@@ -1,8 +1,10 @@
 import { useFetcher } from "@remix-run/react";
-import { Plus, X } from "lucide-react";
+import { Plus, Settings2, X } from "lucide-react";
+import { useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
 
+import { BlastrPolicySettings } from "~/components/settings/BlastrPolicySettings";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -11,6 +13,13 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
@@ -37,6 +46,11 @@ interface RelaysSettingsProps {
   >;
   blastrRelayEnabled?: boolean;
   canToggleBlastr?: boolean;
+  /** When true, show "Policy" button for Blastr relay to open policy modal. */
+  canShowBlastrPolicyModal?: boolean;
+  blastrPolicy?: { mode: "blacklist" | "whitelist"; enabled: boolean } | null;
+  blastrPolicyRelays?: Array<{ relay_url: string; action: "allow" | "block" }>;
+  blastrSystemRelays?: string[];
 }
 
 interface FetcherData {
@@ -61,7 +75,12 @@ export function RelaysSettings({
   relayAcks,
   blastrRelayEnabled = true,
   canToggleBlastr = false,
+  canShowBlastrPolicyModal = false,
+  blastrPolicy = null,
+  blastrPolicyRelays = [],
+  blastrSystemRelays = [],
 }: RelaysSettingsProps) {
+  const [blastrPolicyModalOpen, setBlastrPolicyModalOpen] = useState(false);
   const fetcher = useFetcher<FetcherData>();
   const blastrFetcher = useFetcher<FetcherData>();
   const form = useZodForm(updateRelaysClientSchema, {
@@ -179,6 +198,20 @@ export function RelaysSettings({
                         </Label>
                       </div>
                     ) : null}
+                    {isBlastr && canShowBlastrPolicyModal ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => setBlastrPolicyModalOpen(true)}
+                      >
+                        <Settings2
+                          className={`mr-2 ${INLINE_ICON_SIZE_CLASS}`}
+                        />
+                        Relay policy
+                      </Button>
+                    ) : null}
                   </div>
                   <div className="shrink-0 text-sm">
                     {mr.enabled ? (
@@ -281,6 +314,29 @@ export function RelaysSettings({
             <p className="text-destructive text-sm">{fetcher.data.error}</p>
           ) : null}
         </form>
+
+        {canShowBlastrPolicyModal ? (
+          <Dialog
+            open={blastrPolicyModalOpen}
+            onOpenChange={setBlastrPolicyModalOpen}
+          >
+            <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>SFS Blastr relay policy</DialogTitle>
+                <DialogDescription>
+                  Choose which relays Blastr fans out to. Blacklist = all system
+                  relays except blocked; whitelist = only allowed relays.
+                </DialogDescription>
+              </DialogHeader>
+              <BlastrPolicySettings
+                policy={blastrPolicy}
+                relays={blastrPolicyRelays}
+                systemRelays={blastrSystemRelays}
+                asModalContent
+              />
+            </DialogContent>
+          </Dialog>
+        ) : null}
       </CardContent>
     </Card>
   );

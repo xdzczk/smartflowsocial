@@ -1,5 +1,5 @@
-import { useMatches } from "@remix-run/react";
-import { useMemo } from "react";
+import { useMatches, useNavigation } from "@remix-run/react";
+import { useMemo, useState } from "react";
 
 import type { User } from "~/features/user";
 const DEFAULT_REDIRECT = "/";
@@ -62,11 +62,14 @@ function isUser(user: unknown): user is User {
  * dashboard (or other parent) loader so the profile badge and user-dependent UI
  * render correctly after sign-in and on first paint when root data may not be
  * ready yet (e.g. streaming or hydration).
+ * Retains the last known user while navigation is in progress so the header
+ * (e.g. account switcher) does not disappear during client-side route changes.
  */
 export function useOptionalUser(): User | undefined {
   const matches = useMatches();
+  const navigation = useNavigation();
 
-  return useMemo(() => {
+  const userFromMatches = useMemo(() => {
     // Prefer root loader (canonical source)
     const rootData = matches.find((m) => m.id === "root")?.data;
     if (
@@ -96,6 +99,17 @@ export function useOptionalUser(): User | undefined {
     }
     return;
   }, [matches]);
+
+  const [lastKnownUser, setLastKnownUser] = useState<User | undefined>();
+
+  // Sync last-known user during render (no refs/effects): keep showing it while navigation is loading
+  if (userFromMatches) {
+    if (lastKnownUser !== userFromMatches) setLastKnownUser(userFromMatches);
+    return userFromMatches;
+  }
+  if (navigation.state === "loading" && lastKnownUser) return lastKnownUser;
+  if (lastKnownUser !== undefined) setLastKnownUser(undefined);
+  return undefined;
 }
 
 export function useUser(): User {

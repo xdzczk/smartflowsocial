@@ -6,6 +6,8 @@
  * - noStrudel: /n/{nevent} for notes, /articles/{naddr} for articles
  * - Yakihonne: /note/{nevent} for notes, /article/{naddr} for articles
  * - Iris: /{note1} for notes and articles (when event id is hex)
+ * - Jumble Social: /notes/{nevent} for notes, /notes/{naddr} for articles, /users/{npub} for profiles
+ * - Iris: /{npub} for profiles (bare). Yakihonne: /profile/{nprofile}. noStrudel: /u/{npub} for profiles.
  */
 
 import { nip19 } from "nostr-tools";
@@ -18,6 +20,7 @@ export type PreferredNostrClientPreset =
   | "NOSTRUDEL"
   | "IRIS"
   | "YAKIHONNE"
+  | "JUMBLE"
   | "CUSTOM";
 
 export type NostrClientPathStyle =
@@ -25,7 +28,8 @@ export type NostrClientPathStyle =
   | "bech32_bare"
   | "nostrudel"
   | "yakihonne"
-  | "iris";
+  | "iris"
+  | "jumble";
 
 export interface NostrClientConfig {
   baseUrl: string;
@@ -43,6 +47,7 @@ const PRESET_CONFIG: Record<
   NOSTRUDEL: { baseUrl: "https://nostrudel.ninja", pathStyle: "nostrudel" },
   IRIS: { baseUrl: "https://iris.to", pathStyle: "iris" },
   YAKIHONNE: { baseUrl: "https://yakihonne.com", pathStyle: "yakihonne" },
+  JUMBLE: { baseUrl: "https://jumble.social", pathStyle: "jumble" },
 };
 
 const FALLBACK_CONFIG: NostrClientConfig = {
@@ -106,6 +111,8 @@ export function eventUrl(
         return `${base}/note/${nip19.neventEncode({ id: hex })}`;
       case "iris":
         return `${base}/${nip19.noteEncode(hex)}`;
+      case "jumble":
+        return `${base}/notes/${nip19.neventEncode({ id: hex })}`;
       case "primal":
       default:
         return `${base}/e/${hex}`;
@@ -127,6 +134,7 @@ function isHexEventId(s: string): boolean {
  * - noStrudel: /articles/{naddr}
  * - Yakihonne: /article/{naddr}
  * - Iris: /{note1} when given hex event id; else /a/{idOrNaddr}
+ * - Jumble: /notes/{naddr} or /notes/{nevent} when hex
  */
 export function articleUrl(
   idOrNaddr: string,
@@ -143,6 +151,16 @@ export function articleUrl(
       return `${base}/articles/${raw}`;
     case "yakihonne":
       return `${base}/article/${raw}`;
+    case "jumble":
+      if (raw.startsWith("naddr1")) return `${base}/notes/${raw}`;
+      if (isHexEventId(raw)) {
+        try {
+          return `${base}/notes/${nip19.neventEncode({ id: normalizeHexId(raw) })}`;
+        } catch {
+          return `${base}/a/${raw}`;
+        }
+      }
+      return `${base}/a/${raw}`;
     case "iris":
       if (isHexEventId(raw)) {
         try {
@@ -161,15 +179,40 @@ export function articleUrl(
 /**
  * Builds a URL to view a profile in the preferred client.
  * npub: bech32 npub (npub1...).
+ * - Damus: /{npub}. Iris: /{npub}. Jumble: /users/{npub}. Yakihonne: /profile/{npub}.
+ * - noStrudel: /u/{npub}. Yakihonne: /profile/{nprofile} (npub decoded to nprofile).
+ * - Primal/Amethyst/Nostur: /p/{npub}.
  */
 export function profileUrl(npub: string, config: NostrClientConfig): string {
   if (!npub || typeof npub !== "string") return "";
   const base = config.baseUrl.replace(/\/$/, "");
   const raw = npub.trim();
-  if (config.pathStyle === "bech32_bare" && raw.startsWith("npub1")) {
-    return `${base}/${raw}`;
+  if (!raw.startsWith("npub1")) return `${base}/p/${raw}`;
+  switch (config.pathStyle) {
+    case "bech32_bare":
+      return `${base}/${raw}`;
+    case "iris":
+      return `${base}/${raw}`;
+    case "jumble":
+      return `${base}/users/${raw}`;
+    case "nostrudel":
+      return `${base}/u/${raw}`;
+    case "yakihonne": {
+      try {
+        const decoded = nip19.decode(raw);
+        if (decoded.type === "npub" && typeof decoded.data === "string") {
+          const nprofile = nip19.nprofileEncode({ pubkey: decoded.data });
+          return `${base}/profile/${nprofile}`;
+        }
+      } catch {
+        // fallback to npub if decode fails
+      }
+      return `${base}/profile/${raw}`;
+    }
+    case "primal":
+    default:
+      return `${base}/p/${raw}`;
   }
-  return `${base}/p/${raw}`;
 }
 
 /**
@@ -186,6 +229,7 @@ export function getNostrClientDisplayName(
     NOSTRUDEL: "noStrudel",
     IRIS: "Iris",
     YAKIHONNE: "Yakihonne",
+    JUMBLE: "Jumble Social",
     CUSTOM: "client",
   };
   return names[String(preferredNostrClient)] ?? "Primal";

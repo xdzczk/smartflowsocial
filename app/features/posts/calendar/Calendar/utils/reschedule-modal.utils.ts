@@ -62,7 +62,7 @@ export function formatDateTime(
   date: Date,
   userTimezone: string,
   userTimeFormat: "12h" | "24h" = "12h",
-  dateLocale: "en-GB" | "en-US" | "sv" = "en-GB"
+  dateLocale: "en-GB" | "en-US" | "en-CA" = "en-GB"
 ): string {
   const zonedDateTime = fromDate(date, userTimezone);
   return formatForDisplay(

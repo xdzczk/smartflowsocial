@@ -37,7 +37,7 @@ export interface DayViewProps {
   queueTypes?: QueueType[];
   isLongform?: boolean;
   isAll?: boolean;
-  dateLocale?: "en-GB" | "en-US" | "sv";
+  dateLocale?: "en-GB" | "en-US" | "en-CA";
 }
 
 export function DayView({

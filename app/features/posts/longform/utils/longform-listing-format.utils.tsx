@@ -58,7 +58,7 @@ export function formatDateCell(
         hour12: userTimeFormat === "12h",
       },
       userTimeFormat,
-      dateLocale as "en-GB" | "en-US" | "sv"
+      dateLocale as "en-GB" | "en-US" | "en-CA"
     );
   } catch (error) {
     handleErrorSafely(error, {

@@ -9,6 +9,14 @@ vi.mock("nostr-tools", () => ({
   nip19: {
     neventEncode: vi.fn((x: { id: string }) => `nevent1${x.id}`),
     noteEncode: vi.fn((hex: string) => `note1${hex}`),
+    decode: vi.fn((code: string) => {
+      if (code.startsWith("npub1") && code.length > 10)
+        return { type: "npub", data: "a".repeat(64) };
+      throw new Error("invalid");
+    }),
+    nprofileEncode: vi.fn(
+      (x: { pubkey: string }) => `nprofile1${x.pubkey.slice(0, 12)}`
+    ),
   },
 }));
 
@@ -67,7 +75,7 @@ describe("Nostr Client URLs", () => {
       expect(config.baseUrl).toBe("https://primal.net");
     });
 
-    it("returns preset for AMETHYST, NOSTUR, NOSTRUDEL, IRIS, YAKIHONNE", () => {
+    it("returns preset for AMETHYST, NOSTUR, NOSTRUDEL, IRIS, YAKIHONNE, JUMBLE", () => {
       expect(getNostrClientConfig("AMETHYST", null).baseUrl).toBe(
         "https://amethyst.social"
       );
@@ -82,6 +90,9 @@ describe("Nostr Client URLs", () => {
       );
       expect(getNostrClientConfig("YAKIHONNE", null).baseUrl).toBe(
         "https://yakihonne.com"
+      );
+      expect(getNostrClientConfig("JUMBLE", null).baseUrl).toBe(
+        "https://jumble.social"
       );
     });
   });
@@ -138,6 +149,14 @@ describe("Nostr Client URLs", () => {
     it("returns iris style with note1", () => {
       const config = { baseUrl: "https://iris.to", pathStyle: "iris" as const };
       expect(eventUrl("a".repeat(64), config)).toContain("note1");
+    });
+
+    it("returns jumble style /notes/nevent", () => {
+      const config = {
+        baseUrl: "https://jumble.social",
+        pathStyle: "jumble" as const,
+      };
+      expect(eventUrl("a".repeat(64), config)).toContain("/notes/nevent1");
     });
 
     it("strips trailing slash from baseUrl", () => {
@@ -212,6 +231,16 @@ describe("Nostr Client URLs", () => {
       );
     });
 
+    it("returns jumble style /notes/naddr", () => {
+      const config = {
+        baseUrl: "https://jumble.social",
+        pathStyle: "jumble" as const,
+      };
+      expect(articleUrl("naddr1x", config)).toBe(
+        "https://jumble.social/notes/naddr1x"
+      );
+    });
+
     it("returns iris /a/ for non-hex idOrNaddr", () => {
       const config = { baseUrl: "https://iris.to", pathStyle: "iris" as const };
       expect(articleUrl("naddr1x", config)).toBe("https://iris.to/a/naddr1x");
@@ -244,6 +273,53 @@ describe("Nostr Client URLs", () => {
       };
       expect(profileUrl("npub1abc", config)).toBe("https://damus.io/npub1abc");
     });
+
+    it("returns bare npub for iris", () => {
+      const config = {
+        baseUrl: "https://iris.to",
+        pathStyle: "iris" as const,
+      };
+      expect(profileUrl("npub1abc", config)).toBe("https://iris.to/npub1abc");
+    });
+
+    it("returns /users/npub for jumble", () => {
+      const config = {
+        baseUrl: "https://jumble.social",
+        pathStyle: "jumble" as const,
+      };
+      expect(profileUrl("npub1abc", config)).toBe(
+        "https://jumble.social/users/npub1abc"
+      );
+    });
+
+    it("returns /u/npub for nostrudel", () => {
+      const config = {
+        baseUrl: "https://nostrudel.ninja",
+        pathStyle: "nostrudel" as const,
+      };
+      expect(profileUrl("npub1abc", config)).toBe(
+        "https://nostrudel.ninja/u/npub1abc"
+      );
+    });
+
+    it("returns /profile/nprofile for yakihonne when npub decodes", () => {
+      const config = {
+        baseUrl: "https://yakihonne.com",
+        pathStyle: "yakihonne" as const,
+      };
+      const url = profileUrl("npub1validnpubplaceholder", config);
+      expect(url).toBe("https://yakihonne.com/profile/nprofile1aaaaaaaaaaaa");
+    });
+
+    it("returns /profile/npub fallback for yakihonne when npub decode fails", () => {
+      const config = {
+        baseUrl: "https://yakihonne.com",
+        pathStyle: "yakihonne" as const,
+      };
+      expect(profileUrl("npub1abc", config)).toBe(
+        "https://yakihonne.com/profile/npub1abc"
+      );
+    });
   });
 
   describe("getNostrClientDisplayName", () => {
@@ -256,6 +332,7 @@ describe("Nostr Client URLs", () => {
       expect(getNostrClientDisplayName("NOSTRUDEL")).toBe("noStrudel");
       expect(getNostrClientDisplayName("IRIS")).toBe("Iris");
       expect(getNostrClientDisplayName("YAKIHONNE")).toBe("Yakihonne");
+      expect(getNostrClientDisplayName("JUMBLE")).toBe("Jumble Social");
     });
 
     it("returns Primal for unknown", () => {

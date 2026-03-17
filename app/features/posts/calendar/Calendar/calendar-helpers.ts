@@ -72,7 +72,7 @@ export function formatDropSlotAriaLabel(
   dateKey: string,
   time: string,
   userTimezone: string,
-  dateLocale: "en-GB" | "en-US" | "sv" = "en-GB"
+  dateLocale: "en-GB" | "en-US" | "en-CA" = "en-GB"
 ): string {
   const iso = buildDropIsoString(dateKey, time);
   const zoned = parseDateTimeLocal(iso, userTimezone);

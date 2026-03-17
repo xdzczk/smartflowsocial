@@ -14,7 +14,7 @@ import {
 export interface DaysHeaderProps {
   weekDays: Date[];
   user?: UserData | null;
-  dateLocale: "en-GB" | "en-US" | "sv";
+  dateLocale: "en-GB" | "en-US" | "en-CA";
   isMobile: boolean;
   showTimeSpacer?: boolean;
   stickyTop?: boolean;

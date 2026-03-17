@@ -41,8 +41,8 @@ describe("dateFormatToLocale", () => {
     expect(dateFormatToLocale("mmddyyyy")).toBe("en-US");
   });
 
-  it("maps yyyymmdd to sv", () => {
-    expect(dateFormatToLocale("yyyymmdd")).toBe("sv");
+  it("maps yyyymmdd to en-CA (ISO date order, English)", () => {
+    expect(dateFormatToLocale("yyyymmdd")).toBe("en-CA");
   });
 });
 

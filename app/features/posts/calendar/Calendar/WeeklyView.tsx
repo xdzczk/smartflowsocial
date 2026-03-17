@@ -305,7 +305,7 @@ export function WeeklyView({
         dateKey,
         time,
         userTz,
-        (locale ?? dateLocale) as "en-GB" | "en-US" | "sv"
+        (locale ?? dateLocale) as "en-GB" | "en-US" | "en-CA"
       ),
     dateLocale,
     onPostEdit,

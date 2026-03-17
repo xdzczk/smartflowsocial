@@ -40,7 +40,7 @@ model User {
   timeFormat                 String?        @default("24h") // "12h" or "24h"
   // Date format preference for display (dd/mm, mm/dd, or yyyy-mm-dd)
   dateFormat                 String?        @default("ddmmyyyy") // "ddmmyyyy" | "mmddyyyy" | "yyyymmdd"
-  // Preferred Nostr client for "View note/article" links (PRIMAL, DAMUS, AMETHYST, NOSTUR, NOSTRUDEL, IRIS, YAKIHONNE, CUSTOM)
+  // Preferred Nostr client for "View note/article" links (PRIMAL, DAMUS, AMETHYST, NOSTUR, NOSTRUDEL, IRIS, YAKIHONNE, JUMBLE, CUSTOM)
   preferredNostrClient      String?         @default("PRIMAL")
   // Base URL when preferredNostrClient is CUSTOM (e.g. https://example.com)
   customNostrClientBaseUrl   String?

@@ -1,17 +1,83 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.005036541">
-    <testsuite name="tests/unit/auth/nip46-connect.test.ts" timestamp="2026-03-16T05:52:49.507Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.005036541">
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithBunkerInputForLogin &gt; returns config with method bunker_input and trimmed bunkerInput" time="0.000991375">
+<testsuites name="vitest tests" tests="39" failures="0" errors="0" time="0.004305792">
+    <testsuite name="tests/unit/nostr-client-urls.test.ts" timestamp="2026-03-17T05:34:31.905Z" hostname="Ivans-MacBook-Pro.local" tests="39" failures="0" errors="0" skipped="0" time="0.004305792">
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientConfig &gt; returns Primal config for PRIMAL" time="0.000788375">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithBunkerInputForLogin &gt; passes retryCount to connectNip46WithBunkerInput when provided" time="0.001381625">
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientConfig &gt; returns Damus config for DAMUS" time="0.000131917">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithNostrConnectUriForLogin &gt; returns config with method nostrconnect_uri, uri, and relays" time="0.000581917">
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientConfig &gt; returns fallback for null/undefined" time="0.000126666">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithNostrConnectUriForLogin &gt; calls onUriCreated with uri, pool, relays, clientSecretKey when provided" time="0.000395125">
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientConfig &gt; returns CUSTOM baseUrl when CUSTOM and valid URL" time="0.000101667">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithPendingUriForLogin &gt; calls connectNip46WithNostrConnectUri and returns signer, pubkey, config with optional bunkerPointer" time="0.000585834">
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientConfig &gt; returns fallback when CUSTOM and invalid URL" time="0.000098125">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithPendingUriForLogin &gt; calls onPoolCreated when provided" time="0.000249333">
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientConfig &gt; returns fallback when CUSTOM and empty URL" time="0.000061667">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientConfig &gt; returns preset for AMETHYST, NOSTUR, NOSTRUDEL, IRIS, YAKIHONNE, JUMBLE" time="0.000138417">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; eventUrl &gt; returns empty for empty eventId" time="0.000089542">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; eventUrl &gt; returns empty for non-string eventId" time="0.000059916">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; eventUrl &gt; returns primal style /e/hex" time="0.000145542">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; eventUrl &gt; returns bech32_bare style with nevent" time="0.000151">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; eventUrl &gt; returns nostrudel style /n/nevent" time="0.000057958">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; eventUrl &gt; returns yakihonne style /note/nevent" time="0.000061709">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; eventUrl &gt; returns iris style with note1" time="0.000049834">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; eventUrl &gt; returns jumble style /notes/nevent" time="0.000043041">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; eventUrl &gt; strips trailing slash from baseUrl" time="0.000093333">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; articleUrl &gt; returns empty for empty idOrNaddr" time="0.000074667">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; articleUrl &gt; returns empty for non-string" time="0.000035125">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; articleUrl &gt; returns primal style /a/ for naddr" time="0.000037333">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; articleUrl &gt; returns bech32_bare with naddr as path" time="0.000038208">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; articleUrl &gt; returns bech32_bare with /a/ for non-naddr" time="0.00003475">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; articleUrl &gt; returns nostrudel style /articles/" time="0.000034917">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; articleUrl &gt; returns yakihonne style /article/" time="0.000035083">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; articleUrl &gt; returns jumble style /notes/naddr" time="0.000035959">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; articleUrl &gt; returns iris /a/ for non-hex idOrNaddr" time="0.000071834">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; profileUrl &gt; returns empty for empty npub" time="0.000067208">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; profileUrl &gt; returns /p/npub for primal style" time="0.000035875">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; profileUrl &gt; returns bare npub for bech32_bare" time="0.000035041">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; profileUrl &gt; returns bare npub for iris" time="0.000037333">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; profileUrl &gt; returns /users/npub for jumble" time="0.000034292">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; profileUrl &gt; returns /u/npub for nostrudel" time="0.000034167">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; profileUrl &gt; returns /profile/nprofile for yakihonne when npub decodes" time="0.000063334">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; profileUrl &gt; returns /profile/npub fallback for yakihonne when npub decode fails" time="0.000052708">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientDisplayName &gt; returns names for presets" time="0.000129125">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientDisplayName &gt; returns Primal for unknown" time="0.00004525">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientUrlsFromUser &gt; returns config and URL helpers from user" time="0.000099375">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientUrlsFromUser &gt; handles null user" time="0.000039334">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientUrlsFromUser &gt; handles undefined user" time="0.000040709">
+        </testcase>
+        <testcase classname="tests/unit/nostr-client-urls.test.ts" name="Nostr Client URLs &gt; getNostrClientUrlsFromUser &gt; returns working eventUrl/articleUrl/profileUrl from helpers" time="0.000083458">
         </testcase>
     </testsuite>
 </testsuites>
