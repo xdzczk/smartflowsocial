@@ -125,12 +125,13 @@ export function resetCachedSigner(): void {
 }
 
 /**
- * Record a successful sign; updates activity and verification times.
+ * Record a successful sign; updates activity time only.
+ * Does not update verification time — only an actual ping (verifySignerConnection) counts as verified,
+ * so we re-verify periodically and detect a dead channel even when signing frequently.
  */
 export function recordSuccessfulSign(): void {
   const now = Date.now();
   _lastActivityTime = now;
-  _lastVerificationTime = now;
 }
 
 /**

@@ -316,23 +316,6 @@ async function trySignWithConfiguredSigner(
   const clearCacheOnError = options?.clearCacheOnError !== false;
   let prefersRemoteSigner = false;
   try {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "995736",
-      },
-      body: JSON.stringify({
-        sessionId: "995736",
-        location: "nostr-adapter.client.ts:trySignWithConfiguredSigner:entry",
-        message: "trySignWithConfiguredSigner started",
-        data: { kind: nostrEvent.kind },
-        timestamp: Date.now(),
-        hypothesisId: "H1",
-      }),
-    }).catch(() => {});
-    // #endregion
     const signerManager = await import("~/features/auth/signer");
     const cfg =
       typeof signerManager.getActiveSignerConfig === "function"
@@ -361,24 +344,6 @@ async function trySignWithConfiguredSigner(
 
     if (!activeSigner) return null;
 
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "995736",
-      },
-      body: JSON.stringify({
-        sessionId: "995736",
-        location:
-          "nostr-adapter.client.ts:trySignWithConfiguredSigner:beforeSign",
-        message: "got activeSigner, about to sign",
-        data: { signerType: activeSigner.type },
-        timestamp: Date.now(),
-        hypothesisId: "H2",
-      }),
-    }).catch(() => {});
-    // #endregion
     const signPromise = Promise.resolve(activeSigner.signEvent(nostrEvent));
     const signTimeout =
       activeSigner.type === "nip46"
@@ -398,24 +363,6 @@ async function trySignWithConfiguredSigner(
             "Extension did not respond. Please approve the request in your browser extension or try again."
           );
 
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "995736",
-      },
-      body: JSON.stringify({
-        sessionId: "995736",
-        location:
-          "nostr-adapter.client.ts:trySignWithConfiguredSigner:signSuccess",
-        message: "sign completed successfully",
-        data: { signerType: activeSigner.type },
-        timestamp: Date.now(),
-        hypothesisId: "H2",
-      }),
-    }).catch(() => {});
-    // #endregion
     resetNostrRetryCounts();
     if (
       activeSigner.type === "nip46" &&
@@ -433,26 +380,6 @@ async function trySignWithConfiguredSigner(
 
     return normalizeSignResult(signResult, nostrEvent);
   } catch (err) {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "995736",
-      },
-      body: JSON.stringify({
-        sessionId: "995736",
-        location: "nostr-adapter.client.ts:trySignWithConfiguredSigner:catch",
-        message: "trySignWithConfiguredSigner threw",
-        data: {
-          error: err instanceof Error ? err.message : String(err),
-          isRemoteSignerTimeout: err instanceof RemoteSignerTimeoutError,
-        },
-        timestamp: Date.now(),
-        hypothesisId: "H3",
-      }),
-    }).catch(() => {});
-    // #endregion
     await handleConfiguredSignerError(
       err,
       prefersRemoteSigner,

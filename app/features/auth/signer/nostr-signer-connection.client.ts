@@ -43,6 +43,7 @@ import {
 import { createNip46SignerFromStoredConfig as createNip46SignerFromStoredConfigImpl } from "./connection-connect.client";
 import {
   CONNECTION_FRESH_MS,
+  MAX_VERIFICATION_AGE_MS,
   NIP46_SIGNER_TYPE,
   NOSTR_CONNECTION_HEALTHY_EVENT,
   NOSTR_CONNECTION_STALE_EVENT,
@@ -208,11 +209,15 @@ async function tryGetValidCachedSigner(): Promise<NostrSigner | null> {
   const activityRecent =
     _lastActivityTime != null &&
     now - _lastActivityTime <= RECENT_ACTIVITY_WINDOW_MS;
+  const verificationTooOld =
+    _lastVerificationTime == null ||
+    now - _lastVerificationTime > MAX_VERIFICATION_AGE_MS;
   const shouldVerify =
-    !withinReconnectGrace &&
-    !activityRecent &&
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for null
-    (!recentlyVerified || !connectionFresh || _lastVerificationTime == null);
+    verificationTooOld ||
+    (!withinReconnectGrace &&
+      !activityRecent &&
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for null
+      (!recentlyVerified || !connectionFresh || _lastVerificationTime == null));
 
   if (!shouldVerify) {
     setLastActivityTime(now);
@@ -282,53 +287,8 @@ export async function getActiveSigner(
     clearCachedNip46Signer();
   }
 
-  // #region agent log
-  if (typeof fetch !== "undefined") {
-    fetch("http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "995736",
-      },
-      body: JSON.stringify({
-        sessionId: "995736",
-        location:
-          "nostr-signer-connection.client.ts:getActiveSigner:beforeCache",
-        message: "getActiveSigner about to tryGetValidCachedSigner",
-        data: {},
-        timestamp: Date.now(),
-        hypothesisId: "H1",
-      }),
-    }).catch(() => {});
-  }
-  // #endregion
   const fromCache = await tryGetValidCachedSigner();
-  if (fromCache) {
-    // #region agent log
-    if (typeof fetch !== "undefined") {
-      fetch(
-        "http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "995736",
-          },
-          body: JSON.stringify({
-            sessionId: "995736",
-            location:
-              "nostr-signer-connection.client.ts:getActiveSigner:fromCache",
-            message: "getActiveSigner returning from cache",
-            data: {},
-            timestamp: Date.now(),
-            hypothesisId: "H4",
-          }),
-        }
-      ).catch(() => {});
-    }
-    // #endregion
-    return fromCache;
-  }
+  if (fromCache) return fromCache;
 
   const config = getActiveSignerConfig();
   if (!config) return null;
@@ -384,29 +344,6 @@ export async function getActiveSigner(
   setInFlightSignerPromise(connectPromise);
   setInFlightSignerConfigJson(configJson);
   try {
-    // #region agent log
-    if (typeof fetch !== "undefined") {
-      fetch(
-        "http://127.0.0.1:7242/ingest/cc3d078c-137d-4ccf-99b5-4344a69d09db",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "995736",
-          },
-          body: JSON.stringify({
-            sessionId: "995736",
-            location:
-              "nostr-signer-connection.client.ts:getActiveSigner:awaitConnect",
-            message: "getActiveSigner awaiting connectPromise",
-            data: {},
-            timestamp: Date.now(),
-            hypothesisId: "H4",
-          }),
-        }
-      ).catch(() => {});
-    }
-    // #endregion
     return await connectPromise;
   } catch (err: unknown) {
     if (isConnectionRelatedError(err)) {
