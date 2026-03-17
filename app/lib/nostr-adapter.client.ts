@@ -485,6 +485,9 @@ function dispatchSignAttemptEvent(
   );
 }
 
+/** Max retries for remote signer timeouts. Fail fast so UI clears "Waiting for signer approval" instead of hanging for minutes. */
+const REMOTE_SIGNER_TIMEOUT_MAX_RETRIES = 1;
+
 async function handleSignAttemptFailure(options: {
   error: unknown;
   retries: number;
@@ -502,6 +505,16 @@ async function handleSignAttemptFailure(options: {
   if (isConnectionError && (await tryPrimaryFailover())) {
     debugSignerTrace("Recovered via primary failover in retry loop");
     return { action: "retry", nextRetries: retries };
+  }
+  if (
+    config?.type === "nip46" &&
+    error instanceof RemoteSignerTimeoutError &&
+    retries >= REMOTE_SIGNER_TIMEOUT_MAX_RETRIES
+  ) {
+    debugSignerTrace(
+      "Remote signer timeout: stop retrying so UI can clear signing state"
+    );
+    return { action: "throw", nextRetries: retries };
   }
   if (isConnectionError && retries < maxRetries - 1) {
     const nextRetries = retries + 1;
