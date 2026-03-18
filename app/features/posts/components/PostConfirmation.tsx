@@ -12,7 +12,10 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import {
+  setSigningInProgress,
+  tryBackgroundReconnect,
+} from "~/features/auth/signer";
 import type { SignedEvent } from "~/features/nostr/types";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import { logClientError } from "~/lib/error-handler.client";
@@ -296,6 +299,7 @@ export default function PostConfirmation({
       setSigningError(null);
       setPartialSignState(null);
       setIsSigning(true);
+      setSigningInProgress(true);
       pendingRetryRef.current = () => void handleSignAndSubmit();
       setSigningProgress({ current: 0, total: preparedEvents.length });
 
@@ -397,6 +401,7 @@ export default function PostConfirmation({
           : "Failed to sign posts. Please try again."
       );
     } finally {
+      setSigningInProgress(false);
       pendingRetryRef.current = null;
       setIsSigning(false);
       setSigningProgress(null);
@@ -416,6 +421,7 @@ export default function PostConfirmation({
       return;
     }
     setIsSigning(true);
+    setSigningInProgress(true);
     setPartialSignState(null);
     const { signedEntries: existingSigned, failedIndices } = partialSignState;
     const newSigned: SignedEntryWithIndex[] = [...existingSigned];
@@ -447,6 +453,7 @@ export default function PostConfirmation({
         stillFailed.push(index);
       }
     }
+    setSigningInProgress(false);
     setIsSigning(false);
     setSigningProgress(null);
     if (stillFailed.length > 0) {

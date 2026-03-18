@@ -17,6 +17,7 @@ import {
   getActiveConnection,
   getConnectionHistory,
   isPrimarySignerProfile,
+  isSigningInProgress,
   recordConnectionEvent,
   REMOTE_SIGNER_TIMEOUT_EVENT,
   removeConnection,
@@ -129,9 +130,11 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
     );
     window.addEventListener(REMOTE_SIGNER_TIMEOUT_EVENT, handleTimeout);
 
-    // Poll active connection health every 2 minutes (avoid prompting signer app too often)
+    // Poll active connection health every 2 minutes (avoid prompting signer app too often).
+    // Skip while signing is in progress so health check doesn't compete with sign requests on the same NIP-46 channel.
     const HEALTH_POLL_MS = 2 * 60 * 1000;
     const healthCheckInterval = setInterval(() => {
+      if (isSigningInProgress()) return;
       const active = getActiveConnection();
       if (active?.metadata.status === "active") {
         void (async () => {

@@ -88,6 +88,12 @@ export type { ConnectionEvent } from "./remote-signer-status.client";
 export { testConnection } from "./remote-signer-health.client";
 export type { ConnectionHealthResult } from "./remote-signer-health.client";
 
+// Signing in progress (skip health checks while signing)
+export {
+  isSigningInProgress,
+  setSigningInProgress,
+} from "./signing-in-progress.client";
+
 // Remote signer reconnect (events)
 export {
   REMOTE_SIGNER_TIMEOUT_EVENT,
