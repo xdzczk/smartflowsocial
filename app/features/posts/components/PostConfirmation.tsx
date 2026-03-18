@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/dialog";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import {
+  requestNewSignerSession,
   setSigningInProgress,
   tryBackgroundReconnect,
 } from "~/features/auth/signer";
@@ -330,6 +331,9 @@ export default function PostConfirmation({
             current: index + 1,
             total: preparedEvents.length,
           });
+          if (index < preparedEvents.length - 1) {
+            await new Promise((r) => setTimeout(r, 100));
+          }
         } catch (eventError) {
           const { handleAsyncError } =
             await import("~/lib/error-handler.client");
@@ -371,6 +375,7 @@ export default function PostConfirmation({
               isRecyclable: eventData.isRecyclable,
               originalPostId: eventData.originalPostId,
             });
+            await new Promise((r) => setTimeout(r, 100));
           } catch {
             stillFailed.push(index);
           }
@@ -449,6 +454,7 @@ export default function PostConfirmation({
         });
         current += 1;
         setSigningProgress({ current, total });
+        await new Promise((r) => setTimeout(r, 100));
       } catch {
         stillFailed.push(index);
       }
@@ -541,21 +547,40 @@ export default function PostConfirmation({
               ) : null}
               {" — "}
               If you’re using a remote signer, open it to approve the request.
+              To use a new session in the signer app, click &quot;Use new
+              session&quot;.
             </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground shrink-0"
-              onClick={() => {
-                pendingRetryRef.current = null;
-                setIsSigning(false);
-                setSigningError(null);
-                void tryBackgroundReconnect();
-              }}
-            >
-              Cancel
-            </Button>
+            <span className="flex shrink-0 items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() =>
+                  void requestNewSignerSession(() => {
+                    pendingRetryRef.current = null;
+                    setIsSigning(false);
+                    setSigningError(null);
+                  })
+                }
+              >
+                Use new session
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  pendingRetryRef.current = null;
+                  setIsSigning(false);
+                  setSigningError(null);
+                  void tryBackgroundReconnect();
+                }}
+              >
+                Cancel
+              </Button>
+            </span>
           </div>
         ) : null}
         {(signingError ?? actionError) ? (

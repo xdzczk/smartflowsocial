@@ -4,7 +4,10 @@
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import {
+  requestNewSignerSession,
+  tryBackgroundReconnect,
+} from "~/features/auth/signer";
 import {
   formatAttemptElapsed,
   useSignAttemptProgress,
@@ -54,20 +57,33 @@ export function ComposerErrors({
             {" — "}
             {signerLabel === "NIP-07 extension"
               ? "Approve the request in your browser extension."
-              : "If you're using a remote signer, open it to approve the request. If you started a new session in the signer app, the app will reconnect automatically in a few seconds."}
+              : 'If you\'re using a remote signer, open it to approve the request. If you started a new session in the signer app, click "Use new session" below.'}
           </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-foreground shrink-0"
-            onClick={() => {
-              onCancelSigning();
-              void tryBackgroundReconnect();
-            }}
-          >
-            Cancel
-          </Button>
+          <span className="flex shrink-0 items-center gap-1">
+            {signerLabel !== "NIP-07 extension" ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => void requestNewSignerSession(onCancelSigning)}
+              >
+                Use new session
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                onCancelSigning();
+                void tryBackgroundReconnect();
+              }}
+            >
+              Cancel
+            </Button>
+          </span>
         </div>
       ) : null}
       {signingError ? (

@@ -172,6 +172,10 @@ export async function syncRelaysWithRemoteSigner(
     return { changed: false, reason: "not_nip46" };
   }
 
+  if (config.method !== "nostrconnect_uri") {
+    return { changed: false, reason: "not_nostrconnect_uri" };
+  }
+
   const switched = await signer.switchRelays();
   setLastRelaySyncAt(Date.now());
   if (!switched) {
@@ -180,10 +184,7 @@ export async function syncRelaysWithRemoteSigner(
   }
 
   const normalized = normalizeRelayList(switched);
-  const currentRelays =
-    config.method === "nostrconnect_uri"
-      ? config.relays
-      : ((config as { relays?: string[] }).relays ?? []);
+  const currentRelays = config.relays;
   if (normalized.length === 0 || relayListsEqual(normalized, currentRelays)) {
     debugTrace("switch_relays result unchanged/invalid", {
       relayCount: normalized.length,
@@ -195,7 +196,10 @@ export async function syncRelaysWithRemoteSigner(
 
   const activeConnection = getActiveConnection();
   if (activeConnection?.config.type === NIP46_SIGNER_TYPE) {
-    const updatedConfig = { ...activeConnection.config, relays: normalized };
+    const updatedConfig =
+      activeConnection.config.method === "nostrconnect_uri"
+        ? { ...activeConnection.config, relays: normalized }
+        : activeConnection.config;
     updateSession(activeConnection.id, {
       config: updatedConfig,
       metadata: {

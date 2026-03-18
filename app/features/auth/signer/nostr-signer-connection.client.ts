@@ -397,3 +397,17 @@ export async function tryBackgroundReconnect(): Promise<boolean> {
     backgroundReconnectInProgress = false;
   }
 }
+
+/**
+ * Tear down the current NIP-46 session, clear UI signing state, then start a new
+ * session for the same connection (same config). Use when the user wants to
+ * "use a new session" in the remote signer app without removing the connection.
+ * Call from "Use new session" / "Reconnect signer" buttons on "Waiting for signer" banners.
+ */
+export async function requestNewSignerSession(
+  clearSigningState?: () => void
+): Promise<boolean> {
+  teardownActiveNip46Signer();
+  clearSigningState?.();
+  return tryBackgroundReconnect();
+}

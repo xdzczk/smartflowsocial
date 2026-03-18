@@ -60,31 +60,13 @@ describe("useComposerSignerReconnect", () => {
     expect(mockTryBackgroundReconnect).not.toHaveBeenCalled();
   });
 
-  it("calls tryBackgroundReconnect periodically when isSigning is true", () => {
-    const clearSigningState = vi.fn();
-    renderHook(() => useComposerSignerReconnect(clearSigningState, true));
-
-    expect(mockTryBackgroundReconnect).not.toHaveBeenCalled();
-
-    vi.advanceTimersByTime(10_000);
-    expect(mockTryBackgroundReconnect).toHaveBeenCalledTimes(1);
-
-    vi.advanceTimersByTime(10_000);
-    expect(mockTryBackgroundReconnect).toHaveBeenCalledTimes(2);
-
-    vi.advanceTimersByTime(30_000);
-    expect(mockTryBackgroundReconnect).toHaveBeenCalledTimes(5);
-  });
-
-  it("stops calling tryBackgroundReconnect after max attempts (5)", () => {
+  it("does not call tryBackgroundReconnect periodically when isSigning is true (reconnect only on healthy event)", () => {
     const clearSigningState = vi.fn();
     renderHook(() => useComposerSignerReconnect(clearSigningState, true));
 
     vi.advanceTimersByTime(60_000);
-    expect(mockTryBackgroundReconnect).toHaveBeenCalledTimes(5);
 
-    vi.advanceTimersByTime(20_000);
-    expect(mockTryBackgroundReconnect).toHaveBeenCalledTimes(5);
+    expect(mockTryBackgroundReconnect).not.toHaveBeenCalled();
   });
 
   it("cleans up healthy listener and interval on unmount", () => {

@@ -18,6 +18,7 @@ import {
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
   teardownVisibilityHandler,
+  requestNewSignerSession,
   tryBackgroundReconnect,
 } from "./nostr-signer-connection.client";
 import {
@@ -63,6 +64,7 @@ export {
   getActiveSigner,
   recordSuccessfulSign,
   resetCachedSigner,
+  requestNewSignerSession,
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
   teardownVisibilityHandler,

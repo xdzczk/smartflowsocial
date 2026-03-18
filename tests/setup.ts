@@ -3,6 +3,7 @@
  * This file runs before all tests and configures the test environment
  */
 
+import "dotenv/config";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { expect, afterEach, vi } from "vitest";
 // Extend Vitest's expect with jest-dom matchers

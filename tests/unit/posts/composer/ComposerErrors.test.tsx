@@ -35,7 +35,7 @@ describe("ComposerErrors", () => {
       screen.getByText(/Waiting for signer approval/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/reconnect automatically in a few seconds/i)
+      screen.getByText(/remote signer|open it to approve/i)
     ).toBeInTheDocument();
   });
 

@@ -1,16 +1,15 @@
 /**
  * Composer signer reconnect: clear stuck "Waiting for signer approval" on healthy event,
- * optionally retry the in-flight sign with the new signer, and try background reconnect
- * periodically while awaiting signer.
+ * and optionally retry the in-flight sign with the new signer.
  * Used by UnifiedComposer, DraftBulkResume, SimpleRescheduleModal.
+ *
+ * We do not run periodic tryBackgroundReconnect while awaiting signer: it was interrupting
+ * the in-flight sign every 10s (causing a retry and new sign-attempt event), which reset
+ * the "Waiting for signer" timer and made the banner flicker. Reconnect still happens on
+ * "nostr-connection-healthy" and after sign timeout/failure in the adapter.
  */
 
 import { useEffect } from "react";
-
-import { tryBackgroundReconnect } from "~/features/auth/signer";
-
-const AWAITING_SIGNER_RECONNECT_INTERVAL_MS = 10_000;
-const AWAITING_SIGNER_MAX_RECONNECT_ATTEMPTS = 5;
 
 export function useComposerSignerReconnect(
   clearSigningState: () => void,
@@ -27,16 +26,4 @@ export function useComposerSignerReconnect(
     return () =>
       window.removeEventListener("nostr-connection-healthy", handler);
   }, [clearSigningState, onHealthyWhileSigning]);
-
-  useEffect(() => {
-    if (!isSigning) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= AWAITING_SIGNER_MAX_RECONNECT_ATTEMPTS)
-        clearInterval(interval);
-    }, AWAITING_SIGNER_RECONNECT_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [isSigning]);
 }

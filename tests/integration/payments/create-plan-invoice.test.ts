@@ -37,6 +37,7 @@ const { mockPrisma } = vi.hoisted(() => {
       upsert: vi.fn(),
     },
     user: {
+      findUnique: vi.fn(),
       update: vi.fn(),
     },
     $transaction: vi.fn(async (callback) => {
@@ -55,6 +56,10 @@ const { mockPrisma } = vi.hoisted(() => {
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
+}));
+
+vi.mock("~/infra/blastr/entitlement-sync.server", () => ({
+  afterSubscriptionUpdated: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock external dependencies

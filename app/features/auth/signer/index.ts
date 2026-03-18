@@ -13,6 +13,7 @@ export {
   createNip46SignerFromStoredConfig,
   recordSuccessfulSign,
   resetCachedSigner,
+  requestNewSignerSession,
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
   teardownVisibilityHandler,

@@ -60,6 +60,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         create: {
           npub,
           isEnabled: true,
+          blastrRelayEnabled: true,
         },
       });
       userId = user.id;
@@ -189,7 +190,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       });
 
       it("should handle failed publish transition", async () => {
-        // Create and schedule a post
+        // Create and schedule a post (userId from beforeEach; ensure visible for FK)
         const createUseCase = new CreatePostUseCase();
         const createResult = await createUseCase.execute({
           userId,

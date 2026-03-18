@@ -6,6 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { requestNewSignerSession } from "~/features/auth/signer";
 import { ArticleDetailsCollapsible } from "~/features/posts/components/ArticleDetailsCollapsible";
 import { WritingSurface } from "~/features/posts/components/WritingSurface";
 import { useLocalDraft } from "~/features/posts/composer";
@@ -735,17 +736,31 @@ export default function LongFormPost({
                       ) : null}
                       {" — "}
                       If you’re using a remote signer, open it to approve the
-                      request.
+                      request. To use a new session in the signer app, click
+                      &quot;Use new session&quot;.
                     </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-foreground shrink-0"
-                      onClick={cancelSigning}
-                    >
-                      Cancel
-                    </Button>
+                    <span className="flex shrink-0 items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-foreground"
+                        onClick={() =>
+                          void requestNewSignerSession(cancelSigning)
+                        }
+                      >
+                        Use new session
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-foreground"
+                        onClick={cancelSigning}
+                      >
+                        Cancel
+                      </Button>
+                    </span>
                   </div>
                 ) : null}
                 {signingError ? (

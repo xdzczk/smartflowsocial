@@ -30,11 +30,19 @@ async function getBlastrEligiblePubkeyHex(
   return resolvePubkeyHex(user.npub);
 }
 
+const BLASTR_ACTIONS = [
+  "update_blastr_policy",
+  "add_blastr_policy_relay",
+  "remove_blastr_policy_relay",
+];
+
 export async function handleBlastrPolicyAction(
   userId: string,
   action: string,
   formData: FormData
 ): Promise<ReturnType<typeof json> | null> {
+  if (!BLASTR_ACTIONS.includes(action)) return null;
+
   const pubkeyHex = await getBlastrEligiblePubkeyHex(userId);
   if (!pubkeyHex) {
     return json({ error: "Blastr access required" }, { status: 403 });

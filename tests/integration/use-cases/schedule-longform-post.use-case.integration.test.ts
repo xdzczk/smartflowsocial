@@ -35,6 +35,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         create: {
           npub,
           isEnabled: true,
+          blastrRelayEnabled: true,
         },
       });
       userId = user.id;

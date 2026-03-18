@@ -10,7 +10,10 @@ import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import {
+  requestNewSignerSession,
+  tryBackgroundReconnect,
+} from "~/features/auth/signer";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import type { PostData, RepostConditions } from "~/features/posts/types";
 import {
@@ -438,22 +441,40 @@ export function ScheduleRepostQuoteModal({
                       ) : null}
                       {" — "}
                       If you’re using a remote signer, open it to approve the
-                      request.
+                      request. To use a new session in the signer app, click
+                      &quot;Use new session&quot;.
                     </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-foreground shrink-0"
-                      onClick={() => {
-                        pendingRetryRef.current = null;
-                        setIsSigning(false);
-                        setSigningError(null);
-                        void tryBackgroundReconnect();
-                      }}
-                    >
-                      Cancel
-                    </Button>
+                    <span className="flex shrink-0 items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-foreground"
+                        onClick={() =>
+                          void requestNewSignerSession(() => {
+                            pendingRetryRef.current = null;
+                            setIsSigning(false);
+                            setSigningError(null);
+                          })
+                        }
+                      >
+                        Use new session
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          pendingRetryRef.current = null;
+                          setIsSigning(false);
+                          setSigningError(null);
+                          void tryBackgroundReconnect();
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </span>
                   </div>
                 ) : null}
                 {(fetcher.data?.error ?? signingError) ? (
