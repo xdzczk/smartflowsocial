@@ -10,6 +10,8 @@ export type ActiveSignerConfig =
       method: "bunker_input";
       bunkerInput: string;
       clientSecretKeyHex: string;
+      /** Relays from switch_relays; overrides bunkerInput relays when reconnecting. */
+      relays?: string[];
     }
   | {
       type: "nip46";

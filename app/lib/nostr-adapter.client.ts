@@ -78,12 +78,15 @@ function isConnectionLikeError(error: unknown): boolean {
  *   user reopens Primal and "resumes" the connection, but our cached signer's channel is dead
  *   so sign_event never completes; clearing forces a new connection that can work with resumed Primal.
  */
+const SIGN_TIMEOUT_KEY_DID_NOT_RESPOND = "did not respond";
+const SIGN_TIMEOUT_KEY_APPROVE_REQUEST = "approve the request";
+
 function shouldClearSignerCacheOnError(error: unknown): boolean {
   if (error instanceof RemoteSignerTimeoutError) {
     const msg = error.message.toLowerCase();
     if (
-      msg.includes("did not respond") ||
-      msg.includes("approve the request")
+      msg.includes(SIGN_TIMEOUT_KEY_DID_NOT_RESPOND) ||
+      msg.includes(SIGN_TIMEOUT_KEY_APPROVE_REQUEST)
     ) {
       return true;
     }
@@ -229,6 +232,41 @@ async function resetSignerCacheBestEffort(): Promise<void> {
   }
 }
 
+function getSignerErrorLogEntry(error: unknown): {
+  type: "error";
+  status: "failure";
+  message: string;
+  details: Record<string, unknown>;
+} {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const msg = errorMessage.toLowerCase();
+  const isSignTimeout =
+    error instanceof RemoteSignerTimeoutError &&
+    (msg.includes(SIGN_TIMEOUT_KEY_DID_NOT_RESPOND) ||
+      msg.includes(SIGN_TIMEOUT_KEY_APPROVE_REQUEST));
+  const isConnectionTimeout =
+    error instanceof RemoteSignerTimeoutError &&
+    (msg.includes("connection is taking too long") ||
+      msg.includes("signer app") ||
+      msg.includes("try again"));
+
+  let message: string;
+  if (isSignTimeout) {
+    message = `Sign timed out: ${errorMessage}`;
+  } else if (isConnectionTimeout) {
+    message = `Connection timed out: ${errorMessage}`;
+  } else {
+    message = errorMessage;
+  }
+
+  return {
+    type: "error",
+    status: "failure",
+    message,
+    details: { error: errorMessage },
+  };
+}
+
 function markActiveRemoteConnectionStale(error: unknown): void {
   const activeConnection = getActiveConnection();
   if (!activeConnection) return;
@@ -245,12 +283,8 @@ function markActiveRemoteConnectionStale(error: unknown): void {
     },
   });
 
-  addConnectionLog(activeConnection.id, {
-    type: "health_check",
-    status: "failure",
-    message: `Health check failed: ${errorMessage}`,
-    details: { error: errorMessage },
-  });
+  const logEntry = getSignerErrorLogEntry(error);
+  addConnectionLog(activeConnection.id, logEntry);
 }
 
 async function handleConfiguredSignerError(
@@ -266,8 +300,8 @@ async function handleConfiguredSignerError(
   if (isConnectionError) {
     const isSignTimeout =
       err instanceof RemoteSignerTimeoutError &&
-      (err.message.toLowerCase().includes("did not respond") ||
-        err.message.toLowerCase().includes("approve the request"));
+      (err.message.toLowerCase().includes(SIGN_TIMEOUT_KEY_DID_NOT_RESPOND) ||
+        err.message.toLowerCase().includes(SIGN_TIMEOUT_KEY_APPROVE_REQUEST));
     if (isSignTimeout) {
       incrementSignRetryCount();
     } else {

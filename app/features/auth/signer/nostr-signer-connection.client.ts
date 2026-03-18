@@ -43,7 +43,6 @@ import {
 import { createNip46SignerFromStoredConfig as createNip46SignerFromStoredConfigImpl } from "./connection-connect.client";
 import {
   CONNECTION_FRESH_MS,
-  MAX_VERIFICATION_AGE_MS,
   NIP46_SIGNER_TYPE,
   NOSTR_CONNECTION_HEALTHY_EVENT,
   NOSTR_CONNECTION_STALE_EVENT,
@@ -209,15 +208,11 @@ async function tryGetValidCachedSigner(): Promise<NostrSigner | null> {
   const activityRecent =
     _lastActivityTime != null &&
     now - _lastActivityTime <= RECENT_ACTIVITY_WINDOW_MS;
-  const verificationTooOld =
-    _lastVerificationTime == null ||
-    now - _lastVerificationTime > MAX_VERIFICATION_AGE_MS;
   const shouldVerify =
-    verificationTooOld ||
-    (!withinReconnectGrace &&
-      !activityRecent &&
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for null
-      (!recentlyVerified || !connectionFresh || _lastVerificationTime == null));
+    !withinReconnectGrace &&
+    !activityRecent &&
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for null
+    (!recentlyVerified || !connectionFresh || _lastVerificationTime == null);
 
   if (!shouldVerify) {
     setLastActivityTime(now);

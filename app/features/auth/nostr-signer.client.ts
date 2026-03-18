@@ -225,6 +225,8 @@ export async function connectNip46WithBunkerInput(input: {
   retryCount?: number;
   /** When true, skip connect() (reconnect from stored config per nostr-tools docs). */
   skipConnect?: boolean;
+  /** Override relays from bunkerInput (e.g. from switch_relays response). */
+  relays?: string[];
 }): Promise<Nip46ConnectResult> {
   const clientSecretKey = input.clientSecretKey ?? generateSecretKey();
   const pool = input.pool ?? new SimplePool();
@@ -233,7 +235,13 @@ export async function connectNip46WithBunkerInput(input: {
   if (!bp) {
     throw new Error("Invalid bunker input");
   }
-  const inner = BunkerSigner.fromBunker(clientSecretKey, bp, { pool });
+  const effectiveRelays =
+    (input.relays?.length ?? 0) > 0
+      ? input.relays!.map((r) => r.trim()).filter((r) => r.startsWith("wss://"))
+      : bp.relays;
+  const bpToUse =
+    effectiveRelays.length > 0 ? { ...bp, relays: effectiveRelays } : bp;
+  const inner = BunkerSigner.fromBunker(clientSecretKey, bpToUse, { pool });
 
   const timeoutMs =
     input.retryCount !== undefined

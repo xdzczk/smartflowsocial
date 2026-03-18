@@ -29,6 +29,7 @@ export async function createNip46SignerFromStoredConfig(
       pool,
       timeoutMs,
       skipConnect: true,
+      relays: config.relays,
     });
   }
 

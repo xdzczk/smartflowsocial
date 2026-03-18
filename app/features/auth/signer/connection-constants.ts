@@ -8,8 +8,6 @@ export const NOSTR_CONNECTION_STALE_EVENT = "nostr-connection-stale";
 export const NOSTR_CONNECTION_HEALTHY_EVENT = "nostr-connection-healthy";
 
 export const VERIFY_COOLDOWN_MS = 2 * 60 * 1000;
-/** Max age of last ping verification before we re-verify. Ensures we detect a dead channel even when signing frequently. */
-export const MAX_VERIFICATION_AGE_MS = 2 * 60 * 1000;
 export const CONNECTION_FRESH_MS = 5 * 60 * 1000;
 export const RECENT_ACTIVITY_WINDOW_MS = 10 * 60 * 1000;
 export const RECONNECT_GRACE_MS = 15 * 60 * 1000;

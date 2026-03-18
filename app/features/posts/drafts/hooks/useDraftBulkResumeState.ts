@@ -243,47 +243,55 @@ export function useDraftBulkResumeState({
         );
       }
 
-      const signedPosts = await Promise.all(
-        posts.map(async (post) => {
-          const userTimezone = user?.timezone ?? "UTC";
-          const scheduledZoned = parseDateTimeLocal(
-            post.scheduledFor,
-            userTimezone
-          );
-          const utcZoned = scheduledZoned.withTimeZone("UTC");
-          const scheduledForUnix = toUnixTimestamp(utcZoned);
-          const queueTypeName = getQueueTypeName(post.queueType);
-          const tagsString =
-            queueTypeName && queueTypeName !== "unassigned"
-              ? (hashtagCache.get(queueTypeName) ?? "")
-              : "";
-          const tagArray = tagsString
-            .split(" ")
-            .filter((tag) => tag.length > 0)
-            .map((tag) => ["t", tag.replace("#", "")]);
-          const contentToSign = user?.showHashTagsinPosts
-            ? `${post.content ?? ""}\n${tagsString}`
-            : (post.content ?? "");
-          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
-            {
-              content: contentToSign,
-              created_at: scheduledForUnix,
-              kind: 1,
-              tags: tagArray,
-            },
-            { clearCacheOnError: false }
-          );
-          return {
-            id: post.id,
-            content: post.content ?? undefined,
-            caption: post.caption ?? undefined,
-            queueType: post.queueType,
-            scheduledFor: scheduledForUnix.toString(),
-            signedEvent: JSON.stringify(signedEvent),
-            nostrEvent: JSON.stringify(nostrEvent),
-          };
-        })
-      );
+      // Sign sequentially to avoid flooding remote signers with concurrent requests
+      const signedPosts: Array<{
+        id: string;
+        content: string | undefined;
+        caption: string | undefined;
+        queueType: string | QueueType;
+        scheduledFor: string;
+        signedEvent: string;
+        nostrEvent: string;
+      }> = [];
+      for (const post of posts) {
+        const userTimezone = user?.timezone ?? "UTC";
+        const scheduledZoned = parseDateTimeLocal(
+          post.scheduledFor,
+          userTimezone
+        );
+        const utcZoned = scheduledZoned.withTimeZone("UTC");
+        const scheduledForUnix = toUnixTimestamp(utcZoned);
+        const queueTypeName = getQueueTypeName(post.queueType);
+        const tagsString =
+          queueTypeName && queueTypeName !== "unassigned"
+            ? (hashtagCache.get(queueTypeName) ?? "")
+            : "";
+        const tagArray = tagsString
+          .split(" ")
+          .filter((tag) => tag.length > 0)
+          .map((tag) => ["t", tag.replace("#", "")]);
+        const contentToSign = user?.showHashTagsinPosts
+          ? `${post.content ?? ""}\n${tagsString}`
+          : (post.content ?? "");
+        const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+          {
+            content: contentToSign,
+            created_at: scheduledForUnix,
+            kind: 1,
+            tags: tagArray,
+          },
+          { clearCacheOnError: false }
+        );
+        signedPosts.push({
+          id: post.id,
+          content: post.content ?? undefined,
+          caption: post.caption ?? undefined,
+          queueType: post.queueType,
+          scheduledFor: scheduledForUnix.toString(),
+          signedEvent: JSON.stringify(signedEvent),
+          nostrEvent: JSON.stringify(nostrEvent),
+        });
+      }
 
       const formData = new FormData();
       formData.append("_action", "bulkSignAndResume");
