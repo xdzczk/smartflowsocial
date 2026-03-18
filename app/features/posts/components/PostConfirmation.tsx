@@ -1,8 +1,16 @@
 import { useFetcher, type FetcherWithComponents } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { tryBackgroundReconnect } from "~/features/auth/signer";
 import type { SignedEvent } from "~/features/nostr/types";
@@ -108,6 +116,23 @@ function getCreatedAtTimestamp(eventsData: unknown): number {
   return 0;
 }
 
+/** Signed post with original index for building form and repost/quote by index */
+interface SignedEntryWithIndex {
+  originalIndex: number;
+  nostrEvent: unknown;
+  signedEvent: unknown;
+  fileUrl: unknown;
+  caption: unknown;
+  queueType: string;
+  isRecyclable: boolean;
+  originalPostId: string | null | undefined;
+}
+
+interface PartialSignState {
+  signedEntries: SignedEntryWithIndex[];
+  failedIndices: number[];
+}
+
 interface PostConfirmationProps {
   preparedEvents: PreparedEvent[];
   /** Original posts for per-row repost/quote schedules */
@@ -150,6 +175,9 @@ export default function PostConfirmation({
     current: number;
     total: number;
   } | null>(null);
+  /** When set, some posts failed to sign after retry; modal offers schedule successful or retry failed */
+  const [partialSignState, setPartialSignState] =
+    useState<PartialSignState | null>(null);
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
   const actionError =
@@ -178,64 +206,11 @@ export default function PostConfirmation({
   };
   useComposerSignerReconnect(clearSigningState, isSigning, retryLastSign);
 
-  const handleSignAndSubmit = async () => {
-    try {
-      setSigningError(null);
-      setIsSigning(true);
-      pendingRetryRef.current = () => void handleSignAndSubmit();
-      setSigningProgress({ current: 0, total: preparedEvents.length });
-
-      // Sign sequentially to avoid flooding remote signers with concurrent requests
-      const signed: Array<{
-        nostrEvent: unknown;
-        signedEvent: unknown;
-        fileUrl: unknown;
-        caption: unknown;
-        queueType: string;
-        isRecyclable: boolean;
-        originalPostId: string | null | undefined;
-      }> = [];
-
-      for (let index = 0; index < preparedEvents.length; index++) {
-        const eventData = preparedEvents[index];
-        if (!eventData) {
-          throw new Error("Missing prepared event data");
-        }
-        try {
-          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
-            eventData.events
-          );
-          signed.push({
-            nostrEvent,
-            signedEvent,
-            fileUrl: eventData.fileUrl,
-            caption: eventData.caption,
-            queueType: eventData.queueType,
-            isRecyclable: eventData.isRecyclable,
-            originalPostId: eventData.originalPostId,
-          });
-          setSigningProgress({
-            current: index + 1,
-            total: preparedEvents.length,
-          });
-        } catch (eventError) {
-          const { handleAsyncError } =
-            await import("~/lib/error-handler.client");
-          handleAsyncError(
-            eventError,
-            {
-              component: "PostConfirmation",
-              action: "signEvent",
-              eventIndex: index,
-            },
-            false
-          ); // Don't show toast, throw to outer catch
-          throw eventError;
-        }
-      }
-
+  /** Build FormData from signed entries (by original index) and submit */
+  const submitSignedEntries = useCallback(
+    async (signedEntries: SignedEntryWithIndex[]) => {
       const finalFormData = new FormData();
-      signed.forEach((data) => {
+      for (const data of signedEntries) {
         finalFormData.append("nostrEvent", JSON.stringify(data.nostrEvent));
         finalFormData.append("signedEvents", JSON.stringify(data.signedEvent));
         finalFormData.append("fileUrl", JSON.stringify(data.fileUrl));
@@ -246,11 +221,9 @@ export default function PostConfirmation({
           data.isRecyclable ? "true" : "false"
         );
         finalFormData.append("originalPostId", data.originalPostId ?? "");
-      });
-
-      for (let i = 0; i < signed.length; i++) {
-        const signedEntry = signed[i];
-        if (!signedEntry) continue;
+      }
+      for (const signedEntry of signedEntries) {
+        const i = signedEntry.originalIndex;
         const eventData = preparedEvents[i];
         const mainScheduledUnix =
           typeof eventData?.scheduledFor === "number"
@@ -293,24 +266,121 @@ export default function PostConfirmation({
           finalFormData.append("quoteSchedules", JSON.stringify([]));
         }
       }
-
       finalFormData.append("_action", "sign_and_schedule");
       if (extraFormData) {
         Object.entries(extraFormData).forEach(([k, v]) =>
           finalFormData.append(k, v)
         );
       }
-
       const actionUrl =
         submitActionProp ??
         `/dashboard/bulkposts${new URL(window.location.href).search}`;
-
-      pendingRetryRef.current = null;
       fetcher.submit(finalFormData, {
         method: "post",
         encType: "multipart/form-data",
         action: actionUrl,
       });
+    },
+    [
+      preparedEvents,
+      posts,
+      repostConditions,
+      fetcher,
+      submitActionProp,
+      extraFormData,
+    ]
+  );
+
+  const handleSignAndSubmit = async () => {
+    try {
+      setSigningError(null);
+      setPartialSignState(null);
+      setIsSigning(true);
+      pendingRetryRef.current = () => void handleSignAndSubmit();
+      setSigningProgress({ current: 0, total: preparedEvents.length });
+
+      const signed: SignedEntryWithIndex[] = [];
+      let failedIndices: number[] = [];
+
+      for (let index = 0; index < preparedEvents.length; index++) {
+        const eventData = preparedEvents[index];
+        if (!eventData) {
+          throw new Error("Missing prepared event data");
+        }
+        try {
+          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+            eventData.events,
+            { clearCacheOnError: false }
+          );
+          signed.push({
+            originalIndex: index,
+            nostrEvent,
+            signedEvent,
+            fileUrl: eventData.fileUrl,
+            caption: eventData.caption,
+            queueType: eventData.queueType,
+            isRecyclable: eventData.isRecyclable,
+            originalPostId: eventData.originalPostId,
+          });
+          setSigningProgress({
+            current: index + 1,
+            total: preparedEvents.length,
+          });
+        } catch (eventError) {
+          const { handleAsyncError } =
+            await import("~/lib/error-handler.client");
+          handleAsyncError(
+            eventError,
+            {
+              component: "PostConfirmation",
+              action: "signEvent",
+              eventIndex: index,
+            },
+            false
+          );
+          failedIndices.push(index);
+        }
+      }
+
+      if (failedIndices.length > 0) {
+        setSigningProgress({
+          current: preparedEvents.length,
+          total: preparedEvents.length,
+        });
+        await new Promise((r) => setTimeout(r, 1500));
+        const stillFailed: number[] = [];
+        for (const index of failedIndices) {
+          const eventData = preparedEvents[index];
+          if (!eventData) continue;
+          try {
+            const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+              eventData.events,
+              { clearCacheOnError: false }
+            );
+            signed.push({
+              originalIndex: index,
+              nostrEvent,
+              signedEvent,
+              fileUrl: eventData.fileUrl,
+              caption: eventData.caption,
+              queueType: eventData.queueType,
+              isRecyclable: eventData.isRecyclable,
+              originalPostId: eventData.originalPostId,
+            });
+          } catch {
+            stillFailed.push(index);
+          }
+        }
+        failedIndices = stillFailed;
+      }
+
+      if (failedIndices.length > 0) {
+        setPartialSignState({ signedEntries: signed, failedIndices });
+        setSigningError(null);
+      } else {
+        pendingRetryRef.current = null;
+        await submitSignedEntries(signed);
+      }
     } catch (error) {
       const { handleAsyncError } = await import("~/lib/error-handler.client");
       handleAsyncError(
@@ -320,7 +390,7 @@ export default function PostConfirmation({
           action: "handleSignAndSubmit",
         },
         false
-      ); // Don't show toast, let component handle it
+      );
       setSigningError(
         error instanceof Error
           ? error.message
@@ -332,6 +402,63 @@ export default function PostConfirmation({
       setSigningProgress(null);
     }
   };
+
+  const handleScheduleSuccessfulOnly = useCallback(() => {
+    if (!partialSignState) return;
+    void submitSignedEntries(partialSignState.signedEntries);
+    setPartialSignState(null);
+    setSigningError(null);
+  }, [partialSignState, submitSignedEntries]);
+
+  const handleRetryFailedSigning = useCallback(async () => {
+    if (!partialSignState || partialSignState.failedIndices.length === 0) {
+      setPartialSignState(null);
+      return;
+    }
+    setIsSigning(true);
+    setPartialSignState(null);
+    const { signedEntries: existingSigned, failedIndices } = partialSignState;
+    const newSigned: SignedEntryWithIndex[] = [...existingSigned];
+    const stillFailed: number[] = [];
+    const total = failedIndices.length;
+    setSigningProgress({ current: 0, total });
+    let current = 0;
+    for (const index of failedIndices) {
+      const eventData = preparedEvents[index];
+      if (!eventData) continue;
+      try {
+        const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+          eventData.events,
+          { clearCacheOnError: false }
+        );
+        newSigned.push({
+          originalIndex: index,
+          nostrEvent,
+          signedEvent,
+          fileUrl: eventData.fileUrl,
+          caption: eventData.caption,
+          queueType: eventData.queueType,
+          isRecyclable: eventData.isRecyclable,
+          originalPostId: eventData.originalPostId,
+        });
+        current += 1;
+        setSigningProgress({ current, total });
+      } catch {
+        stillFailed.push(index);
+      }
+    }
+    setIsSigning(false);
+    setSigningProgress(null);
+    if (stillFailed.length > 0) {
+      setPartialSignState({
+        signedEntries: newSigned,
+        failedIndices: stillFailed,
+      });
+    } else {
+      pendingRetryRef.current = null;
+      await submitSignedEntries(newSigned);
+    }
+  }, [partialSignState, preparedEvents, submitSignedEntries]);
 
   const handleSaveAsDraft = () => {
     const finalFormData = new FormData();
@@ -429,6 +556,47 @@ export default function PostConfirmation({
             {signingError ?? actionError}
           </div>
         ) : null}
+
+        <Dialog
+          open={partialSignState !== null}
+          onOpenChange={(open) => {
+            if (!open) setPartialSignState(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-md" hideCloseButton={false}>
+            <DialogHeader>
+              <DialogTitle>Some posts could not be signed</DialogTitle>
+              <DialogDescription>
+                {partialSignState
+                  ? `${partialSignState.failedIndices.length} of ${preparedEvents.length} posts failed to sign after retry. You can schedule only the ${partialSignState.signedEntries.length} successfully signed posts, or retry signing the failed ones.`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPartialSignState(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void handleRetryFailedSigning()}
+              >
+                Retry failed signing
+              </Button>
+              <Button
+                type="button"
+                onClick={handleScheduleSuccessfulOnly}
+                className="rounded-lg bg-gradient-to-r from-[hsl(255,77%,51%)] to-[hsl(255,97%,51%)] text-white hover:from-[hsl(255,97%,51%)] hover:to-[hsl(255,77%,51%)]"
+              >
+                Schedule {partialSignState?.signedEntries.length ?? 0} posts
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Posts Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -627,21 +795,21 @@ export default function PostConfirmation({
           <button
             onClick={() => window.history.back()}
             className="bg-card border-border text-foreground hover:bg-muted rounded-lg border px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
-            disabled={isSubmitting || isSigning}
+            disabled={isSubmitting || isSigning || partialSignState !== null}
           >
             ← Back to Edit
           </button>
           <button
             onClick={handleSaveAsDraft}
             className="bg-card border-border text-foreground hover:bg-muted rounded-lg border px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
-            disabled={isSubmitting || isSigning}
+            disabled={isSubmitting || isSigning || partialSignState !== null}
           >
             💾 Save as Draft
           </button>
           <button
             onClick={() => void handleSignAndSubmit()}
             className="rounded-lg bg-gradient-to-r from-[hsl(255,77%,51%)] to-[hsl(255,97%,51%)] px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-[hsl(255,97%,51%)] hover:to-[hsl(255,77%,51%)] hover:shadow-xl disabled:cursor-not-allowed disabled:from-[hsl(255,77%,30%)] disabled:to-[hsl(255,97%,40%)]"
-            disabled={isSubmitting || isSigning}
+            disabled={isSubmitting || isSigning || partialSignState !== null}
           >
             {isSigning ? (
               <>Waiting for signer…</>

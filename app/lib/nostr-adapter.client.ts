@@ -659,24 +659,62 @@ export const nostrAdapter = {
 
   /**
    * Sign event with retry logic
+   * @param options.clearCacheOnError - If false, do not clear the signer cache on error. Default true.
    */
-  async signEventWithRetry(nostrEvent: NostrEvent): Promise<SignedEvent> {
-    return signEventWithRetryLogic(nostrEvent);
+  async signEventWithRetry(
+    nostrEvent: NostrEvent,
+    options?: SignEventOptions
+  ): Promise<SignedEvent> {
+    return signEventWithRetryLogic(nostrEvent, 5, options);
+  },
+
+  /**
+   * Sign once with clearCacheOnError: false; on failure wait 1.5s and retry once.
+   * Use for single-sign flows so a timeout doesn't tear down the connection and transient failures get one retry.
+   */
+  async signEventWithOneRetry(
+    eventData: NostrEventData,
+    options?: SignEventOptions
+  ): Promise<SignEventResult> {
+    const opts = { clearCacheOnError: false, ...options };
+    try {
+      return await this.signEvent(eventData, opts);
+    } catch {
+      await new Promise((r) => setTimeout(r, 1500));
+      return await this.signEvent(eventData, opts);
+    }
   },
 
   /**
    * Sign a long-form event (NIP-23) using NIP-07
+   * @param options.clearCacheOnError - If false, do not clear the signer cache on error. Default true.
    */
   async signLongFormEvent(
-    eventData: LongFormEventData
+    eventData: LongFormEventData,
+    options?: SignEventOptions
   ): Promise<SignEventResult> {
     try {
       const nostrEvent = this.buildLongFormEvent(eventData);
-      const signedEvent = await this.signEventWithRetry(nostrEvent);
+      const signedEvent = await this.signEventWithRetry(nostrEvent, options);
       return { nostrEvent, signedEvent };
     } catch (error) {
       await logErrorIfClient(error, "signLongFormEvent");
       throw error;
+    }
+  },
+
+  /**
+   * Sign long-form once with clearCacheOnError: false; on failure wait 1.5s and retry once.
+   */
+  async signLongFormEventWithOneRetry(
+    eventData: LongFormEventData
+  ): Promise<SignEventResult> {
+    const opts = { clearCacheOnError: false };
+    try {
+      return await this.signLongFormEvent(eventData, opts);
+    } catch {
+      await new Promise((r) => setTimeout(r, 1500));
+      return await this.signLongFormEvent(eventData, opts);
     }
   },
 };

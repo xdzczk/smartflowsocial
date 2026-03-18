@@ -599,7 +599,8 @@ export function usePublishedPosts({
           const originalPost = longformRepostFetcher.data.originalPost;
 
           // Sign the event using client-side signing
-          const { signedEvent } = await nostrAdapter.signEvent(eventData);
+          const { signedEvent } =
+            await nostrAdapter.signEventWithOneRetry(eventData);
 
           // Get user relays from user data
           const sanitizedRelays = user.userRelays ?? [];
@@ -716,7 +717,8 @@ export function usePublishedPosts({
           const eventData = individualRepostFetcher.data.repostEventData;
 
           // Sign the event using client-side signing
-          const { signedEvent } = await nostrAdapter.signEvent(eventData);
+          const { signedEvent } =
+            await nostrAdapter.signEventWithOneRetry(eventData);
 
           // Get user relays from user data
           const sanitizedRelays = user.userRelays ?? [];

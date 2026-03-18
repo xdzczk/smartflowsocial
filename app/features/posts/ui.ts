@@ -126,7 +126,6 @@ export { ConfidencePanel } from "./components/ConfidencePanel";
 export { TagsChipRow } from "./components/TagsChipRow";
 export { AttachmentsStrip } from "./components/AttachmentsStrip";
 export { AlsoScheduleBlock } from "./components/AlsoScheduleBlock";
-export { default as NewPostImagesConfirmation } from "./components/NewPostImagesConfirmation";
 export { ResumeModal } from "./components/ResumeModal";
 export { default as PostConfirmation } from "./components/PostConfirmation";
 export { HashtagPresetsSettings } from "./components/HashtagPresetsSettings";

@@ -42,12 +42,13 @@ export async function handleSignAndSubmitLogic(
       );
     }
 
-    const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
-      content: originalSignedEvent.content,
-      created_at: newTimeUnix,
-      kind: originalSignedEvent.kind ?? 1,
-      tags: originalSignedEvent.tags ?? [],
-    });
+    const { nostrEvent, signedEvent } =
+      await nostrAdapter.signEventWithOneRetry({
+        content: originalSignedEvent.content,
+        created_at: newTimeUnix,
+        kind: originalSignedEvent.kind ?? 1,
+        tags: originalSignedEvent.tags ?? [],
+      });
 
     const formData = new FormData();
     formData.append("action", "reschedule");

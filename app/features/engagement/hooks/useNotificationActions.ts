@@ -106,7 +106,8 @@ export function useNotificationActions({
         created_at: Math.floor(Date.now() / 1000),
       };
 
-      const { signedEvent } = await nostrAdapter.signEvent(kind1EventData);
+      const { signedEvent } =
+        await nostrAdapter.signEventWithOneRetry(kind1EventData);
 
       const response = await fetch(PUBLISH_API_ENDPOINT, {
         method: "POST",
@@ -155,7 +156,8 @@ export function useNotificationActions({
         created_at: Math.floor(Date.now() / 1000),
       };
 
-      const { signedEvent } = await nostrAdapter.signEvent(kind6EventData);
+      const { signedEvent } =
+        await nostrAdapter.signEventWithOneRetry(kind6EventData);
 
       const response = await fetch(PUBLISH_API_ENDPOINT, {
         method: "POST",
@@ -198,7 +200,8 @@ export function useNotificationActions({
         created_at: Math.floor(Date.now() / 1000),
       };
 
-      const { signedEvent } = await nostrAdapter.signEvent(kind7EventData);
+      const { signedEvent } =
+        await nostrAdapter.signEventWithOneRetry(kind7EventData);
 
       const response = await fetch(PUBLISH_API_ENDPOINT, {
         method: "POST",
@@ -252,7 +255,8 @@ export function useNotificationActions({
         created_at: Math.floor(Date.now() / 1000),
       };
 
-      const { signedEvent } = await nostrAdapter.signEvent(kind1EventData);
+      const { signedEvent } =
+        await nostrAdapter.signEventWithOneRetry(kind1EventData);
 
       const response = await fetch(PUBLISH_API_ENDPOINT, {
         method: "POST",

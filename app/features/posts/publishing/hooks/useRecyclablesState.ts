@@ -652,7 +652,8 @@ export function useRecyclablesState({
 
     const publishRepost = async (repostEventData: Record<string, unknown>) => {
       const eventData = buildEventData(repostEventData);
-      const { signedEvent } = await nostrAdapter.signEvent(eventData);
+      const { signedEvent } =
+        await nostrAdapter.signEventWithOneRetry(eventData);
 
       const response = await fetch("/api/publish", {
         method: "POST",

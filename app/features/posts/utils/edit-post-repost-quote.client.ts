@@ -68,12 +68,13 @@ export async function scheduleOneRepost(
   const offsetSeconds = delayAfterMainToSeconds(delay);
   const repostScheduledForUnix = mainScheduledUnix + offsetSeconds;
   const repostEvent = buildKind6RepostEvent(mainEv, repostScheduledForUnix);
-  const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
-    content: repostEvent.content,
-    created_at: repostEvent.created_at,
-    kind: repostEvent.kind,
-    tags: repostEvent.tags,
-  });
+  const { signedEvent: repostSignedEvent } =
+    await nostrAdapter.signEventWithOneRetry({
+      content: repostEvent.content,
+      created_at: repostEvent.created_at,
+      kind: repostEvent.kind,
+      tags: repostEvent.tags,
+    });
   const fd = new FormData();
   fd.set("_action", "scheduleRepost");
   fd.set("postId", postId);
@@ -100,12 +101,13 @@ export async function scheduleOneQuote(
     quoteScheduledForUnix,
     []
   );
-  const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
-    content: quoteEvent.content,
-    created_at: quoteEvent.created_at,
-    kind: quoteEvent.kind,
-    tags: quoteEvent.tags,
-  });
+  const { signedEvent: quoteSignedEvent } =
+    await nostrAdapter.signEventWithOneRetry({
+      content: quoteEvent.content,
+      created_at: quoteEvent.created_at,
+      kind: quoteEvent.kind,
+      tags: quoteEvent.tags,
+    });
   const fd = new FormData();
   fd.set("_action", "scheduleQuote");
   fd.set("postId", postId);

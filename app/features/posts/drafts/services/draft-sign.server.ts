@@ -225,12 +225,15 @@ export async function signDraftForScheduling(params: SignDraftParams): Promise<{
     ? `${baseContent}\n${effectiveHashtags}`
     : baseContent;
 
-  const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
-    content: contentToSign,
-    created_at: scheduledForUnix,
-    kind: 1,
-    tags: tagArray,
-  });
+  const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+    {
+      content: contentToSign,
+      created_at: scheduledForUnix,
+      kind: 1,
+      tags: tagArray,
+    },
+    { clearCacheOnError: false }
+  );
 
   return {
     signedEvent,

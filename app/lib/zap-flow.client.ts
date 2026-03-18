@@ -144,7 +144,7 @@ export async function zapRecipient(
     ["relays", ...relays],
   ];
 
-  const { signedEvent } = await nostrAdapter.signEvent({
+  const { signedEvent } = await nostrAdapter.signEventWithOneRetry({
     kind: 9734,
     content: "",
     tags,

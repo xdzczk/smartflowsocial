@@ -206,7 +206,7 @@ export function useLongFormSubmission({
       lastScheduleActionRef.current = actionType;
       setIsSigning(true);
       const { nostrEvent, signedEvent } =
-        await nostrAdapter.signLongFormEvent(eventData);
+        await nostrAdapter.signLongFormEventWithOneRetry(eventData);
 
       const mainScheduledUnix =
         actionType === "publish"
@@ -252,7 +252,7 @@ export function useLongFormSubmission({
             tagArray
           );
           const { signedEvent: quoteSignedEvent } =
-            await nostrAdapter.signEvent({
+            await nostrAdapter.signEventWithOneRetry({
               content: quoteEvent.content,
               created_at: quoteEvent.created_at,
               kind: quoteEvent.kind,

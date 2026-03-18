@@ -116,7 +116,7 @@ export async function buildRepostSchedules(
       mainSignedEvent as SignedEvent,
       scheduledForUnix
     );
-    const { signedEvent } = await nostrAdapter.signEvent({
+    const { signedEvent } = await nostrAdapter.signEventWithOneRetry({
       content: repostEvent.content,
       created_at: repostEvent.created_at,
       kind: repostEvent.kind,
@@ -167,7 +167,7 @@ export async function buildQuoteSchedules(
       scheduledForUnix,
       tagArray
     );
-    const { signedEvent } = await nostrAdapter.signEvent({
+    const { signedEvent } = await nostrAdapter.signEventWithOneRetry({
       content: quoteEvent.content,
       created_at: quoteEvent.created_at,
       kind: quoteEvent.kind,

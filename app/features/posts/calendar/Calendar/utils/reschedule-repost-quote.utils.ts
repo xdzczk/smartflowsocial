@@ -48,12 +48,13 @@ export async function submitRepostSchedule(
     originalSignedEvent,
     scheduledForUnix
   );
-  const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent({
-    content: repostEvent.content,
-    created_at: repostEvent.created_at,
-    kind: repostEvent.kind,
-    tags: repostEvent.tags,
-  });
+  const { signedEvent: repostSignedEvent } =
+    await nostrAdapter.signEventWithOneRetry({
+      content: repostEvent.content,
+      created_at: repostEvent.created_at,
+      kind: repostEvent.kind,
+      tags: repostEvent.tags,
+    });
   const formData = new FormData();
   formData.set("_action", "scheduleRepost");
   formData.set("postId", postId);
@@ -94,12 +95,13 @@ export async function submitQuoteSchedule(
     scheduledForUnix,
     tagArray
   );
-  const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent({
-    content: quoteEvent.content,
-    created_at: quoteEvent.created_at,
-    kind: quoteEvent.kind,
-    tags: quoteEvent.tags,
-  });
+  const { signedEvent: quoteSignedEvent } =
+    await nostrAdapter.signEventWithOneRetry({
+      content: quoteEvent.content,
+      created_at: quoteEvent.created_at,
+      kind: quoteEvent.kind,
+      tags: quoteEvent.tags,
+    });
   const formData = new FormData();
   formData.set("_action", "scheduleQuote");
   formData.set("postId", postId);

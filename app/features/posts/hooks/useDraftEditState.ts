@@ -228,7 +228,7 @@ export function useDraftEditState({
             repostScheduledForUnix
           );
           const { signedEvent: repostSignedEvent } =
-            await nostrAdapter.signEvent({
+            await nostrAdapter.signEventWithOneRetry({
               content: repostEvent.content,
               created_at: repostEvent.created_at,
               kind: repostEvent.kind,
@@ -266,7 +266,7 @@ export function useDraftEditState({
             []
           );
           const { signedEvent: quoteSignedEvent } =
-            await nostrAdapter.signEvent({
+            await nostrAdapter.signEventWithOneRetry({
               content: quoteEvent.content,
               created_at: quoteEvent.created_at,
               kind: quoteEvent.kind,

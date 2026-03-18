@@ -181,12 +181,13 @@ export function SimpleRescheduleModal({
         );
       }
 
-      const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
-        content: originalSignedEvent.content,
-        created_at: newTimeUnix,
-        kind: originalSignedEvent.kind,
-        tags: originalSignedEvent.tags,
-      });
+      const { nostrEvent, signedEvent } =
+        await nostrAdapter.signEventWithOneRetry({
+          content: originalSignedEvent.content,
+          created_at: newTimeUnix,
+          kind: originalSignedEvent.kind,
+          tags: originalSignedEvent.tags,
+        });
 
       lastRescheduleDataRef.current = null;
       const formData = new FormData();

@@ -7,6 +7,15 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
 import React, { useEffect, useRef } from "react";
 
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { ConfidencePanel } from "~/features/posts/components/ConfidencePanel";
@@ -366,6 +375,9 @@ export function UnifiedComposer({
     setSigningError,
     clearSigningState,
     retryLastSubmit,
+    partialThreadState,
+    submitThreadSuccessfulOnly,
+    retryThreadFailed,
   } = useComposerSubmit({
     form,
     fetcher,
@@ -704,6 +716,48 @@ export function UnifiedComposer({
           disabled={disabled}
           signerReady={signerReady}
         />
+        <Dialog
+          open={partialThreadState !== null}
+          onOpenChange={(open) => {
+            if (!open) clearSigningState();
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                Some thread segments could not be signed
+              </DialogTitle>
+              <DialogDescription>
+                {partialThreadState
+                  ? `${partialThreadState.failedIndices.length} of ${threadSegments.length} segments failed to sign after retry. You can schedule only the ${partialThreadState.signedEvents.length} successfully signed segments, or retry signing the failed ones.`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={clearSigningState}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={retryThreadFailed}
+              >
+                Retry failed signing
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void submitThreadSuccessfulOnly()}
+                className="bg-success hover:bg-success/90 text-white"
+              >
+                Schedule {partialThreadState?.signedEvents.length ?? 0} segments
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <div className="my-8">
           <UnifiedComposerContentSection
             isThreadMode={isThreadMode}
