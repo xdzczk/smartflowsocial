@@ -110,6 +110,12 @@ export function BulkComposerModal({
             handleRowFileRemove={handlers.handleRowFileRemove}
             repostConditions={restState.repostConditions}
             setRepostConditions={restState.setRepostConditions}
+            bulkScheduleRandomWindowMinutes={
+              restState.bulkScheduleRandomWindowMinutes
+            }
+            setBulkScheduleRandomWindowMinutes={
+              restState.setBulkScheduleRandomWindowMinutes
+            }
           />
         </div>
 

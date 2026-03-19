@@ -78,6 +78,8 @@ export function useBulkComposerModalState({
     string | null
   >(null);
   const [selectedHashtags, setSelectedHashtags] = useState("");
+  const [bulkScheduleRandomWindowMinutes, setBulkScheduleRandomWindowMinutes] =
+    useState<0 | 5 | 10 | 15>(0);
 
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
@@ -170,6 +172,7 @@ export function useBulkComposerModalState({
     setPreparationProgress,
     extraFormData,
     submitAction,
+    scheduleRandomWindowMinutes: bulkScheduleRandomWindowMinutes,
   });
 
   const validationResult = useMemo(() => {
@@ -592,6 +595,8 @@ export function useBulkComposerModalState({
       validationResult,
       previewData,
       isLoadingContext,
+      bulkScheduleRandomWindowMinutes,
+      setBulkScheduleRandomWindowMinutes,
     },
     handlers: {
       prepareEvents,

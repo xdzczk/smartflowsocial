@@ -40,6 +40,7 @@ vi.mock("~/features/posts/server", () => ({
   handleCaptionChange: vi.fn(),
   handleDateChange: vi.fn(),
   handleFileChange: vi.fn(),
+  processBulkSelectedFiles: vi.fn(),
   handleIsRecyclableChange: vi.fn(),
   handleQueueTypeChange: vi.fn(),
   handleRemovePost: vi.fn(),

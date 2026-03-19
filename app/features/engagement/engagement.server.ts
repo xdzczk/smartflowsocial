@@ -1,3 +1,5 @@
+import * as nip27 from "nostr-tools/nip27";
+
 import type { LongFormPostData, PostData } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
 
@@ -107,6 +109,36 @@ function collectProfilesAndStats(threadViewResponse: unknown[]): {
   return { userProfiles, eventStats };
 }
 
+/** True if NIP-27 content embeds this event id (note / nevent pointers). */
+function contentEmbedsQuotedEvent(
+  content: string | undefined,
+  quotedEventIdHex: string | undefined
+): boolean {
+  if (!content || !quotedEventIdHex) return false;
+  try {
+    for (const block of nip27.parse(content)) {
+      if (block.type !== "reference") continue;
+      const ptr = block.pointer;
+      if (
+        "id" in ptr &&
+        typeof ptr.id === "string" &&
+        ptr.id === quotedEventIdHex
+      ) {
+        return true;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+/**
+ * Quote (for Mentions tab) vs reply: many clients use an empty e-tag marker and still put
+ * nostr:note / nevent for the parent in the body — that is a thread reply, not a quote.
+ * Only treat as quote when the e-tag uses the NIP-10-style "mention" marker for the cited post,
+ * plus a nostr reference in content (substring or NIP-27 parse).
+ */
 function isQuotePost(
   event: ParsedEvent,
   targetETag: string[] | undefined
@@ -114,14 +146,17 @@ function isQuotePost(
   if (!targetETag) return false;
 
   const marker = targetETag[3] as string | undefined;
+  if (marker !== "mention") {
+    return false;
+  }
+
   const eventContent = event.content ?? "";
-  const hasNostrReference =
+  const quotedId = targetETag[1];
+  return (
     eventContent.includes("nostr:nevent") ||
     eventContent.includes("nostr:note") ||
-    eventContent.includes("nostr:naddr");
-
-  return (
-    (!marker || marker === "" || marker === "mention") && hasNostrReference
+    eventContent.includes("nostr:naddr") ||
+    contentEmbedsQuotedEvent(eventContent, quotedId)
   );
 }
 
@@ -129,6 +164,58 @@ function isReply(targetETag: string[] | undefined): boolean {
   if (!targetETag) return false;
   const marker = targetETag[3] as string | undefined;
   return marker === "reply" || marker === "root";
+}
+
+/**
+ * NIP-27: detect profile or address pointers in note content that reference the user's hex pubkey.
+ * Complements `p` tags — some clients only embed nostr:npub / nostr:nprofile / nostr:naddr in text.
+ */
+function contentMentionsUserPubkey(
+  content: string | undefined,
+  userPubkeyHex: string
+): boolean {
+  if (!content) return false;
+  const userLower = userPubkeyHex.toLowerCase();
+  try {
+    for (const block of nip27.parse(content)) {
+      if (block.type !== "reference") continue;
+      const ptr = block.pointer;
+      if ("pubkey" in ptr && typeof ptr.pubkey === "string") {
+        if (ptr.pubkey.toLowerCase() === userLower) return true;
+      }
+    }
+  } catch {
+    // Malformed nostr: URIs must not break engagement parsing
+  }
+  return false;
+}
+
+/** True if `p` tags or NIP-27 body references mention this hex pubkey. */
+export function doesEventMentionUser(
+  content: string | undefined,
+  tags: string[][] | undefined,
+  userPubkeyHex: string
+): boolean {
+  const userLower = userPubkeyHex.toLowerCase();
+  const pTags = tags?.filter((t) => t[0] === "p") ?? [];
+  const viaPTag = pTags.some((t) => (t[1] ?? "").toLowerCase() === userLower);
+  return viaPTag || contentMentionsUserPubkey(content, userPubkeyHex);
+}
+
+/**
+ * Best-effort root id for grouping: NIP-10 root/reply markers, else first e-tag, else the note id.
+ */
+export function inferThreadRootEventIdFromTags(
+  tags: NostrTag[] | undefined,
+  noteEventId: string
+): string {
+  const eTags = (tags ?? []).filter((t) => t[0] === "e");
+  const root = eTags.find((t) => (t[3] ?? "") === "root");
+  if (root?.[1]) return root[1];
+  const reply = eTags.find((t) => (t[3] ?? "") === "reply");
+  if (reply?.[1]) return reply[1];
+  if (eTags[0]?.[1]) return eTags[0][1];
+  return noteEventId;
 }
 
 function createReplyNotification(
@@ -239,13 +326,14 @@ function processKind1Notifications(
   }
 
   const eTags = event.tags?.filter((tag: string[]) => tag[0] === "e") ?? [];
-  const pTags = event.tags?.filter((tag: string[]) => tag[0] === "p") ?? [];
 
   const targetETag = eTags.find((tag: string[]) => tag[1] === originalEventId);
   const referencesOriginal = !!targetETag;
   const userPubkeyLower = userPubkey.toLowerCase();
-  const mentionsUser = pTags.some(
-    (tag: string[]) => (tag[1] ?? "").toLowerCase() === userPubkeyLower
+  const mentionsUser = doesEventMentionUser(
+    event.content,
+    event.tags,
+    userPubkey
   );
 
   if (
@@ -418,6 +506,15 @@ export function groupNotificationsByType(notifications: Notification[]) {
   };
 }
 
+/** Options for grouping when some parents are not SmartFlow-published posts. */
+export interface GroupNotificationsByParentOptions {
+  /**
+   * When set, notifications whose `originalEventId` is not in the post map still create a group
+   * using a synthetic parent (Primal global mentions / off-app threads).
+   */
+  syntheticFallbackPubkey?: string;
+}
+
 /**
  * Group notifications by their parent event ID and include parent post data
  */
@@ -425,7 +522,8 @@ export function groupNotificationsByParent(
   notifications: Notification[],
   posts: PostData[],
   longformPosts: LongFormPostData[],
-  stats: Record<string, EventStats> = {}
+  stats: Record<string, EventStats> = {},
+  options?: GroupNotificationsByParentOptions
 ): GroupedNotification[] {
   // Create a map of event ID to post data
   const postMap = new Map<string, ParentPost>();
@@ -493,8 +591,25 @@ export function groupNotificationsByParent(
   // Convert to array of GroupedNotification
   const result: GroupedNotification[] = [];
 
+  const syntheticPk = options?.syntheticFallbackPubkey;
+
   groupedMap.forEach((notifs, parentEventId) => {
-    const parentPost = postMap.get(parentEventId);
+    let parentPost = postMap.get(parentEventId);
+    if (!parentPost && syntheticPk) {
+      parentPost = {
+        id: `synthetic-context-${parentEventId}`,
+        eventId: parentEventId,
+        pubkey: syntheticPk,
+        caption: null,
+        fileUrl: null,
+        title: null,
+        content: null,
+        publishedAt: null,
+        isLongform: false,
+        stats: stats[parentEventId],
+        contextLabel: "Referenced note (Nostr)",
+      };
+    }
     if (parentPost) {
       // Sort notifications by created_at descending (newest first)
       const sortedNotifs = notifs.sort((a, b) => b.createdAt - a.createdAt);

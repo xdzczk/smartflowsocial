@@ -367,6 +367,7 @@ const parentPostSchema = z.object({
   publishedAt: z.string().nullable(), // ISO string
   isLongform: z.boolean(),
   stats: eventStatsSchema.optional(),
+  contextLabel: z.string().nullable().optional(),
 });
 
 /**

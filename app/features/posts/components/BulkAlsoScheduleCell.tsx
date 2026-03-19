@@ -54,7 +54,7 @@ export function BulkAlsoScheduleCell({
   const hasQuote = quoteSchedules.length > 0;
 
   return (
-    <div className="min-w-[200px] space-y-3 text-xs">
+    <div className="w-full max-w-full min-w-0 space-y-3 text-xs">
       <div className="flex items-center gap-2">
         <Checkbox
           id={`${rowLabelId}-repost`}
@@ -238,7 +238,7 @@ export function BulkAlsoScheduleCell({
                   placeholder="Caption (optional)"
                   rows={1}
                   disabled={disabled}
-                  className="min-h-[60px] text-xs"
+                  className="min-h-[60px] w-full max-w-full min-w-0 text-xs"
                 />
               </div>
             );

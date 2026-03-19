@@ -255,6 +255,10 @@ interface BulkComposerModalContentProps {
   setRepostConditions: React.Dispatch<
     React.SetStateAction<RepostConditions | null>
   >;
+  bulkScheduleRandomWindowMinutes: 0 | 5 | 10 | 15;
+  setBulkScheduleRandomWindowMinutes: React.Dispatch<
+    React.SetStateAction<0 | 5 | 10 | 15>
+  >;
 }
 
 function BulkComposerModalContent({
@@ -296,6 +300,8 @@ function BulkComposerModalContent({
   handleRowFileRemove,
   repostConditions,
   setRepostConditions,
+  bulkScheduleRandomWindowMinutes,
+  setBulkScheduleRandomWindowMinutes,
 }: BulkComposerModalContentProps) {
   const showActions = !isRepostOrQuote(mode);
   const userTimezone = user?.timezone ?? "UTC";
@@ -361,6 +367,10 @@ function BulkComposerModalContent({
               scheduleIntervals={scheduleIntervals}
               userTimezone={userTimezone}
               disabled={isProcessing}
+              scheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
+              onScheduleRandomWindowMinutesChange={
+                setBulkScheduleRandomWindowMinutes
+              }
             />
           ) : null}
 
@@ -490,6 +500,8 @@ export function BulkComposerModal({
     string | null
   >(null);
   const [selectedHashtags, setSelectedHashtags] = useState("");
+  const [bulkScheduleRandomWindowMinutes, setBulkScheduleRandomWindowMinutes] =
+    useState<0 | 5 | 10 | 15>(0);
 
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
@@ -582,6 +594,7 @@ export function BulkComposerModal({
     setPreparationProgress,
     extraFormData,
     submitAction,
+    scheduleRandomWindowMinutes: bulkScheduleRandomWindowMinutes,
   });
 
   const validationResult = useMemo(() => {
@@ -1044,6 +1057,10 @@ export function BulkComposerModal({
             handleRowFileRemove={handleRowFileRemove}
             repostConditions={repostConditions}
             setRepostConditions={setRepostConditions}
+            bulkScheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
+            setBulkScheduleRandomWindowMinutes={
+              setBulkScheduleRandomWindowMinutes
+            }
           />
         </div>
 

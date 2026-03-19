@@ -20,21 +20,23 @@ const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB for images
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB for videos
 const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB total
 
+export type BulkFileUploadDeps = Pick<
+  BulkPostsHandlerDeps,
+  | "posts"
+  | "setPosts"
+  | "user"
+  | "scheduleIntervals"
+  | "setIsProcessing"
+  | "setProcessingProgress"
+  | "setFirstItemTimeManuallyChanged"
+>;
+
 /**
- * Handle file selection and processing for bulk uploads
+ * Process user-selected files for bulk uploads (click or drag-and-drop).
  */
-export async function handleFileChange(
-  e: React.ChangeEvent<HTMLInputElement>,
-  deps: Pick<
-    BulkPostsHandlerDeps,
-    | "posts"
-    | "setPosts"
-    | "user"
-    | "scheduleIntervals"
-    | "setIsProcessing"
-    | "setProcessingProgress"
-    | "setFirstItemTimeManuallyChanged"
-  >
+export async function processBulkSelectedFiles(
+  selectedFiles: File[],
+  deps: BulkFileUploadDeps
 ): Promise<void> {
   const {
     posts,
@@ -45,7 +47,6 @@ export async function handleFileChange(
     setProcessingProgress,
     setFirstItemTimeManuallyChanged,
   } = deps;
-  const selectedFiles = Array.from(e.target.files ?? []);
 
   // Check total size
   const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
@@ -139,4 +140,16 @@ export async function handleFileChange(
   setIsProcessing(false);
   // Reset flag when new files are uploaded
   setFirstItemTimeManuallyChanged(false);
+}
+
+/**
+ * Handle file input change for bulk uploads
+ */
+export async function handleFileChange(
+  e: React.ChangeEvent<HTMLInputElement>,
+  deps: BulkFileUploadDeps
+): Promise<void> {
+  const selectedFiles = Array.from(e.target.files ?? []);
+  await processBulkSelectedFiles(selectedFiles, deps);
+  e.target.value = "";
 }

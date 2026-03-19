@@ -338,9 +338,10 @@ export default function BulkPostsTable({
   userTimezone = "UTC",
 }: BulkPostsTableProps) {
   const parentRef = useRef<HTMLDivElement | null>(null);
+  /** Fixed + capped tracks so Caption does not steal all space; Also column ≥ 200px to match cell content. */
   const gridCols = showAlsoSchedule
-    ? "140px minmax(200px, 2fr) 140px 180px 180px 100px 90px"
-    : "140px minmax(200px, 2fr) 140px 180px 100px 90px";
+    ? "minmax(104px,120px) minmax(180px,26rem) minmax(148px,13rem) minmax(168px,13.5rem) minmax(200px,15rem) minmax(96px,7.5rem) minmax(76px,5.75rem)"
+    : "minmax(104px,120px) minmax(180px,26rem) minmax(148px,13rem) minmax(168px,13.5rem) minmax(96px,7.5rem) minmax(76px,5.75rem)";
 
   // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
   const rowVirtualizer = useVirtualizer({
@@ -363,18 +364,20 @@ export default function BulkPostsTable({
       >
         {/* Sticky header with same grid as rows for alignment */}
         <div
-          className="bg-muted/50 sticky top-0 z-10 grid w-full shrink-0 border-b px-4 py-3 text-left text-sm font-medium"
+          className="bg-muted/50 sticky top-0 z-10 grid w-full min-w-max shrink-0 items-center gap-x-3 gap-y-1 border-b px-4 py-3 text-left text-sm font-medium"
           style={{ gridTemplateColumns: gridCols }}
         >
-          <span>Media</span>
-          <span>Caption</span>
-          <span>Queue</span>
-          <span>Schedule</span>
+          <span className="min-w-0">Media</span>
+          <span className="min-w-0">Caption</span>
+          <span className="min-w-0">Queue</span>
+          <span className="min-w-0">Schedule</span>
           {showAlsoSchedule ? (
-            <span className="text-xs">Also repost/quote</span>
+            <span className="min-w-0 text-xs leading-tight">
+              Also repost/quote
+            </span>
           ) : null}
-          <span>Recyclable</span>
-          <span>Actions</span>
+          <span className="min-w-0">Recyclable</span>
+          <span className="min-w-0">Actions</span>
         </div>
         <div
           className="relative w-full"
@@ -389,13 +392,13 @@ export default function BulkPostsTable({
               <div
                 key={virtualRow.key}
                 data-index={virtualRow.index}
-                className={`bg-card absolute top-0 left-0 grid w-full border-b px-4 py-3 ${rowErrors?.length ? "border-l-4 border-l-amber-500" : ""}`}
+                className={`bg-card absolute top-0 left-0 grid w-full min-w-max items-start gap-x-3 gap-y-2 border-b px-4 py-3 ${rowErrors?.length ? "border-l-4 border-l-amber-500" : ""}`}
                 style={{
                   gridTemplateColumns: gridCols,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                <div className="flex items-start gap-2">
+                <div className="flex min-w-0 items-start gap-2">
                   {renderMediaCell(
                     post,
                     index,
@@ -454,7 +457,7 @@ export default function BulkPostsTable({
                     </div>
                   ) : null}
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex min-w-0 flex-wrap gap-1">
                   {queueTypes.map((queue) => {
                     const queueName =
                       typeof queue === "string" ? queue : queue.name;
@@ -493,20 +496,20 @@ export default function BulkPostsTable({
                     );
                   })}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <input
                     type="datetime-local"
                     name="scheduledDates"
                     value={post.scheduledFor}
                     onChange={(e) => handleDateChange(index, e.target.value)}
                     min={getNowForDateTimeLocal(userTimezone)}
-                    className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
+                    className="dark:bg-card text-foreground dark:text-foreground box-border w-full max-w-full min-w-0 rounded-lg border p-2 text-sm"
                   />
                 </div>
                 {showAlsoSchedule &&
                 onRepostSchedulesChange &&
                 onQuoteSchedulesChange ? (
-                  <div className="align-top">
+                  <div className="min-w-0 align-top">
                     <BulkAlsoScheduleCell
                       repostSchedules={post.repostSchedules ?? []}
                       quoteSchedules={post.quoteSchedules ?? []}
@@ -520,7 +523,7 @@ export default function BulkPostsTable({
                     />
                   </div>
                 ) : null}
-                <div className="flex items-center">
+                <div className="flex min-w-0 items-center">
                   <Checkbox
                     id={`bulk-recyclable-${post.clientId}`}
                     checked={post.isRecyclable}
@@ -535,11 +538,11 @@ export default function BulkPostsTable({
                     Recyclable
                   </label>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <button
                     type="button"
                     onClick={() => handleRemovePost(index)}
-                    className="bg-destructive hover:bg-destructive rounded px-3 py-1 text-white"
+                    className="bg-destructive hover:bg-destructive rounded px-3 py-1 text-sm whitespace-nowrap text-white"
                   >
                     Remove
                   </button>

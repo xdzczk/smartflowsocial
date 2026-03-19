@@ -77,6 +77,10 @@ export interface BulkComposerModalContentProps {
   setRepostConditions: React.Dispatch<
     React.SetStateAction<RepostConditions | null>
   >;
+  bulkScheduleRandomWindowMinutes: 0 | 5 | 10 | 15;
+  setBulkScheduleRandomWindowMinutes: React.Dispatch<
+    React.SetStateAction<0 | 5 | 10 | 15>
+  >;
 }
 
 export function BulkComposerModalContent({
@@ -118,6 +122,8 @@ export function BulkComposerModalContent({
   handleRowFileRemove,
   repostConditions,
   setRepostConditions,
+  bulkScheduleRandomWindowMinutes,
+  setBulkScheduleRandomWindowMinutes,
 }: BulkComposerModalContentProps) {
   const showActions = !isRepostOrQuote(mode);
   const userTimezone = user?.timezone ?? "UTC";
@@ -183,6 +189,10 @@ export function BulkComposerModalContent({
               scheduleIntervals={scheduleIntervals}
               userTimezone={userTimezone}
               disabled={isProcessing}
+              scheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
+              onScheduleRandomWindowMinutesChange={
+                setBulkScheduleRandomWindowMinutes
+              }
             />
           ) : null}
 

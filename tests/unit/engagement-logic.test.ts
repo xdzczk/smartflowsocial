@@ -7,6 +7,7 @@
  * Migrated from tests/e2e/unit/engagement-logic.cy.ts
  */
 
+import { generateSecretKey, getPublicKey, nip19 } from "nostr-tools";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Prisma to prevent database connection attempts
@@ -18,7 +19,10 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 import {
+  doesEventMentionUser,
   groupNotificationsByType,
+  inferThreadRootEventIdFromTags,
+  parseThreadViewNotifications,
   type Notification,
 } from "~/features/engagement/engagement.server";
 import {
@@ -161,6 +165,163 @@ describe("Engagement Logic Unit Tests", () => {
       expect(grouped.mentions.length).toBe(0);
       expect(grouped.zaps.length).toBe(0);
       expect(grouped.quotes.length).toBe(0);
+    });
+  });
+
+  describe("inferThreadRootEventIdFromTags", () => {
+    it("prefers e-tag with root marker", () => {
+      const root = "a".repeat(64);
+      const reply = "b".repeat(64);
+      expect(
+        inferThreadRootEventIdFromTags(
+          [
+            ["e", root, "", "root"],
+            ["e", reply, "", "reply"],
+          ],
+          "c".repeat(64)
+        )
+      ).toBe(root);
+    });
+
+    it("falls back to first e-tag", () => {
+      const first = "d".repeat(64);
+      expect(
+        inferThreadRootEventIdFromTags(
+          [["e", first, "wss://x"]],
+          "e".repeat(64)
+        )
+      ).toBe(first);
+    });
+
+    it("falls back to note id when no e-tags", () => {
+      const id = "f".repeat(64);
+      expect(inferThreadRootEventIdFromTags([], id)).toBe(id);
+    });
+  });
+
+  describe("doesEventMentionUser", () => {
+    it("detects p tag hex match", () => {
+      const me = "ab".repeat(32);
+      expect(doesEventMentionUser("hi", [["p", me, "wss://r"]], me)).toBe(true);
+    });
+
+    it("returns false when no p tag or nip-27 ref", () => {
+      expect(doesEventMentionUser("hello world", [], "ab".repeat(32))).toBe(
+        false
+      );
+    });
+  });
+
+  describe("parseThreadViewNotifications (NIP-27 mentions)", () => {
+    it("detects nostr:npub in content without p tag as mention", () => {
+      const mySk = generateSecretKey();
+      const me = getPublicKey(mySk);
+      const otherSk = generateSecretKey();
+      const other = getPublicKey(otherSk);
+      const npub = nip19.npubEncode(me);
+
+      const parentEventId = "a".repeat(64);
+      const noteId = "b".repeat(64);
+
+      const thread = [
+        [
+          "EVENT",
+          "",
+          {
+            kind: 1,
+            id: noteId,
+            pubkey: other,
+            content: `hello nostr:${npub} check this`,
+            tags: [],
+            created_at: 100,
+          },
+        ],
+      ];
+
+      const notifications = parseThreadViewNotifications(
+        thread,
+        parentEventId,
+        me
+      );
+      const mentions = notifications.filter((n) => n.type === "mention");
+
+      expect(mentions.length).toBe(1);
+      expect(mentions[0]?.eventId).toBe(noteId);
+      expect(mentions[0]?.originalEventId).toBe(parentEventId);
+    });
+
+    it("classifies reply with embedded parent note and empty e-tag marker as reply, not mention", () => {
+      const otherSk = generateSecretKey();
+      const other = getPublicKey(otherSk);
+      const mySk = generateSecretKey();
+      const me = getPublicKey(mySk);
+
+      const parentEventId = "ab".repeat(32);
+      const replyNoteId = "cd".repeat(32);
+      const noteRef = nip19.noteEncode(parentEventId);
+
+      const thread = [
+        [
+          "EVENT",
+          "",
+          {
+            kind: 1,
+            id: replyNoteId,
+            pubkey: other,
+            content: `Keep on nostr:${noteRef}`,
+            tags: [["e", parentEventId, "wss://relay.example.com"]],
+            created_at: 100,
+          },
+        ],
+      ];
+
+      const notifications = parseThreadViewNotifications(
+        thread,
+        parentEventId,
+        me
+      );
+      const replies = notifications.filter((n) => n.type === "reply");
+      const mentions = notifications.filter((n) => n.type === "mention");
+
+      expect(replies.length).toBe(1);
+      expect(replies[0]?.eventId).toBe(replyNoteId);
+      expect(mentions.length).toBe(0);
+    });
+
+    it("classifies e-tag marker mention + nostr ref as mention (quote)", () => {
+      const otherSk = generateSecretKey();
+      const other = getPublicKey(otherSk);
+      const mySk = generateSecretKey();
+      const me = getPublicKey(mySk);
+
+      const parentEventId = "ef".repeat(32);
+      const quoteNoteId = "12".repeat(32);
+      const noteRef = nip19.noteEncode(parentEventId);
+
+      const thread = [
+        [
+          "EVENT",
+          "",
+          {
+            kind: 1,
+            id: quoteNoteId,
+            pubkey: other,
+            content: `Quoted nostr:${noteRef}`,
+            tags: [["e", parentEventId, "wss://relay.example.com", "mention"]],
+            created_at: 100,
+          },
+        ],
+      ];
+
+      const notifications = parseThreadViewNotifications(
+        thread,
+        parentEventId,
+        me
+      );
+      const mentions = notifications.filter((n) => n.type === "mention");
+
+      expect(mentions.length).toBe(1);
+      expect(mentions[0]?.eventId).toBe(quoteNoteId);
     });
   });
 

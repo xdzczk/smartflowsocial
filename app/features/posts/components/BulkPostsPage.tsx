@@ -1,5 +1,4 @@
 import { useLoaderData } from "@remix-run/react";
-import { Hash } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -22,7 +21,6 @@ import {
   type BulkPostsLoaderData,
 } from "~/features/posts/utils/bulkposts-loader.utils";
 import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
-import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { isVideoFile } from "~/utils/media-helpers";
 
 import { BulkPostsSubmitButton } from "./BulkPostsSubmitButton";
@@ -63,7 +61,6 @@ export default function BulkPostsPage() {
   const {
     posts,
     setPosts,
-    displayedHashtags,
     preparedEvents,
     setPreparedEvents,
     showConfirmation,
@@ -102,6 +99,8 @@ export default function BulkPostsPage() {
     setBulkRepostConditions,
     bulkDraftPickerOpen,
     setBulkDraftPickerOpen,
+    bulkScheduleRandomWindowMinutes,
+    setBulkScheduleRandomWindowMinutes,
     scheduleIntervals,
     user,
     fetcher,
@@ -124,6 +123,7 @@ export default function BulkPostsPage() {
     setIsPreviewSubmitting,
     setIsProcessing,
     setPreparationProgress,
+    scheduleRandomWindowMinutes: bulkScheduleRandomWindowMinutes,
   });
 
   const validationResult = useMemo(
@@ -217,17 +217,6 @@ export default function BulkPostsPage() {
         type="bulk"
         onSelect={(id) => navigate(`/dashboard/bulkposts?groupId=${id}`)}
       />
-      {displayedHashtags && displayedHashtags.length <= 10 ? (
-        <div className="bg-muted text-foreground mb-6 inline-flex items-center gap-1 rounded px-2 py-1 text-xs leading-4 font-semibold">
-          <Hash
-            className="inline-block size-4 opacity-75"
-            strokeWidth={INLINE_ICON_STROKE}
-            aria-hidden
-          />
-          <span>{displayedHashtags}</span>
-        </div>
-      ) : null}
-
       {!showConfirmation ? (
         <fetcher.Form
           onSubmit={(e) => {
@@ -241,6 +230,7 @@ export default function BulkPostsPage() {
               isProcessing={isProcessing}
               processingProgress={processingProgress}
               onFileChange={handlers.handleFileChange}
+              onFilesDropped={handlers.handleBulkFilesDropped}
               uploadProvider={uploadProvider}
             />
           ) : null}
@@ -274,6 +264,10 @@ export default function BulkPostsPage() {
               scheduleIntervals={scheduleIntervals}
               userTimezone={user?.timezone ?? "UTC"}
               disabled={isProcessing}
+              scheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
+              onScheduleRandomWindowMinutesChange={
+                setBulkScheduleRandomWindowMinutes
+              }
             />
           ) : null}
 

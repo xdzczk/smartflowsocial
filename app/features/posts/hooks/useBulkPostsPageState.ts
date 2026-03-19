@@ -16,6 +16,7 @@ import {
   handleCaptionChange as handleCaptionChangeHandler,
   handleDateChange as handleDateChangeHandler,
   handleFileChange as handleFileChangeHandler,
+  processBulkSelectedFiles,
   handleIsRecyclableChange as handleIsRecyclableChangeHandler,
   handleQueueTypeChange as handleQueueTypeChangeHandler,
   handleRemovePost as handleRemovePostHandler,
@@ -130,6 +131,8 @@ export function useBulkPostsPageState({
   const [bulkRepostConditions, setBulkRepostConditions] =
     useState<RepostConditions | null>(null);
   const [bulkDraftPickerOpen, setBulkDraftPickerOpen] = useState(false);
+  const [bulkScheduleRandomWindowMinutes, setBulkScheduleRandomWindowMinutes] =
+    useState<0 | 5 | 10 | 15>(0);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -365,6 +368,8 @@ export function useBulkPostsPageState({
     setBulkRepostConditions,
     bulkDraftPickerOpen,
     setBulkDraftPickerOpen,
+    bulkScheduleRandomWindowMinutes,
+    setBulkScheduleRandomWindowMinutes,
     scheduleIntervals,
     user,
     fetcher,
@@ -381,16 +386,22 @@ export function useBulkPostsPageState({
       }
     : null;
 
+  const bulkFileUploadDeps = {
+    posts,
+    setPosts,
+    user: userDeps,
+    scheduleIntervals,
+    setIsProcessing,
+    setProcessingProgress,
+    setFirstItemTimeManuallyChanged,
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    void handleFileChangeHandler(e, {
-      posts,
-      setPosts,
-      user: userDeps,
-      scheduleIntervals,
-      setIsProcessing,
-      setProcessingProgress,
-      setFirstItemTimeManuallyChanged,
-    });
+    void handleFileChangeHandler(e, bulkFileUploadDeps);
+  };
+
+  const handleBulkFilesDropped = (files: File[]) => {
+    void processBulkSelectedFiles(files, bulkFileUploadDeps);
   };
 
   const handleCaptionChange = (index: number, value: string) => {
@@ -637,6 +648,7 @@ export function useBulkPostsPageState({
     handleRowFileSelect,
     handleRowFileRemove,
     handleSaveDraftFromTable,
+    handleBulkFilesDropped,
   };
 
   return { state, handlers };

@@ -216,7 +216,9 @@ function GroupedNotificationCard({
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
-            <span className="font-medium">Your post</span>
+            <span className="font-medium">
+              {parentPost.contextLabel ?? "Your post"}
+            </span>
             {parentPost.publishedAt ? (
               <span>· {formatDate(parentPost.publishedAt)}</span>
             ) : null}

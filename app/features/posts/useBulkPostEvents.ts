@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, type FormEvent } from "react";
 import { type ToastMessage } from "~/components/types";
 import type { User } from "~/features/user";
 import { safeConsoleInfo } from "~/lib/safe-console.client";
+import { applyRandomScheduleWindow } from "~/lib/schedule-random";
 import {
   formatForDateTimeLocal,
   nowInTimezone,
@@ -63,6 +64,8 @@ interface UseBulkPostEventsProps {
   extraFormData?: Record<string, string>;
   /** Submit action URL (e.g. /dashboard/bulkposts?mode=quote for modal). */
   submitAction?: string;
+  /** Per post: actual publish time = random within ±N minutes of nominal schedule (0 = off). */
+  scheduleRandomWindowMinutes?: number;
 }
 
 export function useBulkPostEvents({
@@ -80,6 +83,7 @@ export function useBulkPostEvents({
   setPreparationProgress,
   extraFormData,
   submitAction,
+  scheduleRandomWindowMinutes = 0,
 }: UseBulkPostEventsProps) {
   const isWaitingForUpload = useRef(false);
 
@@ -247,10 +251,18 @@ export function useBulkPostEvents({
         const content = buildContent(fileUrl, post.caption, tagsString, user);
         const tagArray = convertTagsToArray(tagsString);
         const userTimezone = getUserTimezone(user);
-        const scheduledTime = convertScheduledTime(
+        let scheduledTime = convertScheduledTime(
           scheduledForValue,
           userTimezone
         );
+        if (scheduleRandomWindowMinutes > 0) {
+          const nominalUnix = Math.floor(scheduledTime / 1000);
+          const actualUnix = applyRandomScheduleWindow(
+            nominalUnix,
+            scheduleRandomWindowMinutes
+          );
+          scheduledTime = actualUnix * 1000;
+        }
 
         const addTags =
           user &&
@@ -323,6 +335,7 @@ export function useBulkPostEvents({
     setShowConfirmation,
     setIsPreviewSubmitting,
     setPreparationProgress,
+    scheduleRandomWindowMinutes,
   ]);
 
   const prepareEvents = async (e: FormEvent<HTMLFormElement>) => {

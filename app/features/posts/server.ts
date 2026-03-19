@@ -110,7 +110,10 @@ export {
 
 // Re-export all bulk post handlers for convenience
 // @deprecated Import directly from handlers/ subdirectory for better tree-shaking
-export { handleFileChange } from "./handlers/file-upload.handler";
+export {
+  handleFileChange,
+  processBulkSelectedFiles,
+} from "./handlers/file-upload.handler";
 export {
   handleCaptionChange,
   handleDateChange,

@@ -297,6 +297,9 @@ only part of it may be loaded.
 - When someone mentions your npub
 - References to your account
 - Tagged in conversations
+- **Global mentions:** Notes from Primal’s notification index that tag you (`p` tags or NIP-27 in
+  content), including threads that are **not** rooted in a post you published via SmartFlow. Those
+  groups show **“Referenced note (Nostr)”** instead of “Your post” on the left.
 
 **How to view:**
 

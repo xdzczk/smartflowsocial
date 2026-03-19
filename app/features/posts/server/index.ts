@@ -122,7 +122,10 @@ export {
 // Bulk post handlers (shared: used by bulk flow and composer)
 // ============================================================================
 
-export { handleFileChange } from "../handlers/file-upload.handler";
+export {
+  handleFileChange,
+  processBulkSelectedFiles,
+} from "../handlers/file-upload.handler";
 export {
   handleCaptionChange,
   handleDateChange,

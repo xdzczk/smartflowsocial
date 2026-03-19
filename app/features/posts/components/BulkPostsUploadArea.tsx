@@ -1,9 +1,10 @@
 /**
  * BulkPosts Upload Area Component
- * Drag/drop area for file uploads with progress indicator
+ * Click or drag/drop for file uploads with progress indicator
  */
 
 import { Loader2, Upload } from "lucide-react";
+import { useCallback, useState } from "react";
 
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
@@ -11,15 +12,65 @@ interface BulkPostsUploadAreaProps {
   isProcessing: boolean;
   processingProgress: { current: number; total: number };
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onFilesDropped: (files: File[]) => void;
   uploadProvider: string | null;
+}
+
+function isImageOrVideoFile(file: File): boolean {
+  const t = file.type;
+  return t.startsWith("image/") || t.startsWith("video/");
 }
 
 export default function BulkPostsUploadArea({
   isProcessing,
   processingProgress,
   onFileChange,
+  onFilesDropped,
   uploadProvider,
 }: BulkPostsUploadAreaProps) {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isProcessing) setIsDragging(true);
+    },
+    [isProcessing]
+  );
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const related = e.relatedTarget as Node | null;
+    if (related && e.currentTarget.contains(related)) return;
+    setIsDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isProcessing) e.dataTransfer.dropEffect = "copy";
+    },
+    [isProcessing]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      if (isProcessing) return;
+      const list = e.dataTransfer.files;
+      const dropped = Array.from(list).filter((file) =>
+        isImageOrVideoFile(file)
+      );
+      if (dropped.length > 0) onFilesDropped(dropped);
+    },
+    [isProcessing, onFilesDropped]
+  );
+
   return (
     <div className="mb-6">
       <div className="mb-4 flex items-center justify-between">
@@ -41,18 +92,24 @@ export default function BulkPostsUploadArea({
           </div>
         ) : null}
       </div>
+      {/* Drag events augment the file input; keyboard users activate the control via the label + input. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drop target wraps native file input */}
       <label
         htmlFor="bulk-posts-file-input"
-        className={`block ${isProcessing ? "cursor-not-allowed" : "cursor-pointer"}`}
-        aria-label="Upload media files"
-      >
-        <div
-          className={`rounded-lg border-2 border-dashed p-12 text-center ${
-            isProcessing
-              ? "dark:bg-card border-border bg-muted dark:border-border"
+        className={`relative block rounded-lg border-2 border-dashed transition-colors ${
+          isProcessing
+            ? "dark:bg-card border-border bg-muted dark:border-border"
+            : isDragging
+              ? "border-primary bg-primary/5"
               : "border-border"
-          }`}
-        >
+        } ${isProcessing ? "cursor-not-allowed" : "cursor-pointer"}`}
+        aria-label="Upload media files"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        <div className="p-12 text-center">
           <div className="flex flex-col items-center gap-4">
             {isProcessing ? (
               <>
@@ -85,7 +142,7 @@ export default function BulkPostsUploadArea({
                 </div>
                 <div>
                   <p className="text-muted-foreground dark:text-foreground text-xl font-medium">
-                    Click to upload images and videos (Max 100MB)
+                    Click or drag and drop images and videos (max 100MB total)
                   </p>
                 </div>
               </>

@@ -1,5 +1,13 @@
 import { useState } from "react";
 
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
@@ -11,12 +19,16 @@ import {
 
 import type { BulkPost } from "./BulkPostCard";
 
+type ScheduleRandomWindow = 0 | 5 | 10 | 15;
+
 interface BulkPostsSchedulingPanelProps {
   posts: BulkPost[];
   setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>;
   scheduleIntervals: number[] | undefined;
   userTimezone: string;
   disabled?: boolean;
+  scheduleRandomWindowMinutes: ScheduleRandomWindow;
+  onScheduleRandomWindowMinutesChange: (value: ScheduleRandomWindow) => void;
 }
 
 export default function BulkPostsSchedulingPanel({
@@ -25,6 +37,8 @@ export default function BulkPostsSchedulingPanel({
   scheduleIntervals,
   userTimezone,
   disabled = false,
+  scheduleRandomWindowMinutes,
+  onScheduleRandomWindowMinutesChange,
 }: BulkPostsSchedulingPanelProps) {
   const defaultStart = formatForDateTimeLocal(
     addHours(nowInTimezone(userTimezone), 1),
@@ -113,6 +127,37 @@ export default function BulkPostsSchedulingPanel({
             </option>
           ))}
         </select>
+      </div>
+      <div className="flex min-w-[200px] flex-col gap-1">
+        <Label
+          htmlFor="bulk-schedule-random-window"
+          className="text-muted-foreground text-xs font-medium"
+        >
+          Random time (± minutes)
+        </Label>
+        <Select
+          value={String(scheduleRandomWindowMinutes)}
+          onValueChange={(v) =>
+            onScheduleRandomWindowMinutesChange(
+              Number(v) as ScheduleRandomWindow
+            )
+          }
+          disabled={disabled}
+        >
+          <SelectTrigger
+            id="bulk-schedule-random-window"
+            className="dark:bg-card border-input h-9 w-full rounded border px-3 text-sm"
+            aria-label="Post at random time within plus or minus minutes"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">Off (exact time)</SelectItem>
+            <SelectItem value="5">±5 minutes</SelectItem>
+            <SelectItem value="10">±10 minutes</SelectItem>
+            <SelectItem value="15">±15 minutes</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <button
         type="button"

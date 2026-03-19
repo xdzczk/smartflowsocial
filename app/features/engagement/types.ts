@@ -176,6 +176,8 @@ export interface ParentPost {
   publishedAt: Date | null;
   isLongform: boolean;
   stats?: EventStats;
+  /** When set, engagement UI shows this instead of "Your post" (e.g. global / off-app mentions). */
+  contextLabel?: string | null;
 }
 
 /**
