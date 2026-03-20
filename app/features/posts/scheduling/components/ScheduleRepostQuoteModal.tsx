@@ -202,12 +202,18 @@ export function ScheduleRepostQuoteModal({
     setIsSigning(false);
     setSigningError(null);
   }, []);
-  const retryLastSign = useCallback(() => {
-    const fn = pendingRetryRef.current;
+  const cancelSigningState = useCallback(() => {
     pendingRetryRef.current = null;
-    fn?.();
+    clearSigningState();
+  }, [clearSigningState]);
+  const retryLastSign = useCallback((): boolean => {
+    const fn = pendingRetryRef.current;
+    if (!fn) return false;
+    pendingRetryRef.current = null;
+    fn();
+    return true;
   }, []);
-  useComposerSignerReconnect(clearSigningState, isSigning, retryLastSign);
+  useComposerSignerReconnect(cancelSigningState, isSigning, retryLastSign);
 
   const fetcher = useFetcher<{
     success?: boolean;
@@ -451,11 +457,7 @@ export function ScheduleRepostQuoteModal({
                         size="sm"
                         className="text-muted-foreground hover:text-foreground"
                         onClick={() =>
-                          void requestNewSignerSession(() => {
-                            pendingRetryRef.current = null;
-                            setIsSigning(false);
-                            setSigningError(null);
-                          })
+                          void requestNewSignerSession(cancelSigningState)
                         }
                       >
                         Use new session
@@ -466,9 +468,7 @@ export function ScheduleRepostQuoteModal({
                         size="sm"
                         className="text-muted-foreground hover:text-foreground"
                         onClick={() => {
-                          pendingRetryRef.current = null;
-                          setIsSigning(false);
-                          setSigningError(null);
+                          cancelSigningState();
                           void tryBackgroundReconnect();
                         }}
                       >

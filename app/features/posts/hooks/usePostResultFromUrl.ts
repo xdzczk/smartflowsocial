@@ -1,4 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+
+import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 
 interface ModalPost {
   id: string;
@@ -39,6 +42,8 @@ export function usePostResultFromUrl({
   setModalLongFormPost,
   setShowPublishModal,
 }: UsePostResultFromUrlOptions) {
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     const postId = searchParams.get(paramName);
     if (!postId || !user || modalPostId || showPublishModal) return;
@@ -54,6 +59,9 @@ export function usePostResultFromUrl({
           longFormPost?: ModalPost;
         };
         if (data.post || data.longFormPost) {
+          if (paramName === "scheduled") {
+            refreshPostViews(queryClient);
+          }
           setTimeout(() => {
             setModalPost(data.post ?? null);
             setModalLongFormPost(data.longFormPost ?? null);
@@ -79,5 +87,6 @@ export function usePostResultFromUrl({
     setModalLongFormPost,
     setShowPublishModal,
     setSearchParams,
+    queryClient,
   ]);
 }

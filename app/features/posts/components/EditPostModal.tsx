@@ -82,12 +82,18 @@ export function EditPostModal({
     setIsSigningEvent(false);
     setSigningError(null);
   };
-  const retryLastSign = () => {
-    const fn = pendingRetryRef.current;
+  const cancelSigningState = () => {
     pendingRetryRef.current = null;
-    fn?.();
+    clearSigningState();
   };
-  useComposerSignerReconnect(clearSigningState, isSigningEvent, retryLastSign);
+  const retryLastSign = (): boolean => {
+    const fn = pendingRetryRef.current;
+    if (!fn) return false;
+    pendingRetryRef.current = null;
+    fn();
+    return true;
+  };
+  useComposerSignerReconnect(cancelSigningState, isSigningEvent, retryLastSign);
 
   // "Also schedule repost/quote" (only for regular posts) – hours after main post (multiple)
   const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
@@ -699,11 +705,7 @@ export function EditPostModal({
                       size="sm"
                       className="text-muted-foreground hover:text-foreground"
                       onClick={() =>
-                        void requestNewSignerSession(() => {
-                          pendingRetryRef.current = null;
-                          setIsSigningEvent(false);
-                          setSigningError(null);
-                        })
+                        void requestNewSignerSession(cancelSigningState)
                       }
                     >
                       Use new session
@@ -714,9 +716,7 @@ export function EditPostModal({
                       size="sm"
                       className="text-muted-foreground hover:text-foreground"
                       onClick={() => {
-                        pendingRetryRef.current = null;
-                        setIsSigningEvent(false);
-                        setSigningError(null);
+                        cancelSigningState();
                         void tryBackgroundReconnect();
                       }}
                     >

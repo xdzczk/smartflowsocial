@@ -113,12 +113,18 @@ export function RescheduleModal({
     setIsSigningEvent(false);
     setSigningError(null);
   };
-  const retryLastSign = () => {
-    const fn = pendingRetryRef.current;
+  const cancelSigningState = () => {
     pendingRetryRef.current = null;
-    fn?.();
+    clearSigningState();
   };
-  useComposerSignerReconnect(clearSigningState, isSigningEvent, retryLastSign);
+  const retryLastSign = (): boolean => {
+    const fn = pendingRetryRef.current;
+    if (!fn) return false;
+    pendingRetryRef.current = null;
+    fn();
+    return true;
+  };
+  useComposerSignerReconnect(cancelSigningState, isSigningEvent, retryLastSign);
 
   const FOCUSABLE_SELECTOR =
     'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';

@@ -129,6 +129,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     data: TextPostFormData;
     event: React.BaseSyntheticEvent | undefined;
   } | null>(null);
+  /** Bumped on cancel/reconnect-without-retry or new submit so stale sign completions do not submit twice. */
+  const submitGenerationRef = React.useRef(0);
 
   const runSubmit = React.useCallback(
     async (data: TextPostFormData, event?: React.BaseSyntheticEvent) => {
@@ -202,6 +204,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       }
 
       async function runThreadSubmit(): Promise<void> {
+        let generation: number | null = null;
         try {
           setSigningError(null);
           const hasUploading = threadSegments.some((s) =>
@@ -238,6 +241,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             .filter((tag) => tag.length > 0)
             .map((tag) => ["t", tag.replace("#", "")]);
 
+          generation = ++submitGenerationRef.current;
           lastSubmitForRetryRef.current = { data, event };
           setIsSigning(true);
           const { signedByIndex, failedIndices } =
@@ -247,6 +251,9 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               tagArray,
               effectiveHashtags
             );
+          if (generation !== submitGenerationRef.current) {
+            return;
+          }
           lastSubmitForRetryRef.current = null;
           setIsSigning(false);
 
@@ -279,8 +286,19 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           setPublishSubmitInFlight(true);
           fetcher.submit(threadPayload, { method: "post" });
         } catch (err) {
-          lastSubmitForRetryRef.current = null;
-          setIsSigning(false);
+          if (
+            generation != null &&
+            generation === submitGenerationRef.current
+          ) {
+            lastSubmitForRetryRef.current = null;
+            setIsSigning(false);
+          }
+          if (
+            generation != null &&
+            generation !== submitGenerationRef.current
+          ) {
+            return;
+          }
           const { handleAsyncError } =
             await import("~/lib/error-handler.client");
           handleAsyncError(
@@ -467,6 +485,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       }
 
       async function runSinglePostSubmit(): Promise<void> {
+        let generation: number | null = null;
         try {
           setSigningError(null);
           const validationError = getSinglePostValidationError();
@@ -521,6 +540,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             ? `${contentResolvedForSign}\n${effectiveHashtags}`
             : contentResolvedForSign;
 
+          generation = ++submitGenerationRef.current;
           lastSubmitForRetryRef.current = { data, event };
           setIsSigning(true);
           const { nostrEvent, signedEvent } =
@@ -530,6 +550,9 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               kind: 1,
               tags: tagArray,
             });
+          if (generation !== submitGenerationRef.current) {
+            return;
+          }
           lastSubmitForRetryRef.current = null;
           setIsSigning(false);
 
@@ -609,6 +632,12 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           setPublishSubmitInFlight(true);
           fetcher.submit(payload, { method: "post" });
         } catch (error) {
+          if (
+            generation != null &&
+            generation !== submitGenerationRef.current
+          ) {
+            return;
+          }
           const { handleAsyncError } =
             await import("~/lib/error-handler.client");
           handleAsyncError(
@@ -625,8 +654,13 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               : "Failed to sign post. Please try again."
           );
         } finally {
-          lastSubmitForRetryRef.current = null;
-          setIsSigning(false);
+          if (
+            generation != null &&
+            generation === submitGenerationRef.current
+          ) {
+            lastSubmitForRetryRef.current = null;
+            setIsSigning(false);
+          }
         }
       }
 
@@ -670,17 +704,24 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
   );
 
   const clearSigningState = React.useCallback(() => {
-    lastSubmitForRetryRef.current = null;
     setSigningError(null);
     setIsSigning(false);
     setPartialThreadState(null);
   }, []);
 
-  const retryLastSubmit = React.useCallback(() => {
+  /** Clears pending auto-retry ref (e.g. user cancelled or reconnect without resubmit). */
+  const cancelSigningState = React.useCallback(() => {
+    submitGenerationRef.current += 1;
+    lastSubmitForRetryRef.current = null;
+    clearSigningState();
+  }, [clearSigningState]);
+
+  const retryLastSubmit = React.useCallback((): boolean => {
     const pending = lastSubmitForRetryRef.current;
-    if (!pending) return;
+    if (!pending) return false;
     lastSubmitForRetryRef.current = null;
     void runSubmit(pending.data, pending.event);
+    return true;
   }, [runSubmit]);
 
   const submitThreadSuccessfulOnly = React.useCallback(async () => {
@@ -756,6 +797,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     signingError,
     setSigningError,
     clearSigningState,
+    cancelSigningState,
     retryLastSubmit,
     partialThreadState,
     submitThreadSuccessfulOnly,

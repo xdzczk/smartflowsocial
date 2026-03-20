@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.010342417">
-    <testsuite name="tests/unit/posts/useBulkPostsPageState.test.ts" timestamp="2026-03-19T05:48:22.930Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.010342417">
-        <testcase classname="tests/unit/posts/useBulkPostsPageState.test.ts" name="useBulkPostsPageState &gt; returns state and handlers" time="0.007326958">
+<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.008928375">
+    <testsuite name="tests/integration/admin-overview.route.test.ts" timestamp="2026-03-20T05:41:16.509Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.008928375">
+        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index loader &gt; returns 403 when user is not referral admin" time="0.002573959">
         </testcase>
-        <testcase classname="tests/unit/posts/useBulkPostsPageState.test.ts" name="useBulkPostsPageState &gt; state includes posts, toast, isProcessing, scheduleIntervals" time="0.001562375">
+        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index loader &gt; returns stats and payoutAvailable when admin" time="0.001823375">
         </testcase>
-        <testcase classname="tests/unit/posts/useBulkPostsPageState.test.ts" name="useBulkPostsPageState &gt; handlers include handleCaptionChange, handleDateChange, handleBulkQueueUpdate" time="0.000737459">
+        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; returns 403 when not admin" time="0.000846333">
+        </testcase>
+        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; returns 400 when OWNER_NWC missing" time="0.000325084">
+        </testcase>
+        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; returns 400 when batch confirm not checked" time="0.001158583">
+        </testcase>
+        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; runs batch payout and returns summary" time="0.000593416">
+        </testcase>
+        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; manual payout calls payReferrerWithInvoice" time="0.0008455">
         </testcase>
     </testsuite>
 </testsuites>

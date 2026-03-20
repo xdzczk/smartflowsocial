@@ -373,7 +373,7 @@ export function UnifiedComposer({
     isSigning,
     signingError,
     setSigningError,
-    clearSigningState,
+    cancelSigningState,
     retryLastSubmit,
     partialThreadState,
     submitThreadSuccessfulOnly,
@@ -413,7 +413,7 @@ export function UnifiedComposer({
     defaultTags: tags,
   });
 
-  useComposerSignerReconnect(clearSigningState, isSigning, retryLastSubmit);
+  useComposerSignerReconnect(cancelSigningState, isSigning, retryLastSubmit);
 
   const handleSubmit = form.handleSubmit((data, event) => {
     void runSubmit(data, event);
@@ -706,7 +706,7 @@ export function UnifiedComposer({
         <ComposerErrors
           isSigning={isSigning}
           signerLabel={signerLabel}
-          onCancelSigning={clearSigningState}
+          onCancelSigning={cancelSigningState}
           signingError={signingError}
           onDismissSigningError={() => {
             setSigningError(null);
@@ -719,7 +719,7 @@ export function UnifiedComposer({
         <Dialog
           open={partialThreadState !== null}
           onOpenChange={(open) => {
-            if (!open) clearSigningState();
+            if (!open) cancelSigningState();
           }}
         >
           <DialogContent className="sm:max-w-md">
@@ -737,7 +737,7 @@ export function UnifiedComposer({
               <Button
                 type="button"
                 variant="outline"
-                onClick={clearSigningState}
+                onClick={cancelSigningState}
               >
                 Cancel
               </Button>

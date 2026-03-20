@@ -408,6 +408,27 @@ METRICS_PORT=3010
 4. **Use secret management services**: AWS Secrets Manager, HashiCorp Vault, etc.
 5. **Restrict access**: Only necessary services should access secrets
 
+### Operator admin dashboard
+
+Signed-in users whose **npub** appears in `ADMIN_NPUBS` (comma-separated) can open:
+
+- **`/dashboard/admin`** — Global DB stats (users, subscriptions, post/long-form counts by
+  `currentState`, referral aggregates) and **referral payout** actions.
+- **`/dashboard/admin/referrals`** and **`/dashboard/admin/earnings`** — Existing referral tables,
+  CSV export, and retry for failed earnings.
+
+**Payouts from the UI** use the same logic as the cron job:
+
+- **`OWNER_NWC`** must be set; otherwise payout buttons stay disabled.
+- **Batch payout** processes referrers with **≥ 1000 sats** pending commission, **https/http LNURL**
+  payout destination, and valid invoice fetch — see `runReferralPayoutBatch` in the codebase
+  (mirrors `cron.referral-payout`).
+- **Manual payout** accepts a BOLT11 invoice and marks pending earnings paid up to that amount (must
+  not exceed the referrer’s pending balance).
+
+For scripted manual pay without a browser session, **`REFERRAL_MANUAL_PAYOUT_SECRET`** +
+`POST /api/referral/manual-payout` remains available.
+
 ---
 
 ## Database Setup

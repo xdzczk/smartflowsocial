@@ -131,7 +131,10 @@ export default function AdminEarningsPage() {
       <p className="text-muted-foreground text-sm">
         Total: {total}. Page {page} of {totalPages || 1}.
       </p>
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link to="/dashboard/admin" className="text-primary hover:underline">
+          Admin overview
+        </Link>
         <Link
           to="/dashboard/admin/referrals"
           className="text-primary hover:underline"

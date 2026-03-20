@@ -17,7 +17,7 @@ import {
 const PAGE_SIZE = 50;
 
 function getAdminNpubs(): string[] {
-  const raw = env.REFERRAL_ADMIN_NPUBS;
+  const raw = env.ADMIN_NPUBS;
   if (!raw) return [];
   return raw
     .split(",")

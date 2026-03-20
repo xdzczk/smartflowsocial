@@ -43,14 +43,13 @@ export default function DraftBulkResume({
     posts,
     isSubmitting,
     signingError,
-    pendingRetryRef,
     handlers,
     user,
     scheduleIntervals,
   } = useDraftBulkResumeState({ selectedDrafts, queueTypes, onCancel });
 
   useComposerSignerReconnect(
-    handlers.clearSigningState,
+    handlers.cancelSigningState,
     isSubmitting,
     handlers.retryLastSign
   );
@@ -79,10 +78,7 @@ export default function DraftBulkResume({
                 size="sm"
                 className="text-muted-foreground hover:text-foreground"
                 onClick={() =>
-                  void requestNewSignerSession(() => {
-                    pendingRetryRef.current = null;
-                    handlers.clearSigningState();
-                  })
+                  void requestNewSignerSession(handlers.cancelSigningState)
                 }
               >
                 Use new session
@@ -92,8 +88,7 @@ export default function DraftBulkResume({
                 size="sm"
                 className="text-muted-foreground hover:text-foreground"
                 onClick={() => {
-                  pendingRetryRef.current = null;
-                  handlers.clearSigningState();
+                  handlers.cancelSigningState();
                   void tryBackgroundReconnect();
                 }}
               >

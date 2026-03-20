@@ -5,11 +5,13 @@ import {
   useSearchParams,
   useNavigate,
 } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "~/features/posts/components/ErrorMessage";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
 import { useNewLongFormState } from "~/features/posts/hooks/useNewLongFormState";
+import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { HashTagPreset, QueueType } from "~/features/posts/types";
@@ -27,6 +29,7 @@ import { NewLongFormHeader } from "./NewLongFormHeader";
 export default function NewLongFormPostPage() {
   const loaderData = useLoaderData<unknown>();
   const actionData = useActionData<unknown>();
+  const queryClient = useQueryClient();
 
   const userTags =
     loaderData && typeof loaderData === "object" && "tags" in loaderData
@@ -303,6 +306,9 @@ export default function NewLongFormPostPage() {
           };
 
           if (data.post || data.longFormPost) {
+            if (scheduledPostId) {
+              refreshPostViews(queryClient);
+            }
             setTimeout(() => {
               setModalPost(data.post ?? null);
               setModalLongFormPost(data.longFormPost ?? null);
@@ -323,7 +329,13 @@ export default function NewLongFormPostPage() {
         }
       })();
     }
-  }, [searchParams, modalPostId, showPublishModal, setSearchParams]);
+  }, [
+    searchParams,
+    modalPostId,
+    showPublishModal,
+    setSearchParams,
+    queryClient,
+  ]);
 
   useEffect(() => {
     if (!publishResultToken) return;

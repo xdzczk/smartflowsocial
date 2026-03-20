@@ -78,7 +78,9 @@ interface EnvConfig {
   // Referral
   REFERRAL_LANDING_URL?: string;
   REFERRAL_MANUAL_PAYOUT_SECRET?: string;
-  REFERRAL_ADMIN_NPUBS?: string;
+
+  // Operator admin (/dashboard/admin*)
+  ADMIN_NPUBS?: string;
 
   // Web Push (VAPID)
   VAPID_PUBLIC_KEY?: string;
@@ -210,7 +212,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "STORAGE_CDN_URL",
     "REFERRAL_LANDING_URL",
     "REFERRAL_MANUAL_PAYOUT_SECRET",
-    "REFERRAL_ADMIN_NPUBS",
+    "ADMIN_NPUBS",
     "VAPID_PUBLIC_KEY",
     "VAPID_PRIVATE_KEY",
     "VAPID_SUBJECT",

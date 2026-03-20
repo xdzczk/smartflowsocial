@@ -80,10 +80,16 @@ export function useDraftBulkResumeState({
     setIsSubmitting(false);
     setSigningError(null);
   };
-  const retryLastSign = () => {
-    const fn = pendingRetryRef.current;
+  const cancelSigningState = () => {
     pendingRetryRef.current = null;
-    fn?.();
+    clearSigningState();
+  };
+  const retryLastSign = (): boolean => {
+    const fn = pendingRetryRef.current;
+    if (!fn) return false;
+    pendingRetryRef.current = null;
+    fn();
+    return true;
   };
 
   useEffect(() => {
@@ -333,6 +339,7 @@ export function useDraftBulkResumeState({
     pendingRetryRef,
     handlers: {
       clearSigningState,
+      cancelSigningState,
       retryLastSign,
       handleQueueTypeChange,
       handleDateChange,

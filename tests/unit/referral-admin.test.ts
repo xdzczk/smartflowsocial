@@ -15,7 +15,7 @@ const mockUpdateEarningToPendingRetry = vi.fn();
 
 vi.mock("~/lib/env.server", () => ({
   get env() {
-    return { REFERRAL_ADMIN_NPUBS: mockAdminNpubs };
+    return { ADMIN_NPUBS: mockAdminNpubs };
   },
 }));
 
@@ -47,7 +47,7 @@ describe("referral-admin", () => {
   });
 
   describe("isReferralAdmin", () => {
-    it("returns false when REFERRAL_ADMIN_NPUBS is empty", () => {
+    it("returns false when ADMIN_NPUBS is empty", () => {
       mockAdminNpubs = "";
       expect(isReferralAdmin("npub_any")).toBe(false);
     });

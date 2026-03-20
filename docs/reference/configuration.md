@@ -321,6 +321,34 @@ OWNER_NWC=nostr+walletconnect://npub1...?relay=wss://relay.example.com&secret=..
 
 - Accepting Lightning payments
 - Subscription management
+- **Referral payouts** (operator UI at `/dashboard/admin` and `cron.referral-payout`)
+
+---
+
+### ADMIN_NPUBS
+
+Comma-separated list of operator **npubs** allowed to access `/dashboard/admin`,
+`/dashboard/admin/referrals`, and `/dashboard/admin/earnings` (global stats, referral tables, payout
+actions).
+
+**Example:**
+
+```env
+ADMIN_NPUBS=npub1abc...,npub1def...
+```
+
+If unset or empty, no accounts have admin access.
+
+---
+
+### REFERRAL_MANUAL_PAYOUT_SECRET
+
+Optional secret for `POST /api/referral/manual-payout` (JSON body with `referrer_npub`, `bolt11`,
+`amount_sats`). When unset, the route does not require a header check (avoid in production unless
+the endpoint is otherwise protected).
+
+The signed-in operator UI at `/dashboard/admin` does **not** use this secret; it relies on
+`ADMIN_NPUBS` and session auth.
 
 ---
 

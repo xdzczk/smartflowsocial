@@ -33,9 +33,9 @@ describe("useComposerSignerReconnect", () => {
     expect(clearSigningState).toHaveBeenCalledTimes(1);
   });
 
-  it("calls onHealthyWhileSigning after clearSigningState when healthy event fires", () => {
+  it("calls onHealthyWhileSigning first and skips clear when retry returns true", () => {
     const clearSigningState = vi.fn();
-    const onHealthyWhileSigning = vi.fn();
+    const onHealthyWhileSigning = vi.fn(() => true);
     renderHook(() =>
       useComposerSignerReconnect(
         clearSigningState,
@@ -46,9 +46,25 @@ describe("useComposerSignerReconnect", () => {
 
     window.dispatchEvent(new CustomEvent("nostr-connection-healthy"));
 
-    expect(clearSigningState).toHaveBeenCalledTimes(1);
     expect(onHealthyWhileSigning).toHaveBeenCalledTimes(1);
-    expect(clearSigningState).toHaveBeenCalledBefore(onHealthyWhileSigning);
+    expect(clearSigningState).not.toHaveBeenCalled();
+  });
+
+  it("calls clearSigningState when onHealthyWhileSigning returns false", () => {
+    const clearSigningState = vi.fn();
+    const onHealthyWhileSigning = vi.fn(() => false);
+    renderHook(() =>
+      useComposerSignerReconnect(
+        clearSigningState,
+        false,
+        onHealthyWhileSigning
+      )
+    );
+
+    window.dispatchEvent(new CustomEvent("nostr-connection-healthy"));
+
+    expect(onHealthyWhileSigning).toHaveBeenCalledTimes(1);
+    expect(clearSigningState).toHaveBeenCalledTimes(1);
   });
 
   it("does not run reconnect interval when isSigning is false", () => {

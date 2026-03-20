@@ -45,6 +45,8 @@ import type {
   PrimalEvent,
 } from "../types";
 
+import { fetchKind1EventsMentioningPubkeyViaRelays } from "./relay-mentions-fallback.server";
+
 /** Primal `get_notifications` payload size (global mentions + quotes). */
 const PRIMAL_NOTIFICATIONS_LIMIT = 200;
 
@@ -839,8 +841,17 @@ async function loadPrimalSupplementalEngagementData(params: {
   let groupedQuoteReposts: GroupedNotification[] = [];
   let globalMentionNotifications: NotificationMention[] = [];
 
+  let notificationsData: unknown = [];
   try {
-    const notificationsData = await notificationsPromise;
+    notificationsData = await notificationsPromise;
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message:
+        "Primal get_notifications request failed (relay fallback may be used)",
+    });
+  }
+
+  try {
     const rawQuoteReposts = extractQuoteRepostEventsFromPrimal(
       notificationsData,
       userPubkeyHex
@@ -859,6 +870,42 @@ async function loadPrimalSupplementalEngagementData(params: {
       userPubkeyHex,
       excludeIds
     );
+
+    const primalNotificationRows =
+      flattenPrimalNotificationItems(notificationsData);
+    const relayFallbackEnabled =
+      process.env["MENTIONS_RELAY_FALLBACK_ENABLED"] !== "false";
+    if (
+      relayFallbackEnabled &&
+      globalMentionNotifications.length === 0 &&
+      primalNotificationRows.length === 0
+    ) {
+      const relayEvents = await fetchKind1EventsMentioningPubkeyViaRelays(
+        userPubkeyHex,
+        { userRelays: user.userRelays }
+      );
+      const userLower = userPubkeyHex.toLowerCase();
+      const fromRelay: NotificationMention[] = [];
+      for (const e of relayEvents) {
+        if (e.pubkey.toLowerCase() === userLower) continue;
+        if (excludeIds.has(e.id)) continue;
+        if (!doesEventMentionUser(e.content, e.tags, userPubkeyHex)) continue;
+        fromRelay.push({
+          type: "mention",
+          id: e.id,
+          eventId: e.id,
+          content: e.content,
+          createdAt: e.created_at,
+          pubkey: e.pubkey,
+          originalEventId: inferThreadRootEventIdFromTags(
+            e.tags as NostrTag[],
+            e.id
+          ),
+        });
+      }
+      fromRelay.sort((a, b) => b.createdAt - a.createdAt);
+      globalMentionNotifications = fromRelay;
+    }
 
     if (user.filterMuted && mutedNpubs.length > 0) {
       globalMentionNotifications = filterMutedNotifications(

@@ -203,12 +203,18 @@ export default function PostConfirmation({
     setIsSigning(false);
     setSigningError(null);
   };
-  const retryLastSign = () => {
-    const fn = pendingRetryRef.current;
+  const cancelSigningState = () => {
     pendingRetryRef.current = null;
-    fn?.();
+    clearSigningState();
   };
-  useComposerSignerReconnect(clearSigningState, isSigning, retryLastSign);
+  const retryLastSign = (): boolean => {
+    const fn = pendingRetryRef.current;
+    if (!fn) return false;
+    pendingRetryRef.current = null;
+    fn();
+    return true;
+  };
+  useComposerSignerReconnect(cancelSigningState, isSigning, retryLastSign);
 
   /** Build FormData from signed entries (by original index) and submit */
   const submitSignedEntries = useCallback(
@@ -556,13 +562,7 @@ export default function PostConfirmation({
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground hover:text-foreground"
-                onClick={() =>
-                  void requestNewSignerSession(() => {
-                    pendingRetryRef.current = null;
-                    setIsSigning(false);
-                    setSigningError(null);
-                  })
-                }
+                onClick={() => void requestNewSignerSession(cancelSigningState)}
               >
                 Use new session
               </Button>
@@ -572,9 +572,7 @@ export default function PostConfirmation({
                 size="sm"
                 className="text-muted-foreground hover:text-foreground"
                 onClick={() => {
-                  pendingRetryRef.current = null;
-                  setIsSigning(false);
-                  setSigningError(null);
+                  cancelSigningState();
                   void tryBackgroundReconnect();
                 }}
               >

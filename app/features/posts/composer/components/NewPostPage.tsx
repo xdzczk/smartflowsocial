@@ -1,7 +1,9 @@
 import { useLoaderData, useSearchParams, useNavigate } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { UnifiedComposer } from "~/features/posts/composer";
+import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import {
   convertJsonValueToScheduleConfig,
   type HashTagPreset,
@@ -182,6 +184,7 @@ export default function NewPostPage() {
   const publishResultToken =
     searchParams.get("published") ?? searchParams.get("scheduled");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
   const [modalPost, setModalPost] = useState<{
@@ -279,6 +282,9 @@ export default function NewPostPage() {
           };
 
           if (data.post || data.longFormPost) {
+            if (scheduledPostId) {
+              refreshPostViews(queryClient);
+            }
             setTimeout(() => {
               setModalPost(data.post ?? null);
               setModalLongFormPost(data.longFormPost ?? null);
@@ -299,7 +305,13 @@ export default function NewPostPage() {
         }
       })();
     }
-  }, [searchParams, modalPostId, showPublishModal, setSearchParams]);
+  }, [
+    searchParams,
+    modalPostId,
+    showPublishModal,
+    setSearchParams,
+    queryClient,
+  ]);
 
   useEffect(() => {
     if (!publishResultToken) return;

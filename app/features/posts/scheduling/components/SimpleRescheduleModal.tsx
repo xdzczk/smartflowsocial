@@ -110,12 +110,18 @@ export function SimpleRescheduleModal({
     setIsSigningEvent(false);
     setSigningError(null);
   };
-  const retryLastSign = () => {
-    const data = lastRescheduleDataRef.current;
+  const cancelSigningState = () => {
     lastRescheduleDataRef.current = null;
-    if (data) void runRescheduleWithData(data);
+    clearSigningState();
   };
-  useComposerSignerReconnect(clearSigningState, isSigningEvent, retryLastSign);
+  const retryLastSign = (): boolean => {
+    const data = lastRescheduleDataRef.current;
+    if (!data) return false;
+    lastRescheduleDataRef.current = null;
+    void runRescheduleWithData(data);
+    return true;
+  };
+  useComposerSignerReconnect(cancelSigningState, isSigningEvent, retryLastSign);
 
   // Determine if this is a longform post
   const isLongform = "title" in post;
@@ -481,11 +487,7 @@ export function SimpleRescheduleModal({
                     size="sm"
                     className="text-muted-foreground hover:text-foreground"
                     onClick={() =>
-                      void requestNewSignerSession(() => {
-                        lastRescheduleDataRef.current = null;
-                        setIsSigningEvent(false);
-                        setSigningError(null);
-                      })
+                      void requestNewSignerSession(cancelSigningState)
                     }
                   >
                     Use new session
@@ -496,9 +498,7 @@ export function SimpleRescheduleModal({
                     size="sm"
                     className="text-muted-foreground hover:text-foreground"
                     onClick={() => {
-                      lastRescheduleDataRef.current = null;
-                      setIsSigningEvent(false);
-                      setSigningError(null);
+                      cancelSigningState();
                       void tryBackgroundReconnect();
                     }}
                   >
