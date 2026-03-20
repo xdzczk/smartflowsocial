@@ -3,6 +3,7 @@
  */
 
 import { env } from "~/lib/env.server";
+import { convertToHex } from "~/lib/nostr-conversion";
 
 import { ReferralEarningStatus } from "./data/referral-prisma-types.server";
 import {
@@ -16,7 +17,7 @@ import {
 
 const PAGE_SIZE = 50;
 
-/** Trim, lowercase, strip zero-width / BOM (copy/paste). Bech32 npubs are compared case-insensitively. */
+/** Trim, lowercase, strip zero-width / BOM (copy/paste). */
 function normalizeNpubForCompare(value: string): string {
   return value
     .trim()
@@ -24,20 +25,49 @@ function normalizeNpubForCompare(value: string): string {
     .replace(/[\u200B-\u200D\uFEFF]/g, "");
 }
 
-function getAdminNpubs(): string[] {
+function stripInvisible(value: string): string {
+  return value.replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
+}
+
+/**
+ * Session `user.npub` is stored as 64-char hex (Nostr auth v2). Operators often paste `npub1…`
+ * from wallets into ADMIN_NPUBS — normalize both to lowercase hex for comparison.
+ */
+function tryPubkeyLowerHex(value: string): string | null {
+  const t = stripInvisible(value);
+  if (!t) return null;
+  const lower = t.toLowerCase();
+  if (/^[0-9a-f]{64}$/.test(lower)) return lower;
+  if (lower.startsWith("npub")) {
+    const hex = convertToHex(t);
+    return hex ? hex.toLowerCase() : null;
+  }
+  return null;
+}
+
+function getAdminNpubEntries(): string[] {
   const raw = env.ADMIN_NPUBS;
   if (!raw) return [];
   return raw
     .split(",")
-    .map((s) => normalizeNpubForCompare(s))
+    .map((s) => stripInvisible(s))
     .filter(Boolean);
 }
 
 export function isReferralAdmin(npub: string): boolean {
-  const admins = getAdminNpubs();
-  if (admins.length === 0) return false;
+  const entries = getAdminNpubEntries();
+  if (entries.length === 0) return false;
+
+  const userHex = tryPubkeyLowerHex(npub);
+  if (userHex) {
+    return entries.some((entry) => {
+      const h = tryPubkeyLowerHex(entry);
+      return h !== null && h === userHex;
+    });
+  }
+
   const key = normalizeNpubForCompare(npub);
-  return admins.includes(key);
+  return entries.some((entry) => normalizeNpubForCompare(entry) === key);
 }
 
 export async function getReferralsAdmin(options: {

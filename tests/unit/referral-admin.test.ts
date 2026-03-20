@@ -39,6 +39,7 @@ import {
   earningsToCsv,
   retryFailedPayout,
 } from "~/features/referral/referral-admin.server";
+import { convertHexToNpub } from "~/lib/nostr-conversion";
 
 describe("referral-admin", () => {
   beforeEach(() => {
@@ -70,6 +71,20 @@ describe("referral-admin", () => {
     it("ignores zero-width characters in user npub", () => {
       mockAdminNpubs = "npub_x";
       expect(isReferralAdmin("npub_\u200Bx")).toBe(true);
+    });
+
+    it("matches npub1 in ADMIN_NPUBS when session user.npub is hex (Nostr auth v2)", () => {
+      const hex =
+        "3bf0c63fcb93463407af97a5ee64fa883d107ef9e558472c4eb9aaaefa459da";
+      mockAdminNpubs = convertHexToNpub(hex);
+      expect(isReferralAdmin(hex)).toBe(true);
+    });
+
+    it("matches hex in ADMIN_NPUBS when comparing to npub session value", () => {
+      const hex =
+        "3bf0c63fcb93463407af97a5ee64fa883d107ef9e558472c4eb9aaaefa459da";
+      mockAdminNpubs = hex;
+      expect(isReferralAdmin(convertHexToNpub(hex))).toBe(true);
     });
   });
 

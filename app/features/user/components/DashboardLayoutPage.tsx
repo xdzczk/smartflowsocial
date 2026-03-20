@@ -1,6 +1,7 @@
 import {
   Outlet,
   useLoaderData,
+  useRouteLoaderData,
   Link,
   Form,
   useLocation,
@@ -51,12 +52,15 @@ function isCalendarPath(pathname: string): boolean {
 
 export function DashboardLayoutPage(): ReactNode {
   const location = useLocation();
-  const {
-    currentSubscription,
-    pendingParentUsers,
-    referredBy,
-    isOperatorAdmin,
-  } = useLoaderData<typeof dashboardLoader>();
+  const data = useLoaderData<typeof dashboardLoader>();
+  const layoutData =
+    useRouteLoaderData<typeof dashboardLoader>("routes/dashboard");
+  const { currentSubscription, pendingParentUsers, referredBy } = data;
+  /** Prefer parent layout loader so nested routes still get the flag. */
+  const isOperatorAdmin = Boolean(
+    layoutData?.isOperatorAdmin ??
+    (data as { isOperatorAdmin?: boolean }).isOperatorAdmin
+  );
   const planType = getUserPlanType(currentSubscription ?? null);
   const isFreePlan = planType === "free";
   const isDashboardIndex = isDashboardIndexPath(location.pathname);

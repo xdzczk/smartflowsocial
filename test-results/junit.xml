@@ -1,29 +1,33 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="12" failures="0" errors="0" time="0.004787334">
-    <testsuite name="tests/unit/referral-admin.test.ts" timestamp="2026-03-20T05:54:00.452Z" hostname="Ivans-MacBook-Pro.local" tests="12" failures="0" errors="0" skipped="0" time="0.004787334">
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; returns false when ADMIN_NPUBS is empty" time="0.000769167">
+<testsuites name="vitest tests" tests="14" failures="0" errors="0" time="0.005317583">
+    <testsuite name="tests/unit/referral-admin.test.ts" timestamp="2026-03-20T06:09:11.985Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.005317583">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; returns false when ADMIN_NPUBS is empty" time="0.000749792">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; returns true when npub is in comma-separated list" time="0.000142416">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; returns true when npub is in comma-separated list" time="0.000348459">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; returns false when npub is not in list" time="0.000103625">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; returns false when npub is not in list" time="0.000143416">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; matches case-insensitively (bech32 is lowercase in DB but env may vary)" time="0.000088791">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; matches case-insensitively (bech32 is lowercase in DB but env may vary)" time="0.000139958">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; ignores zero-width characters in user npub" time="0.000139666">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; ignores zero-width characters in user npub" time="0.000119958">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; getReferralsAdmin &gt; returns referrals and total with pagination" time="0.00064025">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; matches npub1 in ADMIN_NPUBS when session user.npub is hex (Nostr auth v2)" time="0.000123708">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; getEarningsAdmin &gt; filters by status when option is pending/paid/failed" time="0.001193541">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; matches hex in ADMIN_NPUBS when comparing to npub session value" time="0.000067625">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; referralsToCsv &gt; returns header and escaped rows" time="0.00019725">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; getReferralsAdmin &gt; returns referrals and total with pagination" time="0.000633792">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; earningsToCsv &gt; returns header and earnings rows" time="0.000134375">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; getEarningsAdmin &gt; filters by status when option is pending/paid/failed" time="0.001305875">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; retryFailedPayout &gt; returns error when earning not found" time="0.000244875">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; referralsToCsv &gt; returns header and escaped rows" time="0.000237541">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; retryFailedPayout &gt; returns error when earning is not FAILED" time="0.000114167">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; earningsToCsv &gt; returns header and earnings rows" time="0.000121542">
         </testcase>
-        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; retryFailedPayout &gt; calls updateEarningToPendingRetry and returns success when earning is FAILED" time="0.000130958">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; retryFailedPayout &gt; returns error when earning not found" time="0.000203792">
+        </testcase>
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; retryFailedPayout &gt; returns error when earning is not FAILED" time="0.000104875">
+        </testcase>
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; retryFailedPayout &gt; calls updateEarningToPendingRetry and returns success when earning is FAILED" time="0.000126709">
         </testcase>
     </testsuite>
 </testsuites>

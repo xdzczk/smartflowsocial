@@ -339,10 +339,10 @@ ADMIN_NPUBS=npub1abc...,npub1def...
 
 If unset or empty, no accounts have admin access.
 
-Comparison is **case-insensitive**, and stray zero-width characters are stripped. The string must
-still match your account’s npub **exactly** otherwise (e.g. do not use a hex pubkey if the app
-stores `npub1…`). Watch **capital `I` vs lowercase `l`** when pasting—an `I` in the secret will not
-match a bech32 **`l`** in the database.
+Comparison accepts **either** bech32 `npub1…` **or** 64-character **hex** pubkeys, and normalizes
+them to the same form. That matches how login works: Nostr auth v2 stores **`User.npub` as hex**,
+while wallets usually show **`npub1…`** — you can paste either into `ADMIN_NPUBS`. Stray zero-width
+characters are stripped. Watch **capital `I` vs lowercase `l`** when pasting bech32.
 
 ---
 
