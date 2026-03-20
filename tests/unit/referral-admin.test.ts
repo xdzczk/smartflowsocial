@@ -61,6 +61,16 @@ describe("referral-admin", () => {
       mockAdminNpubs = "npub_a,npub_b";
       expect(isReferralAdmin("npub_other")).toBe(false);
     });
+
+    it("matches case-insensitively (bech32 is lowercase in DB but env may vary)", () => {
+      mockAdminNpubs = "npub1abcDEF";
+      expect(isReferralAdmin("npub1abcdef")).toBe(true);
+    });
+
+    it("ignores zero-width characters in user npub", () => {
+      mockAdminNpubs = "npub_x";
+      expect(isReferralAdmin("npub_\u200Bx")).toBe(true);
+    });
   });
 
   describe("getReferralsAdmin", () => {

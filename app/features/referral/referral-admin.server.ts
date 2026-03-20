@@ -16,19 +16,28 @@ import {
 
 const PAGE_SIZE = 50;
 
+/** Trim, lowercase, strip zero-width / BOM (copy/paste). Bech32 npubs are compared case-insensitively. */
+function normalizeNpubForCompare(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\u200B-\u200D\uFEFF]/g, "");
+}
+
 function getAdminNpubs(): string[] {
   const raw = env.ADMIN_NPUBS;
   if (!raw) return [];
   return raw
     .split(",")
-    .map((s) => s.trim())
+    .map((s) => normalizeNpubForCompare(s))
     .filter(Boolean);
 }
 
 export function isReferralAdmin(npub: string): boolean {
   const admins = getAdminNpubs();
   if (admins.length === 0) return false;
-  return admins.includes(npub);
+  const key = normalizeNpubForCompare(npub);
+  return admins.includes(key);
 }
 
 export async function getReferralsAdmin(options: {

@@ -51,8 +51,12 @@ function isCalendarPath(pathname: string): boolean {
 
 export function DashboardLayoutPage(): ReactNode {
   const location = useLocation();
-  const { currentSubscription, pendingParentUsers, referredBy } =
-    useLoaderData<typeof dashboardLoader>();
+  const {
+    currentSubscription,
+    pendingParentUsers,
+    referredBy,
+    isOperatorAdmin,
+  } = useLoaderData<typeof dashboardLoader>();
   const planType = getUserPlanType(currentSubscription ?? null);
   const isFreePlan = planType === "free";
   const isDashboardIndex = isDashboardIndexPath(location.pathname);
@@ -96,6 +100,7 @@ export function DashboardLayoutPage(): ReactNode {
           onDesktopSidebarToggle={handleDesktopSidebarToggle}
           mobileSidebarOpen={mobileSidebarOpen}
           onMobileSidebarOpenChange={setMobileSidebarOpen}
+          isOperatorAdmin={isOperatorAdmin}
         />
 
         <main

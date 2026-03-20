@@ -16,6 +16,7 @@ import {
   Plus,
   Rss,
   Settings,
+  Shield,
   X,
 } from "lucide-react";
 import { useCallback, useState, useEffect } from "react";
@@ -200,6 +201,49 @@ function NavigationItem({
           ) : null}
         </>
       ) : null}
+    </Link>
+  );
+}
+
+/** Operator-only link; bypasses plan/feature gating (see ADMIN_NPUBS). */
+function OperatorAdminNavItem({
+  pathname,
+  collapsed,
+  onMobileNavActiveClick,
+}: {
+  pathname: string;
+  collapsed: boolean;
+  onMobileNavActiveClick: (() => void) | undefined;
+}) {
+  const isActive = pathname.startsWith("/dashboard/admin");
+  const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-ring ${
+    collapsed ? "justify-center px-0 py-2" : ""
+  } ${
+    isActive
+      ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
+      : "text-muted-foreground hover:bg-muted hover:text-foreground active:border-border"
+  }`;
+  const iconSpanClass = isActive
+    ? "text-foreground dark:text-primary"
+    : "text-foreground/70 group-hover:text-foreground";
+
+  return (
+    <Link
+      prefetch="intent"
+      to="/dashboard/admin"
+      className={linkClass}
+      title="Operator admin"
+      onClick={(e) => {
+        if (isActive && onMobileNavActiveClick) {
+          e.preventDefault();
+          onMobileNavActiveClick();
+        }
+      }}
+    >
+      <span className={`flex flex-none items-center ${iconSpanClass}`}>
+        <Shield className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+      </span>
+      {!collapsed ? <span className="grow py-2">Admin</span> : null}
     </Link>
   );
 }
@@ -425,6 +469,8 @@ interface HeaderProps {
   /** When provided, mobile sidebar is controlled by parent (e.g. to disable pointer-events on page content) */
   mobileSidebarOpen?: boolean;
   onMobileSidebarOpenChange?: (open: boolean) => void;
+  /** True when signed-in npub is listed in ADMIN_NPUBS */
+  isOperatorAdmin?: boolean;
 }
 
 export default function Header({
@@ -432,6 +478,7 @@ export default function Header({
   onDesktopSidebarToggle,
   mobileSidebarOpen: controlledMobileOpen,
   onMobileSidebarOpenChange,
+  isOperatorAdmin = false,
 }: HeaderProps) {
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
   const mobileSidebarOpen =
@@ -519,6 +566,15 @@ export default function Header({
         <div
           className={`mt-auto transition-[padding] duration-300 ${sidebarPadding}`}
         >
+          {isOperatorAdmin ? (
+            <div className="mb-1">
+              <OperatorAdminNavItem
+                pathname={location.pathname}
+                collapsed={!isDesktopExpanded}
+                onMobileNavActiveClick={onMobileNavActiveClick}
+              />
+            </div>
+          ) : null}
           <NavigationItem
             to="/dashboard/settings"
             feature="settings"

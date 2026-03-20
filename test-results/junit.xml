@@ -1,19 +1,29 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.008928375">
-    <testsuite name="tests/integration/admin-overview.route.test.ts" timestamp="2026-03-20T05:41:16.509Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.008928375">
-        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index loader &gt; returns 403 when user is not referral admin" time="0.002573959">
+<testsuites name="vitest tests" tests="12" failures="0" errors="0" time="0.004787334">
+    <testsuite name="tests/unit/referral-admin.test.ts" timestamp="2026-03-20T05:54:00.452Z" hostname="Ivans-MacBook-Pro.local" tests="12" failures="0" errors="0" skipped="0" time="0.004787334">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; returns false when ADMIN_NPUBS is empty" time="0.000769167">
         </testcase>
-        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index loader &gt; returns stats and payoutAvailable when admin" time="0.001823375">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; returns true when npub is in comma-separated list" time="0.000142416">
         </testcase>
-        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; returns 403 when not admin" time="0.000846333">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; returns false when npub is not in list" time="0.000103625">
         </testcase>
-        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; returns 400 when OWNER_NWC missing" time="0.000325084">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; matches case-insensitively (bech32 is lowercase in DB but env may vary)" time="0.000088791">
         </testcase>
-        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; returns 400 when batch confirm not checked" time="0.001158583">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; isReferralAdmin &gt; ignores zero-width characters in user npub" time="0.000139666">
         </testcase>
-        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; runs batch payout and returns summary" time="0.000593416">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; getReferralsAdmin &gt; returns referrals and total with pagination" time="0.00064025">
         </testcase>
-        <testcase classname="tests/integration/admin-overview.route.test.ts" name="dashboard.admin._index action &gt; manual payout calls payReferrerWithInvoice" time="0.0008455">
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; getEarningsAdmin &gt; filters by status when option is pending/paid/failed" time="0.001193541">
+        </testcase>
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; referralsToCsv &gt; returns header and escaped rows" time="0.00019725">
+        </testcase>
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; earningsToCsv &gt; returns header and earnings rows" time="0.000134375">
+        </testcase>
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; retryFailedPayout &gt; returns error when earning not found" time="0.000244875">
+        </testcase>
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; retryFailedPayout &gt; returns error when earning is not FAILED" time="0.000114167">
+        </testcase>
+        <testcase classname="tests/unit/referral-admin.test.ts" name="referral-admin &gt; retryFailedPayout &gt; calls updateEarningToPendingRetry and returns success when earning is FAILED" time="0.000130958">
         </testcase>
     </testsuite>
 </testsuites>

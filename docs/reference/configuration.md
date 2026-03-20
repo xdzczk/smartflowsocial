@@ -339,6 +339,11 @@ ADMIN_NPUBS=npub1abc...,npub1def...
 
 If unset or empty, no accounts have admin access.
 
+Comparison is **case-insensitive**, and stray zero-width characters are stripped. The string must
+still match your account’s npub **exactly** otherwise (e.g. do not use a hex pubkey if the app
+stores `npub1…`). Watch **capital `I` vs lowercase `l`** when pasting—an `I` in the secret will not
+match a bech32 **`l`** in the database.
+
 ---
 
 ### REFERRAL_MANUAL_PAYOUT_SECRET

@@ -10,6 +10,7 @@ import {
   ensureUserHasFreePlan,
 } from "~/features/payments";
 import { getReferredByForNpub } from "~/features/referral/get-referred-by.server";
+import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import {
   DashboardLayoutPage,
   loadDashboardData,
@@ -42,6 +43,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     currentSubscription: subscriptionData.currentSubscription,
     ...dashboardData,
     referredBy: referredBy ?? undefined,
+    isOperatorAdmin: isReferralAdmin(user.npub),
   });
 };
 
