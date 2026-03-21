@@ -66,16 +66,14 @@ export function ProductFeedbackSidebar({
 
   const dashLoader =
     useRouteLoaderData<typeof dashboardLoader>("routes/dashboard");
-  if (!dashLoader?.feedbackInboxPubkeyHex) {
-    return null;
-  }
-  const inboxHex = dashLoader.feedbackInboxPubkeyHex;
-  const userNpub = dashLoader.user.npub;
-  const userId = dashLoader.userId;
-  const nostrDmNip17Enabled = Boolean(dashLoader.nostrDmNip17Enabled);
-  const feedbackInboxKind10050Relays = dashLoader.feedbackInboxKind10050Relays;
+  const inboxHex = dashLoader?.feedbackInboxPubkeyHex ?? null;
+  const userNpub = dashLoader?.user.npub ?? "";
+  const userId = dashLoader?.userId ?? "";
+  const nostrDmNip17Enabled = Boolean(dashLoader?.nostrDmNip17Enabled);
+  const feedbackInboxKind10050Relays =
+    dashLoader?.feedbackInboxKind10050Relays ?? [];
 
-  const triggerClass = `group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+  const triggerClass = `group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
     collapsed ? "justify-center px-0 py-2" : ""
   }`;
 
@@ -174,7 +172,7 @@ export function ProductFeedbackSidebar({
       <button
         type="button"
         className={triggerClass}
-        title={collapsed ? "Report a bug or suggest a feature" : undefined}
+        title="Report a bug or suggest a feature"
         onClick={() => {
           setOpen(true);
           onOpenMobileSidebarClose?.();
@@ -188,28 +186,53 @@ export function ProductFeedbackSidebar({
           />
         </span>
         {!collapsed ? (
-          <span className="grow py-2 text-left">Feedback</span>
+          <span className="text-foreground/80 group-hover:text-foreground grow py-1.5 text-left leading-snug">
+            <span className="block">Report a bug</span>
+            <span className="text-muted-foreground block font-normal">
+              Suggest a feature
+            </span>
+          </span>
         ) : null}
       </button>
 
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Report a bug or suggest a feature</DialogTitle>
-          <DialogDescription>
-            Encryption and signing use your active Nostr identity: a browser
-            extension or a remote signer. Remote signers must implement NIP-46
-            nip04_encrypt for feedback. Optional NIP-17 gift wraps need NIP-44
-            (nip44_encrypt on the remote signer or optional NIP-44 in the
-            extension) when the inbox publishes kind 10050 and the server
-            enables NIP-17.
-          </DialogDescription>
+          {inboxHex ? (
+            <DialogDescription>
+              Encryption and signing use your active Nostr identity: a browser
+              extension or a remote signer. Remote signers must implement NIP-46
+              nip04_encrypt for feedback. Optional NIP-17 gift wraps need NIP-44
+              (nip44_encrypt on the remote signer or optional NIP-44 in the
+              extension) when the inbox publishes kind 10050 and the server
+              enables NIP-17.
+            </DialogDescription>
+          ) : (
+            <DialogDescription>
+              Product feedback is not enabled on this deployment yet. If you run
+              your own instance, ask the operator to configure the feedback
+              inbox.
+            </DialogDescription>
+          )}
         </DialogHeader>
+
+        {!inboxHex ? (
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        ) : null}
 
         <form
           ref={formRef}
           key={formNonce}
           onSubmit={handleFormSubmit}
-          className="grid gap-4"
+          className={`grid gap-4 ${!inboxHex ? "hidden" : ""}`}
         >
           <input type="hidden" name="pagePath" value={location.pathname} />
 

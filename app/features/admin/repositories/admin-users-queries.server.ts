@@ -13,6 +13,8 @@ export interface AdminUserRow {
   id: string;
   npub: string;
   displayName: string | null;
+  /** Nostr profile `picture` URL when present */
+  pictureUrl: string | null;
   isEnabled: boolean;
   createdAt: string;
   planLabel: string;
@@ -34,10 +36,35 @@ export interface AdminUsersPageDTO {
 
 const PAGE_SIZE = 30;
 
-function displayNameFromProfile(nostrProfile: unknown): string | null {
-  if (!nostrProfile || typeof nostrProfile !== "object") return null;
-  const d = nostrProfile as { displayName?: string; name?: string };
-  return d.displayName ?? d.name ?? null;
+function profileBitsFromNostr(nostrProfile: unknown): {
+  displayName: string | null;
+  pictureUrl: string | null;
+} {
+  if (!nostrProfile) {
+    return { displayName: null, pictureUrl: null };
+  }
+  try {
+    let o: Record<string, unknown>;
+    if (typeof nostrProfile === "string") {
+      o = JSON.parse(nostrProfile) as Record<string, unknown>;
+    } else if (typeof nostrProfile === "object") {
+      o = nostrProfile as Record<string, unknown>;
+    } else {
+      return { displayName: null, pictureUrl: null };
+    }
+    const nameRaw =
+      (typeof o["displayName"] === "string" && o["displayName"]) ||
+      (typeof o["display_name"] === "string" && o["display_name"]) ||
+      (typeof o["name"] === "string" && o["name"]) ||
+      null;
+    const displayName = nameRaw?.trim() ? nameRaw.trim() : null;
+    const picture = o["picture"];
+    const pictureUrl =
+      typeof picture === "string" && picture.trim() ? picture.trim() : null;
+    return { displayName, pictureUrl };
+  } catch {
+    return { displayName: null, pictureUrl: null };
+  }
 }
 
 export async function getAdminUsersPageData(options: {
@@ -176,6 +203,7 @@ export async function getAdminUsersPageData(options: {
   }
 
   const users: AdminUserRow[] = usersWithScheduled.map((u) => {
+    const bits = profileBitsFromNostr(u.nostrProfile);
     const sub = u.Subscription;
     const planLabel =
       sub?.status === SubscriptionStatus.ACTIVE
@@ -186,7 +214,8 @@ export async function getAdminUsersPageData(options: {
     return {
       id: u.id,
       npub: u.npub,
-      displayName: displayNameFromProfile(u.nostrProfile),
+      displayName: bits.displayName,
+      pictureUrl: bits.pictureUrl,
       isEnabled: u.isEnabled,
       createdAt: u.createdAt.toISOString(),
       planLabel,

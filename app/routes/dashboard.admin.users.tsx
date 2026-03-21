@@ -2,6 +2,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useState } from "react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { AdminPageHeader } from "~/features/admin";
 import { getAdminUsersPageData } from "~/features/admin/repositories/admin-users-queries.server";
@@ -40,6 +41,18 @@ export default function AdminUsersPage() {
 
   const selected = d.users.find((u) => u.id === selectedId) ?? null;
   const totalPages = Math.ceil(d.total / d.pageSize);
+
+  function avatarFallbackLabel(displayName: string | null, npub: string) {
+    const n = displayName?.trim();
+    if (n) {
+      const parts = n.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        return `${parts[0]!.slice(0, 1)}${parts[1]!.slice(0, 1)}`.toUpperCase();
+      }
+      return n.slice(0, 2).toUpperCase();
+    }
+    return npub.slice(5, 7).toUpperCase();
+  }
 
   function setFilter(next: string) {
     const p = new URLSearchParams(searchParams);
@@ -105,15 +118,31 @@ export default function AdminUsersPage() {
                   }
                 >
                   <td className="p-2">
-                    <p className="font-medium">
-                      {u.displayName ?? "—"}{" "}
-                      <span className="text-muted-foreground text-xs">
-                        {u.isEnabled ? "" : "(disabled)"}
-                      </span>
-                    </p>
-                    <p className="text-muted-foreground font-mono text-[10px] break-all">
-                      {u.npub}
-                    </p>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Avatar className="h-9 w-9 shrink-0">
+                        {u.pictureUrl ? (
+                          <AvatarImage
+                            src={u.pictureUrl}
+                            alt=""
+                            loading="lazy"
+                          />
+                        ) : null}
+                        <AvatarFallback className="text-xs">
+                          {avatarFallbackLabel(u.displayName, u.npub)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-medium">
+                          {u.displayName ?? "—"}{" "}
+                          <span className="text-muted-foreground text-xs font-normal">
+                            {u.isEnabled ? "" : "(disabled)"}
+                          </span>
+                        </p>
+                        <p className="text-muted-foreground font-mono text-[10px] break-all">
+                          {u.npub}
+                        </p>
+                      </div>
+                    </div>
                   </td>
                   <td className="p-2">{u.planLabel}</td>
                   <td className="p-2 text-center">
@@ -139,12 +168,30 @@ export default function AdminUsersPage() {
 
         {selected ? (
           <div className="border-border bg-muted/20 rounded-lg border p-4 text-sm">
-            <h3 className="font-semibold">User detail</h3>
+            <div className="flex flex-wrap items-center gap-3">
+              <Avatar className="h-12 w-12 shrink-0">
+                {selected.pictureUrl ? (
+                  <AvatarImage
+                    src={selected.pictureUrl}
+                    alt=""
+                    loading="lazy"
+                  />
+                ) : null}
+                <AvatarFallback>
+                  {avatarFallbackLabel(selected.displayName, selected.npub)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="font-semibold">{selected.displayName ?? "—"}</h3>
+                <p className="text-muted-foreground font-mono text-xs break-all">
+                  {selected.npub}
+                </p>
+              </div>
+            </div>
+            <h4 className="mt-4 font-medium">Details</h4>
             <dl className="mt-2 grid gap-1 sm:grid-cols-2">
               <dt className="text-muted-foreground">ID</dt>
               <dd className="font-mono text-xs">{selected.id}</dd>
-              <dt className="text-muted-foreground">npub</dt>
-              <dd className="font-mono text-xs break-all">{selected.npub}</dd>
               <dt className="text-muted-foreground">Signup</dt>
               <dd>{selected.createdAt}</dd>
               <dt className="text-muted-foreground">Published / scheduled</dt>
