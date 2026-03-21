@@ -1,75 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="9" failures="0" errors="0" time="0.036836334">
-    <testsuite name="tests/integration/api-publish.test.ts" timestamp="2026-03-21T13:43:40.659Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.036836334">
-        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Successful Requests &gt; should publish event via feature service" time="0.011214084">
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.01658525">
+    <testsuite name="tests/unit/proof-card-build.test.ts" timestamp="2026-03-21T16:35:10.065Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.01658525">
+        <testcase classname="tests/unit/proof-card-build.test.ts" name="buildProofCardLines &gt; hybrid milestone omits zero referral sats" time="0.01510325">
         </testcase>
-        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Successful Requests &gt; should allow missing relays (defaults handled by publisher)" time="0.003542209">
+        <testcase classname="tests/unit/proof-card-build.test.ts" name="buildProofCardLines &gt; hybrid milestone includes referral sats when non-zero" time="0.000198708">
         </testcase>
-        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Successful Requests &gt; should merge execution relays with poll relay tags for NIP-88 kind 1018" time="0.006531209">
+        <testcase classname="tests/unit/proof-card-build.test.ts" name="buildProofCardLines &gt; reliability uses last-30d publish fields" time="0.000251416">
         </testcase>
-        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Successful Requests &gt; should dedupe overlapping execution and poll relays for kind 1018" time="0.00529825">
+        <testcase classname="tests/unit/proof-card-build.test.ts" name="buildProofCardLines &gt; range_performance shows light activity when volume is low" time="0.000152875">
         </testcase>
-        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should reject non-POST methods" time="0.002670334">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Method not allowed&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should require authentication" time="0.000301459">
-        </testcase>
-        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should return validation error for invalid JSON" time="0.000504959">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Invalid JSON in request body&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should return validation error when event is missing" time="0.000445375">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Event is required&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should reject kind 1018 without pollEvent" time="0.005455417">
-            <system-err>
-
-❌ Error: {
-  message: &apos;pollEvent is required for kind 1018 (NIP-88 vote)&apos;,
-  code: &apos;VALIDATION_ERROR&apos;,
-  statusCode: 400,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/unit/proof-card-build.test.ts" name="buildProofCardLines &gt; proofCardSummaryText includes footer" time="0.000176167">
         </testcase>
     </testsuite>
 </testsuites>

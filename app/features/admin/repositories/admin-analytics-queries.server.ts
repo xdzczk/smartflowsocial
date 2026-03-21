@@ -11,7 +11,29 @@ import {
 import { prisma } from "~/lib/prisma.server";
 
 import type { RangePreset } from "../metrics/date-range";
-import { getBoundsForPreset } from "../metrics/date-range";
+import {
+  formatDeltaPercent,
+  getBoundsForPreset,
+  getPreviousPeriodBounds,
+} from "../metrics/date-range";
+import type { ProofCardData } from "../proof-card-types";
+
+function proofCardRangeLabel(preset: RangePreset): string {
+  switch (preset) {
+    case "24h":
+      return "Last 24 hours";
+    case "7d":
+      return "Last 7 days";
+    case "30d":
+      return "Last 30 days";
+    case "90d":
+      return "Last 90 days";
+    case "all":
+      return "All time";
+    default:
+      return preset;
+  }
+}
 
 export interface DayCount {
   day: string;
@@ -54,6 +76,24 @@ export interface AdminAnalyticsPageDTO {
     publishSuccessRate30d: number;
   };
   takeaways: string[];
+  /** Prior-window totals when comparable (not for `all` preset). */
+  totalsPrevious: {
+    newUsers: number;
+    postsPublished: number;
+    longFormPublished: number;
+    referredSignups: number;
+    subscriptionsStarted: number;
+  } | null;
+  /** Delta % vs prior window; null when not meaningful. */
+  deltas: {
+    newUsersPct: number | null;
+    postsPublishedPct: number | null;
+    longFormPublishedPct: number | null;
+    referredSignupsPct: number | null;
+    subscriptionsStartedPct: number | null;
+  } | null;
+  /** Curated inputs for public proof-of-work card (scope/type chosen in UI). */
+  proofCard: ProofCardData;
 }
 
 function mapDayRows(rows: Array<{ d: Date; c: bigint }>): DayCount[] {
@@ -93,6 +133,8 @@ export async function getAdminAnalyticsPageData(
     totalReferralSatsPaid,
     pub30,
     fail30,
+    publishersInRangeRows,
+    failedReferralPayouts30d,
   ] = await Promise.all([
     prisma.$queryRaw<Array<{ d: Date; c: bigint }>>`
       SELECT date_trunc('day', "createdAt") AS d, COUNT(*)::bigint AS c
@@ -224,6 +266,33 @@ export async function getAdminAnalyticsPageData(
         },
       },
     }),
+    prisma.$queryRaw<Array<{ c: bigint }>>`
+      SELECT COUNT(DISTINCT uid)::bigint AS c
+      FROM (
+        SELECT "userId" AS uid
+        FROM "Post"
+        WHERE "currentState" = 'PUBLISHED'
+          AND "publishedAt" IS NOT NULL
+          AND "publishedAt" >= ${from}
+          AND "publishedAt" < ${to}
+        UNION
+        SELECT "userId" AS uid
+        FROM "LongFormPost"
+        WHERE "currentState" = 'PUBLISHED'
+          AND "publishedAt" IS NOT NULL
+          AND "publishedAt" >= ${from}
+          AND "publishedAt" < ${to}
+      ) s
+    `,
+    prisma.referralEarning.count({
+      where: {
+        status: ReferralEarningStatus.FAILED,
+        createdAt: {
+          gte: new Date(now.getTime() - 30 * 86400000),
+          lt: now,
+        },
+      },
+    }),
   ]);
 
   const publishersMultiDay = Number(publishersMultiDayRows[0]?.c ?? 0);
@@ -233,17 +302,96 @@ export async function getAdminAnalyticsPageData(
   const publishSuccessRate30d =
     d30 === 0 ? 100 : Math.round((pub30 / d30) * 1000) / 10;
 
+  const subscriptionsSeries = mapDayRows(subscriptionsStartedPerDayRows);
+  const subsStartedTotal = subscriptionsSeries.reduce((s, r) => s + r.count, 0);
+
+  const bounds = { from, to };
+  const prevBounds = getPreviousPeriodBounds(bounds, now);
+  const canCompare = preset !== "all" && prevBounds !== null;
+
+  let totalsPrevious: AdminAnalyticsPageDTO["totalsPrevious"] = null;
+  let deltas: AdminAnalyticsPageDTO["deltas"] = null;
+
+  if (canCompare) {
+    const pf = prevBounds.from;
+    const pt = prevBounds.to;
+    const [
+      prevNewUsers,
+      prevPostsPublished,
+      prevLongForm,
+      prevReferred,
+      prevSubs,
+    ] = await Promise.all([
+      prisma.user.count({
+        where: { createdAt: { gte: pf, lt: pt } },
+      }),
+      prisma.post.count({
+        where: {
+          currentState: "PUBLISHED",
+          publishedAt: { gte: pf, lt: pt },
+        },
+      }),
+      prisma.longFormPost.count({
+        where: {
+          currentState: "PUBLISHED",
+          publishedAt: { gte: pf, lt: pt },
+        },
+      }),
+      prisma.referral.count({
+        where: { createdAt: { gte: pf, lt: pt } },
+      }),
+      prisma.subscription.count({
+        where: { createdAt: { gte: pf, lt: pt } },
+      }),
+    ]);
+
+    totalsPrevious = {
+      newUsers: prevNewUsers,
+      postsPublished: prevPostsPublished,
+      longFormPublished: prevLongForm,
+      referredSignups: prevReferred,
+      subscriptionsStarted: prevSubs,
+    };
+
+    deltas = {
+      newUsersPct: formatDeltaPercent(newUsers, prevNewUsers),
+      postsPublishedPct: formatDeltaPercent(postsPublished, prevPostsPublished),
+      longFormPublishedPct: formatDeltaPercent(longFormPublished, prevLongForm),
+      referredSignupsPct: formatDeltaPercent(referredSignups, prevReferred),
+      subscriptionsStartedPct: formatDeltaPercent(subsStartedTotal, prevSubs),
+    };
+  }
+
+  const postsByDay = mapDayRows(postsPublishedPerDayRows).map((x) => x.count);
+  const medianDayPosts =
+    postsByDay.length === 0
+      ? 0
+      : ([...postsByDay].sort((a, b) => a - b)[
+          Math.floor(postsByDay.length / 2)
+        ] ?? 0);
+  const maxDayPosts = postsByDay.length === 0 ? 0 : Math.max(...postsByDay);
+
   const takeaways: string[] = [];
   if (postsPublished > 0 && newUsers > 0) {
     takeaways.push(
-      `Publishing activity: ${postsPublished} short posts published in this window vs ${newUsers} new accounts.`
+      `Publishing: ${postsPublished} short posts in window vs ${newUsers} new accounts.`
     );
   }
   if (postsPublished > 0 && postsWithMedia > postsPublished * 0.3) {
-    takeaways.push("Media usage represents a solid share of new posts.");
+    takeaways.push("Media usage represents a solid share of posts in range.");
   }
   if (threadSegments > 10) {
     takeaways.push("Thread scheduling is seeing real usage.");
+  }
+  if (postsByDay.length >= 3 && maxDayPosts > Math.max(3, medianDayPosts * 2)) {
+    takeaways.push(
+      `At least one day spiked well above the typical daily publish level (max ${maxDayPosts} vs median ${medianDayPosts}).`
+    );
+  }
+  if (canCompare && newUsers + (totalsPrevious?.newUsers ?? 0) < 6) {
+    takeaways.push(
+      "Low signup volume in current and prior windows — treat period-over-period deltas as directional only."
+    );
   }
   if (takeaways.length === 0) {
     takeaways.push(
@@ -251,13 +399,45 @@ export async function getAdminAnalyticsPageData(
     );
   }
 
+  const publishersInRange = Number(publishersInRangeRows[0]?.c ?? 0);
+
+  const proofCard: ProofCardData = {
+    rangePreset: preset,
+    rangeLabel: proofCardRangeLabel(preset),
+    generatedAt: now.toISOString(),
+    allTime: {
+      postsPublished: totalPostsPublished,
+      longFormPublished: totalLongFormPublished,
+      creatorsEverPublished: totalPublishers,
+      postsScheduled: totalPostsScheduled,
+      referralSatsPaid: totalReferralSatsPaid,
+    },
+    inRange: {
+      postsPublished,
+      longFormPublished,
+      referredSignups,
+      postsWithMedia,
+      publishersInRange,
+      scheduledReposts,
+      giveawaysLockedOrPaid,
+    },
+    last30d: {
+      publishSuccessRate: publishSuccessRate30d,
+      successfulShortPublishes: pub30,
+      failedShortPublishes: fail30,
+    },
+    reliability30d: {
+      failedReferralPayouts: failedReferralPayouts30d,
+    },
+  };
+
   return {
     rangePreset: preset,
     generatedAt: now.toISOString(),
     series: {
       newUsersPerDay: mapDayRows(newUsersPerDayRows),
       postsPublishedPerDay: mapDayRows(postsPublishedPerDayRows),
-      subscriptionsStartedPerDay: mapDayRows(subscriptionsStartedPerDayRows),
+      subscriptionsStartedPerDay: subscriptionsSeries,
       referredSignupsPerDay: mapDayRows(referredSignupsPerDayRows),
     },
     totals: {
@@ -287,5 +467,8 @@ export async function getAdminAnalyticsPageData(
       publishSuccessRate30d,
     },
     takeaways,
+    totalsPrevious,
+    deltas,
+    proofCard,
   };
 }

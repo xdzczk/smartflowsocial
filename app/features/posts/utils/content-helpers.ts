@@ -2,6 +2,8 @@
  * Helper functions for content listing components
  */
 
+import type { SignedEvent } from "~/features/nostr/types";
+import { isPollPostItem } from "~/features/polls";
 import {
   deriveIsDraftLongForm,
   deriveIsScheduledLongForm,
@@ -303,6 +305,32 @@ export function isRepostContent(item: CombinedContent): boolean {
   return kind === "REPOST";
 }
 
+/**
+ * Center label for list/table thumbnails when there is no image (or image fallback).
+ * Matches calendar/flow semantics: polls use POLL, not TEXT.
+ */
+export function getPostRowThumbnailBadge(input: {
+  contentKind: "post" | "longform";
+  postType?: string;
+  /** Full event or minimal shape from table rows (poll check uses `kind` only). */
+  signedEvent?: SignedEvent | { kind?: number } | null;
+  repost?: boolean;
+  postKind?: string | null;
+}): "REPOST" | "POLL" | "TEXT" | "ART" {
+  if (input.contentKind === "longform") return "ART";
+  if (input.repost === true || input.postKind === "REPOST") return "REPOST";
+  if (
+    isPollPostItem({
+      type: "post",
+      postType: input.postType,
+      signedEvent: input.signedEvent ?? undefined,
+    })
+  ) {
+    return "POLL";
+  }
+  return "TEXT";
+}
+
 export function getContentTypeBadge(item: CombinedContent): {
   className: string;
   text: string;
@@ -340,6 +368,17 @@ export function getContentTypeBadge(item: CombinedContent): {
   }
   if (kind === 30023) {
     return { className: POST_KIND_BADGE_CLASS, text: "ARTICLE" };
+  }
+
+  if (
+    item.type === "post" &&
+    isPollPostItem({
+      type: "post",
+      postType: item.postType,
+      signedEvent: item.signedEvent ?? undefined,
+    })
+  ) {
+    return { className: POST_KIND_BADGE_CLASS, text: "POLL" };
   }
 
   // Default: uniform badge (same size/color as REPOST)

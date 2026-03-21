@@ -177,7 +177,7 @@ export function createValidPostDTOMock(
     userId: string;
     caption: string | null;
     content: string | null;
-    postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO";
+    postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO" | "POLL";
     status: "DRAFT" | "ACTIVE" | "SCHEDULED" | "PAUSED" | "POSTED" | "FAILED";
     currentState: string;
     scheduledAtUtc: string | null;
@@ -189,7 +189,7 @@ export function createValidPostDTOMock(
   scheduledAtUtc: string | null;
   publishedAt: string | null;
   currentState: string;
-  postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO";
+  postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO" | "POLL";
   repost: boolean;
   isQuotedPost: boolean;
   isRecyclable: boolean;

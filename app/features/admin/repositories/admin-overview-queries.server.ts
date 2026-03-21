@@ -11,7 +11,7 @@ import {
 import { getReferrersEligibleForPayout } from "~/features/referral/referral-payout.server";
 import { prisma } from "~/lib/prisma.server";
 
-import type { RangePreset } from "../metrics/date-range";
+import type { DateRangeBounds, RangePreset } from "../metrics/date-range";
 import {
   formatDeltaPercent,
   getBoundsForPreset,
@@ -32,6 +32,31 @@ export interface KpiWithDelta {
   current: number;
   previous: number | null;
   deltaPct: number | null;
+}
+
+export interface AdminOverviewKpiInsights {
+  activePaidUsers: string;
+  newUsers: string;
+  postsPublished: string;
+  publishSuccess: string;
+  pendingPayout: string;
+  actionRequired: string;
+}
+
+export interface AdminOverviewRelayInsight {
+  accepted: number;
+  failed: number;
+  /** % of ACKs that succeeded, or null if no samples */
+  ratePct: number | null;
+  /** Operator-facing interpretation */
+  note: string;
+}
+
+export interface AdminOverviewInsights {
+  definitions: AdminOverviewKpiInsights;
+  kpi: AdminOverviewKpiInsights;
+  relay: AdminOverviewRelayInsight;
+  publishingNarrative: string;
 }
 
 export interface AdminOverviewPageDTO {
@@ -69,6 +94,7 @@ export interface AdminOverviewPageDTO {
     batchReadyCount: number;
   };
   systemHealth: Awaited<ReturnType<typeof getAdminQueueHealthSnapshot>>;
+  insights: AdminOverviewInsights;
 }
 
 function dayUtc(d: Date): string {
@@ -201,6 +227,212 @@ function successRate(published: number, failed: number): number {
   const d = published + failed;
   if (d === 0) return 100;
   return Math.round((published / d) * 1000) / 10;
+}
+
+const KPI_DEFINITIONS: AdminOverviewKpiInsights = {
+  activePaidUsers:
+    "Count of subscriptions in ACTIVE status — your current paying base.",
+  newUsers: "Accounts created during the selected time window.",
+  postsPublished:
+    "Short plus long-form posts that reached PUBLISHED within the selected window.",
+  publishSuccess:
+    "Published ÷ (published + failed) where failure/success timestamps fall in the range.",
+  pendingPayout:
+    "Referral commissions still in PENDING (sats waiting for Lightning payout).",
+  actionRequired:
+    "Number of alert conditions firing right now on this overview (see Alerts).",
+};
+
+function overviewRelayNote(
+  relayTotal: number,
+  relayAccepted: number,
+  relayFailed: number
+): string {
+  if (relayTotal === 0) {
+    return "No relay publish acknowledgements in this range — ratio is not meaningful yet.";
+  }
+  const pct = Math.round((relayAccepted / relayTotal) * 1000) / 10;
+  return `${relayAccepted} accepted vs ${relayFailed} failed/timeout ACKs (${pct}% OK). Mix varies by user relays; we warn when failures exceed 15% of ACKs.`;
+}
+
+function overviewNewUsersLine(
+  prevBounds: DateRangeBounds | null,
+  lowVol: boolean,
+  newUsers: number,
+  prevNewUsers: number
+): string {
+  if (!prevBounds) {
+    return "No prior period for this range preset — switch to 7d+ for deltas.";
+  }
+  if (lowVol) {
+    return "Low signup volume — treat the delta as directional, not definitive.";
+  }
+  if (newUsers > prevNewUsers)
+    return "Signups accelerated vs the prior window.";
+  if (newUsers < prevNewUsers) return "Signups cooled vs the prior window.";
+  return "Signups flat vs the prior window.";
+}
+
+function overviewPostsLine(
+  prevBounds: DateRangeBounds | null,
+  lowPostVol: boolean,
+  postsTotal: number,
+  prevPostsTotal: number
+): string {
+  if (!prevBounds) {
+    return "No prior period for comparison.";
+  }
+  if (lowPostVol) {
+    return "Low publish volume — swings are noisy.";
+  }
+  if (postsTotal > prevPostsTotal) {
+    return "Publishing volume is up vs the prior window.";
+  }
+  if (postsTotal < prevPostsTotal) {
+    return "Publishing volume is down vs the prior window.";
+  }
+  return "Publishing steady vs the prior window.";
+}
+
+function overviewMixLine(pubShort: number, pubLong: number): string {
+  if (pubLong > pubShort) {
+    return "Long-form is carrying a large share of output this window.";
+  }
+  if (pubLong === 0 && pubShort > 0) {
+    return "All published output is short-form in this window.";
+  }
+  return "Short-form dominates by count; long-form adds depth.";
+}
+
+function overviewPubSuccessLine(
+  publishSuccessPrev: number | null,
+  publishSuccessRate: number
+): string {
+  if (publishSuccessPrev === null) {
+    return "Compares publishes vs failures with timestamps in the range.";
+  }
+  if (publishSuccessRate >= publishSuccessPrev) {
+    return "Success rate improved or held vs the prior window.";
+  }
+  return "Success rate slipped vs the prior window — check Operations for failures.";
+}
+
+function overviewQueueDepthLine(scheduledQueueDepth: number): string {
+  if (scheduledQueueDepth > 50) {
+    return `Queue depth is elevated (${scheduledQueueDepth} scheduled/publishing) — expect longer time-to-publish.`;
+  }
+  if (scheduledQueueDepth > 0) {
+    return `Queue depth looks normal (${scheduledQueueDepth} scheduled/publishing).`;
+  }
+  return "Nothing waiting in schedule queues.";
+}
+
+function buildOverviewInsights(args: {
+  preset: RangePreset;
+  prevBounds: DateRangeBounds | null;
+  newUsers: number;
+  prevNewUsers: number;
+  postsTotal: number;
+  prevPostsTotal: number;
+  pubShort: number;
+  pubLong: number;
+  relayAccepted: number;
+  relayFailed: number;
+  scheduledQueueDepth: number;
+  publishSuccessRate: number;
+  publishSuccessPrev: number | null;
+  pendingPayoutSats: number;
+  actionRequiredCount: number;
+  activePaidUsers: number;
+}): AdminOverviewInsights {
+  const {
+    preset,
+    prevBounds,
+    newUsers,
+    prevNewUsers,
+    postsTotal,
+    prevPostsTotal,
+    pubShort,
+    pubLong,
+    relayAccepted,
+    relayFailed,
+    scheduledQueueDepth,
+    publishSuccessRate,
+    publishSuccessPrev,
+    pendingPayoutSats,
+    actionRequiredCount,
+    activePaidUsers,
+  } = args;
+
+  const relayTotal = relayAccepted + relayFailed;
+  const relayRatePct =
+    relayTotal === 0
+      ? null
+      : Math.round((relayAccepted / relayTotal) * 1000) / 10;
+
+  const relayNote = overviewRelayNote(relayTotal, relayAccepted, relayFailed);
+
+  const lowVol =
+    prevBounds !== null && newUsers + prevNewUsers < 8 && preset !== "all";
+  const lowPostVol =
+    prevBounds !== null && postsTotal + prevPostsTotal < 8 && preset !== "all";
+
+  const newUsersLine = overviewNewUsersLine(
+    prevBounds,
+    lowVol,
+    newUsers,
+    prevNewUsers
+  );
+
+  const postsLine = overviewPostsLine(
+    prevBounds,
+    lowPostVol,
+    postsTotal,
+    prevPostsTotal
+  );
+
+  const mixLine = overviewMixLine(pubShort, pubLong);
+
+  const pubSuccessLine = overviewPubSuccessLine(
+    publishSuccessPrev,
+    publishSuccessRate
+  );
+
+  const payoutLine =
+    pendingPayoutSats === 0
+      ? "Nothing queued for payout right now."
+      : "Referral commissions are waiting — confirm LNURL setup before batch runs.";
+
+  const actionLine =
+    actionRequiredCount === 0
+      ? "No open alerts — still scan Operations for backlog."
+      : `${actionRequiredCount} alert(s) need review — start with Operations.`;
+
+  const paidBaseLine = `Paid subscriber base: ${activePaidUsers} active seat(s).`;
+
+  const publishingNarrative = [
+    overviewQueueDepthLine(scheduledQueueDepth),
+    mixLine,
+  ].join(" ");
+
+  return {
+    definitions: KPI_DEFINITIONS,
+    kpi: {
+      activePaidUsers: paidBaseLine,
+      newUsers: newUsersLine,
+      postsPublished: `${postsLine} ${pubShort} short · ${pubLong} long.`,
+      publishSuccess: pubSuccessLine,
+      pendingPayout: payoutLine,
+      actionRequired: actionLine,
+    },
+    relay: {
+      accepted: relayAccepted,
+      failed: relayFailed,
+      ratePct: relayRatePct,
+      note: relayNote,
+    },
+    publishingNarrative,
+  };
 }
 
 export async function getAdminOverviewPageData(
@@ -422,6 +654,25 @@ export async function getAdminOverviewPageData(
     relayFailed,
   });
 
+  const insights = buildOverviewInsights({
+    preset,
+    prevBounds,
+    newUsers,
+    prevNewUsers,
+    postsTotal,
+    prevPostsTotal,
+    pubShort,
+    pubLong,
+    relayAccepted,
+    relayFailed,
+    scheduledQueueDepth,
+    publishSuccessRate,
+    publishSuccessPrev,
+    pendingPayoutSats,
+    actionRequiredCount,
+    activePaidUsers,
+  });
+
   return {
     rangePreset: preset,
     generatedAt: now.toISOString(),
@@ -475,5 +726,6 @@ export async function getAdminOverviewPageData(
       batchReadyCount: eligibleReferrers.length,
     },
     systemHealth,
+    insights,
   };
 }

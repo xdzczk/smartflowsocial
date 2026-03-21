@@ -28,6 +28,7 @@ import {
   getContentPreview,
   getContentTitle,
   getMediaPreviewUrls,
+  getPostRowThumbnailBadge,
   getQueueTypeDisplay,
   getStatusColor,
   getStatusText,
@@ -101,6 +102,16 @@ export function ContentListCard({
   const queueDisplay = getQueueTypeDisplay(item.queueType);
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
+  const thumbnailBadge =
+    item.type === "longform"
+      ? ("ART" as const)
+      : getPostRowThumbnailBadge({
+          contentKind: "post",
+          postType: item.postType,
+          signedEvent: item.signedEvent ?? null,
+          repost: isRepostContent(item),
+          postKind: item.postKind ?? null,
+        });
 
   const dateLabel =
     type === "scheduled"
@@ -172,11 +183,7 @@ export function ContentListCard({
               thumbnailClassName="h-full w-full object-cover"
               fallback={
                 <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
-                  {item.type === "post"
-                    ? isRepostContent(item)
-                      ? "REPOST"
-                      : "TEXT"
-                    : "ART"}
+                  {thumbnailBadge}
                 </div>
               }
             />
@@ -185,11 +192,7 @@ export function ContentListCard({
               className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium"
               aria-hidden
             >
-              {item.type === "post"
-                ? isRepostContent(item)
-                  ? "REPOST"
-                  : "TEXT"
-                : "ART"}
+              {thumbnailBadge}
             </div>
           )}
         </div>

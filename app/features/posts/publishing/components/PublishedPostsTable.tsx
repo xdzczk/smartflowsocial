@@ -35,7 +35,10 @@ import {
 } from "~/features/posts/queue-colors";
 import type { PostStats } from "~/features/posts/stats.server";
 import type { PostData, PostFetcher } from "~/features/posts/types";
-import { formatDate } from "~/features/posts/utils/content-helpers";
+import {
+  formatDate,
+  getPostRowThumbnailBadge,
+} from "~/features/posts/utils/content-helpers";
 import { getImageUrls } from "~/lib/helpers";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
@@ -269,6 +272,13 @@ export default function PublishedPostsTable({
             <tbody>
               {filteredPosts.map((post) => {
                 const postStats = getPostStats(post, stats);
+                const rowThumbBadge = getPostRowThumbnailBadge({
+                  contentKind: "post",
+                  postType: post.postType,
+                  signedEvent: post.signedEvent ?? null,
+                  repost: post.repost === true,
+                  postKind: post.postKind,
+                });
                 return (
                   <tr
                     key={post.id}
@@ -292,7 +302,7 @@ export default function PublishedPostsTable({
                             className="h-12 w-12 rounded object-cover"
                             fallback={
                               <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                                {post.repost ? "REPOST" : "TEXT"}
+                                {rowThumbBadge}
                               </div>
                             }
                           />
@@ -318,7 +328,7 @@ export default function PublishedPostsTable({
                       ) : (
                         <div className="relative">
                           <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                            {post.repost ? "REPOST" : "TEXT"}
+                            {rowThumbBadge}
                           </div>
                           {post.repost ? (
                             <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">

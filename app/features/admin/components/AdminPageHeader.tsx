@@ -1,5 +1,7 @@
 import { useRevalidator } from "@remix-run/react";
 
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+
 export function AdminPageHeader({
   title,
   subtitle,
@@ -10,6 +12,7 @@ export function AdminPageHeader({
   generatedAt?: string;
 }) {
   const revalidator = useRevalidator();
+  const { formatDate } = useFormattedDate();
 
   return (
     <div className="border-border flex flex-col gap-2 border-b px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
@@ -22,7 +25,13 @@ export function AdminPageHeader({
         ) : null}
         {generatedAt ? (
           <p className="text-muted-foreground mt-2 text-xs">
-            Last updated: {new Date(generatedAt).toLocaleString()}
+            Last updated:{" "}
+            {formatDate(generatedAt, {
+              dateFormatOptions: {
+                dateStyle: "medium",
+                timeStyle: "short",
+              },
+            })}
           </p>
         ) : null}
       </div>

@@ -7,7 +7,7 @@ import { AdminTabNav } from "~/features/admin";
  */
 export default function DashboardAdminLayout() {
   return (
-    <div className="min-h-[60vh] pb-12">
+    <div className="admin-surface from-muted/25 to-background min-h-[60vh] bg-gradient-to-b pb-12">
       <AdminTabNav />
       <Outlet />
     </div>

@@ -136,7 +136,7 @@ const postDTOSchema = z
       .string()
       .nullish()
       .transform((val) => val ?? null),
-    postType: z.enum(["IMAGE", "CAROUSEL", "TEXT", "VIDEO"]),
+    postType: z.enum(["IMAGE", "CAROUSEL", "TEXT", "VIDEO", "POLL"]),
     repost: z.boolean(),
     isQuotedPost: z.boolean(),
     isRecyclable: z.boolean(),

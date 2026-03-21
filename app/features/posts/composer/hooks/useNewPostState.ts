@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import type { PreparedEvent } from "../../types";
 /**
@@ -15,17 +15,17 @@ export function useNewPostState() {
   const [preparedImageEvent, setPreparedImageEvent] =
     useState<PreparedEvent | null>(null);
 
-  const handleQueueTypeChange = (queueTypeName: string) => {
+  const handleQueueTypeChange = useCallback((queueTypeName: string) => {
     setSelectedQueueType(queueTypeName);
-  };
+  }, []);
 
-  const handleHashtagPresetSelect = (
-    presetId: string | null,
-    hashtags: string
-  ) => {
-    setSelectedHashTagPresetId(presetId);
-    setSelectedHashtags(hashtags);
-  };
+  const handleHashtagPresetSelect = useCallback(
+    (presetId: string | null, hashtags: string) => {
+      setSelectedHashTagPresetId(presetId);
+      setSelectedHashtags(hashtags);
+    },
+    []
+  );
 
   return {
     files,

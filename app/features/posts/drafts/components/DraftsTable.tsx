@@ -39,6 +39,7 @@ import {
   QUEUE_PILL_SHAPE_CLASS,
 } from "~/features/posts/queue-colors";
 import type { PostData } from "~/features/posts/types";
+import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
@@ -286,11 +287,21 @@ export function DraftsTable({
                   </td>
                   <td className="p-3">
                     {(() => {
+                      const p = post as Post & {
+                        repost?: boolean;
+                        postKind?: string;
+                        postType?: string;
+                        signedEvent?: PostData["signedEvent"];
+                      };
                       const isRepost =
-                        (post as { repost?: boolean; postKind?: string })
-                          .repost === true ||
-                        (post as { repost?: boolean; postKind?: string })
-                          .postKind === "REPOST";
+                        p.repost === true || p.postKind === "REPOST";
+                      const rowThumbBadge = getPostRowThumbnailBadge({
+                        contentKind: "post",
+                        postType: p.postType,
+                        signedEvent: p.signedEvent ?? null,
+                        repost: isRepost,
+                        postKind: p.postKind ?? null,
+                      });
                       return post.fileUrl && post.fileUrl.length > 0 ? (
                         <div className="relative inline-block">
                           <img
@@ -311,7 +322,7 @@ export function DraftsTable({
                       ) : (
                         <div className="relative inline-block">
                           <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                            {isRepost ? "REPOST" : "TEXT"}
+                            {rowThumbBadge}
                           </div>
                           {isRepost ? (
                             <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">

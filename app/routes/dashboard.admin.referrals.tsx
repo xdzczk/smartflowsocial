@@ -17,9 +17,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { AdminPageHeader, MetricCard } from "~/features/admin";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  AdminCard,
+  AdminPageHeader,
+  MetricCard,
+  formatAdminInteger,
+} from "~/features/admin";
 import type { AdminOverviewStats } from "~/features/admin/repositories/admin-overview-stats-data.server";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import { action, loader } from "./dashboard.admin.referrals.server";
 import type { ReferralPayoutBatchResult } from "./dashboard.admin.referrals.server";
@@ -68,8 +85,19 @@ function isLoaderOk(d: unknown): d is {
     operatorNpub: string | null;
     createdAt: string;
   }>;
+  batchPreview: {
+    rows: Array<{
+      referrerNpub: string;
+      pendingSats: number;
+      ready: boolean;
+      skipReason: string | null;
+    }>;
+    totalSatsReady: number;
+    readyCount: number;
+    skippedCount: number;
+  };
 } {
-  return typeof d === "object" && d !== null && "stats" in d;
+  return typeof d === "object" && d !== null && "batchPreview" in d;
 }
 
 type ActionData =
@@ -102,13 +130,32 @@ export default function AdminReferralsPage() {
   const busy = navigation.state !== "idle";
   const [searchParams] = useSearchParams();
   const [batchOpen, setBatchOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const { formatDate, dateLocale } = useFormattedDate();
+
+  const formatDateTime = (iso: string) =>
+    formatDate(iso, {
+      dateFormatOptions: {
+        dateStyle: "medium",
+        timeStyle: "short",
+      },
+    });
+
+  const fmtInt = (n: number) => formatAdminInteger(n, dateLocale);
 
   if (!isLoaderOk(raw)) {
     return <div className="p-4">Access denied.</div>;
   }
 
   const data = raw;
-  const { stats, referrals, earnings, auditLogs, payoutAvailable } = data;
+  const {
+    stats,
+    referrals,
+    earnings,
+    auditLogs,
+    payoutAvailable,
+    batchPreview,
+  } = data;
   const totalRefPages = Math.ceil(referrals.total / referrals.pageSize);
   const totalEarnPages = Math.ceil(earnings.total / earnings.pageSize);
 
@@ -189,10 +236,43 @@ export default function AdminReferralsPage() {
           </div>
         </section>
 
-        <section className="border-border space-y-4 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
-          <h2 className="text-lg font-semibold text-amber-950 dark:text-amber-100">
-            Payout actions
-          </h2>
+        <AdminCard variant="muted" className="space-y-2">
+          <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+            Payout readiness
+          </p>
+          <ul className="text-foreground/90 space-y-1 text-sm">
+            <li>
+              Owner wallet (NWC):{" "}
+              {payoutAvailable ? (
+                <Badge variant="secondary" className="ml-1">
+                  Configured
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="ml-1">
+                  Not set
+                </Badge>
+              )}
+            </li>
+            <li>
+              Batch preview:{" "}
+              <span className="font-medium tabular-nums">
+                {batchPreview.readyCount}
+              </span>{" "}
+              ready ·{" "}
+              <span className="font-medium tabular-nums">
+                {batchPreview.skippedCount}
+              </span>{" "}
+              would skip at fetch time ·{" "}
+              <span className="font-medium tabular-nums">
+                {fmtInt(batchPreview.totalSatsReady)}
+              </span>{" "}
+              sats in ready rows
+            </li>
+          </ul>
+        </AdminCard>
+
+        <section className="border-border bg-card/40 space-y-4 rounded-xl border p-5 shadow-sm">
+          <h2 className="text-lg font-semibold">Payout actions</h2>
           {!payoutAvailable ? (
             <p className="text-muted-foreground text-sm">
               Set <code className="text-xs">OWNER_NWC</code> to enable payouts.
@@ -200,31 +280,75 @@ export default function AdminReferralsPage() {
           ) : null}
 
           <div className="space-y-3">
-            <h3 className="font-medium">Execute payout batch</h3>
-            <p className="text-muted-foreground text-xs">
-              Same rules as cron: ≥1000 sats pending and https LNURL
-              destination.
+            <h3 className="font-medium">Batch payout</h3>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Same rules as automation: ≥1000 sats pending per referrer and a
+              valid https LNURL/LUD destination. Review the preview, then type{" "}
+              <span className="text-foreground font-mono">PAY</span> to arm the
+              confirm button.
             </p>
             <Button
               type="button"
               variant="outline"
-              className="border-amber-600/50 text-amber-950 dark:text-amber-50"
               disabled={!payoutAvailable || busy}
               onClick={() => setBatchOpen(true)}
             >
-              Review & run batch…
+              Open batch review…
             </Button>
             <AlertDialog open={batchOpen} onOpenChange={setBatchOpen}>
-              <AlertDialogContent>
+              <AlertDialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Execute payout batch?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will attempt Lightning payouts for{" "}
-                    <strong>{stats.referralPayoutEligibleCount}</strong>{" "}
-                    eligible referrer(s) using <code>OWNER_NWC</code>. Skipped
-                    referrers lack a valid https LNURL destination.
+                  <AlertDialogTitle>Confirm batch payout</AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="text-muted-foreground space-y-3 text-sm">
+                      <p>
+                        Attempts Lightning payouts using{" "}
+                        <code className="text-foreground">OWNER_NWC</code> for
+                        each <strong>ready</strong> row below.
+                      </p>
+                    </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                <div className="border-border max-h-56 overflow-auto rounded-md border">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-muted/50 sticky top-0">
+                      <tr>
+                        <th className="p-2">Referrer</th>
+                        <th className="p-2 text-right">Sats</th>
+                        <th className="p-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {batchPreview.rows.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="text-muted-foreground p-3">
+                            No referrers meet the ≥1000 sats threshold.
+                          </td>
+                        </tr>
+                      ) : (
+                        batchPreview.rows.map((row) => (
+                          <tr key={row.referrerNpub} className="border-t">
+                            <td className="max-w-[180px] truncate p-2 font-mono">
+                              {row.referrerNpub}
+                            </td>
+                            <td className="p-2 text-right tabular-nums">
+                              {fmtInt(row.pendingSats)}
+                            </td>
+                            <td className="p-2">
+                              {row.ready ? (
+                                <Badge variant="secondary">Ready</Badge>
+                              ) : (
+                                <span className="text-muted-foreground">
+                                  Skipped — {row.skipReason}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
                 <Form
                   method="post"
                   onSubmit={() => setBatchOpen(false)}
@@ -236,14 +360,22 @@ export default function AdminReferralsPage() {
                     value="run_batch_payout"
                   />
                   <input type="hidden" name="confirm_batch" value="on" />
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm_phrase">
+                      Type <span className="font-mono">PAY</span> to authorize
+                    </Label>
+                    <Input
+                      id="confirm_phrase"
+                      name="confirm_phrase"
+                      autoComplete="off"
+                      placeholder="PAY"
+                      className="font-mono"
+                    />
+                  </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-                    <Button
-                      type="submit"
-                      className="bg-amber-700 text-white hover:bg-amber-800"
-                      disabled={!payoutAvailable || busy}
-                    >
-                      Confirm batch
+                    <Button type="submit" disabled={!payoutAvailable || busy}>
+                      {busy ? "Working…" : "Run batch"}
                     </Button>
                   </AlertDialogFooter>
                 </Form>
@@ -251,56 +383,82 @@ export default function AdminReferralsPage() {
             </AlertDialog>
           </div>
 
-          <div className="space-y-3 border-t border-amber-500/20 pt-4">
+          <div className="border-border space-y-3 border-t pt-4">
             <h3 className="font-medium">Manual Lightning payout</h3>
-            <Form method="post" className="grid max-w-xl gap-3">
-              <input type="hidden" name="_action" value="manual_payout" />
-              <div>
-                <label className="text-sm font-medium" htmlFor="referrer_npub">
-                  Referrer npub
-                </label>
-                <input
-                  id="referrer_npub"
-                  name="referrer_npub"
-                  className="border-input mt-1 w-full rounded-md border px-2 py-1 font-mono text-xs"
-                  placeholder="npub1…"
-                  disabled={!payoutAvailable || busy}
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium" htmlFor="amount_sats">
-                  Amount (sats)
-                </label>
-                <input
-                  id="amount_sats"
-                  name="amount_sats"
-                  type="number"
-                  min={1}
-                  className="border-input mt-1 w-full rounded-md border px-2 py-1 text-sm"
-                  disabled={!payoutAvailable || busy}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium" htmlFor="bolt11">
-                  BOLT11 invoice
-                </label>
-                <textarea
-                  id="bolt11"
-                  name="bolt11"
-                  rows={3}
-                  className="border-input mt-1 w-full rounded-md border px-2 py-1 font-mono text-xs"
-                  disabled={!payoutAvailable || busy}
-                />
-              </div>
-              <Button
-                type="submit"
-                variant="destructive"
-                disabled={!payoutAvailable || busy}
-              >
-                {busy ? "Working…" : "Pay invoice"}
-              </Button>
-            </Form>
+            <p className="text-muted-foreground text-xs">
+              Pay a specific BOLT11 against pending balance — opens a second
+              confirmation step.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!payoutAvailable || busy}
+              onClick={() => setManualOpen(true)}
+            >
+              Start manual payment…
+            </Button>
+            <Dialog open={manualOpen} onOpenChange={setManualOpen}>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Manual Lightning payment</DialogTitle>
+                  <DialogDescription>
+                    Sends sats via NWC to the invoice you paste. Double-check
+                    amount and destination.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form
+                  method="post"
+                  className="grid gap-3"
+                  onSubmit={() => setManualOpen(false)}
+                >
+                  <input type="hidden" name="_action" value="manual_payout" />
+                  <div>
+                    <Label htmlFor="referrer_npub">Referrer npub</Label>
+                    <Input
+                      id="referrer_npub"
+                      name="referrer_npub"
+                      className="mt-1 font-mono text-xs"
+                      placeholder="npub1…"
+                      disabled={!payoutAvailable || busy}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="amount_sats">Amount (sats)</Label>
+                    <Input
+                      id="amount_sats"
+                      name="amount_sats"
+                      type="number"
+                      min={1}
+                      className="mt-1"
+                      disabled={!payoutAvailable || busy}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bolt11">BOLT11 invoice</Label>
+                    <textarea
+                      id="bolt11"
+                      name="bolt11"
+                      rows={3}
+                      className="border-input mt-1 w-full rounded-md border px-2 py-1 font-mono text-xs"
+                      disabled={!payoutAvailable || busy}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setManualOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={!payoutAvailable || busy}>
+                      {busy ? "Working…" : "Send payment"}
+                    </Button>
+                  </DialogFooter>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
         </section>
 
@@ -331,7 +489,7 @@ export default function AdminReferralsPage() {
                   auditLogs.map((row) => (
                     <tr key={row.id} className="border-b last:border-0">
                       <td className="p-2 text-xs whitespace-nowrap">
-                        {row.createdAt}
+                        {formatDateTime(row.createdAt)}
                       </td>
                       <td className="p-2 font-mono text-xs">{row.channel}</td>
                       <td className="max-w-[140px] truncate p-2 font-mono text-xs">
@@ -340,12 +498,35 @@ export default function AdminReferralsPage() {
                       <td className="p-2 text-right tabular-nums">
                         {row.amountSats ?? "—"}
                       </td>
-                      <td className="p-2">{row.status}</td>
-                      <td className="text-muted-foreground max-w-md truncate p-2 text-xs">
-                        {row.errorMessage ??
-                          (row.batchSummary
-                            ? JSON.stringify(row.batchSummary)
-                            : "—")}
+                      <td className="p-2">
+                        <Badge
+                          variant={
+                            row.status === "success"
+                              ? "secondary"
+                              : "destructive"
+                          }
+                          className="font-normal capitalize"
+                        >
+                          {row.status}
+                        </Badge>
+                      </td>
+                      <td className="text-muted-foreground max-w-md p-2 text-xs">
+                        {row.errorMessage ? (
+                          <span className="text-destructive">
+                            {row.errorMessage}
+                          </span>
+                        ) : row.batchSummary ? (
+                          <details>
+                            <summary className="text-foreground cursor-pointer text-[11px] font-medium">
+                              View batch summary
+                            </summary>
+                            <pre className="border-border bg-muted/30 mt-1 max-h-36 overflow-auto rounded border p-2 font-mono text-[10px] leading-snug">
+                              {JSON.stringify(row.batchSummary, null, 2)}
+                            </pre>
+                          </details>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                     </tr>
                   ))
@@ -383,7 +564,7 @@ export default function AdminReferralsPage() {
                   <tr key={r.referredNpub} className="border-b">
                     <td className="p-2 font-mono text-xs">{r.referrerNpub}</td>
                     <td className="p-2 font-mono text-xs">{r.referredNpub}</td>
-                    <td className="p-2">{r.createdAt}</td>
+                    <td className="p-2">{formatDateTime(r.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

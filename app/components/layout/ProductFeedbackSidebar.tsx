@@ -23,7 +23,8 @@ import {
 } from "~/lib/product-feedback-dm.client";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
-const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
+/** Slightly smaller than main nav (`DashboardHeader` uses 18px + `text-sm`) so this row reads as the same pattern at a smaller scale. */
+const FEEDBACK_NAV_ICON_CLASS = "inline-block size-4 shrink-0";
 const NAV_ICON_STROKE = 2.25;
 
 interface ProductFeedbackSidebarProps {
@@ -73,9 +74,12 @@ export function ProductFeedbackSidebar({
   const feedbackInboxKind10050Relays =
     dashLoader?.feedbackInboxKind10050Relays ?? [];
 
-  const triggerClass = `group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+  // Match inactive `NavigationItem` / `OperatorAdminNavItem` in DashboardHeader; `text-xs` scales the row down.
+  const triggerClass = `group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-xs font-medium relative text-muted-foreground hover:bg-muted hover:text-foreground active:border-border focus:outline-none focus:ring-2 focus:ring-ring ${
     collapsed ? "justify-center px-0 py-2" : ""
   }`;
+  const iconSpanClass =
+    "text-foreground/70 group-hover:text-foreground flex flex-none items-center";
 
   function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -178,20 +182,15 @@ export function ProductFeedbackSidebar({
           onOpenMobileSidebarClose?.();
         }}
       >
-        <span className="text-foreground/70 group-hover:text-foreground flex flex-none items-center">
+        <span className={iconSpanClass}>
           <Bug
-            className={NAV_ICON_SIZE_CLASS}
+            className={FEEDBACK_NAV_ICON_CLASS}
             strokeWidth={NAV_ICON_STROKE}
             aria-hidden
           />
         </span>
         {!collapsed ? (
-          <span className="text-foreground/80 group-hover:text-foreground grow py-1.5 text-left leading-snug">
-            <span className="block">Report a bug</span>
-            <span className="text-muted-foreground block font-normal">
-              Suggest a feature
-            </span>
-          </span>
+          <span className="grow py-2">Report bug · Suggest feature</span>
         ) : null}
       </button>
 
@@ -199,14 +198,30 @@ export function ProductFeedbackSidebar({
         <DialogHeader>
           <DialogTitle>Report a bug or suggest a feature</DialogTitle>
           {inboxHex ? (
-            <DialogDescription>
-              Encryption and signing use your active Nostr identity: a browser
-              extension or a remote signer. Remote signers must implement NIP-46
-              nip04_encrypt for feedback. Optional NIP-17 gift wraps need NIP-44
-              (nip44_encrypt on the remote signer or optional NIP-44 in the
-              extension) when the inbox publishes kind 10050 and the server
-              enables NIP-17.
-            </DialogDescription>
+            <>
+              <DialogDescription>
+                Your message is sent privately to the team, encrypted and signed
+                with your Nostr account. When you continue, your extension or
+                remote signer will ask you to approve.
+              </DialogDescription>
+              <details className="text-muted-foreground mt-2 text-xs">
+                <summary className="cursor-pointer underline-offset-2 select-none hover:underline">
+                  Technical details (remote signers)
+                </summary>
+                <p className="border-border mt-2 border-l-2 pl-3">
+                  Remote signers must expose NIP-46{" "}
+                  <code className="bg-muted rounded px-1 py-0.5 text-[0.8rem]">
+                    nip04_encrypt
+                  </code>{" "}
+                  for the DM. Optional NIP-17 gift wraps need NIP-44 (e.g.{" "}
+                  <code className="bg-muted rounded px-1 py-0.5 text-[0.8rem]">
+                    nip44_encrypt
+                  </code>
+                  ) when the inbox publishes kind 10050 and the server enables
+                  NIP-17.
+                </p>
+              </details>
+            </>
           ) : (
             <DialogDescription>
               Product feedback is not enabled on this deployment yet. If you run

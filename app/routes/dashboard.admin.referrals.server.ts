@@ -17,6 +17,7 @@ import {
 } from "~/features/referral/referral-admin.server";
 import { listReferralPayoutAuditLogs } from "~/features/referral/referral-payout-audit.server";
 import {
+  getReferralBatchPreview,
   payReferrerWithInvoice,
   runReferralPayoutBatch,
 } from "~/features/referral/referral-payout.server";
@@ -92,15 +93,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const [stats, auditLogs] = await Promise.all([
+  const [stats, auditLogs, batchPreview] = await Promise.all([
     getAdminOverviewStats(),
     listReferralPayoutAuditLogs(100),
+    getReferralBatchPreview(),
   ]);
 
   return json({
     section,
     payoutAvailable: Boolean(env.OWNER_NWC?.trim()),
     stats,
+    batchPreview,
     referrals: {
       rows: referralsResult.referrals.map((r) => ({
         referrerNpub: r.referrerNpub,
@@ -174,6 +177,16 @@ export const action = withCSRFProtection(
       if (formData.get("confirm_batch") !== "on") {
         return json(
           { error: "Check the confirmation box to run the batch payout." },
+          { status: 400 }
+        );
+      }
+      const phrase = String(formData.get("confirm_phrase") ?? "").trim();
+      if (phrase !== "PAY") {
+        return json(
+          {
+            error:
+              "Type PAY in the confirmation field to authorize this batch.",
+          },
           { status: 400 }
         );
       }

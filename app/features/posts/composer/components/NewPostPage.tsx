@@ -282,6 +282,8 @@ export default function NewPostPage() {
   const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
 
   const [composerTab, setComposerTab] = useState<"post" | "poll">("post");
+  /** Bumped on success modal "Create new post" so composers remount (poll has no localStorage draft like UnifiedComposer). */
+  const [composerSessionKey, setComposerSessionKey] = useState(0);
 
   const relayCount =
     selectedRelayUrls.length > 0
@@ -388,7 +390,7 @@ export default function NewPostPage() {
 
       {composerTab === "post" || !nip88PollsEnabled ? (
         <UnifiedComposer
-          key={`newpost-composer-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
+          key={`newpost-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
           queueTypes={typedQueueTypes}
           hashTagPresets={typedHashTagPresets}
           scheduleIntervals={
@@ -411,6 +413,7 @@ export default function NewPostPage() {
         />
       ) : (
         <PollComposer
+          key={`poll-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
           queueTypes={typedQueueTypes}
           hashTagPresets={typedHashTagPresets}
           scheduleIntervals={
@@ -453,6 +456,7 @@ export default function NewPostPage() {
             setModalPostId(null);
             setModalPost(null);
             setModalLongFormPost(null);
+            setComposerSessionKey((k) => k + 1);
             // Clear composer localStorage so the new post page shows an empty composer
             try {
               localStorage.removeItem("composer-newpost-draft");

@@ -5,7 +5,15 @@
 import type { SerializeFrom } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 
-import { AdminAlertList, AdminPageHeader, MetricCard } from "~/features/admin";
+import {
+  AdminAlertList,
+  AdminPageHeader,
+  AdminSection,
+  AdminStatusPill,
+  MetricCard,
+  formatAdminInteger,
+} from "~/features/admin";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 import type { loader } from "./dashboard.admin._index.server";
 
@@ -19,10 +27,15 @@ function isSuccess(d: LoaderData): d is Exclude<LoaderData, { error: string }> {
 
 export default function AdminOverviewPage() {
   const raw = useLoaderData<typeof loader>();
+  const { dateLocale } = useFormattedDate();
+  const fmtInt = (n: number) => formatAdminInteger(n, dateLocale);
+
   if (!isSuccess(raw)) {
     return <div className="p-4">Access denied.</div>;
   }
   const d = raw;
+  const def = d.insights.definitions;
+  const k = d.insights.kpi;
 
   const maxDaily = Math.max(
     1,
@@ -41,64 +54,66 @@ export default function AdminOverviewPage() {
         generatedAt={d.generatedAt}
       />
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
-        <section className="space-y-3">
-          <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
-            KPI strip
-          </h2>
+        <AdminSection eyebrow="Pulse" title="KPI strip">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
               title="Active paid users"
               value={d.kpis.activePaidUsers.current}
-              interpretation="Subscriptions in ACTIVE status."
+              definition={def.activePaidUsers}
+              interpretation={k.activePaidUsers}
             />
             <MetricCard
               title="New users"
               value={d.kpis.newUsers.current}
               deltaPct={d.kpis.newUsers.deltaPct}
+              definition={def.newUsers}
+              interpretation={k.newUsers}
             />
             <MetricCard
               title="Posts published"
               value={d.kpis.postsPublished.current}
               deltaPct={d.kpis.postsPublished.deltaPct}
-              interpretation={`${d.kpis.postsPublished.short} short · ${d.kpis.postsPublished.long} long-form`}
+              definition={def.postsPublished}
+              interpretation={k.postsPublished}
             />
             <MetricCard
               title="Publish success rate"
               value={`${d.kpis.publishSuccessRate}%`}
-              interpretation={
+              definition={def.publishSuccess}
+              interpretation={k.publishSuccess}
+              footnote={
                 d.kpis.publishSuccessPrev !== null
-                  ? `Prior window: ${d.kpis.publishSuccessPrev}%`
-                  : "Published vs failed in selected range."
+                  ? `Prior comparable window: ${d.kpis.publishSuccessPrev}%. Uses publishes vs failures with activity timestamps in range.`
+                  : undefined
               }
             />
             <MetricCard
               title="Pending payout (sats)"
-              value={d.kpis.pendingPayoutSats.toLocaleString()}
+              value={fmtInt(d.kpis.pendingPayoutSats)}
               tone={d.kpis.pendingPayoutSats > 0 ? "warning" : "neutral"}
+              definition={def.pendingPayout}
+              interpretation={k.pendingPayout}
             />
             <MetricCard
               title="Action-required issues"
               value={d.kpis.actionRequiredCount}
               tone={d.kpis.actionRequiredCount > 0 ? "danger" : "positive"}
-              interpretation={
-                d.kpis.actionRequiredCount > 0
-                  ? "Open alerts below."
-                  : "Nothing flagged right now."
-              }
+              definition={def.actionRequired}
+              interpretation={k.actionRequired}
             />
           </div>
-        </section>
+        </AdminSection>
 
-        <section className="space-y-3">
-          <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
-            Alerts
-          </h2>
+        <AdminSection eyebrow="Attention" title="Alerts">
           <AdminAlertList alerts={d.alerts} />
-        </section>
+        </AdminSection>
 
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
             <h2 className="text-lg font-semibold">Publishing health</h2>
+            <p className="text-foreground/90 text-sm leading-snug">
+              {d.insights.publishingNarrative}
+            </p>
             <p className="text-muted-foreground text-xs">
               Queue depth (scheduled + publishing):{" "}
               <span className="text-foreground font-medium tabular-nums">
@@ -159,7 +174,7 @@ export default function AdminOverviewPage() {
                 {d.publishing.dailyPublishesShort.map((day) => (
                   <div
                     key={day.day}
-                    className="bg-primary/80 min-w-[6px] flex-1 rounded-t"
+                    className="bg-primary/80 hover:bg-primary min-w-[6px] flex-1 rounded-t transition-all"
                     style={{
                       height: `${(day.count / maxDaily) * 100}%`,
                       minHeight: day.count > 0 ? "4px" : "0",
@@ -204,11 +219,25 @@ export default function AdminOverviewPage() {
             >
               Open user directory →
             </Link>
+
+            <div className="border-border bg-card/50 space-y-2 rounded-xl border p-3">
+              <p className="text-muted-foreground text-xs font-medium">
+                Relay publish ACKs (range)
+              </p>
+              <p className="text-foreground text-sm leading-snug">
+                {d.insights.relay.note}
+              </p>
+              <Link
+                to="/dashboard/admin/operations?focus=relay"
+                className="text-primary text-xs hover:underline"
+              >
+                Open Operations (relay) →
+              </Link>
+            </div>
           </div>
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Referrals snapshot</h2>
+        <AdminSection eyebrow="Growth" title="Referrals snapshot">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
               title="Active subscriptions"
@@ -220,11 +249,11 @@ export default function AdminOverviewPage() {
             />
             <MetricCard
               title="Pending payout (sats)"
-              value={d.referrals.pendingSats.toLocaleString()}
+              value={fmtInt(d.referrals.pendingSats)}
             />
             <MetricCard
               title="Paid in range (sats)"
-              value={d.referrals.paidInRangeSats.toLocaleString()}
+              value={fmtInt(d.referrals.paidInRangeSats)}
             />
           </div>
           <p className="text-muted-foreground text-sm">
@@ -240,43 +269,24 @@ export default function AdminOverviewPage() {
               Open Referrals →
             </Link>
           </p>
-        </section>
+        </AdminSection>
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">System health</h2>
+        <AdminSection eyebrow="Infra" title="System health">
           <div className="flex flex-wrap gap-2">
             {d.systemHealth.map((row) => (
-              <div
+              <AdminStatusPill
                 key={row.id}
-                className="border-border rounded-lg border px-3 py-2 text-xs"
-              >
-                <span className="font-medium">{row.label}</span>
-                <span
-                  className={
-                    row.status === "healthy"
-                      ? "ml-2 text-emerald-600"
-                      : row.status === "degraded"
-                        ? "ml-2 text-amber-600"
-                        : row.status === "failing"
-                          ? "ml-2 text-red-600"
-                          : "text-muted-foreground ml-2"
-                  }
-                >
-                  {row.status}
-                </span>
-                {row.detail ? (
-                  <p className="text-muted-foreground mt-1 max-w-xs">
-                    {row.detail}
-                  </p>
-                ) : null}
-              </div>
+                label={row.label}
+                status={row.status}
+                detail={row.detail}
+              />
             ))}
           </div>
-        </section>
+        </AdminSection>
 
         <details className="text-muted-foreground text-xs">
           <summary className="cursor-pointer font-medium">
-            Metric definitions
+            About these metrics
           </summary>
           <p className="mt-2 max-w-3xl leading-relaxed">
             Active publishers = distinct users with a published short or
@@ -284,7 +294,8 @@ export default function AdminOverviewPage() {
             publishes vs failures with{" "}
             <code className="text-foreground">updatedAt</code> in the range.
             Queue and outbox probes run from the web app; worker liveness is
-            inferred from queue depth, not a separate heartbeat.
+            inferred from queue depth, not a separate heartbeat. Relay ACK
+            ratios depend on which relays users publish through.
           </p>
         </details>
       </div>

@@ -30,6 +30,7 @@ import {
   getContentTitle,
   getContentTypeBadge,
   getImageUrls,
+  getPostRowThumbnailBadge,
   getQueueTypeDisplay,
   getStatusColor,
   getStatusText,
@@ -83,6 +84,17 @@ export function ContentTableRow({
   const { dateLocale } = useFormattedDate();
   const typeBadge = getContentTypeBadge(item);
   const queueDisplay = getQueueTypeDisplay(item.queueType);
+  const isRepost = isRepostContent(item);
+  const postThumbnailBadge =
+    item.type === "longform"
+      ? ("ART" as const)
+      : getPostRowThumbnailBadge({
+          contentKind: "post",
+          postType: item.postType,
+          signedEvent: item.signedEvent ?? null,
+          repost: isRepost,
+          postKind: item.postKind ?? null,
+        });
 
   return (
     <tr
@@ -105,7 +117,6 @@ export function ContentTableRow({
       </td>
       <td className="p-3">
         {(() => {
-          const isRepost = isRepostContent(item);
           // For posts, get the first valid image URL (includes reposts with merged original media)
           if (item.type === "post" && item.fileUrl && item.fileUrl.length > 0) {
             const imageUrls = getImageUrls(item.fileUrl);
@@ -120,7 +131,7 @@ export function ContentTableRow({
                     className="h-12 w-12 rounded object-cover"
                     fallback={
                       <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                        {isRepost ? "REPOST" : "TEXT"}
+                        {postThumbnailBadge}
                       </div>
                     }
                   />
@@ -158,7 +169,7 @@ export function ContentTableRow({
           return (
             <div className="relative inline-block">
               <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                {item.type === "post" ? (isRepost ? "REPOST" : "TEXT") : "ART"}
+                {postThumbnailBadge}
               </div>
               {isRepost ? (
                 <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">

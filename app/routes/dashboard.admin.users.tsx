@@ -1,13 +1,30 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, useLoaderData, useSearchParams } from "@remix-run/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { AdminPageHeader } from "~/features/admin";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
+import {
+  AdminDataTable,
+  AdminDataTableEmpty,
+  AdminDataTableHead,
+  AdminPageHeader,
+  AdminSection,
+} from "~/features/admin";
+import type { AdminUserSegment } from "~/features/admin/repositories/admin-users-queries.server";
 import { getAdminUsersPageData } from "~/features/admin/repositories/admin-users-queries.server";
 import { requireUser } from "~/features/auth";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
@@ -28,18 +45,74 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json(data);
 }
 
-export default function AdminUsersPage() {
-  const raw = useLoaderData<typeof loader>();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+const SEGMENTS: Array<{ id: AdminUserSegment | "all"; label: string }> = [
+  { id: "all", label: "All segments" },
+  { id: "new", label: "New" },
+  { id: "activating", label: "Activating" },
+  { id: "established", label: "Established" },
+  { id: "power", label: "Power" },
+  { id: "at_risk", label: "At risk" },
+  { id: "dormant", label: "Dormant" },
+];
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- narrow from loose loader type
-  if (typeof raw === "object" && raw !== null && "error" in raw) {
+function segmentBadgeClass(s: AdminUserSegment): string {
+  switch (s) {
+    case "power":
+      return "border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100";
+    case "at_risk":
+      return "border-amber-500/50 bg-amber-500/10 text-amber-950 dark:text-amber-50";
+    case "dormant":
+      return "border-border bg-muted text-muted-foreground";
+    case "new":
+      return "border-sky-500/40 bg-sky-500/10 text-sky-950 dark:text-sky-50";
+    case "activating":
+      return "border-violet-500/40 bg-violet-500/10 text-violet-950 dark:text-violet-50";
+    default:
+      return "border-border bg-card";
+  }
+}
+
+type AdminUsersLoaderData =
+  | Awaited<ReturnType<typeof getAdminUsersPageData>>
+  | { error: string };
+
+export default function AdminUsersPage() {
+  const raw = useLoaderData<AdminUsersLoaderData>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [sheetUserId, setSheetUserId] = useState<string | null>(null);
+  const { formatDate } = useFormattedDate();
+
+  const formatDateTime = (iso: string | null | undefined) =>
+    iso
+      ? formatDate(iso, {
+          dateFormatOptions: {
+            dateStyle: "medium",
+            timeStyle: "short",
+          },
+        })
+      : "—";
+
+  const d = useMemo((): Awaited<
+    ReturnType<typeof getAdminUsersPageData>
+  > | null => {
+    return "error" in raw ? null : raw;
+  }, [raw]);
+
+  const segmentFilter =
+    (searchParams.get("segment") as AdminUserSegment | "all" | null) ?? "all";
+
+  const visibleUsers = useMemo(() => {
+    if (!d) return [];
+    if (segmentFilter === "all") return d.users;
+    return d.users.filter((u) => u.segment === segmentFilter);
+  }, [d, segmentFilter]);
+
+  if (!d) {
     return <div className="p-4">Access denied.</div>;
   }
-  const d = raw as Awaited<ReturnType<typeof getAdminUsersPageData>>;
 
-  const selected = d.users.find((u) => u.id === selectedId) ?? null;
+  const sheetUser = d.users.find((u) => u.id === sheetUserId) ?? null;
+
   const totalPages = Math.ceil(d.total / d.pageSize);
 
   function avatarFallbackLabel(displayName: string | null, npub: string) {
@@ -61,11 +134,28 @@ export default function AdminUsersPage() {
     setSearchParams(p);
   }
 
+  function setSegment(next: string) {
+    const p = new URLSearchParams(searchParams);
+    if (next === "all") {
+      p.delete("segment");
+    } else {
+      p.set("segment", next);
+    }
+    setSearchParams(p);
+  }
+
+  function setSort(next: string) {
+    const p = new URLSearchParams(searchParams);
+    p.set("sort", next);
+    p.delete("page");
+    setSearchParams(p);
+  }
+
   return (
     <div>
       <AdminPageHeader
         title="Users"
-        subtitle="Directory of accounts with usage signals. Segments are derived from data, not manual tags."
+        subtitle="Directory with lifecycle heuristics and 7d activity. Segment filters apply to the current page of results."
       />
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
         <div className="flex flex-wrap gap-2">
@@ -82,8 +172,49 @@ export default function AdminUsersPage() {
           ))}
         </div>
 
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground text-xs">Segment</span>
+          {SEGMENTS.map((s) => (
+            <Button
+              key={s.id}
+              type="button"
+              size="sm"
+              variant={segmentFilter === s.id ? "default" : "outline"}
+              className="text-xs"
+              onClick={() => setSegment(s.id)}
+            >
+              {s.label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <span className="text-muted-foreground self-center text-xs">
+            Sort
+          </span>
+          {[
+            { id: "createdAt", label: "Signup" },
+            { id: "lastActive", label: "Last active" },
+            { id: "published", label: "Published" },
+          ].map((s) => (
+            <Button
+              key={s.id}
+              type="button"
+              size="sm"
+              variant={d.sort === s.id ? "default" : "outline"}
+              onClick={() => setSort(s.id)}
+            >
+              {s.label}
+            </Button>
+          ))}
+        </div>
+
         <Form method="get" className="flex flex-wrap gap-2">
           <input type="hidden" name="filter" value={d.filter} />
+          <input type="hidden" name="sort" value={d.sort} />
+          {segmentFilter !== "all" ? (
+            <input type="hidden" name="segment" value={segmentFilter} />
+          ) : null}
           <input
             name="q"
             defaultValue={d.search}
@@ -95,112 +226,227 @@ export default function AdminUsersPage() {
           </Button>
         </Form>
 
-        <div className="overflow-x-auto rounded-md border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-muted/50 border-b">
+        <AdminSection eyebrow="Directory" title="Accounts">
+          <AdminDataTable zebra>
+            <AdminDataTableHead>
+              <tr>
                 <th className="p-2 text-left">User</th>
+                <th className="p-2 text-left">Segment</th>
                 <th className="p-2 text-left">Plan</th>
                 <th className="p-2 text-center">Enabled</th>
+                <th className="p-2 text-right">Last active</th>
+                <th className="p-2 text-right">7d pub</th>
                 <th className="p-2 text-right">Published</th>
                 <th className="p-2 text-right">Scheduled</th>
                 <th className="p-2 text-right">Media</th>
-                <th className="p-2 text-right">Referrals</th>
+                <th className="p-2 text-right">Refs</th>
               </tr>
-            </thead>
+            </AdminDataTableHead>
             <tbody>
-              {d.users.map((u) => (
-                <tr
-                  key={u.id}
-                  className="hover:bg-muted/40 cursor-pointer border-b"
-                  onClick={() =>
-                    setSelectedId(selectedId === u.id ? null : u.id)
-                  }
-                >
-                  <td className="p-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Avatar className="h-9 w-9 shrink-0">
-                        {u.pictureUrl ? (
-                          <AvatarImage
-                            src={u.pictureUrl}
-                            alt=""
-                            loading="lazy"
-                          />
-                        ) : null}
-                        <AvatarFallback className="text-xs">
-                          {avatarFallbackLabel(u.displayName, u.npub)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="font-medium">
-                          {u.displayName ?? "—"}{" "}
-                          <span className="text-muted-foreground text-xs font-normal">
-                            {u.isEnabled ? "" : "(disabled)"}
-                          </span>
-                        </p>
-                        <p className="text-muted-foreground font-mono text-[10px] break-all">
-                          {u.npub}
-                        </p>
+              {visibleUsers.length === 0 ? (
+                <AdminDataTableEmpty colSpan={10}>
+                  No users match this view.
+                </AdminDataTableEmpty>
+              ) : (
+                visibleUsers.map((u) => (
+                  <tr
+                    key={u.id}
+                    className="hover:bg-muted/30 cursor-pointer"
+                    onClick={() => setSheetUserId(u.id)}
+                  >
+                    <td className="p-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Avatar className="h-9 w-9 shrink-0">
+                          {u.pictureUrl ? (
+                            <AvatarImage
+                              src={u.pictureUrl}
+                              alt=""
+                              loading="lazy"
+                            />
+                          ) : null}
+                          <AvatarFallback className="text-xs">
+                            {avatarFallbackLabel(u.displayName, u.npub)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="font-medium">
+                            {u.displayName ?? "—"}{" "}
+                            <span className="text-muted-foreground text-xs font-normal">
+                              {u.isEnabled ? "" : "(disabled)"}
+                            </span>
+                          </p>
+                          <p className="text-muted-foreground font-mono text-[10px] break-all">
+                            {u.npub}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="p-2">{u.planLabel}</td>
-                  <td className="p-2 text-center">
-                    {u.isEnabled ? "Yes" : "No"}
-                  </td>
-                  <td className="p-2 text-right tabular-nums">
-                    {u.publishedPosts}
-                  </td>
-                  <td className="p-2 text-right tabular-nums">
-                    {u.scheduledPosts}
-                  </td>
-                  <td className="p-2 text-right tabular-nums">
-                    {u.mediaCount}
-                  </td>
-                  <td className="p-2 text-right tabular-nums">
-                    {u.referralCount}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="p-2">
+                      <Badge
+                        className={cn(
+                          "font-normal capitalize",
+                          segmentBadgeClass(u.segment)
+                        )}
+                        variant="outline"
+                      >
+                        {u.segment.replace("_", " ")}
+                      </Badge>
+                    </td>
+                    <td className="p-2">{u.planLabel}</td>
+                    <td className="p-2 text-center">
+                      {u.isEnabled ? "Yes" : "No"}
+                    </td>
+                    <td className="text-muted-foreground p-2 text-right text-xs tabular-nums">
+                      {formatDateTime(u.lastActivityAt)}
+                    </td>
+                    <td className="p-2 text-right tabular-nums">
+                      {u.recent7dPublishes}
+                    </td>
+                    <td className="p-2 text-right tabular-nums">
+                      {u.publishedPosts}
+                    </td>
+                    <td className="p-2 text-right tabular-nums">
+                      {u.scheduledPosts}
+                    </td>
+                    <td className="p-2 text-right tabular-nums">
+                      {u.mediaCount}
+                    </td>
+                    <td className="p-2 text-right tabular-nums">
+                      {u.referralCount}
+                      {u.referralAttributed ? (
+                        <span className="text-muted-foreground ml-1 text-[10px]">
+                          (in)
+                        </span>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
-          </table>
-        </div>
+          </AdminDataTable>
+        </AdminSection>
 
-        {selected ? (
-          <div className="border-border bg-muted/20 rounded-lg border p-4 text-sm">
-            <div className="flex flex-wrap items-center gap-3">
-              <Avatar className="h-12 w-12 shrink-0">
-                {selected.pictureUrl ? (
-                  <AvatarImage
-                    src={selected.pictureUrl}
-                    alt=""
-                    loading="lazy"
-                  />
-                ) : null}
-                <AvatarFallback>
-                  {avatarFallbackLabel(selected.displayName, selected.npub)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-semibold">{selected.displayName ?? "—"}</h3>
-                <p className="text-muted-foreground font-mono text-xs break-all">
-                  {selected.npub}
-                </p>
-              </div>
-            </div>
-            <h4 className="mt-4 font-medium">Details</h4>
-            <dl className="mt-2 grid gap-1 sm:grid-cols-2">
-              <dt className="text-muted-foreground">ID</dt>
-              <dd className="font-mono text-xs">{selected.id}</dd>
-              <dt className="text-muted-foreground">Signup</dt>
-              <dd>{selected.createdAt}</dd>
-              <dt className="text-muted-foreground">Published / scheduled</dt>
-              <dd>
-                {selected.publishedPosts} / {selected.scheduledPosts}
-              </dd>
-            </dl>
-          </div>
-        ) : null}
+        <Sheet
+          open={sheetUserId !== null}
+          onOpenChange={(open) => {
+            if (!open) setSheetUserId(null);
+          }}
+        >
+          <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+            {sheetUser ? (
+              <>
+                <SheetHeader>
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-14 w-14 shrink-0">
+                      {sheetUser.pictureUrl ? (
+                        <AvatarImage
+                          src={sheetUser.pictureUrl}
+                          alt=""
+                          loading="lazy"
+                        />
+                      ) : null}
+                      <AvatarFallback>
+                        {avatarFallbackLabel(
+                          sheetUser.displayName,
+                          sheetUser.npub
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <SheetTitle className="text-left">
+                        {sheetUser.displayName ?? "—"}
+                      </SheetTitle>
+                      <SheetDescription className="font-mono text-xs break-all">
+                        {sheetUser.npub}
+                      </SheetDescription>
+                    </div>
+                  </div>
+                </SheetHeader>
+                <div className="mt-6 space-y-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase">
+                      Segment
+                    </p>
+                    <Badge
+                      className={cn(
+                        "mt-1 capitalize",
+                        segmentBadgeClass(sheetUser.segment)
+                      )}
+                      variant="outline"
+                    >
+                      {sheetUser.segment.replace("_", " ")}
+                    </Badge>
+                    <p className="text-muted-foreground mt-2 text-xs">
+                      Heuristic only — based on recency, volume, and plan.
+                    </p>
+                  </div>
+                  <dl className="grid gap-2 sm:grid-cols-2">
+                    <div>
+                      <dt className="text-muted-foreground text-xs">User id</dt>
+                      <dd className="font-mono text-xs break-all">
+                        {sheetUser.id}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground text-xs">Signup</dt>
+                      <dd className="tabular-nums">
+                        {formatDateTime(sheetUser.createdAt)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground text-xs">
+                        Last activity
+                      </dt>
+                      <dd className="tabular-nums">
+                        {formatDateTime(sheetUser.lastActivityAt)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground text-xs">
+                        First publish
+                      </dt>
+                      <dd className="tabular-nums">
+                        {formatDateTime(sheetUser.firstPublishedAt)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground text-xs">
+                        Subscription started
+                      </dt>
+                      <dd className="tabular-nums">
+                        {formatDateTime(sheetUser.subscriptionStartedAt)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground text-xs">
+                        7d publishes
+                      </dt>
+                      <dd>{sheetUser.recent7dPublishes}</dd>
+                    </div>
+                  </dl>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase">
+                      Output
+                    </p>
+                    <ul className="mt-1 space-y-1">
+                      <li>
+                        Published: {sheetUser.publishedPosts} · Scheduled:{" "}
+                        {sheetUser.scheduledPosts} · Media:{" "}
+                        {sheetUser.mediaCount}
+                      </li>
+                      <li>
+                        Referrals as referrer: {sheetUser.referralCount}
+                        {sheetUser.referralAttributed
+                          ? " · arrived via referral"
+                          : ""}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </SheetContent>
+        </Sheet>
 
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-muted-foreground">

@@ -9,6 +9,7 @@ import {
   QUEUE_PILL_OPACITY_CLASS,
   QUEUE_PILL_SHAPE_CLASS,
 } from "~/features/posts/queue-colors";
+import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
@@ -18,7 +19,10 @@ interface Post {
   caption?: string | null;
   publishedAt: Date | null;
   fileUrl: string[];
-  signedEvent: { id: string };
+  postType?: string;
+  repost?: boolean;
+  postKind?: string | null;
+  signedEvent: { id: string; kind?: number };
   queueType?: {
     name: string;
     color?: string | null;
@@ -190,6 +194,13 @@ export function RecyclablesTable({
         </thead>
         <tbody>
           {posts.map((post) => {
+            const rowThumbBadge = getPostRowThumbnailBadge({
+              contentKind: "post",
+              postType: post.postType,
+              signedEvent: post.signedEvent,
+              repost: post.repost === true,
+              postKind: post.postKind ?? null,
+            });
             const postStats = stats[post.signedEvent.id] ?? {
               likes: 0,
               replies: 0,
@@ -221,7 +232,7 @@ export function RecyclablesTable({
                     />
                   ) : (
                     <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                      TEXT
+                      {rowThumbBadge}
                     </div>
                   )}
                 </td>

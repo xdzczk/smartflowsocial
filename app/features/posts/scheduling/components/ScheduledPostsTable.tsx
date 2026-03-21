@@ -40,6 +40,7 @@ import {
   QUEUE_PILL_SHAPE_CLASS,
 } from "~/features/posts/queue-colors";
 import type { PostData } from "~/features/posts/types";
+import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
@@ -290,219 +291,230 @@ export function ScheduledPostsTable({
               </tr>
             </thead>
             <tbody>
-              {posts.map((post) => (
-                <tr
-                  key={post.id}
-                  className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
-                  onClick={() => onPostClick(post)}
-                >
-                  <td className="p-3 text-center">
-                    <Checkbox
-                      id={`scheduled-select-${post.id}`}
-                      checked={selectedPosts.has(post.id)}
-                      onCheckedChange={() => onToggleSelection(post.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </td>
-                  <td className="p-3">
-                    <div className="relative">
-                      {post.fileUrl.length > 0 ? (
-                        <MediaThumbnail
-                          src={getImageUrls(post.fileUrl)[0]}
-                          alt="Post preview"
-                          className="h-12 w-12 rounded object-cover"
-                          onClick={() => {
-                            const imageUrl = getImageUrls(post.fileUrl)[0];
-                            if (imageUrl) {
-                              onMediaClick(imageUrl);
-                            }
-                          }}
-                          fallback={
-                            <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                              TEXT
-                            </div>
-                          }
-                        />
-                      ) : post.repost ? (
-                        <div className="bg-accent/15 text-accent-foreground flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded text-[10px] font-medium">
-                          <Repeat
-                            className={`${SMALL_ICON_SIZE_CLASS} shrink-0`}
-                            strokeWidth={INLINE_ICON_STROKE}
-                            aria-hidden
-                          />
-                          REPOST
-                        </div>
-                      ) : post.isQuotedPost ? (
-                        <div className="bg-success/20 text-success dark:text-success flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                          QUOTE
-                        </div>
-                      ) : (
-                        <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                          TEXT
-                        </div>
-                      )}
-                      {post.repost ? (
-                        <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
-                          <Repeat
-                            className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                            strokeWidth={INLINE_ICON_STROKE}
-                            aria-hidden
-                          />
-                        </div>
-                      ) : null}
-                      {post.isQuotedPost && post.fileUrl.length > 0 ? (
-                        <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
-                          <Quote
-                            className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                            strokeWidth={INLINE_ICON_STROKE}
-                            aria-hidden
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <p className="font-medium">
-                      {post.caption && post.caption.length > 21
-                        ? post.caption.substring(0, 21) + "..."
-                        : post.caption}
-                    </p>
-                  </td>
-                  <td className="text-foreground p-3">
-                    {formatDate(post.scheduledAtUtc)}
-                  </td>
-                  <td className="p-3 text-center">
-                    <div className="text-primary text-sm font-medium">
-                      {countdowns[post.id] ?? "—"}
-                    </div>
-                  </td>
-                  <td className="p-3 text-center">
-                    {post.queueType?.colorToken
-                      ? (() => {
-                          const bundle = getQueueColorBundle(
-                            post.queueType.colorToken
-                          );
-                          return (
-                            <div
-                              className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS}`}
-                              style={{
-                                backgroundColor: bundle.surface,
-                                color: bundle.accent,
-                                borderColor: bundle.accent,
-                              }}
-                            >
-                              {post.queueType.name}
-                            </div>
-                          );
-                        })()
-                      : (() => {
-                          const colors = getQueueColor(
-                            post.queueType?.name ?? "unassigned",
-                            post.queueType?.colorToken
-                          );
-                          return (
-                            <div
-                              className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} ${colors.bg} ${colors.text} ${colors.border}`}
-                            >
-                              {post.queueType?.name ?? "unassigned"}
-                            </div>
-                          );
-                        })()}
-                  </td>
-                  <td className="p-3 text-center">
-                    <div
-                      className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${
-                        post.signedEvent
-                          ? "bg-muted text-muted-foreground"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {post.signedEvent ? "Signed" : "Scheduled"}
-                    </div>
-                  </td>
-                  <td className="p-3 text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={(e) => e.stopPropagation()}
-                          className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
-                          aria-label="Actions"
-                        >
-                          <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
+              {posts.map((post) => {
+                const rowThumbBadge = getPostRowThumbnailBadge({
+                  contentKind: "post",
+                  postType: post.postType,
+                  signedEvent: post.signedEvent ?? null,
+                  repost: post.repost === true,
+                  postKind: post.postKind,
+                });
+                return (
+                  <tr
+                    key={post.id}
+                    className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
+                    onClick={() => onPostClick(post)}
+                  >
+                    <td className="p-3 text-center">
+                      <Checkbox
+                        id={`scheduled-select-${post.id}`}
+                        checked={selectedPosts.has(post.id)}
+                        onCheckedChange={() => onToggleSelection(post.id)}
                         onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
+                    <td className="p-3">
+                      <div className="relative">
+                        {post.fileUrl.length > 0 ? (
+                          <MediaThumbnail
+                            src={getImageUrls(post.fileUrl)[0]}
+                            alt="Post preview"
+                            className="h-12 w-12 rounded object-cover"
+                            onClick={() => {
+                              const imageUrl = getImageUrls(post.fileUrl)[0];
+                              if (imageUrl) {
+                                onMediaClick(imageUrl);
+                              }
+                            }}
+                            fallback={
+                              <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                                {rowThumbBadge}
+                              </div>
+                            }
+                          />
+                        ) : post.repost ? (
+                          <div className="bg-accent/15 text-accent-foreground flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded text-[10px] font-medium">
+                            <Repeat
+                              className={`${SMALL_ICON_SIZE_CLASS} shrink-0`}
+                              strokeWidth={INLINE_ICON_STROKE}
+                              aria-hidden
+                            />
+                            REPOST
+                          </div>
+                        ) : post.isQuotedPost ? (
+                          <div className="bg-success/20 text-success dark:text-success flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                            QUOTE
+                          </div>
+                        ) : (
+                          <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                            {rowThumbBadge}
+                          </div>
+                        )}
+                        {post.repost ? (
+                          <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
+                            <Repeat
+                              className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                              strokeWidth={INLINE_ICON_STROKE}
+                              aria-hidden
+                            />
+                          </div>
+                        ) : null}
+                        {post.isQuotedPost && post.fileUrl.length > 0 ? (
+                          <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
+                            <Quote
+                              className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                              strokeWidth={INLINE_ICON_STROKE}
+                              aria-hidden
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <p className="font-medium">
+                        {post.caption && post.caption.length > 21
+                          ? post.caption.substring(0, 21) + "..."
+                          : post.caption}
+                      </p>
+                    </td>
+                    <td className="text-foreground p-3">
+                      {formatDate(post.scheduledAtUtc)}
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="text-primary text-sm font-medium">
+                        {countdowns[post.id] ?? "—"}
+                      </div>
+                    </td>
+                    <td className="p-3 text-center">
+                      {post.queueType?.colorToken
+                        ? (() => {
+                            const bundle = getQueueColorBundle(
+                              post.queueType.colorToken
+                            );
+                            return (
+                              <div
+                                className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS}`}
+                                style={{
+                                  backgroundColor: bundle.surface,
+                                  color: bundle.accent,
+                                  borderColor: bundle.accent,
+                                }}
+                              >
+                                {post.queueType.name}
+                              </div>
+                            );
+                          })()
+                        : (() => {
+                            const colors = getQueueColor(
+                              post.queueType?.name ?? "unassigned",
+                              post.queueType?.colorToken
+                            );
+                            return (
+                              <div
+                                className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} ${colors.bg} ${colors.text} ${colors.border}`}
+                              >
+                                {post.queueType?.name ?? "unassigned"}
+                              </div>
+                            );
+                          })()}
+                    </td>
+                    <td className="p-3 text-center">
+                      <div
+                        className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${
+                          post.signedEvent
+                            ? "bg-muted text-muted-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
                       >
-                        <DropdownMenuItem onSelect={() => onEditPost(post)}>
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => onReschedulePost(post)}
-                        >
-                          Reschedule
-                        </DropdownMenuItem>
-                        {onScheduleRepost ? (
-                          <DropdownMenuItem
-                            onSelect={() => onScheduleRepost(post)}
+                        {post.signedEvent ? "Signed" : "Scheduled"}
+                      </div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                            aria-label="Actions"
                           >
-                            Schedule repost
+                            <MoreHorizontal
+                              className={INLINE_ICON_SIZE_CLASS}
+                            />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <DropdownMenuItem onSelect={() => onEditPost(post)}>
+                            Edit
                           </DropdownMenuItem>
-                        ) : null}
-                        {onScheduleQuote ? (
                           <DropdownMenuItem
-                            onSelect={() => onScheduleQuote(post)}
+                            onSelect={() => onReschedulePost(post)}
                           >
-                            Schedule quote
+                            Reschedule
                           </DropdownMenuItem>
-                        ) : null}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          disabled={
-                            deleteFetcher.state !== "idle" ||
-                            bulkDeleteState !== "idle"
-                          }
-                          onSelect={() => {
-                            const fd = new FormData();
-                            fd.set("postId", post.id);
-                            fd.set("_action", "moveToDraft");
-                            fd.set("type", "post");
-                            deleteFetcher.submit(fd, { method: "post" });
-                          }}
-                        >
-                          {deleteFetcher.state !== "idle" &&
-                          deleteFetcher.formData?.get("_action") ===
-                            "moveToDraft" &&
-                          /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
-                          deleteFetcher.formData?.get("postId") === post.id
-                            ? "Moving..."
-                            : "Move to drafts"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled={
-                            deleteFetcher.state !== "idle" ||
-                            bulkDeleteState !== "idle"
-                          }
-                          className="text-destructive focus:text-destructive"
-                          onSelect={() => {
-                            const fd = new FormData();
-                            fd.set("postId", post.id);
-                            fd.set("_action", "delete");
-                            deleteFetcher.submit(fd, { method: "post" });
-                          }}
-                        >
-                          {deleteFetcher.state !== "idle" &&
-                          deleteFetcher.formData?.get("postId") === post.id
-                            ? "Deleting..."
-                            : "Delete"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
+                          {onScheduleRepost ? (
+                            <DropdownMenuItem
+                              onSelect={() => onScheduleRepost(post)}
+                            >
+                              Schedule repost
+                            </DropdownMenuItem>
+                          ) : null}
+                          {onScheduleQuote ? (
+                            <DropdownMenuItem
+                              onSelect={() => onScheduleQuote(post)}
+                            >
+                              Schedule quote
+                            </DropdownMenuItem>
+                          ) : null}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            disabled={
+                              deleteFetcher.state !== "idle" ||
+                              bulkDeleteState !== "idle"
+                            }
+                            onSelect={() => {
+                              const fd = new FormData();
+                              fd.set("postId", post.id);
+                              fd.set("_action", "moveToDraft");
+                              fd.set("type", "post");
+                              deleteFetcher.submit(fd, { method: "post" });
+                            }}
+                          >
+                            {deleteFetcher.state !== "idle" &&
+                            deleteFetcher.formData?.get("_action") ===
+                              "moveToDraft" &&
+                            /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
+                            deleteFetcher.formData?.get("postId") === post.id
+                              ? "Moving..."
+                              : "Move to drafts"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={
+                              deleteFetcher.state !== "idle" ||
+                              bulkDeleteState !== "idle"
+                            }
+                            className="text-destructive focus:text-destructive"
+                            onSelect={() => {
+                              const fd = new FormData();
+                              fd.set("postId", post.id);
+                              fd.set("_action", "delete");
+                              deleteFetcher.submit(fd, { method: "post" });
+                            }}
+                          >
+                            {deleteFetcher.state !== "idle" &&
+                            deleteFetcher.formData?.get("postId") === post.id
+                              ? "Deleting..."
+                              : "Delete"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

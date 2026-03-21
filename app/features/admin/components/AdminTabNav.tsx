@@ -38,7 +38,7 @@ export function AdminTabNav() {
   }
 
   return (
-    <div className="border-border bg-background/80 sticky top-0 z-10 border-b backdrop-blur-sm">
+    <div className="border-border from-background/95 to-background/75 sticky top-0 z-10 border-b bg-gradient-to-b backdrop-blur-md">
       <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <nav className="flex flex-wrap gap-1" aria-label="Admin sections">
           {TABS.map((tab) => (
@@ -48,9 +48,9 @@ export function AdminTabNav() {
               end={tab.end}
               className={({ isActive }) =>
                 cn(
-                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
                   isActive
-                    ? "bg-muted text-foreground"
+                    ? "bg-muted text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )
               }

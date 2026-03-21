@@ -173,6 +173,65 @@ export async function getReferrersEligibleForPayout(): Promise<
     .filter((r) => r.pendingSats >= REFERRAL_PAYOUT_THRESHOLD_SATS);
 }
 
+export interface ReferralBatchPreviewRow {
+  referrerNpub: string;
+  pendingSats: number;
+  ready: boolean;
+  skipReason: string | null;
+}
+
+/**
+ * Same eligibility rules as batch execution: threshold + https LNURL destination.
+ */
+export async function getReferralBatchPreview(): Promise<{
+  rows: ReferralBatchPreviewRow[];
+  totalSatsReady: number;
+  readyCount: number;
+  skippedCount: number;
+}> {
+  const eligible = await getReferrersEligibleForPayout();
+  const rows: ReferralBatchPreviewRow[] = [];
+  let totalSatsReady = 0;
+  let readyCount = 0;
+  let skippedCount = 0;
+
+  for (const { referrerNpub, pendingSats } of eligible) {
+    const config = await findReferrerPayoutConfig(referrerNpub);
+    if (!config?.payoutDestination.trim()) {
+      rows.push({
+        referrerNpub,
+        pendingSats,
+        ready: false,
+        skipReason: "No payout destination configured",
+      });
+      skippedCount += 1;
+      continue;
+    }
+    const dest = config.payoutDestination.trim();
+    const isUrl = dest.startsWith("http://") || dest.startsWith("https://");
+    if (!isUrl) {
+      rows.push({
+        referrerNpub,
+        pendingSats,
+        ready: false,
+        skipReason: "Destination must be an http(s) LNURL/LUD endpoint",
+      });
+      skippedCount += 1;
+      continue;
+    }
+    rows.push({
+      referrerNpub,
+      pendingSats,
+      ready: true,
+      skipReason: null,
+    });
+    totalSatsReady += pendingSats;
+    readyCount += 1;
+  }
+
+  return { rows, totalSatsReady, readyCount, skippedCount };
+}
+
 export interface ReferralPayoutBatchResult {
   processed: number;
   paid: number;
