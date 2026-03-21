@@ -1,7 +1,12 @@
 /** @type {import('@remix-run/dev').AppConfig} */
 module.exports = {
   cacheDirectory: "./node_modules/.cache/remix",
-  ignoredRouteFiles: ["**/.*", "**/*.test.{ts,tsx}"],
+  ignoredRouteFiles: [
+    "**/.*",
+    "**/*.test.{ts,tsx}",
+    "**/*.server.ts",
+    "**/*.server.tsx",
+  ],
   serverModuleFormat: "cjs",
   tailwind: true,
   postcss: true,
