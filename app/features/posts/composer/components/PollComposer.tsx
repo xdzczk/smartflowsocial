@@ -1,0 +1,540 @@
+/**
+ * NIP-88 poll composer (kind 1068): question, options, schedule/publish via newpost action.
+ */
+
+import { useFetcher, Link } from "@remix-run/react";
+import { BarChart3, Clock, Plus, Send, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "react-hot-toast";
+
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { ConfidencePanel } from "~/features/posts/components/ConfidencePanel";
+import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
+import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
+import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
+import { usePostScheduling } from "~/features/posts/scheduling";
+import type { QueueType } from "~/features/posts/types";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { useOptionalUser } from "~/lib/remix-utils";
+import { nowMillis } from "~/lib/temporal";
+
+import { useComposerSignerReconnect } from "../hooks/useComposerSignerReconnect";
+import { useComposerState } from "../hooks/useComposerState";
+
+import { ComposerErrors, ComposerQueueField } from "./composer";
+import {
+  getQueueNextSlotLabel,
+  getRelativeTime,
+  getScheduleTimeLabel,
+  getSummaryLine,
+} from "./composer/composer-helpers";
+import {
+  ACTION_POST_POLL,
+  ACTION_SCHEDULE_POLL,
+  parseScheduledTime,
+} from "./composer/composer-submit-utils";
+
+const MAX_OPTIONS = 10;
+const MIN_OPTIONS = 2;
+const COMPOSER_SCHEDULE_FUTURE = "Schedule time must be in the future.";
+
+function newPollOptionRowId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `opt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function parseTopicTagValues(hashtagLine: string): string[] {
+  return hashtagLine
+    .split(/\s+/u)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
+    .map((t) => t.replace(/^#/u, ""));
+}
+
+export interface PollComposerProps {
+  queueTypes?: Array<string | QueueType>;
+  hashTagPresets?: Array<{ id: string; name: string; tags: string }>;
+  onQueueTypeChange?: (queueType: string) => void;
+  selectedHashTagPresetId?: string | null | undefined;
+  onHashtagPresetChange?: (presetId: string | null, hashtags: string) => void;
+  relayOverride?: string[];
+  relayCount?: number;
+  onComposerStatusChange?: (status: ComposerStatus) => void;
+  defaultRelays: string[];
+  scheduleIntervals?: number[];
+  initialScheduledFor?: string | null;
+}
+
+export function PollComposer({
+  queueTypes = [],
+  hashTagPresets = [],
+  onQueueTypeChange,
+  selectedHashTagPresetId,
+  onHashtagPresetChange,
+  relayOverride,
+  relayCount: relayCountProp = 0,
+  onComposerStatusChange,
+  defaultRelays,
+  scheduleIntervals: scheduleIntervalsProp,
+  initialScheduledFor = null,
+}: PollComposerProps) {
+  const fetcher = useFetcher();
+  const user = useOptionalUser();
+  const userTimezone = user?.timezone ?? "UTC";
+
+  const [question, setQuestion] = useState("");
+  const [options, setOptions] = useState<string[]>(["", ""]);
+  const [optionRowIds, setOptionRowIds] = useState<string[]>(() => [
+    newPollOptionRowId(),
+    newPollOptionRowId(),
+  ]);
+  const [pollType, setPollType] = useState<"singlechoice" | "multiplechoice">(
+    "singlechoice"
+  );
+  const [endsAtLocal, setEndsAtLocal] = useState("");
+  const [selectedHashtags, setSelectedHashtags] = useState("");
+  const [hashTagPresetId, setHashTagPresetId] = useState<string | null>(null);
+  const [isRecyclable, setIsRecyclable] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
+  const [signingError, setSigningError] = useState<string | null>(null);
+  const [publishSubmitInFlight, setPublishSubmitInFlight] = useState(false);
+  const [lastPublishFailed, setLastPublishFailed] = useState(false);
+
+  const {
+    selectedQueue,
+    setSelectedQueue,
+    scheduledFor,
+    setScheduledFor,
+    timeError,
+    handleScheduleIntervalClick,
+    scheduleIntervals,
+    calculateQueueScheduleTime,
+  } = usePostScheduling({
+    queueTypes,
+    scheduleIntervals: scheduleIntervalsProp,
+    userTimezone,
+    initialQueue: "unassigned",
+    onQueueTypeChange,
+  });
+
+  const appliedInitialScheduleRef = useRef(false);
+  useEffect(() => {
+    if (!initialScheduledFor || appliedInitialScheduleRef.current) return;
+    appliedInitialScheduleRef.current = true;
+    setScheduledFor(initialScheduledFor);
+  }, [initialScheduledFor, setScheduledFor]);
+
+  const selectedQueueType = queueTypes.find(
+    (q) => (typeof q === "string" ? q : q.name) === selectedQueue
+  );
+  const queueTypeId =
+    typeof selectedQueueType === "object" ? selectedQueueType.id : null;
+
+  const relayUrls =
+    relayOverride && relayOverride.length > 0 ? relayOverride : defaultRelays;
+
+  const relayCount =
+    relayCountProp > 0
+      ? relayCountProp
+      : relayUrls.length > 0
+        ? relayUrls.length
+        : 0;
+
+  const trimmedOptions = useMemo(
+    () => options.map((o) => o.trim()).filter((o) => o.length > 0),
+    [options]
+  );
+
+  const hasContent =
+    question.trim().length > 0 && trimmedOptions.length >= MIN_OPTIONS;
+  const canSubmit = trimmedOptions.length >= MIN_OPTIONS;
+  const hasScheduleTime = scheduledFor.trim().length > 0;
+  const isSubmitting = fetcher.state !== "idle";
+
+  const composerStatus = useComposerState({
+    hasContent,
+    canSubmit,
+    hasScheduleTime,
+    isSigning,
+    isSubmitting,
+    publishSubmitInFlight,
+    lastPublishFailed,
+  });
+
+  useEffect(() => {
+    onComposerStatusChange?.(composerStatus);
+  }, [composerStatus, onComposerStatusChange]);
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data) {
+      const data = fetcher.data as { error?: string };
+      if (typeof data.error === "string") {
+        setLastPublishFailed(true);
+        toast.error(data.error);
+      }
+    }
+  }, [fetcher.state, fetcher.data]);
+
+  const clearSigningState = useCallback(() => {
+    setIsSigning(false);
+    setSigningError(null);
+  }, []);
+
+  useComposerSignerReconnect(clearSigningState, isSigning);
+
+  const scheduleTimeLabel = scheduledFor.trim();
+  const disabled = isSubmitting || isSigning;
+
+  const primarySubmitRef = useRef<HTMLButtonElement>(null);
+
+  async function submitPoll(postNow: boolean): Promise<void> {
+    setSigningError(null);
+    setLastPublishFailed(false);
+    const q = question.trim();
+    if (!q) {
+      toast.error("Enter a poll question.");
+      return;
+    }
+    if (trimmedOptions.length < MIN_OPTIONS) {
+      toast.error(`Add at least ${MIN_OPTIONS} options.`);
+      return;
+    }
+    if (relayUrls.length === 0) {
+      toast.error("Select at least one relay for the poll.");
+      return;
+    }
+
+    let scheduledTimeMs: number;
+    if (postNow) {
+      scheduledTimeMs = nowMillis();
+    } else {
+      if (!scheduledFor.trim()) {
+        toast.error("Pick a schedule time.");
+        return;
+      }
+      scheduledTimeMs = await parseScheduledTime(scheduledFor, userTimezone);
+      if (scheduledTimeMs < Date.now()) {
+        toast.error(COMPOSER_SCHEDULE_FUTURE);
+        return;
+      }
+    }
+
+    const nominalUnix = Math.floor(scheduledTimeMs / 1000);
+    let endsAtUnix: number | undefined;
+    if (endsAtLocal.trim()) {
+      const endMs = await parseScheduledTime(endsAtLocal, userTimezone);
+      endsAtUnix = Math.floor(endMs / 1000);
+      if (endsAtUnix <= nominalUnix) {
+        toast.error("Poll end time must be after publish time.");
+        return;
+      }
+    }
+
+    setIsSigning(true);
+    setPublishSubmitInFlight(true);
+    try {
+      const { nostrEvent, signedEvent } =
+        await nostrAdapter.signPollEventWithOneRetry({
+          question: q,
+          created_at: nominalUnix,
+          optionLabels: trimmedOptions,
+          pollType,
+          relayUrls,
+          endsAt: endsAtUnix,
+          topicTagValues: parseTopicTagValues(selectedHashtags),
+        });
+
+      const fd = new FormData();
+      fd.set("_action", postNow ? ACTION_POST_POLL : ACTION_SCHEDULE_POLL);
+      fd.set("content", q);
+      fd.set("queueType", selectedQueue);
+      if (queueTypeId) fd.set("queueTypeId", queueTypeId);
+      if (isRecyclable) fd.set("isRecyclable", "on");
+      if (hashTagPresetId) {
+        fd.set("useHashtagPresets", "on");
+        fd.set("hashTagPresetId", hashTagPresetId);
+      }
+      fd.set("signedEvent", JSON.stringify(signedEvent));
+      fd.set("nostrEvent", JSON.stringify(nostrEvent));
+      if (relayOverride && relayOverride.length > 0) {
+        fd.set("relays", JSON.stringify(relayOverride));
+      }
+
+      fetcher.submit(fd, { method: "post" });
+    } catch (e) {
+      setLastPublishFailed(true);
+      setSigningError(
+        e instanceof Error ? e.message : "Could not sign poll. Try again."
+      );
+      toast.error("Signing failed");
+    } finally {
+      setIsSigning(false);
+    }
+  }
+
+  const slotLabel = getScheduleTimeLabel(scheduleTimeLabel);
+  const primaryLabel = isSigning
+    ? "Waiting for signer…"
+    : isSubmitting
+      ? hasScheduleTime
+        ? "Scheduling..."
+        : "Posting..."
+      : hasScheduleTime
+        ? slotLabel
+          ? `Schedule for ${slotLabel}`
+          : "Schedule poll"
+        : "Post poll now";
+
+  return (
+    <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="border-border bg-card/30 min-w-0 flex-1 rounded-xl border p-6">
+        <div className="text-muted-foreground mb-4 flex items-center gap-2 text-sm font-medium">
+          <BarChart3 className="h-4 w-4" aria-hidden />
+          NIP-88 poll
+        </div>
+        <div className="space-y-6">
+          <ComposerErrors
+            isSigning={isSigning}
+            signerLabel={null}
+            onCancelSigning={clearSigningState}
+            signingError={signingError}
+            onDismissSigningError={() => {
+              setSigningError(null);
+              setLastPublishFailed(false);
+            }}
+            onRetry={() => primarySubmitRef.current?.click()}
+            disabled={disabled}
+            signerReady={user != null}
+          />
+
+          <div className="space-y-2">
+            <Label htmlFor="poll-question">Question</Label>
+            <textarea
+              id="poll-question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              disabled={disabled}
+              rows={3}
+              className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="What do you want to ask?"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Options</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={disabled || options.length >= MAX_OPTIONS}
+                onClick={() => {
+                  setOptions((o) => [...o, ""]);
+                  setOptionRowIds((ids) => [...ids, newPollOptionRowId()]);
+                }}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add option
+              </Button>
+            </div>
+            <ul className="space-y-2">
+              {options.map((opt, i) => (
+                <li
+                  key={optionRowIds[i] ?? `opt-fallback-${i}`}
+                  className="flex gap-2"
+                >
+                  <Input
+                    value={opt}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setOptions((prev) =>
+                        prev.map((p, j) => (j === i ? v : p))
+                      );
+                    }}
+                    disabled={disabled}
+                    placeholder={`Option ${i + 1}`}
+                    className="flex-1"
+                  />
+                  {options.length > MIN_OPTIONS ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={disabled}
+                      aria-label={`Remove option ${i + 1}`}
+                      onClick={() => {
+                        setOptions((prev) => prev.filter((_, j) => j !== i));
+                        setOptionRowIds((prev) =>
+                          prev.filter((_, j) => j !== i)
+                        );
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="poll-type">How people vote</Label>
+              <select
+                id="poll-type"
+                value={pollType}
+                onChange={(e) =>
+                  setPollType(
+                    e.target.value === "multiplechoice"
+                      ? "multiplechoice"
+                      : "singlechoice"
+                  )
+                }
+                disabled={disabled}
+                className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+              >
+                <option value="singlechoice">Single choice</option>
+                <option value="multiplechoice">Multiple choice</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="poll-ends">End voting (optional)</Label>
+              <Input
+                id="poll-ends"
+                type="datetime-local"
+                value={endsAtLocal}
+                onChange={(e) => setEndsAtLocal(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+          </div>
+
+          <ComposerQueueField
+            queueTypes={queueTypes}
+            value={selectedQueue}
+            onChange={setSelectedQueue}
+            disabled={disabled}
+            nextSlot={
+              selectedQueueType &&
+              typeof selectedQueueType === "object" &&
+              (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+                ? getQueueNextSlotLabel(scheduledFor)
+                : undefined
+            }
+          />
+
+          {timeError ? (
+            <p className="text-destructive text-sm">{timeError}</p>
+          ) : null}
+          <SchedulingSection
+            scheduledFor={scheduledFor}
+            onScheduledForChange={setScheduledFor}
+            scheduleIntervals={scheduleIntervals}
+            queueTypes={queueTypes}
+            selectedQueue={selectedQueue}
+            onScheduleIntervalClick={handleScheduleIntervalClick}
+            onCalculateNextSlot={() => {
+              void calculateQueueScheduleTime(selectedQueue);
+            }}
+            disabled={disabled}
+            userTimezone={userTimezone}
+          />
+
+          <TagsChipRow
+            tags={selectedHashtags}
+            onTagsChange={(t) => {
+              setSelectedHashtags(t);
+              if (!t.trim()) {
+                setHashTagPresetId(null);
+              }
+            }}
+            presets={hashTagPresets}
+            selectedPresetId={
+              hashTagPresetId ?? selectedHashTagPresetId ?? null
+            }
+            onPresetSelect={(id, tags) => {
+              setHashTagPresetId(id);
+              setSelectedHashtags(tags);
+              onHashtagPresetChange?.(id, tags);
+            }}
+            disabled={disabled}
+          />
+
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isRecyclable}
+              onChange={(e) => setIsRecyclable(e.target.checked)}
+              disabled={disabled}
+            />
+            Recyclable post
+          </label>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {user == null ? (
+              <Button variant="default" asChild>
+                <Link to="/dashboard/settings">Connect signer</Link>
+              </Button>
+            ) : (
+              <Button
+                ref={primarySubmitRef}
+                type="button"
+                className="bg-success hover:bg-success/90 text-white"
+                disabled={disabled || !hasContent || !canSubmit}
+                onClick={() => void submitPoll(!hasScheduleTime)}
+              >
+                {hasScheduleTime ? (
+                  <Clock
+                    className="mr-1.5 h-5 w-5"
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                ) : (
+                  <Send
+                    className="mr-1.5 h-5 w-5"
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                )}
+                {primaryLabel}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <ConfidencePanel
+        queueName={selectedQueue}
+        nextSlot={
+          selectedQueueType &&
+          typeof selectedQueueType === "object" &&
+          (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+            selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+            ? scheduledFor.trim() || undefined
+            : undefined
+        }
+        scheduledFor={scheduledFor.trim() || undefined}
+        timezone={user?.timezone ?? undefined}
+        relativeTime={getRelativeTime(scheduledFor)}
+        charCount={question.length}
+        attachmentCount={0}
+        relayCount={relayCount}
+        summaryLine={getSummaryLine(selectedQueue, scheduledFor, false, 1, 0)}
+        usesQueueSlot={
+          !!(
+            selectedQueueType &&
+            typeof selectedQueueType === "object" &&
+            (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+              selectedQueueType.scheduleType === "WEEKLY_SLOTS") &&
+            scheduledFor.trim()
+          )
+        }
+      />
+    </div>
+  );
+}

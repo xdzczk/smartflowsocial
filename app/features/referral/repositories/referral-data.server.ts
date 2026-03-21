@@ -2,6 +2,8 @@
  * Referral data access. All prisma usage for referral confined here.
  */
 
+import type { Prisma } from "@prisma/client";
+
 import { ReferralEarningStatus } from "~/features/referral/data/referral-prisma-types.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -232,5 +234,38 @@ export async function upsertReferrerPayoutConfig(
       payoutDestination: data.payoutDestination,
       payoutDestinationType: data.payoutDestinationType,
     },
+  });
+}
+
+// --- referral payout audit (admin ledger)
+export async function insertReferralPayoutAuditLog(input: {
+  channel: "batch" | "manual";
+  referrerNpub?: string | null;
+  amountSats?: number | null;
+  status: "success" | "failed";
+  batchSummary?: unknown;
+  errorMessage?: string | null;
+  operatorNpub?: string | null;
+}): Promise<void> {
+  await prisma.referralPayoutAuditLog.create({
+    data: {
+      channel: input.channel,
+      referrerNpub: input.referrerNpub ?? null,
+      amountSats: input.amountSats ?? null,
+      status: input.status,
+      batchSummary:
+        input.batchSummary === undefined
+          ? undefined
+          : (input.batchSummary as Prisma.InputJsonValue),
+      errorMessage: input.errorMessage ?? null,
+      operatorNpub: input.operatorNpub ?? null,
+    },
+  });
+}
+
+export async function listReferralPayoutAuditLogs(limit: number) {
+  return prisma.referralPayoutAuditLog.findMany({
+    orderBy: { createdAt: "desc" },
+    take: Math.min(Math.max(limit, 1), 500),
   });
 }

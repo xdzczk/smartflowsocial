@@ -1,3 +1,4 @@
+/* eslint-disable import/order -- env must load before nostr-tools WebSocket polyfill */
 import { env } from "~/lib/env.server";
 
 // Polyfill WebSocket for nostr-tools in Node.js (production only); must run before nostr-tools import
@@ -12,19 +13,19 @@ if (
   globalThis.WebSocket = WebSocket;
 }
 
-// eslint-disable-next-line import/order -- env must load first for WebSocket polyfill before nostr-tools
 import { nip04, finalizeEvent, nip19, SimplePool } from "nostr-tools";
+import { wrapManyEvents } from "nostr-tools/nip17";
+import { getPublicKey } from "nostr-tools/pure";
 
 import { logWarning, logError } from "~/lib/error-logger.server";
-
-import { convertToHex } from "./nostr-conversion";
-import { buildCacheKey, getOrSetJson } from "./redis-cache.server";
-
-// eslint-disable-next-line import/order -- relay-constants after env/nostr-tools so WebSocket polyfill runs first
+import { featureFlags } from "~/lib/feature-flags.server";
 import {
   DEFAULT_USER_WRITE_RELAYS,
   relaysArray,
 } from "~/features/relays/relay-constants";
+
+import { convertToHex } from "./nostr-conversion";
+import { buildCacheKey, getOrSetJson } from "~/lib/redis-cache.server";
 
 type RelayUrl = string;
 
@@ -62,6 +63,20 @@ function parseNip65ReadRelaysFromEventTags(tags: unknown): string[] {
     if (marker === "" || marker === "read") {
       relays.push(url);
     }
+  }
+  return relays;
+}
+
+/** NIP-17 kind:10050 inbox list — `relay` tags only (no merge with defaults). */
+function parseKind10050RelayTags(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+  const relays: string[] = [];
+  for (const t of tags) {
+    if (!Array.isArray(t)) continue;
+    if (t[0] !== "relay") continue;
+    const url = typeof t[1] === "string" ? t[1].trim() : "";
+    if (!url || !isValidWssRelayUrl(url)) continue;
+    relays.push(url);
   }
   return relays;
 }
@@ -123,6 +138,99 @@ async function fetchRecipientRelayListKind10002(receiverHex: string): Promise<{
       // ignore
     }
   }
+}
+
+async function fetchRecipientInboxRelaysKind10050(
+  receiverHex: string
+): Promise<{
+  relays: string[];
+}> {
+  const bootstrapRelays = normalizeRelays(DEFAULT_USER_WRITE_RELAYS);
+  const pool = new SimplePool();
+  const timeoutMs = 2500;
+
+  const filter = { kinds: [10050], authors: [receiverHex], limit: 1 };
+
+  const timeout = new Promise<null>((resolve) =>
+    setTimeout(() => resolve(null), timeoutMs)
+  );
+
+  try {
+    const poolLike = pool as unknown as NostrPoolLike;
+    const evt = await Promise.race([
+      (async () => {
+        if (typeof poolLike.get === "function") {
+          return await poolLike.get(bootstrapRelays, filter);
+        }
+        if (typeof poolLike.list === "function") {
+          const events = await poolLike.list(bootstrapRelays, [filter]);
+          return Array.isArray(events) ? (events[0] ?? null) : null;
+        }
+        return null;
+      })(),
+      timeout,
+    ]);
+
+    const eventObj =
+      evt && typeof evt === "object" && !Array.isArray(evt)
+        ? (evt as { tags?: unknown })
+        : null;
+
+    const relays = eventObj?.tags ? parseKind10050RelayTags(eventObj.tags) : [];
+
+    return { relays };
+  } catch (error) {
+    logWarning("Failed to fetch recipient inbox relays (kind 10050, NIP-17)", {
+      receiverHex,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { relays: [] };
+  } finally {
+    try {
+      const poolLike = pool as unknown as NostrPoolLike;
+      if (typeof poolLike.close === "function") {
+        await Promise.resolve(poolLike.close());
+      }
+    } catch {
+      // ignore
+    }
+  }
+}
+
+/**
+ * Cached kind:10050 `relay` URLs for a pubkey (NIP-17 inbox). Does not merge defaults.
+ */
+export async function resolveCachedKind10050InboxRelays(
+  pubkeyHex: string
+): Promise<string[]> {
+  if (!/^[0-9a-f]{64}$/i.test(pubkeyHex)) return [];
+  const lower = pubkeyHex.toLowerCase();
+  const cacheKey = buildCacheKey({
+    namespace: "dm-inbox-10050",
+    version: "v1",
+    parts: { pubkeyHex: lower },
+  });
+
+  return getOrSetJson<string[]>({
+    cache: "dm-inbox-10050",
+    key: cacheKey,
+    ttlSeconds: 60 * 60 * 12,
+    negativeTtlSeconds: 60 * 10,
+    shouldNegativeCache: (v) => Array.isArray(v) && v.length === 0,
+    compute: async () => {
+      const { relays } = await fetchRecipientInboxRelaysKind10050(lower);
+      return capRelays(normalizeRelays(relays), 8);
+    },
+  });
+}
+
+function mergeNip17PublishRelays(inboxRelays: string[]): string[] {
+  if (inboxRelays.length === 0) return [];
+  const merged = normalizeRelays([
+    ...inboxRelays,
+    ...DEFAULT_USER_WRITE_RELAYS,
+  ]);
+  return capRelays(merged, 12);
 }
 
 /**
@@ -227,7 +335,9 @@ function resolveReceiverHex(receiverPubkey: string): string {
   return receiverPubkey;
 }
 
-async function resolveDmRelaysSafe(receiverHex: string): Promise<string[]> {
+export async function resolveDmRelaysSafe(
+  receiverHex: string
+): Promise<string[]> {
   // Basic hex sanity check (64 hex chars)
   if (!/^[0-9a-f]{64}$/i.test(receiverHex)) return DEFAULT_USER_WRITE_RELAYS;
   try {
@@ -249,11 +359,200 @@ async function readResponseTextSafe(response: Response): Promise<string> {
   }
 }
 
-interface SendNostrDirectMessageResult {
+export function giftWrapRecipientPubkeyHex(event: {
+  tags?: unknown;
+}): string | null {
+  const tags = event.tags;
+  if (!Array.isArray(tags)) return null;
+  for (const t of tags) {
+    if (!Array.isArray(t) || t[0] !== "p") continue;
+    const pk = typeof t[1] === "string" ? t[1].trim().toLowerCase() : "";
+    if (/^[0-9a-f]{64}$/.test(pk)) return pk;
+  }
+  return null;
+}
+
+export async function relaysForNip17GiftWrap(params: {
+  giftWrapPTag: string;
+  receiverHexLower: string;
+  recipientInboxRelays: string[];
+  senderHexLower: string;
+}): Promise<string[]> {
+  const p = params.giftWrapPTag.toLowerCase();
+  if (p === params.receiverHexLower) {
+    return mergeNip17PublishRelays(params.recipientInboxRelays);
+  }
+  if (p === params.senderHexLower) {
+    const senderInbox = await resolveCachedKind10050InboxRelays(
+      params.senderHexLower
+    );
+    return senderInbox.length > 0
+      ? mergeNip17PublishRelays(senderInbox)
+      : normalizeRelays(DEFAULT_USER_WRITE_RELAYS);
+  }
+  return normalizeRelays(DEFAULT_USER_WRITE_RELAYS);
+}
+
+export interface SendNostrDirectMessageResult {
   success: boolean;
   event?: unknown;
   status?: number;
   error?: string;
+  nip17?: {
+    attempted: boolean;
+    recipientPublished: boolean;
+    errors?: string[];
+  };
+  nip04?: { success: boolean };
+}
+
+async function publishEventToRelays(
+  event: Record<string, unknown>,
+  relaysToUse: string[]
+): Promise<SendNostrDirectMessageResult> {
+  const publisherUrl = env.NOSTR_PUBLISHER_URL;
+  if (!publisherUrl) {
+    return {
+      success: false,
+      error: "NOSTR_PUBLISHER_URL is not set.",
+      event,
+    };
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  const apiToken = env.NOSTR_PUBLISHER_API_TOKEN;
+  if (apiToken) {
+    headers["API-TOKEN"] = apiToken;
+  }
+
+  const relayList =
+    relaysToUse.length > 0 ? relaysToUse : normalizeRelays(relaysArray);
+
+  const response = await fetch(publisherUrl, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      relays: relayList,
+      event,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await readResponseTextSafe(response);
+
+    if (response.status === 409) {
+      return {
+        success: false,
+        status: response.status,
+        error: `Event already published (replay protection): ${errorText}`,
+        event,
+      };
+    }
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get("Retry-After");
+      const retryMsg = retryAfter ? ` Retry after ${retryAfter} seconds.` : "";
+      return {
+        success: false,
+        status: response.status,
+        error: `Rate limit exceeded.${retryMsg} ${errorText}`,
+        event,
+      };
+    }
+
+    return {
+      success: false,
+      status: response.status,
+      error: errorText,
+      event,
+    };
+  }
+
+  return { success: true, event };
+}
+
+type Nip17Outcome = NonNullable<SendNostrDirectMessageResult["nip17"]>;
+
+async function tryPublishNip17DirectMessages(params: {
+  receiverPubkey: string;
+  receiverHex: string;
+  systemKey: SystemSecretKey;
+  content: string;
+}): Promise<Nip17Outcome> {
+  const meta: Nip17Outcome = {
+    attempted: false,
+    recipientPublished: false,
+    errors: [],
+  };
+
+  const { receiverPubkey, receiverHex, systemKey, content } = params;
+
+  if (
+    !featureFlags.nostrDmNip17Enabled ||
+    !/^[0-9a-f]{64}$/i.test(receiverHex)
+  ) {
+    return meta;
+  }
+
+  const recipientInboxRelays =
+    await resolveCachedKind10050InboxRelays(receiverHex);
+  if (recipientInboxRelays.length === 0) {
+    return meta;
+  }
+
+  meta.attempted = true;
+  const senderHexLower = getPublicKey(systemKey.privateKeyBytes).toLowerCase();
+
+  try {
+    const preferredRelay = recipientInboxRelays[0];
+    const giftWraps = wrapManyEvents(
+      systemKey.privateKeyBytes,
+      [{ publicKey: receiverHex, relayUrl: preferredRelay }],
+      content
+    );
+
+    for (const gw of giftWraps) {
+      const pTag = giftWrapRecipientPubkeyHex(gw);
+      if (!pTag) {
+        meta.errors?.push("Gift wrap missing p tag");
+        continue;
+      }
+      const relaysForWrap = await relaysForNip17GiftWrap({
+        giftWrapPTag: pTag,
+        receiverHexLower: receiverHex,
+        recipientInboxRelays,
+        senderHexLower,
+      });
+      const pubResult = await publishEventToRelays(
+        gw as unknown as Record<string, unknown>,
+        relaysForWrap
+      );
+      if (!pubResult.success) {
+        meta.errors?.push(
+          pubResult.error ?? `NIP-17 publish failed (kind ${String(gw.kind)})`
+        );
+        logWarning("NIP-17 gift wrap publish failed", {
+          receiverPubkey,
+          kind: gw.kind,
+          error: pubResult.error,
+        });
+      } else if (pTag === receiverHex) {
+        meta.recipientPublished = true;
+      }
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    meta.errors?.push(msg);
+    logError(e instanceof Error ? e : new Error(msg), {
+      receiverPubkey,
+      message: "NIP-17 wrap or publish error",
+    });
+  }
+
+  return meta;
 }
 
 export async function sendNostrDirectMessage(
@@ -269,6 +568,8 @@ export async function sendNostrDirectMessage(
       return Promise.resolve({
         success: false,
         error: "NOSTR_NSEC is not set.",
+        nip17: { attempted: false, recipientPublished: false },
+        nip04: { success: false },
       });
     }
     const systemKey = parseSystemSecretKey(nsecEnv);
@@ -276,99 +577,59 @@ export async function sendNostrDirectMessage(
       return {
         success: false,
         error: "NOSTR_NSEC could not be converted to a usable secret key.",
+        nip17: { attempted: false, recipientPublished: false },
+        nip04: { success: false },
       };
     }
 
-    const receiverHex = resolveReceiverHex(receiverPubkey);
+    const receiverHexRaw = resolveReceiverHex(receiverPubkey);
+    const receiverHex = /^[0-9a-f]{64}$/i.test(receiverHexRaw)
+      ? receiverHexRaw.toLowerCase()
+      : receiverHexRaw;
+
+    const nip17Meta = await tryPublishNip17DirectMessages({
+      receiverPubkey,
+      receiverHex,
+      systemKey,
+      content,
+    });
 
     const relaysToUse = await resolveDmRelaysSafe(receiverHex);
 
-    // Encrypt the content
     const encryptedContent: string = nip04.encrypt(
       systemKey.secretKeyHex,
       receiverHex,
       content
     );
 
-    // Create event template
     const eventTemplate = {
       kind: 4, // NIP-04 encrypted direct message
       created_at: Math.floor(Date.now() / 1000),
-      tags: [
-        ["p", receiverHex], // Recipient's pubkey
-      ],
+      tags: [["p", receiverHex]],
       content: encryptedContent,
     };
 
-    // Sign the event
     const signedEvent = finalizeEvent(eventTemplate, systemKey.privateKeyBytes);
 
-    // Send the event to the publisher
-    const publisherUrl = env.NOSTR_PUBLISHER_URL;
-    if (!publisherUrl) {
-      return {
-        success: false,
-        error: "NOSTR_PUBLISHER_URL is not set.",
-        event: signedEvent,
-      };
-    }
+    const nip04Result = await publishEventToRelays(
+      signedEvent as unknown as Record<string, unknown>,
+      relaysToUse
+    );
 
-    // Build headers
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+    const merged: SendNostrDirectMessageResult = {
+      ...nip04Result,
+      success: nip04Result.success,
+      event: signedEvent,
+      nip17: nip17Meta,
+      nip04: { success: nip04Result.success },
     };
 
-    // Add API token if configured
-    const apiToken = env.NOSTR_PUBLISHER_API_TOKEN;
-    if (apiToken) {
-      headers["API-TOKEN"] = apiToken;
+    if (!nip04Result.success) {
+      merged.error = nip04Result.error;
+      merged.status = nip04Result.status;
     }
 
-    const response = await fetch(publisherUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        relays: relaysToUse.length > 0 ? relaysToUse : relaysArray,
-        event: signedEvent,
-        // Note: returnPerRelayResults is no longer needed - new publisher always returns results
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await readResponseTextSafe(response);
-
-      // Handle specific error codes
-      if (response.status === 409) {
-        return {
-          success: false,
-          status: response.status,
-          error: `Event already published (replay protection): ${errorText}`,
-          event: signedEvent,
-        };
-      }
-
-      if (response.status === 429) {
-        const retryAfter = response.headers.get("Retry-After");
-        const retryMsg = retryAfter
-          ? ` Retry after ${retryAfter} seconds.`
-          : "";
-        return {
-          success: false,
-          status: response.status,
-          error: `Rate limit exceeded.${retryMsg} ${errorText}`,
-          event: signedEvent,
-        };
-      }
-
-      return {
-        success: false,
-        status: response.status,
-        error: errorText,
-        event: signedEvent,
-      };
-    }
-
-    return { success: true, event: signedEvent };
+    return merged;
   } catch (error: unknown) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       receiverPubkey,
@@ -378,6 +639,10 @@ export async function sendNostrDirectMessage(
     return {
       success: false,
       error: errorMessage,
+      nip17: { attempted: false, recipientPublished: false },
+      nip04: { success: false },
     };
   }
 }
+
+/* eslint-enable import/order */

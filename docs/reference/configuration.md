@@ -295,6 +295,42 @@ NOSTR_NSEC=nsec1abc123...
 
 ---
 
+### NOSTR_DM_NIP17_ENABLED
+
+When **true** (default), the server attempts **NIP-17** private DMs (gift-wrapped kind `1059`) for
+recipients who publish **kind `10050`** inbox relay lists. **NIP-04** (kind `4`) is always published
+afterward for legacy clients.
+
+Set to `false` to disable only the NIP-17 leg (NIP-04 remains).
+
+**Example:**
+
+```env
+NOSTR_DM_NIP17_ENABLED=true
+```
+
+---
+
+### FEEDBACK_INBOX_NPUB
+
+**npub** (or hex pubkey) of the Nostr inbox that receives **Report a bug / Suggest a feature**
+submissions from the dashboard sidebar. The user’s client **encrypts (NIP-04) and signs (kind 4)**
+with their active identity—**NIP-07** (`window.nostr.nip04`) or **NIP-46** (`nip04_encrypt` on the
+remote signer). The server only validates and **publishes** (`/api/feedback-dm`); no `NOSTR_NSEC` is
+used for feedback. If **`NOSTR_DM_NIP17_ENABLED`** is on and this inbox has **kind `10050`** inbox
+relays, clients may also submit two **NIP-17 gift wraps** using **NIP-44** via **`nip44_encrypt`**
+(remote) or `window.nostr.nip44.encrypt` (extension).
+
+When unset or invalid, the sidebar feedback control is hidden.
+
+**Example:**
+
+```env
+FEEDBACK_INBOX_NPUB=npub1...
+```
+
+---
+
 ### OWNER_NWC
 
 Nostr Wallet Connect string for receiving subscription payments.
@@ -327,9 +363,9 @@ OWNER_NWC=nostr+walletconnect://npub1...?relay=wss://relay.example.com&secret=..
 
 ### ADMIN_NPUBS
 
-Comma-separated list of operator **npubs** allowed to access `/dashboard/admin`,
-`/dashboard/admin/referrals`, and `/dashboard/admin/earnings` (global stats, referral tables, payout
-actions).
+Comma-separated list of operator **npubs** allowed to access the admin area under `/dashboard/admin`
+(Overview, Analytics, Users, Operations, Referrals). Legacy URL `/dashboard/admin/earnings`
+redirects to Referrals.
 
 **Example:**
 
@@ -658,6 +694,22 @@ Recommended rollout:
 1. Start with `false` in production.
 2. Enable in staging and monitor outbox dead-letter / relay ACK outcomes.
 3. Enable in production once relay error rates are acceptable.
+
+---
+
+### NIP88_POLLS_ENABLED
+
+When `true`, enables NIP-88 **polls** in the product: poll composer on **New post**,
+`PostType.POLL`, kind **`1068`** publish/schedule, vote submission (**`1018`**) through
+`/api/publish` with merged execution + poll relays, and in-app tally subscriptions.
+
+Defaults to **off**; safe for production until you intentionally roll out.
+
+```env
+NIP88_POLLS_ENABLED=true
+```
+
+**Related:** [Nostr reference — NIP-88](./nostr.md#nip-88-polls-kind-1068--1018)
 
 ---
 

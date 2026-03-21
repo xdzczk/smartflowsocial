@@ -8,6 +8,7 @@ import { NWCClient } from "@getalby/sdk";
 import { getOwnerNwcWithRelayOverrides } from "~/features/payments/data";
 import { ReferralEarningStatus } from "~/features/referral/data/referral-prisma-types.server";
 import { fetchInvoiceFromLnurlPay } from "~/features/referral/lnurl-pay.server";
+import { createReferralPayoutAuditLog } from "~/features/referral/referral-payout-audit.server";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 
@@ -39,10 +40,24 @@ export async function getPendingBalanceSats(
 export async function payReferrerWithInvoice(
   referrerNpub: string,
   bolt11: string,
-  amountSats: number
+  amountSats: number,
+  audit?: {
+    channel: "manual" | "batch";
+    operatorNpub?: string;
+  }
 ): Promise<{ success: boolean; error?: string }> {
   const pending = await getPendingBalanceSats(referrerNpub);
   if (amountSats <= 0 || amountSats > pending) {
+    if (audit) {
+      await createReferralPayoutAuditLog({
+        channel: audit.channel,
+        referrerNpub,
+        amountSats,
+        status: "failed",
+        errorMessage: "Amount must be positive and not exceed pending balance",
+        operatorNpub: audit.operatorNpub ?? null,
+      });
+    }
     return {
       success: false,
       error: "Amount must be positive and not exceed pending balance",
@@ -69,9 +84,20 @@ export async function payReferrerWithInvoice(
       amountSats,
       String(error instanceof Error ? error.message : error)
     );
+    const errMsg = error instanceof Error ? error.message : String(error);
+    if (audit) {
+      await createReferralPayoutAuditLog({
+        channel: audit.channel,
+        referrerNpub,
+        amountSats,
+        status: "failed",
+        errorMessage: errMsg,
+        operatorNpub: audit.operatorNpub ?? null,
+      });
+    }
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: errMsg,
     };
   }
 
@@ -84,6 +110,16 @@ export async function payReferrerWithInvoice(
     if (row.commissionSats <= 0) continue;
     await markEarningPaid(row.id, now);
     remaining -= row.commissionSats;
+  }
+
+  if (audit) {
+    await createReferralPayoutAuditLog({
+      channel: audit.channel,
+      referrerNpub,
+      amountSats,
+      status: "success",
+      operatorNpub: audit.operatorNpub ?? null,
+    });
   }
 
   return { success: true };
@@ -148,7 +184,9 @@ export interface ReferralPayoutBatchResult {
 /**
  * Run batch referral payout: for each referrer with pending >= threshold and LNURL config, fetch invoice and pay.
  */
-export async function runReferralPayoutBatch(): Promise<ReferralPayoutBatchResult> {
+export async function runReferralPayoutBatch(options?: {
+  operatorNpub?: string;
+}): Promise<ReferralPayoutBatchResult> {
   const result: ReferralPayoutBatchResult = {
     processed: 0,
     paid: 0,
@@ -189,7 +227,8 @@ export async function runReferralPayoutBatch(): Promise<ReferralPayoutBatchResul
     const payResult = await payReferrerWithInvoice(
       referrerNpub,
       bolt11,
-      pendingSats
+      pendingSats,
+      { channel: "batch", operatorNpub: options?.operatorNpub }
     );
 
     if (payResult.success) {
@@ -201,6 +240,16 @@ export async function runReferralPayoutBatch(): Promise<ReferralPayoutBatchResul
       );
     }
   }
+
+  await createReferralPayoutAuditLog({
+    channel: "batch",
+    status:
+      result.failed > 0 && result.paid === 0 && result.processed > 0
+        ? "failed"
+        : "success",
+    batchSummary: result,
+    operatorNpub: options?.operatorNpub ?? null,
+  });
 
   return result;
 }

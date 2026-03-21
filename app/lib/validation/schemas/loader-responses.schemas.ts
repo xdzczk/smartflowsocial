@@ -609,6 +609,7 @@ export const flowLoaderDataSchema = z.object({
   flowPostsCount: z.number().int().min(0).optional(),
   flowRepostsCount: z.number().int().min(0).optional(),
   flowLongformCount: z.number().int().min(0).optional(),
+  flowPollsCount: z.number().int().min(0).optional(),
 });
 
 export type FlowLoaderData = z.infer<typeof flowLoaderDataSchema>;

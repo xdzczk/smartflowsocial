@@ -24,10 +24,39 @@ vi.mock("~/features/relays/publish-relay-acks.server", () => ({
   persistPublishRelayAcks: vi.fn(),
 }));
 
+vi.mock("~/lib/feature-flags.server", async (importOriginal) => {
+  const actualUnknown: unknown = await importOriginal();
+  if (
+    actualUnknown === null ||
+    typeof actualUnknown !== "object" ||
+    !("featureFlags" in actualUnknown) ||
+    typeof (actualUnknown as { featureFlags: unknown }).featureFlags !==
+      "object" ||
+    (actualUnknown as { featureFlags: unknown }).featureFlags === null
+  ) {
+    throw new Error("feature-flags.server mock: unexpected importOriginal()");
+  }
+  const previousFlags = {
+    ...(actualUnknown as { featureFlags: Record<string, unknown> })
+      .featureFlags,
+  };
+  return {
+    featureFlags: {
+      ...previousFlags,
+      nip88PollsEnabled: true,
+    },
+  };
+});
+
+import {
+  createValidSignedEvent,
+  getTestPublicKey,
+} from "../utils/nostr-test-helpers";
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireSession } from "~/features/auth";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
+import { buildPollTags, KIND_VOTE } from "~/features/polls";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { action } from "~/routes/api.publish";
@@ -37,7 +66,7 @@ describe("API: Publish", () => {
     vi.clearAllMocks();
     (requireSession as ReturnType<typeof vi.fn>).mockResolvedValue({
       userId: TEST_USER_ID,
-      pubkey: "test-pubkey",
+      pubkey: getTestPublicKey(),
       sessionId: "session-1",
     });
     (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue([
@@ -53,12 +82,10 @@ describe("API: Publish", () => {
 
   describe("Successful Requests", () => {
     it("should publish event via feature service", async () => {
-      const mockEvent = {
-        id: "event-123",
-        pubkey: "test-pubkey",
+      const mockEvent = createValidSignedEvent({
         kind: 1,
         content: "Test post",
-      };
+      });
 
       const mockRelays = ["wss://relay1.com", "wss://relay2.com"];
 
@@ -88,21 +115,24 @@ describe("API: Publish", () => {
           : {};
 
       expect(requireSession).toHaveBeenCalledWith(request);
-      expect(publishSignedEventToRelays).toHaveBeenCalledWith({
-        signedEvent: mockEvent,
-        relays: ["wss://resolved.example.com"],
-      });
+      expect(publishSignedEventToRelays).toHaveBeenCalled();
+      const publishInput = vi.mocked(publishSignedEventToRelays).mock
+        .calls[0]![0];
+      expect(publishInput.signedEvent.id).toBe(mockEvent.id);
+      expect(publishInput.signedEvent.kind).toBe(1);
+      expect(publishInput.signedEvent.pubkey).toBe(mockEvent.pubkey);
+      expect(publishInput.relays).toEqual(["wss://resolved.example.com"]);
       expect(persistPublishRelayAcks).toHaveBeenCalledWith({
-        publishAttemptId: "api:event-123",
+        publishAttemptId: `api:${mockEvent.id}`,
         userId: TEST_USER_ID,
-        eventId: "event-123",
+        eventId: mockEvent.id,
         results: [],
       });
       expect(data).toEqual({ success: true });
     });
 
     it("should allow missing relays (defaults handled by publisher)", async () => {
-      const mockEvent = { id: "event-123", pubkey: "test-pubkey" };
+      const mockEvent = createValidSignedEvent({ kind: 1, content: "Note" });
 
       const request = new Request("http://localhost:3000/api/publish", {
         method: "POST",
@@ -128,17 +158,129 @@ describe("API: Publish", () => {
             })
           : {};
 
-      expect(publishSignedEventToRelays).toHaveBeenCalledWith({
-        signedEvent: mockEvent,
-        relays: ["wss://resolved.example.com"],
-      });
+      expect(publishSignedEventToRelays).toHaveBeenCalled();
+      const publishInputMissingRelays = vi.mocked(publishSignedEventToRelays)
+        .mock.calls[0]![0];
+      expect(publishInputMissingRelays.signedEvent.id).toBe(mockEvent.id);
+      expect(publishInputMissingRelays.signedEvent.kind).toBe(1);
+      expect(publishInputMissingRelays.signedEvent.pubkey).toBe(
+        mockEvent.pubkey
+      );
+      expect(publishInputMissingRelays.relays).toEqual([
+        "wss://resolved.example.com",
+      ]);
       expect(persistPublishRelayAcks).toHaveBeenCalledWith({
-        publishAttemptId: "api:event-123",
+        publishAttemptId: `api:${mockEvent.id}`,
         userId: TEST_USER_ID,
-        eventId: "event-123",
+        eventId: mockEvent.id,
         results: [],
       });
       expect(data).toEqual({ success: true });
+    });
+
+    it("should merge execution relays with poll relay tags for NIP-88 kind 1018", async () => {
+      const pollTags = buildPollTags({
+        optionLabels: ["A", "B"],
+        pollType: "singlechoice",
+        relayUrls: ["wss://poll-relay.example"],
+      });
+      const optionRow = pollTags.find((t) => t[0] === "option");
+      const optionId = optionRow?.[1];
+      if (!optionId) {
+        throw new Error("expected option id from buildPollTags");
+      }
+
+      const pollEvent = createValidSignedEvent({
+        kind: 1068,
+        content: "Pick one?",
+        tags: pollTags,
+      });
+
+      const voteEvent = createValidSignedEvent({
+        kind: KIND_VOTE,
+        content: "",
+        tags: [
+          ["e", pollEvent.id],
+          ["response", optionId],
+        ],
+        created_at: pollEvent.created_at + 2,
+      });
+
+      const request = new Request("http://localhost:3000/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: voteEvent,
+          pollEvent,
+        }),
+      });
+
+      const response = await action({ request, params: {}, context: {} });
+      const dataRaw: unknown = await response.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown })
+          : {};
+
+      expect(data).toEqual({ success: true });
+      expect(publishSignedEventToRelays).toHaveBeenCalled();
+      const publishVoteInput = vi.mocked(publishSignedEventToRelays).mock
+        .calls[0]![0];
+      expect(publishVoteInput.signedEvent.id).toBe(voteEvent.id);
+      expect(publishVoteInput.signedEvent.kind).toBe(KIND_VOTE);
+      expect(publishVoteInput.signedEvent.pubkey).toBe(voteEvent.pubkey);
+      expect(publishVoteInput.relays).toEqual([
+        "wss://resolved.example.com",
+        "wss://poll-relay.example",
+      ]);
+    });
+
+    it("should dedupe overlapping execution and poll relays for kind 1018", async () => {
+      (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue([
+        "wss://shared.example.com",
+      ]);
+
+      const pollTags = buildPollTags({
+        optionLabels: ["A", "B"],
+        pollType: "singlechoice",
+        relayUrls: ["wss://shared.example.com", "wss://poll-only.example.com"],
+      });
+      const optionId = pollTags.find((t) => t[0] === "option")?.[1];
+      if (!optionId) throw new Error("expected option id");
+
+      const pollEvent = createValidSignedEvent({
+        kind: 1068,
+        content: "Q",
+        tags: pollTags,
+      });
+      const voteEvent = createValidSignedEvent({
+        kind: KIND_VOTE,
+        content: "",
+        tags: [
+          ["e", pollEvent.id],
+          ["response", optionId],
+        ],
+        created_at: pollEvent.created_at + 1,
+      });
+
+      const request = new Request("http://localhost:3000/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: voteEvent, pollEvent }),
+      });
+
+      await action({ request, params: {}, context: {} });
+
+      expect(publishSignedEventToRelays).toHaveBeenCalled();
+      const publishDedupedInput = vi.mocked(publishSignedEventToRelays).mock
+        .calls[0]![0];
+      expect(publishDedupedInput.signedEvent.id).toBe(voteEvent.id);
+      expect(publishDedupedInput.signedEvent.kind).toBe(KIND_VOTE);
+      expect(publishDedupedInput.signedEvent.pubkey).toBe(voteEvent.pubkey);
+      expect(publishDedupedInput.relays).toEqual([
+        "wss://shared.example.com",
+        "wss://poll-only.example.com",
+      ]);
     });
   });
 
@@ -260,6 +402,39 @@ describe("API: Publish", () => {
           : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
+    });
+
+    it("should reject kind 1018 without pollEvent", async () => {
+      const pollTags = buildPollTags({
+        optionLabels: ["A", "B"],
+        pollType: "singlechoice",
+        relayUrls: ["wss://poll.example"],
+      });
+      const optionId = pollTags.find((t) => t[0] === "option")?.[1];
+      if (!optionId) throw new Error("expected option id");
+      const pollEvent = createValidSignedEvent({
+        kind: 1068,
+        content: "Q",
+        tags: pollTags,
+      });
+      const voteEvent = createValidSignedEvent({
+        kind: KIND_VOTE,
+        content: "",
+        tags: [
+          ["e", pollEvent.id],
+          ["response", optionId],
+        ],
+        created_at: pollEvent.created_at + 1,
+      });
+
+      const request = new Request("http://localhost:3000/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: voteEvent }),
+      });
+
+      const response = await action({ request, params: {}, context: {} });
+      expect(response.status).toBe(400);
     });
   });
 });

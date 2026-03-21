@@ -35,6 +35,8 @@ interface EnvConfig {
   OWNER_NWC_RELAY?: string;
   OWNER_NWC_RELAYS?: string;
   NOSTR_NSEC?: string;
+  /** npub (or hex) of the inbox that receives in-app bug/feature feedback via server-signed DMs */
+  FEEDBACK_INBOX_NPUB?: string;
   SENTRY_DSN?: string;
   SENTRY_TRACES_SAMPLE_RATE?: string;
   SENTRY_PROFILES_SAMPLE_RATE?: string;
@@ -65,6 +67,9 @@ interface EnvConfig {
   ENFORCE_NOSTR_SESSION_PUBKEY?: string; // Enforce session pubkey === signed event pubkey
   MEDIA_PIPELINE_V2_ENABLED?: string; // Enable unified media intents/commit pipeline
   ENABLE_NOSTR_DELETE_EVENTS?: string; // Enable async kind:5 relay deletion events
+  NOSTR_DM_NIP17_ENABLED?: string; // When true (default), send NIP-17 gift-wrapped DMs when recipient has kind:10050 inbox relays
+  /** When true, NIP-88 poll composer, voting, and tallies are enabled (default off). */
+  NIP88_POLLS_ENABLED?: string;
 
   // Blossom (vibe-cdn) internal API: secret for subscription-status gating
   BLOSSOM_INTERNAL_SECRET?: string;
@@ -181,6 +186,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "OWNER_NWC_RELAY",
     "OWNER_NWC_RELAYS",
     "NOSTR_NSEC",
+    "FEEDBACK_INBOX_NPUB",
     "NOSTR_PUBLISHER_API_TOKEN",
     "SENTRY_DSN",
     "SENTRY_TRACES_SAMPLE_RATE",
@@ -204,6 +210,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "ENFORCE_NOSTR_SESSION_PUBKEY",
     "MEDIA_PIPELINE_V2_ENABLED",
     "ENABLE_NOSTR_DELETE_EVENTS",
+    "NOSTR_DM_NIP17_ENABLED",
+    "NIP88_POLLS_ENABLED",
     "BLOSSOM_INTERNAL_SECRET",
     "BLOSSOM_SFS_API_URL",
     "BLOSSOM_UPLOAD_TOKEN_SECRET",

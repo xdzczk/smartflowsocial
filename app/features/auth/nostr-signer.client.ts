@@ -20,6 +20,16 @@ export interface NostrSigner {
   type: NostrSignerType;
   getPublicKey(): Promise<string>;
   signEvent(event: NostrEvent): Promise<SignedEvent>;
+  /**
+   * NIP-04 encrypt for the signing identity toward `thirdPartyPubkeyHex` (peer hex).
+   * NIP-07: `window.nostr.nip04`. NIP-46: bunker `nip04_encrypt` RPC.
+   */
+  nip04Encrypt(thirdPartyPubkeyHex: string, plaintext: string): Promise<string>;
+  /**
+   * NIP-44 encrypt for the signing identity toward `thirdPartyPubkeyHex` (peer hex).
+   * NIP-07: optional `window.nostr.nip44`. NIP-46: bunker `nip44_encrypt` RPC.
+   */
+  nip44Encrypt(thirdPartyPubkeyHex: string, plaintext: string): Promise<string>;
   getStatus(): SignerStatus;
   ping?(): Promise<void>;
   switchRelays?(): Promise<string[] | null>;
@@ -48,6 +58,30 @@ export class Nip07Signer implements NostrSigner {
     }
     const signed = await window.nostr.signEvent(event);
     return signed as SignedEvent;
+  }
+
+  async nip04Encrypt(
+    thirdPartyPubkeyHex: string,
+    plaintext: string
+  ): Promise<string> {
+    if (!window.nostr?.nip04?.encrypt) {
+      throw new Error(
+        "NIP-04 encryption is not available. Enable NIP-04 in your browser extension."
+      );
+    }
+    return await window.nostr.nip04.encrypt(thirdPartyPubkeyHex, plaintext);
+  }
+
+  async nip44Encrypt(
+    thirdPartyPubkeyHex: string,
+    plaintext: string
+  ): Promise<string> {
+    if (!window.nostr?.nip44?.encrypt) {
+      throw new Error(
+        "NIP-44 encryption is not available in your extension (optional NIP-07)."
+      );
+    }
+    return await window.nostr.nip44.encrypt(thirdPartyPubkeyHex, plaintext);
   }
 }
 
@@ -85,6 +119,22 @@ export class Nip46Signer implements NostrSigner {
   async signEvent(event: NostrEvent): Promise<SignedEvent> {
     this.status = "ready";
     return (await this.inner.signEvent(event)) as SignedEvent;
+  }
+
+  async nip04Encrypt(
+    thirdPartyPubkeyHex: string,
+    plaintext: string
+  ): Promise<string> {
+    this.status = "ready";
+    return await this.inner.nip04Encrypt(thirdPartyPubkeyHex, plaintext);
+  }
+
+  async nip44Encrypt(
+    thirdPartyPubkeyHex: string,
+    plaintext: string
+  ): Promise<string> {
+    this.status = "ready";
+    return await this.inner.nip44Encrypt(thirdPartyPubkeyHex, plaintext);
   }
 
   async ping(): Promise<void> {

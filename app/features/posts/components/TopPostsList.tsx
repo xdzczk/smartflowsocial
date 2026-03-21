@@ -48,6 +48,7 @@ function getPreview(post: PostDTO): string {
   if (postType === "VIDEO") return "Video post";
   if (postType === "CAROUSEL") return "Carousel";
   if (hasMedia) return "Image post";
+  if (postType === "POLL") return "Poll";
   if (postType === "TEXT") return "Text post";
   return "Post";
 }

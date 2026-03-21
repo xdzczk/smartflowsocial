@@ -6,7 +6,7 @@ event handling, and relay management.
 ## Table of Contents
 
 - [Overview](#overview)
-- [NIP Implementations](#nip-implementations)
+- [NIP Implementations](#nip-implementations) (incl. [NIP-88 polls](#nip-88-polls-kind-1068--1018))
 - [Authentication (NIP-07 + NIP-46)](#authentication-nip-07--nip-46)
 - [Event Types](#event-types)
 - [Event Signing](#event-signing)
@@ -64,6 +64,34 @@ identity and requires re-authentication.
 
 - `app/features/auth/nostr-signer.client.ts` - NIP-46 signer wrapper (nostr-tools `BunkerSigner`)
 - `app/lib/nostr-signer-manager.client.ts` - Persist/recover the active signer for app-wide signing
+
+### NIP-04 and NIP-17: server-sent direct messages
+
+**Status**: ✅ **Implemented (server)** for automated outbound DMs; ✅ **user-signed** for dashboard
+feedback.
+
+Outbound **system** DMs (for example subscription renewal notices) are sent from `NOSTR_NSEC` via
+`app/lib/nostr.messenger.server.ts`:
+
+- **NIP-17** ([NIP-17](https://nips.nostr.com/17)): When `NOSTR_DM_NIP17_ENABLED` is on and the
+  recipient has a **kind `10050`** event with `relay` tags, the server builds gift-wrapped events
+  (NIP-59 / kind `1059`) using `nostr-tools/nip17` and publishes them to the recipient’s (and
+  sender’s) inbox relay sets.
+- **NIP-04** (kind `4`): Always published after the NIP-17 attempt so clients that only understand
+  legacy encrypted DMs still receive the message.
+
+Relay hints use kind `10050` for NIP-17 delivery and kind `10002` (NIP-65) plus
+`DEFAULT_USER_WRITE_RELAYS` for the NIP-04 leg.
+
+**Dashboard bug/feature feedback** to `FEEDBACK_INBOX_NPUB` is **not** server-signed: the client
+builds a **kind `4`** ciphertext with NIP-04 encryption from the **same identity** as
+signing—`window.nostr.nip04` for NIP-07, or the NIP-46 bunker **`nip04_encrypt`** RPC for remote
+signers—then signs and POSTs to `/api/feedback-dm`, which verifies and publishes (merged user
+execution relays + inbox DM relay hints). When `NOSTR_DM_NIP17_ENABLED` is on and the inbox has
+**kind `10050`** relay hints, the client may also build two **user-signed gift wraps (kind `1059`)**
+using **`nip44_encrypt`** (remote) or `window.nostr.nip44.encrypt` (extension) for the seal (kind
+`13`) plus local ephemeral keys for the wrap; the API validates and publishes each wrap like system
+NIP-17 DMs.
 
 ### NIP-19: bech32-encoded entities
 
@@ -127,6 +155,52 @@ SmartFlowSocial supports NIP-23 for publishing long-form articles.
 - `app/features/posts/services/newlongform-action.server.ts` - Long-form creation
 - `app/features/posts/data/longformpost.server.ts` - Long-form post data
 
+### NIP-88: Polls (kind 1068 / 1018)
+
+**Status**: ⚠️ **Optional (feature-flagged)** — NIP-88 is still a draft; interoperability with other
+clients may vary.
+
+When `NIP88_POLLS_ENABLED` is on, the app can compose and schedule **polls** as kind **`1068`** and
+submit **votes** as kind **`1018`**, reusing the same post pipeline as short notes for
+publish/schedule.
+
+**Poll event (1068)**
+
+- `content`: question text
+- Tags: `option` (id, label), `relay` (at least one URL where votes should be published/read),
+  `polltype` (`singlechoice` / `multiplechoice`), optional `endsAt` (unix seconds)
+
+**Vote event (1018)**
+
+- `content`: empty string
+- Tags: `e` → poll event id; one or more `response` → option ids from the poll
+
+**Publishing votes via `/api/publish`**
+
+For `kind: 1018`, the JSON body **must** include **`pollEvent`**: the full **signed** kind `1068`
+poll the vote references. The server:
+
+1. Cryptographically validates both events (and enforces session pubkey ↔ vote pubkey when
+   `ENFORCE_NOSTR_SESSION_PUBKEY` is on).
+2. Checks semantic binding (`e` tag, option ids, `endsAt` vs vote `created_at` per in-app rules in
+   `~/features/polls`).
+3. Publishes the vote to the **union** of the user’s **execution relays** (from
+   `resolveExecutionRelays`) and the poll’s **`relay`** tags (deduped, trimmed). Client-supplied
+   top-level `relays` are still ignored so relay policy stays server-driven.
+
+Tallies are computed **client-side** by subscribing to the poll’s relay URLs for `kind: 1018` with
+`#e` = poll id (see `usePollTally`).
+
+**Code locations**
+
+- `app/features/polls/` — parse/build/validate/aggregate
+- `app/routes/api.publish.tsx` — vote publish + relay merge
+- `app/lib/nostr-adapter.client.ts` — `signPollEventWithOneRetry`
+
+**Spec**
+
+- [NIP-88 (draft)](https://nips.nostr.com/88)
+
 ### NIP-01: Basic protocol flow
 
 **Status**: ✅ **Fully Implemented**
@@ -136,6 +210,8 @@ Standard Nostr event structure and relay communication.
 **Event Kinds Used:**
 
 - `kind: 1` - Short notes/posts
+- `kind: 1068` - Polls (NIP-88, when enabled)
+- `kind: 1018` - Poll votes (NIP-88, when enabled)
 - `kind: 30023` - Long-form articles (NIP-23)
 
 ---
@@ -637,6 +713,7 @@ const thread = await fetchThreadView(eventId);
 - [NIP Repository](https://github.com/nostr-protocol/nips)
 - [NIP-07 Specification](https://github.com/nostr-protocol/nips/blob/master/07.md)
 - [NIP-23 Specification](https://github.com/nostr-protocol/nips/blob/master/23.md)
+- [NIP-88 Polls (draft)](https://nips.nostr.com/88)
 - [Hosted Quick Start](../getting-started/hosted.md) - Getting started with hosted service
 - [Posting Guide](../guides/user-guides/posting.md) - How to create posts
 
@@ -644,13 +721,14 @@ const thread = await fetchThreadView(eventId);
 
 ## Implementation Status
 
-| NIP    | Status | Description            |
-| ------ | ------ | ---------------------- |
-| NIP-01 | ✅     | Basic protocol flow    |
-| NIP-07 | ✅     | Browser extension auth |
-| NIP-46 | ✅     | Remote signer auth     |
-| NIP-19 | ✅     | bech32 encoding        |
-| NIP-23 | ✅     | Long-form content      |
+| NIP    | Status | Description             |
+| ------ | ------ | ----------------------- |
+| NIP-01 | ✅     | Basic protocol flow     |
+| NIP-07 | ✅     | Browser extension auth  |
+| NIP-46 | ✅     | Remote signer auth      |
+| NIP-19 | ✅     | bech32 encoding         |
+| NIP-23 | ✅     | Long-form content       |
+| NIP-88 | ⚠️     | Polls (feature-flagged) |
 
 ---
 

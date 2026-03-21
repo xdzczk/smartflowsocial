@@ -404,3 +404,51 @@ export async function checkUserPostCreationLimit(
     };
   }
 }
+
+const FEEDBACK_SUBMISSIONS_PER_HOUR = 8;
+const FEEDBACK_RATE_WINDOW_SECONDS = 3600;
+
+/**
+ * Limits product feedback form submissions per user (abuse protection).
+ */
+export async function checkProductFeedbackRateLimit(userId: string): Promise<{
+  allowed: boolean;
+  error?: string;
+}> {
+  if (isTestEnvironment()) {
+    return { allowed: true };
+  }
+
+  if (!isRedisAvailable()) {
+    logWarning(
+      "Redis not available for product feedback rate limit, allowing request"
+    );
+    return { allowed: true };
+  }
+
+  try {
+    const limiter = new RateLimiterRedis({
+      storeClient: redis,
+      keyPrefix: "rl:product-feedback",
+      points: FEEDBACK_SUBMISSIONS_PER_HOUR,
+      duration: FEEDBACK_RATE_WINDOW_SECONDS,
+    });
+    await limiter.consume(userId);
+    return { allowed: true };
+  } catch (error: unknown) {
+    const rateLimitError = error as { msBeforeNext?: number };
+    if (rateLimitError.msBeforeNext !== undefined) {
+      return {
+        allowed: false,
+        error: `Too many feedback submissions. Try again in ${Math.ceil(
+          rateLimitError.msBeforeNext / 1000
+        )} seconds.`,
+      };
+    }
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Product feedback rate limit check failed",
+      userId,
+    });
+    return { allowed: true };
+  }
+}

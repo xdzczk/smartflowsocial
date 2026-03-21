@@ -15,6 +15,7 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
+import { featureFlags } from "~/lib/feature-flags.server";
 
 /**
  * Load new post page data. When draftId or templateId is in the URL, load that for composer prefill.
@@ -41,6 +42,7 @@ export async function loadNewPostData(
     queueTypes,
     hashTagPresets,
     relays,
+    nip88PollsEnabled: featureFlags.nip88PollsEnabled,
     templates: templates.filter(
       (t) => (t as { templateType?: string }).templateType === "POST"
     ),

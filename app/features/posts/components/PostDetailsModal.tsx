@@ -21,6 +21,8 @@ import type { Post } from "../data/posts-prisma-types.server";
 import { getQueueColor } from "../queue-colors";
 import type { CombinedContent, PostData } from "../types";
 
+import { PostDetailsPollPanel } from "./PostDetailsPollPanel";
+
 const MODAL_TITLE = "Post";
 
 function getPostEventId(
@@ -450,6 +452,10 @@ export default function PostDetailsModal({
         } | null;
       }
     | undefined;
+  const dashboardRouteData = useRouteLoaderData("routes/dashboard") as
+    | { nip88PollsEnabled?: boolean }
+    | undefined;
+  const nip88PollsEnabled = Boolean(dashboardRouteData?.nip88PollsEnabled);
   const nostrUrls = useMemo(
     () => getNostrClientUrlsFromUser(rootData?.user),
     [rootData?.user]
@@ -600,6 +606,11 @@ export default function PostDetailsModal({
                     {post.caption?.trim() ? post.caption : "No caption"}
                   </p>
                 </div>
+                <PostDetailsPollPanel
+                  post={post}
+                  type={type}
+                  nip88PollsEnabled={nip88PollsEnabled}
+                />
                 <p className="text-muted-foreground text-sm">
                   {getPostContextLine(
                     type,

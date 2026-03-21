@@ -18,6 +18,9 @@ import { parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
 
 export const ACTION_POST_TEXT = "post-text";
 export const ACTION_SCHEDULE_TEXT = "schedule-text";
+/** NIP-88 poll (kind 1068) */
+export const ACTION_POST_POLL = "post-poll";
+export const ACTION_SCHEDULE_POLL = "schedule-poll";
 
 export interface SignedEventLike {
   id?: string;

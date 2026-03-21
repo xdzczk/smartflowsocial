@@ -412,10 +412,13 @@ METRICS_PORT=3010
 
 Signed-in users whose **npub** appears in `ADMIN_NPUBS` (comma-separated) can open:
 
-- **`/dashboard/admin`** — Global DB stats (users, subscriptions, post/long-form counts by
-  `currentState`, referral aggregates) and **referral payout** actions.
-- **`/dashboard/admin/referrals`** and **`/dashboard/admin/earnings`** — Existing referral tables,
-  CSV export, and retry for failed earnings.
+- **`/dashboard/admin`** — Overview (KPIs, alerts, publishing health, referrals snapshot, system
+  probes).
+- **`/dashboard/admin/analytics`**, **`/users`**, **`/operations`** — Charts, user directory,
+  failures / queues / outbox.
+- **`/dashboard/admin/referrals`** — Referral tables, CSV export, payout ledger
+  (`referral_payout_audit_log`), batch + manual Lightning payouts, retry failed earnings.
+- **`/dashboard/admin/earnings`** — Redirects to Referrals (legacy path).
 
 **Payouts from the UI** use the same logic as the cron job:
 

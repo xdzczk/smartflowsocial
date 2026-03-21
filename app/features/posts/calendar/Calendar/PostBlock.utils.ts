@@ -1,5 +1,6 @@
 import type React from "react";
 
+import { isPollPostItem } from "~/features/polls";
 import { getQueueColorBundle } from "~/features/posts/queue-colors";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import {
@@ -45,6 +46,22 @@ export function getPostPreview(
   if (isLongform) {
     if (post.title) return truncatePreview(post.title, len);
     return "Article";
+  }
+
+  if (
+    isPollPostItem({
+      type: "post",
+      postType: post.postType,
+      signedEvent: post.signedEvent ?? undefined,
+    })
+  ) {
+    const q =
+      post.signedEvent &&
+      typeof post.signedEvent.content === "string" &&
+      post.signedEvent.content.trim()
+        ? post.signedEvent.content.trim()
+        : (post.content?.trim() ?? post.caption?.trim() ?? "Poll");
+    return truncatePreview(`Poll: ${q}`, len);
   }
 
   if (post.caption) return truncatePreview(post.caption, len);

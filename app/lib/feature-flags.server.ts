@@ -44,4 +44,15 @@ export const featureFlags = {
     env.ENABLE_NOSTR_DELETE_EVENTS,
     false
   ),
+
+  /**
+   * When enabled, server-sent DMs attempt NIP-17 (gift wrap) when the recipient
+   * publishes kind:10050 inbox relays. NIP-04 is always attempted afterward for legacy clients.
+   */
+  nostrDmNip17Enabled: parseBooleanEnv(env.NOSTR_DM_NIP17_ENABLED, true),
+
+  /**
+   * NIP-88 polls: kind 1068 compose/schedule, kind 1018 vote publish, in-app tallies.
+   */
+  nip88PollsEnabled: parseBooleanEnv(env.NIP88_POLLS_ENABLED, false),
 } as const;

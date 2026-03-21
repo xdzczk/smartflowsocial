@@ -17,11 +17,40 @@ vi.mock("~/lib/redis-cache.server", () => ({
   }),
 }));
 
+vi.mock("nostr-tools/nip17", () => ({
+  wrapManyEvents: vi.fn(() => [
+    {
+      kind: 1059,
+      tags: [["p", "e".repeat(64)]],
+      id: "gw-sender",
+      content: "c1",
+    },
+    {
+      kind: 1059,
+      tags: [["p", "f".repeat(64)]],
+      id: "gw-recipient",
+      content: "c2",
+    },
+  ]),
+}));
+
+vi.mock("nostr-tools/pure", () => ({
+  getPublicKey: vi.fn(() => "e".repeat(64)),
+}));
+
 // Mock nostr-tools so the test doesn't do crypto or network.
 vi.mock("nostr-tools", () => {
   class MockPool {
+    /** When non-empty, `get` returns `shift()` each call; else `nextGetResult`. */
+    static sequence: unknown[] = [];
     static nextGetResult: unknown = null;
-    get = vi.fn(async () => MockPool.nextGetResult);
+    get = vi.fn(async () => {
+      if (MockPool.sequence.length > 0) {
+        const v = MockPool.sequence.shift();
+        return v === undefined ? null : v;
+      }
+      return MockPool.nextGetResult;
+    });
     list = vi.fn(async () => []);
     close = vi.fn();
   }
@@ -45,8 +74,22 @@ import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
 
 async function setNextPoolGetResult(value: unknown) {
   const mod = await import("nostr-tools");
-  (mod.SimplePool as unknown as { nextGetResult: unknown }).nextGetResult =
-    value;
+  const Pool = mod.SimplePool as unknown as {
+    nextGetResult: unknown;
+    sequence: unknown[];
+  };
+  Pool.sequence = [];
+  Pool.nextGetResult = value;
+}
+
+async function setPoolGetSequence(values: unknown[]) {
+  const mod = await import("nostr-tools");
+  const Pool = mod.SimplePool as unknown as {
+    nextGetResult: unknown;
+    sequence: unknown[];
+  };
+  Pool.nextGetResult = null;
+  Pool.sequence = [...values];
 }
 
 describe("sendNostrDirectMessage relay targeting", () => {
@@ -98,5 +141,66 @@ describe("sendNostrDirectMessage relay targeting", () => {
     for (const r of DEFAULT_USER_WRITE_RELAYS) {
       expect(body.relays).toContain(r);
     }
+  });
+
+  it("when kind 10050 inbox exists, publishes two gift wraps then NIP-04", async () => {
+    await setPoolGetSequence([
+      { tags: [["relay", "wss://dm.inbox.example"]] },
+      null,
+      null,
+    ]);
+
+    const result = await sendNostrDirectMessage("f".repeat(64), "hello");
+
+    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
+    expect(fetchMock.mock.calls.length).toBe(3);
+
+    expect(result).not.toEqual(false);
+    expect(result).toMatchObject({
+      nip17: { attempted: true, recipientPublished: true },
+      nip04: { success: true },
+    });
+
+    const bodies = fetchMock.mock.calls.map(
+      (c) =>
+        JSON.parse((c[1] as { body: string }).body) as {
+          event: { kind: number };
+        }
+    );
+    expect(bodies).toHaveLength(3);
+    expect(bodies[0]!.event.kind).toBe(1059);
+    expect(bodies[1]!.event.kind).toBe(1059);
+    expect(bodies[2]!.event.kind).toBe(4);
+  });
+
+  it("still publishes NIP-04 when NIP-17 gift wrap publish fails", async () => {
+    await setPoolGetSequence([
+      { tags: [["relay", "wss://dm.inbox.example"]] },
+      null,
+      null,
+    ]);
+
+    const fetchMock = vi.fn();
+    fetchMock
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: async () => "relay error",
+      })
+      .mockResolvedValueOnce({ ok: true });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await sendNostrDirectMessage("f".repeat(64), "hello");
+
+    expect(fetchMock.mock.calls.length).toBe(3);
+    expect(result).not.toEqual(false);
+    expect(result).toMatchObject({
+      success: true,
+      nip04: { success: true },
+    });
+    expect(
+      (result as { nip17?: { errors?: string[] } }).nip17?.errors?.length
+    ).toBeGreaterThan(0);
   });
 });

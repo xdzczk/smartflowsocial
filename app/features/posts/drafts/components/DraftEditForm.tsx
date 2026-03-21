@@ -112,7 +112,11 @@ export function DraftEditForm({
         {/* Content/Caption */}
         <div>
           <Label htmlFor="content">
-            {post.postType === "TEXT" ? "Content" : "Caption"}
+            {post.postType === "TEXT"
+              ? "Content"
+              : post.postType === "POLL"
+                ? "Poll question"
+                : "Caption"}
           </Label>
           <Textarea
             id="content"
@@ -122,7 +126,9 @@ export function DraftEditForm({
             placeholder={
               post.postType === "TEXT"
                 ? "Write your post content..."
-                : "Add a caption..."
+                : post.postType === "POLL"
+                  ? "Poll question (options are in the signed event)…"
+                  : "Add a caption..."
             }
             rows={6}
             disabled={isSubmitting}

@@ -27,6 +27,7 @@ import type {
   NostrEventData,
   LongFormEventData,
 } from "~/features/nostr/types";
+import { buildPollTags, KIND_POLL } from "~/features/polls";
 import {
   Nip07AccountMismatchError,
   RemoteSignerTimeoutError,
@@ -159,6 +160,17 @@ async function withTimeout<T>(
   } finally {
     globalThis.clearTimeout(timeoutId);
   }
+}
+
+export interface SignPollEventInput {
+  question: string;
+  created_at: number;
+  optionLabels: string[];
+  pollType: "singlechoice" | "multiplechoice";
+  relayUrls: string[];
+  endsAt?: number;
+  /** Hashtag values without `#` (e.g. from preset chips) */
+  topicTagValues?: string[];
 }
 
 function buildLongFormEventTags(eventData: LongFormEventData): string[][] {
@@ -716,6 +728,35 @@ export const nostrAdapter = {
       await new Promise((r) => setTimeout(r, 1500));
       return await this.signLongFormEvent(eventData, opts);
     }
+  },
+
+  /**
+   * NIP-88 kind 1068 poll — builds tags via `buildPollTags`, then signs like a normal event.
+   */
+  async signPollEventWithOneRetry(
+    input: SignPollEventInput,
+    options?: SignEventOptions
+  ): Promise<SignEventResult> {
+    const hashtagTags: string[][] = (input.topicTagValues ?? [])
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+      .map((t) => ["t", t.replace(/^#/u, "").toLowerCase()]);
+    const tags = buildPollTags({
+      optionLabels: input.optionLabels,
+      pollType: input.pollType,
+      relayUrls: input.relayUrls,
+      endsAt: input.endsAt,
+      extraTags: hashtagTags,
+    });
+    return this.signEventWithOneRetry(
+      {
+        content: input.question.trim(),
+        created_at: input.created_at,
+        kind: KIND_POLL,
+        tags,
+      },
+      options
+    );
   },
 };
 

@@ -1,6 +1,7 @@
 import { Repeat } from "lucide-react";
 import { memo, type ReactNode } from "react";
 
+import { isPollPostItem } from "~/features/polls";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { SMALL_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
@@ -11,6 +12,16 @@ import { getMediaPreviewUrls, isRepostContent } from "../utils/content-helpers";
 import { MediaPreviewCollage } from "./MediaPreviewCollage";
 
 function getFlowPreview(item: CombinedContent): string {
+  if (item.type === "post" && isPollPostItem(item)) {
+    const q =
+      item.signedEvent &&
+      typeof item.signedEvent.content === "string" &&
+      item.signedEvent.content.trim()
+        ? item.signedEvent.content.trim()
+        : (item.content?.trim() ?? item.caption?.trim() ?? "Poll");
+    const short = q.length > 36 ? `${q.slice(0, 36)}…` : q;
+    return `Poll: ${short}`;
+  }
   if (item.type === "longform") {
     if (item.title) {
       return item.title.length > 40

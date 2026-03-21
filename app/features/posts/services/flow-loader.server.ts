@@ -153,8 +153,8 @@ export type FlowItemDTO =
   | { type: "post"; data: PostDTO }
   | { type: "longform"; data: LongFormPostDTO };
 
-/** Content type filter for flow: all, posts only, reposts only, or longform (articles) only. */
-export type FlowContentTab = "all" | "posts" | "longform" | "reposts";
+/** Content type filter for flow: all, posts only, reposts only, polls, or longform (articles) only. */
+export type FlowContentTab = "all" | "posts" | "longform" | "reposts" | "polls";
 
 export interface LoadFlowDataParams {
   userId: string;
@@ -186,6 +186,7 @@ export interface LoadFlowDataResult {
   flowPostsCount?: number;
   flowRepostsCount?: number;
   flowLongformCount?: number;
+  flowPollsCount?: number;
 }
 
 /**
@@ -220,13 +221,18 @@ export async function loadFlowData({
   const queueTypesForClient = toAppQueueTypes(enabledQueueTypes);
 
   const fetchPosts =
-    contentTab === "all" || contentTab === "posts" || contentTab === "reposts";
+    contentTab === "all" ||
+    contentTab === "posts" ||
+    contentTab === "reposts" ||
+    contentTab === "polls";
   const postsContentTab =
     contentTab === "posts"
       ? "posts"
       : contentTab === "reposts"
         ? "reposts"
-        : undefined;
+        : contentTab === "polls"
+          ? "polls"
+          : undefined;
   const fetchLongform = contentTab === "all" || contentTab === "longform";
 
   // Load more past only
@@ -547,6 +553,11 @@ export async function loadFlowData({
   const flowLongformCount = fullWindow.filter(
     (i) => i.type === "longform"
   ).length;
+  const flowPollsCount = fullWindow.filter((i) =>
+    i.type === "post"
+      ? (i as CombinedContent & { postType?: string }).postType === "POLL"
+      : false
+  ).length;
 
   return {
     flowItems,
@@ -562,5 +573,6 @@ export async function loadFlowData({
     flowPostsCount,
     flowRepostsCount,
     flowLongformCount,
+    flowPollsCount,
   };
 }

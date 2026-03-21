@@ -3,7 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { UnifiedComposer } from "~/features/posts/composer";
-import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
+import { PollComposer } from "~/features/posts/composer/components/PollComposer";
+import { useNewPostPublishModalEffect } from "~/features/posts/composer/hooks/useNewPostPublishModalEffect.client";
 import {
   convertJsonValueToScheduleConfig,
   type HashTagPreset,
@@ -127,25 +128,48 @@ function parseHashTagPreset(preset: unknown): HashTagPreset | null {
   return null;
 }
 
-export default function NewPostPage() {
-  const loaderDataRaw = useLoaderData<unknown>();
+interface InitialDraftShape {
+  content: string;
+  caption: string;
+  fileUrl: string[];
+  queueType: string;
+  queueTypeId: string | null;
+  tags: string;
+  draftMeta: {
+    attachmentMeta?: Array<{
+      localId: string;
+      url: string;
+      alt?: string;
+    }>;
+  } | null;
+  hashTagPresetId: string | null;
+}
+
+interface NewPostLoaderParsed {
+  typedQueueTypes: Array<string | QueueType>;
+  typedHashTagPresets: HashTagPreset[];
+  scheduleIntervals: number[];
+  defaultRelays: string[];
+  initialDraft: InitialDraftShape | null;
+  initialDraftId: string | null;
+  templates: Array<{ id: string; name: string | null }>;
+  nip88PollsEnabled: boolean;
+}
+
+function parseNewPostLoaderData(loaderDataRaw: unknown): NewPostLoaderParsed {
   const loaderData =
     loaderDataRaw && typeof loaderDataRaw === "object"
-      ? (loaderDataRaw as {
-          queueTypes?: unknown;
-          hashTagPresets?: unknown;
-          relays?: unknown;
-          scheduleIntervals?: unknown;
-        })
+      ? (loaderDataRaw as Record<string, unknown>)
       : {};
 
   const queueTypes =
-    "queueTypes" in loaderData && Array.isArray(loaderData.queueTypes)
-      ? loaderData.queueTypes
+    "queueTypes" in loaderData && Array.isArray(loaderData["queueTypes"])
+      ? loaderData["queueTypes"]
       : [];
   const hashTagPresets =
-    "hashTagPresets" in loaderData && Array.isArray(loaderData.hashTagPresets)
-      ? loaderData.hashTagPresets
+    "hashTagPresets" in loaderData &&
+    Array.isArray(loaderData["hashTagPresets"])
+      ? loaderData["hashTagPresets"]
       : [];
 
   const typedQueueTypes: Array<string | QueueType> = Array.isArray(queueTypes)
@@ -159,8 +183,8 @@ export default function NewPostPage() {
 
   const scheduleIntervalsRaw =
     "scheduleIntervals" in loaderData &&
-    Array.isArray(loaderData.scheduleIntervals)
-      ? loaderData.scheduleIntervals
+    Array.isArray(loaderData["scheduleIntervals"])
+      ? loaderData["scheduleIntervals"]
       : [];
   const scheduleIntervals: number[] = scheduleIntervalsRaw
     .map((s: unknown) => {
@@ -172,6 +196,60 @@ export default function NewPostPage() {
       return null;
     })
     .filter((n): n is number => n !== null);
+
+  const defaultRelays =
+    "relays" in loaderData && Array.isArray(loaderData["relays"])
+      ? (loaderData["relays"] as unknown[]).filter(
+          (r): r is string => typeof r === "string"
+        )
+      : [];
+
+  const initialDraft =
+    "initialDraft" in loaderData &&
+    loaderData["initialDraft"] !== null &&
+    typeof loaderData["initialDraft"] === "object"
+      ? (loaderData["initialDraft"] as InitialDraftShape)
+      : null;
+
+  const initialDraftId =
+    "initialDraftId" in loaderData &&
+    typeof loaderData["initialDraftId"] === "string"
+      ? loaderData["initialDraftId"]
+      : null;
+
+  const templates =
+    "templates" in loaderData && Array.isArray(loaderData["templates"])
+      ? (loaderData["templates"] as Array<{ id: string; name: string | null }>)
+      : [];
+
+  const nip88PollsEnabled = Boolean(
+    "nip88PollsEnabled" in loaderData &&
+    loaderData["nip88PollsEnabled"] === true
+  );
+
+  return {
+    typedQueueTypes,
+    typedHashTagPresets,
+    scheduleIntervals,
+    defaultRelays,
+    initialDraft,
+    initialDraftId,
+    templates,
+    nip88PollsEnabled,
+  };
+}
+
+export default function NewPostPage() {
+  const {
+    typedQueueTypes,
+    typedHashTagPresets,
+    scheduleIntervals,
+    defaultRelays,
+    initialDraft,
+    initialDraftId,
+    templates,
+    nip88PollsEnabled,
+  } = parseNewPostLoaderData(useLoaderData<unknown>());
 
   const {
     selectedHashTagPresetId,
@@ -203,115 +281,24 @@ export default function NewPostPage() {
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
   const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
 
-  const defaultRelays =
-    "relays" in loaderData && Array.isArray(loaderData.relays)
-      ? (loaderData.relays as string[]).filter(
-          (r): r is string => typeof r === "string"
-        )
-      : [];
-  const initialDraft =
-    "initialDraft" in loaderData &&
-    loaderData.initialDraft !== null &&
-    typeof loaderData.initialDraft === "object"
-      ? (loaderData.initialDraft as {
-          content: string;
-          caption: string;
-          fileUrl: string[];
-          queueType: string;
-          queueTypeId: string | null;
-          tags: string;
-          draftMeta: {
-            attachmentMeta?: Array<{
-              localId: string;
-              url: string;
-              alt?: string;
-            }>;
-          } | null;
-          hashTagPresetId: string | null;
-        })
-      : null;
-  const initialDraftId =
-    "initialDraftId" in loaderData &&
-    typeof loaderData.initialDraftId === "string"
-      ? loaderData.initialDraftId
-      : null;
-
-  const templates =
-    "templates" in loaderData && Array.isArray(loaderData.templates)
-      ? (loaderData.templates as Array<{ id: string; name: string | null }>)
-      : [];
+  const [composerTab, setComposerTab] = useState<"post" | "poll">("post");
 
   const relayCount =
     selectedRelayUrls.length > 0
       ? selectedRelayUrls.length
       : defaultRelays.length;
 
-  // Check for published/scheduled URL param
-  useEffect(() => {
-    const publishedPostId = searchParams.get("published");
-    const scheduledPostId = searchParams.get("scheduled");
-    const postId = publishedPostId ?? scheduledPostId;
-
-    if (postId && !modalPostId && !showPublishModal) {
-      // Use setTimeout to avoid setState in effect warning
-      setTimeout(() => {
-        setModalPostId(postId);
-      }, 0);
-
-      // Fetch post data using fetch directly for API routes
-      void (async () => {
-        try {
-          const res = await fetch(`/api/posts/${postId}`);
-          if (!res.ok) {
-            throw new Error(`Failed to fetch: ${res.status}`);
-          }
-          const data = (await res.json()) as {
-            post?: {
-              id: string;
-              publishAttemptId: string | null;
-              currentState?: string | null;
-              scheduledAtUtc?: string | null;
-            };
-            longFormPost?: {
-              id: string;
-              publishAttemptId: string | null;
-              currentState?: string | null;
-              scheduledAtUtc?: string | null;
-            };
-            error?: string;
-          };
-
-          if (data.post || data.longFormPost) {
-            if (scheduledPostId) {
-              refreshPostViews(queryClient);
-            }
-            setTimeout(() => {
-              setModalPost(data.post ?? null);
-              setModalLongFormPost(data.longFormPost ?? null);
-              setShowPublishModal(true);
-            }, 0);
-            // Clear URL param to prevent re-showing on refresh
-            const newSearchParams = new URLSearchParams(searchParams);
-            newSearchParams.delete("published");
-            newSearchParams.delete("scheduled");
-            setSearchParams(newSearchParams, { replace: true });
-          }
-        } catch (error) {
-          console.error("Failed to fetch post data:", error);
-          // Reset state on error
-          setTimeout(() => {
-            setModalPostId(null);
-          }, 0);
-        }
-      })();
-    }
-  }, [
+  useNewPostPublishModalEffect({
     searchParams,
+    setSearchParams,
     modalPostId,
     showPublishModal,
-    setSearchParams,
+    setModalPostId,
+    setModalPost,
+    setModalLongFormPost,
+    setShowPublishModal,
     queryClient,
-  ]);
+  });
 
   useEffect(() => {
     if (!publishResultToken) return;
@@ -329,6 +316,32 @@ export default function NewPostPage() {
         relayCount={relayCount}
         onRelayClick={() => setRelaySelectorOpen(true)}
       />
+      {nip88PollsEnabled ? (
+        <div className="mb-4 flex gap-2 border-b pb-2">
+          <button
+            type="button"
+            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+              composerTab === "post"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+            onClick={() => setComposerTab("post")}
+          >
+            Post
+          </button>
+          <button
+            type="button"
+            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+              composerTab === "poll"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+            onClick={() => setComposerTab("poll")}
+          >
+            Poll
+          </button>
+        </div>
+      ) : null}
       {relaySelectorOpen ? (
         <RelaySelectorModal
           defaultRelays={defaultRelays}
@@ -373,28 +386,50 @@ export default function NewPostPage() {
         </div>
       ) : null}
 
-      <UnifiedComposer
-        key={`newpost-composer-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
-        queueTypes={typedQueueTypes}
-        hashTagPresets={typedHashTagPresets}
-        scheduleIntervals={
-          scheduleIntervals.length > 0 ? scheduleIntervals : undefined
-        }
-        onQueueTypeChange={handleQueueTypeChange}
-        selectedHashTagPresetId={selectedHashTagPresetId}
-        onHashtagPresetChange={(presetId: string | null, _hashtags: string) =>
-          handleHashtagPresetSelect(presetId ?? "", _hashtags)
-        }
-        relayOverride={
-          selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
-        }
-        relayCount={relayCount}
-        onComposerStatusChange={setComposerStatus}
-        initialDraft={initialDraft}
-        initialDraftId={initialDraftId}
-        initialScheduledFor={scheduledAt ?? undefined}
-        skipLocalDraftRestore={Boolean(publishResultToken)}
-      />
+      {composerTab === "post" || !nip88PollsEnabled ? (
+        <UnifiedComposer
+          key={`newpost-composer-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
+          queueTypes={typedQueueTypes}
+          hashTagPresets={typedHashTagPresets}
+          scheduleIntervals={
+            scheduleIntervals.length > 0 ? scheduleIntervals : undefined
+          }
+          onQueueTypeChange={handleQueueTypeChange}
+          selectedHashTagPresetId={selectedHashTagPresetId}
+          onHashtagPresetChange={(presetId: string | null, _hashtags: string) =>
+            handleHashtagPresetSelect(presetId ?? "", _hashtags)
+          }
+          relayOverride={
+            selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
+          }
+          relayCount={relayCount}
+          onComposerStatusChange={setComposerStatus}
+          initialDraft={initialDraft}
+          initialDraftId={initialDraftId}
+          initialScheduledFor={scheduledAt ?? undefined}
+          skipLocalDraftRestore={Boolean(publishResultToken)}
+        />
+      ) : (
+        <PollComposer
+          queueTypes={typedQueueTypes}
+          hashTagPresets={typedHashTagPresets}
+          scheduleIntervals={
+            scheduleIntervals.length > 0 ? scheduleIntervals : undefined
+          }
+          onQueueTypeChange={handleQueueTypeChange}
+          selectedHashTagPresetId={selectedHashTagPresetId}
+          onHashtagPresetChange={(presetId: string | null, _hashtags: string) =>
+            handleHashtagPresetSelect(presetId ?? "", _hashtags)
+          }
+          relayOverride={
+            selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
+          }
+          relayCount={relayCount}
+          onComposerStatusChange={setComposerStatus}
+          defaultRelays={defaultRelays}
+          initialScheduledFor={scheduledAt ?? undefined}
+        />
+      )}
 
       {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
         <PublishResultModal

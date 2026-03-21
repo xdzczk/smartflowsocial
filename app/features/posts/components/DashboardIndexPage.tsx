@@ -4,6 +4,7 @@ import {
   useNavigate,
   useNavigation,
   useRevalidator,
+  useRouteLoaderData,
   useSearchParams,
 } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -93,9 +94,11 @@ const DASHBOARD_TAB_INACTIVE_CLASSES =
 function DashboardContentTypeTabs({
   currentContentTab,
   queueType,
+  nip88PollsEnabled,
 }: {
   currentContentTab: string;
   queueType: string;
+  nip88PollsEnabled: boolean;
 }) {
   const navigate = useNavigate();
   const isMobile = useIsMobile(768);
@@ -114,7 +117,9 @@ function DashboardContentTypeTabs({
           ? "Posts"
           : currentContentTab === "longform"
             ? "Articles"
-            : "Reposts";
+            : currentContentTab === "polls"
+              ? "Polls"
+              : "Reposts";
     return (
       <div className="min-w-0 flex-1">
         <Select value={currentContentTab} onValueChange={handleMobileTabChange}>
@@ -129,6 +134,9 @@ function DashboardContentTypeTabs({
             <SelectItem value="posts">Posts</SelectItem>
             <SelectItem value="longform">Articles</SelectItem>
             <SelectItem value="reposts">Reposts</SelectItem>
+            {nip88PollsEnabled ? (
+              <SelectItem value="polls">Polls</SelectItem>
+            ) : null}
           </SelectContent>
         </Select>
       </div>
@@ -162,6 +170,11 @@ function DashboardContentTypeTabs({
         >
           Reposts
         </Link>
+        {nip88PollsEnabled ? (
+          <Link to={`/dashboard${baseHref}polls`} className={tabClass("polls")}>
+            Polls
+          </Link>
+        ) : null}
       </nav>
     </div>
   );
@@ -195,6 +208,11 @@ export default function DashboardIndexPage() {
   const [runwayModalOpen, setRunwayModalOpen] = useState(false);
   const [scheduleOverviewTargetModalOpen, setScheduleOverviewTargetModalOpen] =
     useState(false);
+
+  const dashboardRouteData = useRouteLoaderData("routes/dashboard") as
+    | { nip88PollsEnabled?: boolean }
+    | undefined;
+  const nip88PollsEnabled = Boolean(dashboardRouteData?.nip88PollsEnabled);
 
   const loaderData = useLoaderData<{
     queueCountsByQueue?: Array<{ queueName: string; count: number }>;
@@ -402,6 +420,7 @@ export default function DashboardIndexPage() {
             <DashboardContentTypeTabs
               currentContentTab={currentContentTab}
               queueType={queueType}
+              nip88PollsEnabled={nip88PollsEnabled}
             />
             <QueueSelectionTabs
               currentTab="all"

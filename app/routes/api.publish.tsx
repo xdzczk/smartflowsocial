@@ -4,18 +4,28 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { requireSession } from "~/features/auth";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
 import type { SignedEvent } from "~/features/nostr/types";
+import {
+  KIND_VOTE,
+  normalizeRelayUrls,
+  parsePollFromSignedEvent,
+  validateVoteAgainstPoll,
+} from "~/features/polls";
 import { recordReplyPost } from "~/features/posts/server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
+import { featureFlags } from "~/lib/feature-flags.server";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
+import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 
 type AssertFunction = (
   condition: boolean,
   message: string,
   context?: Record<string, unknown>
 ) => asserts condition;
+
+const PUBLISH_API_ROUTE = "/api/publish";
 
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
@@ -43,13 +53,15 @@ export const action = withCSRFProtection(
           ? (bodyRaw as {
               relays?: unknown;
               event?: unknown;
+              /** Required when `event.kind === 1018` (NIP-88 vote): signed kind 1068 poll. */
+              pollEvent?: unknown;
               recordAsReply?: {
                 replyToEventId: string;
                 replyToPostId?: string | null;
               };
             })
           : {};
-      const { relays, event, recordAsReply } = body;
+      const { relays, event, pollEvent: pollEventRaw, recordAsReply } = body;
 
       // Validate event presence (cryptographic validation happens in feature layer)
       assert(event !== null && event !== undefined, "Event is required", {
@@ -68,12 +80,44 @@ export const action = withCSRFProtection(
       assertSignedEventMatchesSessionPubkey({
         sessionPubkey: session.pubkey,
         eventPubkey: eventObj.pubkey,
-        context: { route: "/api/publish" },
+        context: { route: PUBLISH_API_ROUTE },
       });
+
+      let publishRelays = resolvedRelays;
+      if (eventObj.kind === KIND_VOTE) {
+        if (!featureFlags.nip88PollsEnabled) {
+          throw new ValidationError("NIP-88 polls are disabled", {
+            route: PUBLISH_API_ROUTE,
+          });
+        }
+        assert(
+          pollEventRaw !== null && pollEventRaw !== undefined,
+          "pollEvent is required for kind 1018 (NIP-88 vote)",
+          { hasPollEvent: pollEventRaw != null }
+        );
+        const validatedPoll =
+          validateSignedEventCryptographically(pollEventRaw);
+        const voteCheck = validateVoteAgainstPoll(eventObj, validatedPoll);
+        if (!voteCheck.ok) {
+          throw new ValidationError(voteCheck.error ?? "Invalid poll vote", {
+            route: PUBLISH_API_ROUTE,
+          });
+        }
+        const parsedPoll = parsePollFromSignedEvent(validatedPoll);
+        if (!parsedPoll) {
+          throw new ValidationError("Invalid poll event for vote publish", {
+            route: PUBLISH_API_ROUTE,
+          });
+        }
+        publishRelays = normalizeRelayUrls([
+          ...resolvedRelays,
+          ...parsedPoll.relayUrls,
+        ]);
+      }
 
       const publishResult = await publishSignedEventToRelays({
         signedEvent: eventObj,
-        relays: resolvedRelays,
+        relays: publishRelays,
       });
 
       // Persist per-relay outcomes for observability (best-effort).

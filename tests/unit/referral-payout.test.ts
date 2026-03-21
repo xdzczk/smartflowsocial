@@ -39,6 +39,10 @@ vi.mock("~/features/referral/lnurl-pay.server", () => ({
   fetchInvoiceFromLnurlPay: vi.fn().mockResolvedValue("lnbc123"),
 }));
 
+vi.mock("~/features/referral/referral-payout-audit.server", () => ({
+  createReferralPayoutAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("~/features/referral/repositories/referral-data.server", () => ({
   aggregatePendingCommissionByReferrer: (...args: unknown[]) =>
     mockAggregatePendingCommissionByReferrer(...args),

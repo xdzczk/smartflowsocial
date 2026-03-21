@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@remix-run/react";
+import { Link, useLocation, useNavigate } from "@remix-run/react";
 import {
   CalendarDays,
   Check,
@@ -20,9 +20,11 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useState, useEffect } from "react";
+import type { MouseEvent } from "react";
 
 import { ExpandableNavigationSection } from "~/components/layout/ExpandableNavigationSection";
 import { GlobalSearchBar } from "~/components/layout/GlobalSearchBar";
+import { ProductFeedbackSidebar } from "~/components/layout/ProductFeedbackSidebar";
 import UserMenu from "~/components/layout/UserMenu";
 import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/ui/Logo";
@@ -215,6 +217,7 @@ function OperatorAdminNavItem({
   collapsed: boolean;
   onMobileNavActiveClick: (() => void) | undefined;
 }) {
+  const navigate = useNavigate();
   const isActive = pathname.startsWith("/dashboard/admin");
   const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-ring ${
     collapsed ? "justify-center px-0 py-2" : ""
@@ -227,24 +230,34 @@ function OperatorAdminNavItem({
     ? "text-foreground dark:text-primary"
     : "text-foreground/70 group-hover:text-foreground";
 
+  const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+      return;
+    }
+    if (isActive && onMobileNavActiveClick) {
+      e.preventDefault();
+      onMobileNavActiveClick();
+      return;
+    }
+    // Avoid Remix <Link prefetch="intent"> here: prefetching /dashboard/admin can look like a
+    // full reload and may interact badly with loader responses; client navigate is stable.
+    e.preventDefault();
+    navigate("/dashboard/admin");
+    onMobileNavActiveClick?.();
+  };
+
   return (
-    <Link
-      prefetch="intent"
-      to="/dashboard/admin"
+    <a
+      href="/dashboard/admin"
       className={linkClass}
       title="Operator admin"
-      onClick={(e) => {
-        if (isActive && onMobileNavActiveClick) {
-          e.preventDefault();
-          onMobileNavActiveClick();
-        }
-      }}
+      onClick={handleClick}
     >
       <span className={`flex flex-none items-center ${iconSpanClass}`}>
         <Shield className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
       </span>
       {!collapsed ? <span className="grow py-2">Admin</span> : null}
-    </Link>
+    </a>
   );
 }
 
@@ -591,6 +604,12 @@ export default function Header({
           >
             Settings
           </NavigationItem>
+          <div className="mt-1">
+            <ProductFeedbackSidebar
+              collapsed={!isDesktopExpanded}
+              onOpenMobileSidebarClose={onMobileNavActiveClick}
+            />
+          </div>
         </div>
       </nav>
       <PageHeaderBar

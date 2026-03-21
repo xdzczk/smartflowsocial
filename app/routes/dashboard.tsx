@@ -16,8 +16,11 @@ import {
   loadDashboardData,
   handleDashboardAction,
   getPendingParentRequestsForChild,
+  getFeedbackInboxPubkeyHex,
+  loadFeedbackInboxKind10050Relays,
 } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
+import { featureFlags } from "~/lib/feature-flags.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   let user = await requireUser(request);
@@ -32,10 +35,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Pending parent link requests for this user (as child)
   const pendingParentNpubs = await getPendingParentRequestsForChild(user.id);
 
-  const [dashboardData, referredBy] = await Promise.all([
-    loadDashboardData(user.id, user.npub, pendingParentNpubs),
-    getReferredByForNpub(user.npub),
-  ]);
+  const [dashboardData, referredBy, feedbackInboxKind10050Relays] =
+    await Promise.all([
+      loadDashboardData(user.id, user.npub, pendingParentNpubs),
+      getReferredByForNpub(user.npub),
+      loadFeedbackInboxKind10050Relays(),
+    ]);
 
   return json({
     userId: user.id,
@@ -44,6 +49,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     ...dashboardData,
     referredBy: referredBy ?? undefined,
     isOperatorAdmin: isReferralAdmin(user.npub),
+    feedbackInboxPubkeyHex: getFeedbackInboxPubkeyHex(),
+    feedbackInboxKind10050Relays,
+    nostrDmNip17Enabled: featureFlags.nostrDmNip17Enabled,
+    nip88PollsEnabled: featureFlags.nip88PollsEnabled,
   });
 };
 

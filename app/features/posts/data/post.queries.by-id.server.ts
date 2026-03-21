@@ -28,8 +28,8 @@ export function getPastPosts({
   beforeDate?: Date;
   /** Max number of posts to return (for Flow load more past). */
   limit?: number;
-  /** When "reposts", only REPOST. When "posts", exclude REPOST. When "all" or undefined, no filter. */
-  contentTab?: "all" | "posts" | "reposts";
+  /** When "reposts", only REPOST. When "posts", exclude REPOST. When "polls", postType POLL. When "all" or undefined, no filter. */
+  contentTab?: "all" | "posts" | "reposts" | "polls";
 }): Promise<PostWithQueueType[]> {
   const whereClause: Prisma.PostWhereInput = {
     userId,
@@ -48,6 +48,8 @@ export function getPastPosts({
     whereClause.postKind = "REPOST";
   } else if (contentTab === "posts") {
     whereClause.postKind = { not: "REPOST" };
+  } else if (contentTab === "polls") {
+    whereClause.postType = "POLL";
   }
 
   // Add queue type filter if specified ("unassigned" = no queue, else filter by queue name)

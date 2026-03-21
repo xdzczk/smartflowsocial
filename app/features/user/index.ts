@@ -152,6 +152,13 @@ export {
   handleDashboardAction,
 } from "./services/dashboard.server";
 
+export {
+  getFeedbackInboxPubkeyHex,
+  loadFeedbackInboxKind10050Relays,
+  validateUserSignedFeedbackDm,
+  validateUserSignedFeedbackGiftWrap,
+} from "./services/product-feedback.server";
+
 export { loadUploadProviderSettings } from "./services/upload-provider.server";
 
 // ============================================================================

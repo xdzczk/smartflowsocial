@@ -318,6 +318,7 @@ model Post {
   @@index([currentState, scheduledAtUtc])
   @@index([userId, currentState, scheduledAtUtc])
   @@index([userId, scheduledAtUtc])
+  @@index([publishedAt])
   @@index([repostOfPostId])
   @@index([quoteOfPostId])
   @@index([quoteOfLongFormPostId])
@@ -377,6 +378,7 @@ model LongFormPost {
   @@index([currentState, scheduledAtUtc])
   @@index([userId, currentState, scheduledAtUtc])
   @@index([userId, scheduledAtUtc])
+  @@index([publishedAt])
 }
 
 model DraftVersion {
@@ -521,6 +523,7 @@ enum PostType {
   CAROUSEL
   TEXT
   VIDEO
+  POLL
 }
 
 enum ScheduleType {
@@ -938,4 +941,20 @@ model ReferrerPayoutConfig {
   payoutDestination      String   @map("payout_destination")
   payoutDestinationType  String?  @map("payout_destination_type") // ln_address | lnurl | invoice_on_demand
   updatedAt              DateTime @updatedAt @map("updated_at")
+}
+
+/// Operator-visible payout history (batch runs + manual Lightning payouts).
+model ReferralPayoutAuditLog {
+  id            String   @id @default(cuid())
+  channel       String   @map("channel") // "batch" | "manual"
+  referrerNpub  String?  @map("referrer_npub")
+  amountSats    Int?     @map("amount_sats")
+  status        String   @map("status") // "success" | "failed"
+  batchSummary  Json?    @map("batch_summary")
+  errorMessage  String?  @map("error_message")
+  operatorNpub  String?  @map("operator_npub")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("referral_payout_audit_log")
 }

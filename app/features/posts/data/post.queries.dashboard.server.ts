@@ -38,8 +38,8 @@ export async function getScheduledPosts({
   since?: number; // Unix timestamp in milliseconds for delta sync
   /** When set, return only posts with scheduledAtUtc > this date (for cursor-based load more). */
   afterScheduledAtUtc?: Date;
-  /** When "reposts", only REPOST. When "posts", exclude REPOST. When "all" or undefined, no filter. */
-  contentTab?: "all" | "posts" | "reposts";
+  /** When "reposts", only REPOST. When "posts", exclude REPOST. When "polls", postType POLL. When "all" or undefined, no filter. */
+  contentTab?: "all" | "posts" | "reposts" | "polls";
   /** Filter by scheduled date range (inclusive). Used for Scheduled page date filter. */
   scheduledFromUtc?: Date;
   scheduledToUtc?: Date;
@@ -57,6 +57,8 @@ export async function getScheduledPosts({
       whereClause.postKind = "REPOST";
     } else if (contentTab === "posts") {
       whereClause.postKind = { not: "REPOST" };
+    } else if (contentTab === "polls") {
+      whereClause.postType = "POLL";
     }
 
     // Add delta sync filter if since timestamp is provided

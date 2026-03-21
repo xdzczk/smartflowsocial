@@ -14,6 +14,7 @@ import { resolveExecutionRelays } from "~/features/relays/relay-resolution.serve
 import { getUserById } from "~/features/user";
 import { extractCorrelationId } from "~/lib/correlation-context.server";
 import { logWarning } from "~/lib/error-logger.server";
+import { featureFlags } from "~/lib/feature-flags.server";
 import {
   newPostActionSchema,
   validateFormDataOrRespond,
@@ -29,6 +30,10 @@ import {
   handlePostOrScheduleText,
 } from "./newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "./newpost-action/hashtag-preset-utils.server";
+import {
+  handlePostOrSchedulePoll,
+  resolvePollHashtagContext,
+} from "./newpost-action/poll-handlers.server";
 import { handleUploadPreview } from "./newpost-action/upload-preview-handler.server";
 
 /**
@@ -129,6 +134,46 @@ export async function handleNewPostAction(
     const { handleThreadAction } =
       await import("./newpost-action/thread-handlers.server");
     return handleThreadAction(userId, sessionPubkey, formData, sanitizedRelays);
+  }
+
+  if (_action === "post-poll" || _action === "schedule-poll") {
+    if (!featureFlags.nip88PollsEnabled) {
+      return json(
+        { success: false, error: "NIP-88 polls are disabled" },
+        { status: 403 }
+      );
+    }
+    const queueTypePoll = String(formData.get("queueType") ?? "unassigned");
+    const queueTypeIdPollRaw = formData.get("queueTypeId");
+    const queueTypeIdPoll =
+      queueTypeIdPollRaw != null && String(queueTypeIdPollRaw).trim() !== ""
+        ? String(queueTypeIdPollRaw)
+        : null;
+    const isRecyclablePoll = formData.get("isRecyclable") === "on";
+    const useHashtagPresetsPoll = formData.get("useHashtagPresets") === "on";
+    const manualHashTagPresetIdPoll = useHashtagPresetsPoll
+      ? String(formData.get("hashTagPresetId") ?? "")
+      : null;
+    const { hashTagPresetId: hashTagPresetIdPoll } =
+      await resolvePollHashtagContext(
+        userId,
+        useHashtagPresetsPoll,
+        manualHashTagPresetIdPoll === "" ? null : manualHashTagPresetIdPoll,
+        queueTypePoll,
+        queueTypeIdPoll
+      );
+    return handlePostOrSchedulePoll({
+      userId,
+      sessionPubkey,
+      formData,
+      sanitizedRelays,
+      action: _action,
+      correlationId,
+      queueType: queueTypePoll,
+      queueTypeId: queueTypeIdPoll,
+      isRecyclable: isRecyclablePoll,
+      hashTagPresetId: hashTagPresetIdPoll,
+    });
   }
 
   // Validate non-file fields with Zod for other actions
