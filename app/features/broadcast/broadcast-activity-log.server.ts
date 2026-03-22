@@ -1,15 +1,19 @@
 import type { BroadcastEventLogLevel, Prisma } from "@prisma/client";
 
-import { prisma } from "~/lib/prisma.server";
+import { prisma, type AppPrismaTransactionClient } from "~/lib/prisma.server";
 
-export async function appendBroadcastEventLog(input: {
-  campaignId: string;
-  level?: BroadcastEventLogLevel;
-  eventType: string;
-  message: string;
-  metadataJson?: Prisma.InputJsonValue;
-}): Promise<void> {
-  await prisma.broadcastEventLog.create({
+export async function appendBroadcastEventLog(
+  input: {
+    campaignId: string;
+    level?: BroadcastEventLogLevel;
+    eventType: string;
+    message: string;
+    metadataJson?: Prisma.InputJsonValue;
+  },
+  opts?: { tx: AppPrismaTransactionClient }
+): Promise<void> {
+  const db = opts?.tx ?? prisma;
+  await db.broadcastEventLog.create({
     data: {
       campaignId: input.campaignId,
       level: input.level ?? "INFO",

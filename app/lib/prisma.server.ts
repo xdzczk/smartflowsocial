@@ -126,4 +126,12 @@ function getPrismaClient() {
   return client;
 }
 
+/** Interactive `tx` from `prisma.$transaction(async (tx) => …)` (extended client; not base `Prisma.TransactionClient`). */
+export type AppPrismaTransactionClient = Parameters<
+  Extract<
+    Parameters<typeof prisma.$transaction>[0],
+    (tx: never) => Promise<unknown>
+  >
+>[0];
+
 export { prisma };

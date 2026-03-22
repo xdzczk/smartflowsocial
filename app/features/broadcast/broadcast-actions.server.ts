@@ -107,11 +107,14 @@ export async function createBroadcastDraft(
         customNpubLines: input.customNpubLines,
       },
     });
-    await appendBroadcastEventLog({
-      campaignId: row.id,
-      eventType: "draft_created",
-      message: "Draft created",
-    });
+    await appendBroadcastEventLog(
+      {
+        campaignId: row.id,
+        eventType: "draft_created",
+        message: "Draft created",
+      },
+      { tx }
+    );
     return row.id;
   });
   return { id };
