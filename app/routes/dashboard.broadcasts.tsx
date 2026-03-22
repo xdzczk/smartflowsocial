@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "@remix-run/react";
 const subNav = [
   { to: "/dashboard/broadcasts", end: true, label: "All broadcasts" },
   { to: "/dashboard/broadcasts/new", end: false, label: "New broadcast" },
+  { to: "/dashboard/broadcasts/audiences", end: false, label: "Audiences" },
   { to: "/dashboard/broadcasts/suppression", end: false, label: "Suppression" },
   { to: "/dashboard/broadcasts/settings", end: false, label: "Settings" },
 ] as const;

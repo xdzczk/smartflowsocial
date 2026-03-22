@@ -85,6 +85,7 @@ model User {
   engagementReplyTemplates EngagementReplyTemplate[]
   broadcastCampaigns       BroadcastCampaign[]
   broadcastSuppressions    BroadcastSuppression[]
+  broadcastSavedAudiences  BroadcastSavedAudience[]
   /** Default delivery prefs for Broadcasts: { defaultDeliveryMode?, defaultSendStrategy?, ... } */
   broadcastSettings        Json?
   productSessions          ProductSession[]
@@ -167,10 +168,13 @@ model EngagementReplyTemplate {
 
 enum BroadcastCampaignStatus {
   DRAFT
+  /** Audience resolved; user must complete review and sign */
+  AWAITING_SIGNATURE
   SCHEDULED
   QUEUED
   SENDING
   COMPLETED
+  COMPLETED_WITH_FAILURES
   PAUSED
   FAILED
   CANCELLED
@@ -213,6 +217,23 @@ enum BroadcastSuppressionSource {
   AUTO
 }
 
+enum BroadcastSuppressionReasonCode {
+  MANUAL_OPT_OUT
+  FAILED_REPEATEDLY
+  COMPLAINT_OR_ABUSE
+  DUPLICATE_PROTECTION
+  IMPORTED
+  POLICY_BLOCK
+  OTHER
+}
+
+enum BroadcastRecipientDeliveryMethod {
+  NIP04
+  NIP17
+  BOTH
+  UNKNOWN
+}
+
 enum BroadcastEventLogLevel {
   INFO
   WARNING
@@ -240,11 +261,17 @@ model BroadcastCampaign {
   skippedCount     Int                      @default(0)
   /** CUSTOM audience: raw npubs/nhex lines from composer */
   customNpubLines  String[]                 @default([])
+  archivedAt       DateTime?
+  /** When duplicated from another campaign */
+  duplicatedFromId String?
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   recipients       BroadcastRecipient[]
   eventLogs        BroadcastEventLog[]
+  duplicatedFrom   BroadcastCampaign?       @relation("BroadcastDuplication", fields: [duplicatedFromId], references: [id], onDelete: SetNull)
+  duplicates       BroadcastCampaign[]      @relation("BroadcastDuplication")
+  suppressionsFromThis BroadcastSuppression[] @relation("SuppressionFromCampaign")
 
   @@index([userId, status, updatedAt])
   @@index([userId, createdAt])
@@ -267,6 +294,7 @@ model BroadcastRecipient {
   failureCode           String?
   failureReason         String?
   staggerDelayMs        Int?
+  deliveryMethodUsed    BroadcastRecipientDeliveryMethod?
   createdAt             DateTime                 @default(now())
   updatedAt             DateTime                 @updatedAt
   campaign              BroadcastCampaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -276,16 +304,39 @@ model BroadcastRecipient {
 }
 
 model BroadcastSuppression {
-  id              String                   @id @default(cuid())
-  userId          String
-  recipientPubkey String
-  reason          String?
-  source          BroadcastSuppressionSource @default(MANUAL)
-  createdAt       DateTime                 @default(now())
-  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String                     @id @default(cuid())
+  userId               String
+  recipientPubkey      String
+  reason               String?
+  reasonCode           BroadcastSuppressionReasonCode @default(OTHER)
+  source               BroadcastSuppressionSource @default(MANUAL)
+  permanent            Boolean                    @default(true)
+  expiresAt            DateTime?
+  createdFromCampaignId String?
+  metadataJson         Json?
+  createdAt            DateTime                   @default(now())
+  user                 User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdFromCampaign  BroadcastCampaign?         @relation("SuppressionFromCampaign", fields: [createdFromCampaignId], references: [id], onDelete: SetNull)
 
   @@unique([userId, recipientPubkey])
   @@index([userId])
+  @@index([userId, expiresAt])
+}
+
+model BroadcastSavedAudience {
+  id               String                @id @default(cuid())
+  userId           String
+  name             String
+  audienceType     BroadcastAudienceType
+  customNpubLines  String[]              @default([])
+  ruleSummary      String?
+  lastResolvedSize Int?
+  rulesJson        Json?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
 }
 
 model BroadcastEventLog {

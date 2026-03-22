@@ -31,6 +31,7 @@ import {
   AdminPageHeader,
   AdminSection,
   MetricCard,
+  useAdminCurrency,
 } from "~/features/admin";
 import {
   defaultRangeForAdminPath,
@@ -229,7 +230,8 @@ export default function AdminOperationsPage() {
   const [maintenanceNotice, setMaintenanceNotice] = useState<string | null>(
     null
   );
-  const { formatDate } = useFormattedDate();
+  const { formatDate, dateLocale } = useFormattedDate();
+  const { formatSats, moneyColumnLabel } = useAdminCurrency();
 
   const formatDateTime = (iso: string) =>
     formatDate(iso, {
@@ -898,7 +900,7 @@ export default function AdminOperationsPage() {
               <tr>
                 <th className="p-2 text-left">Created</th>
                 <th className="p-2 text-left">Referrer</th>
-                <th className="p-2 text-right">Sats</th>
+                <th className="p-2 text-right">{moneyColumnLabel}</th>
                 <th className="p-2 text-left">Reason</th>
               </tr>
             </AdminDataTableHead>
@@ -916,7 +918,9 @@ export default function AdminOperationsPage() {
                     <td className="max-w-[160px] truncate p-2 font-mono text-xs">
                       {e.referrerNpub}
                     </td>
-                    <td className="p-2 text-right">{e.commissionSats}</td>
+                    <td className="p-2 text-right tabular-nums">
+                      {formatSats(e.commissionSats, dateLocale)}
+                    </td>
                     <td className="text-muted-foreground p-2 text-xs">
                       {e.payoutFailureReason ?? "—"}
                     </td>

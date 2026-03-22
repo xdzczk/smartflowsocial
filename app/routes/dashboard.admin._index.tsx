@@ -11,8 +11,8 @@ import {
   AdminSection,
   AdminStatusPill,
   MetricCard,
-  formatAdminInteger,
   getMetricDefinition,
+  useAdminCurrency,
 } from "~/features/admin";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
@@ -29,7 +29,7 @@ function isSuccess(d: LoaderData): d is Exclude<LoaderData, { error: string }> {
 export default function AdminOverviewPage() {
   const raw = useLoaderData<typeof loader>();
   const { dateLocale } = useFormattedDate();
-  const fmtInt = (n: number) => formatAdminInteger(n, dateLocale);
+  const { unit, formatSats } = useAdminCurrency();
 
   if (!isSuccess(raw)) {
     return <div className="p-4">Access denied.</div>;
@@ -39,6 +39,7 @@ export default function AdminOverviewPage() {
   const k = d.insights.kpi;
   const rangeQ = `?range=${encodeURIComponent(d.rangePreset)}`;
   const mrrDef = getMetricDefinition("mrr_sats");
+  const mrrTitle = unit === "SATS" ? mrrDef.label : `MRR (${unit})`;
   const netFlow = d.monetization.netSubscriptionFlowInRange;
   const reconnectAttempts = d.signerConnect.reconnectAttemptsInRange;
   const reconnectFails = d.signerConnect.reconnectFailuresInRange;
@@ -73,8 +74,8 @@ export default function AdminOverviewPage() {
           </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
-              title={mrrDef.label}
-              value={`${d.monetization.mrrSats} sats`}
+              title={mrrTitle}
+              value={formatSats(d.monetization.mrrSats, dateLocale)}
               definition={`${mrrDef.description} ${mrrDef.formula}`}
               interpretation="Current recurring base (30-day billing periods)."
               href={`/dashboard/admin/analytics${rangeQ}#monetization`}
@@ -159,8 +160,12 @@ export default function AdminOverviewPage() {
               confidence={d.productUsage.activeUsersConfidence}
             />
             <MetricCard
-              title="Pending payout (sats)"
-              value={fmtInt(d.kpis.pendingPayoutSats)}
+              title={
+                unit === "SATS"
+                  ? "Pending payout (sats)"
+                  : `Pending payout (${unit})`
+              }
+              value={formatSats(d.kpis.pendingPayoutSats, dateLocale)}
               tone={d.kpis.pendingPayoutSats > 0 ? "warning" : "neutral"}
               definition={def.pendingPayout}
               interpretation={k.pendingPayout}
@@ -339,16 +344,27 @@ export default function AdminOverviewPage() {
               value={d.referrals.referralLinks}
             />
             <MetricCard
-              title="Pending payout (sats)"
-              value={fmtInt(d.referrals.pendingSats)}
+              title={
+                unit === "SATS"
+                  ? "Pending payout (sats)"
+                  : `Pending payout (${unit})`
+              }
+              value={formatSats(d.referrals.pendingSats, dateLocale)}
             />
             <MetricCard
-              title="Paid in range (sats)"
-              value={fmtInt(d.referrals.paidInRangeSats)}
+              title={
+                unit === "SATS"
+                  ? "Paid in range (sats)"
+                  : `Paid in range (${unit})`
+              }
+              value={formatSats(d.referrals.paidInRangeSats, dateLocale)}
             />
             <MetricCard
               title="Referral commission (range)"
-              value={fmtInt(d.monetization.referredRevenueSatsInRange)}
+              value={formatSats(
+                d.monetization.referredRevenueSatsInRange,
+                dateLocale
+              )}
               definition="ReferralEarning rows created in the window (commission)."
             />
           </div>

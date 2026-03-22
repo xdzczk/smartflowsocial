@@ -2,6 +2,9 @@
  * Public exports for admin UI (routes import from here per import/no-restricted-paths).
  */
 
+export { AdminCurrencyProvider, useAdminCurrency } from "./admin-currency";
+export type { AdminDisplayUnit } from "./format-admin-money";
+export { ADMIN_DISPLAY_UNITS } from "./format-admin-money";
 export {
   AdminAlertSeverityPill,
   AdminStatusPill,

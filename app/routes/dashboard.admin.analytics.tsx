@@ -9,6 +9,7 @@ import {
   AdminProofOfWorkSection,
   AdminSection,
   MetricCard,
+  useAdminCurrency,
 } from "~/features/admin";
 import {
   defaultRangeForAdminPath,
@@ -68,7 +69,8 @@ function mergeThreeSeries(
 
 export default function AdminAnalyticsPage() {
   const raw = useLoaderData<typeof loader>();
-  const { formatDate } = useFormattedDate();
+  const { formatDate, dateLocale } = useFormattedDate();
+  const { unit, formatSats } = useAdminCurrency();
   const formatChartDay = useMemo(
     () => (isoDay: string) =>
       formatDate(`${isoDay}T12:00:00.000Z`, {
@@ -185,13 +187,17 @@ export default function AdminAnalyticsPage() {
         >
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
-              title="MRR (sats)"
-              value={`${d.monetization.mrrSats} sats`}
+              title={unit === "SATS" ? "MRR (sats)" : `MRR (${unit})`}
+              value={formatSats(d.monetization.mrrSats, dateLocale)}
               definition="Sum of amountSats on active paid subscriptions (30-day periods)."
             />
             <MetricCard
-              title="ARR run-rate (sats)"
-              value={`${d.monetization.arrRunRateSats} sats`}
+              title={
+                unit === "SATS"
+                  ? "ARR run-rate (sats)"
+                  : `ARR run-rate (${unit})`
+              }
+              value={formatSats(d.monetization.arrRunRateSats, dateLocale)}
               definition="MRR × 12 — run-rate, not recognized revenue."
             />
             <MetricCard
@@ -214,19 +220,37 @@ export default function AdminAnalyticsPage() {
               definition="Starts minus cancellations in range."
             />
             <MetricCard
-              title="ARPPU (sats, range payments)"
-              value={d.monetization.arppuSatsInRange ?? "—"}
+              title={
+                unit === "SATS"
+                  ? "ARPPU (sats, range payments)"
+                  : `ARPPU (${unit}, range payments)`
+              }
+              value={
+                d.monetization.arppuSatsInRange == null
+                  ? "—"
+                  : formatSats(d.monetization.arppuSatsInRange, dateLocale)
+              }
               definition="Completed payment amount in range ÷ active paid subscribers."
               confidence={d.monetization.revenueConfidence}
             />
             <MetricCard
               title="Referral commission (range)"
-              value={d.monetization.referredRevenueSatsInRange}
+              value={formatSats(
+                d.monetization.referredRevenueSatsInRange,
+                dateLocale
+              )}
               definition="Sum of ReferralEarning.commissionSats with createdAt in range."
             />
             <MetricCard
-              title="Payment total (sats, range)"
-              value={d.monetization.totalPaymentSatsInRange}
+              title={
+                unit === "SATS"
+                  ? "Payment total (sats, range)"
+                  : `Payment total (${unit}, range)`
+              }
+              value={formatSats(
+                d.monetization.totalPaymentSatsInRange,
+                dateLocale
+              )}
               definition="Completed Payment.amount in range."
             />
           </div>

@@ -33,7 +33,7 @@ import {
   AdminCard,
   AdminPageHeader,
   MetricCard,
-  formatAdminInteger,
+  useAdminCurrency,
 } from "~/features/admin";
 import type { AdminOverviewStats } from "~/features/admin/repositories/admin-overview-stats-data.server";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -147,7 +147,7 @@ export default function AdminReferralsPage() {
       },
     });
 
-  const fmtInt = (n: number) => formatAdminInteger(n, dateLocale);
+  const { unit, formatSats, moneyColumnLabel } = useAdminCurrency();
 
   if (!isLoaderOk(raw)) {
     return <div className="p-4">Access denied.</div>;
@@ -202,7 +202,8 @@ export default function AdminReferralsPage() {
             className="border-border bg-muted/40 rounded-md border px-3 py-2 text-sm"
             role="status"
           >
-            Paid {actionData.manual.paidSats} sats to referrer{" "}
+            Paid {formatSats(actionData.manual.paidSats, dateLocale)} to
+            referrer{" "}
             <span className="font-mono text-xs">
               {actionData.manual.referrerNpub}
             </span>
@@ -220,7 +221,10 @@ export default function AdminReferralsPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
               title="Referral commission (range)"
-              value={data.monetization.referredRevenueSatsInRange}
+              value={formatSats(
+                data.monetization.referredRevenueSatsInRange,
+                dateLocale
+              )}
               definition="ReferralEarning rows created in the window (commission sats)."
             />
             <MetricCard
@@ -229,8 +233,15 @@ export default function AdminReferralsPage() {
               definition="Earning rows marked PAID with paidAt in the window."
             />
             <MetricCard
-              title="All payments (sats, range)"
-              value={data.monetization.totalPaymentSatsInRange}
+              title={
+                unit === "SATS"
+                  ? "All payments (sats, range)"
+                  : `All payments (${unit}, range)`
+              }
+              value={formatSats(
+                data.monetization.totalPaymentSatsInRange,
+                dateLocale
+              )}
               definition="Completed subscription-related payments in range (platform-wide context)."
             />
           </div>
@@ -258,8 +269,15 @@ export default function AdminReferralsPage() {
               value={stats.referralEarningsByStatus.failed}
             />
             <MetricCard
-              title="Pending commission (sats)"
-              value={stats.referralPendingCommissionSats}
+              title={
+                unit === "SATS"
+                  ? "Pending commission (sats)"
+                  : `Pending commission (${unit})`
+              }
+              value={formatSats(
+                stats.referralPendingCommissionSats,
+                dateLocale
+              )}
             />
             <MetricCard
               title="Ready for batch payout"
@@ -296,9 +314,9 @@ export default function AdminReferralsPage() {
               </span>{" "}
               would skip at fetch time ·{" "}
               <span className="font-medium tabular-nums">
-                {fmtInt(batchPreview.totalSatsReady)}
+                {formatSats(batchPreview.totalSatsReady, dateLocale)}
               </span>{" "}
-              sats in ready rows
+              in ready rows
             </li>
           </ul>
         </AdminCard>
@@ -346,7 +364,7 @@ export default function AdminReferralsPage() {
                     <thead className="bg-muted/50 sticky top-0">
                       <tr>
                         <th className="p-2">Referrer</th>
-                        <th className="p-2 text-right">Sats</th>
+                        <th className="p-2 text-right">{moneyColumnLabel}</th>
                         <th className="p-2">Status</th>
                       </tr>
                     </thead>
@@ -364,7 +382,7 @@ export default function AdminReferralsPage() {
                               {row.referrerNpub}
                             </td>
                             <td className="p-2 text-right tabular-nums">
-                              {fmtInt(row.pendingSats)}
+                              {formatSats(row.pendingSats, dateLocale)}
                             </td>
                             <td className="p-2">
                               {row.ready ? (
@@ -505,7 +523,7 @@ export default function AdminReferralsPage() {
                   <th className="p-2 text-left">Time</th>
                   <th className="p-2 text-left">Channel</th>
                   <th className="p-2 text-left">Referrer</th>
-                  <th className="p-2 text-right">Sats</th>
+                  <th className="p-2 text-right">{moneyColumnLabel}</th>
                   <th className="p-2 text-left">Status</th>
                   <th className="p-2 text-left">Detail</th>
                 </tr>
@@ -528,7 +546,9 @@ export default function AdminReferralsPage() {
                         {row.referrerNpub ?? "—"}
                       </td>
                       <td className="p-2 text-right tabular-nums">
-                        {row.amountSats ?? "—"}
+                        {row.amountSats == null
+                          ? "—"
+                          : formatSats(row.amountSats, dateLocale)}
                       </td>
                       <td className="p-2">
                         <Badge
@@ -634,7 +654,9 @@ export default function AdminReferralsPage() {
                     <td className="max-w-[140px] truncate p-2 font-mono text-xs">
                       {e.referrerNpub}
                     </td>
-                    <td className="p-2 text-right">{e.commissionSats} sats</td>
+                    <td className="p-2 text-right tabular-nums">
+                      {formatSats(e.commissionSats, dateLocale)}
+                    </td>
                     <td className="p-2">
                       {e.status}
                       {e.payoutFailureReason

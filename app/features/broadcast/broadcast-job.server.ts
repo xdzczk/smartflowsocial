@@ -4,6 +4,7 @@
 
 import {
   BroadcastCampaignStatus,
+  BroadcastRecipientDeliveryMethod,
   BroadcastRecipientStatus,
 } from "@prisma/client";
 import type { Job } from "bullmq";
@@ -157,6 +158,10 @@ export async function runBroadcastDmJob(
     }
 
     const wraps = parseGiftWraps(row.giftWraps);
+    const deliveryMethodUsed =
+      wraps.length > 0
+        ? BroadcastRecipientDeliveryMethod.BOTH
+        : BroadcastRecipientDeliveryMethod.NIP04;
     const recipientInboxRelays =
       await resolveCachedKind10050InboxRelays(receiverHex);
     for (const gw of wraps) {
@@ -184,6 +189,7 @@ export async function runBroadcastDmJob(
           sentAt: new Date(),
           failureCode: null,
           failureReason: null,
+          deliveryMethodUsed,
         },
       });
       await tx.broadcastCampaign.update({
@@ -230,7 +236,7 @@ export async function runBroadcastDmJob(
 async function maybeCompleteCampaign(campaignId: string): Promise<void> {
   const camp = await prisma.broadcastCampaign.findUnique({
     where: { id: campaignId },
-    select: { status: true },
+    select: { status: true, failedCount: true },
   });
   if (
     !camp ||
@@ -255,11 +261,29 @@ async function maybeCompleteCampaign(campaignId: string): Promise<void> {
   });
   if (open > 0) return;
 
+  const terminalStatus =
+    camp.failedCount > 0
+      ? BroadcastCampaignStatus.COMPLETED_WITH_FAILURES
+      : BroadcastCampaignStatus.COMPLETED;
+
   await prisma.broadcastCampaign.update({
     where: { id: campaignId },
     data: {
-      status: BroadcastCampaignStatus.COMPLETED,
+      status: terminalStatus,
       completedAt: new Date(),
     },
+  });
+
+  await appendBroadcastEventLog({
+    campaignId,
+    eventType:
+      terminalStatus === BroadcastCampaignStatus.COMPLETED_WITH_FAILURES
+        ? "completed_with_failures"
+        : "completed",
+    message:
+      terminalStatus === BroadcastCampaignStatus.COMPLETED_WITH_FAILURES
+        ? "Delivery finished with one or more failures"
+        : "Delivery completed successfully",
+    metadataJson: { failedCount: camp.failedCount },
   });
 }

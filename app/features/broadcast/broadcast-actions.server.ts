@@ -1,6 +1,7 @@
 import {
   BroadcastCampaignStatus,
   BroadcastRecipientStatus,
+  BroadcastSuppressionReasonCode,
   type BroadcastAudienceType,
   type Prisma,
 } from "@prisma/client";
@@ -9,6 +10,7 @@ import { appendBroadcastEventLog } from "~/features/broadcast/broadcast-activity
 import { looksSpammyMessage } from "~/features/broadcast/broadcast-guardrails.server";
 import {
   applySuppressionAndSelf,
+  normalizePubkeyInput,
   resolveAudiencePubkeys,
 } from "~/features/broadcast/broadcast-resolve.server";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
@@ -39,6 +41,33 @@ export class BroadcastActionError extends Error {
 }
 
 const MSG_CAMPAIGN_NOT_FOUND = "Campaign not found";
+
+async function countBroadcastRecipientsFinalizedToday(
+  userId: string
+): Promise<number> {
+  const start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  const logs = await prisma.broadcastEventLog.findMany({
+    where: {
+      eventType: "finalized",
+      createdAt: { gte: start },
+      campaign: { userId },
+    },
+    select: { metadataJson: true },
+  });
+  let n = 0;
+  for (const l of logs) {
+    const raw =
+      l.metadataJson &&
+      typeof l.metadataJson === "object" &&
+      "count" in l.metadataJson
+        ? (l.metadataJson as { count?: unknown }).count
+        : undefined;
+    const c = typeof raw === "number" ? raw : Number(raw);
+    if (Number.isFinite(c)) n += c;
+  }
+  return n;
+}
 
 function emptyGraphAudienceMessage(
   audienceType: BroadcastAudienceType
@@ -155,7 +184,10 @@ export async function resolveRecipientsForCampaign(
   if (!campaign) {
     throw new BroadcastActionError(MSG_CAMPAIGN_NOT_FOUND, "NOT_FOUND");
   }
-  if (campaign.status !== BroadcastCampaignStatus.DRAFT) {
+  if (
+    campaign.status !== BroadcastCampaignStatus.DRAFT &&
+    campaign.status !== BroadcastCampaignStatus.AWAITING_SIGNATURE
+  ) {
     throw new BroadcastActionError(
       "Audience is locked for this campaign",
       "STATE"
@@ -171,7 +203,14 @@ export async function resolveRecipientsForCampaign(
   }
 
   const suppressRows = await prisma.broadcastSuppression.findMany({
-    where: { userId },
+    where: {
+      userId,
+      OR: [
+        { permanent: true },
+        { expiresAt: null },
+        { expiresAt: { gt: new Date() } },
+      ],
+    },
     select: { recipientPubkey: true },
   });
   const suppressed = new Set(
@@ -244,6 +283,10 @@ export async function resolveRecipientsForCampaign(
         failedCount: 0,
         sentCount: 0,
         queuedCount: 0,
+        status:
+          included.length > 0
+            ? BroadcastCampaignStatus.AWAITING_SIGNATURE
+            : BroadcastCampaignStatus.DRAFT,
       },
     });
   });
@@ -292,7 +335,7 @@ export async function finalizeBroadcastCampaign(
   sessionPubkeyHex: string,
   input: FinalizeBroadcastInput
 ): Promise<{ enqueued: number }> {
-  await getPlanContext(userId);
+  const { limits } = await getPlanContext(userId);
   const campaign = await prisma.broadcastCampaign.findFirst({
     where: { id: input.campaignId, userId },
     include: { recipients: true },
@@ -300,7 +343,10 @@ export async function finalizeBroadcastCampaign(
   if (!campaign) {
     throw new BroadcastActionError(MSG_CAMPAIGN_NOT_FOUND, "NOT_FOUND");
   }
-  if (campaign.status !== BroadcastCampaignStatus.DRAFT) {
+  if (
+    campaign.status !== BroadcastCampaignStatus.DRAFT &&
+    campaign.status !== BroadcastCampaignStatus.AWAITING_SIGNATURE
+  ) {
     throw new BroadcastActionError("Campaign already finalized", "STATE");
   }
   if (looksSpammyMessage(campaign.messageBody)) {
@@ -308,6 +354,47 @@ export async function finalizeBroadcastCampaign(
       "Message looks repetitive; revise before sending",
       "SPAM"
     );
+  }
+
+  if (limits.maxDailyBroadcastRecipients > 0) {
+    const usedToday = await countBroadcastRecipientsFinalizedToday(userId);
+    if (
+      usedToday + input.recipients.length >
+      limits.maxDailyBroadcastRecipients
+    ) {
+      throw new BroadcastActionError(
+        `Daily broadcast recipient limit exceeded (max ${String(
+          limits.maxDailyBroadcastRecipients
+        )} signed sends per UTC day).`,
+        "LIMIT"
+      );
+    }
+  }
+
+  if (limits.maxConcurrentActiveCampaigns > 0) {
+    const activeOthers = await prisma.broadcastCampaign.count({
+      where: {
+        userId,
+        archivedAt: null,
+        id: { not: input.campaignId },
+        status: {
+          in: [
+            BroadcastCampaignStatus.SCHEDULED,
+            BroadcastCampaignStatus.QUEUED,
+            BroadcastCampaignStatus.SENDING,
+            BroadcastCampaignStatus.PAUSED,
+          ],
+        },
+      },
+    });
+    if (activeOthers >= limits.maxConcurrentActiveCampaigns) {
+      throw new BroadcastActionError(
+        `Too many active broadcasts (max ${String(
+          limits.maxConcurrentActiveCampaigns
+        )}). Cancel or finish one before starting another.`,
+        "LIMIT"
+      );
+    }
   }
 
   const scheduledUnix = campaign.scheduledFor
@@ -426,6 +513,7 @@ export async function cancelBroadcastCampaign(
   }
   const terminal: BroadcastCampaignStatus[] = [
     BroadcastCampaignStatus.COMPLETED,
+    BroadcastCampaignStatus.COMPLETED_WITH_FAILURES,
     BroadcastCampaignStatus.CANCELLED,
     BroadcastCampaignStatus.FAILED,
   ];
@@ -466,7 +554,10 @@ export async function deleteBroadcastDraft(
   if (!campaign) {
     throw new BroadcastActionError(MSG_CAMPAIGN_NOT_FOUND, "NOT_FOUND");
   }
-  if (campaign.status !== BroadcastCampaignStatus.DRAFT) {
+  if (
+    campaign.status !== BroadcastCampaignStatus.DRAFT &&
+    campaign.status !== BroadcastCampaignStatus.AWAITING_SIGNATURE
+  ) {
     throw new BroadcastActionError("Only drafts can be deleted", "STATE");
   }
   await prisma.broadcastCampaign.delete({ where: { id: campaignId } });
@@ -474,19 +565,44 @@ export async function deleteBroadcastDraft(
 
 export async function addBroadcastSuppression(
   userId: string,
-  recipientPubkey: string,
-  reason?: string
-): Promise<void> {
-  const pk = recipientPubkey.toLowerCase();
-  if (!/^[0-9a-f]{64}$/.test(pk)) {
-    throw new BroadcastActionError("Invalid pubkey", "VALIDATION");
+  recipientPubkeyOrNpub: string,
+  options?: {
+    reason?: string;
+    reasonCode?: BroadcastSuppressionReasonCode;
+    permanent?: boolean;
+    expiresAt?: Date | null;
+    createdFromCampaignId?: string | null;
   }
+): Promise<void> {
+  const pk = normalizePubkeyInput(recipientPubkeyOrNpub);
+  if (!pk) {
+    throw new BroadcastActionError("Invalid npub or hex pubkey", "VALIDATION");
+  }
+  const reasonCode =
+    options?.reasonCode ?? BroadcastSuppressionReasonCode.OTHER;
   await prisma.broadcastSuppression.upsert({
     where: {
       userId_recipientPubkey: { userId, recipientPubkey: pk },
     },
-    create: { userId, recipientPubkey: pk, reason: reason ?? null },
-    update: { reason: reason ?? null },
+    create: {
+      userId,
+      recipientPubkey: pk,
+      reason: options?.reason ?? null,
+      reasonCode,
+      permanent: options?.permanent ?? true,
+      expiresAt: options?.expiresAt ?? null,
+      createdFromCampaignId: options?.createdFromCampaignId ?? null,
+    },
+    update: {
+      reason: options?.reason ?? null,
+      reasonCode,
+      ...(options?.permanent !== undefined
+        ? { permanent: options.permanent }
+        : {}),
+      ...(options?.expiresAt !== undefined
+        ? { expiresAt: options.expiresAt }
+        : {}),
+    },
   });
 }
 
@@ -494,8 +610,151 @@ export async function removeBroadcastSuppression(
   userId: string,
   recipientPubkey: string
 ): Promise<void> {
-  const pk = recipientPubkey.toLowerCase();
+  const pk =
+    normalizePubkeyInput(recipientPubkey) ?? recipientPubkey.toLowerCase();
   await prisma.broadcastSuppression.deleteMany({
     where: { userId, recipientPubkey: pk },
   });
+}
+
+export async function archiveBroadcastCampaign(
+  userId: string,
+  campaignId: string
+): Promise<void> {
+  const campaign = await prisma.broadcastCampaign.findFirst({
+    where: { id: campaignId, userId },
+  });
+  if (!campaign) {
+    throw new BroadcastActionError(MSG_CAMPAIGN_NOT_FOUND, "NOT_FOUND");
+  }
+  await prisma.broadcastCampaign.update({
+    where: { id: campaignId },
+    data: { archivedAt: new Date() },
+  });
+}
+
+export async function unarchiveBroadcastCampaign(
+  userId: string,
+  campaignId: string
+): Promise<void> {
+  const campaign = await prisma.broadcastCampaign.findFirst({
+    where: { id: campaignId, userId },
+  });
+  if (!campaign) {
+    throw new BroadcastActionError(MSG_CAMPAIGN_NOT_FOUND, "NOT_FOUND");
+  }
+  await prisma.broadcastCampaign.update({
+    where: { id: campaignId },
+    data: { archivedAt: null },
+  });
+}
+
+export async function duplicateBroadcastCampaign(
+  userId: string,
+  campaignId: string
+): Promise<{ id: string }> {
+  const src = await prisma.broadcastCampaign.findFirst({
+    where: { id: campaignId, userId },
+  });
+  if (!src) {
+    throw new BroadcastActionError(MSG_CAMPAIGN_NOT_FOUND, "NOT_FOUND");
+  }
+  const row = await prisma.broadcastCampaign.create({
+    data: {
+      userId,
+      name: `${src.name} (copy)`,
+      status: BroadcastCampaignStatus.DRAFT,
+      audienceType: src.audienceType,
+      messageBody: src.messageBody,
+      deliveryMode: src.deliveryMode,
+      sendStrategy: src.sendStrategy,
+      scheduledFor: null,
+      customNpubLines: src.customNpubLines,
+      duplicatedFromId: src.id,
+    },
+  });
+  await appendBroadcastEventLog({
+    campaignId: row.id,
+    eventType: "draft_created",
+    message: "Duplicated from another broadcast",
+    metadataJson: { sourceCampaignId: src.id },
+  });
+  return { id: row.id };
+}
+
+export async function retryBroadcastFailedRecipients(
+  userId: string,
+  campaignId: string
+): Promise<{ id: string }> {
+  const src = await prisma.broadcastCampaign.findFirst({
+    where: { id: campaignId, userId },
+    include: {
+      recipients: {
+        where: { status: BroadcastRecipientStatus.FAILED },
+        select: { recipientPubkey: true },
+      },
+    },
+  });
+  if (!src) {
+    throw new BroadcastActionError(MSG_CAMPAIGN_NOT_FOUND, "NOT_FOUND");
+  }
+  if (src.recipients.length === 0) {
+    throw new BroadcastActionError("No failed recipients to retry", "STATE");
+  }
+  const { id } = await createBroadcastDraft(userId, {
+    name: `Retry: ${src.name}`,
+    audienceType: "CUSTOM",
+    customNpubLines: src.recipients.map((r) => r.recipientPubkey),
+    messageBody: src.messageBody,
+    deliveryMode: src.deliveryMode,
+    sendStrategy: src.sendStrategy,
+  });
+  await resolveRecipientsForCampaign(userId, id);
+  await appendBroadcastEventLog({
+    campaignId: id,
+    eventType: "retry_draft_created",
+    message: `Retry draft for ${String(src.recipients.length)} failed recipient(s)`,
+    metadataJson: { sourceCampaignId: src.id },
+  });
+  return { id };
+}
+
+export async function listBroadcastSavedAudiences(userId: string) {
+  return prisma.broadcastSavedAudience.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
+export async function createBroadcastSavedAudience(
+  userId: string,
+  input: {
+    name: string;
+    audienceType: BroadcastAudienceType;
+    customNpubLines: string[];
+    ruleSummary?: string;
+  }
+) {
+  return prisma.broadcastSavedAudience.create({
+    data: {
+      userId,
+      name: input.name,
+      audienceType: input.audienceType,
+      customNpubLines: input.customNpubLines,
+      ruleSummary: input.ruleSummary ?? null,
+    },
+  });
+}
+
+export async function deleteBroadcastSavedAudience(
+  userId: string,
+  id: string
+): Promise<void> {
+  const row = await prisma.broadcastSavedAudience.findFirst({
+    where: { id, userId },
+  });
+  if (!row) {
+    throw new BroadcastActionError("Saved audience not found", "NOT_FOUND");
+  }
+  await prisma.broadcastSavedAudience.delete({ where: { id } });
 }

@@ -32,3 +32,6 @@ export function shouldPauseForFailureRate(input: {
   const rate = (input.failed / input.attempted) * 100;
   return rate >= input.thresholdPercent;
 }
+
+export type { BroadcastMessageLint } from "./broadcast-message-lint";
+export { getBroadcastMessageLintWarnings } from "./broadcast-message-lint";
