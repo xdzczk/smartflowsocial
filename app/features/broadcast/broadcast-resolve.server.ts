@@ -1,8 +1,8 @@
 import type { BroadcastAudienceType } from "@prisma/client";
 
 import {
-  getFollowedPubkeys,
-  getMutualPubkeys,
+  getFollowedPubkeysGraph,
+  getMutualPubkeysGraph,
 } from "~/features/nostr/social-graph.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
@@ -41,17 +41,26 @@ export async function resolveAudiencePubkeys(input: {
   audienceType: BroadcastAudienceType;
   customLines: string[];
   senderPubkeyHex: string;
-}): Promise<{ pubkeys: string[]; invalidCustom: number }> {
+}): Promise<{
+  pubkeys: string[];
+  invalidCustom: number;
+  /** Present when audience is FOLLOWING or MUTUALS; true if cache failed (not “empty graph”). */
+  graphFetchFailed?: boolean;
+}> {
   if (input.audienceType === "CUSTOM") {
     const { valid, invalid } = parseCustomNpubLines(input.customLines);
     return { pubkeys: valid, invalidCustom: invalid };
   }
   if (input.audienceType === "FOLLOWING") {
-    const pubkeys = await getFollowedPubkeys(input.senderPubkeyHex);
-    return { pubkeys, invalidCustom: 0 };
+    const { pubkeys, fetchFailed } = await getFollowedPubkeysGraph(
+      input.senderPubkeyHex
+    );
+    return { pubkeys, invalidCustom: 0, graphFetchFailed: fetchFailed };
   }
-  const pubkeys = await getMutualPubkeys(input.senderPubkeyHex);
-  return { pubkeys, invalidCustom: 0 };
+  const { pubkeys, fetchFailed } = await getMutualPubkeysGraph(
+    input.senderPubkeyHex
+  );
+  return { pubkeys, invalidCustom: 0, graphFetchFailed: fetchFailed };
 }
 
 export function applySuppressionAndSelf(input: {

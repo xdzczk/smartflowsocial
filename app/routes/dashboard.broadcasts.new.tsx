@@ -104,6 +104,124 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({ campaign, limits, planType, notice });
 }
 
+function broadcastResolveErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  return error instanceof BroadcastActionError ? error.message : fallback;
+}
+
+function redirectBroadcastNewWithNotice(campaignId: string, message: string) {
+  return redirect(
+    `/dashboard/broadcasts/new?campaignId=${encodeURIComponent(
+      campaignId
+    )}&notice=${encodeURIComponent(message)}`
+  );
+}
+
+async function handleBroadcastCreateIntents(
+  userId: string,
+  form: FormData,
+  intent: "create_draft" | "create_now" | "create_schedule"
+) {
+  const name = String(form.get("name") ?? "").trim();
+  const audienceType = String(form.get("audienceType") ?? "CUSTOM");
+  const messageBody = String(form.get("messageBody") ?? "").trim();
+  const customRaw = String(form.get("customNpubs") ?? "");
+  const customNpubLines = customRaw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const deliveryMode = String(form.get("deliveryMode") ?? "BEST_COMPATIBILITY");
+  const sendStrategy = String(form.get("sendStrategy") ?? "STANDARD");
+  const scheduledForIsoRaw = form.get("scheduledFor");
+  let scheduledForIso =
+    typeof scheduledForIsoRaw === "string" && scheduledForIsoRaw.trim()
+      ? new Date(scheduledForIsoRaw).toISOString()
+      : undefined;
+
+  const { currentSubscription } = await getSubscriptionData(userId);
+  const planType = getUserPlanType(currentSubscription);
+  const limits = getBroadcastPlanLimits(planType);
+
+  if (intent === "create_now") {
+    scheduledForIso = undefined;
+  }
+  if (intent === "create_schedule") {
+    if (!limits.allowSchedule) {
+      return json(
+        {
+          error: "Scheduling is not available on your plan.",
+        },
+        { status: 400 }
+      );
+    }
+    if (!scheduledForIso) {
+      return json(
+        {
+          error: "Choose a date and time for a scheduled broadcast.",
+        },
+        { status: 400 }
+      );
+    }
+  }
+
+  const parsed = createBroadcastDraftSchema.safeParse({
+    name,
+    audienceType,
+    messageBody,
+    customNpubLines,
+    deliveryMode,
+    sendStrategy,
+    scheduledForIso,
+  });
+  if (!parsed.success) {
+    return json(
+      { error: "Check the form", details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
+
+  const { id } = await createBroadcastDraft(userId, parsed.data);
+
+  if (intent === "create_draft") {
+    return redirect(`/dashboard/broadcasts/new?campaignId=${id}`);
+  }
+
+  try {
+    await resolveRecipientsForCampaign(userId, id);
+  } catch (e) {
+    return redirectBroadcastNewWithNotice(
+      id,
+      broadcastResolveErrorMessage(
+        e,
+        "Could not resolve recipients. You can try “Resolve audience” on the next step."
+      )
+    );
+  }
+
+  return redirect(`/dashboard/broadcasts/new?campaignId=${id}`);
+}
+
+async function handleBroadcastResolveIntent(userId: string, form: FormData) {
+  const campaignId = String(form.get("campaignId") ?? "");
+  if (!campaignId) {
+    return json({ error: "Missing campaign" }, { status: 400 });
+  }
+  try {
+    await resolveRecipientsForCampaign(userId, campaignId);
+  } catch (e) {
+    return redirectBroadcastNewWithNotice(
+      campaignId,
+      broadcastResolveErrorMessage(
+        e,
+        "Could not resolve recipients right now. Try again or use a Custom list."
+      )
+    );
+  }
+  return redirect(`/dashboard/broadcasts/new?campaignId=${campaignId}`);
+}
+
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
@@ -117,96 +235,11 @@ export async function action({ request }: ActionFunctionArgs) {
     intent === "create_now" ||
     intent === "create_schedule"
   ) {
-    const name = String(form.get("name") ?? "").trim();
-    const audienceType = String(form.get("audienceType") ?? "CUSTOM");
-    const messageBody = String(form.get("messageBody") ?? "").trim();
-    const customRaw = String(form.get("customNpubs") ?? "");
-    const customNpubLines = customRaw
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter(Boolean);
-    const deliveryMode = String(
-      form.get("deliveryMode") ?? "BEST_COMPATIBILITY"
-    );
-    const sendStrategy = String(form.get("sendStrategy") ?? "STANDARD");
-    const scheduledForIsoRaw = form.get("scheduledFor");
-    let scheduledForIso =
-      typeof scheduledForIsoRaw === "string" && scheduledForIsoRaw.trim()
-        ? new Date(scheduledForIsoRaw).toISOString()
-        : undefined;
-
-    const { currentSubscription } = await getSubscriptionData(userId);
-    const planType = getUserPlanType(currentSubscription);
-    const limits = getBroadcastPlanLimits(planType);
-
-    if (intent === "create_now") {
-      scheduledForIso = undefined;
-    }
-    if (intent === "create_schedule") {
-      if (!limits.allowSchedule) {
-        return json(
-          {
-            error: "Scheduling is not available on your plan.",
-          },
-          { status: 400 }
-        );
-      }
-      if (!scheduledForIso) {
-        return json(
-          {
-            error: "Choose a date and time for a scheduled broadcast.",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    const parsed = createBroadcastDraftSchema.safeParse({
-      name,
-      audienceType,
-      messageBody,
-      customNpubLines,
-      deliveryMode,
-      sendStrategy,
-      scheduledForIso,
-    });
-    if (!parsed.success) {
-      return json(
-        { error: "Check the form", details: parsed.error.flatten() },
-        { status: 400 }
-      );
-    }
-
-    const { id } = await createBroadcastDraft(userId, parsed.data);
-
-    if (intent === "create_draft") {
-      return redirect(`/dashboard/broadcasts/new?campaignId=${id}`);
-    }
-
-    try {
-      await resolveRecipientsForCampaign(userId, id);
-    } catch (e) {
-      const msg =
-        e instanceof BroadcastActionError
-          ? e.message
-          : "Could not resolve recipients. You can try “Resolve audience” on the next step.";
-      return redirect(
-        `/dashboard/broadcasts/new?campaignId=${encodeURIComponent(
-          id
-        )}&notice=${encodeURIComponent(msg)}`
-      );
-    }
-
-    return redirect(`/dashboard/broadcasts/new?campaignId=${id}`);
+    return handleBroadcastCreateIntents(userId, form, intent);
   }
 
   if (intent === "resolve") {
-    const campaignId = String(form.get("campaignId") ?? "");
-    if (!campaignId) {
-      return json({ error: "Missing campaign" }, { status: 400 });
-    }
-    await resolveRecipientsForCampaign(userId, campaignId);
-    return redirect(`/dashboard/broadcasts/new?campaignId=${campaignId}`);
+    return handleBroadcastResolveIntent(userId, form);
   }
 
   return json({ error: "Unknown intent" }, { status: 400 });

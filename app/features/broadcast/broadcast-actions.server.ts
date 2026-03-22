@@ -162,17 +162,44 @@ export async function resolveRecipientsForCampaign(
     suppressRows.map((r) => r.recipientPubkey.toLowerCase())
   );
 
-  const { pubkeys, invalidCustom } = await resolveAudiencePubkeys({
-    audienceType: campaign.audienceType,
-    customLines: campaign.customNpubLines,
-    senderPubkeyHex: senderHex.toLowerCase(),
-  });
+  const { pubkeys, invalidCustom, graphFetchFailed } =
+    await resolveAudiencePubkeys({
+      audienceType: campaign.audienceType,
+      customLines: campaign.customNpubLines,
+      senderPubkeyHex: senderHex.toLowerCase(),
+    });
 
   const { included, suppressedCount } = applySuppressionAndSelf({
     pubkeys,
     selfPubkeyHex: senderHex,
     suppressed,
   });
+
+  if (
+    included.length === 0 &&
+    campaign.audienceType !== "CUSTOM" &&
+    graphFetchFailed
+  ) {
+    throw new BroadcastActionError(
+      "The Nostr cache could not load your social graph (temporary error). Try again in a few minutes, or use a Custom recipient list.",
+      "GRAPH_CACHE"
+    );
+  }
+
+  if (included.length === 0 && campaign.audienceType !== "CUSTOM") {
+    if (pubkeys.length === 0) {
+      throw new BroadcastActionError(
+        campaign.audienceType === "FOLLOWING"
+          ? "No accounts found in your follow list (kind 3)."
+          : "No mutual follows found for this audience.",
+        "EMPTY_AUDIENCE"
+      );
+    }
+    throw new BroadcastActionError(
+      "Everyone in this audience is suppressed or is your own pubkey. Adjust suppression or choose another audience.",
+      "ALL_SUPPRESSED"
+    );
+  }
 
   if (included.length > limits.maxRecipientsPerCampaign) {
     throw new BroadcastActionError(
