@@ -32,6 +32,7 @@ export function AdminTabNav() {
 
   function hrefForTab(path: string): string {
     const p = new URLSearchParams(searchParams);
+    p.delete("focus");
     p.set("range", range);
     const q = p.toString();
     return q ? `${path}?${q}` : path;

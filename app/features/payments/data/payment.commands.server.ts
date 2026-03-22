@@ -6,6 +6,7 @@ import { NWCClient } from "@getalby/sdk";
 import { LN, USD } from "@getalby/sdk/lnclient";
 
 import { getBitcoinRate } from "~/features/payments/btc.rate";
+import { FREE_PLAN_ID } from "~/features/payments/plan-ids";
 import type {
   CreateInvoiceParams,
   InvoiceResponse,
@@ -33,8 +34,6 @@ import {
 import { getUserSubscription } from "./payment.queries.server";
 
 export { updateUserSubscription } from "./payment-subscription.server";
-
-const FREE_PLAN_ID = "free";
 
 /** Minimal free plan data so dashboard can assign new users even if seed wasn't run. */
 const FREE_PLAN_SEED = {

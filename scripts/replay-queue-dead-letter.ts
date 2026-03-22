@@ -1,6 +1,8 @@
 /**
  * Replay queue dead-letter jobs with explicit operator confirmation.
  *
+ * Same behavior as Admin → Operations → dead-letter row “Re-enqueue”.
+ *
  * Usage:
  *   npx tsx scripts/replay-queue-dead-letter.ts --list --limit=20
  *   npx tsx scripts/replay-queue-dead-letter.ts --entry-id=<id> --confirm=REPLAY

@@ -1,5 +1,5 @@
 import { Form, useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "react-hot-toast";
 
 import ZapButton from "~/components/dashboard/ZapButton";
@@ -221,15 +221,22 @@ export function GiveawayDetailPage({
       toast.success("Winners previewed");
     }
   }, [previewFetcher.state, previewFetcher.data]);
+  const lockFetcherWasBusyRef = useRef(false);
   useEffect(() => {
-    if (lockFetcher.state !== "idle" || !lockFetcher.data) return;
-    if (
-      typeof lockFetcher.data === "object" &&
-      lockFetcher.data !== null && // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- fetcher.data type is generic
-      "error" in lockFetcher.data &&
-      lockFetcher.data.error
-    ) {
-      toast.error(lockFetcher.data.error);
+    const busy =
+      lockFetcher.state === "submitting" || lockFetcher.state === "loading";
+    if (busy) lockFetcherWasBusyRef.current = true;
+    if (lockFetcher.state !== "idle" || !lockFetcherWasBusyRef.current) return;
+    lockFetcherWasBusyRef.current = false;
+    const data = lockFetcher.data;
+    const err =
+      data && typeof data === "object" && "error" in data && data.error
+        ? String(data.error)
+        : undefined;
+    if (err) {
+      toast.error(err);
+    } else {
+      queueMicrotask(() => setShowLockConfirm(false));
     }
   }, [lockFetcher.state, lockFetcher.data]);
   useEffect(() => {
@@ -743,18 +750,22 @@ export function GiveawayDetailPage({
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Go back</AlertDialogCancel>
-                    <lockFetcher.Form method="post">
-                      <input type="hidden" name="intent" value="lock" />
-                      <AlertDialogAction
-                        type="submit"
+                    <AlertDialogAction asChild>
+                      <Button
+                        type="button"
                         className="bg-primary text-primary-foreground"
                         disabled={lockFetcher.state !== "idle"}
+                        onClick={() => {
+                          const fd = new FormData();
+                          fd.set("intent", "lock");
+                          lockFetcher.submit(fd, { method: "post" });
+                        }}
                       >
                         {lockFetcher.state !== "idle"
                           ? "Locking…"
                           : "Lock winners"}
-                      </AlertDialogAction>
-                    </lockFetcher.Form>
+                      </Button>
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

@@ -1,13 +1,11 @@
 /**
- * Best-effort system health probes for admin (DB, Redis queues, outbox, relay ratio).
+ * Best-effort system health probes for admin (DB, Redis queues, outbox, worker heuristic).
  */
 
 import { getOutboxBacklogCounts } from "~/infra/outbox/outbox.server";
 import { getQueueInstance } from "~/infra/queue/queue-client.server";
 import type { QueueType } from "~/infra/queue/queue-types";
 import { prisma } from "~/lib/prisma.server";
-
-import type { DateRangeBounds } from "../metrics/date-range";
 
 export type HealthStatus = "healthy" | "degraded" | "unknown" | "failing";
 
@@ -25,10 +23,46 @@ const QUEUES: QueueType[] = [
   "broadcast-dm",
 ];
 
-export async function getAdminQueueHealthSnapshot(
-  _bounds: DateRangeBounds,
-  relay: { relayAccepted: number; relayFailed: number }
-): Promise<HealthRow[]> {
+/** No separate worker heartbeat — infer from BullMQ waiting vs active totals. */
+function workerHealthFromQueueTotals(
+  redisOk: boolean,
+  totalWaiting: number,
+  totalActive: number
+): { status: HealthStatus; detail: string } {
+  if (!redisOk) {
+    return { status: "unknown", detail: "Redis unreachable" };
+  }
+  if (totalActive > 0) {
+    return {
+      status: "healthy",
+      detail: `${totalActive} active job(s), ${totalWaiting} waiting (all queues)`,
+    };
+  }
+  if (totalWaiting >= 100) {
+    return {
+      status: "failing",
+      detail: `${totalWaiting} waiting, 0 active — likely no consumers`,
+    };
+  }
+  if (totalWaiting >= 25) {
+    return {
+      status: "degraded",
+      detail: `${totalWaiting} waiting, 0 active — verify worker processes`,
+    };
+  }
+  if (totalWaiting > 0) {
+    return {
+      status: "healthy",
+      detail: `${totalWaiting} waiting, 0 active (short gap or slow pickup)`,
+    };
+  }
+  return {
+    status: "healthy",
+    detail: "No backlog; workers idle or polling",
+  };
+}
+
+export async function getAdminQueueHealthSnapshot(): Promise<HealthRow[]> {
   const rows: HealthRow[] = [];
 
   try {
@@ -50,6 +84,8 @@ export async function getAdminQueueHealthSnapshot(
 
   let redisOk = true;
   let queueDetail = "";
+  let totalWaiting = 0;
+  let totalActive = 0;
   try {
     const parts: string[] = [];
     for (const q of QUEUES) {
@@ -63,6 +99,8 @@ export async function getAdminQueueHealthSnapshot(
       const w = c["waiting"] ?? 0;
       const a = c["active"] ?? 0;
       const f = c["failed"] ?? 0;
+      totalWaiting += w;
+      totalActive += a;
       parts.push(`${q}: ${w}w/${a}a/${f}f`);
     }
     queueDetail = parts.join(" · ");
@@ -100,31 +138,16 @@ export async function getAdminQueueHealthSnapshot(
     });
   }
 
-  const rTotal = relay.relayAccepted + relay.relayFailed;
-  if (rTotal === 0) {
-    rows.push({
-      id: "relay",
-      label: "Relay publish (range)",
-      status: "unknown",
-      detail: "No relay ACK rows in selected range",
-    });
-  } else {
-    const rate = relay.relayAccepted / rTotal;
-    rows.push({
-      id: "relay",
-      label: "Relay publish (range)",
-      status: rate >= 0.85 ? "healthy" : rate >= 0.7 ? "degraded" : "failing",
-      detail: `${Math.round(rate * 100)}% accepted (${relay.relayAccepted}/${rTotal})`,
-    });
-  }
-
+  const worker = workerHealthFromQueueTotals(
+    redisOk,
+    totalWaiting,
+    totalActive
+  );
   rows.push({
     id: "worker",
     label: "Workers",
-    status: redisOk ? "unknown" : "unknown",
-    detail: redisOk
-      ? "Use queue depth + metrics; no separate heartbeat yet"
-      : "Unavailable",
+    status: worker.status,
+    detail: worker.detail,
   });
 
   return rows;

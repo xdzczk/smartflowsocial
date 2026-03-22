@@ -2,7 +2,7 @@
  * Unit tests for app/features/admin/repositories/admin-overview-stats-data.server.ts
  */
 
-import { ReferralEarningStatus } from "@prisma/client";
+import { ReferralEarningStatus, SubscriptionStatus } from "@prisma/client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -53,7 +53,19 @@ describe("getAdminOverviewStats", () => {
     vi.clearAllMocks();
     mocks.mockUserCount.mockResolvedValue(10);
     mocks.mockUserCountEnabled.mockResolvedValue(7);
-    mocks.mockSubscriptionCount.mockResolvedValue(3);
+    mocks.mockSubscriptionCount.mockImplementation(
+      (args: { where?: Record<string, unknown> }) => {
+        const w = args.where;
+        const notClause = w?.["NOT"] as { planId?: string } | undefined;
+        if (notClause?.planId === "free") {
+          return Promise.resolve(2);
+        }
+        if (w?.["status"] === SubscriptionStatus.ACTIVE) {
+          return Promise.resolve(5);
+        }
+        return Promise.resolve(0);
+      }
+    );
     mocks.mockPostGroupBy.mockResolvedValue([
       { currentState: "SCHEDULED", _count: { _all: 5 } },
       { currentState: "PUBLISHED", _count: { _all: 12 } },
@@ -81,7 +93,8 @@ describe("getAdminOverviewStats", () => {
 
     expect(stats.usersTotal).toBe(10);
     expect(stats.usersEnabled).toBe(7);
-    expect(stats.subscriptionsActive).toBe(3);
+    expect(stats.subscriptionsActivePaid).toBe(2);
+    expect(stats.subscriptionsActiveAll).toBe(5);
     expect(stats.referralLinkCount).toBe(4);
     expect(stats.referralPendingCommissionSats).toBe(1500);
     expect(stats.referralPayoutEligibleCount).toBe(2);

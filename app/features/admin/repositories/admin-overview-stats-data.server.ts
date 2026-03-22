@@ -9,6 +9,7 @@
 
 import { ReferralEarningStatus, SubscriptionStatus } from "@prisma/client";
 
+import { FREE_PLAN_ID } from "~/features/payments/plan-ids";
 import { getReferrersEligibleForPayout } from "~/features/referral/referral-payout.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -17,7 +18,10 @@ const PAYOUT_PREVIEW_NPUBS = 20;
 export interface AdminOverviewStats {
   usersTotal: number;
   usersEnabled: number;
-  subscriptionsActive: number;
+  /** ACTIVE rows excluding the built-in free plan. */
+  subscriptionsActivePaid: number;
+  /** All ACTIVE subscription rows (free + paid). */
+  subscriptionsActiveAll: number;
   postsByCurrentState: Array<{ currentState: string; count: number }>;
   longFormByCurrentState: Array<{ currentState: string; count: number }>;
   referralLinkCount: number;
@@ -35,7 +39,8 @@ export async function getAdminOverviewStats(): Promise<AdminOverviewStats> {
   const [
     usersTotal,
     usersEnabled,
-    subscriptionsActive,
+    subscriptionsActivePaid,
+    subscriptionsActiveAll,
     postsGrouped,
     longFormGrouped,
     referralLinkCount,
@@ -45,6 +50,12 @@ export async function getAdminOverviewStats(): Promise<AdminOverviewStats> {
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { isEnabled: true } }),
+    prisma.subscription.count({
+      where: {
+        status: SubscriptionStatus.ACTIVE,
+        NOT: { planId: FREE_PLAN_ID },
+      },
+    }),
     prisma.subscription.count({
       where: { status: SubscriptionStatus.ACTIVE },
     }),
@@ -106,7 +117,8 @@ export async function getAdminOverviewStats(): Promise<AdminOverviewStats> {
   return {
     usersTotal,
     usersEnabled,
-    subscriptionsActive,
+    subscriptionsActivePaid,
+    subscriptionsActiveAll,
     postsByCurrentState,
     longFormByCurrentState,
     referralLinkCount,

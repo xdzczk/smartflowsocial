@@ -8,6 +8,7 @@ import {
   SubscriptionStatus,
 } from "@prisma/client";
 
+import { FREE_PLAN_ID } from "~/features/payments/plan-ids";
 import { prisma } from "~/lib/prisma.server";
 
 import type { RangePreset } from "../metrics/date-range";
@@ -53,6 +54,7 @@ export interface AdminAnalyticsPageDTO {
     newUsers: number;
     postsPublished: number;
     longFormPublished: number;
+    /** ACTIVE subscriptions excluding built-in free plan (`planId` free). */
     activeSubscriptions: number;
     referredSignups: number;
   };
@@ -176,7 +178,10 @@ export async function getAdminAnalyticsPageData(
       },
     }),
     prisma.subscription.count({
-      where: { status: SubscriptionStatus.ACTIVE },
+      where: {
+        status: SubscriptionStatus.ACTIVE,
+        NOT: { planId: FREE_PLAN_ID },
+      },
     }),
     prisma.referral.count({
       where: { createdAt: { gte: from, lt: to } },

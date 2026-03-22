@@ -183,9 +183,9 @@ export default function AdminAnalyticsPage() {
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <MetricCard
-              title="Active subscriptions (now)"
+              title="Active paid subscriptions (now)"
               value={d.totals.activeSubscriptions}
-              definition="Current ACTIVE subscriptions — not range-scoped."
+              definition="ACTIVE subscriptions excluding the built-in free plan — not range-scoped."
             />
             <MetricCard
               title="Subscriptions started (range)"

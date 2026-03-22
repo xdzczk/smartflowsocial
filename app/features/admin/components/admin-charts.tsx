@@ -97,7 +97,7 @@ export function AdminLineChart({
   );
 
   return (
-    <div className={cn("h-full min-h-[220px] w-full", className)}>
+    <div className={cn("h-[260px] w-full sm:h-[280px]", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={data}

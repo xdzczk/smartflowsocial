@@ -44,7 +44,8 @@ vi.mock(
     getAdminOverviewStats: vi.fn().mockResolvedValue({
       usersTotal: 0,
       usersEnabled: 0,
-      subscriptionsActive: 0,
+      subscriptionsActivePaid: 0,
+      subscriptionsActiveAll: 0,
       postsByCurrentState: [],
       longFormByCurrentState: [],
       referralLinkCount: 0,
@@ -153,6 +154,7 @@ describe("dashboard.admin.referrals action", () => {
     const body = new FormData();
     body.set("_action", "run_batch_payout");
     body.set("confirm_batch", "on");
+    body.set("confirm_phrase", "PAY");
     const args: ActionFunctionArgs = {
       request: new Request("http://localhost/dashboard/admin/referrals", {
         method: "POST",

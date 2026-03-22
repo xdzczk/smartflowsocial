@@ -1,7 +1,7 @@
 /**
  * Metric definitions for operator admin (single source of truth for semantics).
  *
- * Active paid users: Subscription.status === ACTIVE (includes free plan if stored as ACTIVE).
+ * Active paid users: Subscription.status === ACTIVE and planId is not the built-in free plan (`free`).
  * New users in period: User.createdAt in [from, to).
  * Posts published (short): Post.currentState === PUBLISHED AND publishedAt in range.
  * Long-form published: LongFormPost.currentState === PUBLISHED AND publishedAt in range.

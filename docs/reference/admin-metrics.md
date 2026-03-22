@@ -10,8 +10,10 @@ missing (see `defaultRangeForAdminPath`).
 
 ## Overview
 
-- **Active paid users**: `Subscription.status === ACTIVE` (current count; no historical delta
-  without a time series table).
+- **Active paid users**: `Subscription.status === ACTIVE` and `planId` is not the built-in free plan
+  (`free`). Current count only (no historical delta without a time series table).
+- **Referrals snapshot — Active seats (all plans)**: all `Subscription.status === ACTIVE` rows,
+  including free tier.
 - **New users**: `User.createdAt` in `[from, to)`.
 - **Posts published**: short posts with `currentState === PUBLISHED` and `publishedAt` in range;
   long-form analogous.
@@ -27,10 +29,26 @@ missing (see `defaultRangeForAdminPath`).
 - **Queues**: BullMQ `getJobCounts` from the Remix server process (requires Redis reachable like
   workers).
 - **Outbox**: `getOutboxBacklogCounts`.
-- **Relay (range)**: ratio of `PublishRelayAck` rows with `ACCEPTED` vs `FAILED`/`TIMEOUT` in the
-  selected window.
+- **Workers (heuristic)**: no heartbeat — derived from summed `waiting` / `active` across the same
+  queues. Healthy when jobs are active or backlog is small; degraded at ≥25 waiting with 0 active;
+  failing at ≥100 waiting with 0 active.
+
+Relay ACK ratios stay on **Operations** and Overview copy only; they are **not** infra health cards.
+An Overview **alert** fires only when the accepted share of ACK rows in the range is under 25% and
+there are at least 20 samples.
 
 Prometheus counters on the worker are **not** used for admin cards (separate processes).
+
+## Operations maintenance
+
+Admin **Operations → Operational cleanup** (referral admins only, CSRF-protected):
+
+- **Clean failed queue jobs**: BullMQ `Queue.clean` on failed jobs for `scheduled-posts`,
+  `scheduled-longform-posts`, `post-checker`, and `broadcast-dm` (batched, up to 10k removals per
+  queue per run). Does not change `Post` / `LongFormPost` state or `DeadLetterJob` rows.
+- **Purge old relay ACKs**: `PublishRelayAck.deleteMany` where `createdAt` is before a cutoff;
+  retention days are clamped to **7–365** (default from the form is 30). Logged with operator
+  context.
 
 ## Payout audit
 

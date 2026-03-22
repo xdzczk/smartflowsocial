@@ -5,6 +5,7 @@
 import type { Prisma } from "@prisma/client";
 import { SubscriptionStatus } from "@prisma/client";
 
+import { convertHexToNpub } from "~/lib/nostr-conversion";
 import { prisma } from "~/lib/prisma.server";
 
 export type AdminUserSort = "createdAt" | "lastActive" | "published";
@@ -20,6 +21,7 @@ export type AdminUserSegment =
 
 export interface AdminUserRow {
   id: string;
+  /** Bech32 npub when pubkey is stored as hex; otherwise stored value. */
   npub: string;
   displayName: string | null;
   /** Nostr profile `picture` URL when present */
@@ -124,6 +126,11 @@ function deriveSegment(args: {
   if (paid && pub7d === 0 && publishedTotal >= 5) return "at_risk";
   if (ageDays < 30 && publishedTotal > 0 && publishedTotal < 10) {
     return "activating";
+  }
+  if (publishedTotal === 0) {
+    if (inactiveDays > 21) return "dormant";
+    if (paid) return "at_risk";
+    return "new";
   }
   return "established";
 }
@@ -464,7 +471,7 @@ export async function getAdminUsersPageData(options: {
 
     return {
       id: u.id,
-      npub: u.npub,
+      npub: convertHexToNpub(u.npub),
       displayName: bits.displayName,
       pictureUrl: bits.pictureUrl,
       isEnabled: u.isEnabled,

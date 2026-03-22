@@ -8,6 +8,7 @@ import {
   PublishRelayAckStatus,
 } from "@prisma/client";
 
+import { FREE_PLAN_ID } from "~/features/payments/plan-ids";
 import { getReferrersEligibleForPayout } from "~/features/referral/referral-payout.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -87,6 +88,7 @@ export interface AdminOverviewPageDTO {
     avgPostsPerActiveUser: number | null;
   };
   referrals: {
+    /** All ACTIVE subscription rows (free + paid). */
     activeSubscriptions: number;
     referralLinks: number;
     pendingSats: number;
@@ -231,7 +233,7 @@ function successRate(published: number, failed: number): number {
 
 const KPI_DEFINITIONS: AdminOverviewKpiInsights = {
   activePaidUsers:
-    "Count of subscriptions in ACTIVE status — your current paying base.",
+    "ACTIVE subscriptions whose plan is not the built-in free tier (`planId` ≠ free).",
   newUsers: "Accounts created during the selected time window.",
   postsPublished:
     "Short plus long-form posts that reached PUBLISHED within the selected window.",
@@ -252,7 +254,7 @@ function overviewRelayNote(
     return "No relay publish acknowledgements in this range — ratio is not meaningful yet.";
   }
   const pct = Math.round((relayAccepted / relayTotal) * 1000) / 10;
-  return `${relayAccepted} accepted vs ${relayFailed} failed/timeout ACKs (${pct}% OK). Mix varies by user relays; we warn when failures exceed 15% of ACKs.`;
+  return `${relayAccepted} accepted vs ${relayFailed} failed/timeout ACKs (${pct}% OK). Mix varies by user-chosen relays — not a pure platform health signal. Overview alerts only if OK rate falls below 25% with enough samples.`;
 }
 
 function overviewNewUsersLine(
@@ -444,6 +446,7 @@ export async function getAdminOverviewPageData(
 
   const [
     activePaidUsers,
+    activeSubscriptionsAll,
     newUsers,
     pubShort,
     pubLong,
@@ -465,6 +468,12 @@ export async function getAdminOverviewPageData(
     stuckPublishing,
     relayAgg,
   ] = await Promise.all([
+    prisma.subscription.count({
+      where: {
+        status: SubscriptionStatus.ACTIVE,
+        NOT: { planId: FREE_PLAN_ID },
+      },
+    }),
     prisma.subscription.count({
       where: { status: SubscriptionStatus.ACTIVE },
     }),
@@ -635,11 +644,15 @@ export async function getAdminOverviewPageData(
       href: "/dashboard/admin/operations?focus=stuck",
     });
   }
-  if (relayTotal > 0 && relayFailed / relayTotal > 0.15) {
+  const RELAY_ALERT_MIN_SAMPLES = 20;
+  if (
+    relayTotal >= RELAY_ALERT_MIN_SAMPLES &&
+    relayAccepted / relayTotal < 0.25
+  ) {
     alerts.push({
-      id: "relay-degraded",
+      id: "relay-severe",
       severity: "warning",
-      message: `Relay publish success degraded (~${Math.round((relayAccepted / relayTotal) * 100)}% OK in range)`,
+      message: `Relay ACK success very low (~${Math.round((relayAccepted / relayTotal) * 100)}% OK in range, ${relayTotal} samples) — check Operations relay section`,
       href: "/dashboard/admin/operations?focus=relay",
     });
   }
@@ -649,10 +662,7 @@ export async function getAdminOverviewPageData(
   const avgPostsPerActiveUser =
     activePublishers === 0 ? null : postsTotal / activePublishers;
 
-  const systemHealth = await getAdminQueueHealthSnapshot(bounds, {
-    relayAccepted,
-    relayFailed,
-  });
+  const systemHealth = await getAdminQueueHealthSnapshot();
 
   const insights = buildOverviewInsights({
     preset,
@@ -719,7 +729,7 @@ export async function getAdminOverviewPageData(
       avgPostsPerActiveUser,
     },
     referrals: {
-      activeSubscriptions: activePaidUsers,
+      activeSubscriptions: activeSubscriptionsAll,
       referralLinks: referralLinkCount,
       pendingSats: pendingPayoutSats,
       paidInRangeSats,

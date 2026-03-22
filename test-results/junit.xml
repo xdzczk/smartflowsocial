@@ -1,47 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="21" failures="0" errors="0" time="0.007229791">
-    <testsuite name="tests/unit/giveaway-actions.test.ts" timestamp="2026-03-22T06:06:49.191Z" hostname="Ivans-MacBook-Pro.local" tests="21" failures="0" errors="0" skipped="0" time="0.007229791">
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; getGiveawayById &gt; returns giveaway from repo" time="0.0015515">
+<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.016787042">
+    <testsuite name="tests/integration/admin-operations.route.test.ts" timestamp="2026-03-22T11:20:41.706Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.016787042">
+        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; returns 403 when user is not referral admin" time="0.009752667">
         </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; getGiveawayById &gt; returns null when not found" time="0.000134709">
+        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; returns 400 when confirmation phrase is not REPLAY" time="0.001829292">
         </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; createGiveaway &gt; calls repo create with expected shape" time="0.001086">
+        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; replays dead letter and returns ok" time="0.001488584">
         </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; createGiveaway &gt; throws when queue scope used and plan cannot use queue" time="0.000737042">
+        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; returns 422 when retry fails" time="0.000814625">
         </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; returns error when giveaway not found" time="0.000205458">
+        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; cleans failed jobs when CLEAN is confirmed" time="0.00123875">
         </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; returns error when status is not DRAFT or PREVIEWED" time="0.000079334">
+        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; returns 400 when CLEAN phrase wrong" time="0.000390458">
         </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; fetches participants, runs selection, updates status and snapshot" time="0.000531333">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; uses runGiveawaySelectionPerEngagement when engagementConfig present" time="0.000165333">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; rerollGiveaway &gt; returns error when not found" time="0.000102125">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; rerollGiveaway &gt; returns error when status is not PREVIEWED" time="0.000088875">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; returns error when not found" time="0.000096833">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; updates status to LOCKED when PREVIEWED and has winners" time="0.00040825">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; cancelGiveaway &gt; returns error when LOCKED or PAID_OUT" time="0.000146292">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; cancelGiveaway &gt; updates status to CANCELLED" time="0.0001345">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; returns error when status is not LOCKED" time="0.000102833">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; returns error when winners pending and no override" time="0.000145416">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; updates status to PAID_OUT when all winners settled" time="0.000125292">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; updates status to PAID_OUT with override when pending" time="0.000170875">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; deleteGiveaway &gt; returns error when LOCKED or PAID_OUT" time="0.000087958">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; deleteGiveaway &gt; calls deleteGiveawayById when DRAFT" time="0.00007925">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; listGiveawaysByUser &gt; returns list from repo" time="0.00009875">
+        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; purges relay acks when PURGE is confirmed" time="0.000569334">
         </testcase>
     </testsuite>
 </testsuites>

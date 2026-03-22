@@ -240,8 +240,9 @@ export default function AdminOverviewPage() {
         <AdminSection eyebrow="Growth" title="Referrals snapshot">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
-              title="Active subscriptions"
+              title="Active seats (all plans)"
               value={d.referrals.activeSubscriptions}
+              definition="Every subscription row in ACTIVE status, including the free tier."
             />
             <MetricCard
               title="Referral links"
@@ -294,8 +295,10 @@ export default function AdminOverviewPage() {
             publishes vs failures with{" "}
             <code className="text-foreground">updatedAt</code> in the range.
             Queue and outbox probes run from the web app; worker liveness is
-            inferred from queue depth, not a separate heartbeat. Relay ACK
-            ratios depend on which relays users publish through.
+            inferred from waiting vs active job counts on BullMQ queues (no
+            separate heartbeat). Relay ACK ratios depend on user-chosen relays
+            and are informational; severe aggregate failure rates surface as
+            alerts only.
           </p>
         </details>
       </div>
