@@ -12,7 +12,7 @@ export {
   listBroadcastCampaignsByUser,
   getBroadcastCampaignForUser,
   listSuppressionsByUser,
-  formatBroadcastAudienceLabel,
 } from "./broadcast-display.server";
+export { formatBroadcastAudienceLabel } from "./broadcast-audience-label";
 export { runBroadcastDmJob } from "./broadcast-job.server";
 export * from "./broadcast-types";

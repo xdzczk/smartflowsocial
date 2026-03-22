@@ -2,22 +2,6 @@ import type { BroadcastCampaignStatus } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
 
-export function formatBroadcastAudienceLabel(
-  audienceType: string,
-  customCount: number
-): string {
-  switch (audienceType) {
-    case "CUSTOM":
-      return `Custom (${customCount})`;
-    case "FOLLOWING":
-      return "Following";
-    case "MUTUALS":
-      return "Mutuals";
-    default:
-      return audienceType;
-  }
-}
-
 export async function listBroadcastCampaignsByUser(
   userId: string,
   options?: { status?: BroadcastCampaignStatus }
