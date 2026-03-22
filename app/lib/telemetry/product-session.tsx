@@ -1,3 +1,7 @@
+/**
+ * SSR-safe: sessionStorage / fetch / document run only inside useEffect after a window check
+ * (no `.client` suffix so the hook can be used from server-rendered layouts).
+ */
 import { useEffect, useRef } from "react";
 
 const STORAGE_KEY = "__sfs_product_session_id";

@@ -17,7 +17,7 @@ import {
   isSubscriptionPeriodExpired,
 } from "~/features/payments";
 import { ReferredByBanner } from "~/features/referral/components/ReferredByBanner";
-import { useProductSessionTelemetry } from "~/lib/telemetry/product-session.client";
+import { useProductSessionTelemetry } from "~/lib/telemetry/product-session";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
