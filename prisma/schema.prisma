@@ -64,6 +64,7 @@ model User {
   hashTagPresets HashTagPreset[]
   longFormPosts  LongFormPost[]
   Payment        Payment[]
+  giveawayFinalizationPayments GiveawayFinalizationPayment[]
   notes          Post[]
   queueTypes     QueueType[]
   Subscription   Subscription?
@@ -86,8 +87,53 @@ model User {
   broadcastSuppressions    BroadcastSuppression[]
   /** Default delivery prefs for Broadcasts: { defaultDeliveryMode?, defaultSendStrategy?, ... } */
   broadcastSettings        Json?
+  productSessions          ProductSession[]
+  signerReconnectEvents    SignerReconnectEvent[]
 
   @@index([parentNpub])
+}
+
+enum ProductSessionDeviceCoarse {
+  mobile
+  desktop
+  tablet
+  unknown
+}
+
+enum SignerReconnectFailureBucket {
+  TIMEOUT
+  NETWORK
+  SESSION_DROPPED
+  UNKNOWN
+}
+
+/// Product usage sessions (distinct from auth Session rows).
+model ProductSession {
+  id              String                      @id @default(cuid())
+  userId          String
+  clientSessionId String
+  startedAt       DateTime                    @default(now())
+  lastActivityAt  DateTime                    @default(now())
+  endedAt         DateTime?
+  deviceCoarse    ProductSessionDeviceCoarse?
+  user            User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientSessionId])
+  @@index([userId, lastActivityAt])
+  @@index([lastActivityAt])
+}
+
+/// NIP-46 background reconnect outcomes (narrow telemetry).
+model SignerReconnectEvent {
+  id            String                       @id @default(cuid())
+  userId        String
+  success       Boolean
+  failureBucket SignerReconnectFailureBucket?
+  createdAt     DateTime                     @default(now())
+  user          User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 enum EngagementItemStateKind {
@@ -341,6 +387,25 @@ enum GiveawaySelectionMode {
   WEIGHTED_BY_ENGAGEMENT
 }
 
+enum GiveawayFinalizationFeeStatus {
+  NONE
+  PENDING
+  PAID
+  WAIVED
+}
+
+enum GiveawayFinalizationPaymentStatus {
+  PENDING
+  PAID
+  EXPIRED
+  FAILED
+}
+
+enum PaymentPurpose {
+  SUBSCRIPTION
+  GIVEAWAY_FINALIZATION
+}
+
 model Giveaway {
   id                 String               @id @default(cuid())
   userId             String
@@ -357,6 +422,16 @@ model Giveaway {
   filters            Json?                // { excludeMuted, excludeBlocked, minAccountAgeDays?, minFollowers? }
   status             GiveawayStatus       @default(DRAFT)
   lockedAt           DateTime?
+  lockedByUserId     String?
+  /** Sum of satsPerWinner in locked snapshot (set at lock) */
+  plannedPayoutSats  Int?
+  finalizationFeeRateBps Int?
+  finalizationFeeSats    Int?
+  finalizationFeeStatus  GiveawayFinalizationFeeStatus?
+  /** Commercial plan id or label at lock (e.g. basic, premium) */
+  planAtFinalization String?
+  /** SHA-256 hex of canonical lock-bound config (preview snapshot + rules) */
+  lockConfigHash     String?
   winnerSnapshot     Json?                // [{ pubkey, npub, qualifyingActions, satsPerWinner?, engagementType? }] at lock
   /** Per-winner payout tracking: pubkey -> { status, updatedAt, note? } */
   payoutState        Json?
@@ -370,10 +445,35 @@ model Giveaway {
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  finalizationPayments GiveawayFinalizationPayment[]
 
   @@index([userId])
   @@index([userId, status])
   @@index([userId, createdAt])
+}
+
+model GiveawayFinalizationPayment {
+  id                 String                           @id @default(cuid())
+  giveawayId         String
+  userId             String
+  planName           String
+  feeRateBps         Int
+  plannedPayoutSats  Int
+  feeSats            Int
+  lockConfigHash     String
+  status             GiveawayFinalizationPaymentStatus @default(PENDING)
+  paymentMethod      String?
+  paymentId          String?                          @unique
+  paidAt             DateTime?
+  createdAt          DateTime                         @default(now())
+  metadata           Json?
+  giveaway           Giveaway                         @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  user               User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment            Payment?                         @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([giveawayId])
+  @@index([userId])
+  @@index([giveawayId, status])
 }
 
 model GiveawayPreset {
@@ -601,6 +701,7 @@ model Payment {
   preimage       String?
   status         PaymentStatus @default(PENDING)
   description    String?
+  purpose        PaymentPurpose @default(SUBSCRIPTION)
   subscriptionId String?
   expiresAt      DateTime?
   paidAt         DateTime?
@@ -611,6 +712,7 @@ model Payment {
   updatedAt      DateTime      @updatedAt
   Subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
   User           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  giveawayFinalizationPayment GiveawayFinalizationPayment?
 }
 
 model Plan {

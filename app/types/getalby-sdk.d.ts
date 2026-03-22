@@ -16,6 +16,7 @@ declare module "@getalby/sdk/lnclient" {
 
   // Constructor functions
   export const LN: new (credentials: string) => LNType;
-  // USD returns an Amount type that can be used with requestPayment
+  // USD / SATS return Amount types for requestPayment
   export function USD(amount: unknown): Amount;
+  export function SATS(amount: unknown): Amount;
 }

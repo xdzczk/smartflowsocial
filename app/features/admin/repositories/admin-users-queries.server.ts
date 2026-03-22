@@ -5,6 +5,7 @@
 import type { Prisma } from "@prisma/client";
 import { SubscriptionStatus } from "@prisma/client";
 
+import { isPrimarySignerProfile } from "~/features/auth/signer/primary-signer-profile";
 import { convertHexToNpub } from "~/lib/nostr-conversion";
 import { prisma } from "~/lib/prisma.server";
 
@@ -39,6 +40,10 @@ export interface AdminUserRow {
   subscriptionStartedAt: string | null;
   recent7dPublishes: number;
   segment: AdminUserSegment;
+  /** Rolling ~30d product session rows touching this user. */
+  sessionsIn30d: number;
+  signerModality: "nip46" | "other";
+  reconnectFailures30d: number;
 }
 
 export interface AdminUsersPageDTO {
@@ -393,6 +398,7 @@ export async function getAdminUsersPageData(options: {
       updatedAt: true,
       engagementLastCheckedAt: true,
       nwcLastUsed: true,
+      primarySignerProfile: true,
       Subscription: {
         select: { status: true, plan: true, startDate: true, createdAt: true },
       },
@@ -409,6 +415,32 @@ export async function getAdminUsersPageData(options: {
   const ids = usersRaw.map((u) => u.id);
   const now = new Date();
   const sevenAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thirtyAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const [activityMaps, sessionGroups, reconnectFailGroups] = await Promise.all([
+    loadUserActivityMaps(ids, sevenAgo),
+    ids.length
+      ? prisma.productSession.groupBy({
+          by: ["userId"],
+          where: {
+            userId: { in: ids },
+            lastActivityAt: { gte: thirtyAgo },
+          },
+          _count: { _all: true },
+        })
+      : Promise.resolve([]),
+    ids.length
+      ? prisma.signerReconnectEvent.groupBy({
+          by: ["userId"],
+          where: {
+            userId: { in: ids },
+            success: false,
+            createdAt: { gte: thirtyAgo },
+          },
+          _count: { _all: true },
+        })
+      : Promise.resolve([]),
+  ]);
 
   const {
     scheduledByUser,
@@ -418,7 +450,16 @@ export async function getAdminUsersPageData(options: {
     minPubLong,
     pub7dShort,
     pub7dLong,
-  } = await loadUserActivityMaps(ids, sevenAgo);
+  } = activityMaps;
+
+  const sessionsByUser = new Map<string, number>();
+  for (const r of sessionGroups) {
+    sessionsByUser.set(r.userId, r._count._all);
+  }
+  const reconnectFailByUser = new Map<string, number>();
+  for (const r of reconnectFailGroups) {
+    reconnectFailByUser.set(r.userId, r._count._all);
+  }
 
   let usersWithScheduled = usersRaw.map((u) => ({
     ...u,
@@ -487,6 +528,11 @@ export async function getAdminUsersPageData(options: {
       subscriptionStartedAt,
       recent7dPublishes,
       segment,
+      sessionsIn30d: sessionsByUser.get(u.id) ?? 0,
+      signerModality: isPrimarySignerProfile(u.primarySignerProfile)
+        ? "nip46"
+        : "other",
+      reconnectFailures30d: reconnectFailByUser.get(u.id) ?? 0,
     };
   });
 

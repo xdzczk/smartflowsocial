@@ -12,6 +12,7 @@ import {
   AdminStatusPill,
   MetricCard,
   formatAdminInteger,
+  getMetricDefinition,
 } from "~/features/admin";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
@@ -36,6 +37,17 @@ export default function AdminOverviewPage() {
   const d = raw;
   const def = d.insights.definitions;
   const k = d.insights.kpi;
+  const rangeQ = `?range=${encodeURIComponent(d.rangePreset)}`;
+  const mrrDef = getMetricDefinition("mrr_sats");
+  const netFlow = d.monetization.netSubscriptionFlowInRange;
+  const reconnectAttempts = d.signerConnect.reconnectAttemptsInRange;
+  const reconnectFails = d.signerConnect.reconnectFailuresInRange;
+  const reconnectOkPct =
+    reconnectAttempts === 0
+      ? null
+      : Math.round(
+          ((reconnectAttempts - reconnectFails) / reconnectAttempts) * 1000
+        ) / 10;
 
   const maxDaily = Math.max(
     1,
@@ -54,7 +66,77 @@ export default function AdminOverviewPage() {
         generatedAt={d.generatedAt}
       />
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
-        <AdminSection eyebrow="Pulse" title="KPI strip">
+        <AdminSection eyebrow="Pulse" title="Executive strip">
+          <p className="text-muted-foreground mb-3 text-xs leading-snug">
+            Top-line business, publishing, and signer health. Click a card to
+            drill into Analytics where linked.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <MetricCard
+              title={mrrDef.label}
+              value={`${d.monetization.mrrSats} sats`}
+              definition={`${mrrDef.description} ${mrrDef.formula}`}
+              interpretation="Current recurring base (30-day billing periods)."
+              href={`/dashboard/admin/analytics${rangeQ}#monetization`}
+            />
+            <MetricCard
+              title="Net paid subscription flow"
+              value={netFlow >= 0 ? `+${netFlow}` : `${netFlow}`}
+              definition="Paid subscription rows created minus CANCELED updates in range (approximation)."
+              interpretation="Starts vs cancellations in this window."
+              tone={netFlow < 0 ? "warning" : "neutral"}
+              href={`/dashboard/admin/analytics${rangeQ}#monetization`}
+            />
+            <MetricCard
+              title="Posts published"
+              value={d.kpis.postsPublished.current}
+              deltaPct={d.kpis.postsPublished.deltaPct}
+              definition={def.postsPublished}
+              interpretation={k.postsPublished}
+              href={`/dashboard/admin/analytics${rangeQ}#growth`}
+            />
+            <MetricCard
+              title="Publish success rate"
+              value={`${d.kpis.publishSuccessRate}%`}
+              definition={def.publishSuccess}
+              interpretation={k.publishSuccess}
+              footnote={
+                d.kpis.publishSuccessPrev !== null
+                  ? `Prior comparable window: ${d.kpis.publishSuccessPrev}%. Uses publishes vs failures with activity timestamps in range.`
+                  : undefined
+              }
+              href={`/dashboard/admin/analytics${rangeQ}#publishing-reliability`}
+            />
+            <MetricCard
+              title="Signer reconnect success"
+              value={reconnectOkPct === null ? "—" : `${reconnectOkPct}%`}
+              definition="Share of recorded NIP-46 background reconnect attempts that succeeded in this range."
+              interpretation={
+                reconnectAttempts === 0
+                  ? "No reconnect telemetry in this range yet."
+                  : `${reconnectFails} failed of ${reconnectAttempts} attempts.`
+              }
+              tone={
+                reconnectOkPct !== null && reconnectOkPct < 70
+                  ? "warning"
+                  : "neutral"
+              }
+              confidence={d.signerConnect.reconnectConfidence.confidence}
+              confidenceNote={d.signerConnect.reconnectConfidence.note}
+              href={`/dashboard/admin/analytics${rangeQ}#signer-connect`}
+            />
+            <MetricCard
+              title="Open alerts"
+              value={d.kpis.actionRequiredCount}
+              tone={d.kpis.actionRequiredCount > 0 ? "danger" : "positive"}
+              definition={def.actionRequired}
+              interpretation={k.actionRequired}
+              href="/dashboard/admin/operations?focus=failures"
+            />
+          </div>
+        </AdminSection>
+
+        <AdminSection eyebrow="Context" title="Supporting strip">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
               title="Active paid users"
@@ -70,22 +152,11 @@ export default function AdminOverviewPage() {
               interpretation={k.newUsers}
             />
             <MetricCard
-              title="Posts published"
-              value={d.kpis.postsPublished.current}
-              deltaPct={d.kpis.postsPublished.deltaPct}
-              definition={def.postsPublished}
-              interpretation={k.postsPublished}
-            />
-            <MetricCard
-              title="Publish success rate"
-              value={`${d.kpis.publishSuccessRate}%`}
-              definition={def.publishSuccess}
-              interpretation={k.publishSuccess}
-              footnote={
-                d.kpis.publishSuccessPrev !== null
-                  ? `Prior comparable window: ${d.kpis.publishSuccessPrev}%. Uses publishes vs failures with activity timestamps in range.`
-                  : undefined
-              }
+              title="DAU / WAU / MAU (rolling)"
+              value={`${d.productUsage.dauRolling} / ${d.productUsage.wauRolling} / ${d.productUsage.mauRolling}`}
+              definition="Distinct users with product session heartbeats (24h / 7d / 30d rolling)."
+              interpretation="Session-based activity, not publishes only."
+              confidence={d.productUsage.activeUsersConfidence}
             />
             <MetricCard
               title="Pending payout (sats)"
@@ -93,13 +164,26 @@ export default function AdminOverviewPage() {
               tone={d.kpis.pendingPayoutSats > 0 ? "warning" : "neutral"}
               definition={def.pendingPayout}
               interpretation={k.pendingPayout}
+              href={`/dashboard/admin/referrals${rangeQ}`}
             />
             <MetricCard
-              title="Action-required issues"
-              value={d.kpis.actionRequiredCount}
-              tone={d.kpis.actionRequiredCount > 0 ? "danger" : "positive"}
-              definition={def.actionRequired}
-              interpretation={k.actionRequired}
+              title="Active publishers (proxy)"
+              value={d.users.activeUsersProxy}
+              definition="Distinct users with a published post in range."
+            />
+            <MetricCard
+              title="Paid subs started (range)"
+              value={d.monetization.subscriptionsStartedInRange}
+              definition="New paid subscription rows created in the window."
+            />
+            <MetricCard
+              title="Avg publish latency"
+              value={
+                d.publishing.avgPublishLatencyMs === null
+                  ? "—"
+                  : `${Math.round(d.publishing.avgPublishLatencyMs / 1000)}s`
+              }
+              definition="Mean time from publishingStartedAt to publishedAt (short posts, sampled)."
             />
           </div>
         </AdminSection>
@@ -199,6 +283,12 @@ export default function AdminOverviewPage() {
                 </span>
               </li>
               <li>
+                Session-active users (range):{" "}
+                <span className="text-foreground font-medium">
+                  {d.productUsage.activeSessionUsersInRange}
+                </span>
+              </li>
+              <li>
                 Signups in range:{" "}
                 <span className="text-foreground font-medium">
                   {d.users.signupsInRange}
@@ -255,6 +345,11 @@ export default function AdminOverviewPage() {
             <MetricCard
               title="Paid in range (sats)"
               value={fmtInt(d.referrals.paidInRangeSats)}
+            />
+            <MetricCard
+              title="Referral commission (range)"
+              value={fmtInt(d.monetization.referredRevenueSatsInRange)}
+              definition="ReferralEarning rows created in the window (commission)."
             />
           </div>
           <p className="text-muted-foreground text-sm">

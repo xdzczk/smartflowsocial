@@ -20,6 +20,15 @@ const mockUpdateGiveawayRow = vi.fn();
 const mockFindGiveawayByIdAndUser = vi.fn();
 const mockDeleteGiveawayById = vi.fn();
 const mockListGiveawaysByUserFromRepo = vi.fn();
+const mockFindPaidFinalizationForLock = vi.fn();
+
+vi.mock(
+  "~/features/giveaway/repositories/giveaway-finalization-payment.server",
+  () => ({
+    findPaidFinalizationForLock: (...args: unknown[]) =>
+      mockFindPaidFinalizationForLock(...args),
+  })
+);
 
 vi.mock("~/features/user", () => ({
   getUserById: (...args: unknown[]) => mockGetUserById(...args),
@@ -33,6 +42,7 @@ vi.mock("~/features/payments/types", () => ({
   getUserPlanType: (...args: unknown[]) => mockGetUserPlanType(...args),
   getGiveawayPlanLimits: (...args: unknown[]) =>
     mockGetGiveawayPlanLimits(...args),
+  getPlanDisplayName: () => "Test plan",
 }));
 
 vi.mock("~/features/giveaway/giveaway-scope.server", () => ({
@@ -90,7 +100,8 @@ describe("giveaway-actions", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetUserPlanType.mockReturnValue("PAID");
+    mockFindPaidFinalizationForLock.mockReset();
+    mockGetUserPlanType.mockReturnValue("premium");
     mockGetGiveawayPlanLimits.mockReturnValue({
       canUseQueueScope: true,
       maxWinnerCount: 10,
@@ -331,7 +342,8 @@ describe("giveaway-actions", () => {
       expect(result.error).toBe("Giveaway not found");
     });
 
-    it("updates status to LOCKED when PREVIEWED and has winners", async () => {
+    it("updates status to LOCKED when PREVIEWED and has winners (no fee)", async () => {
+      mockGetUserPlanType.mockReturnValue("premium");
       mockFindGiveawayByIdAndUser.mockResolvedValue({
         id: giveawayId,
         userId,
@@ -345,7 +357,12 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: [
-          { pubkey: "pk1", npub: "npub1", qualifyingActions: [] },
+          {
+            pubkey: "pk1",
+            npub: "npub1",
+            qualifyingActions: [],
+            satsPerWinner: 0,
+          },
         ],
       } as unknown as Giveaway);
       mockUpdateGiveawayRow.mockResolvedValue({});
@@ -353,15 +370,103 @@ describe("giveaway-actions", () => {
       const result = await lockGiveaway(userId, giveawayId);
 
       expect(result.success).toBe(true);
+      expect(mockFindPaidFinalizationForLock).not.toHaveBeenCalled();
       expect(mockUpdateGiveawayRow).toHaveBeenCalled();
       const updatePayload = mockUpdateGiveawayRow.mock.calls[0]?.[1] as {
         status?: string;
         payoutState?: Record<string, { status?: string }>;
+        finalizationFeeStatus?: string;
       };
       expect(updatePayload).toMatchObject({
         status: "LOCKED",
         payoutState: { pk1: { status: "pending" } },
+        finalizationFeeStatus: "NONE",
       });
+    });
+
+    it("rejects lock on free plan when fee due and not paid", async () => {
+      mockGetUserPlanType.mockReturnValue("free");
+      mockFindPaidFinalizationForLock.mockResolvedValue(null);
+      mockFindGiveawayByIdAndUser.mockResolvedValue({
+        id: giveawayId,
+        userId,
+        status: "PREVIEWED",
+        scopeType: "PERIOD",
+        scopeReference: {},
+        winnerCount: 1,
+        engagementTypes: ["REACTION"],
+        selectionMode: "UNIQUE_USER",
+        engagementConfig: null,
+        engagementWeights: null,
+        filters: null,
+        winnerSnapshot: [
+          {
+            pubkey: "pk1",
+            npub: "npub1",
+            qualifyingActions: [],
+            satsPerWinner: 1000,
+          },
+        ],
+      } as unknown as Giveaway);
+
+      const result = await lockGiveaway(userId, giveawayId);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("finalization fee");
+      expect(mockUpdateGiveawayRow).not.toHaveBeenCalled();
+    });
+
+    it("locks when free plan fee is paid for current preview hash", async () => {
+      mockGetUserPlanType.mockReturnValue("free");
+      mockFindPaidFinalizationForLock.mockResolvedValue({ id: "pay1" });
+      mockFindGiveawayByIdAndUser.mockResolvedValue({
+        id: giveawayId,
+        userId,
+        status: "PREVIEWED",
+        scopeType: "PERIOD",
+        scopeReference: {},
+        winnerCount: 1,
+        engagementTypes: ["REACTION"],
+        selectionMode: "UNIQUE_USER",
+        engagementConfig: null,
+        engagementWeights: null,
+        filters: null,
+        winnerSnapshot: [
+          {
+            pubkey: "pk1",
+            npub: "npub1",
+            qualifyingActions: [],
+            satsPerWinner: 1000,
+          },
+        ],
+      } as unknown as Giveaway);
+      mockUpdateGiveawayRow.mockResolvedValue({});
+
+      const result = await lockGiveaway(userId, giveawayId);
+      expect(result.success).toBe(true);
+      expect(mockUpdateGiveawayRow).toHaveBeenCalled();
+    });
+
+    it("returns success when already LOCKED (idempotent)", async () => {
+      mockFindGiveawayByIdAndUser.mockResolvedValue({
+        id: giveawayId,
+        userId,
+        status: "LOCKED",
+        scopeType: "PERIOD",
+        scopeReference: {},
+        winnerCount: 1,
+        engagementTypes: ["REACTION"],
+        selectionMode: "UNIQUE_USER",
+        engagementConfig: null,
+        engagementWeights: null,
+        filters: null,
+        winnerSnapshot: [
+          { pubkey: "pk1", npub: "npub1", qualifyingActions: [] },
+        ],
+      } as unknown as Giveaway);
+
+      const result = await lockGiveaway(userId, giveawayId);
+      expect(result.success).toBe(true);
+      expect(mockUpdateGiveawayRow).not.toHaveBeenCalled();
     });
   });
 

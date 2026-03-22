@@ -13,6 +13,8 @@ import type { RangePreset } from "../metrics/date-range";
 import { getBoundsForPreset } from "../metrics/date-range";
 import { PUBLISHING_STUCK_MINUTES } from "../metrics/definitions";
 
+import { getSignerConnectHealthBundle } from "./admin-signer-connect-bundle.server";
+
 export interface FailedPostRow {
   id: string;
   kind: "short" | "long";
@@ -82,6 +84,7 @@ export interface AdminOperationsPageDTO {
     failed: number;
     ratePct: number | null;
   };
+  signerConnect: Awaited<ReturnType<typeof getSignerConnectHealthBundle>>;
 }
 
 const QUEUES: QueueType[] = [
@@ -372,6 +375,8 @@ export async function getAdminOperationsPageData(
     nextStep,
   };
 
+  const signerConnect = await getSignerConnectHealthBundle({ from, to });
+
   return {
     rangePreset: preset,
     generatedAt: now.toISOString(),
@@ -388,5 +393,6 @@ export async function getAdminOperationsPageData(
       failed: relayFailed,
       ratePct: relayRatePct,
     },
+    signerConnect,
   };
 }

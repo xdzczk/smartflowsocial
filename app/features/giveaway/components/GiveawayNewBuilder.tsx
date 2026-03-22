@@ -9,6 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  computeFinalizationFeeSats,
+  getFinalizationFeeRateBps,
+} from "~/features/giveaway/giveaway-finalization-fee.shared";
+import type { PlanType } from "~/features/payments/types";
 
 const ENGAGEMENT_META: Array<{
   value: string;
@@ -109,6 +114,8 @@ export interface GiveawayNewBuilderProps {
     canUseQueueScope: boolean;
     canUsePresets: boolean;
   };
+  planType: PlanType;
+  planDisplayName: string;
   actionError?: string;
 }
 
@@ -122,6 +129,9 @@ function GiveawayNewBuilderStickySummary({
   summary,
   selectionMode,
   typeCount,
+  planDisplayName,
+  plannedPayoutForFee,
+  feePreview,
 }: {
   scopeType: BuilderScopeType;
   periodMode: "days" | "custom";
@@ -136,6 +146,13 @@ function GiveawayNewBuilderStickySummary({
   };
   selectionMode: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT";
   typeCount: number;
+  planDisplayName: string;
+  plannedPayoutForFee: number | null;
+  feePreview: {
+    feeSats: number;
+    waivedByPlan: boolean;
+    rateBps: number;
+  } | null;
 }) {
   return (
     <aside className="mt-10 space-y-4 lg:mt-0">
@@ -191,6 +208,47 @@ function GiveawayNewBuilderStickySummary({
             <span className="text-foreground font-medium">Selection · </span>
             {selectionMode === "UNIQUE_USER" ? "Unique user" : "Weighted"}
           </div>
+          <div>
+            <span className="text-foreground font-medium">Plan · </span>
+            {planDisplayName}
+          </div>
+          {plannedPayoutForFee != null && feePreview ? (
+            <>
+              <div>
+                <span className="text-foreground font-medium">
+                  Planned payout ·{" "}
+                </span>
+                {plannedPayoutForFee.toLocaleString()} sats
+              </div>
+              <div>
+                <span className="text-foreground font-medium">
+                  Finalization fee ·{" "}
+                </span>
+                {plannedPayoutForFee <= 0
+                  ? "0 sats"
+                  : feePreview.waivedByPlan
+                    ? "Included in your plan"
+                    : `${feePreview.feeSats.toLocaleString()} sats (${feePreview.rateBps / 100}%)`}
+              </div>
+              <div>
+                <span className="text-foreground font-medium">
+                  Due at lock ·{" "}
+                </span>
+                {plannedPayoutForFee <= 0
+                  ? "0 sats"
+                  : feePreview.waivedByPlan
+                    ? "0 sats"
+                    : `${feePreview.feeSats.toLocaleString()} sats`}
+              </div>
+            </>
+          ) : rewardMode === "advanced" ? (
+            <div>
+              <span className="text-foreground font-medium">
+                Finalization ·{" "}
+              </span>
+              Fee is calculated from your per-type rewards when you preview.
+            </div>
+          ) : null}
           {winnerCount > 50 ? (
             <p className="text-destructive text-xs">
               Winner count exceeds typical limits — check your plan cap.
@@ -247,11 +305,168 @@ function GiveawayNewBuilderPresetTemplates({
   );
 }
 
+function GiveawayNewBuilderSelectionAndReview({
+  scopeType,
+  periodMode,
+  summary,
+  winnerCount,
+  rewardMode,
+  simpleSats,
+  selectionMode,
+  setSelectionMode,
+  plannedPayoutForFee,
+  feePreview,
+  planDisplayName,
+  actionError,
+}: {
+  scopeType: BuilderScopeType;
+  periodMode: "days" | "custom";
+  summary: {
+    maxPayout: number | null;
+    avg: number | null;
+    engagementLine: string;
+  };
+  winnerCount: number;
+  rewardMode: "simple" | "advanced";
+  simpleSats: number;
+  selectionMode: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT";
+  setSelectionMode: (v: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT") => void;
+  plannedPayoutForFee: number | null;
+  feePreview: {
+    feeSats: number;
+    waivedByPlan: boolean;
+    rateBps: number;
+  } | null;
+  planDisplayName: string;
+  actionError?: string;
+}) {
+  return (
+    <>
+      <section className="space-y-4" aria-labelledby="sel-heading">
+        <h2 id="sel-heading" className="text-foreground text-lg font-semibold">
+          4. How should winners be chosen?
+        </h2>
+        <div className="max-w-md">
+          <label
+            htmlFor="selectionMode"
+            className="text-muted-foreground text-sm"
+          >
+            Selection mode
+          </label>
+          <select
+            id="selectionMode"
+            name="selectionMode"
+            value={selectionMode}
+            onChange={(e) => {
+              setSelectionMode(
+                e.target.value === "WEIGHTED_BY_ENGAGEMENT"
+                  ? "WEIGHTED_BY_ENGAGEMENT"
+                  : "UNIQUE_USER"
+              );
+            }}
+            className="border-border bg-background mt-1 block w-full rounded-md border px-2 py-2 text-sm"
+          >
+            <option value="UNIQUE_USER">
+              Unique user — one entry per eligible pubkey
+            </option>
+            <option value="WEIGHTED_BY_ENGAGEMENT">
+              Weighted by engagement — more activity, higher chance
+            </option>
+          </select>
+        </div>
+        <div className="border-border rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm">
+          <p className="text-foreground font-medium">Fairness</p>
+          <p className="text-muted-foreground mt-2">
+            Winners are picked at random from eligible participants after
+            filters. In unique-user mode each eligible account gets one entry.
+            Locked giveaways cannot be edited — preview first, then lock when
+            you’re satisfied.
+          </p>
+        </div>
+      </section>
+
+      <section className="space-y-4" aria-labelledby="rev-heading">
+        <h2 id="rev-heading" className="text-foreground text-lg font-semibold">
+          5. Review
+        </h2>
+        <ul className="text-muted-foreground list-inside list-disc space-y-1 text-sm">
+          <li>
+            Scope:{" "}
+            <span className="text-foreground">
+              {reviewScopeLine(scopeType, periodMode)}
+            </span>
+          </li>
+          <li>
+            Engagement:{" "}
+            <span className="text-foreground">{summary.engagementLine}</span>
+          </li>
+          <li>
+            Winners: <span className="text-foreground">{winnerCount}</span> ·{" "}
+            {rewardMode === "simple" && simpleSats > 0 ? (
+              <span className="text-foreground">
+                {simpleSats.toLocaleString()} sats each · max{" "}
+                {summary.maxPayout?.toLocaleString()} sats
+              </span>
+            ) : rewardMode === "simple" ? (
+              <span className="text-foreground">selection only</span>
+            ) : (
+              <span className="text-foreground">Per-type table (advanced)</span>
+            )}
+          </li>
+          <li>
+            Selection:{" "}
+            <span className="text-foreground">
+              {selectionMode === "UNIQUE_USER"
+                ? "Unique user"
+                : "Weighted by engagement"}
+            </span>
+          </li>
+          {plannedPayoutForFee != null && feePreview ? (
+            <>
+              <li>
+                Planned payout:{" "}
+                <span className="text-foreground">
+                  {plannedPayoutForFee.toLocaleString()} sats
+                </span>
+              </li>
+              <li>
+                Finalization fee:{" "}
+                <span className="text-foreground">
+                  {plannedPayoutForFee <= 0
+                    ? "0 sats"
+                    : feePreview.waivedByPlan
+                      ? `Included (${planDisplayName})`
+                      : `${feePreview.feeSats.toLocaleString()} sats on ${planDisplayName}`}
+                </span>
+              </li>
+            </>
+          ) : rewardMode === "advanced" ? (
+            <li>
+              Finalization fee:{" "}
+              <span className="text-foreground">
+                Based on per-type rewards at preview
+              </span>
+            </li>
+          ) : null}
+        </ul>
+        {actionError ? (
+          <p className="text-destructive text-sm">{actionError}</p>
+        ) : null}
+        <Button type="submit" size="lg" className="w-full sm:w-auto">
+          Create draft & continue to preview
+        </Button>
+      </section>
+    </>
+  );
+}
+
 export function GiveawayNewBuilder({
   presets,
   queueTypes,
   recentPosts,
   planLimits,
+  planType,
+  planDisplayName,
   actionError,
 }: GiveawayNewBuilderProps) {
   const [scopeType, setScopeType] = useState<
@@ -298,6 +513,18 @@ export function GiveawayNewBuilder({
       engagementLine: selectedTypes.join(", ") || "—",
     };
   }, [rewardMode, winnerCount, simpleSats, selectedTypes]);
+
+  const plannedPayoutForFee =
+    rewardMode === "simple" ? winnerCount * simpleSats : null;
+  const feePreview = useMemo(() => {
+    if (plannedPayoutForFee == null) return null;
+    const rateBps = getFinalizationFeeRateBps(planType);
+    const { feeSats, waivedByPlan } = computeFinalizationFeeSats(
+      plannedPayoutForFee,
+      rateBps
+    );
+    return { feeSats, waivedByPlan, rateBps };
+  }, [plannedPayoutForFee, planType]);
 
   const toggleEngagement = (key: string, checked: boolean) => {
     setEngagement((prev) => {
@@ -812,104 +1039,20 @@ export function GiveawayNewBuilder({
             )}
           </section>
 
-          <section className="space-y-4" aria-labelledby="sel-heading">
-            <h2
-              id="sel-heading"
-              className="text-foreground text-lg font-semibold"
-            >
-              4. How should winners be chosen?
-            </h2>
-            <div className="max-w-md">
-              <label
-                htmlFor="selectionMode"
-                className="text-muted-foreground text-sm"
-              >
-                Selection mode
-              </label>
-              <select
-                id="selectionMode"
-                name="selectionMode"
-                value={selectionMode}
-                onChange={(e) => {
-                  setSelectionMode(
-                    e.target.value === "WEIGHTED_BY_ENGAGEMENT"
-                      ? "WEIGHTED_BY_ENGAGEMENT"
-                      : "UNIQUE_USER"
-                  );
-                }}
-                className="border-border bg-background mt-1 block w-full rounded-md border px-2 py-2 text-sm"
-              >
-                <option value="UNIQUE_USER">
-                  Unique user — one entry per eligible pubkey
-                </option>
-                <option value="WEIGHTED_BY_ENGAGEMENT">
-                  Weighted by engagement — more activity, higher chance
-                </option>
-              </select>
-            </div>
-            <div className="border-border rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm">
-              <p className="text-foreground font-medium">Fairness</p>
-              <p className="text-muted-foreground mt-2">
-                Winners are picked at random from eligible participants after
-                filters. In unique-user mode each eligible account gets one
-                entry. Locked giveaways cannot be edited — preview first, then
-                lock when you’re satisfied.
-              </p>
-            </div>
-          </section>
-
-          <section className="space-y-4" aria-labelledby="rev-heading">
-            <h2
-              id="rev-heading"
-              className="text-foreground text-lg font-semibold"
-            >
-              5. Review
-            </h2>
-            <ul className="text-muted-foreground list-inside list-disc space-y-1 text-sm">
-              <li>
-                Scope:{" "}
-                <span className="text-foreground">
-                  {reviewScopeLine(scopeType, periodMode)}
-                </span>
-              </li>
-              <li>
-                Engagement:{" "}
-                <span className="text-foreground">
-                  {summary.engagementLine}
-                </span>
-              </li>
-              <li>
-                Winners: <span className="text-foreground">{winnerCount}</span>{" "}
-                ·{" "}
-                {rewardMode === "simple" && simpleSats > 0 ? (
-                  <span className="text-foreground">
-                    {simpleSats.toLocaleString()} sats each · max{" "}
-                    {summary.maxPayout?.toLocaleString()} sats
-                  </span>
-                ) : rewardMode === "simple" ? (
-                  <span className="text-foreground">selection only</span>
-                ) : (
-                  <span className="text-foreground">
-                    Per-type table (advanced)
-                  </span>
-                )}
-              </li>
-              <li>
-                Selection:{" "}
-                <span className="text-foreground">
-                  {selectionMode === "UNIQUE_USER"
-                    ? "Unique user"
-                    : "Weighted by engagement"}
-                </span>
-              </li>
-            </ul>
-            {actionError ? (
-              <p className="text-destructive text-sm">{actionError}</p>
-            ) : null}
-            <Button type="submit" size="lg" className="w-full sm:w-auto">
-              Create draft & continue to preview
-            </Button>
-          </section>
+          <GiveawayNewBuilderSelectionAndReview
+            scopeType={scopeType}
+            periodMode={periodMode}
+            summary={summary}
+            winnerCount={winnerCount}
+            rewardMode={rewardMode}
+            simpleSats={simpleSats}
+            selectionMode={selectionMode}
+            setSelectionMode={setSelectionMode}
+            plannedPayoutForFee={plannedPayoutForFee}
+            feePreview={feePreview}
+            planDisplayName={planDisplayName}
+            actionError={actionError}
+          />
         </div>
 
         <GiveawayNewBuilderStickySummary
@@ -922,6 +1065,9 @@ export function GiveawayNewBuilder({
           summary={summary}
           selectionMode={selectionMode}
           typeCount={typeCount}
+          planDisplayName={planDisplayName}
+          plannedPayoutForFee={plannedPayoutForFee}
+          feePreview={feePreview}
         />
       </form>
 

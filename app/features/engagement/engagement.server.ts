@@ -203,7 +203,56 @@ export function doesEventMentionUser(
 }
 
 /**
- * Best-effort root id for grouping: NIP-10 root/reply markers, else first e-tag, else the note id.
+ * Kind-1 participates in a NIP-10 thread (reply/root markers), not a standalone @mention.
+ * Quotes use an `e` tag with marker `mention` — those are excluded here so real quotes
+ * still surface in the Mentions tab.
+ */
+export function isStructuredThreadReplyKind1(
+  tags: NostrTag[] | undefined
+): boolean {
+  const eTags = (tags ?? []).filter((t) => t[0] === "e");
+  const hasMentionMarker = eTags.some(
+    (t) => (t[3] ?? "").toLowerCase() === "mention"
+  );
+  if (hasMentionMarker) return false;
+  return eTags.some((t) => {
+    const marker = (t[3] ?? "").toLowerCase();
+    return marker === "reply" || marker === "root";
+  });
+}
+
+/**
+ * True when an `e` tag points at one of the user's published notes with a non-quote marker.
+ * Catches legacy replies (empty marker) to the user's posts that still match `#p`.
+ */
+export function isReplyToUserPublishedEvent(
+  tags: NostrTag[] | undefined,
+  userPublishedEventIds: Set<string>
+): boolean {
+  if (userPublishedEventIds.size === 0) return false;
+  const eTags = (tags ?? []).filter((t) => t[0] === "e");
+  for (const t of eTags) {
+    const id = t[1];
+    if (!id || !userPublishedEventIds.has(id)) continue;
+    const marker = (t[3] ?? "").toLowerCase();
+    if (marker === "mention") continue;
+    return true;
+  }
+  return false;
+}
+
+/** Drop thread replies from the global Mentions inbox; keep quotes and body-only @mentions. */
+export function shouldExcludeKind1FromGlobalMentionInbox(
+  tags: NostrTag[] | undefined,
+  userPublishedEventIds: Set<string>
+): boolean {
+  if (isStructuredThreadReplyKind1(tags)) return true;
+  return isReplyToUserPublishedEvent(tags, userPublishedEventIds);
+}
+
+/**
+ * Best-effort root id for grouping: explicit `root` marker, then first `e` (NIP-10 ordering),
+ * then `reply`, else the note id.
  */
 export function inferThreadRootEventIdFromTags(
   tags: NostrTag[] | undefined,
@@ -212,9 +261,9 @@ export function inferThreadRootEventIdFromTags(
   const eTags = (tags ?? []).filter((t) => t[0] === "e");
   const root = eTags.find((t) => (t[3] ?? "") === "root");
   if (root?.[1]) return root[1];
+  if (eTags[0]?.[1]) return eTags[0][1];
   const reply = eTags.find((t) => (t[3] ?? "") === "reply");
   if (reply?.[1]) return reply[1];
-  if (eTags[0]?.[1]) return eTags[0][1];
   return noteEventId;
 }
 

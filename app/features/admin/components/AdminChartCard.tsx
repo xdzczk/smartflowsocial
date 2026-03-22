@@ -9,6 +9,10 @@ export function AdminChartCard({
   subtitle,
   legend,
   empty,
+  emptyTitle,
+  emptyDescription,
+  emptySuggestedRange,
+  confidenceHint,
   variant = "default",
   className,
   chartClassName,
@@ -18,11 +22,18 @@ export function AdminChartCard({
   subtitle?: string;
   legend?: ReactNode;
   empty?: boolean;
+  /** Overrides default empty copy. */
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptySuggestedRange?: string;
+  /** Shown under subtitle when metric confidence is low (set by loader). */
+  confidenceHint?: string;
   variant?: AdminCardVariant;
   className?: string;
   chartClassName?: string;
   children: ReactNode;
 }) {
+  const emptyHeading = emptyTitle ?? "No data in this range";
   return (
     <AdminCard
       variant={variant}
@@ -33,6 +44,11 @@ export function AdminChartCard({
           <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
           {subtitle ? (
             <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>
+          ) : null}
+          {confidenceHint ? (
+            <p className="text-muted-foreground/90 mt-1 text-[11px] leading-snug">
+              {confidenceHint}
+            </p>
           ) : null}
         </div>
         {legend ? (
@@ -49,9 +65,15 @@ export function AdminChartCard({
         )}
       >
         {empty ? (
-          <p className="text-muted-foreground text-sm">
-            No data in this range.
-          </p>
+          <div className="text-muted-foreground max-w-md px-2 text-center text-sm">
+            <p className="text-foreground/90 font-medium">{emptyHeading}</p>
+            {emptyDescription ? (
+              <p className="mt-2 text-xs leading-relaxed">{emptyDescription}</p>
+            ) : null}
+            {emptySuggestedRange ? (
+              <p className="mt-2 text-xs italic">{emptySuggestedRange}</p>
+            ) : null}
+          </div>
         ) : (
           children
         )}

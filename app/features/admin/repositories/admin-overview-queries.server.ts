@@ -20,13 +20,24 @@ import {
 } from "../metrics/date-range";
 import { PUBLISHING_STUCK_MINUTES } from "../metrics/definitions";
 
+import { getMonetizationBundle } from "./admin-monetization-bundle.server";
+import { getProductUsageBundle } from "./admin-product-usage-bundle.server";
+import { getSignerConnectHealthBundle } from "./admin-signer-connect-bundle.server";
 import { getAdminQueueHealthSnapshot } from "./admin-system-health.server";
+
+export type AdminAlertCategory =
+  | "business"
+  | "publishing"
+  | "signer"
+  | "infra"
+  | "payouts";
 
 export interface AdminAlertItem {
   id: string;
   severity: "warning" | "danger";
   message: string;
   href: string;
+  category: AdminAlertCategory;
 }
 
 export interface KpiWithDelta {
@@ -63,6 +74,9 @@ export interface AdminOverviewInsights {
 export interface AdminOverviewPageDTO {
   rangePreset: RangePreset;
   generatedAt: string;
+  monetization: Awaited<ReturnType<typeof getMonetizationBundle>>;
+  signerConnect: Awaited<ReturnType<typeof getSignerConnectHealthBundle>>;
+  productUsage: Awaited<ReturnType<typeof getProductUsageBundle>>;
   kpis: {
     activePaidUsers: KpiWithDelta;
     newUsers: KpiWithDelta;
@@ -626,6 +640,7 @@ export async function getAdminOverviewPageData(
       severity: "danger",
       message: `${failed24hShort + failed24hLong} failed publish job(s) in the last 24 hours`,
       href: "/dashboard/admin/operations?focus=failures",
+      category: "publishing",
     });
   }
   if (deadLetter24h > 0) {
@@ -634,6 +649,7 @@ export async function getAdminOverviewPageData(
       severity: "danger",
       message: `${deadLetter24h} dead-letter queue entr${deadLetter24h === 1 ? "y" : "ies"} in the last 24 hours`,
       href: "/dashboard/admin/operations?focus=deadletter",
+      category: "infra",
     });
   }
   if (stuckPublishing > 0) {
@@ -642,6 +658,7 @@ export async function getAdminOverviewPageData(
       severity: "warning",
       message: `${stuckPublishing} post(s) stuck in publishing (${PUBLISHING_STUCK_MINUTES}+ min)`,
       href: "/dashboard/admin/operations?focus=stuck",
+      category: "publishing",
     });
   }
   const RELAY_ALERT_MIN_SAMPLES = 20;
@@ -654,15 +671,49 @@ export async function getAdminOverviewPageData(
       severity: "warning",
       message: `Relay ACK success very low (~${Math.round((relayAccepted / relayTotal) * 100)}% OK in range, ${relayTotal} samples) — check Operations relay section`,
       href: "/dashboard/admin/operations?focus=relay",
+      category: "publishing",
     });
   }
-
-  const actionRequiredCount = alerts.length;
 
   const avgPostsPerActiveUser =
     activePublishers === 0 ? null : postsTotal / activePublishers;
 
-  const systemHealth = await getAdminQueueHealthSnapshot();
+  const [systemHealth, monetization, signerConnect, productUsage] =
+    await Promise.all([
+      getAdminQueueHealthSnapshot(),
+      getMonetizationBundle(preset, now),
+      getSignerConnectHealthBundle(bounds),
+      getProductUsageBundle(bounds, now),
+    ]);
+
+  if (
+    signerConnect.reconnectFailuresInRange >= 3 &&
+    signerConnect.reconnectAttemptsInRange >= 3
+  ) {
+    alerts.push({
+      id: "signer-reconnect-failures",
+      severity: "warning",
+      message: `Remote signer reconnect failures in range (${signerConnect.reconnectFailuresInRange} of ${signerConnect.reconnectAttemptsInRange} attempts; ${signerConnect.distinctUsersWithFailureInRange} user(s))`,
+      href: "/dashboard/admin/analytics#signer-connect",
+      category: "signer",
+    });
+  }
+
+  if (
+    monetization.netSubscriptionFlowInRange < 0 &&
+    preset !== "all" &&
+    monetization.subscriptionsCanceledInRange >= 2
+  ) {
+    alerts.push({
+      id: "net-subs-down",
+      severity: "warning",
+      message: `Paid subscription cancellations (${monetization.subscriptionsCanceledInRange}) outpaced new paid starts (${monetization.subscriptionsStartedInRange}) in this window`,
+      href: "/dashboard/admin/analytics#monetization",
+      category: "business",
+    });
+  }
+
+  const actionRequiredCount = alerts.length;
 
   const insights = buildOverviewInsights({
     preset,
@@ -686,6 +737,9 @@ export async function getAdminOverviewPageData(
   return {
     rangePreset: preset,
     generatedAt: now.toISOString(),
+    monetization,
+    signerConnect,
+    productUsage,
     kpis: {
       activePaidUsers: {
         current: activePaidUsers,

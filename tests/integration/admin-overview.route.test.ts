@@ -27,6 +27,37 @@ import { loader } from "~/routes/dashboard.admin._index";
 const minimalOverview = {
   rangePreset: "7d" as const,
   generatedAt: "2026-01-01T00:00:00.000Z",
+  monetization: {
+    mrrSats: "0",
+    arrRunRateSats: "0",
+    activePaidSubscribers: 0,
+    subscriptionsStartedInRange: 0,
+    subscriptionsCanceledInRange: 0,
+    netSubscriptionFlowInRange: 0,
+    planMix: [] as Array<{ planId: string | null; count: number }>,
+    arppuSatsInRange: null as number | null,
+    referredRevenueSatsInRange: 0,
+    totalPaymentSatsInRange: 0,
+    revenueConfidence: "confident" as const,
+  },
+  signerConnect: {
+    enabledUsers: 0,
+    usersWithNip46Profile: 0,
+    usersExtensionOrUnset: 0,
+    reconnectAttemptsInRange: 0,
+    reconnectFailuresInRange: 0,
+    reconnectFailureRatePct: null as number | null,
+    distinctUsersWithFailureInRange: 0,
+    failuresByBucket: [] as Array<{ bucket: string; count: number }>,
+    reconnectConfidence: { confidence: "insufficient_sample" as const },
+  },
+  productUsage: {
+    activeSessionUsersInRange: 0,
+    dauRolling: 0,
+    wauRolling: 0,
+    mauRolling: 0,
+    activeUsersConfidence: "insufficient_sample" as const,
+  },
   kpis: {
     activePaidUsers: { current: 1, previous: null, deltaPct: null },
     newUsers: { current: 0, previous: null, deltaPct: null },
@@ -47,6 +78,7 @@ const minimalOverview = {
     severity: "warning" | "danger";
     message: string;
     href: string;
+    category: "business" | "publishing" | "signer" | "infra" | "payouts";
   }>,
   publishing: {
     stateMixShort: [] as Array<{ state: string; count: number }>,

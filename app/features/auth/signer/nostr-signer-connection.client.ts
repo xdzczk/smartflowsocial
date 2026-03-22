@@ -390,8 +390,29 @@ export async function tryBackgroundReconnect(): Promise<boolean> {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent(NOSTR_CONNECTION_HEALTHY_EVENT));
     }
+    void (async () => {
+      try {
+        const { reportSignerReconnectOutcome } =
+          await import("~/lib/telemetry/signer-reconnect-report.client");
+        reportSignerReconnectOutcome({ success: true });
+      } catch {
+        /* ignore */
+      }
+    })();
     return true;
-  } catch {
+  } catch (err: unknown) {
+    void (async () => {
+      try {
+        const { reportSignerReconnectOutcome, mapReconnectErrorToBucket } =
+          await import("~/lib/telemetry/signer-reconnect-report.client");
+        reportSignerReconnectOutcome({
+          success: false,
+          failureBucket: mapReconnectErrorToBucket(err),
+        });
+      } catch {
+        /* ignore */
+      }
+    })();
     return false;
   } finally {
     backgroundReconnectInProgress = false;

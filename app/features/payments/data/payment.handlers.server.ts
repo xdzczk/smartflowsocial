@@ -2,6 +2,7 @@
  * Payment event/webhook-style handlers: completion and timeout.
  */
 
+import { completeGiveawayFinalizationPayment } from "~/features/giveaway/repositories/giveaway-finalization-payment.server";
 import { recordReferralEarningIfAny } from "~/features/referral/record-referral-earning.server";
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
@@ -20,9 +21,14 @@ export async function handlePaymentCompleted(
   try {
     const existing = await prisma.payment.findUnique({
       where: { id: paymentId },
-      select: { status: true },
+      select: { status: true, purpose: true },
     });
     if (existing?.status === "COMPLETED") {
+      return;
+    }
+
+    if (existing?.purpose === "GIVEAWAY_FINALIZATION") {
+      await completeGiveawayFinalizationPayment(paymentId);
       return;
     }
 
@@ -66,6 +72,11 @@ export async function handlePaymentTimeout(paymentId: string): Promise<void> {
         failedAt: new Date(),
         failureReason: "Payment timeout",
       },
+    });
+
+    await prisma.giveawayFinalizationPayment.updateMany({
+      where: { paymentId, status: "PENDING" },
+      data: { status: "EXPIRED" },
     });
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {

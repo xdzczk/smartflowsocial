@@ -8,6 +8,7 @@ export function AdminSection({
   description,
   actions,
   className,
+  id,
   children,
 }: {
   eyebrow?: string;
@@ -15,10 +16,12 @@ export function AdminSection({
   description?: string;
   actions?: ReactNode;
   className?: string;
+  /** For in-app drilldown hash links (e.g. #monetization). */
+  id?: string;
   children?: ReactNode;
 }) {
   return (
-    <section className={cn("space-y-3", className)}>
+    <section id={id} className={cn("scroll-mt-20 space-y-3", className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           {eyebrow ? (

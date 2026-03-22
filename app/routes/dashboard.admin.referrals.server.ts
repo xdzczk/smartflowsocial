@@ -5,6 +5,12 @@
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 
+import {
+  defaultRangeForAdminPath,
+  getBoundsForPreset,
+  parseRangePreset,
+} from "~/features/admin/metrics/date-range";
+import { getMonetizationBundle } from "~/features/admin/repositories/admin-monetization-bundle.server";
 import { getAdminOverviewStats } from "~/features/admin/repositories/admin-overview-stats-data.server";
 import { requireUser } from "~/features/auth";
 import {
@@ -21,6 +27,7 @@ import {
   payReferrerWithInvoice,
   runReferralPayoutBatch,
 } from "~/features/referral/referral-payout.server";
+import { countReferralEarningsPaidInRange } from "~/features/referral/repositories/referral-data.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { env } from "~/lib/env.server";
 
@@ -93,17 +100,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const [stats, auditLogs, batchPreview] = await Promise.all([
-    getAdminOverviewStats(),
-    listReferralPayoutAuditLogs(100),
-    getReferralBatchPreview(),
-  ]);
+  const rangePreset = parseRangePreset(
+    url.searchParams.get("range"),
+    defaultRangeForAdminPath(url.pathname)
+  );
+  const bounds = getBoundsForPreset(rangePreset, new Date());
+
+  const [stats, auditLogs, batchPreview, monetization, referredPaidInRange] =
+    await Promise.all([
+      getAdminOverviewStats(),
+      listReferralPayoutAuditLogs(100),
+      getReferralBatchPreview(),
+      getMonetizationBundle(rangePreset),
+      countReferralEarningsPaidInRange({
+        from: bounds.from,
+        to: bounds.to,
+      }),
+    ]);
 
   return json({
     section,
+    rangePreset,
     payoutAvailable: Boolean(env.OWNER_NWC?.trim()),
     stats,
     batchPreview,
+    monetization,
+    referredPaidConversionsInRange: referredPaidInRange,
     referrals: {
       rows: referralsResult.referrals.map((r) => ({
         referrerNpub: r.referrerNpub,

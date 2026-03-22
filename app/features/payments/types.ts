@@ -91,6 +91,25 @@ export const PLAN_FEATURES = {
     engagement_feed: true,
     broadcasts: true,
   },
+  /** Lifetime / early-supporter tier: same entitlements as premium for product gates */
+  founder: {
+    basicScheduling: true,
+    newPost: true,
+    dashboard: true,
+    drafts: true,
+    calendar: true,
+    bulkScheduling: true,
+    longformPosts: true,
+    templates: true,
+    recyclables: true,
+    scheduled: true,
+    posted: true,
+    published: true,
+    giveaways: true,
+    settings: true,
+    engagement_feed: true,
+    broadcasts: true,
+  },
 } as const;
 
 /** Audience sources allowed for broadcast recipient resolution */
@@ -214,6 +233,9 @@ export function getUserPlanType(
   if (planId === "basic" || planName.includes("basic")) {
     return "basic";
   }
+  if (planId === "founder" || planName.includes("founder")) {
+    return "founder";
+  }
   if (planId === "premium" || planName.includes("premium")) return "premium";
   if (planId === "pro" || planName.includes("pro")) return "pro";
   if (planId === "enterprise" || planName.includes("enterprise"))
@@ -322,11 +344,29 @@ export function getGiveawayPlanLimits(planType: PlanType): {
   return { maxWinnerCount: 50, canUseQueueScope: true, canUsePresets: true };
 }
 
+/** Display label for subscription plan (giveaway finalization UI). */
+export function getPlanDisplayName(
+  subscription: UserSubscription | null
+): string {
+  if (subscription?.status !== "ACTIVE") {
+    return "Free";
+  }
+  const name = subscription.Plan?.name.trim();
+  return (name && name.length > 0 ? name : subscription.planId) || "Free";
+}
+
 /**
  * Get the minimum plan required for a feature
  */
 export function getMinimumPlanForFeature(feature: FeatureName): PlanType {
-  const plans: PlanType[] = ["free", "basic", "premium", "pro", "enterprise"];
+  const plans: PlanType[] = [
+    "free",
+    "basic",
+    "premium",
+    "pro",
+    "enterprise",
+    "founder",
+  ];
 
   for (const plan of plans) {
     if (PLAN_FEATURES[plan][feature]) {

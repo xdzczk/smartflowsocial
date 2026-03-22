@@ -1,19 +1,63 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.016787042">
-    <testsuite name="tests/integration/admin-operations.route.test.ts" timestamp="2026-03-22T11:20:41.706Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.016787042">
-        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; returns 403 when user is not referral admin" time="0.009752667">
+<testsuites name="vitest tests" tests="28" failures="0" errors="0" time="0.00986275">
+    <testsuite name="tests/unit/giveaway-actions.test.ts" timestamp="2026-03-22T13:45:03.814Z" hostname="Ivans-MacBook-Pro.local" tests="24" failures="0" errors="0" skipped="0" time="0.008077333">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; getGiveawayById &gt; returns giveaway from repo" time="0.0015125">
         </testcase>
-        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; returns 400 when confirmation phrase is not REPLAY" time="0.001829292">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; getGiveawayById &gt; returns null when not found" time="0.000136042">
         </testcase>
-        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; replays dead letter and returns ok" time="0.001488584">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; createGiveaway &gt; calls repo create with expected shape" time="0.001104084">
         </testcase>
-        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; returns 422 when retry fails" time="0.000814625">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; createGiveaway &gt; throws when queue scope used and plan cannot use queue" time="0.00075975">
         </testcase>
-        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; cleans failed jobs when CLEAN is confirmed" time="0.00123875">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; returns error when giveaway not found" time="0.000206958">
         </testcase>
-        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; returns 400 when CLEAN phrase wrong" time="0.000390458">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; returns error when status is not DRAFT or PREVIEWED" time="0.000083">
         </testcase>
-        <testcase classname="tests/integration/admin-operations.route.test.ts" name="dashboard.admin.operations action &gt; purges relay acks when PURGE is confirmed" time="0.000569334">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; fetches participants, runs selection, updates status and snapshot" time="0.000548">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; uses runGiveawaySelectionPerEngagement when engagementConfig present" time="0.00016925">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; rerollGiveaway &gt; returns error when not found" time="0.000104416">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; rerollGiveaway &gt; returns error when status is not PREVIEWED" time="0.000086541">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; returns error when not found" time="0.000147916">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; updates status to LOCKED when PREVIEWED and has winners (no fee)" time="0.000833875">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; rejects lock on free plan when fee due and not paid" time="0.000173042">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; locks when free plan fee is paid for current preview hash" time="0.000120708">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; returns success when already LOCKED (idempotent)" time="0.000086333">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; cancelGiveaway &gt; returns error when LOCKED or PAID_OUT" time="0.000106917">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; cancelGiveaway &gt; updates status to CANCELLED" time="0.000137916">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; returns error when status is not LOCKED" time="0.000103292">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; returns error when winners pending and no override" time="0.000149125">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; updates status to PAID_OUT when all winners settled" time="0.000135333">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; updates status to PAID_OUT with override when pending" time="0.0001255">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; deleteGiveaway &gt; returns error when LOCKED or PAID_OUT" time="0.000083292">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; deleteGiveaway &gt; calls deleteGiveawayById when DRAFT" time="0.00008175">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; listGiveawaysByUser &gt; returns list from repo" time="0.000103209">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/giveaway-finalization-fee.shared.test.ts" timestamp="2026-03-22T13:45:03.816Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.001785417">
+        <testcase classname="tests/unit/giveaway-finalization-fee.shared.test.ts" name="giveaway-finalization-fee.shared &gt; maps plan types to bps" time="0.000739625">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-finalization-fee.shared.test.ts" name="giveaway-finalization-fee.shared &gt; charges no fee when payout is zero" time="0.000136166">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-finalization-fee.shared.test.ts" name="giveaway-finalization-fee.shared &gt; applies minimum 1 sat on basic when percentage rounds to zero" time="0.000093917">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-finalization-fee.shared.test.ts" name="giveaway-finalization-fee.shared &gt; waives by plan when bps is zero and payout positive" time="0.000096667">
         </testcase>
     </testsuite>
 </testsuites>

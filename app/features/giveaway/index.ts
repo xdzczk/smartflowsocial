@@ -52,6 +52,7 @@ export {
   duplicateGiveaway,
   resetGiveawayToDraft,
   updateGiveaway,
+  appendGiveawayAuditActivity,
 } from "./giveaway-actions.server";
 
 // ============================================================================

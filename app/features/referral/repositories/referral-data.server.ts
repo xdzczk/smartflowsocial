@@ -145,6 +145,18 @@ export async function aggregatePendingCommissionByReferrer(
   });
 }
 
+export async function countReferralEarningsPaidInRange(params: {
+  from: Date;
+  to: Date;
+}): Promise<number> {
+  return prisma.referralEarning.count({
+    where: {
+      status: ReferralEarningStatus.PAID,
+      paidAt: { gte: params.from, lt: params.to },
+    },
+  });
+}
+
 export async function findPendingEarningsForPayout(referrerNpub: string) {
   return prisma.referralEarning.findMany({
     where: { referrerNpub, status: ReferralEarningStatus.PENDING },

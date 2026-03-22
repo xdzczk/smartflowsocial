@@ -3,6 +3,22 @@
 Definitions used by `/dashboard/admin` loaders: date helpers in `app/features/admin/metrics/`, DB
 aggregates in `app/features/admin/repositories/*-queries.server.ts`.
 
+## Metric registry (source of truth)
+
+Canonical labels, descriptions, formulas, domains, and range semantics for operator-facing metrics
+live in [`app/features/admin/metrics/registry.ts`](../../app/features/admin/metrics/registry.ts)
+(`METRIC_DEFINITIONS`). Shared confidence helpers:
+[`resolve-confidence.ts`](../../app/features/admin/metrics/resolve-confidence.ts). Bundles compose
+SQL for tabs: `app/features/admin/repositories/admin-*-bundle.server.ts`.
+
+## Product sessions & signer reconnect
+
+- **ProductSession**: dashboard session beacons from `/api/product-session` (start / heartbeat /
+  end) for DAU-style rollups. Distinct from auth `Session` rows in Prisma.
+- **SignerReconnectEvent**: failed (and optionally future success) outcomes from NIP-46
+  `tryBackgroundReconnect` posted to `/api/signer-reconnect`. Used for reconnect health, not
+  per-sign latency analytics.
+
 ## Time range
 
 URL query `range`: `24h` | `7d` | `30d` | `90d` | `all`. Each tab picks a default when the param is

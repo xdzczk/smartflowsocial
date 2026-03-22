@@ -32,6 +32,7 @@ import {
   inferThreadRootEventIdFromTags,
   parseThreadViewNotifications,
   processQuoteReposts,
+  shouldExcludeKind1FromGlobalMentionInbox,
   type Notification,
 } from "../engagement.server";
 import { calculateTrustScore, type User } from "../trust-score";
@@ -438,10 +439,26 @@ function mergeGroupedNotificationsByParent(
 /**
  * Kind 1 notes from Primal that mention the user but are not already in thread/quote pipelines.
  */
+function publishedNostrEventIdsFromPosts(posts: PostData[]): Set<string> {
+  const s = new Set<string>();
+  for (const p of posts) {
+    const fromSigned = p.signedEvent?.id;
+    if (typeof fromSigned === "string" && fromSigned.length > 0) {
+      s.add(fromSigned);
+    }
+    const stored = (p as { nostrEventId?: string | null }).nostrEventId;
+    if (typeof stored === "string" && stored.length > 0) {
+      s.add(stored);
+    }
+  }
+  return s;
+}
+
 function buildGlobalMentionNotificationsFromPrimal(
   notificationsData: unknown,
   userPubkeyHex: string,
-  excludeEventIds: Set<string>
+  excludeEventIds: Set<string>,
+  userPublishedEventIds: Set<string>
 ): NotificationMention[] {
   const items = flattenPrimalNotificationItems(notificationsData);
   const userLower = userPubkeyHex.toLowerCase();
@@ -463,6 +480,9 @@ function buildGlobalMentionNotificationsFromPrimal(
     const content = typeof rawContent === "string" ? rawContent : "";
     const tags = Array.isArray(ev.tags) ? ev.tags : [];
     if (!doesEventMentionUser(content, tags, userPubkeyHex)) continue;
+    if (shouldExcludeKind1FromGlobalMentionInbox(tags, userPublishedEventIds)) {
+      continue;
+    }
 
     const createdAtRaw = ev["created_at"];
     const createdAt =
@@ -838,10 +858,14 @@ async function loadPrimalSupplementalEngagementData(params: {
       excludeIds.add(ev.id);
     }
 
+    const userPublishedEventIds =
+      publishedNostrEventIdsFromPosts(postsAsPostData);
+
     globalMentionNotifications = buildGlobalMentionNotificationsFromPrimal(
       notificationsData,
       userPubkeyHex,
-      excludeIds
+      excludeIds,
+      userPublishedEventIds
     );
 
     const primalNotificationRows =
@@ -863,6 +887,14 @@ async function loadPrimalSupplementalEngagementData(params: {
         if (e.pubkey.toLowerCase() === userLower) continue;
         if (excludeIds.has(e.id)) continue;
         if (!doesEventMentionUser(e.content, e.tags, userPubkeyHex)) continue;
+        if (
+          shouldExcludeKind1FromGlobalMentionInbox(
+            e.tags as NostrTag[],
+            userPublishedEventIds
+          )
+        ) {
+          continue;
+        }
         fromRelay.push({
           type: "mention",
           id: e.id,
@@ -1109,7 +1141,17 @@ export async function loadEngagementFeedData(
     await updateEngagementLastCheckedAt(userId);
   }
 
-  const followedPubkeys = await followedPubkeysPromise;
+  let followedPubkeys: string[] = [];
+  try {
+    followedPubkeys = await followedPubkeysPromise;
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message:
+        "Failed to load follow list for engagement feed; continuing empty",
+      userId,
+    });
+    followedPubkeys = [];
+  }
 
   return {
     posts: postsAsDTOs,

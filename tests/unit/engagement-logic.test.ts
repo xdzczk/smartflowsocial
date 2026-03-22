@@ -22,7 +22,9 @@ import {
   doesEventMentionUser,
   groupNotificationsByType,
   inferThreadRootEventIdFromTags,
+  isStructuredThreadReplyKind1,
   parseThreadViewNotifications,
+  shouldExcludeKind1FromGlobalMentionInbox,
   type Notification,
 } from "~/features/engagement/engagement.server";
 import {
@@ -193,9 +195,63 @@ describe("Engagement Logic Unit Tests", () => {
       ).toBe(first);
     });
 
+    it("prefers first e-tag over reply when root marker is absent (NIP-10 order)", () => {
+      const threadRoot = "1".repeat(64);
+      const immediateParent = "2".repeat(64);
+      expect(
+        inferThreadRootEventIdFromTags(
+          [
+            ["e", threadRoot, ""],
+            ["e", immediateParent, "", "reply"],
+          ],
+          "3".repeat(64)
+        )
+      ).toBe(threadRoot);
+    });
+
     it("falls back to note id when no e-tags", () => {
       const id = "f".repeat(64);
       expect(inferThreadRootEventIdFromTags([], id)).toBe(id);
+    });
+  });
+
+  describe("global mention inbox exclusion (thread replies vs real mentions)", () => {
+    it("treats NIP-10 reply as structured thread reply", () => {
+      expect(
+        isStructuredThreadReplyKind1([
+          ["e", "a".repeat(64), "", "reply"],
+          ["p", "b".repeat(64)],
+        ])
+      ).toBe(true);
+    });
+
+    it("does not treat quote (mention marker) as structured thread reply", () => {
+      expect(
+        isStructuredThreadReplyKind1([["e", "a".repeat(64), "", "mention"]])
+      ).toBe(false);
+    });
+
+    it("excludes thread reply even when #p matches the parent author", () => {
+      const myPost = "c".repeat(64);
+      const published = new Set([myPost]);
+      expect(
+        shouldExcludeKind1FromGlobalMentionInbox(
+          [
+            ["e", myPost, "", "reply"],
+            ["p", "d".repeat(64)],
+          ],
+          published
+        )
+      ).toBe(true);
+    });
+
+    it("keeps standalone @mention with no thread e-tags", () => {
+      expect(
+        shouldExcludeKind1FromGlobalMentionInbox(
+          [["p", "e".repeat(64)]],
+          new Set(["f".repeat(64)])
+        )
+      ).toBe(false);
     });
   });
 

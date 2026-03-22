@@ -5,6 +5,8 @@ const PAYMENT_ID_FIELD = "paymentId";
 interface UsePaymentPollingProps {
   paymentId: string | null;
   onPaymentComplete: () => void;
+  /** When true, do not redirect after a successful payment (e.g. giveaway finalization). */
+  skipSuccessNavigation?: boolean;
 }
 
 /**
@@ -13,6 +15,7 @@ interface UsePaymentPollingProps {
 export function usePaymentPolling({
   paymentId: _paymentId,
   onPaymentComplete,
+  skipSuccessNavigation = false,
 }: UsePaymentPollingProps) {
   const navigate = useNavigate();
   const [isPolling, setIsPolling] = useState(false);
@@ -55,9 +58,11 @@ export function usePaymentPolling({
           setPollingInterval(null);
         }
         onPaymentComplete();
-        setTimeout(() => {
-          navigate("/dashboard", { replace: true });
-        }, 2000);
+        if (!skipSuccessNavigation) {
+          setTimeout(() => {
+            navigate("/dashboard", { replace: true });
+          }, 2000);
+        }
       }
     } catch (_error) {
       // Silently handle errors
@@ -126,10 +131,11 @@ export function usePaymentPolling({
                 clearInterval(pollingInterval);
               }
 
-              // Redirect to dashboard after showing success message
-              setTimeout(() => {
-                navigate("/dashboard", { replace: true });
-              }, 2000);
+              if (!skipSuccessNavigation) {
+                setTimeout(() => {
+                  navigate("/dashboard", { replace: true });
+                }, 2000);
+              }
             }
           } catch (_error) {
             // Silently handle polling errors
@@ -150,7 +156,13 @@ export function usePaymentPolling({
         5 * 60 * 1000
       );
     },
-    [isPolling, pollingInterval, onPaymentComplete, navigate]
+    [
+      isPolling,
+      pollingInterval,
+      onPaymentComplete,
+      navigate,
+      skipSuccessNavigation,
+    ]
   );
 
   // Clean up polling on component unmount only. Do NOT set shouldStopPolling

@@ -17,7 +17,7 @@ export async function getFollowedPubkeys(
       kind: 3,
       pubkey: userPubkeyHex,
       identifier: "",
-    });
+    }).catch((): unknown[] => []);
     if (!Array.isArray(responses) || responses.length === 0) return [];
     for (const item of responses) {
       if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
@@ -46,7 +46,7 @@ export async function getFollowerPubkeys(
     const responses = await fetchFromCache("get_followers", {
       pubkey: userPubkeyHex,
       limit: 5000,
-    });
+    }).catch((): unknown[] => []);
     if (!Array.isArray(responses) || responses.length === 0) return [];
     const pubkeys: string[] = [];
     for (const item of responses) {

@@ -123,6 +123,16 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       const result = getUserPlanType(subscription);
       expect(result).toBe("free");
     });
+
+    it("should return founder for founder planId", () => {
+      const subscription: UserSubscription = {
+        planId: "founder",
+        status: "ACTIVE",
+        Plan: { name: "Founder", id: "founder" },
+      };
+
+      expect(getUserPlanType(subscription)).toBe("founder");
+    });
   });
 
   describe("hasFeatureAccess", () => {

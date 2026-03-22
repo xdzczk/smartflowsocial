@@ -4,11 +4,18 @@ import type {
   SerializeFrom,
 } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, Link, useLoaderData, useNavigation } from "@remix-run/react";
+import {
+  Form,
+  Link,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "@remix-run/react";
 import { useCallback, useMemo, useState } from "react";
 
 import { requireUserId } from "~/features/auth";
 import {
+  BroadcastActionError,
   createBroadcastDraft,
   resolveRecipientsForCampaign,
   getBroadcastCampaignForUser,
@@ -80,20 +87,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const campaignId = url.searchParams.get("campaignId");
+  const notice = url.searchParams.get("notice");
   const { currentSubscription } = await getSubscriptionData(userId);
   const planType = getUserPlanType(currentSubscription);
   const limits = getBroadcastPlanLimits(planType);
 
   if (!campaignId) {
-    return json({ campaign: null, limits, planType });
+    return json({ campaign: null, limits, planType, notice });
   }
 
   const campaign = await getBroadcastCampaignForUser(campaignId, userId);
   if (!campaign) {
-    return json({ campaign: null, limits, planType });
+    return json({ campaign: null, limits, planType, notice });
   }
 
-  return json({ campaign, limits, planType });
+  return json({ campaign, limits, planType, notice });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -104,7 +112,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const form = await request.formData();
   const intent = form.get("intent");
 
-  if (intent === "create") {
+  if (
+    intent === "create_draft" ||
+    intent === "create_now" ||
+    intent === "create_schedule"
+  ) {
     const name = String(form.get("name") ?? "").trim();
     const audienceType = String(form.get("audienceType") ?? "CUSTOM");
     const messageBody = String(form.get("messageBody") ?? "").trim();
@@ -118,10 +130,36 @@ export async function action({ request }: ActionFunctionArgs) {
     );
     const sendStrategy = String(form.get("sendStrategy") ?? "STANDARD");
     const scheduledForIsoRaw = form.get("scheduledFor");
-    const scheduledForIso =
+    let scheduledForIso =
       typeof scheduledForIsoRaw === "string" && scheduledForIsoRaw.trim()
         ? new Date(scheduledForIsoRaw).toISOString()
         : undefined;
+
+    const { currentSubscription } = await getSubscriptionData(userId);
+    const planType = getUserPlanType(currentSubscription);
+    const limits = getBroadcastPlanLimits(planType);
+
+    if (intent === "create_now") {
+      scheduledForIso = undefined;
+    }
+    if (intent === "create_schedule") {
+      if (!limits.allowSchedule) {
+        return json(
+          {
+            error: "Scheduling is not available on your plan.",
+          },
+          { status: 400 }
+        );
+      }
+      if (!scheduledForIso) {
+        return json(
+          {
+            error: "Choose a date and time for a scheduled broadcast.",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     const parsed = createBroadcastDraftSchema.safeParse({
       name,
@@ -140,6 +178,25 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const { id } = await createBroadcastDraft(userId, parsed.data);
+
+    if (intent === "create_draft") {
+      return redirect(`/dashboard/broadcasts/new?campaignId=${id}`);
+    }
+
+    try {
+      await resolveRecipientsForCampaign(userId, id);
+    } catch (e) {
+      const msg =
+        e instanceof BroadcastActionError
+          ? e.message
+          : "Could not resolve recipients. You can try “Resolve audience” on the next step.";
+      return redirect(
+        `/dashboard/broadcasts/new?campaignId=${encodeURIComponent(
+          id
+        )}&notice=${encodeURIComponent(msg)}`
+      );
+    }
+
     return redirect(`/dashboard/broadcasts/new?campaignId=${id}`);
   }
 
@@ -161,14 +218,25 @@ function BroadcastNewDraftForm({
   limits,
   planType,
   busy,
+  actionError,
 }: {
   limits: BroadcastNewLoaderData["limits"];
   planType: BroadcastNewLoaderData["planType"];
   busy: boolean;
+  actionError: string | null;
 }) {
+  const [messageLen, setMessageLen] = useState(0);
+
   return (
     <Form method="post" className="space-y-4">
-      <input type="hidden" name="intent" value="create" />
+      {actionError ? (
+        <div
+          role="alert"
+          className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+        >
+          {actionError}
+        </div>
+      ) : null}
       <div>
         <label
           htmlFor="broadcast-draft-name"
@@ -233,8 +301,12 @@ function BroadcastNewDraftForm({
           required
           rows={8}
           maxLength={8000}
+          onChange={(e) => setMessageLen(e.target.value.length)}
           className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
         />
+        <p className="text-muted-foreground mt-1 text-xs tabular-nums">
+          {messageLen} / 8000
+        </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -286,7 +358,8 @@ function BroadcastNewDraftForm({
             htmlFor="broadcast-scheduled-for"
             className="mb-1 block text-sm font-medium"
           >
-            Schedule (optional, local time)
+            Schedule (required for “Schedule”; optional for draft / broadcast
+            now)
           </label>
           <input
             id="broadcast-scheduled-for"
@@ -300,13 +373,43 @@ function BroadcastNewDraftForm({
         Plan: {planType} · max {limits.maxRecipientsPerCampaign} recipients per
         broadcast.
       </p>
-      <button
-        type="submit"
-        disabled={busy}
-        className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
-      >
-        Save draft
-      </button>
+      <p className="text-muted-foreground text-xs">
+        <strong className="text-foreground">Broadcast now</strong> saves your
+        campaign, resolves the audience immediately, then takes you to signing.
+        <strong className="text-foreground"> Schedule</strong> requires a date
+        and time above.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <button
+          type="submit"
+          name="intent"
+          value="create_draft"
+          disabled={busy}
+          className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50"
+        >
+          Save draft
+        </button>
+        <button
+          type="submit"
+          name="intent"
+          value="create_now"
+          disabled={busy}
+          className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+        >
+          Broadcast now
+        </button>
+        {limits.allowSchedule ? (
+          <button
+            type="submit"
+            name="intent"
+            value="create_schedule"
+            disabled={busy}
+            className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+          >
+            Schedule
+          </button>
+        ) : null}
+      </div>
     </Form>
   );
 }
@@ -318,6 +421,7 @@ function BroadcastNewCampaignPhase({
   finalizeError,
   finalizeProgress,
   onFinalize,
+  notice,
 }: {
   campaign: NonNullable<BroadcastNewLoaderData["campaign"]>;
   pendingRecipients: BroadcastPendingRecipient[];
@@ -325,9 +429,18 @@ function BroadcastNewCampaignPhase({
   finalizeError: string | null;
   finalizeProgress: string | null;
   onFinalize: () => void;
+  notice: string | null;
 }) {
   return (
     <div className="space-y-6">
+      {notice ? (
+        <div
+          role="status"
+          className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100"
+        >
+          {notice}
+        </div>
+      ) : null}
       <div className="border-border rounded-lg border p-4">
         <h2 className="font-medium">{campaign.name}</h2>
         <p className="text-muted-foreground mt-2 text-sm">
@@ -405,9 +518,17 @@ function BroadcastNewCampaignPhase({
 }
 
 export default function BroadcastNewRoute() {
-  const { campaign, limits, planType } = useLoaderData<typeof loader>();
+  const { campaign, limits, planType, notice } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const busy = navigation.state !== "idle";
+  const actionError =
+    actionData &&
+    typeof actionData === "object" &&
+    "error" in actionData &&
+    typeof actionData.error === "string"
+      ? actionData.error
+      : null;
 
   const pendingRecipients = useMemo(
     () => campaign?.recipients.filter((r) => r.status === "PENDING") ?? [],
@@ -454,6 +575,7 @@ export default function BroadcastNewRoute() {
           limits={limits}
           planType={planType}
           busy={busy}
+          actionError={actionError}
         />
       ) : (
         <BroadcastNewCampaignPhase
@@ -462,6 +584,7 @@ export default function BroadcastNewRoute() {
           busy={busy}
           finalizeError={finalizeError}
           finalizeProgress={finalizeProgress}
+          notice={notice}
           onFinalize={() => {
             void runFinalize();
           }}

@@ -1,5 +1,5 @@
 import { Form, useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "react-hot-toast";
 
 import ZapButton from "~/components/dashboard/ZapButton";
@@ -14,10 +14,28 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { InvoiceModal } from "~/features/payments/components/InvoiceModal";
+import { usePaymentPolling } from "~/features/payments/hooks/usePaymentPolling";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
 import type { GiveawayWinnerEntry } from "../types";
+
+interface GiveawayFinalizationQuotePayload {
+  plannedPayoutSats: number;
+  feeRateBps: number;
+  feeSats: number;
+  dueNowSats: number;
+  waivedByPlan: boolean;
+  lockConfigHash: string;
+}
 
 function budgetFromSnapshot(snap: GiveawayWinnerEntry[]): number {
   return snap.reduce((a, w) => a + (w.satsPerWinner ?? 0), 0);
@@ -170,13 +188,43 @@ interface GiveawayDetailPageProps {
     selectionMode?: string;
     engagementWeights?: Record<string, number> | null;
     filters?: Record<string, unknown> | null;
+    plannedPayoutSats?: number | null;
+    finalizationFeeSats?: number | null;
+    finalizationFeeRateBps?: number | null;
+    finalizationFeeStatus?: string | null;
+    planAtFinalization?: string | null;
   };
   winnerProfiles?: Record<string, WinnerProfileDisplay>;
   canUsePresets?: boolean;
   maxWinnerCount?: number;
+  planType?: string;
+  planDisplayName?: string;
+  finalizationQuote?: GiveawayFinalizationQuotePayload | null;
+  receiptSummaryLine?: string | null;
+  publicSummaryText?: string | null;
 }
 
 const ENGAGEMENT_OPTIONS = ["REACTION", "REPOST", "COMMENT", "ZAP"] as const;
+
+function formatActivityTypeLabel(type: string): string {
+  const map: Record<string, string> = {
+    giveaway_created: "Giveaway created",
+    configuration_updated: "Giveaway edited",
+    preview_generated: "Preview generated",
+    rerolled: "Reroll executed",
+    winner_excluded: "Winner excluded",
+    fee_quoted: "Finalization fee quoted",
+    fee_paid: "Finalization fee paid",
+    giveaway_locked: "Winners locked",
+    locked: "Winners locked",
+    csv_exported: "CSV exported",
+    proof_summary_copied: "Proof summary copied",
+    completed: "Giveaway completed",
+    cancelled: "Giveaway cancelled",
+    reset_to_draft: "Reset to draft",
+  };
+  return map[type] ?? type.replace(/_/g, " ");
+}
 
 /* eslint-disable sonarjs/cognitive-complexity -- detail page has many fetchers and states */
 export function GiveawayDetailPage({
@@ -184,6 +232,11 @@ export function GiveawayDetailPage({
   winnerProfiles = {},
   canUsePresets = false,
   maxWinnerCount = 50,
+  planType = "free",
+  planDisplayName = "Free",
+  finalizationQuote = null,
+  receiptSummaryLine = null,
+  publicSummaryText = null,
 }: GiveawayDetailPageProps) {
   const rootData = useRouteLoaderData("root") as
     | {
@@ -206,11 +259,41 @@ export function GiveawayDetailPage({
   const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const paidFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const updateFetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const invoiceFetcher = useFetcher<{
+    success?: boolean;
+    error?: string;
+    invoice?: string;
+    amount?: number;
+    paymentId?: string;
+    expiresAt?: string;
+  }>();
+  const activityLogFetcher = useFetcher();
   const [showEdit, setShowEdit] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showLockConfirm, setShowLockConfirm] = useState(false);
+  const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
+  const [showFeeInvoiceModal, setShowFeeInvoiceModal] = useState(false);
+  const [feeInvoiceData, setFeeInvoiceData] = useState<{
+    invoice: string;
+    amount: number;
+    paymentId: string;
+    expiresAt: string;
+  } | null>(null);
+  const [feeTimeRemaining, setFeeTimeRemaining] = useState(0);
   const [activityOpen, setActivityOpen] = useState(false);
+
+  const handleFeePaymentComplete = useCallback(() => {
+    toast.success("Payment received. Click Lock winners to finish.");
+    setShowFeeInvoiceModal(false);
+    setFeeInvoiceData(null);
+  }, []);
+
+  const { isPolling, startPaymentPolling, checkPaymentStatusNow } =
+    usePaymentPolling({
+      paymentId: feeInvoiceData?.paymentId ?? null,
+      onPaymentComplete: handleFeePaymentComplete,
+      skipSuccessNavigation: true,
+    });
 
   // Toasts for action results
   useEffect(() => {
@@ -236,9 +319,56 @@ export function GiveawayDetailPage({
     if (err) {
       toast.error(err);
     } else {
-      queueMicrotask(() => setShowLockConfirm(false));
+      queueMicrotask(() => {
+        setShowFinalizeDialog(false);
+        setShowFeeInvoiceModal(false);
+      });
     }
   }, [lockFetcher.state, lockFetcher.data]);
+
+  useEffect(() => {
+    if (invoiceFetcher.state !== "idle" || !invoiceFetcher.data) return;
+    const d = invoiceFetcher.data;
+    if (d.error) {
+      toast.error(d.error);
+      return;
+    }
+    if (
+      d.success &&
+      d.invoice &&
+      d.paymentId &&
+      d.expiresAt &&
+      d.amount != null
+    ) {
+      const invoice = d.invoice;
+      const amount = d.amount;
+      const paymentId = d.paymentId;
+      const expiresAt = d.expiresAt;
+      queueMicrotask(() => {
+        setFeeInvoiceData({
+          invoice,
+          amount,
+          paymentId,
+          expiresAt,
+        });
+        setShowFeeInvoiceModal(true);
+        setFeeTimeRemaining(new Date(expiresAt).getTime() - Date.now());
+        startPaymentPolling(paymentId);
+      });
+    }
+  }, [invoiceFetcher.state, invoiceFetcher.data, startPaymentPolling]);
+
+  useEffect(() => {
+    if (!showFeeInvoiceModal || !feeInvoiceData?.expiresAt) return;
+    const tick = () => {
+      setFeeTimeRemaining(
+        new Date(feeInvoiceData.expiresAt).getTime() - Date.now()
+      );
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [showFeeInvoiceModal, feeInvoiceData]);
   useEffect(() => {
     if (cancelFetcher.state !== "idle" || !cancelFetcher.data) return;
     if (
@@ -309,17 +439,35 @@ export function GiveawayDetailPage({
   const totalBudgetSats = budgetFromSnapshot(winners);
 
   const copyPublicSummary = async () => {
-    const lines = [
-      giveaway.name ?? `Giveaway ${giveaway.id.slice(0, 8)}`,
-      giveaway.scopeSummaryLabel ?? "",
-      `Winners: ${winners.length}`,
-      `Sats (planned): ${totalBudgetSats.toLocaleString()}`,
-      `Status: ${giveaway.statusLabel ?? giveaway.status}`,
-      "Powered by SmartFlow Social",
-    ];
+    const text =
+      publicSummaryText ??
+      [
+        giveaway.name ?? `Giveaway ${giveaway.id.slice(0, 8)}`,
+        giveaway.scopeSummaryLabel ?? "",
+        `Winners: ${winners.length}`,
+        `Sats (planned): ${totalBudgetSats.toLocaleString()}`,
+        `Status: ${giveaway.statusLabel ?? giveaway.status}`,
+        "Powered by SmartFlow Social",
+      ].join("\n");
     try {
-      await navigator.clipboard.writeText(lines.filter(Boolean).join("\n"));
+      await navigator.clipboard.writeText(text);
       toast.success("Summary copied");
+      if (giveaway.status === "PAID_OUT") {
+        const fd = new FormData();
+        fd.set("intent", "logActivity");
+        fd.set("activityType", "proof_summary_copied");
+        activityLogFetcher.submit(fd, { method: "post" });
+      }
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+
+  const copyReceiptSummary = async () => {
+    if (!receiptSummaryLine) return;
+    try {
+      await navigator.clipboard.writeText(receiptSummaryLine);
+      toast.success("Receipt copied");
     } catch {
       toast.error("Could not copy");
     }
@@ -348,6 +496,10 @@ export function GiveawayDetailPage({
     a.click();
     URL.revokeObjectURL(url);
     toast.success("CSV downloaded");
+    const fd = new FormData();
+    fd.set("intent", "logActivity");
+    fd.set("activityType", "csv_exported");
+    activityLogFetcher.submit(fd, { method: "post" });
   };
 
   return (
@@ -379,11 +531,11 @@ export function GiveawayDetailPage({
             </h1>
             <p className="text-muted-foreground mt-2 text-sm">
               {giveaway.status === "PREVIEWED"
-                ? "Review the selection before locking. You can reroll or exclude winners."
+                ? "This giveaway is ready to finalize. Locking winners applies your plan’s finalization fee (if any) and creates an official record. You can reroll or exclude winners first."
                 : giveaway.status === "LOCKED"
-                  ? "Winners are fixed. Complete payouts, then mark the giveaway complete."
+                  ? "Finalization complete. Winners are fixed. SmartFlowSocial does not hold prize funds — pay winners manually, then mark progress below."
                   : giveaway.status === "PAID_OUT"
-                    ? "Campaign complete — share your receipt below."
+                    ? "Giveaway complete. Receipt and proof are available below."
                     : "Configure and preview before you lock winners."}
             </p>
           </div>
@@ -486,6 +638,27 @@ export function GiveawayDetailPage({
                     ? "weighted by engagement"
                     : "unique user"}
                 </li>
+                {giveaway.status === "PREVIEWED" && finalizationQuote ? (
+                  <>
+                    <li>
+                      <span className="text-foreground font-medium">
+                        Planned payout:
+                      </span>{" "}
+                      {finalizationQuote.plannedPayoutSats.toLocaleString()}{" "}
+                      sats
+                    </li>
+                    <li>
+                      <span className="text-foreground font-medium">
+                        Finalization fee:
+                      </span>{" "}
+                      {finalizationQuote.plannedPayoutSats <= 0
+                        ? "0 sats"
+                        : finalizationQuote.waivedByPlan
+                          ? `Included (${planDisplayName})`
+                          : `${finalizationQuote.feeSats.toLocaleString()} sats on ${planDisplayName}`}
+                    </li>
+                  </>
+                ) : null}
                 {giveaway.filters &&
                 typeof giveaway.filters === "object" &&
                 (giveaway.filters["excludeMuted"] ||
@@ -545,6 +718,57 @@ export function GiveawayDetailPage({
                   {giveaway.rerollCount ?? 0}
                 </li>
               </ul>
+            </div>
+          ) : null}
+
+          {giveaway.status === "PREVIEWED" && finalizationQuote ? (
+            <div className="border-border rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
+              <h2 className="text-foreground mb-2 text-sm font-semibold">
+                Finalization
+              </h2>
+              <ul className="text-muted-foreground space-y-1 text-sm">
+                <li>
+                  <span className="text-foreground font-medium">
+                    Planned payout:
+                  </span>{" "}
+                  {finalizationQuote.plannedPayoutSats.toLocaleString()} sats
+                </li>
+                <li>
+                  <span className="text-foreground font-medium">
+                    Your plan:
+                  </span>{" "}
+                  {planDisplayName}
+                </li>
+                <li>
+                  <span className="text-foreground font-medium">
+                    Finalization fee:
+                  </span>{" "}
+                  {finalizationQuote.plannedPayoutSats <= 0
+                    ? "0 sats (selection only)"
+                    : finalizationQuote.waivedByPlan
+                      ? "Included in your plan"
+                      : `${finalizationQuote.feeSats.toLocaleString()} sats (${finalizationQuote.feeRateBps / 100}%)`}
+                </li>
+                <li>
+                  <span className="text-foreground font-medium">
+                    Total due at lock:
+                  </span>{" "}
+                  {finalizationQuote.dueNowSats.toLocaleString()} sats
+                </li>
+              </ul>
+              {finalizationQuote.plannedPayoutSats <= 0 ? (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  This giveaway selects winners only. No finalization fee will
+                  be charged.
+                </p>
+              ) : null}
+              {(planType === "free" || planType === "basic") &&
+              finalizationQuote.feeSats > 0 ? (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Running giveaways regularly? Upgrade to Premium to reduce or
+                  remove finalization fees.
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -719,7 +943,7 @@ export function GiveawayDetailPage({
                 <Button
                   type="button"
                   onClick={() => {
-                    setShowLockConfirm(true);
+                    setShowFinalizeDialog(true);
                   }}
                 >
                   Lock winners
@@ -735,40 +959,154 @@ export function GiveawayDetailPage({
                   Cancel giveaway
                 </Button>
               </div>
-              <AlertDialog
-                open={showLockConfirm}
-                onOpenChange={setShowLockConfirm}
+              <Dialog
+                open={showFinalizeDialog}
+                onOpenChange={setShowFinalizeDialog}
               >
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Lock winners?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Locking finalizes this winner set. You won’t be able to
-                      change scope, eligibility, or payout rules afterward —
-                      only run payouts and complete the giveaway.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Go back</AlertDialogCancel>
-                    <AlertDialogAction asChild>
+                <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Finalize giveaway</DialogTitle>
+                  </DialogHeader>
+                  <p className="text-muted-foreground text-sm">
+                    This action locks the current winner selection and starts
+                    payout tracking. The finalization fee covers official
+                    locking, audit trail, payout checklist, and receipt tools —
+                    not custody of prize funds.
+                  </p>
+                  {finalizationQuote ? (
+                    <div className="bg-muted/40 space-y-1 rounded-md border p-3 text-sm">
+                      <p>
+                        <span className="text-foreground font-medium">
+                          Giveaway:
+                        </span>{" "}
+                        {(() => {
+                          const n = giveaway.name?.trim();
+                          return n && n.length > 0
+                            ? n
+                            : `Giveaway ${giveaway.id.slice(0, 8)}`;
+                        })()}
+                      </p>
+                      <p>
+                        <span className="text-foreground font-medium">
+                          Scope:
+                        </span>{" "}
+                        {giveaway.scopeSummaryLabel ?? giveaway.scopeType}
+                      </p>
+                      <p>
+                        <span className="text-foreground font-medium">
+                          Winners:
+                        </span>{" "}
+                        {winners.length}
+                      </p>
+                      <p>
+                        <span className="text-foreground font-medium">
+                          Planned payout:
+                        </span>{" "}
+                        {finalizationQuote.plannedPayoutSats.toLocaleString()}{" "}
+                        sats
+                      </p>
+                      <p>
+                        <span className="text-foreground font-medium">
+                          Your plan:
+                        </span>{" "}
+                        {planDisplayName}
+                      </p>
+                      <p>
+                        <span className="text-foreground font-medium">
+                          Finalization fee:
+                        </span>{" "}
+                        {finalizationQuote.plannedPayoutSats <= 0
+                          ? "0 sats"
+                          : finalizationQuote.waivedByPlan
+                            ? "Included in your plan"
+                            : `${finalizationQuote.feeSats.toLocaleString()} sats (${finalizationQuote.feeRateBps / 100}%)`}
+                      </p>
+                      <p>
+                        <span className="text-foreground font-medium">
+                          Due now:
+                        </span>{" "}
+                        {finalizationQuote.dueNowSats.toLocaleString()} sats
+                      </p>
+                    </div>
+                  ) : null}
+                  <div className="grid gap-2 text-sm">
+                    <div className="bg-muted/30 rounded-md border p-3">
+                      <p className="text-foreground font-medium">
+                        What this includes
+                      </p>
+                      <ul className="text-muted-foreground mt-1 list-inside list-disc text-xs">
+                        <li>Official winner locking</li>
+                        <li>Audit trail</li>
+                        <li>Payout checklist</li>
+                        <li>Receipt and proof tools</li>
+                      </ul>
+                    </div>
+                    <div className="bg-muted/30 rounded-md border p-3">
+                      <p className="text-foreground font-medium">
+                        What this does not include
+                      </p>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        SmartFlowSocial does not hold or distribute giveaway
+                        prizes. Winner payouts are completed manually by you.
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-destructive text-xs font-medium">
+                    Locking is irreversible. You cannot reroll after lock.
+                  </p>
+                  <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowFinalizeDialog(false)}
+                    >
+                      Cancel
+                    </Button>
+                    {finalizationQuote && finalizationQuote.feeSats > 0 ? (
                       <Button
                         type="button"
-                        className="bg-primary text-primary-foreground"
-                        disabled={lockFetcher.state !== "idle"}
+                        variant="secondary"
+                        disabled={invoiceFetcher.state !== "idle"}
                         onClick={() => {
                           const fd = new FormData();
-                          fd.set("intent", "lock");
-                          lockFetcher.submit(fd, { method: "post" });
+                          fd.set("intent", "createFinalizationInvoice");
+                          fd.set(
+                            "lockConfigHash",
+                            finalizationQuote.lockConfigHash
+                          );
+                          invoiceFetcher.submit(fd, { method: "post" });
                         }}
                       >
-                        {lockFetcher.state !== "idle"
-                          ? "Locking…"
-                          : "Lock winners"}
+                        {invoiceFetcher.state !== "idle"
+                          ? "Creating invoice…"
+                          : "Pay finalization fee"}
                       </Button>
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                    ) : null}
+                    <Button
+                      type="button"
+                      className="bg-primary text-primary-foreground"
+                      disabled={lockFetcher.state !== "idle"}
+                      onClick={() => {
+                        const fd = new FormData();
+                        fd.set("intent", "lock");
+                        if (finalizationQuote) {
+                          fd.set(
+                            "lockConfigHash",
+                            finalizationQuote.lockConfigHash
+                          );
+                        }
+                        lockFetcher.submit(fd, { method: "post" });
+                      }}
+                    >
+                      {lockFetcher.state !== "idle"
+                        ? "Locking…"
+                        : finalizationQuote && finalizationQuote.feeSats > 0
+                          ? "Lock winners (after paying fee)"
+                          : "Lock winners"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <AlertDialog
                 open={showCancelConfirm}
                 onOpenChange={setShowCancelConfirm}
@@ -858,16 +1196,55 @@ export function GiveawayDetailPage({
       ) : null}
 
       {giveaway.status === "LOCKED" ? (
-        <BatchZapFlow
-          giveawayId={giveaway.id}
-          winners={winners}
-          winnerProfiles={winnerProfiles}
-          lockedAt={giveaway.lockedAt}
-          payoutProgress={giveaway.payoutProgress}
-          payoutState={giveaway.payoutState}
-          paidFetcher={paidFetcher}
-          getProfileUrl={nostrUrls.profileUrl}
-        />
+        <div className="space-y-4">
+          <div className="border-border rounded-lg border border-amber-500/25 bg-amber-500/10 p-4 text-sm">
+            <p className="text-foreground font-semibold">Finalization</p>
+            {giveaway.finalizationFeeStatus === "PAID" &&
+            giveaway.finalizationFeeSats != null ? (
+              <p className="text-muted-foreground mt-1">
+                Finalization fee paid:{" "}
+                {giveaway.finalizationFeeSats.toLocaleString()} sats
+              </p>
+            ) : giveaway.finalizationFeeStatus === "WAIVED" ? (
+              <p className="text-muted-foreground mt-1">
+                Finalization included in your plan
+                {giveaway.planAtFinalization
+                  ? ` (${giveaway.planAtFinalization})`
+                  : ""}
+              </p>
+            ) : (
+              <p className="text-muted-foreground mt-1">
+                No finalization fee (selection only or n/a).
+              </p>
+            )}
+            <div className="text-muted-foreground mt-2 space-y-0.5">
+              <p>
+                Planned payout:{" "}
+                {(
+                  giveaway.plannedPayoutSats ?? totalBudgetSats
+                ).toLocaleString()}{" "}
+                sats
+              </p>
+              <p>
+                Finalization fee:{" "}
+                {(giveaway.finalizationFeeSats ?? 0).toLocaleString()} sats
+              </p>
+              {giveaway.planAtFinalization ? (
+                <p>Plan: {giveaway.planAtFinalization}</p>
+              ) : null}
+            </div>
+          </div>
+          <BatchZapFlow
+            giveawayId={giveaway.id}
+            winners={winners}
+            winnerProfiles={winnerProfiles}
+            lockedAt={giveaway.lockedAt}
+            payoutProgress={giveaway.payoutProgress}
+            payoutState={giveaway.payoutState}
+            paidFetcher={paidFetcher}
+            getProfileUrl={nostrUrls.profileUrl}
+          />
+        </div>
       ) : null}
 
       {giveaway.status === "PAID_OUT" ? (
@@ -877,7 +1254,14 @@ export function GiveawayDetailPage({
             <p className="text-muted-foreground mt-1 text-sm">
               {giveaway.scopeSummaryLabel ?? giveaway.scopeType} ·{" "}
               {winners.length} winner{winners.length !== 1 ? "s" : ""} ·{" "}
-              {totalBudgetSats.toLocaleString()} sats (planned) · Completed{" "}
+              {(giveaway.plannedPayoutSats ?? totalBudgetSats).toLocaleString()}{" "}
+              sats planned ·{" "}
+              {(giveaway.finalizationFeeSats ?? 0).toLocaleString()} sats
+              finalization fee
+              {giveaway.planAtFinalization
+                ? ` · Plan: ${giveaway.planAtFinalization}`
+                : ""}{" "}
+              · Completed{" "}
               {giveaway.updatedAt
                 ? new Date(giveaway.updatedAt).toLocaleString()
                 : ""}
@@ -892,6 +1276,17 @@ export function GiveawayDetailPage({
               >
                 Copy public summary
               </Button>
+              {receiptSummaryLine ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    void copyReceiptSummary();
+                  }}
+                >
+                  Copy receipt summary
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -936,6 +1331,32 @@ export function GiveawayDetailPage({
         </div>
       ) : null}
 
+      {showFeeInvoiceModal && feeInvoiceData ? (
+        <InvoiceModal
+          isOpen={showFeeInvoiceModal}
+          modalTitle="Pay finalization fee"
+          invoiceData={{
+            invoice: feeInvoiceData.invoice,
+            amount: feeInvoiceData.amount,
+            amountUsd: null,
+            expiresAt: feeInvoiceData.expiresAt,
+            paymentId: feeInvoiceData.paymentId,
+            contextLabel:
+              "Giveaway finalization fee (locks winners after payment)",
+          }}
+          timeRemaining={feeTimeRemaining}
+          isPolling={isPolling}
+          onCopy={(text) => {
+            void navigator.clipboard.writeText(text);
+            toast.success("Copied");
+          }}
+          onCheckPayment={(id) => {
+            void checkPaymentStatusNow(id);
+          }}
+          onClose={() => setShowFeeInvoiceModal(false)}
+        />
+      ) : null}
+
       {activityEntries.length > 0 ? (
         <div className="border-border bg-muted/10 rounded-lg border">
           <button
@@ -951,15 +1372,22 @@ export function GiveawayDetailPage({
             </span>
           </button>
           {activityOpen ? (
-            <ol className="border-border text-muted-foreground max-h-64 space-y-2 overflow-y-auto border-t p-4 text-xs">
+            <ol className="border-border text-muted-foreground max-h-64 space-y-3 overflow-y-auto border-t p-4 text-xs">
               {[...activityEntries].reverse().map((e) => (
                 <li
                   key={`${e.at}-${e.type}-${JSON.stringify(e.payload ?? {})}`}
                 >
-                  <span className="text-foreground font-medium">
-                    {e.type.replace(/_/g, " ")}
-                  </span>{" "}
-                  · {new Date(e.at).toLocaleString()}
+                  <div>
+                    <span className="text-foreground font-medium">
+                      {formatActivityTypeLabel(e.type)}
+                    </span>{" "}
+                    · {new Date(e.at).toLocaleString()}
+                  </div>
+                  {e.payload && Object.keys(e.payload).length > 0 ? (
+                    <pre className="bg-muted/50 mt-1 max-w-full overflow-x-auto rounded p-2 font-mono text-[10px] leading-snug whitespace-pre-wrap">
+                      {JSON.stringify(e.payload, null, 2)}
+                    </pre>
+                  ) : null}
                 </li>
               ))}
             </ol>
@@ -1216,9 +1644,11 @@ function BatchZapFlow({
           <AlertDialogHeader>
             <AlertDialogTitle>Complete with pending payouts?</AlertDialogTitle>
             <AlertDialogDescription>
-              Not every winner is marked sent or paid. To close this giveaway
-              anyway, enter a short reason (at least 10 characters). This is
-              recorded for your records.
+              Not all winners are marked paid or sent. SmartFlowSocial does not
+              custody prizes — you are responsible for actual payouts. Complete
+              anyway only if you accept leaving some payouts untracked here.
+              Enter a short reason (at least 10 characters); it is stored in
+              your audit log.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <textarea

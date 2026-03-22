@@ -365,6 +365,45 @@ export default function AdminOperationsPage() {
           <p className="text-foreground/90 mt-3 text-sm">{sum.nextStep}</p>
         </AdminCard>
 
+        <AdminSection eyebrow="Signer" title="NIP-46 reconnect health (range)">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              title="Reconnect attempts"
+              value={d.signerConnect.reconnectAttemptsInRange}
+            />
+            <MetricCard
+              title="Failures"
+              value={d.signerConnect.reconnectFailuresInRange}
+              tone={
+                d.signerConnect.reconnectFailuresInRange > 0
+                  ? "warning"
+                  : "positive"
+              }
+            />
+            <MetricCard
+              title="Users affected"
+              value={d.signerConnect.distinctUsersWithFailureInRange}
+            />
+            <MetricCard
+              title="NIP-46 profiles (all enabled)"
+              value={d.signerConnect.usersWithNip46Profile}
+            />
+          </div>
+          {d.signerConnect.failuresByBucket.length > 0 ? (
+            <ul className="text-muted-foreground mt-2 text-xs">
+              {d.signerConnect.failuresByBucket.map((b) => (
+                <li key={b.bucket}>
+                  <span className="font-mono">{b.bucket}</span>: {b.count}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground mt-2 text-sm">
+              No failure buckets in range — either healthy or no telemetry yet.
+            </p>
+          )}
+        </AdminSection>
+
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Failed publish rows (range)"

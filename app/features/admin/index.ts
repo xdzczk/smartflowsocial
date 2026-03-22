@@ -31,3 +31,17 @@ export {
   formatAdminDeltaPercent,
   formatAdminInteger,
 } from "./metrics/format-admin";
+export {
+  getMetricDefinition,
+  METRIC_DEFINITIONS,
+  type MetricRegistryKey,
+} from "./metrics/registry";
+export type {
+  MetricConfidence,
+  MetricDefinition,
+  ResolvedMetric,
+} from "./metrics/metric-types";
+export {
+  confidenceForCount,
+  confidenceForRate,
+} from "./metrics/resolve-confidence";

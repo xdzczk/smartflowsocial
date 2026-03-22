@@ -33,6 +33,7 @@ export {
   getGiveawayPlanLimits,
   getBroadcastPlanLimits,
   getUserPlanType,
+  getPlanDisplayName,
   hasFeatureAccess,
   isSubscriptionPeriodExpired,
 } from "./types";

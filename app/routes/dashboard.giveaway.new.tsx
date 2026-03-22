@@ -14,6 +14,7 @@ import {
 } from "~/features/giveaway/giveaway-presets.server";
 import {
   getGiveawayPlanLimits,
+  getPlanDisplayName,
   getUserPlanType,
   requireFeatureAccess,
   requireAnySubscription,
@@ -284,10 +285,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
   const subscriptionData = await requireFeatureAccess(userId, "giveaways");
-  const planType = getUserPlanType(
-    subscriptionData.currentSubscription ?? null
-  );
+  const planType = getUserPlanType(subscriptionData.currentSubscription);
   const planLimits = getGiveawayPlanLimits(planType);
+  const planDisplayName = getPlanDisplayName(
+    subscriptionData.currentSubscription
+  );
 
   const [presets, queueTypes, recentPosts] = await Promise.all([
     getGiveawayPresetsByUser(userId),
@@ -309,6 +311,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       canUseQueueScope: planLimits.canUseQueueScope,
       canUsePresets: planLimits.canUsePresets,
     },
+    planType,
+    planDisplayName,
   });
 }
 

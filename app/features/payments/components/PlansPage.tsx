@@ -199,7 +199,14 @@ export function PlansPage(): ReactNode {
       {invoiceData ? (
         <InvoiceModal
           isOpen={showInvoice}
-          invoiceData={invoiceData}
+          invoiceData={{
+            invoice: invoiceData.invoice,
+            amount: invoiceData.amount,
+            amountUsd: invoiceData.amountUsd,
+            expiresAt: invoiceData.expiresAt,
+            paymentId: invoiceData.paymentId,
+            contextLabel: invoiceData.contextLabel,
+          }}
           timeRemaining={timeRemaining}
           isPolling={isPolling}
           onCopy={copyToClipboard}

@@ -6,6 +6,7 @@ import { requireUserId } from "~/features/auth";
 import type { GiveawayWinnerEntry } from "~/features/giveaway";
 import {
   GiveawayDetailPage,
+  appendGiveawayAuditActivity,
   getGiveawayById,
   previewGiveaway,
   rerollGiveaway,
@@ -23,6 +24,7 @@ import {
   formatStatusLabel,
   resolveGiveawayQueueName,
 } from "~/features/giveaway/giveaway-display.server";
+import { quoteGiveawayFinalization } from "~/features/giveaway/giveaway-finalization-fee.server";
 import { getWinnerProfiles } from "~/features/giveaway/giveaway-loader.server";
 import {
   countPayoutCompleted,
@@ -32,14 +34,21 @@ import {
 } from "~/features/giveaway/giveaway-payout.server";
 import { createGiveawayPreset } from "~/features/giveaway/giveaway-presets.server";
 import {
+  buildGiveawayPublicSummaryLines,
+  buildGiveawayReceiptSummaryLine,
+} from "~/features/giveaway/giveaway-proof-share.server";
+import {
   getSubscriptionData,
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { createGiveawayFinalizationInvoice } from "~/features/payments/data/payment.commands.server";
 import {
   getGiveawayPlanLimits,
+  getPlanDisplayName,
   getUserPlanType,
 } from "~/features/payments/types";
+import { ExternalServiceError } from "~/lib/errors";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -59,8 +68,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Not found", { status: 404 });
   }
 
-  const limits = getGiveawayPlanLimits(
-    getUserPlanType(subscriptionData.currentSubscription)
+  const planType = getUserPlanType(subscriptionData.currentSubscription);
+  const limits = getGiveawayPlanLimits(planType);
+  const planDisplayName = getPlanDisplayName(
+    subscriptionData.currentSubscription
   );
 
   const scopeRef = giveaway.scopeReference as Record<string, unknown>;
@@ -108,6 +119,59 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         }
       : null;
 
+  const finalizationQuote =
+    giveaway.status === "PREVIEWED" && payoutSnapshot.length > 0
+      ? quoteGiveawayFinalization({
+          giveaway: {
+            winnerSnapshot: giveaway.winnerSnapshot,
+            engagementConfig: giveaway.engagementConfig,
+            winnerCount: giveaway.winnerCount,
+            selectionMode: giveaway.selectionMode,
+            scopeType: giveaway.scopeType,
+            scopeReference: giveaway.scopeReference,
+            engagementTypes: giveaway.engagementTypes,
+            filters: giveaway.filters,
+            engagementWeights: giveaway.engagementWeights,
+          },
+          planType,
+        })
+      : null;
+
+  const completedAtFormatted = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(giveaway.updatedAt);
+
+  const receiptSummaryLine =
+    giveaway.status === "PAID_OUT"
+      ? buildGiveawayReceiptSummaryLine({
+          scopeSummaryLabel,
+          winnerCount: payoutSnapshot.length || giveaway.winnerCount,
+          plannedPayoutSats:
+            giveaway.plannedPayoutSats ??
+            totalSatsBudgetFromSnapshot(payoutSnapshot),
+          finalizationFeeSats: giveaway.finalizationFeeSats ?? 0,
+          planAtFinalization: giveaway.planAtFinalization ?? null,
+          completedAtLabel: completedAtFormatted,
+        })
+      : null;
+
+  const publicSummaryText =
+    giveaway.status === "PAID_OUT"
+      ? buildGiveawayPublicSummaryLines({
+          title:
+            giveaway.name?.trim() && giveaway.name.trim() !== ""
+              ? giveaway.name.trim()
+              : `Giveaway ${giveaway.id.slice(0, 8)}`,
+          scopeLine: scopeSummaryLabel,
+          winnerCount: payoutSnapshot.length || giveaway.winnerCount,
+          budgetSats:
+            giveaway.plannedPayoutSats ??
+            totalSatsBudgetFromSnapshot(payoutSnapshot),
+          completedAtLabel: completedAtFormatted,
+        }).join("\n")
+      : null;
+
   return json({
     giveaway: {
       id: giveaway.id,
@@ -128,6 +192,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       rerollCount: giveaway.rerollCount,
       excludedPubkeys: giveaway.excludedPubkeys,
       activityLog: giveaway.activityLog,
+      plannedPayoutSats: giveaway.plannedPayoutSats ?? null,
+      finalizationFeeSats: giveaway.finalizationFeeSats ?? null,
+      finalizationFeeRateBps: giveaway.finalizationFeeRateBps ?? null,
+      finalizationFeeStatus: giveaway.finalizationFeeStatus ?? null,
+      planAtFinalization: giveaway.planAtFinalization ?? null,
       ...(isDraftOrPreviewed && {
         scopeReference: scopeRef,
         engagementTypes: giveaway.engagementTypes as string[],
@@ -141,6 +210,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     },
     giveawaysLimits: limits,
     winnerProfiles,
+    planType,
+    planDisplayName,
+    finalizationQuote,
+    receiptSummaryLine,
+    publicSummaryText,
   });
 }
 
@@ -185,8 +259,53 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return redirectBack();
     }
     case "lock": {
-      const result = await lockGiveaway(userId, id);
+      const lockHashRaw = formData.get("lockConfigHash");
+      const result = await lockGiveaway(userId, id, {
+        lockConfigHash:
+          typeof lockHashRaw === "string" && lockHashRaw.trim() !== ""
+            ? lockHashRaw.trim()
+            : undefined,
+      });
       if (result.error) return json(result);
+      return redirectBack();
+    }
+    case "createFinalizationInvoice": {
+      const hashRaw = formData.get("lockConfigHash");
+      if (typeof hashRaw !== "string" || !hashRaw.trim()) {
+        return json({ error: "Missing lock preview state" }, { status: 400 });
+      }
+      try {
+        const inv = await createGiveawayFinalizationInvoice({
+          giveawayId: id,
+          userId,
+          lockConfigHash: hashRaw.trim(),
+        });
+        return json({
+          success: true,
+          invoice: inv.invoice,
+          paymentHash: inv.paymentHash,
+          amount: inv.amount,
+          paymentId: inv.paymentId,
+          expiresAt: inv.expiresAt.toISOString(),
+          lockConfigHash: inv.lockConfigHash,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to create invoice";
+        const status =
+          error instanceof ExternalServiceError ? error.statusCode : 500;
+        return json({ error: message }, { status });
+      }
+    }
+    case "logActivity": {
+      const typeRaw = formData.get("activityType");
+      if (typeRaw !== "csv_exported" && typeRaw !== "proof_summary_copied") {
+        return json({ error: "Invalid activity type" }, { status: 400 });
+      }
+      const result = await appendGiveawayAuditActivity(userId, id, typeRaw);
+      if (!result.success) {
+        return json(result, { status: 400 });
+      }
       return redirectBack();
     }
     case "cancel": {
@@ -293,11 +412,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function DashboardGiveawayDetailPage() {
-  const { giveaway, giveawaysLimits, winnerProfiles } =
-    useLoaderData<typeof loader>();
+  const {
+    giveaway,
+    giveawaysLimits,
+    winnerProfiles,
+    planType,
+    planDisplayName,
+    finalizationQuote,
+    receiptSummaryLine,
+    publicSummaryText,
+  } = useLoaderData<typeof loader>();
   return (
     <GiveawayDetailPage
       winnerProfiles={winnerProfiles}
+      planType={planType}
+      planDisplayName={planDisplayName}
+      finalizationQuote={finalizationQuote}
+      receiptSummaryLine={receiptSummaryLine}
+      publicSummaryText={publicSummaryText}
       giveaway={{
         id: giveaway.id,
         name: giveaway.name ?? null,
@@ -317,6 +449,11 @@ export default function DashboardGiveawayDetailPage() {
         rerollCount: giveaway.rerollCount,
         excludedPubkeys: giveaway.excludedPubkeys,
         activityLog: giveaway.activityLog,
+        plannedPayoutSats: giveaway.plannedPayoutSats ?? null,
+        finalizationFeeSats: giveaway.finalizationFeeSats ?? null,
+        finalizationFeeRateBps: giveaway.finalizationFeeRateBps ?? null,
+        finalizationFeeStatus: giveaway.finalizationFeeStatus ?? null,
+        planAtFinalization: giveaway.planAtFinalization ?? null,
         ...("scopeReference" in giveaway && {
           scopeReference: giveaway.scopeReference,
           engagementTypes: giveaway.engagementTypes,

@@ -46,8 +46,14 @@ export { action, loader };
 // Remix json() return typing is loose; narrow at runtime.
 function isLoaderOk(d: unknown): d is {
   section: string;
+  rangePreset: string;
   payoutAvailable: boolean;
   stats: AdminOverviewStats;
+  monetization: {
+    referredRevenueSatsInRange: number;
+    totalPaymentSatsInRange: number;
+  };
+  referredPaidConversionsInRange: number;
   referrals: {
     rows: Array<{
       referrerNpub: string;
@@ -203,6 +209,32 @@ export default function AdminReferralsPage() {
             .
           </div>
         ) : null}
+
+        <section className="space-y-3">
+          <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+            Business value (selected range)
+          </h2>
+          <p className="text-muted-foreground text-xs">
+            Range: {data.rangePreset}. Adjust via admin tab range control.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <MetricCard
+              title="Referral commission (range)"
+              value={data.monetization.referredRevenueSatsInRange}
+              definition="ReferralEarning rows created in the window (commission sats)."
+            />
+            <MetricCard
+              title="Referred paid conversions (range)"
+              value={data.referredPaidConversionsInRange}
+              definition="Earning rows marked PAID with paidAt in the window."
+            />
+            <MetricCard
+              title="All payments (sats, range)"
+              value={data.monetization.totalPaymentSatsInRange}
+              definition="Completed subscription-related payments in range (platform-wide context)."
+            />
+          </div>
+        </section>
 
         <section className="space-y-3">
           <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">

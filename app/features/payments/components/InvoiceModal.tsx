@@ -8,11 +8,15 @@ interface InvoiceModalProps {
   invoiceData: {
     invoice: string;
     amount: number;
-    amountUsd: number;
+    /** Null hides the fiat line (e.g. sats-only finalization fee). */
+    amountUsd: number | null;
     expiresAt: string;
-    planName: string;
+    /** Shown in the summary box (plan picker or giveaway context). */
+    contextLabel: string;
     paymentId?: string;
   };
+  /** Modal title; default Complete payment */
+  modalTitle?: string;
   timeRemaining: number;
   isPolling: boolean;
   onCopy: (text: string) => void;
@@ -23,6 +27,7 @@ interface InvoiceModalProps {
 export function InvoiceModal({
   isOpen,
   invoiceData,
+  modalTitle = "Complete payment",
   timeRemaining,
   isPolling,
   onCopy,
@@ -36,22 +41,24 @@ export function InvoiceModal({
       <div className="dark:bg-card mx-4 max-w-lg rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-4">
           <h3 className="text-foreground mb-2 text-lg font-semibold dark:text-white">
-            Complete Payment
+            {modalTitle}
           </h3>
           <div className="bg-muted dark:bg-muted/30 rounded-lg p-3">
             <p className="text-foreground dark:text-foreground text-sm font-medium">
-              Selected Plan: {invoiceData.planName}
+              {invoiceData.contextLabel}
             </p>
           </div>
         </div>
 
         <div className="mb-4">
+          {invoiceData.amountUsd != null ? (
+            <div className="dark:text-muted-foreground text-foreground mb-2 flex justify-between text-sm">
+              <span>Amount:</span>
+              <span className="font-medium">${invoiceData.amountUsd} USD</span>
+            </div>
+          ) : null}
           <div className="dark:text-muted-foreground text-foreground mb-2 flex justify-between text-sm">
-            <span>Amount:</span>
-            <span className="font-medium">${invoiceData.amountUsd} USD</span>
-          </div>
-          <div className="dark:text-muted-foreground text-foreground mb-2 flex justify-between text-sm">
-            <span>Lightning Amount:</span>
+            <span>Lightning amount:</span>
             <span className="font-medium">
               {invoiceData.amount.toLocaleString()} sats
             </span>

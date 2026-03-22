@@ -11,13 +11,17 @@ import {
 import { FREE_PLAN_ID } from "~/features/payments/plan-ids";
 import { prisma } from "~/lib/prisma.server";
 
-import type { RangePreset } from "../metrics/date-range";
 import {
   formatDeltaPercent,
   getBoundsForPreset,
   getPreviousPeriodBounds,
 } from "../metrics/date-range";
+import type { RangePreset } from "../metrics/date-range";
 import type { ProofCardData } from "../proof-card-types";
+
+import { getMonetizationBundle } from "./admin-monetization-bundle.server";
+import { getProductUsageBundle } from "./admin-product-usage-bundle.server";
+import { getSignerConnectHealthBundle } from "./admin-signer-connect-bundle.server";
 
 function proofCardRangeLabel(preset: RangePreset): string {
   switch (preset) {
@@ -96,6 +100,14 @@ export interface AdminAnalyticsPageDTO {
   } | null;
   /** Curated inputs for public proof-of-work card (scope/type chosen in UI). */
   proofCard: ProofCardData;
+  monetization: Awaited<ReturnType<typeof getMonetizationBundle>>;
+  signerConnect: Awaited<ReturnType<typeof getSignerConnectHealthBundle>>;
+  productUsage: Awaited<ReturnType<typeof getProductUsageBundle>>;
+  publishingReliability: {
+    publishSuccessRateInRange: number;
+    failedShortInRange: number;
+    failedLongInRange: number;
+  };
 }
 
 function mapDayRows(rows: Array<{ d: Date; c: bigint }>): DayCount[] {
@@ -137,6 +149,8 @@ export async function getAdminAnalyticsPageData(
     fail30,
     publishersInRangeRows,
     failedReferralPayouts30d,
+    failShortInRange,
+    failLongInRange,
   ] = await Promise.all([
     prisma.$queryRaw<Array<{ d: Date; c: bigint }>>`
       SELECT date_trunc('day', "createdAt") AS d, COUNT(*)::bigint AS c
@@ -298,6 +312,18 @@ export async function getAdminAnalyticsPageData(
         },
       },
     }),
+    prisma.post.count({
+      where: {
+        currentState: "FAILED",
+        updatedAt: { gte: from, lt: to },
+      },
+    }),
+    prisma.longFormPost.count({
+      where: {
+        currentState: "FAILED",
+        updatedAt: { gte: from, lt: to },
+      },
+    }),
   ]);
 
   const publishersMultiDay = Number(publishersMultiDayRows[0]?.c ?? 0);
@@ -404,7 +430,43 @@ export async function getAdminAnalyticsPageData(
     );
   }
 
+  const [monetization, signerConnect, productUsage] = await Promise.all([
+    getMonetizationBundle(preset, now),
+    getSignerConnectHealthBundle({ from, to }),
+    getProductUsageBundle({ from, to }, now),
+  ]);
+
+  let mrrBi = BigInt(0);
+  try {
+    mrrBi = BigInt(monetization.mrrSats || "0");
+  } catch {
+    mrrBi = BigInt(0);
+  }
+  if (mrrBi > BigInt(0)) {
+    takeaways.push(
+      `MRR (sats) is ${monetization.mrrSats} across ${monetization.activePaidSubscribers} active paid seat(s).`
+    );
+  }
+  if (signerConnect.reconnectAttemptsInRange >= 5) {
+    takeaways.push(
+      `NIP-46 reconnect telemetry: ${signerConnect.reconnectFailuresInRange} failures of ${signerConnect.reconnectAttemptsInRange} attempts (${signerConnect.reconnectConfidence.confidence} confidence).`
+    );
+  }
+  if (productUsage.activeSessionUsersInRange > 0) {
+    takeaways.push(
+      `Session-active users in range: ${productUsage.activeSessionUsersInRange}; rolling DAU/WAU/MAU ${productUsage.dauRolling}/${productUsage.wauRolling}/${productUsage.mauRolling}.`
+    );
+  }
+
   const publishersInRange = Number(publishersInRangeRows[0]?.c ?? 0);
+
+  const publishedTotalRange = postsPublished + longFormPublished;
+  const failedTotalRange = failShortInRange + failLongInRange;
+  const denomRel = publishedTotalRange + failedTotalRange;
+  const publishSuccessRateInRange =
+    denomRel === 0
+      ? 100
+      : Math.round((publishedTotalRange / denomRel) * 1000) / 10;
 
   const proofCard: ProofCardData = {
     rangePreset: preset,
@@ -475,5 +537,13 @@ export async function getAdminAnalyticsPageData(
     totalsPrevious,
     deltas,
     proofCard,
+    monetization,
+    signerConnect,
+    productUsage,
+    publishingReliability: {
+      publishSuccessRateInRange,
+      failedShortInRange: failShortInRange,
+      failedLongInRange: failLongInRange,
+    },
   };
 }

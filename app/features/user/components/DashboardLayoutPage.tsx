@@ -17,6 +17,7 @@ import {
   isSubscriptionPeriodExpired,
 } from "~/features/payments";
 import { ReferredByBanner } from "~/features/referral/components/ReferredByBanner";
+import { useProductSessionTelemetry } from "~/lib/telemetry/product-session.client";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
@@ -53,6 +54,7 @@ function isCalendarPath(pathname: string): boolean {
 export function DashboardLayoutPage(): ReactNode {
   const location = useLocation();
   const data = useLoaderData<typeof dashboardLoader>();
+  useProductSessionTelemetry(Boolean(data.userId));
   const layoutData =
     useRouteLoaderData<typeof dashboardLoader>("routes/dashboard");
   const { currentSubscription, pendingParentUsers, referredBy } = data;

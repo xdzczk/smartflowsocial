@@ -107,9 +107,10 @@ export default function AdminAnalyticsPage() {
       />
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-6">
         <AdminSection
+          id="narrative"
           eyebrow="Narrative"
-          title="Key takeaways"
-          description="Honest read on this range — low volume stays intentionally cautious."
+          title="Insight summary"
+          description="Rule-based read on this range — low volume stays intentionally cautious."
         >
           <ul className="border-border bg-card/50 space-y-2 rounded-xl border p-4 text-sm">
             {d.takeaways.map((t) => (
@@ -120,7 +121,7 @@ export default function AdminAnalyticsPage() {
           </ul>
         </AdminSection>
 
-        <AdminSection eyebrow="Totals" title="Growth">
+        <AdminSection id="growth" eyebrow="Growth" title="Growth">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
               title="New users"
@@ -177,24 +178,56 @@ export default function AdminAnalyticsPage() {
         </AdminSection>
 
         <AdminSection
+          id="monetization"
           eyebrow="Monetization"
-          title="Publishing & subscriptions"
-          description="Compare new subscription rows with short-post publish volume."
+          title="Business"
+          description="Recurring revenue and paid subscription flow (approximations documented in metric registry)."
         >
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
-              title="Active paid subscriptions (now)"
-              value={d.totals.activeSubscriptions}
-              definition="ACTIVE subscriptions excluding the built-in free plan — not range-scoped."
+              title="MRR (sats)"
+              value={`${d.monetization.mrrSats} sats`}
+              definition="Sum of amountSats on active paid subscriptions (30-day periods)."
+            />
+            <MetricCard
+              title="ARR run-rate (sats)"
+              value={`${d.monetization.arrRunRateSats} sats`}
+              definition="MRR × 12 — run-rate, not recognized revenue."
+            />
+            <MetricCard
+              title="Active paid subscribers"
+              value={d.monetization.activePaidSubscribers}
             />
             <MetricCard
               title="Subscriptions started (range)"
-              value={d.series.subscriptionsStartedPerDay.reduce(
-                (s, x) => s + x.count,
-                0
-              )}
+              value={d.monetization.subscriptionsStartedInRange}
               deltaPct={deltas?.subscriptionsStartedPct ?? null}
-              definition="Subscription rows created in the selected window."
+            />
+            <MetricCard
+              title="Cancellations (range)"
+              value={d.monetization.subscriptionsCanceledInRange}
+              definition="Subscriptions moved to CANCELED in range (timestamp approximation)."
+            />
+            <MetricCard
+              title="Net paid flow"
+              value={d.monetization.netSubscriptionFlowInRange}
+              definition="Starts minus cancellations in range."
+            />
+            <MetricCard
+              title="ARPPU (sats, range payments)"
+              value={d.monetization.arppuSatsInRange ?? "—"}
+              definition="Completed payment amount in range ÷ active paid subscribers."
+              confidence={d.monetization.revenueConfidence}
+            />
+            <MetricCard
+              title="Referral commission (range)"
+              value={d.monetization.referredRevenueSatsInRange}
+              definition="Sum of ReferralEarning.commissionSats with createdAt in range."
+            />
+            <MetricCard
+              title="Payment total (sats, range)"
+              value={d.monetization.totalPaymentSatsInRange}
+              definition="Completed Payment.amount in range."
             />
           </div>
           <AdminChartCard
@@ -202,6 +235,8 @@ export default function AdminAnalyticsPage() {
             title="Subscriptions vs post volume"
             subtitle="Daily subscription starts and short-form publishes."
             empty={publishingMixData.length === 0}
+            emptyDescription="No subscription or publish days in this window."
+            emptySuggestedRange="Try 30d or 90d for more subscription movement."
           >
             <AdminLineChart
               formatDayLabel={formatChartDay}
@@ -222,7 +257,108 @@ export default function AdminAnalyticsPage() {
           </AdminChartCard>
         </AdminSection>
 
-        <AdminSection eyebrow="Product" title="Feature adoption (range)">
+        <AdminSection
+          id="product-usage"
+          eyebrow="Product usage"
+          title="Sessions"
+          description="Distinct users with dashboard session beacons — not auth sessions."
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              title="Active session users (range)"
+              value={d.productUsage.activeSessionUsersInRange}
+              confidence={d.productUsage.activeUsersConfidence}
+            />
+            <MetricCard
+              title="DAU (rolling)"
+              value={d.productUsage.dauRolling}
+            />
+            <MetricCard
+              title="WAU (rolling)"
+              value={d.productUsage.wauRolling}
+            />
+            <MetricCard
+              title="MAU (rolling)"
+              value={d.productUsage.mauRolling}
+            />
+          </div>
+        </AdminSection>
+
+        <AdminSection
+          id="publishing-reliability"
+          eyebrow="Publishing"
+          title="Reliability"
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <MetricCard
+              title="Publish success (range)"
+              value={`${d.publishingReliability.publishSuccessRateInRange}%`}
+              definition="Published ÷ (published + failed) with activity timestamps in range."
+            />
+            <MetricCard
+              title="Failed short (range)"
+              value={d.publishingReliability.failedShortInRange}
+            />
+            <MetricCard
+              title="Failed long-form (range)"
+              value={d.publishingReliability.failedLongInRange}
+            />
+            <MetricCard
+              title="30d success % (context)"
+              value={`${d.proofOfWork.publishSuccessRate30d}%`}
+              definition="Separate rolling 30-day short-post success rate for context."
+            />
+          </div>
+        </AdminSection>
+
+        <AdminSection
+          id="signer-connect"
+          eyebrow="Signer"
+          title="Remote signer vs extension"
+          description="NIP-46 profile counts are a proxy for remote signer preference. Reconnect stats are background NIP-46 retries only."
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <MetricCard
+              title="Enabled users"
+              value={d.signerConnect.enabledUsers}
+            />
+            <MetricCard
+              title="NIP-46 profile saved"
+              value={d.signerConnect.usersWithNip46Profile}
+            />
+            <MetricCard
+              title="Extension / unset (proxy)"
+              value={d.signerConnect.usersExtensionOrUnset}
+            />
+            <MetricCard
+              title="Reconnect attempts (range)"
+              value={d.signerConnect.reconnectAttemptsInRange}
+            />
+            <MetricCard
+              title="Reconnect failures (range)"
+              value={d.signerConnect.reconnectFailuresInRange}
+            />
+            <MetricCard
+              title="Users with ≥1 failure"
+              value={d.signerConnect.distinctUsersWithFailureInRange}
+            />
+          </div>
+          {d.signerConnect.failuresByBucket.length > 0 ? (
+            <ul className="text-muted-foreground mt-3 text-xs">
+              {d.signerConnect.failuresByBucket.map((b) => (
+                <li key={b.bucket}>
+                  <span className="font-mono">{b.bucket}</span>: {b.count}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </AdminSection>
+
+        <AdminSection
+          id="feature-adoption"
+          eyebrow="Product"
+          title="Feature adoption (range)"
+        >
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
               title="Scheduled reposts"
@@ -247,7 +383,11 @@ export default function AdminAnalyticsPage() {
           </div>
         </AdminSection>
 
-        <AdminSection eyebrow="Retention" title="Retention proxies">
+        <AdminSection
+          id="retention"
+          eyebrow="Retention"
+          title="Retention proxies"
+        >
           <div className="grid gap-3 sm:grid-cols-2">
             <MetricCard
               title="Multi-day publishers"

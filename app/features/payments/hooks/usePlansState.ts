@@ -11,6 +11,7 @@ interface InvoiceData {
   expiresAt: string;
   planName: string;
   planId: string;
+  contextLabel: string;
 }
 
 interface ActionData {
@@ -107,6 +108,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
             expiresAt: expiresAt,
             planName: actionData.planName,
             planId: actionData.planId,
+            contextLabel: `Selected plan: ${actionData.planName}`,
           };
           // Defer to avoid cascading renders
           setTimeout(() => {

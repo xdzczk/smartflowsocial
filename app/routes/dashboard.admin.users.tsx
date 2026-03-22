@@ -240,11 +240,14 @@ export default function AdminUsersPage() {
                 <th className="p-2 text-right">Scheduled</th>
                 <th className="p-2 text-right">Media</th>
                 <th className="p-2 text-right">Refs</th>
+                <th className="p-2 text-left">Signer</th>
+                <th className="p-2 text-right">Sess 30d</th>
+                <th className="p-2 text-right">Reconn fail</th>
               </tr>
             </AdminDataTableHead>
             <tbody>
               {visibleUsers.length === 0 ? (
-                <AdminDataTableEmpty colSpan={10}>
+                <AdminDataTableEmpty colSpan={13}>
                   No users match this view.
                 </AdminDataTableEmpty>
               ) : (
@@ -318,6 +321,23 @@ export default function AdminUsersPage() {
                           (in)
                         </span>
                       ) : null}
+                    </td>
+                    <td className="text-muted-foreground p-2 text-xs">
+                      {u.signerModality === "nip46"
+                        ? "Remote (NIP-46)"
+                        : "Ext / unset"}
+                    </td>
+                    <td className="p-2 text-right tabular-nums">
+                      {u.sessionsIn30d}
+                    </td>
+                    <td className="p-2 text-right tabular-nums">
+                      {u.reconnectFailures30d > 0 ? (
+                        <span className="text-amber-700 dark:text-amber-300">
+                          {u.reconnectFailures30d}
+                        </span>
+                      ) : (
+                        "0"
+                      )}
                     </td>
                   </tr>
                 ))
@@ -422,6 +442,28 @@ export default function AdminUsersPage() {
                         7d publishes
                       </dt>
                       <dd>{sheetUser.recent7dPublishes}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground text-xs">
+                        Signer modality
+                      </dt>
+                      <dd>
+                        {sheetUser.signerModality === "nip46"
+                          ? "NIP-46 profile saved"
+                          : "Extension or unset"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground text-xs">
+                        Product sessions (30d)
+                      </dt>
+                      <dd>{sheetUser.sessionsIn30d}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground text-xs">
+                        Reconnect failures (30d)
+                      </dt>
+                      <dd>{sheetUser.reconnectFailures30d}</dd>
                     </div>
                   </dl>
                   <div>

@@ -1,5 +1,5 @@
 import { toPng } from "html-to-image";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -63,6 +63,8 @@ const EXPORT_PX: Record<ProofCardAspectRatio, { w: number; h: number }> = {
   "1:1": { w: 1080, h: 1080 },
   "16:9": { w: 1280, h: 720 },
 };
+
+const PROOF_PREFS_KEY = "__sfs_admin_proof_export_prefs";
 
 /** Shared hero scale for 1:1 and 16:9 layouts (sonar: single literal). */
 const HERO_COMPACT_SCALE = "text-4xl sm:text-5xl";
@@ -192,6 +194,34 @@ export function AdminProofOfWorkSection({
   const [cardType, setCardType] = useState<ProofCardType>("milestone");
   const [aspectRatio, setAspectRatio] = useState<ProofCardAspectRatio>("4:5");
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PROOF_PREFS_KEY);
+      if (!raw) return;
+      const o = JSON.parse(raw) as Partial<{
+        scope: ProofCardScope;
+        cardType: ProofCardType;
+        aspectRatio: ProofCardAspectRatio;
+      }>;
+      if (o.scope) setScope(o.scope);
+      if (o.cardType) setCardType(o.cardType);
+      if (o.aspectRatio) setAspectRatio(o.aspectRatio);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        PROOF_PREFS_KEY,
+        JSON.stringify({ scope, cardType, aspectRatio })
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [scope, cardType, aspectRatio]);
+
   const { formatDate, dateLocale } = useFormattedDate();
 
   const lines = useMemo(
@@ -213,6 +243,11 @@ export function AdminProofOfWorkSection({
   );
 
   const summaryText = useMemo(() => proofCardSummaryText(lines), [lines]);
+
+  const nostrCaption = useMemo(() => {
+    const core = summaryText.replace(/\s+/g, " ").trim().slice(0, 220);
+    return `${core}\n\n— SmartFlowSocial`;
+  }, [summaryText]);
 
   const exportPng = useCallback(async () => {
     const el = cardRef.current;
@@ -246,6 +281,16 @@ export function AdminProofOfWorkSection({
   const copyText = useCallback(async () => {
     await navigator.clipboard.writeText(summaryText);
   }, [summaryText]);
+
+  const copyNostrCaption = useCallback(async () => {
+    await navigator.clipboard.writeText(nostrCaption);
+  }, [nostrCaption]);
+
+  const reliabilitySampleLow =
+    cardType === "reliability" &&
+    proofCard.last30d.successfulShortPublishes +
+      proofCard.last30d.failedShortPublishes <
+      10;
 
   const heroReliability = cardType === "reliability";
   const heroClass = cn(
@@ -302,6 +347,16 @@ export function AdminProofOfWorkSection({
           </Button>
           <Button
             type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void copyNostrCaption();
+            }}
+          >
+            Copy Nostr caption
+          </Button>
+          <Button
+            type="button"
             size="sm"
             onClick={() => {
               void exportPng();
@@ -312,6 +367,13 @@ export function AdminProofOfWorkSection({
           </Button>
         </div>
       </div>
+
+      {reliabilitySampleLow ? (
+        <p className="text-muted-foreground border-border rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs leading-snug">
+          Low sample for 30d reliability stats — interpret exports carefully or
+          pick a longer window in the admin range before sharing.
+        </p>
+      ) : null}
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
