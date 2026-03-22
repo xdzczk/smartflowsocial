@@ -2,6 +2,7 @@ import type { BroadcastAudienceType } from "@prisma/client";
 
 import {
   getFollowedPubkeysGraph,
+  getFollowerPubkeysGraph,
   getMutualPubkeysGraph,
 } from "~/features/nostr/social-graph.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
@@ -44,7 +45,7 @@ export async function resolveAudiencePubkeys(input: {
 }): Promise<{
   pubkeys: string[];
   invalidCustom: number;
-  /** Present when audience is FOLLOWING or MUTUALS; true if cache failed (not “empty graph”). */
+  /** Present for graph-backed audiences; true if cache failed (not “empty graph”). */
   graphFetchFailed?: boolean;
 }> {
   if (input.audienceType === "CUSTOM") {
@@ -53,6 +54,12 @@ export async function resolveAudiencePubkeys(input: {
   }
   if (input.audienceType === "FOLLOWING") {
     const { pubkeys, fetchFailed } = await getFollowedPubkeysGraph(
+      input.senderPubkeyHex
+    );
+    return { pubkeys, invalidCustom: 0, graphFetchFailed: fetchFailed };
+  }
+  if (input.audienceType === "FOLLOWERS") {
+    const { pubkeys, fetchFailed } = await getFollowerPubkeysGraph(
       input.senderPubkeyHex
     );
     return { pubkeys, invalidCustom: 0, graphFetchFailed: fetchFailed };

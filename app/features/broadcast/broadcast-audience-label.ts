@@ -10,6 +10,8 @@ export function formatBroadcastAudienceLabel(
       return `Custom (${String(customCount)})`;
     case "FOLLOWING":
       return "Following";
+    case "FOLLOWERS":
+      return "Followers";
     case "MUTUALS":
       return "Mutuals";
     default:

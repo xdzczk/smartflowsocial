@@ -299,7 +299,12 @@ function BroadcastNewDraftForm({
         >
           <option value="CUSTOM">Custom list (npubs / hex)</option>
           {limits.allowedAudienceTypes.includes("FOLLOWING") ? (
-            <option value="FOLLOWING">Following</option>
+            <option value="FOLLOWING">Following (accounts you follow)</option>
+          ) : null}
+          {limits.allowedAudienceTypes.includes("FOLLOWERS") ? (
+            <option value="FOLLOWERS">
+              Followers (accounts that follow you)
+            </option>
           ) : null}
           {limits.allowedAudienceTypes.includes("MUTUALS") ? (
             <option value="MUTUALS">Mutuals</option>

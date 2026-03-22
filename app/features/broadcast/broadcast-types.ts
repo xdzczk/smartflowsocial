@@ -4,6 +4,7 @@ import { z } from "zod";
 export const broadcastAudienceTypeSchema = z.enum([
   "CUSTOM",
   "FOLLOWING",
+  "FOLLOWERS",
   "MUTUALS",
 ]);
 

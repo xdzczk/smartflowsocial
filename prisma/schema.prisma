@@ -179,6 +179,7 @@ enum BroadcastCampaignStatus {
 enum BroadcastAudienceType {
   CUSTOM
   FOLLOWING
+  FOLLOWERS
   MUTUALS
 }
 

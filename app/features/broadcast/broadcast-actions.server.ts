@@ -1,6 +1,7 @@
 import {
   BroadcastCampaignStatus,
   BroadcastRecipientStatus,
+  type BroadcastAudienceType,
   type Prisma,
 } from "@prisma/client";
 
@@ -38,6 +39,21 @@ export class BroadcastActionError extends Error {
 }
 
 const MSG_CAMPAIGN_NOT_FOUND = "Campaign not found";
+
+function emptyGraphAudienceMessage(
+  audienceType: BroadcastAudienceType
+): string {
+  switch (audienceType) {
+    case "FOLLOWING":
+      return "No accounts found in your follow list (kind 3).";
+    case "FOLLOWERS":
+      return "No followers were found for your account in the Nostr cache.";
+    case "MUTUALS":
+      return "No mutual follows found for this audience.";
+    default:
+      return "No recipients in this audience.";
+  }
+}
 
 async function getPlanContext(userId: string) {
   const { currentSubscription } = await getSubscriptionData(userId);
@@ -189,9 +205,7 @@ export async function resolveRecipientsForCampaign(
   if (included.length === 0 && campaign.audienceType !== "CUSTOM") {
     if (pubkeys.length === 0) {
       throw new BroadcastActionError(
-        campaign.audienceType === "FOLLOWING"
-          ? "No accounts found in your follow list (kind 3)."
-          : "No mutual follows found for this audience.",
+        emptyGraphAudienceMessage(campaign.audienceType),
         "EMPTY_AUDIENCE"
       );
     }
