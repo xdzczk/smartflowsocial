@@ -255,31 +255,22 @@ export async function handleSearchEvent(eventInput: string) {
       identifier: decoded.identifier,
     };
     try {
-      responses = await connectToPrimalCache("event_by_addr", {
-        kind: decoded.kind,
+      responses = await connectToPrimalCache("parametrized_replaceable_event", {
         pubkey: decoded.pubkey,
+        kind: decoded.kind,
         identifier: decoded.identifier,
+        extended_response: true,
       });
-    } catch {
-      // Fallback: some caches accept "kind:pubkey:identifier" as event_id
-      try {
-        responses = await connectToPrimalCache("events", {
-          event_ids: [
-            `${decoded.kind}:${decoded.pubkey}:${decoded.identifier}`,
-          ],
-        });
-      } catch (error) {
-        const { ExternalServiceError } = await import("~/lib/errors");
-        throw new ExternalServiceError(
-          "Failed to fetch article from cache",
-          502,
-          {
-            service: "PrimalCache",
-            originalError:
-              error instanceof Error ? error.message : String(error),
-          }
-        );
-      }
+    } catch (error) {
+      const { ExternalServiceError } = await import("~/lib/errors");
+      throw new ExternalServiceError(
+        "Failed to fetch replaceable event from cache",
+        502,
+        {
+          service: "PrimalCache",
+          originalError: error instanceof Error ? error.message : String(error),
+        }
+      );
     }
   } else {
     eventIdNorm = decoded.eventId.toLowerCase();

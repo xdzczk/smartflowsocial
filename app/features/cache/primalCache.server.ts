@@ -158,7 +158,11 @@ export async function fetchFromCache(
  * PRIMAL_CACHING_URL can be:
  * - https://... — HTTP proxy (e.g. Cloudflare Worker): POST { requestType, params }, returns same array format
  * - wss://... or unset — WebSocket API (direct cache or default wss://cache1.primal.net/v1, etc.)
- * Supports: thread_view, feed, user_profile, user_infos, events, get_notifications, net_stats, reposts, likes, replies, zaps
+ * WebSocket `requestType` strings must match `App.exposed_functions` in Primal’s `app.jl`
+ * (e.g. `network_stats`, `thread_view`, `parametrized_replaceable_event`, `contact_list`,
+ * `user_followers`, `mutual_follows`). Helpers in `nostrwebsocket.server.ts` map aliases
+ * (`reposts`/`likes`/… → `event_actions`) and `net_stats` → `network_stats`.
+ * `get_notifications` is used on Primal public caches but is not in the open-source exposed set.
  *
  * @param requestType - The type of request (e.g., "thread_view", "user_profile", etc.)
  * @param params - Parameters for the request (e.g., { event_id: "..." })

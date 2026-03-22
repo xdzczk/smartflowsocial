@@ -8,6 +8,12 @@ import { env } from "~/lib/env.server";
 import { logError } from "./error-logger.server";
 
 /**
+ * Primal cache WebSocket client: `requestType` + `params` are dispatched as
+ * `{ cache: [functionName, paramObject] }` and must match `App.exposed_functions` in
+ * primal-caching-service `src/app.jl` (except documented aliases and `get_notifications`).
+ */
+
+/**
  * Gets Primal cache endpoints from environment variable or uses defaults
  * Supports comma-separated list of WebSocket URLs
  */
@@ -47,8 +53,12 @@ async function tryConnectToCache(
 
     ws.onopen = () => {
       switch (requestType) {
+        /** `App.network_stats` — `net_stats` kept as alias for older callers. */
+        case "network_stats":
         case "net_stats":
-          ws.send(JSON.stringify(["REQ", requestId, { cache: ["net_stats"] }]));
+          ws.send(
+            JSON.stringify(["REQ", requestId, { cache: ["network_stats"] }])
+          );
           break;
         case "feed":
           ws.send(
@@ -86,18 +96,26 @@ async function tryConnectToCache(
             ])
           );
           break;
-        case "event_by_addr":
+        /** `App.parametrized_replaceable_event` (spelling matches Julia). NIP-33 / naddr resolution. */
+        case "parametrized_replaceable_event":
           ws.send(
             JSON.stringify([
               "REQ",
               requestId,
               {
                 cache: [
-                  "event_by_addr",
+                  "parametrized_replaceable_event",
                   {
-                    kind: params["kind"],
                     pubkey: params["pubkey"],
+                    kind: Number(params["kind"]),
                     identifier: params["identifier"],
+                    extended_response:
+                      params["extended_response"] !== undefined
+                        ? params["extended_response"]
+                        : true,
+                    ...(typeof params["user_pubkey"] === "string"
+                      ? { user_pubkey: params["user_pubkey"] }
+                      : {}),
                   },
                 ],
               },
@@ -113,6 +131,76 @@ async function tryConnectToCache(
             ])
           );
           break;
+        /** Primal `App.contact_list` — kind 3 follow list for `pubkey` (see primal-caching-service `exposed_functions`). */
+        case "contact_list":
+          ws.send(
+            JSON.stringify([
+              "REQ",
+              requestId,
+              {
+                cache: [
+                  "contact_list",
+                  {
+                    pubkey: params["pubkey"],
+                    extended_response:
+                      params["extended_response"] !== undefined
+                        ? params["extended_response"]
+                        : false,
+                  },
+                ],
+              },
+            ])
+          );
+          break;
+        /** Primal `App.user_followers` — follower pubkeys as profile (kind 0) events; max limit 1000 server-side. */
+        case "user_followers":
+          ws.send(
+            JSON.stringify([
+              "REQ",
+              requestId,
+              {
+                cache: [
+                  "user_followers",
+                  {
+                    pubkey: params["pubkey"],
+                    limit: Math.min(
+                      Number(params["limit"]) > 0
+                        ? Number(params["limit"])
+                        : 1000,
+                      1000
+                    ),
+                  },
+                ],
+              },
+            ])
+          );
+          break;
+        /** Primal `App.mutual_follows` — pass same hex for `pubkey` and `user_pubkey` for “my mutuals”. */
+        case "mutual_follows":
+          ws.send(
+            JSON.stringify([
+              "REQ",
+              requestId,
+              {
+                cache: [
+                  "mutual_follows",
+                  {
+                    pubkey: params["pubkey"],
+                    user_pubkey:
+                      typeof params["user_pubkey"] === "string"
+                        ? params["user_pubkey"]
+                        : params["pubkey"],
+                  },
+                ],
+              },
+            ])
+          );
+          break;
+        /**
+         * Not in open-source `App.exposed_functions`; supported on Primal’s public caches
+         * (see `cache_server_handlers.jl` time_exceeded hook). Open deployments may return
+         * "unknown api request" unless they extend `App.exposed_functions`.
+         */
         case "get_notifications":
           ws.send(
             JSON.stringify([
@@ -222,25 +310,6 @@ async function tryConnectToCache(
                     event_id: params["event_id"],
                     kind: 9735,
                     limit: params["limit"] ?? 100,
-                  },
-                ],
-              },
-            ])
-          );
-          break;
-
-        // Get followers: kind 3 events that have pubkey in "p" tag (authors = followers)
-        case "get_followers":
-          ws.send(
-            JSON.stringify([
-              "REQ",
-              requestId,
-              {
-                cache: [
-                  "get_followers",
-                  {
-                    pubkey: params["pubkey"],
-                    limit: params["limit"] ?? 5000,
                   },
                 ],
               },

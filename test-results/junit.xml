@@ -1,15 +1,280 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="4" failures="0" errors="0" time="0.00376325">
-    <testsuite name="tests/unit/broadcast-guardrails.test.ts" timestamp="2026-03-22T15:11:08.317Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001913291">
-        <testcase classname="tests/unit/broadcast-guardrails.test.ts" name="broadcast-guardrails &gt; flags heavy word repetition" time="0.001128209">
+<testsuites name="vitest tests" tests="8" failures="7" errors="0" time="60.022384542">
+    <testsuite name="tests/integration/engagement-loader.test.ts" timestamp="2026-03-22T15:43:42.105Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="7" errors="0" skipped="0" time="60.022384542">
+        <testcase classname="tests/integration/engagement-loader.test.ts" name="Engagement Loader &gt; Successful Data Loading &gt; should load engagement feed data with posts and stats" time="10.005272417">
+            <system-err>
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+            </system-err>
+            <failure message="Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/integration/engagement-loader.test.ts:56:5
+            </failure>
         </testcase>
-        <testcase classname="tests/unit/broadcast-guardrails.test.ts" name="broadcast-guardrails &gt; allows normal prose" time="0.000114917">
+        <testcase classname="tests/integration/engagement-loader.test.ts" name="Engagement Loader &gt; Successful Data Loading &gt; should filter posts to only show those with replies" time="10.001636208">
+            <system-err>
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+            </system-err>
+            <failure message="Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/integration/engagement-loader.test.ts:176:5
+            </failure>
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/broadcast-resolve.test.ts" timestamp="2026-03-22T15:11:08.317Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001849959">
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines dedupes and counts invalid" time="0.001064125">
+        <testcase classname="tests/integration/engagement-loader.test.ts" name="Engagement Loader &gt; Successful Data Loading &gt; should filter muted users when filterMuted is enabled" time="10.0024275">
+            <system-err>
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+            </system-err>
+            <failure message="Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/integration/engagement-loader.test.ts:271:5
+            </failure>
         </testcase>
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; normalizePubkeyInput accepts 64 hex" time="0.00010775">
+        <testcase classname="tests/integration/engagement-loader.test.ts" name="Engagement Loader &gt; Successful Data Loading &gt; should filter low trust users when hidePostsFromLowTrustUsers is enabled" time="10.002001334">
+            <system-err>
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+            </system-err>
+            <failure message="Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/integration/engagement-loader.test.ts:329:5
+            </failure>
+        </testcase>
+        <testcase classname="tests/integration/engagement-loader.test.ts" name="Engagement Loader &gt; Error Handling &gt; should handle missing user gracefully" time="0.002582459">
+        </testcase>
+        <testcase classname="tests/integration/engagement-loader.test.ts" name="Engagement Loader &gt; Error Handling &gt; should handle cache errors gracefully" time="10.00088625">
+            <system-err>
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+            </system-err>
+            <failure message="Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/integration/engagement-loader.test.ts:411:5
+            </failure>
+        </testcase>
+        <testcase classname="tests/integration/engagement-loader.test.ts" name="Engagement Loader &gt; Error Handling &gt; should handle missing npub gracefully" time="0.004592334">
+            <system-err>
+
+❌ Error: {
+  message: &quot;Cannot read properties of null (reading &apos;toLowerCase&apos;)&quot;,
+  code: &apos;UNKNOWN_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+            <failure message="Cannot read properties of null (reading &apos;toLowerCase&apos;)" type="TypeError">
+TypeError: Cannot read properties of null (reading &apos;toLowerCase&apos;)
+ ❯ filterGroupedExcludingUser app/features/engagement/services/engagement-loader.server.ts:638:35
+ ❯ Module.loadEngagementFeedData app/features/engagement/services/engagement-loader.server.ts:1126:31
+ ❯ tests/integration/engagement-loader.test.ts:467:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/integration/engagement-loader.test.ts" name="Engagement Loader &gt; Quote Reposts &gt; should fetch and process quote reposts" time="10.001225166">
+            <system-err>
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+            </system-err>
+            <failure message="Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;." type="Error">
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with &quot;testTimeout&quot;.
+ ❯ tests/integration/engagement-loader.test.ts:475:5
+            </failure>
         </testcase>
     </testsuite>
 </testsuites>

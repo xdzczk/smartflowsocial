@@ -1014,6 +1014,7 @@ export async function loadEngagementFeedData(
   const followedPubkeysPromise = getFollowedPubkeys(userPubkeyHex);
 
   // Global mentions + quotes from Primal (not scoped to SmartFlow-published roots)
+  // Primal public API; not listed in open-source `App.exposed_functions` (may 500 on self-hosted cache).
   const notificationsPromise = fetchFromCache("get_notifications", {
     pubkey: userPubkeyHex,
     limit: PRIMAL_NOTIFICATIONS_LIMIT,

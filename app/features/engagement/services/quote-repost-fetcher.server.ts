@@ -106,6 +106,7 @@ export async function fetchQuoteReposts(
   limit = 100
 ): Promise<Notification[]> {
   try {
+    // See engagement-loader: `get_notifications` is Primal-public; not in open-source `exposed_functions`.
     const notificationsData = await connectToPrimalCache("get_notifications", {
       pubkey: userNpub,
       limit,
