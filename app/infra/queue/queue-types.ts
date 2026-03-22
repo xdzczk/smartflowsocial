@@ -25,6 +25,18 @@ export interface LongFormPostJobData {
 }
 
 /**
+ * Broadcast DM publish job: signed payloads live on BroadcastRecipient; worker loads from DB.
+ */
+export interface BroadcastJobData {
+  campaignId: string;
+  recipientId: string;
+  userId: string;
+  correlationId?: string;
+}
+
+export type QueueJobData = PostJobData | LongFormPostJobData | BroadcastJobData;
+
+/**
  * Options for scheduling a job
  */
 export interface ScheduleOptions {
@@ -68,7 +80,8 @@ export type JobStatus =
 export type QueueType =
   | "scheduled-posts"
   | "scheduled-longform-posts"
-  | "post-checker";
+  | "post-checker"
+  | "broadcast-dm";
 
 /**
  * Queue client interface
@@ -78,7 +91,7 @@ export interface QueueClient {
   /**
    * Enqueue a job to be processed
    */
-  enqueue<T extends PostJobData | LongFormPostJobData>(
+  enqueue<T extends QueueJobData = QueueJobData>(
     queueName: QueueType,
     jobName: string,
     data: T,

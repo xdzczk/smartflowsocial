@@ -340,6 +340,7 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       expect(PLAN_FEATURES.free.bulkScheduling).toBe(false);
       // longformPosts is allowed on free tier
       expect(PLAN_FEATURES.free.longformPosts).toBe(true);
+      expect(PLAN_FEATURES.free.broadcasts).toBe(false);
     });
 
     it("should have paid plans with full features", () => {
@@ -350,6 +351,7 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
         expect(PLAN_FEATURES[plan].calendar).toBe(true);
         expect(PLAN_FEATURES[plan].bulkScheduling).toBe(true);
         expect(PLAN_FEATURES[plan].longformPosts).toBe(true);
+        expect(PLAN_FEATURES[plan].broadcasts).toBe(true);
       });
     });
   });

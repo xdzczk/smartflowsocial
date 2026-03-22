@@ -492,6 +492,8 @@ export default (async () => {
       files: [
         "app/features/**/data/**/*.{ts,tsx}",
         "app/features/**/repositories/**/*.{ts,tsx}",
+        // Broadcast: Prisma lives in *.server modules until Track 3.2 repository split.
+        "app/features/broadcast/**/*.{ts,tsx}",
       ],
       rules: {
         "no-restricted-imports": "off",

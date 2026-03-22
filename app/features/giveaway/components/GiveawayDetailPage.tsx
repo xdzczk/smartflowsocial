@@ -1,4 +1,4 @@
-import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
+import { Form, useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-hot-toast";
 
@@ -16,7 +16,23 @@ import {
 import { Button } from "~/components/ui/button";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
+import { giveawayStatusPillClass } from "../giveaway-status-ui";
 import type { GiveawayWinnerEntry } from "../types";
+
+function budgetFromSnapshot(snap: GiveawayWinnerEntry[]): number {
+  return snap.reduce((a, w) => a + (w.satsPerWinner ?? 0), 0);
+}
+
+function winnerEngagementBadges(w: GiveawayWinnerEntry): string[] {
+  const kinds = new Set(w.qualifyingActions.map((a) => a.kind));
+  const out: string[] = [];
+  if (kinds.has(7)) out.push("Reaction");
+  if (kinds.has(6)) out.push("Repost");
+  if (kinds.has(1)) out.push("Comment");
+  if (kinds.has(9735)) out.push("Zap");
+  if (w.engagementType) out.push(String(w.engagementType));
+  return out.length ? out : ["Participant"];
+}
 
 function WinnerNpubRow({
   npub,
@@ -107,30 +123,6 @@ function WinnerNpubRow({
   );
 }
 
-const BATCH_ZAP_STORAGE_KEY = "giveaway_batch_zap";
-
-function getMarkedZapped(giveawayId: string): Record<string, boolean> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = sessionStorage.getItem(
-      `${BATCH_ZAP_STORAGE_KEY}:${giveawayId}`
-    );
-    if (!raw) return {};
-    return JSON.parse(raw) as Record<string, boolean>;
-  } catch {
-    return {};
-  }
-}
-
-function setMarkedZapped(giveawayId: string, npub: string, value: boolean) {
-  if (typeof window === "undefined") return;
-  const prev = getMarkedZapped(giveawayId);
-  sessionStorage.setItem(
-    `${BATCH_ZAP_STORAGE_KEY}:${giveawayId}`,
-    JSON.stringify({ ...prev, [npub]: value })
-  );
-}
-
 type GiveawayStatus =
   | "DRAFT"
   | "PREVIEWED"
@@ -141,6 +133,13 @@ type GiveawayStatus =
 export interface WinnerProfileDisplay {
   displayName: string | null;
   picture: string | null;
+}
+
+export interface GiveawayPayoutProgress {
+  settledCount: number;
+  totalWinners: number;
+  budgetSats: number;
+  settledSats: number;
 }
 
 interface GiveawayDetailPageProps {
@@ -155,6 +154,17 @@ interface GiveawayDetailPageProps {
     winnerSnapshot: GiveawayWinnerEntry[] | null;
     lockedAt: string | null;
     createdAt: string;
+    updatedAt?: string;
+    engagementConfig?: unknown;
+    payoutState?: Record<
+      string,
+      { status: string; updatedAt?: string; note?: string }
+    >;
+    payoutProgress?: GiveawayPayoutProgress | null;
+    lastPreviewMeta?: unknown;
+    rerollCount?: number;
+    excludedPubkeys?: unknown;
+    activityLog?: unknown;
     scopeReference?: Record<string, unknown>;
     engagementTypes?: string[];
     selectionMode?: string;
@@ -163,6 +173,7 @@ interface GiveawayDetailPageProps {
   };
   winnerProfiles?: Record<string, WinnerProfileDisplay>;
   canUsePresets?: boolean;
+  maxWinnerCount?: number;
 }
 
 const ENGAGEMENT_OPTIONS = ["REACTION", "REPOST", "COMMENT", "ZAP"] as const;
@@ -172,6 +183,7 @@ export function GiveawayDetailPage({
   giveaway,
   winnerProfiles = {},
   canUsePresets = false,
+  maxWinnerCount = 50,
 }: GiveawayDetailPageProps) {
   const rootData = useRouteLoaderData("root") as
     | {
@@ -197,6 +209,8 @@ export function GiveawayDetailPage({
   const [showEdit, setShowEdit] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showLockConfirm, setShowLockConfirm] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
 
   // Toasts for action results
   useEffect(() => {
@@ -264,6 +278,71 @@ export function GiveawayDetailPage({
       ? previewFetcher.data.winners
       : giveaway.winnerSnapshot) ?? [];
 
+  const previewMeta =
+    giveaway.lastPreviewMeta && typeof giveaway.lastPreviewMeta === "object"
+      ? (giveaway.lastPreviewMeta as {
+          eligiblePoolSize?: number;
+          computedAt?: string;
+          selectionMode?: string;
+        })
+      : null;
+
+  const activityEntries = Array.isArray(giveaway.activityLog)
+    ? (giveaway.activityLog as Array<{
+        at: string;
+        type: string;
+        payload?: Record<string, unknown>;
+      }>)
+    : [];
+
+  const excludedList = Array.isArray(giveaway.excludedPubkeys)
+    ? (giveaway.excludedPubkeys as string[])
+    : [];
+
+  const totalBudgetSats = budgetFromSnapshot(winners);
+
+  const copyPublicSummary = async () => {
+    const lines = [
+      giveaway.name ?? `Giveaway ${giveaway.id.slice(0, 8)}`,
+      giveaway.scopeSummaryLabel ?? "",
+      `Winners: ${winners.length}`,
+      `Sats (planned): ${totalBudgetSats.toLocaleString()}`,
+      `Status: ${giveaway.statusLabel ?? giveaway.status}`,
+      "Powered by SmartFlow Social",
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.filter(Boolean).join("\n"));
+      toast.success("Summary copied");
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+
+  const exportWinnersCsv = () => {
+    const header = "index,npub,displayName,satsPerWinner,badges";
+    const rows = winners.map((w, i) => {
+      const name = winnerProfiles[w.pubkey]?.displayName ?? "";
+      const badges = winnerEngagementBadges(w).join(";");
+      return [
+        i + 1,
+        `"${w.npub.replace(/"/g, '""')}"`,
+        `"${String(name).replace(/"/g, '""')}"`,
+        w.satsPerWinner ?? "",
+        `"${badges.replace(/"/g, '""')}"`,
+      ].join(",");
+    });
+    const blob = new Blob([`${header}\n${rows.join("\n")}`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `giveaway-${giveaway.id}-winners.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV downloaded");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -275,15 +354,50 @@ export function GiveawayDetailPage({
         </Link>
       </div>
 
-      <div className="border-border bg-card rounded-lg border p-4">
-        <h1 className="text-foreground mb-2 text-xl font-bold">
-          {giveaway.name ?? `Giveaway ${giveaway.id.slice(0, 8)}`}
-        </h1>
-        <p className="text-muted-foreground text-sm">
+      <div
+        className={`rounded-lg border p-5 ${
+          giveaway.status === "PREVIEWED"
+            ? "border-blue-500/40 bg-blue-500/5"
+            : giveaway.status === "LOCKED"
+              ? "border-amber-500/40 bg-amber-500/5"
+              : giveaway.status === "PAID_OUT"
+                ? "border-emerald-500/40 bg-emerald-500/5"
+                : "border-border bg-card"
+        }`}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-foreground text-2xl font-bold tracking-tight">
+              {giveaway.name ?? `Giveaway ${giveaway.id.slice(0, 8)}`}
+            </h1>
+            <p className="text-muted-foreground mt-2 text-sm">
+              {giveaway.status === "PREVIEWED"
+                ? "Review the selection before locking. You can reroll or exclude winners."
+                : giveaway.status === "LOCKED"
+                  ? "Winners are fixed. Complete payouts, then mark the giveaway complete."
+                  : giveaway.status === "PAID_OUT"
+                    ? "Campaign complete — share your receipt below."
+                    : "Configure and preview before you lock winners."}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1 text-right text-xs">
+            <span
+              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${giveawayStatusPillClass(giveaway.status)}`}
+            >
+              {giveaway.statusLabel ?? giveaway.status}
+            </span>
+            <span className="text-muted-foreground">
+              Updated{" "}
+              {giveaway.updatedAt
+                ? new Date(giveaway.updatedAt).toLocaleString()
+                : "—"}
+            </span>
+          </div>
+        </div>
+        <p className="text-muted-foreground mt-3 text-sm">
           {giveaway.scopeSummaryLabel ?? giveaway.scopeType} ·{" "}
           {giveaway.winnerCount} winner
-          {giveaway.winnerCount !== 1 ? "s" : ""} ·{" "}
-          {giveaway.statusLabel ?? giveaway.status}
+          {giveaway.winnerCount !== 1 ? "s" : ""} configured
         </p>
       </div>
 
@@ -389,6 +503,61 @@ export function GiveawayDetailPage({
               </ul>
             </div>
           ) : null}
+
+          {previewMeta ? (
+            <div className="border-border rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
+              <h2 className="text-foreground mb-2 text-sm font-semibold">
+                Fairness & audit
+              </h2>
+              <ul className="text-muted-foreground space-y-1 text-sm">
+                <li>
+                  <span className="text-foreground font-medium">
+                    Eligible pool:
+                  </span>{" "}
+                  {previewMeta.eligiblePoolSize?.toLocaleString() ?? "—"}{" "}
+                  accounts (after filters)
+                </li>
+                <li>
+                  <span className="text-foreground font-medium">
+                    Snapshot time:
+                  </span>{" "}
+                  {previewMeta.computedAt
+                    ? new Date(previewMeta.computedAt).toLocaleString()
+                    : "—"}
+                </li>
+                <li>
+                  <span className="text-foreground font-medium">
+                    Selection:
+                  </span>{" "}
+                  {previewMeta.selectionMode === "WEIGHTED_BY_ENGAGEMENT"
+                    ? "Weighted by engagement"
+                    : "Unique user (one entry each)"}
+                </li>
+                <li>
+                  <span className="text-foreground font-medium">Rerolls:</span>{" "}
+                  {giveaway.rerollCount ?? 0}
+                </li>
+              </ul>
+            </div>
+          ) : null}
+
+          {excludedList.length > 0 && giveaway.status === "PREVIEWED" ? (
+            <details className="border-border bg-muted/20 rounded-lg border p-4">
+              <summary className="text-foreground cursor-pointer text-sm font-medium">
+                Manually excluded ({excludedList.length})
+              </summary>
+              <p className="text-muted-foreground mt-2 text-xs">
+                These pubkeys were excluded during preview; the current winner
+                set avoids them.
+              </p>
+              <ul className="mt-2 font-mono text-xs">
+                {excludedList.map((pk) => (
+                  <li key={pk}>{pk.slice(0, 16)}…</li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+
           {giveaway.status === "DRAFT" &&
           (giveaway.engagementTypes != null ||
             giveaway.scopeSummaryLabel != null) ? (
@@ -434,7 +603,7 @@ export function GiveawayDetailPage({
                       name="winnerCount"
                       type="number"
                       min={1}
-                      max={50}
+                      max={maxWinnerCount}
                       defaultValue={giveaway.winnerCount}
                       className="border-border bg-background w-20 rounded border px-2 py-1 text-sm"
                     />
@@ -523,33 +692,72 @@ export function GiveawayDetailPage({
 
           {giveaway.status === "PREVIEWED" ? (
             <>
-              <previewFetcher.Form method="post">
-                <input type="hidden" name="intent" value="reroll" />
-                <button
-                  type="submit"
-                  className="border-border mr-2 rounded-md border px-4 py-2"
-                  disabled={previewFetcher.state !== "idle"}
-                >
-                  Reroll
-                </button>
-              </previewFetcher.Form>
-              <lockFetcher.Form method="post">
-                <input type="hidden" name="intent" value="lock" />
-                <button
-                  type="submit"
-                  className="bg-primary text-primary-foreground mr-2 rounded-md px-4 py-2"
-                  disabled={lockFetcher.state !== "idle"}
+              <div className="flex flex-wrap gap-2">
+                <previewFetcher.Form method="post" className="inline">
+                  <input type="hidden" name="intent" value="reroll" />
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={previewFetcher.state !== "idle"}
+                  >
+                    Reroll
+                  </Button>
+                </previewFetcher.Form>
+                <Form method="post" className="inline">
+                  <input type="hidden" name="intent" value="resetDraft" />
+                  <Button type="submit" variant="secondary">
+                    Edit rules
+                  </Button>
+                </Form>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowLockConfirm(true);
+                  }}
                 >
                   Lock winners
-                </button>
-              </lockFetcher.Form>
-              <button
-                type="button"
-                onClick={() => setShowCancelConfirm(true)}
-                className="text-destructive border-border rounded-md border px-4 py-2"
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowCancelConfirm(true);
+                  }}
+                  className="text-destructive border-destructive/40"
+                >
+                  Cancel giveaway
+                </Button>
+              </div>
+              <AlertDialog
+                open={showLockConfirm}
+                onOpenChange={setShowLockConfirm}
               >
-                Cancel giveaway
-              </button>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Lock winners?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Locking finalizes this winner set. You won’t be able to
+                      change scope, eligibility, or payout rules afterward —
+                      only run payouts and complete the giveaway.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Go back</AlertDialogCancel>
+                    <lockFetcher.Form method="post">
+                      <input type="hidden" name="intent" value="lock" />
+                      <AlertDialogAction
+                        type="submit"
+                        className="bg-primary text-primary-foreground"
+                        disabled={lockFetcher.state !== "idle"}
+                      >
+                        {lockFetcher.state !== "idle"
+                          ? "Locking…"
+                          : "Lock winners"}
+                      </AlertDialogAction>
+                    </lockFetcher.Form>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <AlertDialog
                 open={showCancelConfirm}
                 onOpenChange={setShowCancelConfirm}
@@ -585,24 +793,44 @@ export function GiveawayDetailPage({
           {winners.length > 0 ? (
             <div className="border-border rounded-lg border p-4">
               <h2 className="text-foreground mb-3 font-semibold">
-                Selected winners ({winners.length})
+                {giveaway.status === "PREVIEWED"
+                  ? "Selected winners"
+                  : "Winners"}{" "}
+                ({winners.length})
               </h2>
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {winners.map((w, i) => (
                   <li
                     key={w.pubkey}
-                    className="border-border bg-muted/30 flex flex-wrap items-center justify-between gap-2 rounded border p-2"
+                    className="border-border bg-card flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-muted-foreground text-sm">
-                        {i + 1}.
+                    <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3">
+                      <span className="text-muted-foreground mt-1 text-sm font-medium">
+                        {i + 1}
                       </span>
-                      <WinnerNpubRow
-                        npub={w.npub}
-                        displayName={winnerProfiles[w.pubkey]?.displayName}
-                        picture={winnerProfiles[w.pubkey]?.picture}
-                        profileUrl={nostrUrls.profileUrl(w.npub)}
-                      />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <WinnerNpubRow
+                          npub={w.npub}
+                          displayName={winnerProfiles[w.pubkey]?.displayName}
+                          picture={winnerProfiles[w.pubkey]?.picture}
+                          profileUrl={nostrUrls.profileUrl(w.npub)}
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          {winnerEngagementBadges(w).map((b) => (
+                            <span
+                              key={b}
+                              className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs"
+                            >
+                              {b}
+                            </span>
+                          ))}
+                        </div>
+                        {w.satsPerWinner != null && w.satsPerWinner > 0 ? (
+                          <p className="text-muted-foreground text-xs tabular-nums">
+                            {w.satsPerWinner.toLocaleString()} sats
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                     {giveaway.status === "PREVIEWED" ? (
                       <ExcludeWinnerForm
@@ -624,27 +852,107 @@ export function GiveawayDetailPage({
           winners={winners}
           winnerProfiles={winnerProfiles}
           lockedAt={giveaway.lockedAt}
+          payoutProgress={giveaway.payoutProgress}
+          payoutState={giveaway.payoutState}
           paidFetcher={paidFetcher}
           getProfileUrl={nostrUrls.profileUrl}
         />
       ) : null}
 
       {giveaway.status === "PAID_OUT" ? (
-        <div className="border-border rounded-lg border p-4">
-          <p className="text-muted-foreground text-sm">Giveaway completed.</p>
-          <ul className="text-foreground mt-2 space-y-1 text-sm">
-            {winners.map((w, i) => (
-              <li key={w.pubkey} className="flex items-center gap-2">
-                <span className="text-muted-foreground">{i + 1}.</span>
-                <WinnerNpubRow
-                  npub={w.npub}
-                  displayName={winnerProfiles[w.pubkey]?.displayName}
-                  picture={winnerProfiles[w.pubkey]?.picture}
-                  profileUrl={nostrUrls.profileUrl(w.npub)}
-                />
-              </li>
-            ))}
-          </ul>
+        <div className="space-y-4">
+          <div className="border-border bg-card rounded-lg border p-5">
+            <h2 className="text-foreground text-lg font-semibold">Receipt</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {giveaway.scopeSummaryLabel ?? giveaway.scopeType} ·{" "}
+              {winners.length} winner{winners.length !== 1 ? "s" : ""} ·{" "}
+              {totalBudgetSats.toLocaleString()} sats (planned) · Completed{" "}
+              {giveaway.updatedAt
+                ? new Date(giveaway.updatedAt).toLocaleString()
+                : ""}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  void copyPublicSummary();
+                }}
+              >
+                Copy public summary
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={exportWinnersCsv}
+              >
+                Export CSV
+              </Button>
+              <Button type="button" variant="outline" asChild>
+                <Link to="/dashboard/giveaway/proof">Proof cards</Link>
+              </Button>
+              <Form
+                method="post"
+                action="/dashboard/giveaway"
+                className="inline"
+              >
+                <input type="hidden" name="intent" value="duplicate" />
+                <input type="hidden" name="giveawayId" value={giveaway.id} />
+                <Button type="submit" variant="outline">
+                  Duplicate giveaway
+                </Button>
+              </Form>
+            </div>
+          </div>
+          <details className="border-border bg-muted/10 rounded-lg border">
+            <summary className="text-foreground cursor-pointer p-4 text-sm font-medium">
+              View winners ({winners.length})
+            </summary>
+            <ul className="border-border space-y-2 border-t p-4">
+              {winners.map((w, i) => (
+                <li key={w.pubkey} className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">{i + 1}.</span>
+                  <WinnerNpubRow
+                    npub={w.npub}
+                    displayName={winnerProfiles[w.pubkey]?.displayName}
+                    picture={winnerProfiles[w.pubkey]?.picture}
+                    profileUrl={nostrUrls.profileUrl(w.npub)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </details>
+        </div>
+      ) : null}
+
+      {activityEntries.length > 0 ? (
+        <div className="border-border bg-muted/10 rounded-lg border">
+          <button
+            type="button"
+            onClick={() => {
+              setActivityOpen((o) => !o);
+            }}
+            className="text-foreground flex w-full items-center justify-between p-4 text-left text-sm font-medium"
+          >
+            Activity log ({activityEntries.length})
+            <span className="text-muted-foreground text-xs">
+              {activityOpen ? "Hide" : "Show"}
+            </span>
+          </button>
+          {activityOpen ? (
+            <ol className="border-border text-muted-foreground max-h-64 space-y-2 overflow-y-auto border-t p-4 text-xs">
+              {[...activityEntries].reverse().map((e) => (
+                <li
+                  key={`${e.at}-${e.type}-${JSON.stringify(e.payload ?? {})}`}
+                >
+                  <span className="text-foreground font-medium">
+                    {e.type.replace(/_/g, " ")}
+                  </span>{" "}
+                  · {new Date(e.at).toLocaleString()}
+                </li>
+              ))}
+            </ol>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -677,11 +985,37 @@ function SavePresetForm() {
   );
 }
 
+function PayoutStatusBadge({ status }: { status: string }) {
+  const label =
+    status === "marked_paid"
+      ? "Marked paid"
+      : status === "sent"
+        ? "Sent"
+        : status === "failed"
+          ? "Failed"
+          : "Pending";
+  const cls =
+    status === "sent" || status === "marked_paid"
+      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+      : status === "failed"
+        ? "bg-destructive/15 text-destructive"
+        : "bg-muted text-muted-foreground";
+  return (
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 function BatchZapFlow({
-  giveawayId,
+  giveawayId: _giveawayId,
   winners,
   winnerProfiles,
   lockedAt,
+  payoutProgress,
+  payoutState = {},
   paidFetcher,
   getProfileUrl,
 }: {
@@ -689,76 +1023,223 @@ function BatchZapFlow({
   winners: GiveawayWinnerEntry[];
   winnerProfiles: Record<string, WinnerProfileDisplay>;
   lockedAt: string | null;
-  paidFetcher: ReturnType<typeof useFetcher>;
+  payoutProgress?: GiveawayPayoutProgress | null;
+  payoutState?: Record<
+    string,
+    { status: string; updatedAt?: string; note?: string }
+  >;
+  paidFetcher: ReturnType<
+    typeof useFetcher<{ success?: boolean; error?: string }>
+  >;
   getProfileUrl: (npub: string) => string;
 }) {
-  const [marked, setMarked] = useState<Record<string, boolean>>({});
+  const payoutFetcher = useFetcher();
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [overrideReason, setOverrideReason] = useState("");
 
-  useEffect(() => {
-    setMarked(getMarkedZapped(giveawayId));
-  }, [giveawayId]);
+  const allSettled =
+    winners.length > 0 &&
+    winners.every((w) => {
+      const s = payoutState[w.pubkey]?.status;
+      return s === "sent" || s === "marked_paid";
+    });
 
-  const markedCount = Object.values(marked).filter(Boolean).length;
-
-  const handleMarkZapped = (npub: string) => {
-    setMarkedZapped(giveawayId, npub, true);
-    setMarked((prev) => ({ ...prev, [npub]: true }));
+  const submitPayout = (pubkey: string, status: string) => {
+    const fd = new FormData();
+    fd.set("intent", "updatePayout");
+    fd.set("winnerPubkey", pubkey);
+    fd.set("payoutStatus", status);
+    payoutFetcher.submit(fd, { method: "post" });
   };
 
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
-        Locked at {lockedAt ? new Date(lockedAt).toLocaleString() : ""}. Zap
-        each winner, then mark as paid out when done.
-      </p>
-      {winners.length > 0 ? (
-        <p className="text-muted-foreground text-xs">
-          {markedCount}/{winners.length} marked zapped
+      <div className="border-border rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+        <p className="text-foreground font-semibold">
+          Locked — payout in progress
         </p>
-      ) : null}
-      <ul className="border-border divide-border divide-y rounded-lg border">
-        {winners.map((w) => (
-          <li
-            key={w.pubkey}
-            className="flex flex-wrap items-center gap-4 p-4 sm:flex-nowrap"
-          >
-            <div className="min-w-0 flex-1">
-              <WinnerNpubRow
-                npub={w.npub}
-                displayName={winnerProfiles[w.pubkey]?.displayName}
-                picture={winnerProfiles[w.pubkey]?.picture}
-                profileUrl={getProfileUrl(w.npub)}
-              />
+        <p className="text-muted-foreground mt-1 text-sm">
+          Winners fixed at{" "}
+          {lockedAt ? new Date(lockedAt).toLocaleString() : "—"}. Zap each
+          winner, then mark payouts as sent when done.
+        </p>
+        {payoutProgress ? (
+          <div className="mt-3 space-y-2">
+            <div className="flex flex-wrap justify-between gap-2 text-sm">
+              <span>
+                Progress: {payoutProgress.settledCount}/
+                {payoutProgress.totalWinners} marked sent or paid
+              </span>
+              <span className="text-muted-foreground">
+                {payoutProgress.settledSats.toLocaleString()} /{" "}
+                {payoutProgress.budgetSats.toLocaleString()} sats (budget)
+              </span>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <ZapButton
-                npub={w.npub}
-                amountSats={w.satsPerWinner}
-                size="sm"
-                onZapped={() => {
-                  setMarkedZapped(giveawayId, w.npub, true);
-                  setMarked((prev) => ({ ...prev, [w.npub]: true }));
+            <div className="bg-muted h-2 overflow-hidden rounded-full">
+              <div
+                className="bg-primary h-full transition-all"
+                style={{
+                  width: `${payoutProgress.totalWinners > 0 ? (100 * payoutProgress.settledCount) / payoutProgress.totalWinners : 0}%`,
                 }}
               />
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => handleMarkZapped(w.npub)}
-                aria-label="Mark as zapped"
-              >
-                {marked[w.npub] ? "Zapped ✓" : "Mark zapped"}
-              </Button>
             </div>
-          </li>
-        ))}
+          </div>
+        ) : null}
+      </div>
+      <ul className="border-border divide-border divide-y rounded-lg border">
+        {winners.map((w) => {
+          const st = payoutState[w.pubkey]?.status ?? "pending";
+          return (
+            <li
+              key={w.pubkey}
+              className="flex flex-wrap items-center gap-4 p-4 sm:flex-nowrap"
+            >
+              <div className="min-w-0 flex-1">
+                <WinnerNpubRow
+                  npub={w.npub}
+                  displayName={winnerProfiles[w.pubkey]?.displayName}
+                  picture={winnerProfiles[w.pubkey]?.picture}
+                  profileUrl={getProfileUrl(w.npub)}
+                />
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <PayoutStatusBadge status={st} />
+                  {w.satsPerWinner != null && w.satsPerWinner > 0 ? (
+                    <span className="text-muted-foreground text-xs">
+                      {w.satsPerWinner.toLocaleString()} sats
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <ZapButton
+                  npub={w.npub}
+                  amountSats={w.satsPerWinner}
+                  size="sm"
+                  onZapped={() => {
+                    submitPayout(w.pubkey, "sent");
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={payoutFetcher.state !== "idle"}
+                  onClick={() => {
+                    submitPayout(w.pubkey, "sent");
+                  }}
+                >
+                  Mark as sent
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={payoutFetcher.state !== "idle"}
+                  onClick={() => {
+                    submitPayout(w.pubkey, "marked_paid");
+                  }}
+                >
+                  Mark paid
+                </Button>
+                {st === "failed" ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={payoutFetcher.state !== "idle"}
+                    onClick={() => {
+                      submitPayout(w.pubkey, "pending");
+                    }}
+                  >
+                    Retry
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={payoutFetcher.state !== "idle"}
+                    onClick={() => {
+                      submitPayout(w.pubkey, "failed");
+                    }}
+                  >
+                    Failed
+                  </Button>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
-      <paidFetcher.Form method="post">
-        <input type="hidden" name="intent" value="markPaidOut" />
-        <Button type="submit" disabled={paidFetcher.state !== "idle"}>
-          Mark as paid out
+      <div className="flex flex-col gap-2">
+        <Button
+          type="button"
+          disabled={paidFetcher.state !== "idle"}
+          onClick={() => {
+            if (allSettled) {
+              const fd = new FormData();
+              fd.set("intent", "markPaidOut");
+              paidFetcher.submit(fd, { method: "post" });
+            } else {
+              setOverrideReason("");
+              setShowCompleteDialog(true);
+            }
+          }}
+        >
+          Complete giveaway
         </Button>
-      </paidFetcher.Form>
+        {paidFetcher.data &&
+        typeof paidFetcher.data === "object" &&
+        "error" in paidFetcher.data &&
+        paidFetcher.data.error ? (
+          <p className="text-destructive text-sm">
+            {String(paidFetcher.data.error)}
+          </p>
+        ) : null}
+      </div>
+      <AlertDialog
+        open={showCompleteDialog}
+        onOpenChange={setShowCompleteDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete with pending payouts?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Not every winner is marked sent or paid. To close this giveaway
+              anyway, enter a short reason (at least 10 characters). This is
+              recorded for your records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <textarea
+            value={overrideReason}
+            onChange={(e) => {
+              setOverrideReason(e.target.value);
+            }}
+            rows={3}
+            className="border-border bg-background w-full rounded-md border p-2 text-sm"
+            placeholder="Reason for completing before all payouts are marked…"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              type="button"
+              disabled={
+                paidFetcher.state !== "idle" ||
+                overrideReason.trim().length < 10
+              }
+              onClick={() => {
+                const fd = new FormData();
+                fd.set("intent", "markPaidOut");
+                fd.set("completeOverrideReason", overrideReason.trim());
+                paidFetcher.submit(fd, { method: "post" });
+                setShowCompleteDialog(false);
+              }}
+            >
+              Complete anyway
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

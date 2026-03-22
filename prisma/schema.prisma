@@ -82,6 +82,10 @@ model User {
   giveawayPresets          GiveawayPreset[]
   engagementItemStates     EngagementItemState[]
   engagementReplyTemplates EngagementReplyTemplate[]
+  broadcastCampaigns       BroadcastCampaign[]
+  broadcastSuppressions    BroadcastSuppression[]
+  /** Default delivery prefs for Broadcasts: { defaultDeliveryMode?, defaultSendStrategy?, ... } */
+  broadcastSettings        Json?
 
   @@index([parentNpub])
 }
@@ -113,6 +117,141 @@ model EngagementReplyTemplate {
 
   @@unique([userId, slug])
   @@index([userId])
+}
+
+enum BroadcastCampaignStatus {
+  DRAFT
+  SCHEDULED
+  QUEUED
+  SENDING
+  COMPLETED
+  PAUSED
+  FAILED
+  CANCELLED
+}
+
+enum BroadcastAudienceType {
+  CUSTOM
+  FOLLOWING
+  MUTUALS
+}
+
+enum BroadcastDeliveryMode {
+  BEST_COMPATIBILITY
+  NIP17_ONLY
+  NIP04_ONLY
+  NIP17_FALLBACK_NIP04
+  BOTH
+}
+
+enum BroadcastSendStrategy {
+  STANDARD
+  STAGGERED
+}
+
+enum BroadcastRecipientStatus {
+  PENDING
+  READY
+  QUEUED
+  SENDING
+  SENT
+  FAILED
+  SUPPRESSED
+  SKIPPED
+}
+
+enum BroadcastSuppressionSource {
+  MANUAL
+  OPT_OUT
+  AUTO
+}
+
+enum BroadcastEventLogLevel {
+  INFO
+  WARNING
+  ERROR
+}
+
+model BroadcastCampaign {
+  id               String                   @id @default(cuid())
+  userId           String
+  name             String
+  status           BroadcastCampaignStatus  @default(DRAFT)
+  audienceType     BroadcastAudienceType
+  messageBody      String
+  deliveryMode     BroadcastDeliveryMode    @default(BEST_COMPATIBILITY)
+  sendStrategy     BroadcastSendStrategy    @default(STANDARD)
+  scheduledFor     DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  cancelledAt      DateTime?
+  totalRecipients  Int                      @default(0)
+  queuedCount      Int                      @default(0)
+  sentCount        Int                      @default(0)
+  failedCount      Int                      @default(0)
+  suppressedCount  Int                      @default(0)
+  skippedCount     Int                      @default(0)
+  /** CUSTOM audience: raw npubs/nhex lines from composer */
+  customNpubLines  String[]                 @default([])
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipients       BroadcastRecipient[]
+  eventLogs        BroadcastEventLog[]
+
+  @@index([userId, status, updatedAt])
+  @@index([userId, createdAt])
+}
+
+model BroadcastRecipient {
+  id                    String                   @id @default(cuid())
+  campaignId            String
+  recipientPubkey       String
+  sourceType            BroadcastAudienceType?
+  status                BroadcastRecipientStatus @default(PENDING)
+  skipReason            String?
+  attemptCount          Int                      @default(0)
+  signedEvent           Json?
+  giftWraps             Json?
+  publishRelays         String[]                 @default([])
+  publishedNip04EventId String?
+  lastAttemptAt         DateTime?
+  sentAt                DateTime?
+  failureCode           String?
+  failureReason         String?
+  staggerDelayMs        Int?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  campaign              BroadcastCampaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, recipientPubkey])
+  @@index([campaignId, status])
+}
+
+model BroadcastSuppression {
+  id              String                   @id @default(cuid())
+  userId          String
+  recipientPubkey String
+  reason          String?
+  source          BroadcastSuppressionSource @default(MANUAL)
+  createdAt       DateTime                 @default(now())
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipientPubkey])
+  @@index([userId])
+}
+
+model BroadcastEventLog {
+  id           String                 @id @default(cuid())
+  campaignId   String
+  level        BroadcastEventLogLevel @default(INFO)
+  eventType    String
+  message      String
+  metadataJson Json?
+  createdAt    DateTime               @default(now())
+  campaign     BroadcastCampaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, createdAt])
 }
 
 model LoginChallenge {
@@ -219,6 +358,15 @@ model Giveaway {
   status             GiveawayStatus       @default(DRAFT)
   lockedAt           DateTime?
   winnerSnapshot     Json?                // [{ pubkey, npub, qualifyingActions, satsPerWinner?, engagementType? }] at lock
+  /** Per-winner payout tracking: pubkey -> { status, updatedAt, note? } */
+  payoutState        Json?
+  /** Fairness/preview audit: pool size, filters, timestamps (updated on preview/reroll) */
+  lastPreviewMeta    Json?
+  rerollCount        Int                  @default(0)
+  /** Append-only log: { at, type, payload? }[] */
+  activityLog        Json?
+  /** Pubkeys manually excluded during preview (cumulative) */
+  excludedPubkeys    Json?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -240,6 +388,7 @@ model GiveawayPreset {
   selectionMode     GiveawaySelectionMode  @default(UNIQUE_USER)
   engagementWeights Json?
   filters           Json?
+  lastUsedAt        DateTime?
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
   user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)

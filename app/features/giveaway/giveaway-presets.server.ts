@@ -11,10 +11,8 @@ import {
   getGiveawayPlanLimits,
 } from "~/features/payments/types";
 
-import type {
-  GiveawayPreset,
-  Prisma,
-} from "./data/giveaway-prisma-types.server";
+import type { GiveawayPreset } from "./data/giveaway-prisma-types.server";
+import { Prisma } from "./data/giveaway-prisma-types.server";
 import {
   createGiveawayPreset as createPresetRow,
   deleteGiveawayPreset as deletePresetRow,
@@ -30,6 +28,10 @@ export interface CreateGiveawayPresetInput {
   scopeReference: Record<string, unknown>;
   engagementTypes: string[];
   winnerCount: number;
+  engagementConfig?: Record<
+    string,
+    { winnerCount: number; satsPerWinner: number }
+  > | null;
   selectionMode?: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT";
   engagementWeights?: Record<string, number> | null;
   filters?: Record<string, unknown> | null;
@@ -56,6 +58,10 @@ export async function createGiveawayPreset(
     scopeReference: input.scopeReference as Prisma.InputJsonValue,
     engagementTypes: input.engagementTypes as Prisma.InputJsonValue,
     winnerCount: input.winnerCount,
+    engagementConfig:
+      input.engagementConfig && Object.keys(input.engagementConfig).length > 0
+        ? (input.engagementConfig as unknown as Prisma.InputJsonValue)
+        : undefined,
     selectionMode: input.selectionMode ?? "UNIQUE_USER",
     engagementWeights: (input.engagementWeights ?? undefined) as
       | Prisma.InputJsonValue
@@ -77,6 +83,11 @@ export async function updateGiveawayPreset(
   if (input.engagementTypes !== undefined)
     data.engagementTypes = input.engagementTypes as Prisma.InputJsonValue;
   if (input.winnerCount !== undefined) data.winnerCount = input.winnerCount;
+  if (input.engagementConfig !== undefined)
+    data.engagementConfig =
+      input.engagementConfig && Object.keys(input.engagementConfig).length > 0
+        ? (input.engagementConfig as unknown as Prisma.InputJsonValue)
+        : Prisma.JsonNull;
   if (input.selectionMode !== undefined)
     data.selectionMode = input.selectionMode;
   if (input.engagementWeights !== undefined)
@@ -117,4 +128,11 @@ export async function resolvePresetQueue(
   const queueId = scopeReference["queueId"];
   if (typeof queueId !== "string") return null;
   return findQueueTypeByIdAndUser(userId, queueId);
+}
+
+export async function touchGiveawayPresetLastUsed(
+  userId: string,
+  presetId: string
+): Promise<void> {
+  await updatePresetRow(presetId, userId, { lastUsedAt: new Date() });
 }

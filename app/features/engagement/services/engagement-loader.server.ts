@@ -6,6 +6,7 @@
 import { fetchFromCache } from "~/features/cache";
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { getThreadViewWithCache } from "~/features/cache/thread-view-cache.server";
+import { getFollowedPubkeys } from "~/features/nostr/social-graph.server";
 import type { SignedEvent } from "~/features/nostr/types";
 import { toPostDTOArray } from "~/features/posts/dtos";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
@@ -293,34 +294,6 @@ function getMutedNpubsFromUser(user: UserWithHashTagPresets): string[] {
   return mutedListData && Array.isArray(mutedListData.npubs)
     ? (mutedListData.npubs as string[])
     : [];
-}
-
-/**
- * Fetch the logged-in user's follow list (kind 3 contacts) and return hex pubkeys.
- * Returns [] if not available or on error.
- */
-async function getFollowedPubkeys(userPubkeyHex: string): Promise<string[]> {
-  try {
-    const responses = await fetchFromCache("event_by_addr", {
-      kind: 3,
-      pubkey: userPubkeyHex,
-      identifier: "",
-    });
-    if (!Array.isArray(responses) || responses.length === 0) return [];
-    for (const item of responses) {
-      if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
-      const ev = item[2] as { kind?: number; tags?: string[][] };
-      if (ev.kind !== 3 || !Array.isArray(ev.tags)) continue;
-      return ev.tags.flatMap((t) =>
-        Array.isArray(t) && t[0] === "p" && typeof t[1] === "string"
-          ? [t[1]]
-          : []
-      );
-    }
-  } catch {
-    // No follow list or cache error
-  }
-  return [];
 }
 
 function buildFallbackStatsFromPosts(

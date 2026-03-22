@@ -48,6 +48,9 @@ export {
   cancelGiveaway,
   deleteGiveaway,
   markGiveawayPaidOut,
+  setGiveawayWinnerPayoutStatus,
+  duplicateGiveaway,
+  resetGiveawayToDraft,
   updateGiveaway,
 } from "./giveaway-actions.server";
 
@@ -62,6 +65,8 @@ export { GiveawayQueueTabs } from "./components/GiveawayQueueTabs";
 export { default as GiveawayRandomizer } from "./components/GiveawayRandomizer";
 export { GiveawayTable } from "./components/GiveawayTable";
 export { default as GiveawayPage } from "./components/GiveawayPage";
+export type { GiveawayPageProps } from "./components/GiveawayPage";
+export { GiveawayNewBuilder } from "./components/GiveawayNewBuilder";
 export { default as GiveawayQueuePage } from "./components/GiveawayQueuePage";
 
 // ============================================================================

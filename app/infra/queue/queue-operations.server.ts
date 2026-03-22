@@ -8,7 +8,66 @@ import { createOutboxEvent } from "~/infra/outbox/outbox.server";
 import { logError } from "~/lib/error-logger.server";
 
 import { queueClient } from "./queue-client.server";
-import type { PostJobData, LongFormPostJobData } from "./queue-types";
+import type {
+  PostJobData,
+  LongFormPostJobData,
+  BroadcastJobData,
+} from "./queue-types";
+
+export function broadcastRecipientJobId(
+  campaignId: string,
+  recipientId: string
+): string {
+  return `broadcast:${campaignId}:${recipientId}`;
+}
+
+/**
+ * Enqueue a broadcast DM publish job. Signed events must already be on BroadcastRecipient.
+ */
+export async function enqueueBroadcastRecipientJob(input: {
+  campaignId: string;
+  recipientId: string;
+  userId: string;
+  /** Unix seconds; 0 = publish as soon as worker picks up (after delayMs) */
+  scheduledForUnix: number;
+  /** Added to computed schedule delay (stagger / jitter between recipients) */
+  additionalDelayMs?: number;
+  correlationId?: string;
+}): Promise<void> {
+  const jobId = broadcastRecipientJobId(input.campaignId, input.recipientId);
+  let delay = 0;
+  if (input.scheduledForUnix > 0) {
+    delay = input.scheduledForUnix * 1000 - Date.now();
+    if (delay < 0) delay = 0;
+  }
+  if (input.additionalDelayMs) {
+    delay += input.additionalDelayMs;
+  }
+  const result = await queueClient.enqueue<BroadcastJobData>(
+    "broadcast-dm",
+    "publish-broadcast-dm",
+    {
+      campaignId: input.campaignId,
+      recipientId: input.recipientId,
+      userId: input.userId,
+      correlationId: input.correlationId,
+    },
+    { delay, jobId }
+  );
+  if (!result.success) {
+    throw new Error(result.error ?? "Failed to enqueue broadcast job");
+  }
+}
+
+export function cancelBroadcastRecipientJob(
+  campaignId: string,
+  recipientId: string
+): Promise<boolean> {
+  return queueClient.cancelByJobId(
+    "broadcast-dm",
+    broadcastRecipientJobId(campaignId, recipientId)
+  );
+}
 /**
  * Schedule a regular post to be published
  * @param postId - The post ID

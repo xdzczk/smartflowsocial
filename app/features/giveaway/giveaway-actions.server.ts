@@ -15,11 +15,18 @@ import type {
   Giveaway,
   GiveawaySelectionMode,
 } from "./data/giveaway-prisma-types.server";
+import { appendGiveawayActivityLog } from "./giveaway-activity-log.server";
 import {
   getParticipantPubkeysForFollowScope,
   processGiveawayParticipants,
   type GiveawayParticipantFilters,
 } from "./giveaway-loader.server";
+import {
+  allWinnersPayoutSettled,
+  buildInitialPayoutState,
+  normalizePayoutState,
+} from "./giveaway-payout.server";
+import type { GiveawayPayoutEntryStatus } from "./giveaway-payout.server";
 import { getPostsInScope } from "./giveaway-scope.server";
 import {
   runGiveawaySelection,
@@ -274,6 +281,7 @@ export async function createGiveaway(
       | undefined,
     filters: (input.filters ?? undefined) as Prisma.InputJsonValue | undefined,
     status: "DRAFT",
+    activityLog: appendGiveawayActivityLog(null, "giveaway_created"),
   });
 }
 
@@ -342,6 +350,15 @@ export async function updateGiveaway(
     data.selectionMode = input.selectionMode;
   }
 
+  if (Object.keys(data).length === 0) {
+    return { success: true };
+  }
+
+  data.activityLog = appendGiveawayActivityLog(
+    g.activityLog,
+    "configuration_updated"
+  );
+
   await updateGiveawayRow(giveawayId, data);
   return { success: true };
 }
@@ -358,9 +375,21 @@ export async function previewGiveaway(
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
   const winners = runSelectionForGiveaway(g, relatedEvents);
 
+  const lastPreviewMeta = {
+    eligiblePoolSize: relatedEvents.length,
+    computedAt: new Date().toISOString(),
+    selectionMode: g.selectionMode,
+    filters: g.filters ?? null,
+  };
+
   await updateGiveawayRow(giveawayId, {
     status: "PREVIEWED",
     winnerSnapshot: winners as unknown as Prisma.InputJsonValue,
+    lastPreviewMeta: lastPreviewMeta as unknown as Prisma.InputJsonValue,
+    activityLog: appendGiveawayActivityLog(g.activityLog, "preview_generated", {
+      eligiblePoolSize: relatedEvents.length,
+      winnersDrawn: winners.length,
+    }),
   });
 
   return { winners };
@@ -378,8 +407,20 @@ export async function rerollGiveaway(
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
   const winners = runSelectionForGiveaway(g, relatedEvents);
 
+  const lastPreviewMeta = {
+    eligiblePoolSize: relatedEvents.length,
+    computedAt: new Date().toISOString(),
+    selectionMode: g.selectionMode,
+    filters: g.filters ?? null,
+  };
+
   await updateGiveawayRow(giveawayId, {
     winnerSnapshot: winners as unknown as Prisma.InputJsonValue,
+    lastPreviewMeta: lastPreviewMeta as unknown as Prisma.InputJsonValue,
+    rerollCount: { increment: 1 },
+    activityLog: appendGiveawayActivityLog(g.activityLog, "rerolled", {
+      eligiblePoolSize: relatedEvents.length,
+    }),
   });
 
   return { winners };
@@ -401,14 +442,34 @@ export async function excludeWinnerAndRedraw(
     return { winners: current, error: "Winner not in list" };
 
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
-  const excludedPubkeys = new Set(without.map((w) => w.pubkey));
+  const keepWinnerKeys = new Set(without.map((w) => w.pubkey));
   const eligibleEvents = relatedEvents.filter(
-    (e) => !excludedPubkeys.has(e.pubkey)
+    (e) => !keepWinnerKeys.has(e.pubkey)
   );
   const updated = runSelectionForGiveaway(g, eligibleEvents);
 
+  const prevEx =
+    Array.isArray(g.excludedPubkeys) &&
+    g.excludedPubkeys.every((x) => typeof x === "string")
+      ? g.excludedPubkeys
+      : [];
+  const excludedHistory = [...new Set([...prevEx, winnerPubkey])];
+
+  const lastPreviewMeta = {
+    eligiblePoolSize: eligibleEvents.length,
+    computedAt: new Date().toISOString(),
+    selectionMode: g.selectionMode,
+    filters: g.filters ?? null,
+  };
+
   await updateGiveawayRow(giveawayId, {
     winnerSnapshot: updated as unknown as Prisma.InputJsonValue,
+    lastPreviewMeta: lastPreviewMeta as unknown as Prisma.InputJsonValue,
+    excludedPubkeys: excludedHistory as unknown as Prisma.InputJsonValue,
+    rerollCount: { increment: 1 },
+    activityLog: appendGiveawayActivityLog(g.activityLog, "winner_excluded", {
+      excludedPubkey: winnerPubkey,
+    }),
   });
 
   return { winners: updated };
@@ -425,9 +486,16 @@ export async function lockGiveaway(
   const snapshot = g.winnerSnapshot as GiveawayWinnerEntry[] | null;
   if (!snapshot?.length) return { success: false, error: "No winners to lock" };
 
+  const lockedAt = new Date();
   await updateGiveawayRow(giveawayId, {
     status: "LOCKED",
-    lockedAt: new Date(),
+    lockedAt,
+    payoutState: buildInitialPayoutState(
+      snapshot
+    ) as unknown as Prisma.InputJsonValue,
+    activityLog: appendGiveawayActivityLog(g.activityLog, "locked", {
+      lockedAt: lockedAt.toISOString(),
+    }),
   });
   return { success: true };
 }
@@ -441,7 +509,35 @@ export async function cancelGiveaway(
   if (g.status === "LOCKED" || g.status === "PAID_OUT")
     return { success: false, error: "Cannot cancel locked or paid giveaway" };
 
-  await updateGiveawayRow(giveawayId, { status: "CANCELLED" });
+  await updateGiveawayRow(giveawayId, {
+    status: "CANCELLED",
+    activityLog: appendGiveawayActivityLog(g.activityLog, "cancelled"),
+  });
+  return { success: true };
+}
+
+/** Clear preview snapshot and return to draft so rules can be edited. */
+export async function resetGiveawayToDraft(
+  userId: string,
+  giveawayId: string
+): Promise<{ success: boolean; error?: string }> {
+  const g = await getGiveawayById(giveawayId, userId);
+  if (!g) return { success: false, error: ERROR_GIVEAWAY_NOT_FOUND };
+  if (g.status !== "PREVIEWED") {
+    return {
+      success: false,
+      error: "Only giveaways in preview can be reset to draft",
+    };
+  }
+
+  await updateGiveawayRow(giveawayId, {
+    status: "DRAFT",
+    winnerSnapshot: Prisma.JsonNull,
+    lastPreviewMeta: Prisma.JsonNull,
+    excludedPubkeys: Prisma.JsonNull,
+    rerollCount: 0,
+    activityLog: appendGiveawayActivityLog(g.activityLog, "reset_to_draft"),
+  });
   return { success: true };
 }
 
@@ -464,18 +560,98 @@ export async function deleteGiveaway(
 
 export async function markGiveawayPaidOut(
   userId: string,
-  giveawayId: string
+  giveawayId: string,
+  options?: { completeOverrideReason?: string }
 ): Promise<{ success: boolean; error?: string }> {
   const g = await getGiveawayById(giveawayId, userId);
   if (!g) return { success: false, error: ERROR_GIVEAWAY_NOT_FOUND };
   if (g.status !== "LOCKED")
     return {
       success: false,
-      error: "Only locked giveaways can be marked paid",
+      error: "Only locked giveaways can be completed",
     };
 
-  await updateGiveawayRow(giveawayId, { status: "PAID_OUT" });
+  const snapshot = g.winnerSnapshot as GiveawayWinnerEntry[] | null;
+  if (!snapshot?.length)
+    return { success: false, error: "No winners in giveaway" };
+
+  const state = normalizePayoutState(g.payoutState, snapshot);
+  if (!allWinnersPayoutSettled(state, snapshot)) {
+    const reason = options?.completeOverrideReason?.trim() ?? "";
+    if (reason.length < 10) {
+      return {
+        success: false,
+        error:
+          "Mark each winner as sent (or paid) first, or enter a reason (10+ characters) to complete with pending payouts.",
+      };
+    }
+  }
+
+  await updateGiveawayRow(giveawayId, {
+    status: "PAID_OUT",
+    activityLog: appendGiveawayActivityLog(g.activityLog, "completed", {
+      ...(options?.completeOverrideReason
+        ? { overrideReason: options.completeOverrideReason }
+        : {}),
+    }),
+  });
   return { success: true };
+}
+
+export async function setGiveawayWinnerPayoutStatus(
+  userId: string,
+  giveawayId: string,
+  winnerPubkey: string,
+  status: GiveawayPayoutEntryStatus,
+  note?: string | null
+): Promise<{ success: boolean; error?: string }> {
+  const g = await getGiveawayById(giveawayId, userId);
+  if (!g) return { success: false, error: ERROR_GIVEAWAY_NOT_FOUND };
+  if (g.status !== "LOCKED") {
+    return {
+      success: false,
+      error: "Payout status can only be changed while the giveaway is locked",
+    };
+  }
+  const snapshot = g.winnerSnapshot as GiveawayWinnerEntry[] | null;
+  if (!snapshot?.some((w) => w.pubkey === winnerPubkey)) {
+    return { success: false, error: "Winner not in locked set" };
+  }
+  const state = normalizePayoutState(g.payoutState, snapshot);
+  const next: (typeof state)[string] = {
+    status,
+    updatedAt: new Date().toISOString(),
+  };
+  if (note != null && note.trim() !== "") {
+    next.note = note.trim();
+  }
+  state[winnerPubkey] = next;
+  await updateGiveawayRow(giveawayId, {
+    payoutState: state as unknown as Prisma.InputJsonValue,
+  });
+  return { success: true };
+}
+
+export async function duplicateGiveaway(
+  userId: string,
+  giveawayId: string
+): Promise<{ id: string | null; error?: string }> {
+  const g = await getGiveawayById(giveawayId, userId);
+  if (!g) return { id: null, error: ERROR_GIVEAWAY_NOT_FOUND };
+  const created = await createGiveaway(userId, {
+    name: g.name ? `${g.name} (copy)` : `Giveaway copy ${g.id.slice(0, 6)}`,
+    scopeType: g.scopeType,
+    scopeReference: g.scopeReference as Record<string, unknown>,
+    eligibilityFrom: g.eligibilityFrom ?? undefined,
+    eligibilityTo: g.eligibilityTo ?? undefined,
+    engagementTypes: g.engagementTypes as string[],
+    winnerCount: g.winnerCount,
+    engagementConfig: g.engagementConfig as GiveawayEngagementConfig | null,
+    selectionMode: g.selectionMode,
+    engagementWeights: g.engagementWeights as Record<string, number> | null,
+    filters: g.filters as Record<string, unknown> | null,
+  });
+  return { id: created.id };
 }
 
 export async function listGiveawaysByUser(

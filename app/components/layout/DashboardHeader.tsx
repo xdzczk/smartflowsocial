@@ -11,6 +11,7 @@ import {
   Home,
   LayoutGrid,
   Lock,
+  Megaphone,
   Menu,
   MessageSquare,
   Plus,
@@ -104,12 +105,23 @@ const ENGAGEMENT_SECTION_ITEMS = [
     label: "Engagement Feed",
   },
   {
-    to: "/dashboard/giveaway?days=7",
+    to: "/dashboard/giveaway",
     feature: "giveaways" as const,
     icon: (
       <Gift className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
     ),
     label: "Giveaway",
+  },
+  {
+    to: "/dashboard/broadcasts",
+    feature: "broadcasts" as const,
+    icon: (
+      <Megaphone
+        className={NAV_ICON_SIZE_CLASS}
+        strokeWidth={NAV_ICON_STROKE}
+      />
+    ),
+    label: "Broadcasts",
   },
 ];
 

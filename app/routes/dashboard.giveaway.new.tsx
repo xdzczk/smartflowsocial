@@ -1,15 +1,16 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Link, useActionData, useLoaderData } from "@remix-run/react";
-import { useState } from "react";
+import { useActionData, useLoaderData } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
+import { GiveawayNewBuilder } from "~/features/giveaway";
 import { createGiveaway } from "~/features/giveaway/giveaway-actions.server";
 import { getRecentPostsForGiveawaySelector } from "~/features/giveaway/giveaway-new.server";
 import {
   getGiveawayPresetsByUser,
   getGiveawayPresetById,
   resolvePresetQueue,
+  touchGiveawayPresetLastUsed,
 } from "~/features/giveaway/giveaway-presets.server";
 import {
   getGiveawayPlanLimits,
@@ -26,14 +27,45 @@ function parseScopeReference(
   | { scopeReference: Record<string, unknown> }
   | { error: string; status: 400 } {
   if (scopeTypeResolved === "PERIOD") {
+    const queueId = formData.get("queueId");
+    const queueIdTrimmed =
+      typeof queueId === "string" && queueId.trim() ? queueId.trim() : "";
+    const periodMode = formData.get("periodMode");
+    if (periodMode === "custom") {
+      const fromRaw = formData.get("periodFrom");
+      const toRaw = formData.get("periodTo");
+      if (
+        typeof fromRaw !== "string" ||
+        typeof toRaw !== "string" ||
+        !fromRaw.trim() ||
+        !toRaw.trim()
+      ) {
+        return {
+          error: "Choose a start and end date for the custom period",
+          status: 400,
+        };
+      }
+      const fromD = new Date(fromRaw);
+      const toD = new Date(toRaw);
+      if (
+        Number.isNaN(fromD.getTime()) ||
+        Number.isNaN(toD.getTime()) ||
+        fromD > toD
+      ) {
+        return { error: "Invalid date range", status: 400 };
+      }
+      const scopeReference: Record<string, unknown> = {
+        from: fromD.toISOString(),
+        to: toD.toISOString(),
+      };
+      if (queueIdTrimmed) scopeReference["queueId"] = queueIdTrimmed;
+      return { scopeReference };
+    }
     const daysRaw = formData.get("periodDays");
     const days =
       typeof daysRaw === "string" && /^\d+$/.test(daysRaw)
         ? Math.min(365, Math.max(1, parseInt(daysRaw, 10)))
         : 7;
-    const queueId = formData.get("queueId");
-    const queueIdTrimmed =
-      typeof queueId === "string" && queueId.trim() ? queueId.trim() : "";
     const scopeReference: Record<string, unknown> = { days };
     if (queueIdTrimmed) scopeReference["queueId"] = queueIdTrimmed;
     return { scopeReference };
@@ -53,7 +85,31 @@ function parseScopeReference(
   return { scopeReference: {} };
 }
 
-function parseEngagementAndWinners(formData: FormData):
+/** Split total winners across engagement types as evenly as possible. */
+function distributeWinnersAcrossTypes(
+  total: number,
+  types: string[]
+): Record<string, number> {
+  const n = types.length;
+  if (n === 0 || total <= 0) return {};
+  const out: Record<string, number> = {};
+  for (let i = 0; i < n; i++) {
+    const t = types[i];
+    if (!t) continue;
+    const w = Math.floor(total / n) + (i < total % n ? 1 : 0);
+    if (w > 0) out[t] = w;
+  }
+  return out;
+}
+
+const ENGAGEMENT_TYPE_ALLOWLIST = [
+  "REACTION",
+  "REPOST",
+  "COMMENT",
+  "ZAP",
+] as const;
+
+type EngagementWinnersResult =
   | {
       engagementTypes: string[];
       winnerCount: number;
@@ -63,14 +119,79 @@ function parseEngagementAndWinners(formData: FormData):
         { winnerCount: number; satsPerWinner: number }
       >;
     }
-  | { error: string; status: 400 } {
+  | { error: string; status: 400 };
+
+function parseAdvancedEngagementConfig(
+  formData: FormData,
+  engagementTypes: string[]
+): Record<string, { winnerCount: number; satsPerWinner: number }> {
+  const engagementConfig: Record<
+    string,
+    { winnerCount: number; satsPerWinner: number }
+  > = {};
+  for (const type of ENGAGEMENT_TYPE_ALLOWLIST) {
+    const wRaw = formData.get(`engagementWinners_${type}`);
+    const sRaw = formData.get(`engagementSats_${type}`);
+    const w =
+      typeof wRaw === "string" && /^\d+$/.test(wRaw)
+        ? Math.max(0, parseInt(wRaw, 10))
+        : 0;
+    const sats =
+      typeof sRaw === "string" && /^\d+$/.test(sRaw)
+        ? Math.max(0, parseInt(sRaw, 10))
+        : 0;
+    if (w > 0 && engagementTypes.includes(type)) {
+      engagementConfig[type] = { winnerCount: w, satsPerWinner: sats };
+    }
+  }
+  return engagementConfig;
+}
+
+function parseSimpleSatsEngagementResult(
+  winnerCount: number,
+  engagementTypes: string[],
+  simpleSats: number,
+  selectionModeResolved: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT"
+): EngagementWinnersResult {
+  const parts = distributeWinnersAcrossTypes(winnerCount, engagementTypes);
+  const engagementConfig: Record<
+    string,
+    { winnerCount: number; satsPerWinner: number }
+  > = {};
+  for (const t of engagementTypes) {
+    const w = parts[t] ?? 0;
+    if (w > 0) {
+      engagementConfig[t] = {
+        winnerCount: w,
+        satsPerWinner: simpleSats,
+      };
+    }
+  }
+  const sum = Object.values(engagementConfig).reduce(
+    (a, c) => a + c.winnerCount,
+    0
+  );
+  return {
+    engagementTypes,
+    winnerCount: sum > 0 ? sum : winnerCount,
+    selectionMode: selectionModeResolved,
+    ...(Object.keys(engagementConfig).length > 0 ? { engagementConfig } : {}),
+  };
+}
+
+function parseEngagementAndWinners(
+  formData: FormData
+): EngagementWinnersResult {
   const engagementTypesRaw = formData.getAll("engagementTypes");
-  const allowed = ["REACTION", "REPOST", "COMMENT", "ZAP"] as const;
   const engagementTypes =
     Array.isArray(engagementTypesRaw) && engagementTypesRaw.length > 0
       ? engagementTypesRaw
           .filter((v): v is string => typeof v === "string")
-          .filter((v) => allowed.includes(v as (typeof allowed)[number]))
+          .filter((v) =>
+            ENGAGEMENT_TYPE_ALLOWLIST.includes(
+              v as (typeof ENGAGEMENT_TYPE_ALLOWLIST)[number]
+            )
+          )
       : (["REACTION", "REPOST", "COMMENT", "ZAP"] as string[]);
   if (engagementTypes.length === 0) {
     return { error: "Select at least one engagement type", status: 400 };
@@ -86,30 +207,39 @@ function parseEngagementAndWinners(formData: FormData):
       ? "WEIGHTED_BY_ENGAGEMENT"
       : "UNIQUE_USER";
 
-  const engagementConfig: Record<
-    string,
-    { winnerCount: number; satsPerWinner: number }
-  > = {};
-  for (const type of allowed) {
-    const wRaw = formData.get(`engagementWinners_${type}`);
-    const sRaw = formData.get(`engagementSats_${type}`);
-    const w =
-      typeof wRaw === "string" && /^\d+$/.test(wRaw)
-        ? Math.max(0, parseInt(wRaw, 10))
-        : 0;
-    const sats =
-      typeof sRaw === "string" && /^\d+$/.test(sRaw)
-        ? Math.max(0, parseInt(sRaw, 10))
-        : 0;
-    if (w > 0 && engagementTypes.includes(type)) {
-      engagementConfig[type] = { winnerCount: w, satsPerWinner: sats };
-    }
+  const rewardMode = formData.get("rewardMode");
+  const simpleSatsRaw = formData.get("simpleSatsPerWinner");
+  const simpleSats =
+    typeof simpleSatsRaw === "string" && /^\d+$/.test(simpleSatsRaw)
+      ? Math.max(0, parseInt(simpleSatsRaw, 10))
+      : 0;
+
+  if (rewardMode === "advanced") {
+    const engagementConfig = parseAdvancedEngagementConfig(
+      formData,
+      engagementTypes
+    );
+    return {
+      engagementTypes,
+      winnerCount,
+      selectionMode: selectionModeResolved,
+      ...(Object.keys(engagementConfig).length > 0 ? { engagementConfig } : {}),
+    };
   }
+
+  if (simpleSats > 0) {
+    return parseSimpleSatsEngagementResult(
+      winnerCount,
+      engagementTypes,
+      simpleSats,
+      selectionModeResolved
+    );
+  }
+
   return {
     engagementTypes,
     winnerCount,
     selectionMode: selectionModeResolved,
-    ...(Object.keys(engagementConfig).length > 0 ? { engagementConfig } : {}),
   };
 }
 
@@ -126,20 +256,28 @@ function parseFilters(formData: FormData): Record<string, unknown> | undefined {
   const excludeNonFollowers =
     formData.get("excludeNonFollowers") === "on" ||
     formData.get("excludeNonFollowers") === "true";
-  if (
-    !excludeMuted &&
-    !excludeBlocked &&
-    !excludeLowTrust &&
-    !excludeNonFollowers
-  ) {
-    return undefined;
+  const minAgeRaw = formData.get("minAccountAgeDays");
+  const minFollowersRaw = formData.get("minFollowers");
+  let minAccountAgeDays: number | undefined;
+  if (typeof minAgeRaw === "string" && /^\d+$/.test(minAgeRaw)) {
+    minAccountAgeDays = Math.min(3650, Math.max(0, parseInt(minAgeRaw, 10)));
   }
-  return {
-    ...(excludeMuted && { excludeMuted: true }),
-    ...(excludeBlocked && { excludeBlocked: true }),
-    ...(excludeLowTrust && { excludeLowTrust: true }),
-    ...(excludeNonFollowers && { excludeNonFollowers: true }),
-  };
+  let minFollowers: number | undefined;
+  if (typeof minFollowersRaw === "string" && /^\d+$/.test(minFollowersRaw)) {
+    minFollowers = Math.min(
+      1_000_000,
+      Math.max(0, parseInt(minFollowersRaw, 10))
+    );
+  }
+  const out: Record<string, unknown> = {};
+  if (excludeMuted) out["excludeMuted"] = true;
+  if (excludeBlocked) out["excludeBlocked"] = true;
+  if (excludeLowTrust) out["excludeLowTrust"] = true;
+  if (excludeNonFollowers) out["excludeNonFollowers"] = true;
+  if (minAccountAgeDays !== undefined)
+    out["minAccountAgeDays"] = minAccountAgeDays;
+  if (minFollowers !== undefined) out["minFollowers"] = minFollowers;
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -203,6 +341,10 @@ export async function action({ request }: ActionFunctionArgs) {
       scopeReference: scopeRef,
       engagementTypes: preset.engagementTypes as string[],
       winnerCount: preset.winnerCount,
+      engagementConfig: preset.engagementConfig as Record<
+        string,
+        { winnerCount: number; satsPerWinner: number }
+      > | null,
       selectionMode: preset.selectionMode,
       engagementWeights: preset.engagementWeights as Record<
         string,
@@ -210,6 +352,7 @@ export async function action({ request }: ActionFunctionArgs) {
       > | null,
       filters: preset.filters as Record<string, unknown> | null,
     });
+    await touchGiveawayPresetLastUsed(userId, presetId);
     return redirect(`/dashboard/giveaway/detail/${giveaway.id}`);
   }
 
@@ -274,371 +417,16 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
-const ENGAGEMENT_OPTIONS = [
-  { value: "REACTION", label: "Reaction" },
-  { value: "REPOST", label: "Repost" },
-  { value: "COMMENT", label: "Comment" },
-  { value: "ZAP", label: "Zap" },
-] as const;
-
-const PERIOD_DAYS_OPTIONS = [7, 14, 30] as const;
-
-type ScopeType = "PERIOD" | "SINGLE_POST" | "FOLLOWERS" | "FOLLOWING";
+function pickActionError(actionData: unknown): string | undefined {
+  if (!actionData || typeof actionData !== "object") return undefined;
+  if (!("error" in actionData)) return undefined;
+  const err = (actionData as { error: unknown }).error;
+  return typeof err === "string" ? err : undefined;
+}
 
 export default function DashboardGiveawayNewPage() {
-  const { presets, queueTypes, recentPosts, planLimits } =
-    useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
-  const [scopeType, setScopeType] = useState<ScopeType>("PERIOD");
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          to="/dashboard/giveaway"
-          className="text-muted-foreground hover:text-foreground text-sm"
-        >
-          ← Back to Giveaways
-        </Link>
-      </div>
-      <div className="border-border bg-card rounded-lg border p-6">
-        <h1 className="text-foreground mb-2 text-xl font-bold">New giveaway</h1>
-        <p className="text-muted-foreground mb-4 text-sm">
-          Set custom settings below, or use a template to start from a saved
-          preset.
-        </p>
-
-        <form method="post" className="space-y-4">
-          <input type="hidden" name="intent" value="create" />
-
-          <div>
-            <label
-              htmlFor="giveaway-name"
-              className="text-muted-foreground mb-1 block text-sm"
-            >
-              Giveaway name (optional)
-            </label>
-            <input
-              id="giveaway-name"
-              name="name"
-              type="text"
-              placeholder="e.g. March engagement giveaway"
-              className="border-border bg-background w-full max-w-sm rounded border px-3 py-2 text-sm"
-            />
-          </div>
-
-          <fieldset>
-            <legend className="text-muted-foreground mb-2 block text-sm font-medium">
-              Scope
-            </legend>
-            <div className="flex flex-wrap gap-4">
-              <label className="text-foreground flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="scopeType"
-                  value="PERIOD"
-                  checked={scopeType === "PERIOD"}
-                  onChange={() => setScopeType("PERIOD")}
-                />
-                Period (last N days)
-              </label>
-              <label className="text-foreground flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="scopeType"
-                  value="SINGLE_POST"
-                  checked={scopeType === "SINGLE_POST"}
-                  onChange={() => setScopeType("SINGLE_POST")}
-                />
-                Single post
-              </label>
-              <label className="text-foreground flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="scopeType"
-                  value="FOLLOWERS"
-                  checked={scopeType === "FOLLOWERS"}
-                  onChange={() => setScopeType("FOLLOWERS")}
-                />
-                Followers
-              </label>
-              <label className="text-foreground flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="scopeType"
-                  value="FOLLOWING"
-                  checked={scopeType === "FOLLOWING"}
-                  onChange={() => setScopeType("FOLLOWING")}
-                />
-                Following
-              </label>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-4">
-              {scopeType === "PERIOD" ? (
-                <>
-                  <div className="flex items-center gap-2">
-                    <label
-                      htmlFor="periodDays"
-                      className="text-muted-foreground text-sm"
-                    >
-                      Days
-                    </label>
-                    <select
-                      id="periodDays"
-                      name="periodDays"
-                      className="border-border bg-background rounded border px-2 py-1 text-sm"
-                      defaultValue="7"
-                    >
-                      {PERIOD_DAYS_OPTIONS.map((d) => (
-                        <option key={d} value={d}>
-                          Last {d} days
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {planLimits.canUseQueueScope ? (
-                    <div className="flex items-center gap-2">
-                      <label
-                        htmlFor="queueId"
-                        className="text-muted-foreground text-sm"
-                      >
-                        Queue (optional)
-                      </label>
-                      <select
-                        id="queueId"
-                        name="queueId"
-                        className="border-border bg-background min-w-[160px] rounded border px-2 py-1 text-sm"
-                      >
-                        <option value="">All queues</option>
-                        {queueTypes.map((q) => (
-                          <option key={q.id} value={q.id}>
-                            {q.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-              {scopeType === "SINGLE_POST" ? (
-                <div className="flex items-center gap-2">
-                  <label
-                    htmlFor="postId"
-                    className="text-muted-foreground text-sm"
-                  >
-                    Post
-                  </label>
-                  <select
-                    id="postId"
-                    name="postId"
-                    className="border-border bg-background min-w-[200px] rounded border px-2 py-1 text-sm"
-                  >
-                    <option value="">Select a post</option>
-                    {recentPosts.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.caption
-                          ? `${p.caption.slice(0, 40)}${p.caption.length > 40 ? "…" : ""}`
-                          : `Post ${p.id.slice(0, 8)}`}{" "}
-                        · {p.publishedAt.slice(0, 10)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
-            </div>
-          </fieldset>
-
-          <div>
-            <span className="text-muted-foreground mb-2 block text-sm font-medium">
-              Engagement types
-            </span>
-            <div className="flex flex-wrap gap-3">
-              {ENGAGEMENT_OPTIONS.map((opt) => (
-                <label
-                  key={opt.value}
-                  className="text-foreground flex items-center gap-1.5 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    name="engagementTypes"
-                    value={opt.value}
-                    defaultChecked
-                  />
-                  {opt.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground mb-2 block text-sm font-medium">
-              Winners & sats per engagement type (optional)
-            </span>
-            <p className="text-muted-foreground mb-2 text-xs">
-              Set winner count and sats per winner for each type. If you leave
-              all at 0, the single winner count below is used and no sats are
-              suggested.
-            </p>
-            <div className="border-border bg-muted/20 grid max-w-xl gap-2 rounded border p-3 text-sm sm:grid-cols-[auto_1fr_1fr]">
-              <span className="text-muted-foreground font-medium">Type</span>
-              <span className="text-muted-foreground font-medium">Winners</span>
-              <span className="text-muted-foreground font-medium">
-                Sats each
-              </span>
-              {ENGAGEMENT_OPTIONS.map((opt) => (
-                <div
-                  key={opt.value}
-                  className="text-foreground grid grid-cols-[auto_1fr_1fr] gap-2 sm:contents"
-                >
-                  <label
-                    htmlFor={`engagementWinners_${opt.value}`}
-                    className="flex items-center"
-                  >
-                    {opt.label}
-                  </label>
-                  <input
-                    id={`engagementWinners_${opt.value}`}
-                    name={`engagementWinners_${opt.value}`}
-                    type="number"
-                    min={0}
-                    max={planLimits.maxWinnerCount}
-                    defaultValue={0}
-                    className="border-border bg-background w-20 rounded border px-2 py-1"
-                  />
-                  <input
-                    id={`engagementSats_${opt.value}`}
-                    name={`engagementSats_${opt.value}`}
-                    type="number"
-                    min={0}
-                    defaultValue={0}
-                    className="border-border bg-background w-24 rounded border px-2 py-1"
-                    placeholder="0"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4">
-            <div>
-              <label
-                htmlFor="winnerCount"
-                className="text-muted-foreground mb-1 block text-sm"
-              >
-                Winner count
-              </label>
-              <input
-                id="winnerCount"
-                name="winnerCount"
-                type="number"
-                min={1}
-                max={planLimits.maxWinnerCount}
-                defaultValue={3}
-                className="border-border bg-background w-20 rounded border px-2 py-1 text-sm"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="selectionMode"
-                className="text-muted-foreground mb-1 block text-sm"
-              >
-                Selection mode
-              </label>
-              <select
-                id="selectionMode"
-                name="selectionMode"
-                className="border-border bg-background rounded border px-2 py-1 text-sm"
-                defaultValue="UNIQUE_USER"
-              >
-                <option value="UNIQUE_USER">Unique user</option>
-                <option value="WEIGHTED_BY_ENGAGEMENT">
-                  Weighted by engagement
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <fieldset>
-            <legend className="text-muted-foreground mb-2 block text-sm font-medium">
-              Filter out users
-            </legend>
-            <div className="flex flex-wrap gap-4">
-              <label className="text-foreground flex items-center gap-2 text-sm">
-                <input type="checkbox" name="excludeMuted" value="true" />
-                Muted
-              </label>
-              <label className="text-foreground flex items-center gap-2 text-sm">
-                <input type="checkbox" name="excludeBlocked" value="true" />
-                Blacklisted
-              </label>
-              <label className="text-foreground flex items-center gap-2 text-sm">
-                <input type="checkbox" name="excludeLowTrust" value="true" />
-                Low Trust
-              </label>
-              <label className="text-foreground flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  name="excludeNonFollowers"
-                  value="true"
-                />
-                Non-followers
-              </label>
-            </div>
-          </fieldset>
-
-          {actionData && "error" in actionData ? (
-            <p className="text-destructive text-sm">{actionData.error}</p>
-          ) : null}
-          <button
-            type="submit"
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2 font-medium"
-          >
-            Create giveaway
-          </button>
-        </form>
-
-        <div className="border-border mt-6 border-t pt-4">
-          <h2 className="text-foreground mb-2 text-sm font-semibold">
-            Or use a template
-          </h2>
-          {!planLimits.canUsePresets ? (
-            <p className="text-muted-foreground text-sm">
-              Upgrade your plan to save and use giveaway templates.
-            </p>
-          ) : presets.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {presets.map((p) => (
-                <form
-                  key={p.id}
-                  method="post"
-                  className="border-border bg-muted/20 flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
-                >
-                  <input type="hidden" name="intent" value="createFromPreset" />
-                  <input type="hidden" name="presetId" value={p.id} />
-                  <div>
-                    <p className="text-foreground font-medium">{p.name}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {p.scopeType} · {p.winnerCount} winner
-                      {p.winnerCount !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                  <button
-                    type="submit"
-                    className="border-border bg-background shrink-0 rounded-md border px-4 py-2 text-sm"
-                  >
-                    Create from template
-                  </button>
-                </form>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">
-              No templates yet. Create a giveaway and save it as a template from
-              the detail page.
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  const actionError = pickActionError(actionData);
+  return <GiveawayNewBuilder {...data} actionError={actionError} />;
 }

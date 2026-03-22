@@ -353,10 +353,15 @@ describe("giveaway-actions", () => {
       const result = await lockGiveaway(userId, giveawayId);
 
       expect(result.success).toBe(true);
-      expect(mockUpdateGiveawayRow).toHaveBeenCalledWith(
-        giveawayId,
-        expect.objectContaining({ status: "LOCKED" })
-      );
+      expect(mockUpdateGiveawayRow).toHaveBeenCalled();
+      const updatePayload = mockUpdateGiveawayRow.mock.calls[0]?.[1] as {
+        status?: string;
+        payoutState?: Record<string, { status?: string }>;
+      };
+      expect(updatePayload).toMatchObject({
+        status: "LOCKED",
+        payoutState: { pk1: { status: "pending" } },
+      });
     });
   });
 
@@ -400,9 +405,10 @@ describe("giveaway-actions", () => {
 
       const result = await cancelGiveaway(userId, giveawayId);
       expect(result.success).toBe(true);
-      expect(mockUpdateGiveawayRow).toHaveBeenCalledWith(giveawayId, {
-        status: "CANCELLED",
-      });
+      expect(mockUpdateGiveawayRow).toHaveBeenCalledWith(
+        giveawayId,
+        expect.objectContaining({ status: "CANCELLED" })
+      );
     });
   });
 
@@ -427,7 +433,7 @@ describe("giveaway-actions", () => {
       expect(result.error).toContain("Only locked");
     });
 
-    it("updates status to PAID_OUT", async () => {
+    it("returns error when winners pending and no override", async () => {
       mockFindGiveawayByIdAndUser.mockResolvedValue({
         id: giveawayId,
         userId,
@@ -440,15 +446,80 @@ describe("giveaway-actions", () => {
         engagementConfig: null,
         engagementWeights: null,
         filters: null,
-        winnerSnapshot: [],
+        winnerSnapshot: [
+          { pubkey: "pk1", npub: "npub1", qualifyingActions: [] },
+        ],
+        payoutState: {
+          pk1: { status: "pending", updatedAt: new Date().toISOString() },
+        },
+      } as unknown as Giveaway);
+
+      const result = await markGiveawayPaidOut(userId, giveawayId);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Mark each winner");
+      expect(mockUpdateGiveawayRow).not.toHaveBeenCalled();
+    });
+
+    it("updates status to PAID_OUT when all winners settled", async () => {
+      mockFindGiveawayByIdAndUser.mockResolvedValue({
+        id: giveawayId,
+        userId,
+        status: "LOCKED",
+        scopeType: "PERIOD",
+        scopeReference: {},
+        winnerCount: 1,
+        engagementTypes: ["REACTION"],
+        selectionMode: "UNIQUE_USER",
+        engagementConfig: null,
+        engagementWeights: null,
+        filters: null,
+        winnerSnapshot: [
+          { pubkey: "pk1", npub: "npub1", qualifyingActions: [] },
+        ],
+        payoutState: {
+          pk1: { status: "sent", updatedAt: new Date().toISOString() },
+        },
       } as unknown as Giveaway);
       mockUpdateGiveawayRow.mockResolvedValue({});
 
       const result = await markGiveawayPaidOut(userId, giveawayId);
       expect(result.success).toBe(true);
-      expect(mockUpdateGiveawayRow).toHaveBeenCalledWith(giveawayId, {
-        status: "PAID_OUT",
+      expect(mockUpdateGiveawayRow).toHaveBeenCalledWith(
+        giveawayId,
+        expect.objectContaining({ status: "PAID_OUT" })
+      );
+    });
+
+    it("updates status to PAID_OUT with override when pending", async () => {
+      mockFindGiveawayByIdAndUser.mockResolvedValue({
+        id: giveawayId,
+        userId,
+        status: "LOCKED",
+        scopeType: "PERIOD",
+        scopeReference: {},
+        winnerCount: 1,
+        engagementTypes: ["REACTION"],
+        selectionMode: "UNIQUE_USER",
+        engagementConfig: null,
+        engagementWeights: null,
+        filters: null,
+        winnerSnapshot: [
+          { pubkey: "pk1", npub: "npub1", qualifyingActions: [] },
+        ],
+        payoutState: {
+          pk1: { status: "pending", updatedAt: new Date().toISOString() },
+        },
+      } as unknown as Giveaway);
+      mockUpdateGiveawayRow.mockResolvedValue({});
+
+      const result = await markGiveawayPaidOut(userId, giveawayId, {
+        completeOverrideReason: "Paid offline manually today",
       });
+      expect(result.success).toBe(true);
+      expect(mockUpdateGiveawayRow).toHaveBeenCalledWith(
+        giveawayId,
+        expect.objectContaining({ status: "PAID_OUT" })
+      );
     });
   });
 

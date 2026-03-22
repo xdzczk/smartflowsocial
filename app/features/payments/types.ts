@@ -17,6 +17,7 @@ export const PLAN_FEATURES = {
     giveaways: true, // Free users can access giveaways
     settings: true, // Free users can access settings
     engagement_feed: false, // Free users cannot access engagement feed
+    broadcasts: false,
   },
   basic: {
     basicScheduling: true,
@@ -34,6 +35,7 @@ export const PLAN_FEATURES = {
     giveaways: true,
     settings: true,
     engagement_feed: true,
+    broadcasts: true,
   },
   premium: {
     basicScheduling: true,
@@ -51,6 +53,7 @@ export const PLAN_FEATURES = {
     giveaways: true,
     settings: true,
     engagement_feed: true,
+    broadcasts: true,
   },
   pro: {
     basicScheduling: true,
@@ -68,6 +71,7 @@ export const PLAN_FEATURES = {
     giveaways: true,
     settings: true,
     engagement_feed: true,
+    broadcasts: true,
   },
   enterprise: {
     basicScheduling: true,
@@ -85,8 +89,57 @@ export const PLAN_FEATURES = {
     giveaways: true,
     settings: true,
     engagement_feed: true,
+    broadcasts: true,
   },
 } as const;
+
+/** Audience sources allowed for broadcast recipient resolution */
+export type BroadcastAudienceGate = "CUSTOM" | "FOLLOWING" | "MUTUALS";
+
+/**
+ * Tier limits for Broadcasts (paid-only feature; free has broadcasts: false).
+ */
+export function getBroadcastPlanLimits(planType: PlanType): {
+  maxRecipientsPerCampaign: number;
+  maxConcurrentActiveCampaigns: number;
+  maxDailyBroadcastRecipients: number;
+  allowedAudienceTypes: BroadcastAudienceGate[];
+  allowAdvancedDelivery: boolean;
+  allowSchedule: boolean;
+  allowStaggered: boolean;
+} {
+  if (planType === "free") {
+    return {
+      maxRecipientsPerCampaign: 0,
+      maxConcurrentActiveCampaigns: 0,
+      maxDailyBroadcastRecipients: 0,
+      allowedAudienceTypes: [],
+      allowAdvancedDelivery: false,
+      allowSchedule: false,
+      allowStaggered: false,
+    };
+  }
+  if (planType === "basic") {
+    return {
+      maxRecipientsPerCampaign: 75,
+      maxConcurrentActiveCampaigns: 2,
+      maxDailyBroadcastRecipients: 150,
+      allowedAudienceTypes: ["CUSTOM"],
+      allowAdvancedDelivery: false,
+      allowSchedule: true,
+      allowStaggered: false,
+    };
+  }
+  return {
+    maxRecipientsPerCampaign: 500,
+    maxConcurrentActiveCampaigns: 5,
+    maxDailyBroadcastRecipients: 2000,
+    allowedAudienceTypes: ["CUSTOM", "FOLLOWING", "MUTUALS"],
+    allowAdvancedDelivery: true,
+    allowSchedule: true,
+    allowStaggered: true,
+  };
+}
 
 export type PlanType = keyof typeof PLAN_FEATURES;
 export type FeatureName = keyof typeof PLAN_FEATURES.free;

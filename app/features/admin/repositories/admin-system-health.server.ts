@@ -22,6 +22,7 @@ const QUEUES: QueueType[] = [
   "scheduled-posts",
   "scheduled-longform-posts",
   "post-checker",
+  "broadcast-dm",
 ];
 
 export async function getAdminQueueHealthSnapshot(

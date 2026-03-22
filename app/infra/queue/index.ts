@@ -18,6 +18,9 @@ export {
   enqueueLongFormPostJob,
   cancelLongFormPostJob,
   enqueuePostCheckerJob,
+  enqueueBroadcastRecipientJob,
+  cancelBroadcastRecipientJob,
+  broadcastRecipientJobId,
 } from "./queue-operations.server";
 
 // Queue client (for advanced usage)
@@ -31,6 +34,8 @@ export type {
   QueueClient,
   PostJobData,
   LongFormPostJobData,
+  BroadcastJobData,
+  QueueJobData,
   ScheduleOptions,
   QueueOperationResult,
   JobStatus,

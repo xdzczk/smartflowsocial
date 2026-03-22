@@ -93,6 +93,11 @@ using **`nip44_encrypt`** (remote) or `window.nostr.nip44.encrypt` (extension) f
 `13`) plus local ephemeral keys for the wrap; the API validates and publishes each wrap like system
 NIP-17 DMs.
 
+**Broadcasts** (Engagement) are **user-signed** kind `4` DMs (and optional user-signed NIP-17 wraps
+stored as JSON), persisted per recipient like scheduled posts’ `signedEvent`, then published by the
+`broadcast-dm` BullMQ worker via `publishSignedEventToRelays`. They are **not** sent from
+`NOSTR_NSEC`.
+
 ### NIP-19: bech32-encoded entities
 
 **Status**: ✅ **Fully Implemented**

@@ -90,7 +90,7 @@ export function formatStatusLabel(status: string): string {
     case "DRAFT":
       return "Draft";
     case "PREVIEWED":
-      return "Winners preview";
+      return "Preview";
     case "LOCKED":
       return "Locked";
     case "PAID_OUT":

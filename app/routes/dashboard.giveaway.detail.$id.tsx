@@ -14,6 +14,8 @@ import {
   cancelGiveaway,
   deleteGiveaway,
   markGiveawayPaidOut,
+  resetGiveawayToDraft,
+  setGiveawayWinnerPayoutStatus,
   updateGiveaway,
 } from "~/features/giveaway";
 import {
@@ -22,6 +24,12 @@ import {
   resolveGiveawayQueueName,
 } from "~/features/giveaway/giveaway-display.server";
 import { getWinnerProfiles } from "~/features/giveaway/giveaway-loader.server";
+import {
+  countPayoutCompleted,
+  normalizePayoutState,
+  totalSatsBudgetFromSnapshot,
+  totalSatsPaidFromState,
+} from "~/features/giveaway/giveaway-payout.server";
 import { createGiveawayPreset } from "~/features/giveaway/giveaway-presets.server";
 import {
   getSubscriptionData,
@@ -78,6 +86,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     snapshot?.map((w: GiveawayWinnerEntry) => w.pubkey) ?? [];
   const winnerProfiles = await getWinnerProfiles(winnerPubkeys);
 
+  const payoutSnapshot = snapshot ?? [];
+  const payoutStateNormalized =
+    payoutSnapshot.length > 0
+      ? normalizePayoutState(giveaway.payoutState, payoutSnapshot)
+      : {};
+  const payoutProgress =
+    payoutSnapshot.length > 0 &&
+    (giveaway.status === "LOCKED" || giveaway.status === "PAID_OUT")
+      ? {
+          settledCount: countPayoutCompleted(
+            payoutStateNormalized,
+            payoutSnapshot.map((w) => w.pubkey)
+          ),
+          totalWinners: payoutSnapshot.length,
+          budgetSats: totalSatsBudgetFromSnapshot(payoutSnapshot),
+          settledSats: totalSatsPaidFromState(
+            payoutSnapshot,
+            payoutStateNormalized
+          ),
+        }
+      : null;
+
   return json({
     giveaway: {
       id: giveaway.id,
@@ -90,6 +120,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       winnerSnapshot: giveaway.winnerSnapshot,
       lockedAt: giveaway.lockedAt?.toISOString() ?? null,
       createdAt: giveaway.createdAt.toISOString(),
+      updatedAt: giveaway.updatedAt.toISOString(),
+      engagementConfig: giveaway.engagementConfig,
+      payoutState: payoutStateNormalized,
+      payoutProgress,
+      lastPreviewMeta: giveaway.lastPreviewMeta,
+      rerollCount: giveaway.rerollCount,
+      excludedPubkeys: giveaway.excludedPubkeys,
+      activityLog: giveaway.activityLog,
       ...(isDraftOrPreviewed && {
         scopeReference: scopeRef,
         engagementTypes: giveaway.engagementTypes as string[],
@@ -162,8 +200,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return redirect("/dashboard/giveaway");
     }
     case "markPaidOut": {
-      const result = await markGiveawayPaidOut(userId, id);
-      if (result.error) return json(result);
+      const overrideRaw = formData.get("completeOverrideReason");
+      const result = await markGiveawayPaidOut(userId, id, {
+        completeOverrideReason:
+          typeof overrideRaw === "string" ? overrideRaw : undefined,
+      });
+      if (result.error) return json(result, { status: 400 });
+      return redirectBack();
+    }
+    case "resetDraft": {
+      const result = await resetGiveawayToDraft(userId, id);
+      if (!result.success) return json(result, { status: 400 });
+      return redirectBack();
+    }
+    case "updatePayout": {
+      const winnerPubkey = formData.get("winnerPubkey");
+      const payoutStatus = formData.get("payoutStatus");
+      const noteRaw = formData.get("payoutNote");
+      if (
+        typeof winnerPubkey !== "string" ||
+        typeof payoutStatus !== "string"
+      ) {
+        return json(
+          { error: "Missing winner or payout status" },
+          { status: 400 }
+        );
+      }
+      const allowed = ["pending", "sent", "failed", "marked_paid"] as const;
+      if (!allowed.includes(payoutStatus as (typeof allowed)[number])) {
+        return json({ error: "Invalid payout status" }, { status: 400 });
+      }
+      const result = await setGiveawayWinnerPayoutStatus(
+        userId,
+        id,
+        winnerPubkey,
+        payoutStatus as (typeof allowed)[number],
+        typeof noteRaw === "string" ? noteRaw : null
+      );
+      if (!result.success) return json(result, { status: 400 });
       return redirectBack();
     }
     case "savePreset": {
@@ -179,6 +253,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         scopeReference: g.scopeReference as Record<string, unknown>,
         engagementTypes: g.engagementTypes as string[],
         winnerCount: g.winnerCount,
+        engagementConfig: g.engagementConfig as Record<
+          string,
+          { winnerCount: number; satsPerWinner: number }
+        > | null,
         selectionMode: g.selectionMode,
         engagementWeights: g.engagementWeights as Record<string, number> | null,
         filters: g.filters as Record<string, unknown> | null,
@@ -231,6 +309,14 @@ export default function DashboardGiveawayDetailPage() {
         winnerSnapshot: giveaway.winnerSnapshot as GiveawayWinnerEntry[] | null,
         lockedAt: giveaway.lockedAt,
         createdAt: giveaway.createdAt,
+        updatedAt: giveaway.updatedAt,
+        engagementConfig: giveaway.engagementConfig ?? null,
+        payoutState: giveaway.payoutState,
+        payoutProgress: giveaway.payoutProgress,
+        lastPreviewMeta: giveaway.lastPreviewMeta,
+        rerollCount: giveaway.rerollCount,
+        excludedPubkeys: giveaway.excludedPubkeys,
+        activityLog: giveaway.activityLog,
         ...("scopeReference" in giveaway && {
           scopeReference: giveaway.scopeReference,
           engagementTypes: giveaway.engagementTypes,
@@ -240,6 +326,7 @@ export default function DashboardGiveawayDetailPage() {
         }),
       }}
       canUsePresets={giveawaysLimits.canUsePresets}
+      maxWinnerCount={giveawaysLimits.maxWinnerCount}
     />
   );
 }

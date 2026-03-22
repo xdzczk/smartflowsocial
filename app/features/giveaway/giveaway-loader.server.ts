@@ -3,10 +3,13 @@
  * Centralized data fetching and processing for giveaway page
  */
 
-import { fetchFromCache } from "~/features/cache";
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { calculateTrustScore } from "~/features/engagement/trust-score";
 import type { User } from "~/features/engagement/trust-score";
+import {
+  getFollowedPubkeys,
+  getFollowerPubkeys,
+} from "~/features/nostr/social-graph.server";
 import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
 import { getRecentPublishedPosts } from "~/features/posts/server";
 import { getPostStats } from "~/features/posts/stats.server";
@@ -28,59 +31,6 @@ import type {
   RelatedEvent,
   GiveawayScope,
 } from "./types";
-
-/**
- * Fetch the given user's follow list (kind 3 contacts) and return hex pubkeys.
- * Returns [] if not available or on error.
- */
-async function getFollowedPubkeys(userPubkeyHex: string): Promise<string[]> {
-  try {
-    const responses = await fetchFromCache("event_by_addr", {
-      kind: 3,
-      pubkey: userPubkeyHex,
-      identifier: "",
-    });
-    if (!Array.isArray(responses) || responses.length === 0) return [];
-    for (const item of responses) {
-      if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
-      const ev = item[2] as { kind?: number; tags?: string[][] };
-      if (ev.kind !== 3 || !Array.isArray(ev.tags)) continue;
-      return ev.tags.flatMap((t) =>
-        Array.isArray(t) && t[0] === "p" && typeof t[1] === "string"
-          ? [t[1]]
-          : []
-      );
-    }
-  } catch {
-    // No follow list or cache error
-  }
-  return [];
-}
-
-/**
- * Fetch pubkeys of users who follow the given pubkey (kind 3 events that have pubkey in "p" tag).
- * Returns [] if not available or on error. Requires cache support for "get_followers".
- */
-async function getFollowerPubkeys(userPubkeyHex: string): Promise<string[]> {
-  try {
-    const responses = await fetchFromCache("get_followers", {
-      pubkey: userPubkeyHex,
-      limit: 5000,
-    });
-    if (!Array.isArray(responses) || responses.length === 0) return [];
-    const pubkeys: string[] = [];
-    for (const item of responses) {
-      if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
-      const ev = item[2] as { pubkey?: string; kind?: number };
-      if (ev.kind !== 3 || typeof ev.pubkey !== "string") continue;
-      pubkeys.push(ev.pubkey);
-    }
-    return [...new Set(pubkeys)];
-  } catch {
-    // get_followers not supported or cache error
-  }
-  return [];
-}
 
 /**
  * Return participant pubkeys for FOLLOWERS or FOLLOWING scope. Requires user.npub.

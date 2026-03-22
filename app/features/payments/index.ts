@@ -21,6 +21,7 @@ export type {
   FeatureName,
   UserSubscription,
   SubscriptionData,
+  BroadcastAudienceGate,
 } from "./types";
 
 // ============================================================================
@@ -30,6 +31,7 @@ export type {
 export {
   PLAN_FEATURES,
   getGiveawayPlanLimits,
+  getBroadcastPlanLimits,
   getUserPlanType,
   hasFeatureAccess,
   isSubscriptionPeriodExpired,

@@ -46,6 +46,7 @@ const USER_SCALAR_SELECT = {
   primarySignerProfile: true,
   engagementLastCheckedAt: true,
   blastrRelayEnabled: true,
+  broadcastSettings: true,
 } as const;
 
 export type UserWithHashTagPresetsRow = {

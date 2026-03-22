@@ -81,6 +81,14 @@ const RETRY_POLICIES: Record<QueueType, RetryPolicy> = {
     useJitter: true,
     jitterFactor: 0.1,
   },
+  "broadcast-dm": {
+    maxAttempts: 5,
+    baseDelayMs: 2000,
+    maxDelayMs: 60000,
+    multiplier: 2,
+    useJitter: true,
+    jitterFactor: 0.15,
+  },
 };
 
 /**

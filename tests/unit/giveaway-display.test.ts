@@ -74,7 +74,7 @@ describe("giveaway-display", () => {
   describe("formatStatusLabel", () => {
     it("maps known statuses to human label", () => {
       expect(formatStatusLabel("DRAFT")).toBe("Draft");
-      expect(formatStatusLabel("PREVIEWED")).toBe("Winners preview");
+      expect(formatStatusLabel("PREVIEWED")).toBe("Preview");
       expect(formatStatusLabel("LOCKED")).toBe("Locked");
       expect(formatStatusLabel("PAID_OUT")).toBe("Paid out");
       expect(formatStatusLabel("CANCELLED")).toBe("Cancelled");

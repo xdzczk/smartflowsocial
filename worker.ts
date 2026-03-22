@@ -18,7 +18,9 @@ if (!(globalThis as { crypto?: Crypto }).crypto?.getRandomValues) {
 // Import and initialize the queue workers
 import {
   scheduledPostsWorker,
+  scheduledLongFormPostsWorker,
   postCheckerWorker,
+  broadcastDmWorker,
 } from "./app/features/posts/queues.server";
 
 // Import outbox worker
@@ -66,6 +68,7 @@ const queueBacklogMetricsInterval = setInterval(() => {
         "scheduled-posts",
         "scheduled-longform-posts",
         "post-checker",
+        "broadcast-dm",
       ] as const;
       for (const queueName of queueNames) {
         const queue = getQueueInstance(queueName);
@@ -133,7 +136,9 @@ const blossomReservationCleanupInterval = setInterval(() => {
 logInfo("BullMQ worker started");
 logInfo("Workers initialized", {
   scheduledPostsWorker: !!scheduledPostsWorker,
+  scheduledLongFormPostsWorker: !!scheduledLongFormPostsWorker,
   postCheckerWorker: !!postCheckerWorker,
+  broadcastDmWorker: !!broadcastDmWorker,
 });
 
 // Expose Prometheus metrics endpoint (separate from web server process)
@@ -254,6 +259,8 @@ process.on("SIGTERM", () => {
   clearInterval(blossomReservationCleanupInterval);
   workerMetricsServer.close();
   void scheduledPostsWorker.close();
+  void scheduledLongFormPostsWorker.close();
+  void broadcastDmWorker.close();
   void postCheckerWorker.close();
   process.exit(0);
 });
@@ -268,6 +275,8 @@ process.on("SIGINT", () => {
   clearInterval(blossomReservationCleanupInterval);
   workerMetricsServer.close();
   void scheduledPostsWorker.close();
+  void scheduledLongFormPostsWorker.close();
+  void broadcastDmWorker.close();
   void postCheckerWorker.close();
   process.exit(0);
 });

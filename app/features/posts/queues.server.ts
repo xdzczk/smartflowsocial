@@ -11,6 +11,7 @@
 
 import { Worker, type Job } from "bullmq";
 
+import { runBroadcastDmJob } from "~/features/broadcast/broadcast-job.server";
 import { runPostChecker } from "~/features/posts/queue-handlers/checker-job.server";
 import {
   runScheduledLongFormPostJob,
@@ -27,7 +28,11 @@ import {
 } from "~/features/posts/queue-handlers/shared.server";
 import type { PublishLease } from "~/infra/publishing/publish-lease.server";
 import { getQueueInstance, redis, closeAllQueues } from "~/infra/queue";
-import type { PostJobData, LongFormPostJobData } from "~/infra/queue";
+import type {
+  PostJobData,
+  LongFormPostJobData,
+  BroadcastJobData,
+} from "~/infra/queue";
 import { logError, logInfo } from "~/lib/error-logger.server";
 import {
   recordJobMetrics,
@@ -46,6 +51,8 @@ const _scheduledLongFormPostsQueue = getQueueInstance(
   QUEUE_SCHEDULED_LONGFORM_POSTS
 );
 const postCheckerQueue = getQueueInstance(QUEUE_POST_CHECKER);
+
+const QUEUE_BROADCAST_DM = "broadcast-dm" as const;
 
 // ---------------------------------------------------------------------------
 // Worker: scheduled posts
@@ -146,6 +153,49 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
 );
 
 // ---------------------------------------------------------------------------
+// Worker: broadcast DMs
+// ---------------------------------------------------------------------------
+
+export const broadcastDmWorker = new Worker<BroadcastJobData>(
+  QUEUE_BROADCAST_DM,
+  async (job: Job<BroadcastJobData>) => {
+    const startTime = nowMillis();
+    const queueName = QUEUE_BROADCAST_DM;
+    try {
+      updateActiveJobs(queueName, 1);
+      recordJobStarted(queueName);
+      addBreadcrumb({
+        message: "broadcast_dm_job_started",
+        category: "worker",
+        level: "info",
+        data: {
+          queue: queueName,
+          campaignId: job.data.campaignId,
+          recipientId: job.data.recipientId,
+          jobId: job.id ?? "unknown",
+        },
+      });
+      const result = await runBroadcastDmJob(job);
+      const duration = nowMillis() - startTime;
+      recordJobMetrics(queueName, duration, true);
+      return result;
+    } catch (error) {
+      const duration = nowMillis() - startTime;
+      const err = error instanceof Error ? error : new Error(String(error));
+      recordJobMetrics(queueName, duration, false, err);
+      throw error;
+    } finally {
+      updateActiveJobs(queueName, -1);
+    }
+  },
+  {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
+    connection: redis as any,
+    concurrency: 3,
+  }
+);
+
+// ---------------------------------------------------------------------------
 // Worker: post checker
 // ---------------------------------------------------------------------------
 
@@ -217,6 +267,7 @@ process.on("SIGTERM", () => {
   void (async () => {
     await scheduledPostsWorker.close();
     await scheduledLongFormPostsWorker.close();
+    await broadcastDmWorker.close();
     await postCheckerWorker.close();
     await closeAllQueues();
   })();
@@ -226,6 +277,7 @@ process.on("SIGINT", () => {
   void (async () => {
     await scheduledPostsWorker.close();
     await scheduledLongFormPostsWorker.close();
+    await broadcastDmWorker.close();
     await postCheckerWorker.close();
     await closeAllQueues();
   })();
