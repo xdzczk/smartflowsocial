@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Form, Link, useLoaderData } from "@remix-run/react";
 import { useCallback, useMemo, useState } from "react";
 
 import { requireUserId } from "~/features/auth";
@@ -26,14 +26,49 @@ import { cn } from "~/lib/utils";
 
 export const meta: MetaFunction = () => [{ title: "Review broadcast — Vibe" }];
 
-function invalidCustomFromLogs(
+function audienceResolvedMetadata(
   logs: Array<{ eventType: string; metadataJson: unknown }>
-): number {
+): {
+  invalidCustom: number;
+  excludedRecentMessaged: number;
+  excludedPriorBroadcast: number;
+} {
   const resolveLog = logs.find((l) => l.eventType === "audience_resolved");
   const m = resolveLog?.metadataJson;
-  if (!m || typeof m !== "object" || !("invalidCustom" in m)) return 0;
-  const v = (m as { invalidCustom?: unknown }).invalidCustom;
-  return typeof v === "number" ? v : 0;
+  if (!m || typeof m !== "object") {
+    return {
+      invalidCustom: 0,
+      excludedRecentMessaged: 0,
+      excludedPriorBroadcast: 0,
+    };
+  }
+  const o = m as Record<string, unknown>;
+  const num = (k: string) => {
+    const v = o[k];
+    return typeof v === "number" ? v : 0;
+  };
+  return {
+    invalidCustom: num("invalidCustom"),
+    excludedRecentMessaged: num("excludedRecentMessaged"),
+    excludedPriorBroadcast: num("excludedPriorBroadcast"),
+  };
+}
+
+function parseSnapshotSummary(
+  raw: unknown
+): { summary?: Record<string, unknown>; sourceTab?: string } | null {
+  if (raw == null || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const version = o["version"];
+  if (version !== 1) return { summary: undefined, sourceTab: undefined };
+  const summaryRaw = o["summary"];
+  const summary =
+    summaryRaw && typeof summaryRaw === "object"
+      ? (summaryRaw as Record<string, unknown>)
+      : undefined;
+  const sourceTab =
+    typeof o["sourceTab"] === "string" ? o["sourceTab"] : undefined;
+  return { summary, sourceTab };
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -72,7 +107,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const limits = getBroadcastPlanLimits(planType);
   const user = await getUserById(userId);
 
-  const invalidCustom = invalidCustomFromLogs(campaign.eventLogs);
+  const resolvedMeta = audienceResolvedMetadata(campaign.eventLogs);
+  const invalidCustom = resolvedMeta.invalidCustom;
+  const parseSnapshot = parseSnapshotSummary(campaign.parseSnapshotJson);
   const reviewWarnings = await getBroadcastReviewWarnings({
     userId,
     campaignId: campaign.id,
@@ -104,6 +141,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     userTimezone: user?.timezone ?? "Etc/UTC",
     warnings,
     invalidCustom,
+    excludedRecentMessaged: resolvedMeta.excludedRecentMessaged,
+    excludedPriorBroadcast: resolvedMeta.excludedPriorBroadcast,
+    parseSnapshot,
     scheduledIsFuture,
   });
 }
@@ -118,6 +158,9 @@ export default function BroadcastNewReviewRoute() {
     userTimezone,
     warnings,
     invalidCustom,
+    excludedRecentMessaged,
+    excludedPriorBroadcast,
+    parseSnapshot,
     scheduledIsFuture,
   } = useLoaderData<typeof loader>();
 
@@ -136,6 +179,9 @@ export default function BroadcastNewReviewRoute() {
     });
     return `This broadcast will begin sending on ${formatted} (${userTimezone}).`;
   }, [campaign.scheduledFor, userTimezone]);
+
+  const snapshotSummary = parseSnapshot?.summary;
+  const snapshotSourceTab = parseSnapshot?.sourceTab;
 
   const runFinalize = useCallback(async () => {
     setFinalizeError(null);
@@ -261,6 +307,10 @@ export default function BroadcastNewReviewRoute() {
                 ) : null}
               </li>
               <li>Invalid custom lines skipped: {invalidCustom}</li>
+              <li>Excluded (messaged recently): {excludedRecentMessaged}</li>
+              <li>
+                Excluded (prior broadcast recipients): {excludedPriorBroadcast}
+              </li>
               <li>Pending signatures: {pendingRecipients.length}</li>
             </ul>
             <p className="text-muted-foreground mt-3 text-xs">
@@ -268,6 +318,95 @@ export default function BroadcastNewReviewRoute() {
               list and self-send rules. You can add or remove entries anytime
               before signing.
             </p>
+          </section>
+
+          {snapshotSummary || snapshotSourceTab ? (
+            <section className="border-border rounded-lg border p-4">
+              <h2 className="font-medium">Composer snapshot</h2>
+              <p className="text-muted-foreground mt-2 text-sm">
+                {snapshotSourceTab ? (
+                  <>
+                    Source tab when drafted:{" "}
+                    <span className="text-foreground font-medium">
+                      {snapshotSourceTab}
+                    </span>
+                  </>
+                ) : null}
+              </p>
+              {snapshotSummary ? (
+                <ul className="text-muted-foreground mt-2 space-y-1 text-sm">
+                  {typeof snapshotSummary["parsed"] === "number" ? (
+                    <li>
+                      Parsed (from composer):{" "}
+                      {String(snapshotSummary["parsed"])}
+                    </li>
+                  ) : null}
+                  {typeof snapshotSummary["valid"] === "number" ? (
+                    <li>
+                      Valid (from composer): {String(snapshotSummary["valid"])}
+                    </li>
+                  ) : null}
+                  {typeof snapshotSummary["duplicates"] === "number" ? (
+                    <li>
+                      Duplicates (from composer):{" "}
+                      {String(snapshotSummary["duplicates"])}
+                    </li>
+                  ) : null}
+                  {typeof snapshotSummary["invalid"] === "number" ? (
+                    <li>
+                      Invalid (from composer):{" "}
+                      {String(snapshotSummary["invalid"])}
+                    </li>
+                  ) : null}
+                  {typeof snapshotSummary["finalSendable"] === "number" ? (
+                    <li>
+                      Sendable estimate (from composer):{" "}
+                      {String(snapshotSummary["finalSendable"])}
+                    </li>
+                  ) : null}
+                </ul>
+              ) : null}
+              <p className="text-muted-foreground mt-2 text-xs">
+                Final counts above reflect server resolution (suppression,
+                exclusions, graph).
+              </p>
+            </section>
+          ) : null}
+
+          <section className="border-border rounded-lg border p-4">
+            <h2 className="font-medium">Save audience</h2>
+            <p className="text-muted-foreground mt-2 text-sm">
+              Save this audience definition to your library for reuse (same type
+              and recipient lines as this draft).
+            </p>
+            <Form
+              method="post"
+              action="/dashboard/broadcasts/audiences"
+              className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+            >
+              <input type="hidden" name="intent" value="save_from_review" />
+              <input type="hidden" name="campaignId" value={campaign.id} />
+              <div className="min-w-[200px] flex-1">
+                <label
+                  htmlFor="save-audience-name"
+                  className="mb-1 block text-xs font-medium"
+                >
+                  Name
+                </label>
+                <input
+                  id="save-audience-name"
+                  name="name"
+                  defaultValue={`${campaign.name} audience`}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+              >
+                Save as audience
+              </button>
+            </Form>
           </section>
         </div>
 

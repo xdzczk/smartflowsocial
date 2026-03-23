@@ -72,5 +72,39 @@ export async function getBroadcastReviewWarnings(input: {
     }
   }
 
+  const priorSizes = await prisma.broadcastCampaign.findMany({
+    where: {
+      userId: input.userId,
+      id: { not: input.campaignId },
+      totalRecipients: { gt: 0 },
+      status: {
+        in: [
+          "COMPLETED",
+          "COMPLETED_WITH_FAILURES",
+          "SENDING",
+          "QUEUED",
+          "SCHEDULED",
+        ],
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 12,
+    select: { totalRecipients: true },
+  });
+  const sizes = priorSizes.map((r) => r.totalRecipients).sort((a, b) => a - b);
+  if (sizes.length >= 3) {
+    const median = sizes[Math.floor(sizes.length / 2)] ?? 0;
+    if (median > 0 && input.totalRecipients > median * 2.5) {
+      out.push({
+        level: "warning",
+        message: `This audience (${String(
+          input.totalRecipients
+        )} recipients) is much larger than your typical recent broadcast (median ~${String(
+          median
+        )}). Confirm intent and message tone.`,
+      });
+    }
+  }
+
   return out;
 }

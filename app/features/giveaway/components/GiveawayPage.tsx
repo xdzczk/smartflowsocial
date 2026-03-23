@@ -9,6 +9,7 @@ import {
 } from "~/components/ui/card";
 
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
+import { scopeIsFollowGraphAccountPool } from "../types";
 
 function engagementLabel(t: string): string {
   const m: Record<string, string> = {
@@ -319,16 +320,22 @@ export default function GiveawayPage({
                       {g.scopeSummaryLabel}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {g.engagementTypes.map((t) => (
-                          <span
-                            key={t}
-                            className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs"
-                          >
-                            {engagementLabel(t)}
-                          </span>
-                        ))}
-                      </div>
+                      {scopeIsFollowGraphAccountPool(g.scopeType) ? (
+                        <span className="text-muted-foreground text-xs">
+                          Account pool
+                        </span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {g.engagementTypes.map((t) => (
+                            <span
+                              key={t}
+                              className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs"
+                            >
+                              {engagementLabel(t)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs tabular-nums">
                       {g.snapshotWinnerCount > 0
@@ -460,14 +467,20 @@ export default function GiveawayPage({
                       {g.scopeSummaryLabel}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {g.engagementTypes.map((t) => (
-                        <span
-                          key={t}
-                          className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs"
-                        >
-                          {engagementLabel(t)}
+                      {scopeIsFollowGraphAccountPool(g.scopeType) ? (
+                        <span className="text-muted-foreground text-xs">
+                          Account pool
                         </span>
-                      ))}
+                      ) : (
+                        g.engagementTypes.map((t) => (
+                          <span
+                            key={t}
+                            className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs"
+                          >
+                            {engagementLabel(t)}
+                          </span>
+                        ))
+                      )}
                     </div>
                     <p className="text-muted-foreground mt-2 text-xs">
                       {g.snapshotWinnerCount > 0

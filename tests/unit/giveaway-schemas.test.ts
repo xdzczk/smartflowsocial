@@ -117,7 +117,7 @@ describe("giveaway-schemas", () => {
       expect(result.success).toBe(false);
     });
 
-    it("rejects empty engagementTypes", () => {
+    it("rejects empty engagementTypes when not follow-graph scope", () => {
       const result = createGiveawaySchema.safeParse({
         scopeType: "PERIOD",
         scopeReference: {},
@@ -125,6 +125,18 @@ describe("giveaway-schemas", () => {
         winnerCount: 1,
       });
       expect(result.success).toBe(false);
+    });
+
+    it("allows empty engagementTypes for followers/following (account pool)", () => {
+      for (const scopeType of ["FOLLOWERS", "FOLLOWING"] as const) {
+        const result = createGiveawaySchema.safeParse({
+          scopeType,
+          scopeReference: {},
+          engagementTypes: [],
+          winnerCount: 1,
+        });
+        expect(result.success).toBe(true);
+      }
     });
 
     it("rejects winnerCount out of range", () => {

@@ -3,7 +3,6 @@ import { z } from "zod";
 
 export const broadcastAudienceTypeSchema = z.enum([
   "CUSTOM",
-  "FOLLOWING",
   "FOLLOWERS",
   "MUTUALS",
 ]);
@@ -27,6 +26,8 @@ export const createBroadcastDraftSchema = z
     deliveryMode: broadcastDeliveryModeSchema.optional(),
     sendStrategy: broadcastSendStrategySchema.optional(),
     scheduledForIso: z.string().optional(),
+    parseSnapshotJson: z.unknown().optional(),
+    exclusionRulesJson: z.unknown().optional(),
   })
   .transform((d) => ({
     ...d,

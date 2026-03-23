@@ -15,6 +15,19 @@ import {
 } from "~/features/giveaway/giveaway-finalization-fee.shared";
 import type { PlanType } from "~/features/payments/types";
 
+import {
+  ALL_GIVEAWAY_ENGAGEMENT_TYPES,
+  scopeAllowsEngagementEntryTypePick,
+  scopeIsFollowGraphAccountPool,
+} from "../types";
+
+const DEFAULT_ENGAGEMENT_ALL: Record<string, boolean> = {
+  REACTION: true,
+  REPOST: true,
+  COMMENT: true,
+  ZAP: true,
+};
+
 const ENGAGEMENT_META: Array<{
   value: string;
   label: string;
@@ -132,6 +145,7 @@ function GiveawayNewBuilderStickySummary({
   planDisplayName,
   plannedPayoutForFee,
   feePreview,
+  isFollowGraphScope,
 }: {
   scopeType: BuilderScopeType;
   periodMode: "days" | "custom";
@@ -153,6 +167,7 @@ function GiveawayNewBuilderStickySummary({
     waivedByPlan: boolean;
     rateBps: number;
   } | null;
+  isFollowGraphScope: boolean;
 }) {
   return (
     <aside className="mt-10 space-y-4 lg:mt-0">
@@ -167,13 +182,17 @@ function GiveawayNewBuilderStickySummary({
             {asideScopeLine(scopeType, periodMode)}
           </div>
           <div>
-            <span className="text-foreground font-medium">Engagement · </span>
-            {selectedTypes.length ? selectedTypes.join(", ") : "None selected"}
+            <span className="text-foreground font-medium">Entries · </span>
+            {isFollowGraphScope
+              ? "Random from accounts (after filters)"
+              : selectedTypes.length
+                ? selectedTypes.join(", ")
+                : "None selected"}
           </div>
           <div>
             <span className="text-foreground font-medium">Winners · </span>
             {winnerCount} total
-            {rewardMode === "simple" && typeCount > 1 ? (
+            {!isFollowGraphScope && rewardMode === "simple" && typeCount > 1 ? (
               <span className="block text-xs">
                 (split across {typeCount} types in the backend)
               </span>
@@ -206,7 +225,11 @@ function GiveawayNewBuilderStickySummary({
           ) : null}
           <div>
             <span className="text-foreground font-medium">Selection · </span>
-            {selectionMode === "UNIQUE_USER" ? "Unique user" : "Weighted"}
+            {isFollowGraphScope
+              ? "Uniform random"
+              : selectionMode === "UNIQUE_USER"
+                ? "Unique user"
+                : "Weighted"}
           </div>
           <div>
             <span className="text-foreground font-medium">Plan · </span>
@@ -318,6 +341,7 @@ function GiveawayNewBuilderSelectionAndReview({
   feePreview,
   planDisplayName,
   actionError,
+  isFollowGraphScope,
 }: {
   scopeType: BuilderScopeType;
   periodMode: "days" | "custom";
@@ -339,6 +363,7 @@ function GiveawayNewBuilderSelectionAndReview({
   } | null;
   planDisplayName: string;
   actionError?: string;
+  isFollowGraphScope: boolean;
 }) {
   return (
     <>
@@ -346,41 +371,51 @@ function GiveawayNewBuilderSelectionAndReview({
         <h2 id="sel-heading" className="text-foreground text-lg font-semibold">
           4. How should winners be chosen?
         </h2>
-        <div className="max-w-md">
-          <label
-            htmlFor="selectionMode"
-            className="text-muted-foreground text-sm"
-          >
-            Selection mode
-          </label>
-          <select
-            id="selectionMode"
-            name="selectionMode"
-            value={selectionMode}
-            onChange={(e) => {
-              setSelectionMode(
-                e.target.value === "WEIGHTED_BY_ENGAGEMENT"
-                  ? "WEIGHTED_BY_ENGAGEMENT"
-                  : "UNIQUE_USER"
-              );
-            }}
-            className="border-border bg-background mt-1 block w-full rounded-md border px-2 py-2 text-sm"
-          >
-            <option value="UNIQUE_USER">
-              Unique user — one entry per eligible pubkey
-            </option>
-            <option value="WEIGHTED_BY_ENGAGEMENT">
-              Weighted by engagement — more activity, higher chance
-            </option>
-          </select>
-        </div>
+        {isFollowGraphScope ? (
+          <>
+            <input type="hidden" name="selectionMode" value="UNIQUE_USER" />
+            <p className="text-muted-foreground max-w-prose text-sm">
+              Winners are picked uniformly at random from eligible accounts in
+              your follower or following list (after filters). This is not based
+              on note reactions or zaps.
+            </p>
+          </>
+        ) : (
+          <div className="max-w-md">
+            <label
+              htmlFor="selectionMode"
+              className="text-muted-foreground text-sm"
+            >
+              Selection mode
+            </label>
+            <select
+              id="selectionMode"
+              name="selectionMode"
+              value={selectionMode}
+              onChange={(e) => {
+                setSelectionMode(
+                  e.target.value === "WEIGHTED_BY_ENGAGEMENT"
+                    ? "WEIGHTED_BY_ENGAGEMENT"
+                    : "UNIQUE_USER"
+                );
+              }}
+              className="border-border bg-background mt-1 block w-full rounded-md border px-2 py-2 text-sm"
+            >
+              <option value="UNIQUE_USER">
+                Unique user — one entry per eligible pubkey
+              </option>
+              <option value="WEIGHTED_BY_ENGAGEMENT">
+                Weighted by engagement — more activity, higher chance
+              </option>
+            </select>
+          </div>
+        )}
         <div className="border-border rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm">
           <p className="text-foreground font-medium">Fairness</p>
           <p className="text-muted-foreground mt-2">
-            Winners are picked at random from eligible participants after
-            filters. In unique-user mode each eligible account gets one entry.
-            Locked giveaways cannot be edited — preview first, then lock when
-            you’re satisfied.
+            {isFollowGraphScope
+              ? "The eligible pool is built from your follow graph at lock time. Each eligible account has one chance to win."
+              : "Winners are picked at random from eligible participants after filters. In unique-user mode each eligible account gets one entry. Locked giveaways cannot be edited — preview first, then lock when you’re satisfied."}
           </p>
         </div>
       </section>
@@ -397,7 +432,7 @@ function GiveawayNewBuilderSelectionAndReview({
             </span>
           </li>
           <li>
-            Engagement:{" "}
+            {isFollowGraphScope ? "Pool: " : "Engagement: "}
             <span className="text-foreground">{summary.engagementLine}</span>
           </li>
           <li>
@@ -416,9 +451,11 @@ function GiveawayNewBuilderSelectionAndReview({
           <li>
             Selection:{" "}
             <span className="text-foreground">
-              {selectionMode === "UNIQUE_USER"
-                ? "Unique user"
-                : "Weighted by engagement"}
+              {isFollowGraphScope
+                ? "Uniform random from accounts"
+                : selectionMode === "UNIQUE_USER"
+                  ? "Unique user"
+                  : "Weighted by engagement"}
             </span>
           </li>
           {plannedPayoutForFee != null && feePreview ? (
@@ -487,6 +524,18 @@ export function GiveawayNewBuilder({
     "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT"
   >("UNIQUE_USER");
 
+  const canPickEngagementEntryTypes =
+    scopeAllowsEngagementEntryTypePick(scopeType);
+  const isFollowGraphScope = scopeIsFollowGraphAccountPool(scopeType);
+
+  const effectiveRewardMode = isFollowGraphScope ? "simple" : rewardMode;
+  const effectiveSelectionMode = isFollowGraphScope
+    ? "UNIQUE_USER"
+    : selectionMode;
+  const effectiveEngagement = canPickEngagementEntryTypes
+    ? engagement
+    : DEFAULT_ENGAGEMENT_ALL;
+
   const filteredPosts = useMemo(() => {
     const q = postSearch.trim().toLowerCase();
     if (!q) return recentPosts;
@@ -496,26 +545,35 @@ export function GiveawayNewBuilder({
     });
   }, [recentPosts, postSearch]);
 
-  const selectedTypes = ENGAGEMENT_META.filter((m) => engagement[m.value]).map(
-    (m) => m.value
-  );
+  const selectedTypes = ENGAGEMENT_META.filter(
+    (m) => effectiveEngagement[m.value]
+  ).map((m) => m.value);
   const typeCount = Math.max(1, selectedTypes.length);
 
   const summary = useMemo(() => {
-    const maxPayout = rewardMode === "simple" ? winnerCount * simpleSats : null;
+    const maxPayout =
+      effectiveRewardMode === "simple" ? winnerCount * simpleSats : null;
     const avg =
-      rewardMode === "simple" && winnerCount > 0 && simpleSats > 0
+      effectiveRewardMode === "simple" && winnerCount > 0 && simpleSats > 0
         ? simpleSats
         : null;
     return {
       maxPayout,
       avg,
-      engagementLine: selectedTypes.join(", ") || "—",
+      engagementLine: isFollowGraphScope
+        ? "Random from follower/following list"
+        : selectedTypes.join(", ") || "—",
     };
-  }, [rewardMode, winnerCount, simpleSats, selectedTypes]);
+  }, [
+    effectiveRewardMode,
+    winnerCount,
+    simpleSats,
+    selectedTypes,
+    isFollowGraphScope,
+  ]);
 
   const plannedPayoutForFee =
-    rewardMode === "simple" ? winnerCount * simpleSats : null;
+    effectiveRewardMode === "simple" ? winnerCount * simpleSats : null;
   const feePreview = useMemo(() => {
     if (plannedPayoutForFee == null) return null;
     const rateBps = getFinalizationFeeRateBps(planType);
@@ -551,7 +609,7 @@ export function GiveawayNewBuilder({
         className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-start lg:gap-8"
       >
         <input type="hidden" name="intent" value="create" />
-        <input type="hidden" name="rewardMode" value={rewardMode} />
+        <input type="hidden" name="rewardMode" value={effectiveRewardMode} />
         <input type="hidden" name="periodMode" value={periodMode} />
 
         <div className="min-w-0 space-y-10">
@@ -795,38 +853,65 @@ export function GiveawayNewBuilder({
             >
               2. Who is eligible?
             </h2>
-            <p className="text-muted-foreground text-sm">
-              Pick engagement types that count as entries.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {ENGAGEMENT_META.map((m) => (
-                <label
-                  key={m.value}
-                  htmlFor={`giveaway-engagement-${m.value}`}
-                  className="border-border bg-card flex cursor-pointer gap-3 rounded-lg border p-3"
-                >
+            {canPickEngagementEntryTypes ? (
+              <>
+                <p className="text-muted-foreground text-sm">
+                  Pick engagement types that count as entries.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {ENGAGEMENT_META.map((m) => (
+                    <label
+                      key={m.value}
+                      htmlFor={`giveaway-engagement-${m.value}`}
+                      className="border-border bg-card flex cursor-pointer gap-3 rounded-lg border p-3"
+                    >
+                      <input
+                        id={`giveaway-engagement-${m.value}`}
+                        type="checkbox"
+                        name="engagementTypes"
+                        aria-label={`${m.label}: ${m.hint}`}
+                        value={m.value}
+                        checked={engagement[m.value] ?? false}
+                        onChange={(e) => {
+                          toggleEngagement(m.value, e.target.checked);
+                        }}
+                      />
+                      <span>
+                        <span className="text-foreground font-medium">
+                          {m.label}
+                        </span>
+                        <span className="text-muted-foreground block text-xs">
+                          {m.hint}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </>
+            ) : isFollowGraphScope ? (
+              <p className="text-muted-foreground text-sm">
+                Winners are picked at random from eligible accounts in your
+                follower or following list (not from note reactions or zaps).
+                The list is snapshotted when you lock. Use filters below to
+                exclude accounts from the pool.
+              </p>
+            ) : (
+              <>
+                <p className="text-muted-foreground text-sm">
+                  For this scope, reactions, reposts, comments, and zaps can
+                  count as entries. You can narrow types only for period or
+                  single-post giveaways.
+                </p>
+                {ALL_GIVEAWAY_ENGAGEMENT_TYPES.map((t) => (
                   <input
-                    id={`giveaway-engagement-${m.value}`}
-                    type="checkbox"
+                    key={t}
+                    type="hidden"
                     name="engagementTypes"
-                    aria-label={`${m.label}: ${m.hint}`}
-                    value={m.value}
-                    checked={engagement[m.value] ?? false}
-                    onChange={(e) => {
-                      toggleEngagement(m.value, e.target.checked);
-                    }}
+                    value={t}
                   />
-                  <span>
-                    <span className="text-foreground font-medium">
-                      {m.label}
-                    </span>
-                    <span className="text-muted-foreground block text-xs">
-                      {m.hint}
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
+                ))}
+              </>
+            )}
 
             <div className="space-y-3">
               <p className="text-foreground text-sm font-medium">Exclude</p>
@@ -905,7 +990,9 @@ export function GiveawayNewBuilder({
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
-                variant={rewardMode === "simple" ? "default" : "outline"}
+                variant={
+                  effectiveRewardMode === "simple" ? "default" : "outline"
+                }
                 size="sm"
                 onClick={() => {
                   setRewardMode("simple");
@@ -913,19 +1000,23 @@ export function GiveawayNewBuilder({
               >
                 Simple payout
               </Button>
-              <Button
-                type="button"
-                variant={rewardMode === "advanced" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setRewardMode("advanced");
-                }}
-              >
-                Customize by engagement type
-              </Button>
+              {!isFollowGraphScope ? (
+                <Button
+                  type="button"
+                  variant={
+                    effectiveRewardMode === "advanced" ? "default" : "outline"
+                  }
+                  size="sm"
+                  onClick={() => {
+                    setRewardMode("advanced");
+                  }}
+                >
+                  Customize by engagement type
+                </Button>
+              ) : null}
             </div>
 
-            {rewardMode === "simple" ? (
+            {effectiveRewardMode === "simple" ? (
               <div className="border-border bg-muted/20 flex flex-wrap gap-6 rounded-lg border p-4">
                 <div>
                   <label
@@ -1044,14 +1135,15 @@ export function GiveawayNewBuilder({
             periodMode={periodMode}
             summary={summary}
             winnerCount={winnerCount}
-            rewardMode={rewardMode}
+            rewardMode={effectiveRewardMode}
             simpleSats={simpleSats}
-            selectionMode={selectionMode}
+            selectionMode={effectiveSelectionMode}
             setSelectionMode={setSelectionMode}
             plannedPayoutForFee={plannedPayoutForFee}
             feePreview={feePreview}
             planDisplayName={planDisplayName}
             actionError={actionError}
+            isFollowGraphScope={isFollowGraphScope}
           />
         </div>
 
@@ -1060,14 +1152,15 @@ export function GiveawayNewBuilder({
           periodMode={periodMode}
           selectedTypes={selectedTypes}
           winnerCount={winnerCount}
-          rewardMode={rewardMode}
+          rewardMode={effectiveRewardMode}
           simpleSats={simpleSats}
           summary={summary}
-          selectionMode={selectionMode}
+          selectionMode={effectiveSelectionMode}
           typeCount={typeCount}
           planDisplayName={planDisplayName}
           plannedPayoutForFee={plannedPayoutForFee}
           feePreview={feePreview}
+          isFollowGraphScope={isFollowGraphScope}
         />
       </form>
 

@@ -85,6 +85,23 @@ export type GiveawayScope =
  */
 export type GiveawayEngagementType = "REACTION" | "REPOST" | "COMMENT" | "ZAP";
 
+/** All engagement types; used when the scope does not allow narrowing which types count as entries. */
+export const ALL_GIVEAWAY_ENGAGEMENT_TYPES: readonly GiveawayEngagementType[] =
+  ["REACTION", "REPOST", "COMMENT", "ZAP"];
+
+/**
+ * Period- and single-post giveaways let creators choose which engagement types
+ * count as entries. Queue-scoped giveaways use all types (no separate picker in the builder).
+ */
+export function scopeAllowsEngagementEntryTypePick(scopeType: string): boolean {
+  return scopeType === "PERIOD" || scopeType === "SINGLE_POST";
+}
+
+/** Followers / following giveaways pick random accounts from the graph — not engagement-based. */
+export function scopeIsFollowGraphAccountPool(scopeType: string): boolean {
+  return scopeType === "FOLLOWERS" || scopeType === "FOLLOWING";
+}
+
 /**
  * Per-engagement config: winner count and sats per winner for one engagement type.
  */

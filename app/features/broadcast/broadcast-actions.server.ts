@@ -11,6 +11,7 @@ import { looksSpammyMessage } from "~/features/broadcast/broadcast-guardrails.se
 import {
   applySuppressionAndSelf,
   normalizePubkeyInput,
+  parseCustomNpubLines,
   resolveAudiencePubkeys,
 } from "~/features/broadcast/broadcast-resolve.server";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
@@ -41,6 +42,9 @@ export class BroadcastActionError extends Error {
 }
 
 const MSG_CAMPAIGN_NOT_FOUND = "Campaign not found";
+const MSG_FOLLOWING_AUDIENCE_REMOVED =
+  "The “Following” audience type is no longer available.";
+const MSG_SAVED_AUDIENCE_NOT_FOUND = "Saved audience not found";
 
 async function countBroadcastRecipientsFinalizedToday(
   userId: string
@@ -150,6 +154,14 @@ export async function createBroadcastDraft(
         sendStrategy: input.sendStrategy,
         scheduledFor,
         customNpubLines: input.customNpubLines,
+        parseSnapshotJson:
+          input.parseSnapshotJson === undefined
+            ? undefined
+            : (input.parseSnapshotJson as object),
+        exclusionRulesJson:
+          input.exclusionRulesJson === undefined
+            ? undefined
+            : (input.exclusionRulesJson as object),
       },
     });
     await appendBroadcastEventLog(
@@ -224,11 +236,62 @@ export async function resolveRecipientsForCampaign(
       senderPubkeyHex: senderHex.toLowerCase(),
     });
 
-  const { included, suppressedCount } = applySuppressionAndSelf({
+  let { included, suppressedCount } = applySuppressionAndSelf({
     pubkeys,
     selfPubkeyHex: senderHex,
     suppressed,
   });
+
+  let excludedRecentMessaged = 0;
+  const rules = campaign.exclusionRulesJson as
+    | {
+        excludeMessagedWithinDays?: number;
+        excludePriorBroadcastRecipients?: boolean;
+      }
+    | null
+    | undefined;
+  if (
+    rules &&
+    typeof rules.excludeMessagedWithinDays === "number" &&
+    rules.excludeMessagedWithinDays > 0
+  ) {
+    const days = Math.min(
+      365,
+      Math.max(1, Math.floor(rules.excludeMessagedWithinDays))
+    );
+    const since = new Date(Date.now() - days * 86400000);
+    const recentRows = await prisma.broadcastRecipient.findMany({
+      where: {
+        campaign: { userId },
+        sentAt: { gte: since },
+        status: BroadcastRecipientStatus.SENT,
+      },
+      select: { recipientPubkey: true },
+    });
+    const recentSet = new Set(
+      recentRows.map((r) => r.recipientPubkey.toLowerCase())
+    );
+    const before = included.length;
+    included = included.filter((p) => !recentSet.has(p.toLowerCase()));
+    excludedRecentMessaged = before - included.length;
+  }
+
+  let excludedPriorBroadcast = 0;
+  if (rules?.excludePriorBroadcastRecipients === true) {
+    const priorRecipients = await prisma.broadcastRecipient.findMany({
+      where: {
+        campaign: { userId, id: { not: campaignId } },
+        status: BroadcastRecipientStatus.SENT,
+      },
+      select: { recipientPubkey: true },
+    });
+    const priorSet = new Set(
+      priorRecipients.map((r) => r.recipientPubkey.toLowerCase())
+    );
+    const beforePrior = included.length;
+    included = included.filter((p) => !priorSet.has(p.toLowerCase()));
+    excludedPriorBroadcast = beforePrior - included.length;
+  }
 
   if (
     included.length === 0 &&
@@ -298,6 +361,8 @@ export async function resolveRecipientsForCampaign(
     metadataJson: {
       suppressedCount,
       invalidCustom,
+      excludedRecentMessaged,
+      excludedPriorBroadcast,
     },
   });
 
@@ -659,6 +724,12 @@ export async function duplicateBroadcastCampaign(
   if (!src) {
     throw new BroadcastActionError(MSG_CAMPAIGN_NOT_FOUND, "NOT_FOUND");
   }
+  if (src.audienceType === "FOLLOWING") {
+    throw new BroadcastActionError(
+      "The “Following” audience is no longer available. Create a new broadcast using Followers, Mutuals, or a custom list.",
+      "AUDIENCE"
+    );
+  }
   const row = await prisma.broadcastCampaign.create({
     data: {
       userId,
@@ -670,6 +741,8 @@ export async function duplicateBroadcastCampaign(
       sendStrategy: src.sendStrategy,
       scheduledFor: null,
       customNpubLines: src.customNpubLines,
+      parseSnapshotJson: src.parseSnapshotJson ?? undefined,
+      exclusionRulesJson: src.exclusionRulesJson ?? undefined,
       duplicatedFromId: src.id,
     },
   });
@@ -735,6 +808,9 @@ export async function createBroadcastSavedAudience(
     ruleSummary?: string;
   }
 ) {
+  if (input.audienceType === "FOLLOWING") {
+    throw new BroadcastActionError(MSG_FOLLOWING_AUDIENCE_REMOVED, "AUDIENCE");
+  }
   return prisma.broadcastSavedAudience.create({
     data: {
       userId,
@@ -754,7 +830,102 @@ export async function deleteBroadcastSavedAudience(
     where: { id, userId },
   });
   if (!row) {
-    throw new BroadcastActionError("Saved audience not found", "NOT_FOUND");
+    throw new BroadcastActionError(MSG_SAVED_AUDIENCE_NOT_FOUND, "NOT_FOUND");
   }
   await prisma.broadcastSavedAudience.delete({ where: { id } });
+}
+
+export async function updateBroadcastSavedAudience(
+  userId: string,
+  id: string,
+  input: {
+    name: string;
+    audienceType: BroadcastAudienceType;
+    customNpubLines: string[];
+    ruleSummary?: string | null;
+  }
+) {
+  if (input.audienceType === "FOLLOWING") {
+    throw new BroadcastActionError(MSG_FOLLOWING_AUDIENCE_REMOVED, "AUDIENCE");
+  }
+  const row = await prisma.broadcastSavedAudience.findFirst({
+    where: { id, userId },
+  });
+  if (!row) {
+    throw new BroadcastActionError(MSG_SAVED_AUDIENCE_NOT_FOUND, "NOT_FOUND");
+  }
+  return prisma.broadcastSavedAudience.update({
+    where: { id },
+    data: {
+      name: input.name,
+      audienceType: input.audienceType,
+      customNpubLines: input.customNpubLines,
+      ruleSummary: input.ruleSummary ?? null,
+    },
+  });
+}
+
+export async function duplicateBroadcastSavedAudience(
+  userId: string,
+  id: string
+): Promise<{ id: string }> {
+  const row = await prisma.broadcastSavedAudience.findFirst({
+    where: { id, userId },
+  });
+  if (!row) {
+    throw new BroadcastActionError(MSG_SAVED_AUDIENCE_NOT_FOUND, "NOT_FOUND");
+  }
+  if (row.audienceType === "FOLLOWING") {
+    throw new BroadcastActionError(MSG_FOLLOWING_AUDIENCE_REMOVED, "AUDIENCE");
+  }
+  const created = await prisma.broadcastSavedAudience.create({
+    data: {
+      userId,
+      name: `${row.name} (copy)`,
+      audienceType: row.audienceType,
+      customNpubLines: row.customNpubLines,
+      ruleSummary: row.ruleSummary,
+    },
+  });
+  return { id: created.id };
+}
+
+export async function refreshSavedAudienceEstimate(
+  userId: string,
+  id: string
+): Promise<{ size: number }> {
+  const row = await prisma.broadcastSavedAudience.findFirst({
+    where: { id, userId },
+  });
+  if (!row) {
+    throw new BroadcastActionError(MSG_SAVED_AUDIENCE_NOT_FOUND, "NOT_FOUND");
+  }
+  const user = await getUserById(userId);
+  if (!user?.npub) {
+    throw new BroadcastActionError("User npub missing", "USER");
+  }
+  const { nostrAdapter } = await import("~/lib/nostr-adapter.server");
+  const senderHex = nostrAdapter.decodeNpub(user.npub) ?? user.npub;
+  if (!/^[0-9a-f]{64}$/i.test(senderHex)) {
+    throw new BroadcastActionError("Invalid account pubkey", "USER");
+  }
+
+  let size = 0;
+  if (row.audienceType === "CUSTOM") {
+    const { valid } = parseCustomNpubLines(row.customNpubLines);
+    size = valid.length;
+  } else {
+    const { pubkeys } = await resolveAudiencePubkeys({
+      audienceType: row.audienceType,
+      customLines: row.customNpubLines,
+      senderPubkeyHex: senderHex.toLowerCase(),
+    });
+    size = pubkeys.length;
+  }
+
+  await prisma.broadcastSavedAudience.update({
+    where: { id },
+    data: { lastResolvedSize: size },
+  });
+  return { size };
 }

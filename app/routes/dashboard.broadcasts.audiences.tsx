@@ -1,26 +1,59 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, Link, useLoaderData } from "@remix-run/react";
+import { Form, Link, useLoaderData, useSearchParams } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
 import {
   createBroadcastSavedAudience,
   deleteBroadcastSavedAudience,
+  duplicateBroadcastSavedAudience,
   formatBroadcastAudienceLabel,
+  getBroadcastCampaignForUser,
   listBroadcastSavedAudiences,
+  refreshSavedAudienceEstimate,
+  updateBroadcastSavedAudience,
 } from "~/features/broadcast";
 import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { cn } from "~/lib/utils";
+
+const BROADCAST_AUDIENCES_PATH = "/dashboard/broadcasts/audiences";
+
+const VALID_SAVED_AUDIENCE_TYPES = ["CUSTOM", "FOLLOWERS", "MUTUALS"] as const;
+const ERR_INVALID_AUDIENCE = "Invalid audience";
+const ERR_MISSING_ID = "Missing id";
+
+function audienceTypeBadgeClass(t: string): string {
+  switch (t) {
+    case "MUTUALS":
+      return "bg-emerald-500/15 text-emerald-900 dark:text-emerald-100";
+    case "FOLLOWERS":
+      return "bg-amber-500/15 text-amber-950 dark:text-amber-100";
+    case "CUSTOM":
+      return "bg-blue-500/15 text-blue-950 dark:text-blue-100";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
   await requireFeatureAccess(userId, "broadcasts");
 
+  const url = new URL(request.url);
+  const notice = url.searchParams.get("notice");
+  const editId = url.searchParams.get("edit");
+
   const rows = await listBroadcastSavedAudiences(userId);
-  return json({ rows });
+  const editingRow =
+    editId && rows.some((r) => r.id === editId)
+      ? (rows.find((r) => r.id === editId) ?? null)
+      : null;
+
+  return json({ rows, notice, editingRow });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -31,48 +64,118 @@ export async function action({ request }: ActionFunctionArgs) {
   const form = await request.formData();
   const intent = form.get("intent");
 
+  const splitCustom = (raw: string) =>
+    raw
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+
   if (intent === "create") {
     const name = String(form.get("name") ?? "").trim();
     const audienceType = String(form.get("audienceType") ?? "CUSTOM");
     const customRaw = String(form.get("customNpubs") ?? "");
-    const customNpubLines = customRaw
-      .split(/[\r\n,]+/)
-      .map((l) => l.trim())
-      .filter(Boolean);
+    const customNpubLines = splitCustom(customRaw);
     const ruleSummary = String(form.get("ruleSummary") ?? "").trim();
     if (!name) {
       return json({ error: "Name required" }, { status: 400 });
     }
     if (
-      !["CUSTOM", "FOLLOWING", "FOLLOWERS", "MUTUALS"].includes(audienceType)
+      !VALID_SAVED_AUDIENCE_TYPES.includes(
+        audienceType as (typeof VALID_SAVED_AUDIENCE_TYPES)[number]
+      )
     ) {
-      return json({ error: "Invalid audience" }, { status: 400 });
+      return json({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
     }
     await createBroadcastSavedAudience(userId, {
       name,
-      audienceType: audienceType as
-        | "CUSTOM"
-        | "FOLLOWING"
-        | "FOLLOWERS"
-        | "MUTUALS",
+      audienceType: audienceType as "CUSTOM" | "FOLLOWERS" | "MUTUALS",
       customNpubLines,
       ruleSummary: ruleSummary || undefined,
     });
-    return redirect("/dashboard/broadcasts/audiences");
+    return redirect(BROADCAST_AUDIENCES_PATH);
+  }
+
+  if (intent === "update") {
+    const id = String(form.get("id") ?? "");
+    const name = String(form.get("name") ?? "").trim();
+    const audienceType = String(form.get("audienceType") ?? "CUSTOM");
+    const customRaw = String(form.get("customNpubs") ?? "");
+    const customNpubLines = splitCustom(customRaw);
+    const ruleSummary = String(form.get("ruleSummary") ?? "").trim();
+    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    if (!name) {
+      return json({ error: "Name required" }, { status: 400 });
+    }
+    if (
+      !VALID_SAVED_AUDIENCE_TYPES.includes(
+        audienceType as (typeof VALID_SAVED_AUDIENCE_TYPES)[number]
+      )
+    ) {
+      return json({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
+    }
+    await updateBroadcastSavedAudience(userId, id, {
+      name,
+      audienceType: audienceType as "CUSTOM" | "FOLLOWERS" | "MUTUALS",
+      customNpubLines,
+      ruleSummary: ruleSummary || null,
+    });
+    return redirect(BROADCAST_AUDIENCES_PATH);
+  }
+
+  if (intent === "duplicate") {
+    const id = String(form.get("id") ?? "");
+    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    const { id: newId } = await duplicateBroadcastSavedAudience(userId, id);
+    return redirect(
+      `${BROADCAST_AUDIENCES_PATH}?edit=${encodeURIComponent(newId)}`
+    );
+  }
+
+  if (intent === "refresh_estimate") {
+    const id = String(form.get("id") ?? "");
+    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    await refreshSavedAudienceEstimate(userId, id);
+    return redirect(BROADCAST_AUDIENCES_PATH);
+  }
+
+  if (intent === "save_from_review") {
+    const campaignId = String(form.get("campaignId") ?? "");
+    const name = String(form.get("name") ?? "").trim();
+    if (!campaignId) {
+      return json({ error: "Missing campaign" }, { status: 400 });
+    }
+    const campaign = await getBroadcastCampaignForUser(campaignId, userId);
+    if (!campaign) {
+      return json({ error: "Campaign not found" }, { status: 404 });
+    }
+    if (campaign.audienceType === "FOLLOWING") {
+      return json(
+        { error: "This audience type cannot be saved" },
+        { status: 400 }
+      );
+    }
+    await createBroadcastSavedAudience(userId, {
+      name: name || campaign.name,
+      audienceType: campaign.audienceType,
+      customNpubLines: campaign.customNpubLines,
+      ruleSummary: "Saved from broadcast review",
+    });
+    return redirect(`${BROADCAST_AUDIENCES_PATH}?notice=saved`);
   }
 
   if (intent === "delete") {
     const id = String(form.get("id") ?? "");
-    if (!id) return json({ error: "Missing id" }, { status: 400 });
+    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
     await deleteBroadcastSavedAudience(userId, id);
-    return redirect("/dashboard/broadcasts/audiences");
+    return redirect(BROADCAST_AUDIENCES_PATH);
   }
 
   return json({ error: "Unknown intent" }, { status: 400 });
 }
 
 export default function BroadcastAudiencesRoute() {
-  const { rows } = useLoaderData<typeof loader>();
+  const { rows, notice, editingRow } = useLoaderData<typeof loader>();
+  const [, setSearchParams] = useSearchParams();
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -83,6 +186,104 @@ export default function BroadcastAudiencesRoute() {
           types (followers, etc.) resolve at send time.
         </p>
       </div>
+
+      {notice === "saved" ? (
+        <div
+          role="status"
+          className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-950 dark:text-emerald-100"
+        >
+          Audience saved.
+        </div>
+      ) : null}
+
+      {editingRow ? (
+        <section className="border-border rounded-lg border p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-medium">Edit audience</h2>
+            <button
+              type="button"
+              className="text-muted-foreground text-xs hover:underline"
+              onClick={() => {
+                setSearchParams({});
+              }}
+            >
+              Cancel edit
+            </button>
+          </div>
+          <Form method="post" className="mt-4 space-y-3">
+            <input type="hidden" name="intent" value="update" />
+            <input type="hidden" name="id" value={editingRow.id} />
+            <div>
+              <label
+                className="mb-1 block text-sm font-medium"
+                htmlFor="aud-edit-name"
+              >
+                Name
+              </label>
+              <input
+                id="aud-edit-name"
+                name="name"
+                required
+                defaultValue={editingRow.name}
+                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label
+                className="mb-1 block text-sm font-medium"
+                htmlFor="aud-edit-type"
+              >
+                Type
+              </label>
+              <select
+                id="aud-edit-type"
+                name="audienceType"
+                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                defaultValue={editingRow.audienceType}
+              >
+                <option value="CUSTOM">Custom list</option>
+                <option value="FOLLOWERS">Followers</option>
+                <option value="MUTUALS">Mutuals</option>
+              </select>
+            </div>
+            <div>
+              <label
+                className="mb-1 block text-sm font-medium"
+                htmlFor="aud-edit-custom"
+              >
+                Custom npubs / hex (optional for graph types)
+              </label>
+              <textarea
+                id="aud-edit-custom"
+                name="customNpubs"
+                rows={4}
+                defaultValue={editingRow.customNpubLines.join("\n")}
+                className="border-input bg-background w-full rounded-md border px-3 py-2 font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label
+                className="mb-1 block text-sm font-medium"
+                htmlFor="aud-edit-rule"
+              >
+                Rule summary (optional)
+              </label>
+              <input
+                id="aud-edit-rule"
+                name="ruleSummary"
+                defaultValue={editingRow.ruleSummary ?? ""}
+                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+            >
+              Save changes
+            </button>
+          </Form>
+        </section>
+      ) : null}
 
       <section className="border-border rounded-lg border p-4">
         <h2 className="font-medium">Save new audience</h2>
@@ -115,7 +316,6 @@ export default function BroadcastAudiencesRoute() {
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
             >
               <option value="CUSTOM">Custom list</option>
-              <option value="FOLLOWING">Following</option>
               <option value="FOLLOWERS">Followers</option>
               <option value="MUTUALS">Mutuals</option>
             </select>
@@ -184,8 +384,15 @@ export default function BroadcastAudiencesRoute() {
                 rows.map((r) => (
                   <tr key={r.id}>
                     <td className="px-3 py-2 font-medium">{r.name}</td>
-                    <td className="text-muted-foreground px-3 py-2 text-xs">
-                      {r.audienceType}
+                    <td className="px-3 py-2">
+                      <span
+                        className={cn(
+                          "rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase",
+                          audienceTypeBadgeClass(r.audienceType)
+                        )}
+                      >
+                        {r.audienceType}
+                      </span>
                     </td>
                     <td className="text-muted-foreground max-w-[200px] truncate px-3 py-2 text-xs">
                       {r.ruleSummary ??
@@ -208,6 +415,40 @@ export default function BroadcastAudiencesRoute() {
                         >
                           Use
                         </Link>
+                        <Link
+                          to={`${BROADCAST_AUDIENCES_PATH}?edit=${encodeURIComponent(r.id)}`}
+                          className="text-primary text-xs font-medium hover:underline"
+                        >
+                          Edit
+                        </Link>
+                        <Form method="post" className="inline">
+                          <input
+                            type="hidden"
+                            name="intent"
+                            value="duplicate"
+                          />
+                          <input type="hidden" name="id" value={r.id} />
+                          <button
+                            type="submit"
+                            className="text-primary text-xs font-medium hover:underline"
+                          >
+                            Duplicate
+                          </button>
+                        </Form>
+                        <Form method="post" className="inline">
+                          <input
+                            type="hidden"
+                            name="intent"
+                            value="refresh_estimate"
+                          />
+                          <input type="hidden" name="id" value={r.id} />
+                          <button
+                            type="submit"
+                            className="text-primary text-xs font-medium hover:underline"
+                          >
+                            Refresh estimate
+                          </button>
+                        </Form>
                         <Form method="post" className="inline">
                           <input type="hidden" name="intent" value="delete" />
                           <input type="hidden" name="id" value={r.id} />

@@ -1,0 +1,79 @@
+import { useFetcher } from "@remix-run/react";
+import { useEffect } from "react";
+
+import { audienceRiskForSource } from "~/features/broadcast/audience/audience-risk";
+import { cn } from "~/lib/utils";
+
+export interface AudienceGraphPanelProps {
+  type: "FOLLOWERS" | "MUTUALS";
+  /** Optional: share estimate with parent (e.g. summary card) without a second fetch. */
+  onEstimateStats?: (s: { count: number | null; fetchFailed: boolean }) => void;
+}
+
+export function AudienceGraphPanel({
+  type,
+  onEstimateStats,
+}: AudienceGraphPanelProps) {
+  const fetcher = useFetcher<{ count: number | null; fetchFailed: boolean }>();
+  const risk = audienceRiskForSource(
+    type === "MUTUALS" ? "MUTUALS" : "FOLLOWERS"
+  );
+
+  useEffect(() => {
+    fetcher.load(
+      `/api/broadcast-audience-estimate?type=${encodeURIComponent(type)}`
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when type changes
+  }, [type]);
+
+  const count = fetcher.data?.count;
+  const failed = fetcher.data?.fetchFailed;
+
+  useEffect(() => {
+    if (!onEstimateStats || !fetcher.data) return;
+    onEstimateStats({
+      count: fetcher.data.count ?? null,
+      fetchFailed: !!fetcher.data.fetchFailed,
+    });
+  }, [fetcher.data, onEstimateStats]);
+
+  return (
+    <div className="border-border space-y-3 rounded-lg border p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={cn(
+            "rounded-md px-2 py-1 text-xs font-medium",
+            risk.level === "low"
+              ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"
+              : "bg-amber-500/15 text-amber-900 dark:text-amber-100"
+          )}
+        >
+          {risk.label}
+        </span>
+      </div>
+      <p className="text-muted-foreground text-sm">
+        {type === "MUTUALS"
+          ? "Resolved at send time from mutual follow relationships. Best for direct updates to accounts with a two-way relationship."
+          : "Resolved at send time from your current follower graph. Broader audience — use only for clearly relevant updates."}
+      </p>
+      <p className="text-sm">
+        <span className="text-muted-foreground">Estimated audience size: </span>
+        <strong className="text-foreground">
+          {fetcher.state === "loading"
+            ? "…"
+            : failed
+              ? "Unavailable"
+              : count != null
+                ? String(count)
+                : "—"}
+        </strong>
+        {failed ? (
+          <span className="text-muted-foreground text-xs">
+            {" "}
+            (graph cache could not be loaded — try again or use a custom list)
+          </span>
+        ) : null}
+      </p>
+    </div>
+  );
+}

@@ -10,7 +10,10 @@ vi.mock("nostr-tools", () => ({
   },
 }));
 
-import { runGiveawaySelection } from "~/features/giveaway/giveaway-selection.server";
+import {
+  runGiveawayAccountPoolSelection,
+  runGiveawaySelection,
+} from "~/features/giveaway/giveaway-selection.server";
 import type { RelatedEvent } from "~/features/giveaway/types";
 
 const makeEvent = (
@@ -78,6 +81,17 @@ describe("runGiveawaySelection", () => {
       winnerCount: 2,
     });
     expect(result.length).toBe(2);
+  });
+
+  it("runGiveawayAccountPoolSelection picks random unique pubkeys ignoring kind", () => {
+    const events = [
+      makeEvent("e1", "pk1", 7),
+      makeEvent("e2", "pk2", 1),
+      makeEvent("e3", "pk3", 6),
+    ];
+    const result = runGiveawayAccountPoolSelection(events as RelatedEvent[], 2);
+    expect(result.length).toBe(2);
+    expect(new Set(result.map((w) => w.pubkey)).size).toBe(2);
   });
 
   it("supports WEIGHTED_BY_ENGAGEMENT selection mode", () => {

@@ -3,18 +3,12 @@ import { NavLink, Outlet } from "@remix-run/react";
 const subNav = [
   { to: "/dashboard/giveaway", end: true, label: "All giveaways" },
   { to: "/dashboard/giveaway/new", end: false, label: "New giveaway" },
-  {
-    to: "/dashboard/giveaway/all?days=7",
-    end: false,
-    label: "Queue picker",
-  },
   { to: "/dashboard/giveaway/presets", end: false, label: "Presets" },
   { to: "/dashboard/giveaway/proof", end: false, label: "Proof cards" },
 ] as const;
 
 /**
  * Layout for /dashboard/giveaway: child routes render in the outlet.
- * Secondary nav groups campaign giveaways vs queue randomizer and future hubs.
  */
 export default function GiveawayLayout() {
   return (

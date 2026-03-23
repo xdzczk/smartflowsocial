@@ -1,4 +1,3 @@
-import type { BroadcastDeliveryMode } from "@prisma/client";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -11,20 +10,20 @@ import {
   useActionData,
   useLoaderData,
   useNavigation,
+  useOutlet,
 } from "@remix-run/react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
+import { BroadcastNewDraftForm } from "~/components/broadcast/BroadcastNewDraftForm";
 import { requireUserId } from "~/features/auth";
 import {
   BroadcastActionError,
   createBroadcastDraft,
+  createBroadcastSavedAudience,
   resolveRecipientsForCampaign,
   getBroadcastCampaignForUser,
   listBroadcastSavedAudiences,
 } from "~/features/broadcast";
-import { parseCustomRecipientPaste } from "~/features/broadcast/broadcast-custom-parse";
-import { broadcastCompatibilityForecastNote } from "~/features/broadcast/broadcast-delivery-copy";
-import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import { createBroadcastDraftSchema } from "~/features/broadcast/broadcast-types";
 import {
   getBroadcastPlanLimits,
@@ -33,7 +32,7 @@ import {
   requireAnySubscription,
 } from "~/features/payments";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
-
+import { getUserById } from "~/features/user";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
@@ -42,16 +41,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const campaignId = url.searchParams.get("campaignId");
   const savedAudienceId = url.searchParams.get("savedAudienceId");
-  const notice = url.searchParams.get("notice");
+  const noticeParam = url.searchParams.get("notice");
   const { currentSubscription } = await getSubscriptionData(userId);
   const planType = getUserPlanType(currentSubscription);
   const limits = getBroadcastPlanLimits(planType);
+  const user = await getUserById(userId);
+  const userTimezone = user?.timezone ?? "Etc/UTC";
 
   if (!campaignId) {
     const savedAudiences = await listBroadcastSavedAudiences(userId);
-    const savedForNew = savedAudienceId
+    let savedForNew = savedAudienceId
       ? (savedAudiences.find((s) => s.id === savedAudienceId) ?? null)
       : null;
+    const noticeParts = [noticeParam].filter(
+      (s): s is string => typeof s === "string" && s.length > 0
+    );
+    if (savedForNew?.audienceType === "FOLLOWING") {
+      savedForNew = null;
+      noticeParts.push(
+        "The “Following” audience type is no longer available. Choose Followers, Mutuals, or a custom list."
+      );
+    }
+    const notice = noticeParts.length > 0 ? noticeParts.join(" ") : null;
     return json({
       campaign: null,
       limits,
@@ -59,6 +70,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       notice,
       savedAudiences,
       savedForNew,
+      userTimezone,
     });
   }
 
@@ -68,9 +80,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       campaign: null,
       limits,
       planType,
-      notice,
+      notice: noticeParam,
       savedAudiences: [],
       savedForNew: null,
+      userTimezone,
     });
   }
 
@@ -78,9 +91,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     campaign,
     limits,
     planType,
-    notice,
+    notice: noticeParam,
     savedAudiences: [],
     savedForNew: null,
+    userTimezone,
   });
 }
 
@@ -99,6 +113,44 @@ function redirectBroadcastNewWithNotice(campaignId: string, message: string) {
   );
 }
 
+function parseFormJson(raw: FormDataEntryValue | null): unknown {
+  if (raw == null || typeof raw !== "string" || !raw.trim()) return undefined;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
+async function handleSaveAudienceIntent(userId: string, form: FormData) {
+  const name = String(form.get("name") ?? "").trim();
+  const audienceType = String(form.get("audienceType") ?? "CUSTOM");
+  const customRaw = String(form.get("customNpubs") ?? "");
+  const customNpubLines = customRaw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!name) {
+    return json({ error: "Name required" }, { status: 400 });
+  }
+  if (!["CUSTOM", "FOLLOWERS", "MUTUALS"].includes(audienceType)) {
+    return json({ error: "Invalid audience" }, { status: 400 });
+  }
+  if (audienceType === "CUSTOM" && customNpubLines.length === 0) {
+    return json(
+      { error: "Add at least one valid recipient to save a custom audience." },
+      { status: 400 }
+    );
+  }
+  await createBroadcastSavedAudience(userId, {
+    name,
+    audienceType: audienceType as "CUSTOM" | "FOLLOWERS" | "MUTUALS",
+    customNpubLines,
+    ruleSummary: "Saved from broadcast composer",
+  });
+  return redirect("/dashboard/broadcasts/audiences?notice=saved");
+}
+
 async function handleBroadcastCreateIntents(
   userId: string,
   form: FormData,
@@ -109,9 +161,11 @@ async function handleBroadcastCreateIntents(
   const messageBody = String(form.get("messageBody") ?? "").trim();
   const customRaw = String(form.get("customNpubs") ?? "");
   const customNpubLines = customRaw
-    .split(/[\r\n,]+/)
+    .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean);
+  const parseSnapshotJson = parseFormJson(form.get("parseSnapshotJson"));
+  const exclusionRulesJson = parseFormJson(form.get("exclusionRulesJson"));
   const deliveryMode = String(form.get("deliveryMode") ?? "BEST_COMPATIBILITY");
   const sendStrategy = String(form.get("sendStrategy") ?? "STANDARD");
   const scheduledForIsoRaw = form.get("scheduledFor");
@@ -154,6 +208,8 @@ async function handleBroadcastCreateIntents(
     deliveryMode,
     sendStrategy,
     scheduledForIso,
+    parseSnapshotJson,
+    exclusionRulesJson,
   });
   if (!parsed.success) {
     return json(
@@ -222,6 +278,10 @@ export async function action({ request }: ActionFunctionArgs) {
     return handleBroadcastCreateIntents(userId, form, intent);
   }
 
+  if (intent === "save_audience") {
+    return handleSaveAudienceIntent(userId, form);
+  }
+
   if (intent === "resolve") {
     return handleBroadcastResolveIntent(userId, form);
   }
@@ -230,328 +290,6 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 type BroadcastNewLoaderData = SerializeFrom<typeof loader>;
-
-function BroadcastNewDraftForm({
-  limits,
-  planType,
-  busy,
-  actionError,
-  savedAudiences,
-  savedForNew,
-}: {
-  limits: BroadcastNewLoaderData["limits"];
-  planType: BroadcastNewLoaderData["planType"];
-  busy: boolean;
-  actionError: string | null;
-  savedAudiences: BroadcastNewLoaderData["savedAudiences"];
-  savedForNew: BroadcastNewLoaderData["savedForNew"];
-}) {
-  const [messageLen, setMessageLen] = useState(0);
-  const [messageBody, setMessageBody] = useState("");
-  const [deliveryMode, setDeliveryMode] = useState("BEST_COMPATIBILITY");
-  const [customRaw, setCustomRaw] = useState(
-    () => savedForNew?.customNpubLines.join("\n") ?? ""
-  );
-
-  const customStats = useMemo(
-    () => parseCustomRecipientPaste(customRaw),
-    [customRaw]
-  );
-  const messageLint = useMemo(
-    () => getBroadcastMessageLintWarnings(messageBody),
-    [messageBody]
-  );
-
-  return (
-    <Form
-      method="post"
-      key={savedForNew?.id ?? "new-draft"}
-      className="grid gap-8 lg:grid-cols-[1fr_minmax(260px,320px)]"
-    >
-      <div className="space-y-4">
-        {actionError ? (
-          <div
-            role="alert"
-            className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
-          >
-            {actionError}
-          </div>
-        ) : null}
-        {savedAudiences.length > 0 ? (
-          <div>
-            <label
-              htmlFor="broadcast-saved-audience-select"
-              className="mb-1 block text-sm font-medium"
-            >
-              Load saved audience
-            </label>
-            <select
-              id="broadcast-saved-audience-select"
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-              defaultValue=""
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v)
-                  window.location.href = `/dashboard/broadcasts/new?savedAudienceId=${encodeURIComponent(v)}`;
-              }}
-            >
-              <option value="">—</option>
-              {savedAudiences
-                .filter((s) => s != null)
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-        ) : null}
-        <div>
-          <label
-            htmlFor="broadcast-draft-name"
-            className="mb-1 block text-sm font-medium"
-          >
-            Name
-          </label>
-          <input
-            id="broadcast-draft-name"
-            name="name"
-            required
-            defaultValue={savedForNew?.name ?? ""}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-            placeholder="March product update · Giveaway follow-up · Beta wave 1"
-          />
-          <p className="text-muted-foreground mt-1 text-xs">
-            Internal only. Recipients will not see this label.
-          </p>
-        </div>
-        <div>
-          <label
-            htmlFor="broadcast-audience-type"
-            className="mb-1 block text-sm font-medium"
-          >
-            Audience source
-          </label>
-          <select
-            id="broadcast-audience-type"
-            name="audienceType"
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-            defaultValue={savedForNew?.audienceType ?? "CUSTOM"}
-          >
-            <option value="CUSTOM">Custom list (npubs / hex)</option>
-            {limits.allowedAudienceTypes.includes("FOLLOWING") ? (
-              <option value="FOLLOWING">Following (accounts you follow)</option>
-            ) : null}
-            {limits.allowedAudienceTypes.includes("FOLLOWERS") ? (
-              <option value="FOLLOWERS">
-                Followers (accounts that follow you)
-              </option>
-            ) : null}
-            {limits.allowedAudienceTypes.includes("MUTUALS") ? (
-              <option value="MUTUALS">Mutuals</option>
-            ) : null}
-          </select>
-        </div>
-        <div>
-          <label
-            htmlFor="broadcast-custom-npubs"
-            className="mb-1 block text-sm font-medium"
-          >
-            Custom recipients (lines or comma-separated)
-          </label>
-          <textarea
-            id="broadcast-custom-npubs"
-            name="customNpubs"
-            rows={6}
-            value={customRaw}
-            onChange={(e) => setCustomRaw(e.target.value)}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 font-mono text-sm"
-            placeholder="npub1… or 64-char hex"
-          />
-          <p className="text-muted-foreground mt-1 text-xs">
-            {customStats.parsedLines} entries parsed · {customStats.valid} valid
-            · {customStats.duplicatesRemoved} duplicates removed ·{" "}
-            {customStats.invalid} invalid
-          </p>
-        </div>
-        <div>
-          <label
-            htmlFor="broadcast-message-body"
-            className="mb-1 block text-sm font-medium"
-          >
-            Message
-          </label>
-          <textarea
-            id="broadcast-message-body"
-            name="messageBody"
-            required
-            rows={8}
-            maxLength={8000}
-            value={messageBody}
-            onChange={(e) => {
-              setMessageBody(e.target.value);
-              setMessageLen(e.target.value.length);
-            }}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-          />
-          <p className="text-muted-foreground mt-1 text-xs tabular-nums">
-            {messageLen} / 8000 characters ·{" "}
-            {messageBody ? messageBody.split(/\r?\n/).length : 0} lines
-          </p>
-          {messageLint.length > 0 ? (
-            <ul className="mt-2 space-y-1 text-xs text-amber-800 dark:text-amber-200">
-              {messageLint.map((w) => (
-                <li key={`${w.level}:${w.message}`}>{w.message}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="broadcast-delivery-mode"
-              className="mb-1 block text-sm font-medium"
-            >
-              Delivery mode
-            </label>
-            <select
-              id="broadcast-delivery-mode"
-              name="deliveryMode"
-              value={deliveryMode}
-              onChange={(e) => setDeliveryMode(e.target.value)}
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-            >
-              <option value="BEST_COMPATIBILITY">
-                Best compatibility (recommended)
-              </option>
-              {limits.allowAdvancedDelivery ? (
-                <>
-                  <option value="NIP04_ONLY">NIP-04 only (legacy)</option>
-                  <option value="NIP17_ONLY">NIP-17 only</option>
-                  <option value="NIP17_FALLBACK_NIP04">
-                    Dual / NIP-17 with fallback
-                  </option>
-                  <option value="BOTH">Expert: send both</option>
-                </>
-              ) : null}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="broadcast-send-strategy"
-              className="mb-1 block text-sm font-medium"
-            >
-              Strategy
-            </label>
-            <select
-              id="broadcast-send-strategy"
-              name="sendStrategy"
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-              disabled={!limits.allowStaggered}
-            >
-              <option value="STANDARD">Standard (balanced concurrency)</option>
-              {limits.allowStaggered ? (
-                <option value="STAGGERED">
-                  Staggered (conservative pacing)
-                </option>
-              ) : null}
-            </select>
-          </div>
-        </div>
-        {limits.allowSchedule ? (
-          <div>
-            <label
-              htmlFor="broadcast-scheduled-for"
-              className="mb-1 block text-sm font-medium"
-            >
-              Schedule (required for “Schedule”; optional for send now)
-            </label>
-            <input
-              id="broadcast-scheduled-for"
-              type="datetime-local"
-              name="scheduledFor"
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-            />
-          </div>
-        ) : null}
-        <p className="text-muted-foreground text-xs">
-          <strong className="text-foreground">Broadcast now</strong> resolves
-          the audience, then opens mandatory review before signing.
-          <strong className="text-foreground"> Schedule</strong> requires a date
-          and time above.
-        </p>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <button
-            type="submit"
-            name="intent"
-            value="create_draft"
-            disabled={busy}
-            className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50"
-          >
-            Save draft
-          </button>
-          <button
-            type="submit"
-            name="intent"
-            value="create_now"
-            disabled={busy}
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
-          >
-            Continue (resolve &amp; review)
-          </button>
-          {limits.allowSchedule ? (
-            <button
-              type="submit"
-              name="intent"
-              value="create_schedule"
-              disabled={busy}
-              className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
-            >
-              Schedule via review
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      <aside className="border-border bg-muted/20 h-fit space-y-4 rounded-lg border p-4 text-sm lg:sticky lg:top-4">
-        <h2 className="font-medium">Live summary</h2>
-        <p className="text-muted-foreground text-xs">
-          Estimated custom recipients (after de-dupe):{" "}
-          <strong className="text-foreground">{customStats.valid}</strong>
-        </p>
-        <p className="text-muted-foreground text-xs">
-          Plan: {planType} · max {limits.maxRecipientsPerCampaign} per broadcast
-          {limits.maxDailyBroadcastRecipients > 0
-            ? ` · ${String(limits.maxDailyBroadcastRecipients)}/day`
-            : null}
-        </p>
-        <p className="text-muted-foreground text-xs">
-          Suppressed accounts are excluded automatically.{" "}
-          <Link
-            to="/dashboard/broadcasts/suppression"
-            className="text-primary font-medium hover:underline"
-          >
-            Manage suppression
-          </Link>
-        </p>
-        <div>
-          <h3 className="text-xs font-medium tracking-wide uppercase">
-            Delivery note
-          </h3>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {broadcastCompatibilityForecastNote(
-              deliveryMode as BroadcastDeliveryMode
-            )}
-          </p>
-        </div>
-        <p className="text-muted-foreground text-xs">
-          Send signed Nostr direct messages to selected audiences. Use
-          broadcasts for meaningful updates, not noise.
-        </p>
-      </aside>
-    </Form>
-  );
-}
 
 function BroadcastNewCampaignPhase({
   campaign,
@@ -651,8 +389,16 @@ function BroadcastNewCampaignPhase({
 }
 
 export default function BroadcastNewRoute() {
-  const { campaign, limits, planType, notice, savedAudiences, savedForNew } =
-    useLoaderData<typeof loader>();
+  const outlet = useOutlet();
+  const {
+    campaign,
+    limits,
+    planType,
+    notice,
+    savedAudiences,
+    savedForNew,
+    userTimezone,
+  } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const busy = navigation.state !== "idle";
@@ -668,6 +414,12 @@ export default function BroadcastNewRoute() {
     () => campaign?.recipients.filter((r) => r.status === "PENDING") ?? [],
     [campaign]
   );
+
+  // `dashboard.broadcasts.new.review` is a child route; without rendering the
+  // outlet, /dashboard/broadcasts/new/review never shows the review UI.
+  if (outlet) {
+    return outlet;
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -687,6 +439,7 @@ export default function BroadcastNewRoute() {
           actionError={actionError}
           savedAudiences={savedAudiences}
           savedForNew={savedForNew}
+          userTimezone={userTimezone}
         />
       ) : (
         <BroadcastNewCampaignPhase

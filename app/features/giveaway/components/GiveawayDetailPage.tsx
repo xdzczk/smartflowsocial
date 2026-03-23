@@ -26,7 +26,11 @@ import { usePaymentPolling } from "~/features/payments/hooks/usePaymentPolling";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
-import type { GiveawayWinnerEntry } from "../types";
+import {
+  scopeAllowsEngagementEntryTypePick,
+  scopeIsFollowGraphAccountPool,
+  type GiveawayWinnerEntry,
+} from "../types";
 
 interface GiveawayFinalizationQuotePayload {
   plannedPayoutSats: number;
@@ -622,7 +626,8 @@ export function GiveawayDetailPage({
                     {giveaway.scopeSummaryLabel}
                   </li>
                 ) : null}
-                {Array.isArray(giveaway.engagementTypes) &&
+                {!scopeIsFollowGraphAccountPool(giveaway.scopeType) &&
+                Array.isArray(giveaway.engagementTypes) &&
                 giveaway.engagementTypes.length > 0 ? (
                   <li>
                     <span className="text-foreground font-medium">
@@ -634,9 +639,11 @@ export function GiveawayDetailPage({
                 <li>
                   <span className="text-foreground font-medium">Winners:</span>{" "}
                   {giveaway.winnerCount} ·{" "}
-                  {giveaway.selectionMode === "WEIGHTED_BY_ENGAGEMENT"
-                    ? "weighted by engagement"
-                    : "unique user"}
+                  {scopeIsFollowGraphAccountPool(giveaway.scopeType)
+                    ? "uniform random from accounts"
+                    : giveaway.selectionMode === "WEIGHTED_BY_ENGAGEMENT"
+                      ? "weighted by engagement"
+                      : "unique user"}
                 </li>
                 {giveaway.status === "PREVIEWED" && finalizationQuote ? (
                   <>
@@ -709,9 +716,11 @@ export function GiveawayDetailPage({
                   <span className="text-foreground font-medium">
                     Selection:
                   </span>{" "}
-                  {previewMeta.selectionMode === "WEIGHTED_BY_ENGAGEMENT"
-                    ? "Weighted by engagement"
-                    : "Unique user (one entry each)"}
+                  {scopeIsFollowGraphAccountPool(giveaway.scopeType)
+                    ? "Uniform random from accounts"
+                    : previewMeta.selectionMode === "WEIGHTED_BY_ENGAGEMENT"
+                      ? "Weighted by engagement"
+                      : "Unique user (one entry each)"}
                 </li>
                 <li>
                   <span className="text-foreground font-medium">Rerolls:</span>{" "}
@@ -841,47 +850,80 @@ export function GiveawayDetailPage({
                   </div>
                   <div>
                     <span className="text-muted-foreground mb-1 block text-sm">
-                      Engagement types
+                      {scopeIsFollowGraphAccountPool(giveaway.scopeType)
+                        ? "How winners are chosen"
+                        : "Engagement types"}
                     </span>
-                    <div className="flex flex-wrap gap-3">
-                      {ENGAGEMENT_OPTIONS.map((opt) => (
-                        <label
-                          key={opt}
-                          className="text-foreground flex items-center gap-1.5 text-sm"
-                        >
-                          <input
-                            type="checkbox"
-                            name="engagementTypes"
-                            value={opt}
-                            defaultChecked={
-                              Array.isArray(giveaway.engagementTypes)
-                                ? giveaway.engagementTypes.includes(opt)
-                                : undefined
-                            }
-                          />
-                          {opt.charAt(0) + opt.slice(1).toLowerCase()}
-                        </label>
-                      ))}
-                    </div>
+                    {scopeAllowsEngagementEntryTypePick(giveaway.scopeType) ? (
+                      <div className="flex flex-wrap gap-3">
+                        {ENGAGEMENT_OPTIONS.map((opt) => (
+                          <label
+                            key={opt}
+                            className="text-foreground flex items-center gap-1.5 text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              name="engagementTypes"
+                              value={opt}
+                              defaultChecked={
+                                Array.isArray(giveaway.engagementTypes)
+                                  ? giveaway.engagementTypes.includes(opt)
+                                  : undefined
+                              }
+                            />
+                            {opt.charAt(0) + opt.slice(1).toLowerCase()}
+                          </label>
+                        ))}
+                      </div>
+                    ) : scopeIsFollowGraphAccountPool(giveaway.scopeType) ? (
+                      <p className="text-muted-foreground text-sm">
+                        Winners are picked at random from eligible accounts in
+                        your follower or following list — not from note
+                        engagement.
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">
+                        For this scope, reactions, reposts, comments, and zaps
+                        all count as entries.
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <label
-                      htmlFor="edit-selectionMode"
-                      className="text-muted-foreground mb-1 block text-sm"
-                    >
-                      Selection mode
-                    </label>
-                    <select
-                      id="edit-selectionMode"
-                      name="selectionMode"
-                      className="border-border bg-background rounded border px-2 py-1 text-sm"
-                      defaultValue={giveaway.selectionMode ?? "UNIQUE_USER"}
-                    >
-                      <option value="UNIQUE_USER">Unique user</option>
-                      <option value="WEIGHTED_BY_ENGAGEMENT">
-                        Weighted by engagement
-                      </option>
-                    </select>
+                    {scopeIsFollowGraphAccountPool(giveaway.scopeType) ? (
+                      <>
+                        <span className="text-muted-foreground mb-1 block text-sm">
+                          Selection mode
+                        </span>
+                        <p className="text-foreground text-sm">
+                          Uniform random from accounts
+                        </p>
+                        <input
+                          type="hidden"
+                          name="selectionMode"
+                          value="UNIQUE_USER"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <label
+                          htmlFor="edit-selectionMode"
+                          className="text-muted-foreground mb-1 block text-sm"
+                        >
+                          Selection mode
+                        </label>
+                        <select
+                          id="edit-selectionMode"
+                          name="selectionMode"
+                          className="border-border bg-background rounded border px-2 py-1 text-sm"
+                          defaultValue={giveaway.selectionMode ?? "UNIQUE_USER"}
+                        >
+                          <option value="UNIQUE_USER">Unique user</option>
+                          <option value="WEIGHTED_BY_ENGAGEMENT">
+                            Weighted by engagement
+                          </option>
+                        </select>
+                      </>
+                    )}
                   </div>
                   <button
                     type="submit"

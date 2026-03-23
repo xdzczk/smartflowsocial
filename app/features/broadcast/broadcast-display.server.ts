@@ -242,6 +242,33 @@ export async function listSuppressionsByUser(userId: string) {
   });
 }
 
+/** Batch lookup: which normalized hex pubkeys are on the user's active suppression list. */
+export async function getSuppressionFlagsForPubkeys(
+  userId: string,
+  pubkeysHex: string[]
+): Promise<Record<string, boolean>> {
+  if (pubkeysHex.length === 0) {
+    return {};
+  }
+  const rows = await prisma.broadcastSuppression.findMany({
+    where: {
+      userId,
+      recipientPubkey: { in: pubkeysHex },
+      OR: [
+        { permanent: true },
+        { expiresAt: null },
+        { expiresAt: { gt: new Date() } },
+      ],
+    },
+    select: { recipientPubkey: true },
+  });
+  const suppressed: Record<string, boolean> = {};
+  for (const r of rows) {
+    suppressed[r.recipientPubkey.toLowerCase()] = true;
+  }
+  return suppressed;
+}
+
 export async function countRecentBroadcastRecipientsForUser(
   userId: string,
   since: Date

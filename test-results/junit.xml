@@ -1,23 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.005811666">
-    <testsuite name="tests/unit/broadcast-guardrails.test.ts" timestamp="2026-03-22T16:49:57.093Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001677">
-        <testcase classname="tests/unit/broadcast-guardrails.test.ts" name="broadcast-guardrails &gt; flags heavy word repetition" time="0.000819792">
+<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.002024875">
+    <testsuite name="tests/unit/broadcast-resolve.test.ts" timestamp="2026-03-23T06:33:08.867Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.002024875">
+        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines dedupes and counts invalid" time="0.001054583">
         </testcase>
-        <testcase classname="tests/unit/broadcast-guardrails.test.ts" name="broadcast-guardrails &gt; allows normal prose" time="0.000121625">
+        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; normalizePubkeyInput accepts 64 hex" time="0.000106708">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/broadcast-message-lint.test.ts" timestamp="2026-03-22T16:49:57.093Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001882708">
-        <testcase classname="tests/unit/broadcast-message-lint.test.ts" name="broadcast-message-lint &gt; warns on very short body" time="0.000914667">
-        </testcase>
-        <testcase classname="tests/unit/broadcast-message-lint.test.ts" name="broadcast-message-lint &gt; warns on many links" time="0.000228667">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/broadcast-resolve.test.ts" timestamp="2026-03-22T16:49:57.094Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.002251958">
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines dedupes and counts invalid" time="0.001075875">
-        </testcase>
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; normalizePubkeyInput accepts 64 hex" time="0.000193542">
-        </testcase>
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines works after comma-splitting like the composer" time="0.000242667">
+        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines works after comma-splitting like the composer" time="0.00018675">
         </testcase>
     </testsuite>
 </testsuites>

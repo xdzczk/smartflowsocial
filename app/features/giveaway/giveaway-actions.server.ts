@@ -31,6 +31,7 @@ import {
 import type { GiveawayPayoutEntryStatus } from "./giveaway-payout.server";
 import { getPostsInScope } from "./giveaway-scope.server";
 import {
+  runGiveawayAccountPoolSelection,
   runGiveawaySelection,
   runGiveawaySelectionPerEngagement,
 } from "./giveaway-selection.server";
@@ -43,19 +44,19 @@ import {
   updateGiveaway as updateGiveawayRow,
 } from "./repositories/giveaway-actions-data.server";
 import { findPaidFinalizationForLock } from "./repositories/giveaway-finalization-payment.server";
-import type {
-  GiveawayEngagementConfig,
-  GiveawayEngagementType,
-  GiveawayScope,
-  GiveawayWinnerEntry,
-  RelatedEvent,
+import {
+  ALL_GIVEAWAY_ENGAGEMENT_TYPES,
+  scopeAllowsEngagementEntryTypePick,
+  scopeIsFollowGraphAccountPool,
+  type GiveawayEngagementConfig,
+  type GiveawayEngagementType,
+  type GiveawayScope,
+  type GiveawayWinnerEntry,
+  type RelatedEvent,
 } from "./types";
 
 const DEFAULT_ENGAGEMENT_TYPES: GiveawayEngagementType[] = [
-  "REACTION",
-  "REPOST",
-  "COMMENT",
-  "ZAP",
+  ...ALL_GIVEAWAY_ENGAGEMENT_TYPES,
 ];
 
 const ERROR_GIVEAWAY_NOT_FOUND = "Giveaway not found";
@@ -179,6 +180,11 @@ function runSelectionForGiveaway(
   g: Giveaway,
   relatedEvents: RelatedEvent[]
 ): GiveawayWinnerEntry[] {
+  const scope = scopeFromGiveaway(g);
+  if (scope.type === "FOLLOWERS" || scope.type === "FOLLOWING") {
+    return runGiveawayAccountPoolSelection(relatedEvents, g.winnerCount);
+  }
+
   const engagementConfig =
     g.engagementConfig as GiveawayEngagementConfig | null;
   const engagementTypes =
@@ -253,6 +259,7 @@ export async function createGiveaway(
 
   let winnerCount = Math.min(input.winnerCount, limits.maxWinnerCount);
   if (
+    !scopeIsFollowGraphAccountPool(input.scopeType) &&
     input.engagementConfig &&
     typeof input.engagementConfig === "object" &&
     Object.keys(input.engagementConfig).length > 0
@@ -265,6 +272,24 @@ export async function createGiveaway(
     winnerCount = Math.min(sum, limits.maxWinnerCount);
   }
 
+  const engagementTypesStored = scopeIsFollowGraphAccountPool(input.scopeType)
+    ? []
+    : scopeAllowsEngagementEntryTypePick(input.scopeType)
+      ? input.engagementTypes
+      : [...DEFAULT_ENGAGEMENT_TYPES];
+
+  const engagementConfigStored =
+    scopeIsFollowGraphAccountPool(input.scopeType) ||
+    !input.engagementConfig ||
+    typeof input.engagementConfig !== "object" ||
+    Object.keys(input.engagementConfig).length === 0
+      ? undefined
+      : input.engagementConfig;
+
+  const selectionModeStored = scopeIsFollowGraphAccountPool(input.scopeType)
+    ? "UNIQUE_USER"
+    : (input.selectionMode ?? "UNIQUE_USER");
+
   return createGiveawayRow(userId, {
     user: { connect: { id: userId } },
     name: (input.name?.trim() ?? "") || undefined,
@@ -272,16 +297,18 @@ export async function createGiveaway(
     scopeReference: input.scopeReference as Prisma.InputJsonValue,
     eligibilityFrom: input.eligibilityFrom ?? undefined,
     eligibilityTo: input.eligibilityTo ?? undefined,
-    engagementTypes: input.engagementTypes as Prisma.InputJsonValue,
+    engagementTypes: engagementTypesStored as Prisma.InputJsonValue,
     winnerCount,
     engagementConfig:
-      input.engagementConfig && Object.keys(input.engagementConfig).length > 0
-        ? (input.engagementConfig as Prisma.InputJsonValue)
+      engagementConfigStored && Object.keys(engagementConfigStored).length > 0
+        ? (engagementConfigStored as Prisma.InputJsonValue)
         : undefined,
-    selectionMode: input.selectionMode ?? "UNIQUE_USER",
-    engagementWeights: (input.engagementWeights ?? undefined) as
-      | Prisma.InputJsonValue
-      | undefined,
+    selectionMode: selectionModeStored,
+    engagementWeights: scopeIsFollowGraphAccountPool(input.scopeType)
+      ? undefined
+      : ((input.engagementWeights ?? undefined) as
+          | Prisma.InputJsonValue
+          | undefined),
     filters: (input.filters ?? undefined) as Prisma.InputJsonValue | undefined,
     status: "DRAFT",
     activityLog: appendGiveawayActivityLog(null, "giveaway_created"),
@@ -320,16 +347,31 @@ export async function updateGiveaway(
       limits.maxWinnerCount
     );
   }
-  if (input.engagementTypes !== undefined) {
-    if (
-      !Array.isArray(input.engagementTypes) ||
-      input.engagementTypes.length === 0
-    ) {
-      return { success: false, error: "At least one engagement type required" };
+  if (scopeAllowsEngagementEntryTypePick(g.scopeType)) {
+    if (input.engagementTypes !== undefined) {
+      if (
+        !Array.isArray(input.engagementTypes) ||
+        input.engagementTypes.length === 0
+      ) {
+        return {
+          success: false,
+          error: "At least one engagement type required",
+        };
+      }
+      data.engagementTypes = input.engagementTypes;
     }
-    data.engagementTypes = input.engagementTypes;
+  } else if (scopeIsFollowGraphAccountPool(g.scopeType)) {
+    data.engagementTypes = [];
+    data.engagementConfig = Prisma.JsonNull;
+    data.selectionMode = "UNIQUE_USER";
+    data.engagementWeights = Prisma.JsonNull;
+  } else {
+    data.engagementTypes = [...DEFAULT_ENGAGEMENT_TYPES];
   }
-  if (input.engagementConfig !== undefined) {
+  if (
+    !scopeIsFollowGraphAccountPool(g.scopeType) &&
+    input.engagementConfig !== undefined
+  ) {
     data.engagementConfig =
       input.engagementConfig && Object.keys(input.engagementConfig).length > 0
         ? (input.engagementConfig as unknown as Prisma.InputJsonValue)
@@ -349,7 +391,10 @@ export async function updateGiveaway(
       );
     }
   }
-  if (input.selectionMode !== undefined) {
+  if (
+    !scopeIsFollowGraphAccountPool(g.scopeType) &&
+    input.selectionMode !== undefined
+  ) {
     data.selectionMode = input.selectionMode;
   }
 

@@ -261,6 +261,10 @@ model BroadcastCampaign {
   skippedCount     Int                      @default(0)
   /** CUSTOM audience: raw npubs/nhex lines from composer */
   customNpubLines  String[]                 @default([])
+  /** Client snapshot of parse/review metrics for pre-flight review (Audience Builder v2) */
+  parseSnapshotJson   Json?
+  /** Optional exclusion rules, e.g. { excludeMessagedWithinDays: 7 } */
+  exclusionRulesJson  Json?
   archivedAt       DateTime?
   /** When duplicated from another campaign */
   duplicatedFromId String?

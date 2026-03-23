@@ -67,7 +67,7 @@ function parseIndexFilters(url: URL): BroadcastIndexFilters {
 
   if (
     audienceType &&
-    ["CUSTOM", "FOLLOWING", "FOLLOWERS", "MUTUALS"].includes(audienceType)
+    ["CUSTOM", "FOLLOWERS", "MUTUALS"].includes(audienceType)
   ) {
     filters.audienceType = audienceType as NonNullable<
       BroadcastIndexFilters["audienceType"]
@@ -327,7 +327,6 @@ export default function BroadcastsIndexRoute() {
           >
             <option value="">All audiences</option>
             <option value="CUSTOM">Custom list</option>
-            <option value="FOLLOWING">Following</option>
             <option value="FOLLOWERS">Followers</option>
             <option value="MUTUALS">Mutuals</option>
           </select>

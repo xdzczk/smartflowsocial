@@ -146,6 +146,30 @@ function pubkeyToNpub(pubkey: string): string {
 /**
  * Run winner selection and return ordered list of winner entries.
  */
+/**
+ * Random winners from unique pubkeys (followers / following giveaways).
+ * Ignores engagement kind — one eligible account per pubkey after filters.
+ */
+export function runGiveawayAccountPoolSelection(
+  relatedEvents: RelatedEvent[],
+  winnerCount: number
+): GiveawayWinnerEntry[] {
+  const seen = new Set<string>();
+  const unique: RelatedEvent[] = [];
+  for (const e of relatedEvents) {
+    if (seen.has(e.pubkey)) continue;
+    seen.add(e.pubkey);
+    unique.push(e);
+  }
+  const k = Math.min(Math.max(0, winnerCount), unique.length);
+  const selected = sampleUniform(unique, k);
+  return selected.map((e) => ({
+    pubkey: e.pubkey,
+    npub: pubkeyToNpub(e.pubkey),
+    qualifyingActions: [{ kind: e.kind, eventId: e.id }],
+  }));
+}
+
 export function runGiveawaySelection(
   input: SelectionInput
 ): GiveawayWinnerEntry[] {
