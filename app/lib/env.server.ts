@@ -70,6 +70,8 @@ interface EnvConfig {
   NOSTR_DM_NIP17_ENABLED?: string; // When true (default), send NIP-17 gift-wrapped DMs when recipient has kind:10050 inbox relays
   /** When true, NIP-88 poll composer, voting, and tallies are enabled (default off). */
   NIP88_POLLS_ENABLED?: string;
+  /** When true, Contests v1 UI and server routes are enabled. */
+  CONTESTS_V1_ENABLED?: string;
 
   // Blossom (vibe-cdn) internal API: secret for subscription-status gating
   BLOSSOM_INTERNAL_SECRET?: string;
@@ -212,6 +214,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "ENABLE_NOSTR_DELETE_EVENTS",
     "NOSTR_DM_NIP17_ENABLED",
     "NIP88_POLLS_ENABLED",
+    "CONTESTS_V1_ENABLED",
     "BLOSSOM_INTERNAL_SECRET",
     "BLOSSOM_SFS_API_URL",
     "BLOSSOM_UPLOAD_TOKEN_SECRET",

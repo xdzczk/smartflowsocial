@@ -80,7 +80,9 @@ model User {
   blossomReservationBatches BlossomReservationBatch[]
   blossomUploadUsagePeriods BlossomUploadUsagePeriod[]
   giveaways                Giveaway[]
+  contests                 Contest[]
   giveawayPresets          GiveawayPreset[]
+  contestFinalizationPayments ContestFinalizationPayment[]
   engagementItemStates     EngagementItemState[]
   engagementReplyTemplates EngagementReplyTemplate[]
   broadcastCampaigns       BroadcastCampaign[]
@@ -457,9 +459,49 @@ enum GiveawayFinalizationPaymentStatus {
   FAILED
 }
 
+enum ContestStatus {
+  DRAFT
+  LIVE
+  ENDED_REVIEW
+  LOCKED
+  PAYOUT_IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ContestEntryType {
+  REPLY_DIRECT
+}
+
+enum ContestRankingMetric {
+  REACTIONS
+  ZAPS
+  SATS_ZAPPED
+}
+
+enum ContestPrizeMode {
+  EQUAL
+  RANKED
+}
+
+enum ContestFinalizationFeeStatus {
+  NONE
+  PENDING
+  PAID
+  WAIVED
+}
+
+enum ContestFinalizationPaymentStatus {
+  PENDING
+  PAID
+  EXPIRED
+  FAILED
+}
+
 enum PaymentPurpose {
   SUBSCRIPTION
   GIVEAWAY_FINALIZATION
+  CONTEST_FINALIZATION
 }
 
 model Giveaway {
@@ -550,6 +592,158 @@ model GiveawayPreset {
   user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name])
+}
+
+model Contest {
+  id                    String                    @id @default(cuid())
+  userId                String
+  title                 String?
+  status                ContestStatus             @default(DRAFT)
+  sourceNoteId          String
+  sourcePostId          String?
+  entryType             ContestEntryType          @default(REPLY_DIRECT)
+  rankingMetric         ContestRankingMetric
+  contestStartAt        DateTime?
+  contestEndAt          DateTime
+  freezeSnapshotAt      DateTime?
+  freezeSnapshotWindowEndsAt DateTime?
+  prizeMode             ContestPrizeMode
+  winnerCount           Int
+  equalRewardSats       Int?
+  rankRewards           Json?
+  fairnessConfig        Json?
+  tieBreakRule          String?
+  plannedPayoutSats     Int?
+  finalizationFeeRateBps Int?
+  finalizationFeeSats   Int?
+  finalizationFeeStatus ContestFinalizationFeeStatus?
+  planAtFinalization    String?
+  lockConfigHash        String?
+  payoutState           Json?
+  lockedAt              DateTime?
+  completedAt           DateTime?
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshots             ContestSnapshot[]
+  winners               ContestWinner[]
+  entries               ContestEntry[]
+  eventLogs             ContestEventLog[]
+  finalizationPayments  ContestFinalizationPayment[]
+  payments              Payment[]                 @relation("ContestPayoutPayment")
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+model ContestSnapshot {
+  id                 String    @id @default(cuid())
+  contestId          String
+  snapshotAt         DateTime  @default(now())
+  deadlineAt         DateTime
+  rankingMetric      ContestRankingMetric
+  tieBreakRule       String
+  freezeWindowEndsAt DateTime?
+  totalEntries       Int       @default(0)
+  eligibleEntries    Int       @default(0)
+  excludedEntries    Int       @default(0)
+  rerankCount        Int       @default(0)
+  relayCaveat        String?
+  metadata           Json?
+  contest            Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  entries            ContestEntry[]
+
+  @@index([contestId, snapshotAt])
+}
+
+model ContestEntry {
+  id               String   @id @default(cuid())
+  contestId        String
+  snapshotId       String
+  entryEventId     String
+  authorPubkey     String
+  authorNpub       String?
+  createdAtUnix    Int
+  replySnippet     String?
+  score            Int      @default(0)
+  reactionsCount   Int      @default(0)
+  zapCount         Int      @default(0)
+  satsZapped       Int      @default(0)
+  rank             Int?
+  isEligible       Boolean  @default(true)
+  isExcluded       Boolean  @default(false)
+  exclusionReason  String?
+  discoveredAt     DateTime @default(now())
+  snapshotAt       DateTime
+  metadata         Json?
+  contest          Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  snapshot         ContestSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  winnerRow        ContestWinner?
+
+  @@unique([snapshotId, entryEventId])
+  @@index([contestId, rank])
+  @@index([contestId, isExcluded])
+  @@index([snapshotAt])
+}
+
+model ContestWinner {
+  id            String   @id @default(cuid())
+  contestId     String
+  entryId       String   @unique
+  rank          Int
+  rewardSats    Int
+  isAlternate   Boolean  @default(false)
+  wasPromoted   Boolean  @default(false)
+  promotedFromRank Int?
+  finalizedAt   DateTime?
+  payoutStatus  String?
+  payoutNote    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  contest       Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  entry         ContestEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, rank, isAlternate])
+  @@index([contestId, isAlternate, rank])
+}
+
+model ContestEventLog {
+  id          String   @id @default(cuid())
+  contestId   String
+  eventType   String
+  message     String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  contest     Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@index([contestId, createdAt])
+}
+
+model ContestFinalizationPayment {
+  id                String                          @id @default(cuid())
+  contestId         String
+  userId            String
+  planName          String
+  feeRateBps        Int
+  plannedPayoutSats Int
+  feeSats           Int
+  lockConfigHash    String
+  status            ContestFinalizationPaymentStatus @default(PENDING)
+  paymentMethod     String?
+  paymentId         String?                         @unique
+  paidAt            DateTime?
+  createdAt         DateTime                        @default(now())
+  metadata          Json?
+  contest           Contest                         @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user              User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment           Payment?                        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([contestId])
+  @@index([userId])
+  @@index([contestId, status])
 }
 
 model Post {
@@ -769,6 +963,9 @@ model Payment {
   Subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
   User           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   giveawayFinalizationPayment GiveawayFinalizationPayment?
+  contestFinalizationPayment  ContestFinalizationPayment?
+  contestPayoutForId String?
+  contestPayoutFor Contest? @relation("ContestPayoutPayment", fields: [contestPayoutForId], references: [id], onDelete: SetNull)
 }
 
 model Plan {
@@ -790,6 +987,7 @@ model Plan {
   enableCommissions            Boolean        @default(false)
   enableEngagementFeed         Boolean        @default(false)
   enableGiveaways              Boolean        @default(false)
+  enableContests               Boolean        @default(false)
   enableLeaderboards           Boolean        @default(false)
   enableLifetimeAccess         Boolean        @default(false)
   enableMultiAccountSwitching  Boolean        @default(false)

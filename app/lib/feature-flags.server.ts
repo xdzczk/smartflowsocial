@@ -55,4 +55,9 @@ export const featureFlags = {
    * NIP-88 polls: kind 1068 compose/schedule, kind 1018 vote publish, in-app tallies.
    */
   nip88PollsEnabled: parseBooleanEnv(env.NIP88_POLLS_ENABLED, false),
+
+  /**
+   * Contests v1 ranked campaigns.
+   */
+  contestsV1Enabled: parseBooleanEnv(env.CONTESTS_V1_ENABLED, true),
 } as const;

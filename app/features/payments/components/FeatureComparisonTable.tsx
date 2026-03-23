@@ -20,6 +20,7 @@ const featureLabels = [
   { key: "repostsAndQuotes", label: "Reposts & quotes" },
   { key: "engagementFeed", label: "Engagement Feed" },
   { key: "giveaways", label: "Giveaways" },
+  { key: "contests", label: "Contests" },
   { key: "commissions", label: "Commissions" },
   { key: "leaderboards", label: "Leaderboards" },
   { key: "advancedAnalytics", label: "Advanced analytics" },

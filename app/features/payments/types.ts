@@ -15,6 +15,7 @@ export const PLAN_FEATURES = {
     posted: true, // Free users can access posted content (legacy key)
     published: true, // Free users can access published content
     giveaways: true, // Free users can access giveaways
+    contests: true,
     settings: true, // Free users can access settings
     engagement_feed: false, // Free users cannot access engagement feed
     broadcasts: false,
@@ -33,6 +34,7 @@ export const PLAN_FEATURES = {
     posted: true,
     published: true,
     giveaways: true,
+    contests: true,
     settings: true,
     engagement_feed: true,
     broadcasts: true,
@@ -51,6 +53,7 @@ export const PLAN_FEATURES = {
     posted: true,
     published: true,
     giveaways: true,
+    contests: true,
     settings: true,
     engagement_feed: true,
     broadcasts: true,
@@ -69,6 +72,7 @@ export const PLAN_FEATURES = {
     posted: true,
     published: true,
     giveaways: true,
+    contests: true,
     settings: true,
     engagement_feed: true,
     broadcasts: true,
@@ -87,6 +91,7 @@ export const PLAN_FEATURES = {
     posted: true,
     published: true,
     giveaways: true,
+    contests: true,
     settings: true,
     engagement_feed: true,
     broadcasts: true,
@@ -106,6 +111,7 @@ export const PLAN_FEATURES = {
     posted: true,
     published: true,
     giveaways: true,
+    contests: true,
     settings: true,
     engagement_feed: true,
     broadcasts: true,

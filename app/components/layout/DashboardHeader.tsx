@@ -18,6 +18,7 @@ import {
   Rss,
   Settings,
   Shield,
+  Trophy,
   X,
 } from "lucide-react";
 import { useCallback, useState, useEffect } from "react";
@@ -111,6 +112,14 @@ const ENGAGEMENT_SECTION_ITEMS = [
       <Gift className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
     ),
     label: "Giveaway",
+  },
+  {
+    to: "/dashboard/contests",
+    feature: "contests" as const,
+    icon: (
+      <Trophy className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
+    ),
+    label: "Contests",
   },
   {
     to: "/dashboard/broadcasts",
