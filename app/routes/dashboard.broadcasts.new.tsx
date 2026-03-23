@@ -22,6 +22,7 @@ import {
   createBroadcastSavedAudience,
   resolveRecipientsForCampaign,
   getBroadcastCampaignForUser,
+  getLatestBroadcastMessageSnippetForUser,
   listBroadcastSavedAudiences,
 } from "~/features/broadcast";
 import { createBroadcastDraftSchema } from "~/features/broadcast/broadcast-types";
@@ -49,7 +50,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
 
   if (!campaignId) {
-    const savedAudiences = await listBroadcastSavedAudiences(userId);
+    const [savedAudiences, recentBroadcastMessageSnippet] = await Promise.all([
+      listBroadcastSavedAudiences(userId),
+      getLatestBroadcastMessageSnippetForUser(userId),
+    ]);
     let savedForNew = savedAudienceId
       ? (savedAudiences.find((s) => s.id === savedAudienceId) ?? null)
       : null;
@@ -62,7 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ) {
       savedForNew = null;
       noticeParts.push(
-        "That saved audience type is no longer available. Choose Mutuals or a custom list of accounts that follow you."
+        "That saved audience type is no longer available. Choose Mutuals or selected recipients."
       );
     }
     const notice = noticeParts.length > 0 ? noticeParts.join(" ") : null;
@@ -74,6 +78,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       savedAudiences,
       savedForNew,
       userTimezone,
+      recentBroadcastMessageSnippet,
     });
   }
 
@@ -87,6 +92,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       savedAudiences: [],
       savedForNew: null,
       userTimezone,
+      recentBroadcastMessageSnippet: null,
     });
   }
 
@@ -98,6 +104,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     savedAudiences: [],
     savedForNew: null,
     userTimezone,
+    recentBroadcastMessageSnippet: null,
   });
 }
 
@@ -401,6 +408,7 @@ export default function BroadcastNewRoute() {
     savedAudiences,
     savedForNew,
     userTimezone,
+    recentBroadcastMessageSnippet,
   } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
@@ -443,6 +451,7 @@ export default function BroadcastNewRoute() {
           savedAudiences={savedAudiences}
           savedForNew={savedForNew}
           userTimezone={userTimezone}
+          recentBroadcastMessageSnippet={recentBroadcastMessageSnippet}
         />
       ) : (
         <BroadcastNewCampaignPhase

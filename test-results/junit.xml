@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.00217375">
-    <testsuite name="tests/unit/broadcast-resolve.test.ts" timestamp="2026-03-23T07:38:56.702Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.00217375">
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines dedupes and counts invalid" time="0.001128458">
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.002198583">
+    <testsuite name="tests/unit/giveaway-single-post-engagement.test.ts" timestamp="2026-03-23T14:15:11.780Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.002198583">
+        <testcase classname="tests/unit/giveaway-single-post-engagement.test.ts" name="giveaway-single-post-engagement &gt; kind1IsDirectReplyToRootEvent &gt; accepts NIP-10 direct reply (reply marker points at root)" time="0.000700416">
         </testcase>
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; normalizePubkeyInput accepts 64 hex" time="0.000110584">
+        <testcase classname="tests/unit/giveaway-single-post-engagement.test.ts" name="giveaway-single-post-engagement &gt; kind1IsDirectReplyToRootEvent &gt; rejects nested reply (reply parent is a child note)" time="0.000108709">
         </testcase>
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines works after comma-splitting like the composer" time="0.000200709">
+        <testcase classname="tests/unit/giveaway-single-post-engagement.test.ts" name="giveaway-single-post-engagement &gt; kind1IsDirectReplyToRootEvent &gt; accepts deprecated single e-tag reply to root" time="0.00007125">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-single-post-engagement.test.ts" name="giveaway-single-post-engagement &gt; kind9735TargetsEventId &gt; matches zap receipt with e-tag for target" time="0.000127459">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-single-post-engagement.test.ts" name="giveaway-single-post-engagement &gt; filterRelatedEventsToRootNoteEngagementOnly &gt; keeps kind 7/6, direct kind 1, matching 9735; drops nested kind 1" time="0.000417125">
         </testcase>
     </testsuite>
 </testsuites>

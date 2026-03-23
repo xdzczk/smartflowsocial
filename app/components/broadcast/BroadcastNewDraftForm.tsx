@@ -1,21 +1,22 @@
 import type { BroadcastDeliveryMode } from "@prisma/client";
 import { Form } from "@remix-run/react";
-import { Clock, Send } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowRight, Clock } from "lucide-react";
+import type { ReactNode } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { AudienceGraphPanel } from "~/components/broadcast/audience/AudienceGraphPanel";
-import { AudiencePanelCustomList } from "~/components/broadcast/audience/AudiencePanelCustomList";
 import {
-  AudienceSourceSelector,
-  type AudienceSourceTab,
-} from "~/components/broadcast/audience/AudienceSourceSelector";
+  AudienceSourceCards,
+  type AudienceMode,
+} from "~/components/broadcast/audience/AudienceSourceCards";
 import { AudienceSummaryCard } from "~/components/broadcast/audience/AudienceSummaryCard";
+import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { Button } from "~/components/ui/button";
-import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import {
-  parseRecipientInput,
-  type ParsedRecipientRow,
-} from "~/features/broadcast/broadcast-recipient-parse";
+  broadcastDeliveryModeComposerHelper,
+  broadcastSendStrategyComposerHelper,
+} from "~/features/broadcast/broadcast-delivery-copy";
+import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import { getBroadcastScheduleTimeLabel } from "~/features/broadcast/broadcast-schedule-label";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
@@ -29,6 +30,59 @@ import {
 const BROADCAST_QUICK_SCHEDULE_INTERVALS_HOURS = [
   0.25, 0.5, 1, 12, 24,
 ] as const;
+
+function normalizeHexLines(lines: string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const line of lines) {
+    const p = line.trim().toLowerCase();
+    if (!/^[0-9a-f]{64}$/i.test(p)) continue;
+    if (seen.has(p)) continue;
+    seen.add(p);
+    out.push(p);
+  }
+  return out;
+}
+
+function broadcastReviewPrimaryLabel(
+  busy: boolean,
+  scheduleLater: boolean,
+  hasValidSchedule: boolean,
+  scheduleTimeLabel: string | null
+): string {
+  if (busy) return scheduleLater ? "Scheduling…" : "Continuing…";
+  if (scheduleLater) {
+    if (hasValidSchedule && scheduleTimeLabel) {
+      return `Review broadcast · ${scheduleTimeLabel}`;
+    }
+    return "Review broadcast";
+  }
+  return "Review broadcast";
+}
+
+function FormSection(props: {
+  step: string;
+  title: string;
+  purpose: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-4">
+      <div>
+        <h2 className="text-foreground text-lg font-semibold tracking-tight">
+          <span className="text-muted-foreground mr-2 font-mono text-base tabular-nums">
+            {props.step}
+          </span>
+          {props.title}
+        </h2>
+        <p className="text-muted-foreground mt-1.5 text-sm">{props.purpose}</p>
+      </div>
+      <div className="border-border bg-card/40 rounded-xl border p-5 shadow-sm">
+        {props.children}
+      </div>
+    </section>
+  );
+}
 
 export interface BroadcastNewDraftFormProps {
   limits: {
@@ -58,21 +112,10 @@ export interface BroadcastNewDraftFormProps {
     customNpubLines: string[];
   } | null;
   userTimezone: string;
+  recentBroadcastMessageSnippet?: string | null;
 }
 
-function broadcastPrimaryActionLabel(
-  busy: boolean,
-  hasSchedule: boolean,
-  scheduleTimeLabel: string | null
-): string {
-  if (busy) return hasSchedule ? "Scheduling…" : "Continue…";
-  if (hasSchedule) {
-    if (scheduleTimeLabel) return `Schedule for ${scheduleTimeLabel}`;
-    return "Schedule";
-  }
-  return "Broadcast now";
-}
-
+/* eslint-disable sonarjs/cognitive-complexity -- guided composer coordinates audience, message, delivery */
 export function BroadcastNewDraftForm({
   limits,
   planType,
@@ -81,6 +124,7 @@ export function BroadcastNewDraftForm({
   savedAudiences,
   savedForNew,
   userTimezone,
+  recentBroadcastMessageSnippet = null,
 }: BroadcastNewDraftFormProps) {
   const savedFiltered = useMemo(
     () =>
@@ -90,46 +134,59 @@ export function BroadcastNewDraftForm({
     [savedAudiences]
   );
 
-  const allowGraph = limits.allowedAudienceTypes.includes("MUTUALS");
-  const allowSaved = savedFiltered.length > 0;
+  const allowMutuals = limits.allowedAudienceTypes.includes("MUTUALS");
 
-  const [audienceTab, setAudienceTab] = useState<AudienceSourceTab>(() => {
-    if (savedForNew) {
-      return savedForNew.audienceType === "CUSTOM" ? "custom" : "saved";
-    }
-    if (limits.allowedAudienceTypes.includes("MUTUALS")) return "mutuals";
-    return "custom";
+  const [audienceMode, setAudienceMode] = useState<AudienceMode>(() => {
+    if (savedForNew?.audienceType === "MUTUALS") return "mutuals";
+    if (savedForNew?.audienceType === "CUSTOM") return "selected";
+    if (allowMutuals) return "mutuals";
+    return "selected";
   });
 
-  const [selectedSavedId, setSelectedSavedId] = useState<string | null>(
-    () => savedForNew?.id ?? null
+  const [selectedPubkeys, setSelectedPubkeys] = useState<string[]>(() =>
+    savedForNew?.audienceType === "CUSTOM"
+      ? normalizeHexLines(savedForNew.customNpubLines)
+      : []
   );
 
-  const [customRows, setCustomRows] = useState<ParsedRecipientRow[]>([]);
-  const [validHexLines, setValidHexLines] = useState<string[]>([]);
+  const [trayStats, setTrayStats] = useState({
+    selected: 0,
+    suppressed: 0,
+    sendable: 0,
+  });
+
+  const onSelectionStats = useCallback(
+    (s: { selected: number; suppressed: number; sendable: number }) => {
+      setTrayStats(s);
+    },
+    []
+  );
+
   const [excludeMessagedDays, setExcludeMessagedDays] = useState(0);
   const [excludePriorBroadcastRecipients, setExcludePriorBroadcastRecipients] =
     useState(false);
 
   const [messageLen, setMessageLen] = useState(0);
   const [messageBody, setMessageBody] = useState("");
+  const [showMessagePreview, setShowMessagePreview] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState("BEST_COMPATIBILITY");
   const [sendStrategy, setSendStrategy] = useState("STANDARD");
+  const [scheduleLater, setScheduleLater] = useState(false);
   const [scheduledForLocal, setScheduledForLocal] = useState("");
 
+  const resolvedSendStrategy = limits.allowStaggered
+    ? sendStrategy
+    : "STANDARD";
+
   const minDatetime = getNowForDateTimeLocal(userTimezone);
-  const hasScheduleTimeForSubmit =
-    limits.allowSchedule &&
+  const hasValidScheduleTime =
     scheduledForLocal.trim() !== "" &&
     !Number.isNaN(new Date(scheduledForLocal).getTime());
+  const hasScheduleTimeForSubmit =
+    limits.allowSchedule && scheduleLater && hasValidScheduleTime;
   const scheduleTimeLabel = hasScheduleTimeForSubmit
     ? getBroadcastScheduleTimeLabel(scheduledForLocal)
     : null;
-  const primaryLabel = broadcastPrimaryActionLabel(
-    busy,
-    hasScheduleTimeForSubmit,
-    scheduleTimeLabel
-  );
 
   const applyQuickSchedule = (hours: number) => {
     const min = getNowForDateTimeLocal(userTimezone);
@@ -139,92 +196,21 @@ export function BroadcastNewDraftForm({
     setScheduledForLocal(formatted < min ? min : formatted);
   };
 
-  const resolvedSelectedSavedId = useMemo(() => {
-    if (audienceTab !== "saved") return selectedSavedId;
-    if (selectedSavedId) return selectedSavedId;
-    return savedFiltered[0]?.id ?? null;
-  }, [audienceTab, selectedSavedId, savedFiltered]);
+  const effectiveAudienceType =
+    audienceMode === "mutuals" ? ("MUTUALS" as const) : ("CUSTOM" as const);
 
-  const selectedSaved = useMemo(
+  const hiddenCustomNpubs =
+    audienceMode === "selected" ? selectedPubkeys.join("\n") : "";
+
+  const parseSnapshotJson = useMemo(
     () =>
-      resolvedSelectedSavedId
-        ? (savedFiltered.find((s) => s.id === resolvedSelectedSavedId) ?? null)
-        : null,
-    [savedFiltered, resolvedSelectedSavedId]
+      JSON.stringify({
+        version: 2,
+        audienceMode,
+        selectedCount: selectedPubkeys.length,
+      }),
+    [audienceMode, selectedPubkeys.length]
   );
-
-  const effectiveAudienceType = useMemo(() => {
-    if (audienceTab === "mutuals") return "MUTUALS" as const;
-    if (audienceTab === "saved" && selectedSaved) {
-      return selectedSaved.audienceType as "CUSTOM" | "MUTUALS";
-    }
-    return "CUSTOM" as const;
-  }, [audienceTab, selectedSaved]);
-
-  const customPasteForPanel = useMemo(() => {
-    if (audienceTab === "custom") {
-      return savedForNew?.audienceType === "CUSTOM"
-        ? savedForNew.customNpubLines.join("\n")
-        : "";
-    }
-    if (audienceTab === "saved" && selectedSaved?.audienceType === "CUSTOM") {
-      return selectedSaved.customNpubLines.join("\n");
-    }
-    return "";
-  }, [audienceTab, savedForNew, selectedSaved]);
-
-  const customPanelKey = useMemo(() => {
-    if (audienceTab === "custom") {
-      return `custom-${savedForNew?.id ?? "new"}`;
-    }
-    if (audienceTab === "saved" && selectedSavedId) {
-      return `saved-custom-${selectedSavedId}`;
-    }
-    return "custom-off";
-  }, [audienceTab, savedForNew?.id, selectedSavedId]);
-
-  const hiddenCustomNpubs = useMemo(() => {
-    if (audienceTab === "custom") {
-      return validHexLines.join("\n");
-    }
-    if (audienceTab === "saved" && selectedSaved) {
-      if (selectedSaved.audienceType === "CUSTOM") {
-        return validHexLines.join("\n");
-      }
-      return selectedSaved.customNpubLines.join("\n");
-    }
-    return "";
-  }, [audienceTab, selectedSaved, validHexLines]);
-
-  const customSummary = useMemo(() => {
-    const text = customRows.map((r) => r.raw).join("\n");
-    return parseRecipientInput(text).summary;
-  }, [customRows]);
-
-  const parseSnapshotJson = useMemo(() => {
-    const base = {
-      version: 1 as const,
-      sourceTab: audienceTab,
-      savedAudienceId: audienceTab === "saved" ? selectedSavedId : undefined,
-      savedAudienceName: selectedSaved?.name,
-    };
-    if (
-      audienceTab === "custom" ||
-      (audienceTab === "saved" && selectedSaved?.audienceType === "CUSTOM")
-    ) {
-      return JSON.stringify({
-        ...base,
-        summary: customSummary,
-      });
-    }
-    return JSON.stringify(base);
-  }, [
-    audienceTab,
-    selectedSavedId,
-    selectedSaved?.name,
-    selectedSaved?.audienceType,
-    customSummary,
-  ]);
 
   const exclusionRulesJson = useMemo(() => {
     const rules: Record<string, unknown> = {};
@@ -238,8 +224,11 @@ export function BroadcastNewDraftForm({
   }, [excludeMessagedDays, excludePriorBroadcastRecipients]);
 
   const messageLint = useMemo(
-    () => getBroadcastMessageLintWarnings(messageBody),
-    [messageBody]
+    () =>
+      getBroadcastMessageLintWarnings(messageBody, {
+        recentBroadcastSnippet: recentBroadcastMessageSnippet,
+      }),
+    [messageBody, recentBroadcastMessageSnippet]
   );
 
   const [graphEstimateStats, setGraphEstimateStats] = useState<{
@@ -254,56 +243,47 @@ export function BroadcastNewDraftForm({
     []
   );
 
-  const graphEstimateType = useMemo((): "MUTUALS" | null => {
-    if (audienceTab === "mutuals") return "MUTUALS";
-    if (audienceTab === "saved" && selectedSaved?.audienceType === "MUTUALS") {
-      return "MUTUALS";
-    }
-    return null;
-  }, [audienceTab, selectedSaved]);
+  const audienceHeadline =
+    audienceMode === "mutuals" ? "Mutuals" : "Selected recipients";
 
-  useEffect(() => {
-    // Clear stale estimate when switching graph audience (mutuals vs saved).
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset when graph audience changes
-    setGraphEstimateStats(null);
-  }, [graphEstimateType]);
+  const riskSource = audienceMode === "mutuals" ? "MUTUALS" : "CUSTOM";
 
-  const summaryAudienceSource = useMemo(() => {
-    if (audienceTab === "saved") return "SAVED" as const;
-    if (audienceTab === "mutuals") return "MUTUALS" as const;
-    return "CUSTOM" as const;
-  }, [audienceTab]);
+  const scheduleSummary =
+    hasScheduleTimeForSubmit && scheduleTimeLabel
+      ? scheduleTimeLabel
+      : "After review";
 
-  const canContinue = useMemo(() => {
-    if (!messageBody.trim()) return false;
-    if (audienceTab === "custom") return validHexLines.length > 0;
-    if (audienceTab === "saved") {
-      if (!selectedSaved) return false;
-      if (selectedSaved.audienceType === "CUSTOM") {
-        return validHexLines.length > 0;
-      }
-      return true;
-    }
-    return true;
-  }, [audienceTab, messageBody, selectedSaved, validHexLines.length]);
+  const canContinue =
+    messageBody.trim().length > 0 &&
+    (audienceMode === "mutuals" || selectedPubkeys.length > 0);
 
-  const canSaveAudience = useMemo(() => {
-    if (!messageBody.trim()) return false;
-    return canContinue;
-  }, [canContinue, messageBody]);
+  const canSaveAudience =
+    audienceMode === "selected" &&
+    selectedPubkeys.length > 0 &&
+    messageBody.trim().length > 0;
 
-  const showCustomMetrics = useMemo(
-    () =>
-      audienceTab === "custom" ||
-      (audienceTab === "saved" && selectedSaved?.audienceType === "CUSTOM"),
-    [audienceTab, selectedSaved?.audienceType]
+  const primaryLabel = broadcastReviewPrimaryLabel(
+    busy,
+    scheduleLater,
+    hasScheduleTimeForSubmit,
+    scheduleTimeLabel
   );
+
+  const primaryIntent = hasScheduleTimeForSubmit
+    ? "create_schedule"
+    : "create_now";
+
+  const deliveryModeHelper = broadcastDeliveryModeComposerHelper(
+    deliveryMode as BroadcastDeliveryMode
+  );
+  const strategyHelper =
+    broadcastSendStrategyComposerHelper(resolvedSendStrategy);
 
   return (
     <Form
       method="post"
       key={savedForNew?.id ?? "new-draft"}
-      className="grid gap-8 lg:grid-cols-[1fr_minmax(260px,320px)]"
+      className="grid gap-10 lg:grid-cols-[1fr_minmax(280px,320px)] lg:items-start"
     >
       <input type="hidden" name="audienceType" value={effectiveAudienceType} />
       <input type="hidden" name="customNpubs" value={hiddenCustomNpubs} />
@@ -316,317 +296,372 @@ export function BroadcastNewDraftForm({
         />
       ) : null}
 
-      <div className="space-y-4">
+      <div className="space-y-12">
         {actionError ? (
           <div
             role="alert"
-            className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+            className="border-destructive/40 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm"
           >
             {actionError}
           </div>
         ) : null}
 
-        <AudienceSourceSelector
-          value={audienceTab}
-          onChange={setAudienceTab}
-          disabled={busy}
-          allowGraph={allowGraph}
-          allowSaved={allowSaved}
-        />
+        <FormSection
+          step="1"
+          title="Audience"
+          purpose="Choose who should receive this direct update."
+        >
+          <div className="space-y-6">
+            <AudienceSourceCards
+              value={audienceMode}
+              onChange={(m) => {
+                setAudienceMode(m);
+              }}
+              disabled={busy}
+              allowMutuals={allowMutuals}
+            />
 
-        {audienceTab === "mutuals" && allowGraph ? (
-          <AudienceGraphPanel onEstimateStats={onGraphEstimateStats} />
-        ) : null}
+            {audienceMode === "mutuals" && allowMutuals ? (
+              <div className="border-border bg-muted/10 space-y-3 rounded-xl border p-4">
+                <p className="text-muted-foreground text-sm">
+                  Resolved at send time from two-way follow relationships.
+                </p>
+                <span className="inline-block rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-900 dark:text-emerald-100">
+                  Lower spam risk
+                </span>
+                <AudienceGraphPanel onEstimateStats={onGraphEstimateStats} />
+              </div>
+            ) : null}
 
-        {audienceTab === "saved" && selectedSaved ? (
-          <div className="border-border space-y-3 rounded-lg border p-4">
+            {audienceMode === "selected" ? (
+              <RecipientPicker
+                savedAudiences={savedFiltered}
+                selectedPubkeys={selectedPubkeys}
+                onChangeSelected={setSelectedPubkeys}
+                onSelectionStats={onSelectionStats}
+                disabled={busy}
+              />
+            ) : null}
+
+            <div className="border-border space-y-3 rounded-xl border p-4">
+              <p className="text-sm font-medium">Audience exclusions</p>
+              <p className="text-muted-foreground text-xs">
+                Applied when the final audience is resolved.
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Suppressed recipients are always excluded automatically.
+              </p>
+              <div>
+                <label
+                  htmlFor="broadcast-exclude-recent-days-global"
+                  className="text-muted-foreground text-xs font-medium"
+                >
+                  Exclude recipients messaged in the last
+                </label>
+                <select
+                  id="broadcast-exclude-recent-days-global"
+                  className="border-input bg-background mt-1 block w-full max-w-xs rounded-md border px-3 py-2 text-sm"
+                  value={String(excludeMessagedDays)}
+                  onChange={(e) => {
+                    setExcludeMessagedDays(Number(e.target.value));
+                  }}
+                >
+                  <option value="0">No extra exclusion</option>
+                  <option value="7">7 days</option>
+                  <option value="14">14 days</option>
+                  <option value="30">30 days</option>
+                  <option value="90">90 days</option>
+                </select>
+              </div>
+              <label className="flex cursor-pointer items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="border-input mt-0.5 rounded"
+                  checked={excludePriorBroadcastRecipients}
+                  onChange={(e) => {
+                    setExcludePriorBroadcastRecipients(e.target.checked);
+                  }}
+                />
+                <span>
+                  Exclude anyone who already received a prior completed
+                  broadcast from this account.
+                </span>
+              </label>
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection
+          step="2"
+          title="Message"
+          purpose="Write what recipients will read in their DMs."
+        >
+          <div className="space-y-5">
             <div>
               <label
-                htmlFor="broadcast-saved-pick"
+                htmlFor="broadcast-internal-name"
                 className="mb-1 block text-sm font-medium"
               >
-                Saved audience
+                Internal name
               </label>
-              <select
-                id="broadcast-saved-pick"
+              <input
+                id="broadcast-internal-name"
+                name="name"
+                required
+                defaultValue={savedForNew?.name ?? ""}
                 className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                value={resolvedSelectedSavedId ?? ""}
-                onChange={(e) => {
-                  setSelectedSavedId(e.target.value || null);
-                }}
+                placeholder="March update · Beta list · Team note"
+              />
+              <p className="text-muted-foreground mt-1 text-xs">
+                For your workspace only. Recipients won’t see this.
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="broadcast-message-body"
+                className="mb-1 block text-sm font-medium"
               >
-                {savedFiltered.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <p className="text-muted-foreground text-xs">
-              Type: {selectedSaved.audienceType}
-              {selectedSaved.lastResolvedSize != null
-                ? ` · last estimate ${String(selectedSaved.lastResolvedSize)}`
-                : null}
-            </p>
-            {selectedSaved.audienceType === "MUTUALS" && allowGraph ? (
-              <AudienceGraphPanel onEstimateStats={onGraphEstimateStats} />
-            ) : null}
-          </div>
-        ) : null}
-
-        {audienceTab === "custom" ||
-        (audienceTab === "saved" &&
-          selectedSaved?.audienceType === "CUSTOM") ? (
-          <AudiencePanelCustomList
-            key={customPanelKey}
-            savedAudiences={savedFiltered}
-            initialPaste={customPasteForPanel}
-            onRowsChange={setCustomRows}
-            onValidHexLinesChange={setValidHexLines}
-          />
-        ) : null}
-
-        <div className="border-border space-y-3 rounded-lg border p-4">
-          <p className="text-sm font-medium">Audience exclusions</p>
-          <p className="text-muted-foreground text-xs">
-            Applied when you resolve the audience (after suppression and
-            self-exclusion).
-          </p>
-          <div>
-            <label
-              htmlFor="broadcast-exclude-recent-days-global"
-              className="text-muted-foreground text-xs font-medium"
-            >
-              Exclude recipients you messaged in the last
-            </label>
-            <select
-              id="broadcast-exclude-recent-days-global"
-              className="border-input bg-background mt-1 block w-full max-w-xs rounded-md border px-3 py-2 text-sm"
-              value={String(excludeMessagedDays)}
-              onChange={(e) => {
-                setExcludeMessagedDays(Number(e.target.value));
-              }}
-            >
-              <option value="0">No extra exclusion</option>
-              <option value="7">7 days</option>
-              <option value="14">14 days</option>
-              <option value="30">30 days</option>
-            </select>
-          </div>
-          <label className="flex cursor-pointer items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="border-input mt-0.5 rounded"
-              checked={excludePriorBroadcastRecipients}
-              onChange={(e) => {
-                setExcludePriorBroadcastRecipients(e.target.checked);
-              }}
-            />
-            <span>
-              Exclude anyone who already received a prior broadcast from this
-              account (any completed send).
-            </span>
-          </label>
-        </div>
-
-        <div>
-          <label
-            htmlFor="broadcast-draft-name"
-            className="mb-1 block text-sm font-medium"
-          >
-            Name
-          </label>
-          <input
-            id="broadcast-draft-name"
-            name="name"
-            required
-            defaultValue={savedForNew?.name ?? ""}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-            placeholder="March product update · Giveaway follow-up · Beta wave 1"
-          />
-          <p className="text-muted-foreground mt-1 text-xs">
-            Internal only. Recipients will not see this label.
-          </p>
-        </div>
-
-        <div>
-          <label
-            htmlFor="broadcast-message-body"
-            className="mb-1 block text-sm font-medium"
-          >
-            Message
-          </label>
-          <textarea
-            id="broadcast-message-body"
-            name="messageBody"
-            required
-            rows={8}
-            maxLength={8000}
-            value={messageBody}
-            onChange={(e) => {
-              setMessageBody(e.target.value);
-              setMessageLen(e.target.value.length);
-            }}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-          />
-          <p className="text-muted-foreground mt-1 text-xs tabular-nums">
-            {messageLen} / 8000 characters ·{" "}
-            {messageBody ? messageBody.split(/\r?\n/).length : 0} lines
-          </p>
-          {messageLint.length > 0 ? (
-            <ul className="mt-2 space-y-1 text-xs text-amber-800 dark:text-amber-200">
-              {messageLint.map((w) => (
-                <li key={`${w.level}:${w.message}`}>{w.message}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="broadcast-delivery-mode"
-              className="mb-1 block text-sm font-medium"
-            >
-              Delivery mode
-            </label>
-            <select
-              id="broadcast-delivery-mode"
-              name="deliveryMode"
-              value={deliveryMode}
-              onChange={(e) => setDeliveryMode(e.target.value)}
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-            >
-              <option value="BEST_COMPATIBILITY">
-                Best compatibility (recommended)
-              </option>
-              {limits.allowAdvancedDelivery ? (
-                <>
-                  <option value="NIP04_ONLY">NIP-04 only (legacy)</option>
-                  <option value="NIP17_ONLY">NIP-17 only</option>
-                  <option value="NIP17_FALLBACK_NIP04">
-                    Dual / NIP-17 with fallback
-                  </option>
-                  <option value="BOTH">Expert: send both</option>
-                </>
-              ) : null}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="broadcast-send-strategy"
-              className="mb-1 block text-sm font-medium"
-            >
-              Strategy
-            </label>
-            <select
-              id="broadcast-send-strategy"
-              name="sendStrategy"
-              value={sendStrategy}
-              onChange={(e) => setSendStrategy(e.target.value)}
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-              disabled={!limits.allowStaggered}
-            >
-              <option value="STANDARD">Standard (balanced concurrency)</option>
-              {limits.allowStaggered ? (
-                <option value="STAGGERED">
-                  Staggered (conservative pacing)
-                </option>
-              ) : null}
-            </select>
-          </div>
-        </div>
-
-        {limits.allowSchedule ? (
-          <div className="space-y-2">
-            <label
-              htmlFor="broadcast-scheduled-for"
-              className="mb-1 block text-sm font-medium"
-            >
-              Schedule for later
-            </label>
-            <input
-              id="broadcast-scheduled-for"
-              type="datetime-local"
-              name="scheduledFor"
-              value={scheduledForLocal}
-              min={minDatetime}
-              onChange={(e) => {
-                const v = e.target.value;
-                const min = getNowForDateTimeLocal(userTimezone);
-                setScheduledForLocal(v && v < min ? min : v);
-              }}
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-            />
-            <div className="flex flex-wrap gap-2">
-              {BROADCAST_QUICK_SCHEDULE_INTERVALS_HOURS.map((h) => (
-                <Button
-                  key={h}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => {
-                    applyQuickSchedule(h);
-                  }}
-                  className="border-primary text-foreground hover:bg-muted transition-transform duration-150 active:scale-95"
+                Message
+              </label>
+              <textarea
+                id="broadcast-message-body"
+                name="messageBody"
+                required
+                rows={10}
+                maxLength={8000}
+                value={messageBody}
+                onChange={(e) => {
+                  setMessageBody(e.target.value);
+                  setMessageLen(e.target.value.length);
+                }}
+                className="border-input bg-background focus-visible:ring-primary min-h-[220px] w-full rounded-md border px-3 py-3 text-sm leading-relaxed shadow-inner focus-visible:ring-2 focus-visible:outline-none"
+              />
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-muted-foreground text-xs tabular-nums">
+                  {messageLen} / 8000 characters ·{" "}
+                  {messageBody ? messageBody.split(/\r?\n/).length : 0} lines
+                </p>
+                <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    className="border-input rounded"
+                    checked={showMessagePreview}
+                    onChange={(e) => {
+                      setShowMessagePreview(e.target.checked);
+                    }}
+                  />
+                  Preview message
+                </label>
+              </div>
+              <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+                Recipients should understand why they are receiving this
+                message. Low-context or overly promotional messages are more
+                likely to be treated as spam.
+              </p>
+              {showMessagePreview && messageBody.trim() ? (
+                <div
+                  className="border-border bg-muted/30 mt-3 rounded-lg border p-4 text-sm whitespace-pre-wrap"
+                  aria-live="polite"
                 >
-                  {formatIntervalLabel(h, { compact: true })}
-                </Button>
-              ))}
+                  {messageBody}
+                </div>
+              ) : null}
+              {messageLint.length > 0 ? (
+                <ul className="mt-3 space-y-1 text-xs text-amber-800 dark:text-amber-200">
+                  {messageLint.map((w) => (
+                    <li key={`${w.level}:${w.message}`}>{w.message}</li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           </div>
-        ) : null}
+        </FormSection>
 
-        <p className="text-muted-foreground text-xs">
-          Leave scheduling empty to{" "}
-          <strong className="text-foreground">broadcast now</strong>, or pick a
-          time to <strong className="text-foreground">schedule</strong>. Both
-          paths resolve the audience and open mandatory review before signing.
-        </p>
+        <FormSection
+          step="3"
+          title="Delivery"
+          purpose="Choose how and when to send after you review and sign."
+        >
+          <div className="space-y-6">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="broadcast-delivery-mode"
+                  className="mb-1 block text-sm font-medium"
+                >
+                  Delivery mode
+                </label>
+                <select
+                  id="broadcast-delivery-mode"
+                  name="deliveryMode"
+                  value={deliveryMode}
+                  onChange={(e) => setDeliveryMode(e.target.value)}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="BEST_COMPATIBILITY">Best compatibility</option>
+                  {limits.allowAdvancedDelivery ? (
+                    <>
+                      <option value="NIP04_ONLY">NIP-04 only (legacy)</option>
+                      <option value="NIP17_ONLY">NIP-17 only</option>
+                      <option value="NIP17_FALLBACK_NIP04">
+                        NIP-17 with NIP-04 fallback
+                      </option>
+                      <option value="BOTH">Both (expert)</option>
+                    </>
+                  ) : null}
+                </select>
+                <p className="text-muted-foreground mt-1.5 text-xs leading-snug">
+                  {deliveryModeHelper}
+                </p>
+              </div>
+              <div>
+                <label
+                  htmlFor="broadcast-send-strategy"
+                  className="mb-1 block text-sm font-medium"
+                >
+                  Strategy
+                </label>
+                <select
+                  id="broadcast-send-strategy"
+                  name="sendStrategy"
+                  value={resolvedSendStrategy}
+                  onChange={(e) => setSendStrategy(e.target.value)}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="STANDARD">Standard</option>
+                  {limits.allowStaggered ? (
+                    <option value="STAGGERED">Conservative</option>
+                  ) : null}
+                </select>
+                <p className="text-muted-foreground mt-1.5 text-xs leading-snug">
+                  {strategyHelper}
+                </p>
+              </div>
+            </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <button
-            type="submit"
-            name="intent"
-            value="create_draft"
-            disabled={busy || !canContinue}
-            className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50"
-          >
-            Save draft
-          </button>
-          <button
-            type="submit"
-            name="intent"
-            value="save_audience"
-            disabled={busy || !canSaveAudience}
-            className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50"
-          >
-            Save audience
-          </button>
-          <button
-            type="submit"
-            name="intent"
-            value={hasScheduleTimeForSubmit ? "create_schedule" : "create_now"}
-            disabled={busy || !canContinue}
-            className="bg-success hover:bg-success/90 inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {hasScheduleTimeForSubmit ? (
-              <Clock
-                className="h-5 w-5 shrink-0"
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-            ) : (
-              <Send
-                className="h-5 w-5 shrink-0"
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-            )}
-            {primaryLabel}
-          </button>
-        </div>
+            {limits.allowSchedule ? (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Send time</p>
+                <div className="space-y-2">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      className="border-input"
+                      checked={!scheduleLater}
+                      onChange={() => {
+                        setScheduleLater(false);
+                        setScheduledForLocal("");
+                      }}
+                    />
+                    Send after review
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      className="border-input"
+                      checked={scheduleLater}
+                      onChange={() => {
+                        setScheduleLater(true);
+                      }}
+                    />
+                    Schedule for later
+                  </label>
+                </div>
+                {scheduleLater ? (
+                  <div className="space-y-2">
+                    <input
+                      id="broadcast-scheduled-for"
+                      type="datetime-local"
+                      name="scheduledFor"
+                      value={scheduledForLocal}
+                      min={minDatetime}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const min = getNowForDateTimeLocal(userTimezone);
+                        setScheduledForLocal(v && v < min ? min : v);
+                      }}
+                      className="border-input bg-background w-full max-w-md rounded-md border px-3 py-2 text-sm"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {BROADCAST_QUICK_SCHEDULE_INTERVALS_HOURS.map((h) => (
+                        <Button
+                          key={h}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => {
+                            applyQuickSchedule(h);
+                          }}
+                          className="border-primary text-foreground hover:bg-muted transition-transform duration-150 active:scale-95"
+                        >
+                          {formatIntervalLabel(h, { compact: true })}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Signed direct messages are queued after review. The next step is
+              review and signing—not an instant blast.
+            </p>
+
+            <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap">
+              <button
+                type="submit"
+                name="intent"
+                value={primaryIntent}
+                disabled={
+                  busy ||
+                  !canContinue ||
+                  (scheduleLater &&
+                    limits.allowSchedule &&
+                    !hasValidScheduleTime)
+                }
+                className="bg-success hover:bg-success/90 inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {hasScheduleTimeForSubmit ? (
+                  <Clock
+                    className="h-5 w-5 shrink-0"
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                ) : (
+                  <ArrowRight
+                    className="h-5 w-5 shrink-0"
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                )}
+                {primaryLabel}
+              </button>
+              <button
+                type="submit"
+                name="intent"
+                value="create_draft"
+                disabled={busy || !canContinue}
+                className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+              >
+                Save draft
+              </button>
+              {canSaveAudience ? (
+                <button
+                  type="submit"
+                  name="intent"
+                  value="save_audience"
+                  disabled={busy}
+                  className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+                >
+                  Save audience
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </FormSection>
       </div>
 
       <AudienceSummaryCard
@@ -635,27 +670,34 @@ export function BroadcastNewDraftForm({
           maxRecipientsPerCampaign: limits.maxRecipientsPerCampaign,
           maxDailyBroadcastRecipients: limits.maxDailyBroadcastRecipients,
         }}
-        audienceSource={summaryAudienceSource}
-        parsed={showCustomMetrics ? customSummary.parsed : undefined}
-        valid={showCustomMetrics ? customSummary.valid : undefined}
-        duplicates={showCustomMetrics ? customSummary.duplicates : undefined}
-        invalid={showCustomMetrics ? customSummary.invalid : undefined}
-        finalSendable={
-          showCustomMetrics ? customSummary.finalSendable : undefined
-        }
+        riskSource={riskSource}
+        audienceHeadline={audienceHeadline}
         estimatedGraphCount={
-          graphEstimateType ? (graphEstimateStats?.count ?? null) : null
+          audienceMode === "mutuals"
+            ? (graphEstimateStats?.count ?? null)
+            : undefined
         }
         graphFetchFailed={
-          graphEstimateType ? (graphEstimateStats?.fetchFailed ?? false) : false
+          audienceMode === "mutuals"
+            ? (graphEstimateStats?.fetchFailed ?? false)
+            : false
+        }
+        selectedCount={
+          audienceMode === "selected" ? trayStats.selected : undefined
+        }
+        selectedSuppressed={
+          audienceMode === "selected" ? trayStats.suppressed : undefined
+        }
+        selectedSendable={
+          audienceMode === "selected" ? trayStats.sendable : undefined
         }
         deliveryMode={deliveryMode as BroadcastDeliveryMode}
-        sendStrategy={sendStrategy}
-        scheduleLabel={scheduleTimeLabel}
-        broadcastNowLabel={!hasScheduleTimeForSubmit}
+        sendStrategy={resolvedSendStrategy}
+        scheduleSummary={scheduleSummary}
         excludeRecentDays={excludeMessagedDays}
         overlapWarning={null}
       />
     </Form>
   );
 }
+/* eslint-enable sonarjs/cognitive-complexity */

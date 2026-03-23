@@ -15,6 +15,33 @@ export function formatBroadcastDeliveryMode(
 }
 
 /** Plain-language compatibility note for review (honest about current client signing). */
+/** One-line helper under delivery mode on the composer (scannable). */
+export function broadcastDeliveryModeComposerHelper(
+  mode: BroadcastDeliveryMode
+): string {
+  switch (mode) {
+    case "BEST_COMPATIBILITY":
+      return "Maximizes deliverability across recipient setups.";
+    case "NIP17_ONLY":
+      return "Sends only to recipients compatible with NIP-17.";
+    case "NIP04_ONLY":
+      return "Legacy NIP-04 only—widest older client support.";
+    case "NIP17_FALLBACK_NIP04":
+      return "Prefers NIP-17 where available, with NIP-04 fallback.";
+    case "BOTH":
+      return "Expert: may use both paths where the signed payload allows.";
+    default:
+      return "";
+  }
+}
+
+export function broadcastSendStrategyComposerHelper(strategy: string): string {
+  if (strategy === "STAGGERED") {
+    return "Slower delivery with stricter retry behavior.";
+  }
+  return "Balanced pacing and retries for most broadcasts.";
+}
+
 export function broadcastCompatibilityForecastNote(
   mode: BroadcastDeliveryMode
 ): string {

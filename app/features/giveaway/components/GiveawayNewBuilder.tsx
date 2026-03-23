@@ -70,7 +70,7 @@ const SCOPE_TYPE_OPTIONS: ReadonlyArray<{
   {
     value: "SINGLE_POST",
     title: "Single post",
-    desc: "One note or thread you choose",
+    desc: "Engagement on that note only — not nested replies deeper in the thread",
   },
   {
     value: "FOLLOWERS",

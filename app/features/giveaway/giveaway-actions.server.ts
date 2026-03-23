@@ -35,6 +35,7 @@ import {
   runGiveawaySelection,
   runGiveawaySelectionPerEngagement,
 } from "./giveaway-selection.server";
+import { filterRelatedEventsToRootNoteEngagementOnly } from "./giveaway-single-post-engagement.server";
 import { fetchGiveawayParticipants } from "./giveaway.server";
 import {
   createGiveaway as createGiveawayRow,
@@ -167,8 +168,19 @@ async function getEligibleParticipantsForGiveaway(
     return { relatedEvents: [] };
   }
   const { relatedEvents } = await fetchGiveawayParticipants(eventIds);
+  let eventsForSelection = relatedEvents;
+  if (
+    scope.type === "SINGLE_POST" &&
+    eventIds.length === 1 &&
+    typeof eventIds[0] === "string"
+  ) {
+    eventsForSelection = filterRelatedEventsToRootNoteEngagementOnly(
+      relatedEvents,
+      eventIds[0]
+    );
+  }
   const processed = await processGiveawayParticipants(
-    relatedEvents,
+    eventsForSelection,
     userId,
     userWithDefaults,
     filters ? { filters } : undefined

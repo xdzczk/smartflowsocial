@@ -294,3 +294,21 @@ export async function countActiveBroadcastCampaignsForUser(
     },
   });
 }
+
+/** Latest non-empty message body for similarity hints in the composer (truncated). */
+export async function getLatestBroadcastMessageSnippetForUser(
+  userId: string
+): Promise<string | null> {
+  const row = await prisma.broadcastCampaign.findFirst({
+    where: {
+      userId,
+      messageBody: { not: "" },
+    },
+    orderBy: { updatedAt: "desc" },
+    select: { messageBody: true },
+  });
+  if (!row) return null;
+  const t = row.messageBody.trim();
+  if (!t) return null;
+  return t.length > 500 ? t.slice(0, 500) : t;
+}
