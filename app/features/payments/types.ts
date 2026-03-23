@@ -113,7 +113,7 @@ export const PLAN_FEATURES = {
 } as const;
 
 /** Audience sources allowed for broadcast recipient resolution */
-export type BroadcastAudienceGate = "CUSTOM" | "FOLLOWERS" | "MUTUALS";
+export type BroadcastAudienceGate = "CUSTOM" | "MUTUALS";
 
 /**
  * Tier limits for Broadcasts (paid-only feature; free has broadcasts: false).
@@ -153,7 +153,7 @@ export function getBroadcastPlanLimits(planType: PlanType): {
     maxRecipientsPerCampaign: 500,
     maxConcurrentActiveCampaigns: 5,
     maxDailyBroadcastRecipients: 2000,
-    allowedAudienceTypes: ["CUSTOM", "FOLLOWERS", "MUTUALS"],
+    allowedAudienceTypes: ["CUSTOM", "MUTUALS"],
     allowAdvancedDelivery: true,
     allowSchedule: true,
     allowStaggered: true,

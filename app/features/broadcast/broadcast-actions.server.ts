@@ -11,7 +11,6 @@ import { looksSpammyMessage } from "~/features/broadcast/broadcast-guardrails.se
 import {
   applySuppressionAndSelf,
   normalizePubkeyInput,
-  parseCustomNpubLines,
   resolveAudiencePubkeys,
 } from "~/features/broadcast/broadcast-resolve.server";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
@@ -44,6 +43,8 @@ export class BroadcastActionError extends Error {
 const MSG_CAMPAIGN_NOT_FOUND = "Campaign not found";
 const MSG_FOLLOWING_AUDIENCE_REMOVED =
   "The “Following” audience type is no longer available.";
+const MSG_FOLLOWERS_AUDIENCE_REMOVED =
+  "Broadcasting to all followers is no longer available. Use Mutuals or a custom list of accounts that follow you.";
 const MSG_SAVED_AUDIENCE_NOT_FOUND = "Saved audience not found";
 
 async function countBroadcastRecipientsFinalizedToday(
@@ -196,6 +197,9 @@ export async function resolveRecipientsForCampaign(
   if (!campaign) {
     throw new BroadcastActionError(MSG_CAMPAIGN_NOT_FOUND, "NOT_FOUND");
   }
+  if (campaign.audienceType === "FOLLOWERS") {
+    throw new BroadcastActionError(MSG_FOLLOWERS_AUDIENCE_REMOVED, "AUDIENCE");
+  }
   if (
     campaign.status !== BroadcastCampaignStatus.DRAFT &&
     campaign.status !== BroadcastCampaignStatus.AWAITING_SIGNATURE
@@ -229,18 +233,30 @@ export async function resolveRecipientsForCampaign(
     suppressRows.map((r) => r.recipientPubkey.toLowerCase())
   );
 
-  const { pubkeys, invalidCustom, graphFetchFailed } =
-    await resolveAudiencePubkeys({
-      audienceType: campaign.audienceType,
-      customLines: campaign.customNpubLines,
-      senderPubkeyHex: senderHex.toLowerCase(),
-    });
+  const {
+    pubkeys,
+    invalidCustom,
+    graphFetchFailed,
+    excludedNonFollowers = 0,
+  } = await resolveAudiencePubkeys({
+    audienceType: campaign.audienceType,
+    customLines: campaign.customNpubLines,
+    senderPubkeyHex: senderHex.toLowerCase(),
+  });
+
+  if (campaign.audienceType === "CUSTOM" && graphFetchFailed) {
+    throw new BroadcastActionError(
+      "Could not load your follower list to verify custom recipients. Try again in a few minutes.",
+      "GRAPH_CACHE"
+    );
+  }
 
   let { included, suppressedCount } = applySuppressionAndSelf({
     pubkeys,
     selfPubkeyHex: senderHex,
     suppressed,
   });
+  const includedAfterSuppression = included.length;
 
   let excludedRecentMessaged = 0;
   const rules = campaign.exclusionRulesJson as
@@ -291,6 +307,37 @@ export async function resolveRecipientsForCampaign(
     const beforePrior = included.length;
     included = included.filter((p) => !priorSet.has(p.toLowerCase()));
     excludedPriorBroadcast = beforePrior - included.length;
+  }
+
+  if (included.length === 0 && campaign.audienceType === "CUSTOM") {
+    if (pubkeys.length === 0) {
+      if (excludedNonFollowers > 0) {
+        throw new BroadcastActionError(
+          "None of the accounts you listed follow you. You can only message people who follow you.",
+          "EMPTY_AUDIENCE"
+        );
+      }
+      if (invalidCustom > 0) {
+        throw new BroadcastActionError(
+          "No valid recipients. Fix invalid lines or add pubkeys that follow you.",
+          "EMPTY_AUDIENCE"
+        );
+      }
+      throw new BroadcastActionError(
+        "Add at least one recipient who follows you.",
+        "EMPTY_AUDIENCE"
+      );
+    }
+    if (includedAfterSuppression === 0) {
+      throw new BroadcastActionError(
+        "Everyone in this audience is suppressed or is your own pubkey. Adjust suppression or choose another audience.",
+        "ALL_SUPPRESSED"
+      );
+    }
+    throw new BroadcastActionError(
+      "Everyone in this audience was excluded by your rules (recent messages or prior broadcast). Adjust exclusions or choose another audience.",
+      "EMPTY_AUDIENCE"
+    );
   }
 
   if (
@@ -361,6 +408,7 @@ export async function resolveRecipientsForCampaign(
     metadataJson: {
       suppressedCount,
       invalidCustom,
+      excludedNonFollowers,
       excludedRecentMessaged,
       excludedPriorBroadcast,
     },
@@ -726,9 +774,12 @@ export async function duplicateBroadcastCampaign(
   }
   if (src.audienceType === "FOLLOWING") {
     throw new BroadcastActionError(
-      "The “Following” audience is no longer available. Create a new broadcast using Followers, Mutuals, or a custom list.",
+      "The “Following” audience is no longer available. Create a new broadcast using Mutuals or a custom list of accounts that follow you.",
       "AUDIENCE"
     );
+  }
+  if (src.audienceType === "FOLLOWERS") {
+    throw new BroadcastActionError(MSG_FOLLOWERS_AUDIENCE_REMOVED, "AUDIENCE");
   }
   const row = await prisma.broadcastCampaign.create({
     data: {
@@ -811,6 +862,9 @@ export async function createBroadcastSavedAudience(
   if (input.audienceType === "FOLLOWING") {
     throw new BroadcastActionError(MSG_FOLLOWING_AUDIENCE_REMOVED, "AUDIENCE");
   }
+  if (input.audienceType === "FOLLOWERS") {
+    throw new BroadcastActionError(MSG_FOLLOWERS_AUDIENCE_REMOVED, "AUDIENCE");
+  }
   return prisma.broadcastSavedAudience.create({
     data: {
       userId,
@@ -848,6 +902,9 @@ export async function updateBroadcastSavedAudience(
   if (input.audienceType === "FOLLOWING") {
     throw new BroadcastActionError(MSG_FOLLOWING_AUDIENCE_REMOVED, "AUDIENCE");
   }
+  if (input.audienceType === "FOLLOWERS") {
+    throw new BroadcastActionError(MSG_FOLLOWERS_AUDIENCE_REMOVED, "AUDIENCE");
+  }
   const row = await prisma.broadcastSavedAudience.findFirst({
     where: { id, userId },
   });
@@ -877,6 +934,9 @@ export async function duplicateBroadcastSavedAudience(
   }
   if (row.audienceType === "FOLLOWING") {
     throw new BroadcastActionError(MSG_FOLLOWING_AUDIENCE_REMOVED, "AUDIENCE");
+  }
+  if (row.audienceType === "FOLLOWERS") {
+    throw new BroadcastActionError(MSG_FOLLOWERS_AUDIENCE_REMOVED, "AUDIENCE");
   }
   const created = await prisma.broadcastSavedAudience.create({
     data: {
@@ -912,8 +972,18 @@ export async function refreshSavedAudienceEstimate(
 
   let size = 0;
   if (row.audienceType === "CUSTOM") {
-    const { valid } = parseCustomNpubLines(row.customNpubLines);
-    size = valid.length;
+    const { pubkeys, graphFetchFailed } = await resolveAudiencePubkeys({
+      audienceType: "CUSTOM",
+      customLines: row.customNpubLines,
+      senderPubkeyHex: senderHex.toLowerCase(),
+    });
+    if (graphFetchFailed) {
+      throw new BroadcastActionError(
+        "Could not load your follower list to estimate this audience. Try again in a few minutes.",
+        "GRAPH_CACHE"
+      );
+    }
+    size = pubkeys.length;
   } else {
     const { pubkeys } = await resolveAudiencePubkeys({
       audienceType: row.audienceType,

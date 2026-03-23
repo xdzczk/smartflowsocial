@@ -126,7 +126,8 @@ export function AudiencePanelCustomList({
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
         Add recipients without relying on raw keys alone: paste, import a file,
-        paste an npub in search, or pull from a saved audience.
+        paste an npub in search, or pull from a saved audience. At send time,
+        only accounts that follow you are included — others are dropped.
       </p>
       <div className="flex flex-wrap gap-1 rounded-lg border p-1">
         {(

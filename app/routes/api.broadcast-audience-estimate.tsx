@@ -1,21 +1,18 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import {
-  getFollowerPubkeysGraph,
-  getMutualPubkeysGraph,
-} from "~/features/nostr/social-graph.server";
+import { getMutualPubkeysGraph } from "~/features/nostr/social-graph.server";
 import { getUserById } from "~/features/user";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 /**
- * GET ?type=FOLLOWERS|MUTUALS — estimated graph audience size (cache-based).
+ * GET ?type=MUTUALS — estimated graph audience size (cache-based).
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const url = new URL(request.url);
   const type = url.searchParams.get("type");
-  if (type !== "FOLLOWERS" && type !== "MUTUALS") {
+  if (type !== "MUTUALS") {
     return json({ error: "Invalid type" }, { status: 400 });
   }
 
@@ -30,10 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return json({ count: null, fetchFailed: true });
   }
 
-  const r =
-    type === "FOLLOWERS"
-      ? await getFollowerPubkeysGraph(hex)
-      : await getMutualPubkeysGraph(hex);
+  const r = await getMutualPubkeysGraph(hex);
 
   return json({
     count: r.pubkeys.length,

@@ -73,7 +73,6 @@ function broadcastPrimaryActionLabel(
   return "Broadcast now";
 }
 
-/* eslint-disable sonarjs/cognitive-complexity -- audience builder coordinates many dependent fields */
 export function BroadcastNewDraftForm({
   limits,
   planType,
@@ -84,13 +83,14 @@ export function BroadcastNewDraftForm({
   userTimezone,
 }: BroadcastNewDraftFormProps) {
   const savedFiltered = useMemo(
-    () => savedAudiences.filter((s) => s.audienceType !== "FOLLOWING"),
+    () =>
+      savedAudiences.filter(
+        (s) => s.audienceType !== "FOLLOWING" && s.audienceType !== "FOLLOWERS"
+      ),
     [savedAudiences]
   );
 
-  const allowGraph =
-    limits.allowedAudienceTypes.includes("FOLLOWERS") ||
-    limits.allowedAudienceTypes.includes("MUTUALS");
+  const allowGraph = limits.allowedAudienceTypes.includes("MUTUALS");
   const allowSaved = savedFiltered.length > 0;
 
   const [audienceTab, setAudienceTab] = useState<AudienceSourceTab>(() => {
@@ -98,7 +98,6 @@ export function BroadcastNewDraftForm({
       return savedForNew.audienceType === "CUSTOM" ? "custom" : "saved";
     }
     if (limits.allowedAudienceTypes.includes("MUTUALS")) return "mutuals";
-    if (limits.allowedAudienceTypes.includes("FOLLOWERS")) return "followers";
     return "custom";
   });
 
@@ -156,9 +155,8 @@ export function BroadcastNewDraftForm({
 
   const effectiveAudienceType = useMemo(() => {
     if (audienceTab === "mutuals") return "MUTUALS" as const;
-    if (audienceTab === "followers") return "FOLLOWERS" as const;
     if (audienceTab === "saved" && selectedSaved) {
-      return selectedSaved.audienceType as "CUSTOM" | "FOLLOWERS" | "MUTUALS";
+      return selectedSaved.audienceType as "CUSTOM" | "MUTUALS";
     }
     return "CUSTOM" as const;
   }, [audienceTab, selectedSaved]);
@@ -256,22 +254,16 @@ export function BroadcastNewDraftForm({
     []
   );
 
-  const graphEstimateType = useMemo((): "FOLLOWERS" | "MUTUALS" | null => {
+  const graphEstimateType = useMemo((): "MUTUALS" | null => {
     if (audienceTab === "mutuals") return "MUTUALS";
-    if (audienceTab === "followers") return "FOLLOWERS";
-    if (
-      audienceTab === "saved" &&
-      selectedSaved &&
-      (selectedSaved.audienceType === "FOLLOWERS" ||
-        selectedSaved.audienceType === "MUTUALS")
-    ) {
-      return selectedSaved.audienceType === "MUTUALS" ? "MUTUALS" : "FOLLOWERS";
+    if (audienceTab === "saved" && selectedSaved?.audienceType === "MUTUALS") {
+      return "MUTUALS";
     }
     return null;
   }, [audienceTab, selectedSaved]);
 
   useEffect(() => {
-    // Clear stale estimate when switching graph audience (mutuals vs followers vs saved).
+    // Clear stale estimate when switching graph audience (mutuals vs saved).
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset when graph audience changes
     setGraphEstimateStats(null);
   }, [graphEstimateType]);
@@ -279,7 +271,6 @@ export function BroadcastNewDraftForm({
   const summaryAudienceSource = useMemo(() => {
     if (audienceTab === "saved") return "SAVED" as const;
     if (audienceTab === "mutuals") return "MUTUALS" as const;
-    if (audienceTab === "followers") return "FOLLOWERS" as const;
     return "CUSTOM" as const;
   }, [audienceTab]);
 
@@ -344,16 +335,7 @@ export function BroadcastNewDraftForm({
         />
 
         {audienceTab === "mutuals" && allowGraph ? (
-          <AudienceGraphPanel
-            type="MUTUALS"
-            onEstimateStats={onGraphEstimateStats}
-          />
-        ) : null}
-        {audienceTab === "followers" && allowGraph ? (
-          <AudienceGraphPanel
-            type="FOLLOWERS"
-            onEstimateStats={onGraphEstimateStats}
-          />
+          <AudienceGraphPanel onEstimateStats={onGraphEstimateStats} />
         ) : null}
 
         {audienceTab === "saved" && selectedSaved ? (
@@ -386,17 +368,8 @@ export function BroadcastNewDraftForm({
                 ? ` · last estimate ${String(selectedSaved.lastResolvedSize)}`
                 : null}
             </p>
-            {(selectedSaved.audienceType === "FOLLOWERS" ||
-              selectedSaved.audienceType === "MUTUALS") &&
-            allowGraph ? (
-              <AudienceGraphPanel
-                type={
-                  selectedSaved.audienceType === "MUTUALS"
-                    ? "MUTUALS"
-                    : "FOLLOWERS"
-                }
-                onEstimateStats={onGraphEstimateStats}
-              />
+            {selectedSaved.audienceType === "MUTUALS" && allowGraph ? (
+              <AudienceGraphPanel onEstimateStats={onGraphEstimateStats} />
             ) : null}
           </div>
         ) : null}
@@ -686,4 +659,3 @@ export function BroadcastNewDraftForm({
     </Form>
   );
 }
-/* eslint-enable sonarjs/cognitive-complexity */

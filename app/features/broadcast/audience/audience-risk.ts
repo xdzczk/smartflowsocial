@@ -11,7 +11,10 @@ export function audienceRiskForSource(
     case "FOLLOWERS":
       return { level: "moderate", label: "Moderate spam risk — broader reach" };
     case "CUSTOM":
-      return { level: "curated", label: "User-curated list" };
+      return {
+        level: "curated",
+        label: "Followers only (verified at send)",
+      };
     case "SAVED":
       return { level: "depends", label: "Depends on saved definition" };
     default:

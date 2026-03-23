@@ -42,19 +42,59 @@ function spotFromFx(fx: FxState): { btcUsd: number; btcEur: number } | null {
     : null;
 }
 
+function normalizeRatesFromApi(
+  data: Record<string, unknown>
+): AdminBtcSpotRates | null {
+  const btcUsd = data["btcUsd"];
+  const btcEur = data["btcEur"];
+  const fetchedAt = data["fetchedAt"];
+  const source = data["source"];
+  if (
+    typeof btcUsd !== "number" ||
+    typeof btcEur !== "number" ||
+    typeof fetchedAt !== "string"
+  ) {
+    return null;
+  }
+  const src = source === "coingecko" || source === "kraken" ? source : "kraken";
+  return { btcUsd, btcEur, fetchedAt, source: src };
+}
+
+function initialFxState(
+  initialFx: AdminBtcSpotRates | null,
+  initialFxError: boolean
+): FxState {
+  if (initialFx) return { status: "ok", rates: initialFx };
+  if (initialFxError) return { status: "error" };
+  return { status: "idle" };
+}
+
 export function AdminCurrencyProvider({
   children,
+  initialFx,
+  initialFxError,
 }: {
   children: React.ReactNode;
+  initialFx: AdminBtcSpotRates | null;
+  initialFxError: boolean;
 }) {
   const [unit, setUnitState] = useState<AdminDisplayUnit>("SATS");
-  const [fx, setFx] = useState<FxState>({ status: "idle" });
+  const [fx, setFx] = useState<FxState>(() =>
+    initialFxState(initialFx, initialFxError)
+  );
 
   useEffect(() => {
     queueMicrotask(() => {
       setUnitState(readStoredAdminDisplayUnit());
     });
   }, []);
+
+  useEffect(() => {
+    if (!initialFx) return;
+    queueMicrotask(() => {
+      setFx({ status: "ok", rates: initialFx });
+    });
+  }, [initialFx]);
 
   const setUnit = useCallback((u: AdminDisplayUnit) => {
     setUnitState(u);
@@ -72,12 +112,9 @@ export function AdminCurrencyProvider({
           setFx({ status: "error" });
           return;
         }
-        const data = (await res.json()) as AdminBtcSpotRates;
-        if (
-          typeof data.btcUsd === "number" &&
-          typeof data.btcEur === "number" &&
-          typeof data.fetchedAt === "string"
-        ) {
+        const raw = (await res.json()) as Record<string, unknown>;
+        const data = normalizeRatesFromApi(raw);
+        if (data) {
           setFx({ status: "ok", rates: data });
         } else {
           setFx({ status: "error" });
@@ -90,10 +127,11 @@ export function AdminCurrencyProvider({
 
   useEffect(() => {
     if (unit !== "USD" && unit !== "EUR") return;
+    if (fx.status === "ok") return;
     queueMicrotask(() => {
       loadFx();
     });
-  }, [unit, loadFx]);
+  }, [unit, loadFx, fx.status]);
 
   const refetchFx = useCallback(() => {
     loadFx();
@@ -105,7 +143,11 @@ export function AdminCurrencyProvider({
     if (fx.status === "error") {
       return "Fiat spot unavailable — showing sats.";
     }
-    return `Fiat from Kraken last trade (XBTUSDC, XBTEUR), ${fx.rates.fetchedAt}. Display only.`;
+    const srcLabel =
+      fx.rates.source === "kraken"
+        ? "Kraken last trade (XBTUSDC, XBTEUR)"
+        : "CoinGecko spot (fallback)";
+    return `Fiat from ${srcLabel}, ${fx.rates.fetchedAt}. Display only.`;
   }, [unit, fx]);
 
   const moneyColumnLabel = useMemo(() => {
@@ -157,7 +199,6 @@ export function useAdminCurrency(): AdminCurrencyContextValue {
   return ctx;
 }
 
-/** Safe for pages that might render outside provider (should not happen on admin). */
 export function useAdminCurrencyOptional(): AdminCurrencyContextValue | null {
   return useContext(AdminCurrencyContext);
 }

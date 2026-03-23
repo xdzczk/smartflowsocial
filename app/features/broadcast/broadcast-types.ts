@@ -1,11 +1,7 @@
 import { BroadcastCampaignStatus } from "@prisma/client";
 import { z } from "zod";
 
-export const broadcastAudienceTypeSchema = z.enum([
-  "CUSTOM",
-  "FOLLOWERS",
-  "MUTUALS",
-]);
+export const broadcastAudienceTypeSchema = z.enum(["CUSTOM", "MUTUALS"]);
 
 export const broadcastDeliveryModeSchema = z.enum([
   "BEST_COMPATIBILITY",

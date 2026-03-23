@@ -1,6 +1,6 @@
 import { cn } from "~/lib/utils";
 
-export type AudienceSourceTab = "mutuals" | "followers" | "custom" | "saved";
+export type AudienceSourceTab = "mutuals" | "custom" | "saved";
 
 const OPTIONS: Array<{
   id: AudienceSourceTab;
@@ -16,16 +16,10 @@ const OPTIONS: Array<{
     recommended: true,
   },
   {
-    id: "followers",
-    title: "Followers",
-    description:
-      "People who follow this account. Higher reach — use for clearly relevant updates only.",
-  },
-  {
     id: "custom",
     title: "Custom list",
     description:
-      "Paste, import, or search specific recipients. Full control over who receives the DM.",
+      "Paste, import, or search specific recipients. Only accounts that follow you can receive the DM.",
   },
   {
     id: "saved",
@@ -51,7 +45,7 @@ export function AudienceSourceSelector({
   allowSaved,
 }: AudienceSourceSelectorProps) {
   const visible = OPTIONS.filter((o) => {
-    if (o.id === "followers" || o.id === "mutuals") return allowGraph;
+    if (o.id === "mutuals") return allowGraph;
     if (o.id === "saved") return allowSaved;
     return true;
   });

@@ -45,12 +45,32 @@ export async function resolveAudiencePubkeys(input: {
 }): Promise<{
   pubkeys: string[];
   invalidCustom: number;
+  /** Custom list: recipients not in your follower graph (counted in invalidCustom). */
+  excludedNonFollowers?: number;
   /** Present for graph-backed audiences; true if cache failed (not “empty graph”). */
   graphFetchFailed?: boolean;
 }> {
   if (input.audienceType === "CUSTOM") {
     const { valid, invalid } = parseCustomNpubLines(input.customLines);
-    return { pubkeys: valid, invalidCustom: invalid };
+    const { pubkeys: followerPubkeys, fetchFailed } =
+      await getFollowerPubkeysGraph(input.senderPubkeyHex);
+    if (fetchFailed) {
+      return {
+        pubkeys: [],
+        invalidCustom: invalid,
+        excludedNonFollowers: valid.length,
+        graphFetchFailed: true,
+      };
+    }
+    const followerSet = new Set(followerPubkeys.map((p) => p.toLowerCase()));
+    const filtered = valid.filter((p) => followerSet.has(p.toLowerCase()));
+    const excludedNonFollowers = valid.length - filtered.length;
+    return {
+      pubkeys: filtered,
+      invalidCustom: invalid + excludedNonFollowers,
+      excludedNonFollowers,
+      graphFetchFailed: false,
+    };
   }
   if (input.audienceType === "FOLLOWING") {
     const { pubkeys, fetchFailed } = await getFollowedPubkeysGraph(

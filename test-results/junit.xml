@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.002024875">
-    <testsuite name="tests/unit/broadcast-resolve.test.ts" timestamp="2026-03-23T06:33:08.867Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.002024875">
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines dedupes and counts invalid" time="0.001054583">
+<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.00217375">
+    <testsuite name="tests/unit/broadcast-resolve.test.ts" timestamp="2026-03-23T07:38:56.702Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.00217375">
+        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines dedupes and counts invalid" time="0.001128458">
         </testcase>
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; normalizePubkeyInput accepts 64 hex" time="0.000106708">
+        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; normalizePubkeyInput accepts 64 hex" time="0.000110584">
         </testcase>
-        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines works after comma-splitting like the composer" time="0.00018675">
+        <testcase classname="tests/unit/broadcast-resolve.test.ts" name="broadcast-resolve &gt; parseCustomNpubLines works after comma-splitting like the composer" time="0.000200709">
         </testcase>
     </testsuite>
 </testsuites>

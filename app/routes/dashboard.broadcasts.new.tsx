@@ -56,10 +56,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const noticeParts = [noticeParam].filter(
       (s): s is string => typeof s === "string" && s.length > 0
     );
-    if (savedForNew?.audienceType === "FOLLOWING") {
+    if (
+      savedForNew?.audienceType === "FOLLOWING" ||
+      savedForNew?.audienceType === "FOLLOWERS"
+    ) {
       savedForNew = null;
       noticeParts.push(
-        "The “Following” audience type is no longer available. Choose Followers, Mutuals, or a custom list."
+        "That saved audience type is no longer available. Choose Mutuals or a custom list of accounts that follow you."
       );
     }
     const notice = noticeParts.length > 0 ? noticeParts.join(" ") : null;
@@ -133,7 +136,7 @@ async function handleSaveAudienceIntent(userId: string, form: FormData) {
   if (!name) {
     return json({ error: "Name required" }, { status: 400 });
   }
-  if (!["CUSTOM", "FOLLOWERS", "MUTUALS"].includes(audienceType)) {
+  if (!["CUSTOM", "MUTUALS"].includes(audienceType)) {
     return json({ error: "Invalid audience" }, { status: 400 });
   }
   if (audienceType === "CUSTOM" && customNpubLines.length === 0) {
@@ -144,7 +147,7 @@ async function handleSaveAudienceIntent(userId: string, form: FormData) {
   }
   await createBroadcastSavedAudience(userId, {
     name,
-    audienceType: audienceType as "CUSTOM" | "FOLLOWERS" | "MUTUALS",
+    audienceType: audienceType as "CUSTOM" | "MUTUALS",
     customNpubLines,
     ruleSummary: "Saved from broadcast composer",
   });

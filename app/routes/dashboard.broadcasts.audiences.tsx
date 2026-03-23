@@ -21,7 +21,7 @@ import { cn } from "~/lib/utils";
 
 const BROADCAST_AUDIENCES_PATH = "/dashboard/broadcasts/audiences";
 
-const VALID_SAVED_AUDIENCE_TYPES = ["CUSTOM", "FOLLOWERS", "MUTUALS"] as const;
+const VALID_SAVED_AUDIENCE_TYPES = ["CUSTOM", "MUTUALS"] as const;
 const ERR_INVALID_AUDIENCE = "Invalid audience";
 const ERR_MISSING_ID = "Missing id";
 
@@ -88,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     await createBroadcastSavedAudience(userId, {
       name,
-      audienceType: audienceType as "CUSTOM" | "FOLLOWERS" | "MUTUALS",
+      audienceType: audienceType as "CUSTOM" | "MUTUALS",
       customNpubLines,
       ruleSummary: ruleSummary || undefined,
     });
@@ -115,7 +115,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     await updateBroadcastSavedAudience(userId, id, {
       name,
-      audienceType: audienceType as "CUSTOM" | "FOLLOWERS" | "MUTUALS",
+      audienceType: audienceType as "CUSTOM" | "MUTUALS",
       customNpubLines,
       ruleSummary: ruleSummary || null,
     });
@@ -154,6 +154,12 @@ export async function action({ request }: ActionFunctionArgs) {
         { status: 400 }
       );
     }
+    if (campaign.audienceType === "FOLLOWERS") {
+      return json(
+        { error: "This audience type cannot be saved" },
+        { status: 400 }
+      );
+    }
     await createBroadcastSavedAudience(userId, {
       name: name || campaign.name,
       audienceType: campaign.audienceType,
@@ -183,7 +189,8 @@ export default function BroadcastAudiencesRoute() {
         <h1 className="text-2xl font-semibold tracking-tight">Audiences</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Save audience definitions to reuse in new broadcasts. Graph-based
-          types (followers, etc.) resolve at send time.
+          types (mutuals) resolve at send time; custom lists are filtered to
+          followers at send time.
         </p>
       </div>
 
@@ -242,7 +249,6 @@ export default function BroadcastAudiencesRoute() {
                 defaultValue={editingRow.audienceType}
               >
                 <option value="CUSTOM">Custom list</option>
-                <option value="FOLLOWERS">Followers</option>
                 <option value="MUTUALS">Mutuals</option>
               </select>
             </div>
@@ -251,7 +257,7 @@ export default function BroadcastAudiencesRoute() {
                 className="mb-1 block text-sm font-medium"
                 htmlFor="aud-edit-custom"
               >
-                Custom npubs / hex (optional for graph types)
+                Custom npubs / hex (optional for mutuals)
               </label>
               <textarea
                 id="aud-edit-custom"
@@ -316,7 +322,6 @@ export default function BroadcastAudiencesRoute() {
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
             >
               <option value="CUSTOM">Custom list</option>
-              <option value="FOLLOWERS">Followers</option>
               <option value="MUTUALS">Mutuals</option>
             </select>
           </div>
@@ -325,7 +330,7 @@ export default function BroadcastAudiencesRoute() {
               className="mb-1 block text-sm font-medium"
               htmlFor="aud-custom"
             >
-              Custom npubs / hex (optional for graph types)
+              Custom npubs / hex (optional for mutuals)
             </label>
             <textarea
               id="aud-custom"
