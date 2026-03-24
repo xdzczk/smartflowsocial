@@ -7,7 +7,7 @@ import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
 import type { UserSubscription } from "~/features/payments/types";
 import { getPostById } from "~/features/posts/server";
 
-import { getContestById } from "./contest-actions.server";
+import { getContestById, getContestByIdPublic } from "./contest-actions.server";
 import type { ContestDetailPageData } from "./contest-detail.types";
 import { quoteContestFinalization } from "./contest-finalization-fee.server";
 import { normalizeContestPayoutState } from "./contest-payout.server";
@@ -382,5 +382,70 @@ export async function getContestDetailPageData(
       failed,
       plannedSats: contest.plannedPayoutSats ?? quote.plannedPayoutSats,
     },
+  };
+}
+
+export async function getContestPublicPageData(contestId: string) {
+  const contest = await getContestByIdPublic(contestId);
+  if (!contest) return null;
+  if (
+    contest.status !== "LIVE" &&
+    contest.status !== "ENDED_REVIEW" &&
+    contest.status !== "LOCKED" &&
+    contest.status !== "PAYOUT_IN_PROGRESS" &&
+    contest.status !== "COMPLETED"
+  ) {
+    return null;
+  }
+
+  let rows: Array<{
+    rank: number;
+    authorPubkey: string;
+    score: number;
+    entryEventId: string;
+    replySnippet: string | null;
+  }> = [];
+  if (contest.status === "LIVE") {
+    const resolved = await resolveContestEntries({
+      userId: contest.userId,
+      sourceNoteId: contest.sourceNoteId,
+      metric: contest.rankingMetric,
+      deadlineUnix: Math.min(
+        Math.floor(Date.now() / 1000),
+        Math.floor(contest.contestEndAt.getTime() / 1000)
+      ),
+      filters:
+        (contest.fairnessConfig as Record<string, unknown> | null) ?? undefined,
+    });
+    rows = resolved.slice(0, 10).map((r, idx) => ({
+      rank: idx + 1,
+      authorPubkey: r.authorPubkey,
+      score: r.score,
+      entryEventId: r.entryEventId,
+      replySnippet: r.replySnippet ?? null,
+    }));
+  } else {
+    const entries = await findContestEntriesForDetail(contest.id, {
+      includeExcluded: false,
+    });
+    rows = entries.slice(0, 10).map((r, idx) => ({
+      rank: r.rank ?? idx + 1,
+      authorPubkey: r.authorPubkey,
+      score: r.score,
+      entryEventId: r.entryEventId,
+      replySnippet: r.replySnippet,
+    }));
+  }
+
+  return {
+    id: contest.id,
+    title: contest.title ?? `Contest ${contest.id.slice(0, 8)}`,
+    status: contest.status,
+    rankingMetric: contest.rankingMetric,
+    contestEndAt: contest.contestEndAt.toISOString(),
+    winnerCount: contest.winnerCount,
+    plannedPayoutSats: contest.plannedPayoutSats ?? 0,
+    sourceNoteId: contest.sourceNoteId,
+    rows,
   };
 }

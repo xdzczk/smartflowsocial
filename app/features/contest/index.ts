@@ -12,13 +12,16 @@ export type {
 } from "./types";
 export type { ContestDetailPageData } from "./contest-detail.types";
 export { getContestDetailPageData } from "./contest-detail-page.server";
+export { getContestPublicPageData } from "./contest-detail-page.server";
 export { buildContestEntriesCsv } from "./contest-export-csv.server";
 export {
   createContest,
   getContestById,
+  getContestByIdPublic,
   listContests,
   listContestsFiltered,
   getContestKpiCounts,
+  getContestEntryCounts,
   launchContest,
   freezeContestAtDeadline,
   lockContest,
@@ -27,6 +30,7 @@ export {
   cancelContest,
   deleteContest,
   duplicateContest,
+  appendContestEventLog,
 } from "./contest-actions.server";
 export { formatContestStatusLabel } from "./contest-status-ui";
 export {

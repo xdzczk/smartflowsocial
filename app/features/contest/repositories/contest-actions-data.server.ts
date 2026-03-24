@@ -11,6 +11,12 @@ export async function findContestByIdAndUser(
   return prisma.contest.findFirst({ where: { id, userId } });
 }
 
+export async function findContestByIdPublic(
+  id: string
+): Promise<Contest | null> {
+  return prisma.contest.findFirst({ where: { id } });
+}
+
 export async function listContestsByUser(userId: string): Promise<Contest[]> {
   return prisma.contest.findMany({
     where: { userId },

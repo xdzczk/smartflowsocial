@@ -14,6 +14,7 @@ import { broadcastCompatibilityForecastNote } from "~/features/broadcast/broadca
 import { runBroadcastFinalizeFlow } from "~/features/broadcast/broadcast-finalize.client";
 import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import { getBroadcastReviewWarnings } from "~/features/broadcast/broadcast-review-warnings.server";
+import { formatBroadcastUnsubscribeFooter } from "~/features/broadcast/broadcast-unsubscribe-copy";
 import {
   ensureUnsubscribeTokensForCampaign,
   getBroadcastUnsubscribeBaseUrl,
@@ -196,6 +197,10 @@ export default function BroadcastNewReviewRoute() {
 
   const snapshotSummary = parseSnapshot?.summary;
   const snapshotSourceTab = parseSnapshot?.sourceTab;
+  const sampleUnsubscribeUrl = pendingRecipients[0]?.unsubscribeUrl ?? null;
+  const previewMessage = sampleUnsubscribeUrl
+    ? `${campaign.messageBody}\n\n${formatBroadcastUnsubscribeFooter(sampleUnsubscribeUrl)}`
+    : campaign.messageBody;
 
   const runFinalize = useCallback(async () => {
     setFinalizeError(null);
@@ -297,8 +302,14 @@ export default function BroadcastNewReviewRoute() {
             <div className="border-border mt-4 border-t pt-4">
               <h3 className="text-sm font-medium">Message preview</h3>
               <p className="text-muted-foreground mt-2 max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
-                {campaign.messageBody}
+                {previewMessage}
               </p>
+              {sampleUnsubscribeUrl ? (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Preview includes a sample unsubscribe link. Each recipient
+                  gets their own unique link.
+                </p>
+              ) : null}
             </div>
           </section>
 

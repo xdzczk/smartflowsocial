@@ -113,6 +113,11 @@ export function ContestLeaderboard({
                           {w.rewardSats.toLocaleString()} sats
                         </span>
                       ) : null}
+                      {isWinnerSlot ? (
+                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs">
+                          Winning
+                        </span>
+                      ) : null}
                     </div>
                     <p className="text-muted-foreground truncate text-sm">
                       {row.replySnippet ?? "(no text)"}
@@ -127,6 +132,26 @@ export function ContestLeaderboard({
                           {new Date(row.createdAtUnix * 1000).toLocaleString()}
                         </span>
                       ) : null}
+                      <a
+                        href={`https://njump.me/${row.entryEventId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary text-xs hover:underline"
+                      >
+                        Open reply
+                      </a>
+                      <a
+                        href={
+                          prof?.npub
+                            ? `https://njump.me/${prof.npub}`
+                            : `https://njump.me/${row.authorPubkey}`
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary text-xs hover:underline"
+                      >
+                        Open profile
+                      </a>
                     </div>
                   </div>
                 </div>

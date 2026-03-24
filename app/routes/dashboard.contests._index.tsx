@@ -14,6 +14,7 @@ import {
   contestCopy,
   deleteContest,
   duplicateContest,
+  getContestEntryCounts,
   formatContestStatusLabel,
   getContestKpiCounts,
   listContestsFiltered,
@@ -35,6 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const status = url.searchParams.get("status") ?? "all";
   const metric = url.searchParams.get("metric") ?? "all";
+  const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
   const sort = (url.searchParams.get("sort") ?? "newest") as
     | "newest"
     | "ending"
@@ -44,9 +46,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     listContestsFiltered(userId, { status, metric, sort }),
     getContestKpiCounts(userId),
   ]);
+  const filteredByQ = q
+    ? contests.filter((c) => (c.title ?? "").toLowerCase().includes(q))
+    : contests;
+  const contestIds = filteredByQ.map((c) => c.id);
+  const entryCounts = await getContestEntryCounts(userId, contestIds);
+  const totalSatsPlanned = filteredByQ.reduce(
+    (sum, c) => sum + (c.plannedPayoutSats ?? 0),
+    0
+  );
+  const totalEntries = filteredByQ.reduce(
+    (sum, c) => sum + (entryCounts[c.id] ?? 0),
+    0
+  );
 
   return json({
-    contests: contests.map((c) => ({
+    contests: filteredByQ.map((c) => ({
       id: c.id,
       title: c.title ?? `Contest ${c.id.slice(0, 8)}`,
       status: c.status,
@@ -55,10 +70,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       endAt: c.contestEndAt.toISOString(),
       winners: c.winnerCount,
       plannedPayoutSats: c.plannedPayoutSats ?? 0,
+      entries: entryCounts[c.id] ?? 0,
       updatedAt: c.updatedAt.toISOString(),
     })),
+    totals: { totalSatsPlanned, totalEntries },
     kpiCounts,
-    filters: { status, metric, sort },
+    filters: { status, metric, sort, q },
   });
 }
 
@@ -124,6 +141,22 @@ export default function ContestsIndexRoute() {
   const done = k["COMPLETED"] ?? 0;
   const cancelled = k["CANCELLED"] ?? 0;
   const total = draft + live + activeReview + done + cancelled;
+  const review = activeReview;
+  const tabs: Array<{ label: string; value: string }> = [
+    { label: "All", value: "all" },
+    { label: "Draft", value: "DRAFT" },
+    { label: "Live", value: "LIVE" },
+    { label: "Review", value: "ENDED_REVIEW" },
+    { label: "Completed", value: "COMPLETED" },
+    { label: "Canceled", value: "CANCELLED" },
+  ];
+  const quickActionLabel = (status: string) => {
+    if (status === "DRAFT") return "Launch";
+    if (status === "LIVE") return "Share update";
+    if (status === "ENDED_REVIEW") return "Review winners";
+    if (status === "COMPLETED") return "Results";
+    return "Open";
+  };
 
   return (
     <div className="space-y-6">
@@ -140,14 +173,52 @@ export default function ContestsIndexRoute() {
       <CampaignKpiStrip
         items={[
           { id: "total", label: "Total contests", value: total },
-          { id: "draft", label: "Draft", value: draft },
-          { id: "live", label: "Live", value: live },
-          { id: "review", label: "Review / payout", value: activeReview },
-          { id: "done", label: "Completed", value: done },
+          { id: "live", label: "Live now", value: live },
+          { id: "review", label: "Awaiting review", value: review },
+          {
+            id: "sats",
+            label: "Total sats planned",
+            value: data.totals.totalSatsPlanned.toLocaleString(),
+          },
+          {
+            id: "entries",
+            label: "Total entries",
+            value: data.totals.totalEntries.toLocaleString(),
+          },
         ]}
       />
 
+      <div className="flex flex-wrap gap-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            className={`rounded-md border px-3 py-1.5 text-sm ${data.filters.status === tab.value ? "border-primary bg-primary/10" : "border-border bg-background"}`}
+            onClick={() => {
+              setFilter("status", tab.value);
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <CampaignFilterRow>
+        <label className="flex min-w-[220px] flex-col gap-1">
+          <span className="text-muted-foreground text-xs">Search</span>
+          <input
+            value={data.filters.q}
+            onChange={(e) => {
+              const next = new URLSearchParams(searchParams);
+              const value = e.target.value.trim();
+              if (!value) next.delete("q");
+              else next.set("q", value);
+              navigate(`/dashboard/contests?${next.toString()}`);
+            }}
+            className="border-border bg-background rounded-md border px-2 py-1.5"
+            placeholder="Search by title…"
+          />
+        </label>
         <label className="flex flex-col gap-1">
           <span className="text-muted-foreground text-xs">Status</span>
           <select
@@ -215,7 +286,7 @@ export default function ContestsIndexRoute() {
                   {contest.statusLabel} · {contest.metric.toLowerCase()} · Ends{" "}
                   {new Date(contest.endAt).toLocaleString()} ·{" "}
                   {contest.plannedPayoutSats.toLocaleString()} sats planned ·{" "}
-                  {contest.winners} winner slots
+                  {contest.winners} winner slots · {contest.entries} entries
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -225,6 +296,9 @@ export default function ContestsIndexRoute() {
                 >
                   Open
                 </Link>
+                <span className="text-muted-foreground text-xs">
+                  {quickActionLabel(contest.status)}
+                </span>
                 <Form method="post" className="inline">
                   <input type="hidden" name="intent" value="duplicate" />
                   <input type="hidden" name="contestId" value={contest.id} />

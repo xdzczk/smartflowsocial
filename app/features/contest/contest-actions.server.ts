@@ -16,6 +16,7 @@ import {
 import { resolveContestEntries } from "./contest-resolver.server";
 import {
   findContestByIdAndUser,
+  findContestByIdPublic,
   listContestsByUser,
   listContestsByUserWithFilters,
   createContest as createContestRow,
@@ -33,6 +34,12 @@ export async function getContestById(
   userId: string
 ): Promise<Contest | null> {
   return findContestByIdAndUser(id, userId);
+}
+
+export async function getContestByIdPublic(
+  id: string
+): Promise<Contest | null> {
+  return findContestByIdPublic(id);
 }
 
 export async function createContest(
@@ -471,6 +478,26 @@ export async function getContestKpiCounts(
   return map;
 }
 
+export async function getContestEntryCounts(
+  userId: string,
+  contestIds: string[]
+): Promise<Record<string, number>> {
+  if (contestIds.length === 0) return {};
+  const rows = await prisma.contestEntry.groupBy({
+    by: ["contestId"],
+    where: {
+      contestId: { in: contestIds },
+      contest: { userId },
+    },
+    _count: { _all: true },
+  });
+  const map: Record<string, number> = {};
+  for (const row of rows) {
+    map[row.contestId] = row._count._all;
+  }
+  return map;
+}
+
 export async function listContests(userId: string): Promise<Contest[]> {
   return listContestsByUser(userId);
 }
@@ -524,5 +551,24 @@ export async function duplicateContest(
     },
   });
   return { success: true, newId: newRow.id };
+}
+
+export async function appendContestEventLog(
+  userId: string,
+  contestId: string,
+  eventType: string,
+  message: string,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  const contest = await getContestById(contestId, userId);
+  if (!contest) return;
+  await prisma.contestEventLog.create({
+    data: {
+      contestId,
+      eventType,
+      message,
+      metadata: (metadata ?? undefined) as Prisma.InputJsonValue | undefined,
+    },
+  });
 }
 /* eslint-enable no-restricted-imports, import/order, sonarjs/no-duplicate-string, @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/consistent-type-assertions */

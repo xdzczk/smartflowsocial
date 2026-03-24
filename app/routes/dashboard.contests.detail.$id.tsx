@@ -5,6 +5,7 @@ import { useLoaderData } from "@remix-run/react";
 import { requireUserId } from "~/features/auth";
 import {
   ContestDetailView,
+  appendContestEventLog,
   buildContestEntriesCsv,
   cancelContest,
   completeContest,
@@ -50,6 +51,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (intent === "exportCsv") {
     const data = await getContestDetailPageData(userId, id);
     if (!data) return json({ error: "Not found" }, { status: 404 });
+    await appendContestEventLog(
+      userId,
+      id,
+      "contest_export_csv",
+      "Contest entries CSV exported"
+    );
     const csv = buildContestEntriesCsv(data);
     return new Response(csv, {
       headers: {

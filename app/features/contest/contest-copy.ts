@@ -2,7 +2,7 @@
 
 export const contestCopy = {
   launchContest: "Launch contest",
-  freezeLeaderboard: "Freeze leaderboard",
+  freezeLeaderboard: "End contest & freeze results",
   reviewWinners: "Review winners",
   lockWinners: "Lock winners",
   payoutsInProgress: "Payouts in progress",
@@ -18,7 +18,7 @@ export const contestCopy = {
   bannerCompleted: "Completed — receipt and proof available below.",
   bannerCancelled: "Cancelled — this contest is no longer active.",
   bannerPayout: "Payouts in progress — mark each winner when paid.",
-  builderSummary: "Contest summary",
+  builderSummary: "Launch summary",
   builderSummaryHint: "Planned pool and fee update as you edit the form.",
   railSourceOk: "Selected",
   railSourceMissing: "Not selected",
@@ -35,7 +35,7 @@ export const contestCopy = {
   railWarnRankedIncomplete:
     "Rank-based mode needs at least one rank prize above 0.",
   railWarnNoFairness:
-    "No fairness filters are enabled — consider exclusions for muted/blocked/low-trust accounts.",
+    "No eligibility filters are enabled — consider exclusions for muted/blocked/low-trust accounts.",
   completeWithPendingConfirm:
     "Some payouts are still pending. Mark the contest complete anyway?",
   leaderboard: "Leaderboard",
@@ -44,6 +44,7 @@ export const contestCopy = {
   excludedSection: "Excluded entries",
   cutoffLine: (n: number) => `Top ${n} winner slots above this line`,
   fairnessCard: "Fairness & snapshot",
+  eligibilityFilters: "Eligibility filters",
   activityLog: "Activity",
   payoutOverview: "Payout overview",
   sourcePost: "Source post",

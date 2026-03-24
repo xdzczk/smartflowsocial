@@ -168,6 +168,20 @@ export function ContestDetailView({
 
         {isLive && data.liveStats ? (
           <>
+            <div className="border-border bg-card rounded-lg border p-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="rounded bg-blue-500/15 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
+                  Live
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  Winner slots: {contest.winnerCount}
+                </span>
+              </div>
+              <p className="text-sm font-medium">
+                Reply to the source post before the deadline. Winners are ranked
+                by {metric.toLowerCase()}.
+              </p>
+            </div>
             <ContestLiveHeader
               contestEndAtIso={contest.contestEndAt}
               rankingMetric={metric}
@@ -190,6 +204,24 @@ export function ContestDetailView({
                 announcementText={announcementText}
                 updateText={updateText}
               />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Form method="post">
+                <input type="hidden" name="intent" value="freeze" />
+                <button
+                  type="submit"
+                  className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+                >
+                  {contestCopy.freezeLeaderboard}
+                </button>
+              </Form>
+              <button
+                type="button"
+                className="border-border bg-background rounded-md border px-4 py-2 text-sm"
+                onClick={() => void navigator.clipboard.writeText(updateText)}
+              >
+                {contestCopy.copyUpdate}
+              </button>
             </div>
             <ContestLeaderboard
               metric={metric}
@@ -269,18 +301,6 @@ export function ContestDetailView({
               className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
             >
               {contestCopy.launchContest}
-            </button>
-          </Form>
-        ) : null}
-
-        {isLive ? (
-          <Form method="post">
-            <input type="hidden" name="intent" value="freeze" />
-            <button
-              type="submit"
-              className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
-            >
-              {contestCopy.freezeLeaderboard}
             </button>
           </Form>
         ) : null}
@@ -366,12 +386,51 @@ export function ContestDetailView({
         {isCompleted ? (
           <CampaignReceiptProofShell
             receiptTitle={contestCopy.receipt}
-            receiptBody={<p className="text-sm">{data.receiptSummaryLine}</p>}
+            receiptBody={
+              <div className="space-y-3 text-sm">
+                <p>{data.receiptSummaryLine}</p>
+                <dl className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                  <div>
+                    <dt className="text-muted-foreground">Source</dt>
+                    <dd className="font-mono">{contest.sourceNoteId}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Metric</dt>
+                    <dd>{metric.toLowerCase()}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Winners</dt>
+                    <dd>{winners.filter((w) => !w.isAlternate).length}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Prize pool</dt>
+                    <dd>
+                      {data.quote.plannedPayoutSats.toLocaleString()} sats
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            }
             proofTitle={contestCopy.publicProof}
             proofBody={
-              <pre className="text-muted-foreground overflow-x-auto text-xs whitespace-pre-wrap">
-                {data.publicSummaryText}
-              </pre>
+              <div className="space-y-3">
+                <pre className="text-muted-foreground overflow-x-auto text-xs whitespace-pre-wrap">
+                  {data.publicSummaryText}
+                </pre>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium">Winners</p>
+                  <ul className="text-muted-foreground space-y-1 text-xs">
+                    {winners
+                      .filter((w) => !w.isAlternate)
+                      .map((winner) => (
+                        <li key={winner.id}>
+                          #{winner.rank} · {winner.rewardSats.toLocaleString()}{" "}
+                          sats · score {winner.score}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              </div>
             }
             actions={
               <>
