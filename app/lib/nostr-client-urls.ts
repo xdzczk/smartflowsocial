@@ -263,3 +263,6 @@ export function getNostrClientUrlsFromUser(
     profileUrl: (npub: string) => profileUrl(npub, config),
   };
 }
+
+/** Return shape of {@link getNostrClientUrlsFromUser} for component props typing. */
+export type NostrClientUrls = ReturnType<typeof getNostrClientUrlsFromUser>;

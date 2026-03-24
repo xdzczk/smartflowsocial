@@ -54,6 +54,20 @@ export interface RecipientPickerProps {
 const MAX_BROWSER_ROWS = 400;
 const PROFILE_BATCH = 120;
 const CHIP_THRESHOLD = 24;
+const CACHE_TTL_MS = 2 * 60 * 1000;
+
+interface CachedPoolData {
+  pubkeys: string[];
+  fetchFailed: boolean;
+  truncatedNote: string | null;
+  fetchedAt: number;
+}
+
+interface CachedSavedExpandData {
+  pubkeys: string[];
+  fetchFailed: boolean;
+  fetchedAt: number;
+}
 
 function initials(name: string, pubkey: string): string {
   const t = name.trim();
@@ -111,10 +125,18 @@ export function RecipientPicker({
     () => new Set()
   );
   const [expandingSavedId, setExpandingSavedId] = useState<string | null>(null);
+  const [expandingLoadingId, setExpandingLoadingId] = useState<string | null>(
+    null
+  );
   const [expandedMembers, setExpandedMembers] = useState<string[]>([]);
   const [expandedFailed, setExpandedFailed] = useState(false);
-  const expandFetcher = useFetcher<ExpandResponse>();
   const poolFetcher = useFetcher<PoolResponse>();
+  const [poolCache, setPoolCache] = useState<
+    Partial<Record<"followers" | "mutuals", CachedPoolData>>
+  >({});
+  const [savedExpandCache, setSavedExpandCache] = useState<
+    Record<string, CachedSavedExpandData>
+  >({});
 
   const selectedSet = useMemo(
     () => new Set(selectedPubkeys.map((p) => p.toLowerCase())),
@@ -153,35 +175,108 @@ export function RecipientPicker({
 
   useEffect(() => {
     if (poolTab !== "followers" && poolTab !== "mutuals") return;
-    poolFetcher.load(
-      `/api/broadcast-eligible-pool?pool=${encodeURIComponent(poolTab)}`
-    );
+    const cached = poolCache[poolTab];
+    if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+      return;
+    }
+    poolFetcher.load(`/api/broadcast-eligible-pool?pool=${poolTab}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load when tab changes
-  }, [poolTab]);
+  }, [poolTab, poolCache]);
+
+  useEffect(() => {
+    if (poolTab !== "followers") return;
+    const cachedMutuals = poolCache["mutuals"];
+    if (cachedMutuals && Date.now() - cachedMutuals.fetchedAt < CACHE_TTL_MS) {
+      return;
+    }
+    void (async () => {
+      try {
+        const res = await fetch("/api/broadcast-eligible-pool?pool=mutuals");
+        if (!res.ok) return;
+        const data = (await res.json()) as PoolResponse;
+        setPoolCache((prev) => ({
+          ...prev,
+          mutuals: {
+            pubkeys: data.pubkeys,
+            fetchFailed: data.fetchFailed,
+            truncatedNote: data.truncatedNote,
+            fetchedAt: Date.now(),
+          },
+        }));
+      } catch {
+        // best-effort hint for chips; ignore failures
+      }
+    })();
+  }, [poolCache, poolTab]);
 
   useEffect(() => {
     if (poolTab !== "followers" && poolTab !== "mutuals") return;
-    const keys = poolFetcher.data?.pubkeys;
-    if (!keys?.length) return;
-    void loadProfilesFor(keys);
-  }, [poolFetcher.data, poolTab, loadProfilesFor]);
+    const d = poolFetcher.data;
+    if (!d) return;
+    setPoolCache((prev) => ({
+      ...prev,
+      [poolTab]: {
+        pubkeys: d.pubkeys,
+        fetchFailed: d.fetchFailed,
+        truncatedNote: d.truncatedNote,
+        fetchedAt: Date.now(),
+      },
+    }));
+  }, [poolFetcher.data, poolTab]);
 
   useEffect(() => {
-    if (expandFetcher.state !== "idle" || !expandFetcher.data) return;
-    const { pubkeys, fetchFailed } = expandFetcher.data;
-    setExpandedFailed(fetchFailed);
-    setExpandedMembers(pubkeys);
-    void loadProfilesFor(pubkeys);
-  }, [expandFetcher.data, expandFetcher.state, loadProfilesFor]);
+    if (poolTab !== "followers" && poolTab !== "mutuals") return;
+    const keys = poolCache[poolTab]?.pubkeys ?? poolFetcher.data?.pubkeys;
+    if (!keys?.length) return;
+    void loadProfilesFor(keys);
+  }, [poolCache, poolFetcher.data, poolTab, loadProfilesFor]);
 
-  const openExpandSaved = (id: string) => {
-    setExpandingSavedId(id);
-    setExpandedMembers([]);
-    setExpandedFailed(false);
-    expandFetcher.load(
-      `/api/broadcast-expand-saved-audience?savedAudienceId=${encodeURIComponent(id)}`
-    );
-  };
+  const fetchSavedAudienceMembers = useCallback(
+    async (id: string): Promise<CachedSavedExpandData | null> => {
+      const cached = savedExpandCache[id];
+      if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+        return cached;
+      }
+      try {
+        const res = await fetch(
+          `/api/broadcast-expand-saved-audience?savedAudienceId=${encodeURIComponent(id)}`
+        );
+        if (!res.ok) return null;
+        const data = (await res.json()) as ExpandResponse;
+        const entry: CachedSavedExpandData = {
+          pubkeys: data.pubkeys,
+          fetchFailed: data.fetchFailed,
+          fetchedAt: Date.now(),
+        };
+        setSavedExpandCache((prev) => ({ ...prev, [id]: entry }));
+        return entry;
+      } catch {
+        return null;
+      }
+    },
+    [savedExpandCache]
+  );
+
+  const openExpandSaved = useCallback(
+    (id: string) => {
+      setExpandingSavedId(id);
+      setExpandedMembers([]);
+      setExpandedFailed(false);
+      setExpandingLoadingId(id);
+      void (async () => {
+        const entry = await fetchSavedAudienceMembers(id);
+        setExpandingLoadingId((prev) => (prev === id ? null : prev));
+        if (!entry) {
+          setExpandedFailed(true);
+          return;
+        }
+        setExpandedMembers(entry.pubkeys);
+        setExpandedFailed(entry.fetchFailed);
+        void loadProfilesFor(entry.pubkeys);
+      })();
+    },
+    [fetchSavedAudienceMembers, loadProfilesFor]
+  );
 
   const relationshipLabel =
     poolTab === "followers"
@@ -189,9 +284,19 @@ export function RecipientPicker({
       : poolTab === "mutuals"
         ? "Mutual"
         : "Saved";
+  const mutualSet = useMemo(
+    () =>
+      new Set(
+        (poolCache["mutuals"]?.pubkeys ?? []).map((p) => p.toLowerCase())
+      ),
+    [poolCache]
+  );
 
   const filteredPoolRows = useMemo(() => {
-    const poolPubkeys = poolFetcher.data?.pubkeys ?? [];
+    const poolPubkeys =
+      poolTab === "followers" || poolTab === "mutuals"
+        ? (poolCache[poolTab]?.pubkeys ?? poolFetcher.data?.pubkeys ?? [])
+        : [];
     const q = search.trim().toLowerCase();
     const list = poolPubkeys.map((pk) => pk.toLowerCase());
     if (!q) return list;
@@ -207,7 +312,7 @@ export function RecipientPicker({
         nip.includes(q)
       );
     });
-  }, [poolFetcher.data, profileMap, search]);
+  }, [poolCache, poolFetcher.data, poolTab, profileMap, search]);
 
   const displayRows = useMemo(
     () => filteredPoolRows.slice(0, MAX_BROWSER_ROWS),
@@ -281,8 +386,13 @@ export function RecipientPicker({
     sendableCount,
   ]);
 
-  const poolFailed = poolFetcher.data?.fetchFailed ?? false;
-  const poolNote = poolFetcher.data?.truncatedNote;
+  const poolState =
+    poolTab === "followers" || poolTab === "mutuals"
+      ? (poolCache[poolTab] ?? null)
+      : null;
+  const poolFailed =
+    poolState?.fetchFailed ?? poolFetcher.data?.fetchFailed ?? false;
+  const poolNote = poolState?.truncatedNote ?? poolFetcher.data?.truncatedNote;
 
   return (
     <div className="border-border space-y-4 rounded-xl border p-4">
@@ -380,13 +490,10 @@ export function RecipientPicker({
                     disabled={disabled}
                     onClick={() => {
                       void (async () => {
-                        const res = await fetch(
-                          `/api/broadcast-expand-saved-audience?savedAudienceId=${encodeURIComponent(s.id)}`
-                        );
-                        if (!res.ok) return;
-                        const data = (await res.json()) as ExpandResponse;
-                        addPubkeys(data.pubkeys);
-                        void loadProfilesFor(data.pubkeys);
+                        const entry = await fetchSavedAudienceMembers(s.id);
+                        if (!entry) return;
+                        addPubkeys(entry.pubkeys);
+                        void loadProfilesFor(entry.pubkeys);
                       })();
                     }}
                   >
@@ -401,7 +508,7 @@ export function RecipientPicker({
                       openExpandSaved(s.id);
                     }}
                   >
-                    {expandingSavedId === s.id && expandFetcher.state !== "idle"
+                    {expandingSavedId === s.id && expandingLoadingId === s.id
                       ? "Loading…"
                       : "View"}
                   </Button>
@@ -506,6 +613,10 @@ export function RecipientPicker({
                   nip05: null,
                 };
                 const inSel = selectedSet.has(pk);
+                const rowRelationshipLabel =
+                  poolTab === "followers" && mutualSet.has(pk)
+                    ? "Mutual"
+                    : relationshipLabel;
                 return (
                   <label
                     key={pk}
@@ -536,7 +647,7 @@ export function RecipientPicker({
                       </p>
                     </div>
                     <span className="bg-muted shrink-0 rounded px-1.5 py-0.5 text-[10px]">
-                      {relationshipLabel}
+                      {rowRelationshipLabel}
                     </span>
                     <Button
                       type="button"

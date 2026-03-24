@@ -5,6 +5,7 @@ import { Form, Link, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { requireUserId } from "~/features/auth";
 import {
   addBroadcastSuppression,
@@ -12,11 +13,12 @@ import {
   listSuppressionsByUser,
   removeBroadcastSuppression,
 } from "~/features/broadcast";
-import { shortHexPubkey } from "~/features/broadcast/broadcast-identity";
+import { fetchBroadcastRecipientProfiles } from "~/features/broadcast/broadcast-recipient-picker.server";
 import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { formatNpubShort } from "~/lib/nostr-conversion";
 
 const REASON_LABELS: Record<BroadcastSuppressionReasonCode, string> = {
   MANUAL_OPT_OUT: "Manual opt-out",
@@ -39,7 +41,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     listSuppressionsByUser(userId),
     listBroadcastSavedAudiences(userId),
   ]);
-  return json({ rows, notice, savedAudiences });
+  const profiles = await fetchBroadcastRecipientProfiles(
+    rows.map((r) => r.recipientPubkey)
+  );
+  const profileMap = Object.fromEntries(
+    profiles.map((p) => [p.pubkey.toLowerCase(), p])
+  );
+  return json({ rows, notice, savedAudiences, profileMap });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -90,7 +98,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function BroadcastSuppressionRoute() {
-  const { rows, notice, savedAudiences } = useLoaderData<typeof loader>();
+  const { rows, notice, savedAudiences, profileMap } =
+    useLoaderData<typeof loader>();
   const [selectedPubkeys, setSelectedPubkeys] = useState<string[]>([]);
 
   return (
@@ -228,11 +237,36 @@ export default function BroadcastSuppressionRoute() {
               ) : (
                 rows.map((r) => (
                   <tr key={r.id}>
-                    <td
-                      className="px-3 py-2 font-mono text-xs"
-                      title={r.recipientPubkey}
-                    >
-                      {shortHexPubkey(r.recipientPubkey)}
+                    <td className="px-3 py-2">
+                      {(() => {
+                        const p = profileMap[r.recipientPubkey.toLowerCase()];
+                        const label =
+                          p?.name ?? formatNpubShort(r.recipientPubkey);
+                        return (
+                          <div
+                            className="flex items-center gap-2"
+                            title={r.recipientPubkey}
+                          >
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage
+                                src={p?.picture ?? undefined}
+                                alt={label}
+                              />
+                              <AvatarFallback>
+                                {label.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-medium">
+                                {label}
+                              </p>
+                              <p className="text-muted-foreground truncate font-mono text-[11px]">
+                                {formatNpubShort(r.recipientPubkey)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="text-muted-foreground max-w-[160px] truncate px-3 py-2 text-xs">
                       {r.reason ?? "—"}

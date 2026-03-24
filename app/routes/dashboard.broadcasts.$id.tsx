@@ -14,6 +14,7 @@ import {
 } from "@remix-run/react";
 import { useEffect } from "react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { requireUserId } from "~/features/auth";
 import {
   addBroadcastSuppression,
@@ -25,12 +26,13 @@ import {
   getBroadcastCampaignForUserWithRecipientSlice,
   retryBroadcastFailedRecipients,
 } from "~/features/broadcast";
-import { shortHexPubkey } from "~/features/broadcast/broadcast-identity";
+import { fetchBroadcastRecipientProfiles } from "~/features/broadcast/broadcast-recipient-picker.server";
 import { broadcastStatusBadgeKind } from "~/features/broadcast/broadcast-status";
 import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { formatNpubShort } from "~/lib/nostr-conversion";
 import { cn } from "~/lib/utils";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -66,8 +68,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   );
   if (!bundle) throw new Response("Not found", { status: 404 });
+  const profiles = await fetchBroadcastRecipientProfiles(
+    bundle.recipients.map((r) => r.recipientPubkey)
+  );
+  const profileMap = Object.fromEntries(
+    profiles.map((p) => [p.pubkey.toLowerCase(), p])
+  );
 
-  return json({ ...bundle, page, take, statusFilter, search });
+  return json({ ...bundle, page, take, statusFilter, search, profileMap });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -215,6 +223,7 @@ export default function BroadcastDetailRoute() {
   const {
     campaign,
     recipients,
+    profileMap,
     recipientTotal,
     failureByCode,
     deliverySplit,
@@ -483,8 +492,33 @@ export default function BroadcastDetailRoute() {
               {recipients.map((r) => (
                 <tr key={r.id} className="hover:bg-muted/20">
                   <td className="px-2 py-2 font-mono">{r.status}</td>
-                  <td className="px-2 py-2 font-mono" title={r.recipientPubkey}>
-                    {shortHexPubkey(r.recipientPubkey)}
+                  <td className="px-2 py-2" title={r.recipientPubkey}>
+                    {(() => {
+                      const p = profileMap[r.recipientPubkey.toLowerCase()];
+                      const label =
+                        p?.name ?? formatNpubShort(r.recipientPubkey);
+                      return (
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage
+                              src={p?.picture ?? undefined}
+                              alt={label}
+                            />
+                            <AvatarFallback>
+                              {label.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-medium">
+                              {label}
+                            </p>
+                            <p className="text-muted-foreground truncate font-mono text-[11px]">
+                              {formatNpubShort(r.recipientPubkey)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="text-muted-foreground px-2 py-2">
                     {r.deliveryMethodUsed ?? "—"}

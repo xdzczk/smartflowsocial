@@ -8,8 +8,14 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 
+import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { requireUserId } from "~/features/auth";
-import { CampaignFilterRow, CampaignKpiStrip } from "~/features/campaign-ui";
 import {
   contestCopy,
   deleteContest,
@@ -117,6 +123,28 @@ export async function action({ request }: ActionFunctionArgs) {
   return json({ error: "Unknown intent" }, { status: 400 });
 }
 
+function contestStatusPillClass(status: string): string {
+  const amberStatusClass = "bg-amber-500/15 text-amber-700 dark:text-amber-300";
+  const map: Record<string, string> = {
+    DRAFT: "bg-muted text-muted-foreground",
+    LIVE: "bg-blue-500/15 text-blue-800 dark:text-blue-200",
+    ENDED_REVIEW: amberStatusClass,
+    LOCKED: amberStatusClass,
+    PAYOUT_IN_PROGRESS: amberStatusClass,
+    COMPLETED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    CANCELLED: "bg-destructive/15 text-destructive",
+  };
+  return map[status] ?? "bg-muted text-muted-foreground";
+}
+
+function contestRowTitle(title: string | null | undefined, id: string): string {
+  const trimmed = title?.trim();
+  if (trimmed === undefined || trimmed === "") {
+    return `Contest ${id.slice(0, 8)}`;
+  }
+  return trimmed;
+}
+
 export default function ContestsIndexRoute() {
   const data = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
@@ -150,50 +178,71 @@ export default function ContestsIndexRoute() {
     { label: "Completed", value: "COMPLETED" },
     { label: "Canceled", value: "CANCELLED" },
   ];
-  const quickActionLabel = (status: string) => {
-    if (status === "DRAFT") return "Launch";
-    if (status === "LIVE") return "Share update";
-    if (status === "ENDED_REVIEW") return "Review winners";
-    if (status === "COMPLETED") return "Results";
-    return "Open";
-  };
+  const hasAnyContests = total > 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Contests</h1>
-        <Link
-          className="text-primary text-sm font-medium hover:underline"
-          to="/dashboard/contests/new"
-        >
-          New contest
-        </Link>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-foreground text-2xl font-semibold tracking-tight">
+            Contests
+          </h2>
+          <p className="text-muted-foreground mt-1 max-w-xl text-sm">
+            Run live competitions, rank entries fairly, and track payout status.
+          </p>
+        </div>
+        <Button asChild className="shrink-0">
+          <Link to="/dashboard/contests/new">New contest</Link>
+        </Button>
       </div>
 
-      <CampaignKpiStrip
-        items={[
-          { id: "total", label: "Total contests", value: total },
-          { id: "live", label: "Live now", value: live },
-          { id: "review", label: "Awaiting review", value: review },
-          {
-            id: "sats",
-            label: "Total sats planned",
-            value: data.totals.totalSatsPlanned.toLocaleString(),
-          },
-          {
-            id: "entries",
-            label: "Total entries",
-            value: data.totals.totalEntries.toLocaleString(),
-          },
-        ]}
-      />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Total contests</CardDescription>
+            <CardTitle className="text-2xl tabular-nums">{total}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Live now</CardDescription>
+            <CardTitle className="text-2xl tabular-nums">{live}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Awaiting review</CardDescription>
+            <CardTitle className="text-2xl tabular-nums">{review}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Total sats planned</CardDescription>
+            <CardTitle className="text-2xl tabular-nums">
+              {data.totals.totalSatsPlanned.toLocaleString()}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Total entries</CardDescription>
+            <CardTitle className="text-2xl tabular-nums">
+              {data.totals.totalEntries.toLocaleString()}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="border-border bg-card flex flex-wrap gap-2 rounded-lg border p-2">
         {tabs.map((tab) => (
           <button
             key={tab.value}
             type="button"
-            className={`rounded-md border px-3 py-1.5 text-sm ${data.filters.status === tab.value ? "border-primary bg-primary/10" : "border-border bg-background"}`}
+            className={`rounded-md border px-3 py-1.5 text-sm ${
+              data.filters.status === tab.value
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-background"
+            }`}
             onClick={() => {
               setFilter("status", tab.value);
             }}
@@ -203,125 +252,301 @@ export default function ContestsIndexRoute() {
         ))}
       </div>
 
-      <CampaignFilterRow>
-        <label className="flex min-w-[220px] flex-col gap-1">
-          <span className="text-muted-foreground text-xs">Search</span>
-          <input
-            value={data.filters.q}
-            onChange={(e) => {
-              const next = new URLSearchParams(searchParams);
-              const value = e.target.value.trim();
-              if (!value) next.delete("q");
-              else next.set("q", value);
-              navigate(`/dashboard/contests?${next.toString()}`);
-            }}
-            className="border-border bg-background rounded-md border px-2 py-1.5"
-            placeholder="Search by title…"
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-xs">Status</span>
-          <select
-            className="border-border bg-background rounded-md border px-2 py-1.5"
-            value={data.filters.status}
-            onChange={(e) => {
-              setFilter("status", e.target.value);
-            }}
-          >
-            <option value="all">All</option>
-            <option value="DRAFT">Draft</option>
-            <option value="LIVE">Live</option>
-            <option value="ENDED_REVIEW">Ended (review)</option>
-            <option value="LOCKED">Locked</option>
-            <option value="PAYOUT_IN_PROGRESS">Payout in progress</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-xs">Metric</span>
-          <select
-            className="border-border bg-background rounded-md border px-2 py-1.5"
-            value={data.filters.metric}
-            onChange={(e) => {
-              setFilter("metric", e.target.value);
-            }}
-          >
-            <option value="all">All</option>
-            <option value="REACTIONS">Reactions</option>
-            <option value="ZAPS">Zaps</option>
-            <option value="SATS_ZAPPED">Sats zapped</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-xs">Sort</span>
-          <select
-            className="border-border bg-background rounded-md border px-2 py-1.5"
-            value={data.filters.sort}
-            onChange={(e) => {
-              setFilter("sort", e.target.value);
-            }}
-          >
-            <option value="newest">Newest</option>
-            <option value="ending">Ending soon</option>
-            <option value="completed">Recently completed</option>
-          </select>
-        </label>
-      </CampaignFilterRow>
-
-      {data.contests.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          No contests match these filters. Create one or adjust filters above.
-        </p>
-      ) : (
-        <div className="border-border divide-border overflow-hidden rounded-lg border">
-          {data.contests.map((contest) => (
-            <div
-              key={contest.id}
-              className="bg-card flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      <Form
+        method="get"
+        replace
+        className="border-border bg-card flex flex-col gap-3 rounded-lg border p-4"
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
+          <div className="min-w-[200px] flex-1">
+            <label
+              htmlFor="c-q"
+              className="text-muted-foreground mb-1 block text-xs font-medium"
             >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{contest.title}</p>
-                <p className="text-muted-foreground text-xs">
-                  {contest.statusLabel} · {contest.metric.toLowerCase()} · Ends{" "}
-                  {new Date(contest.endAt).toLocaleString()} ·{" "}
-                  {contest.plannedPayoutSats.toLocaleString()} sats planned ·{" "}
-                  {contest.winners} winner slots · {contest.entries} entries
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Link
-                  to={`/dashboard/contests/detail/${contest.id}`}
-                  className="text-primary text-sm hover:underline"
-                >
-                  Open
-                </Link>
-                <span className="text-muted-foreground text-xs">
-                  {quickActionLabel(contest.status)}
-                </span>
-                <Form method="post" className="inline">
-                  <input type="hidden" name="intent" value="duplicate" />
-                  <input type="hidden" name="contestId" value={contest.id} />
-                  <button
-                    type="submit"
-                    className="text-muted-foreground text-sm hover:underline"
-                  >
-                    {contestCopy.duplicate}
-                  </button>
-                </Form>
-                <Form method="post" className="inline">
-                  <input type="hidden" name="intent" value="delete" />
-                  <input type="hidden" name="contestId" value={contest.id} />
-                  <button
-                    type="submit"
-                    className="text-destructive text-sm hover:underline"
-                  >
-                    Delete
-                  </button>
-                </Form>
-              </div>
-            </div>
-          ))}
+              Search
+            </label>
+            <input
+              id="c-q"
+              name="q"
+              type="search"
+              defaultValue={data.filters.q}
+              onChange={(e) => {
+                const next = new URLSearchParams(searchParams);
+                const value = e.target.value.trim();
+                if (!value) next.delete("q");
+                else next.set("q", value);
+                navigate(`/dashboard/contests?${next.toString()}`);
+              }}
+              placeholder="Search by title…"
+              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="c-status"
+              className="text-muted-foreground mb-1 block text-xs font-medium"
+            >
+              Status
+            </label>
+            <select
+              id="c-status"
+              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              value={data.filters.status}
+              onChange={(e) => {
+                setFilter("status", e.target.value);
+              }}
+            >
+              <option value="all">All statuses</option>
+              <option value="DRAFT">Draft</option>
+              <option value="LIVE">Live</option>
+              <option value="ENDED_REVIEW">Ended (review)</option>
+              <option value="LOCKED">Locked</option>
+              <option value="PAYOUT_IN_PROGRESS">Payout in progress</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="c-metric"
+              className="text-muted-foreground mb-1 block text-xs font-medium"
+            >
+              Metric
+            </label>
+            <select
+              id="c-metric"
+              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              value={data.filters.metric}
+              onChange={(e) => {
+                setFilter("metric", e.target.value);
+              }}
+            >
+              <option value="all">All metrics</option>
+              <option value="REACTIONS">Reactions</option>
+              <option value="ZAPS">Zaps</option>
+              <option value="SATS_ZAPPED">Sats zapped</option>
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="c-sort"
+              className="text-muted-foreground mb-1 block text-xs font-medium"
+            >
+              Sort
+            </label>
+            <select
+              id="c-sort"
+              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              value={data.filters.sort}
+              onChange={(e) => {
+                setFilter("sort", e.target.value);
+              }}
+            >
+              <option value="newest">Newest</option>
+              <option value="ending">Ending soon</option>
+              <option value="completed">Recently completed</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <Button type="submit" size="sm">
+              Apply
+            </Button>
+            <Button type="button" variant="outline" size="sm" asChild>
+              <Link to="/dashboard/contests">Reset</Link>
+            </Button>
+          </div>
+        </div>
+      </Form>
+
+      {!hasAnyContests ? (
+        <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+          <p className="text-foreground font-medium">No contests yet</p>
+          <p className="text-muted-foreground mt-1 max-w-sm text-sm">
+            Create your first contest to rank entries and reward winners.
+          </p>
+          <Button asChild className="mt-4">
+            <Link to="/dashboard/contests/new">New contest</Link>
+          </Button>
+        </div>
+      ) : data.contests.length > 0 ? (
+        <>
+          <div className="border-border bg-card hidden overflow-x-auto rounded-lg border md:block">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/40 border-border text-muted-foreground border-b text-xs uppercase">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Contest</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Metric</th>
+                  <th className="px-4 py-3 font-medium">Entries</th>
+                  <th className="px-4 py-3 font-medium">Winners / sats</th>
+                  <th className="px-4 py-3 font-medium">Updated</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-border divide-y">
+                {data.contests.map((contest) => (
+                  <tr key={contest.id} className="hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <Link
+                        to={`/dashboard/contests/detail/${contest.id}`}
+                        className="text-foreground font-medium hover:underline"
+                      >
+                        {contestRowTitle(contest.title, contest.id)}
+                      </Link>
+                      <p className="text-muted-foreground text-xs">
+                        Ends{" "}
+                        {new Date(contest.endAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
+                      >
+                        {contest.statusLabel}
+                      </span>
+                    </td>
+                    <td className="text-muted-foreground px-4 py-3 text-xs">
+                      {contest.metric.toLowerCase()}
+                    </td>
+                    <td className="px-4 py-3 text-xs tabular-nums">
+                      {contest.entries.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-xs tabular-nums">
+                      {contest.winners} winners
+                      <br />
+                      <span className="text-muted-foreground">
+                        {contest.plannedPayoutSats.toLocaleString()} sats
+                        planned
+                      </span>
+                    </td>
+                    <td className="text-muted-foreground px-4 py-3 text-xs">
+                      {new Date(contest.updatedAt).toLocaleDateString(
+                        undefined,
+                        {
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex flex-wrap justify-end gap-1">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/dashboard/contests/detail/${contest.id}`}>
+                            Open
+                          </Link>
+                        </Button>
+                        <Form method="post" className="inline">
+                          <input
+                            type="hidden"
+                            name="intent"
+                            value="duplicate"
+                          />
+                          <input
+                            type="hidden"
+                            name="contestId"
+                            value={contest.id}
+                          />
+                          <Button type="submit" variant="ghost" size="sm">
+                            {contestCopy.duplicate}
+                          </Button>
+                        </Form>
+                        <Form method="post" className="inline">
+                          <input type="hidden" name="intent" value="delete" />
+                          <input
+                            type="hidden"
+                            name="contestId"
+                            value={contest.id}
+                          />
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            Delete
+                          </Button>
+                        </Form>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <ul className="border-border bg-card divide-border divide-y rounded-lg border md:hidden">
+            {data.contests.map((contest) => (
+              <li key={contest.id} className="p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <Link
+                      to={`/dashboard/contests/detail/${contest.id}`}
+                      className="text-foreground font-medium hover:underline"
+                    >
+                      {contestRowTitle(contest.title, contest.id)}
+                    </Link>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
+                      >
+                        {contest.statusLabel}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground mt-2 text-xs">
+                      {contest.metric.toLowerCase()} · Ends{" "}
+                      {new Date(contest.endAt).toLocaleDateString()}
+                    </p>
+                    <p className="text-muted-foreground mt-2 text-xs">
+                      {contest.winners} winners ·{" "}
+                      {contest.plannedPayoutSats.toLocaleString()} sats planned
+                      · {contest.entries.toLocaleString()} entries
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button size="sm" variant="secondary" asChild>
+                    <Link to={`/dashboard/contests/detail/${contest.id}`}>
+                      Open
+                    </Link>
+                  </Button>
+                  <Form method="post" className="inline">
+                    <input type="hidden" name="intent" value="duplicate" />
+                    <input type="hidden" name="contestId" value={contest.id} />
+                    <Button type="submit" size="sm" variant="outline">
+                      {contestCopy.duplicate}
+                    </Button>
+                  </Form>
+                  <Form method="post" className="inline">
+                    <input type="hidden" name="intent" value="delete" />
+                    <input type="hidden" name="contestId" value={contest.id} />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive"
+                    >
+                      Delete
+                    </Button>
+                  </Form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+          <p className="text-foreground font-medium">
+            No contests match filters
+          </p>
+          <p className="text-muted-foreground mt-1 max-w-sm text-sm">
+            Try clearing filters or create a new contest to reward top replies.
+          </p>
+          <Button asChild className="mt-4">
+            <Link to="/dashboard/contests/new">New contest</Link>
+          </Button>
         </div>
       )}
     </div>

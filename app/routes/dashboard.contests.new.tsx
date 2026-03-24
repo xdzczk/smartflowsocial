@@ -2,6 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import {
   Form,
+  Link,
   useActionData,
   useLoaderData,
   useRevalidator,
@@ -289,11 +290,23 @@ export default function NewContestRoute() {
   const canSubmit = selectedSourcePostId.trim() !== "";
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Link
+          to="/dashboard/contests"
+          className="text-muted-foreground hover:text-foreground text-sm"
+        >
+          ← Back to Contests
+        </Link>
+      </div>
+
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">New Contest</h1>
-        <p className="text-muted-foreground text-sm">
-          Source, ranking, rewards, then review and launch.
+        <h1 className="text-foreground text-2xl font-bold tracking-tight">
+          New contest
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Build your contest in steps. You can save a draft, then launch when
+          ready.
         </p>
       </div>
 
@@ -309,10 +322,10 @@ export default function NewContestRoute() {
           onClick={() => {
             setSourceMode("create");
           }}
-          className={`rounded-md border px-3 py-2 text-sm font-medium ${
+          className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
             sourceMode === "create"
-              ? STEP_ACTIVE_BUTTON_CLASSES
-              : STEP_INACTIVE_BUTTON_CLASSES
+              ? `${STEP_ACTIVE_BUTTON_CLASSES} text-primary`
+              : `${STEP_INACTIVE_BUTTON_CLASSES} text-muted-foreground hover:bg-muted hover:text-foreground`
           }`}
         >
           Create new contest post
@@ -322,10 +335,10 @@ export default function NewContestRoute() {
           onClick={() => {
             setSourceMode("existing");
           }}
-          className={`rounded-md border px-3 py-2 text-sm font-medium ${
+          className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
             sourceMode === "existing"
-              ? STEP_ACTIVE_BUTTON_CLASSES
-              : STEP_INACTIVE_BUTTON_CLASSES
+              ? `${STEP_ACTIVE_BUTTON_CLASSES} text-primary`
+              : `${STEP_INACTIVE_BUTTON_CLASSES} text-muted-foreground hover:bg-muted hover:text-foreground`
           }`}
         >
           Use existing published post
@@ -346,9 +359,11 @@ export default function NewContestRoute() {
             <p className="text-muted-foreground text-xs">{entryRuleSummary}</p>
           </section>
 
-          <section className="space-y-3">
+          <section className="space-y-3 rounded-lg border border-transparent p-0">
             <div className="space-y-1">
-              <span className="text-sm font-medium">Source post</span>
+              <span className="text-foreground text-lg font-semibold">
+                1. Source post
+              </span>
               <p className="text-muted-foreground text-xs">
                 Each direct reply to this note is an entry. Publish a new note
                 or pick an existing published post.
@@ -442,42 +457,47 @@ export default function NewContestRoute() {
             ) : null}
           </section>
 
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="rankingMetric">
-                Ranking metric
-              </label>
-              <select
-                id="rankingMetric"
-                name="rankingMetric"
-                value={rankingMetric}
-                onChange={(e) => {
-                  setRankingMetric(
-                    e.target.value as "REACTIONS" | "ZAPS" | "SATS_ZAPPED"
-                  );
-                }}
-                className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-              >
-                <option value="REACTIONS">Most reactions</option>
-                <option value="ZAPS">Most zaps</option>
-                <option value="SATS_ZAPPED">Most sats zapped</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="contestEndAt">
-                Contest end time
-              </label>
-              <input
-                id="contestEndAt"
-                name="contestEndAt"
-                type="datetime-local"
-                required
-                value={contestEndAt}
-                onChange={(e) => {
-                  setContestEndAt(e.target.value);
-                }}
-                className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-              />
+          <section className="space-y-3">
+            <h2 className="text-foreground text-lg font-semibold">
+              2. Ranking rules
+            </h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="rankingMetric">
+                  Ranking metric
+                </label>
+                <select
+                  id="rankingMetric"
+                  name="rankingMetric"
+                  value={rankingMetric}
+                  onChange={(e) => {
+                    setRankingMetric(
+                      e.target.value as "REACTIONS" | "ZAPS" | "SATS_ZAPPED"
+                    );
+                  }}
+                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="REACTIONS">Most reactions</option>
+                  <option value="ZAPS">Most zaps</option>
+                  <option value="SATS_ZAPPED">Most sats zapped</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="contestEndAt">
+                  Contest end time
+                </label>
+                <input
+                  id="contestEndAt"
+                  name="contestEndAt"
+                  type="datetime-local"
+                  required
+                  value={contestEndAt}
+                  onChange={(e) => {
+                    setContestEndAt(e.target.value);
+                  }}
+                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                />
+              </div>
             </div>
           </section>
           <div className="border-border bg-muted/20 space-y-2 rounded-md border p-3 text-xs">
@@ -495,7 +515,9 @@ export default function NewContestRoute() {
           </div>
 
           <section className="space-y-3">
-            <p className="text-sm font-medium">Prize structure</p>
+            <h2 className="text-foreground text-lg font-semibold">
+              3. Prize structure
+            </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
                 <input
@@ -617,7 +639,9 @@ export default function NewContestRoute() {
           </div>
 
           <section className="space-y-2">
-            <p className="text-sm font-medium">Eligibility filters</p>
+            <h2 className="text-foreground text-lg font-semibold">
+              4. Eligibility filters
+            </h2>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <label>
                 <input
@@ -693,7 +717,9 @@ export default function NewContestRoute() {
           </section>
 
           <section className="border-border bg-card space-y-3 rounded-lg border p-4">
-            <h2 className="text-sm font-semibold">Launch readiness</h2>
+            <h2 className="text-foreground text-lg font-semibold">
+              5. Review and launch
+            </h2>
             <div className="grid gap-2 text-sm sm:grid-cols-2">
               <p>
                 <span className="text-muted-foreground">Source:</span>{" "}
@@ -748,19 +774,19 @@ export default function NewContestRoute() {
             <button
               type="submit"
               name="launchNow"
+              value="0"
+              className="border-border bg-background rounded-md border px-4 py-2 text-sm"
+            >
+              Save draft
+            </button>
+            <button
+              type="submit"
+              name="launchNow"
               value="1"
               disabled={!canSubmit}
               className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:pointer-events-none disabled:opacity-50"
             >
               Launch contest
-            </button>
-            <button
-              type="submit"
-              name="launchNow"
-              value="0"
-              className="border-border bg-background rounded-md border px-4 py-2 text-sm"
-            >
-              Save draft
             </button>
           </div>
         </Form>
