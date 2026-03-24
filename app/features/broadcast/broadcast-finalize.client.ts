@@ -1,5 +1,9 @@
 import { buildAndSignBroadcastKind4 } from "~/features/broadcast/broadcast-dm.client";
 import {
+  BROADCAST_PLAINTEXT_MAX_CHARS,
+  buildBroadcastPlaintextWithUnsubscribeFooter,
+} from "~/features/broadcast/broadcast-unsubscribe-copy";
+import {
   buildUserSignedFeedbackNip17GiftWraps,
   feedbackClientMayAttemptNip17Seals,
 } from "~/lib/product-feedback-dm.client";
@@ -13,6 +17,7 @@ export interface BroadcastFinalizeCampaign {
 export interface BroadcastPendingRecipient {
   id: string;
   recipientPubkey: string;
+  unsubscribeUrl: string;
 }
 
 function deliveryModeUsesNip17GiftWraps(mode: string): boolean {
@@ -29,6 +34,19 @@ export async function runBroadcastFinalizeFlow(
   pendingRecipients: BroadcastPendingRecipient[],
   onSigningProgress: (index: number, total: number) => void
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  for (const r of pendingRecipients) {
+    const plaintext = buildBroadcastPlaintextWithUnsubscribeFooter(
+      campaign.messageBody,
+      r.unsubscribeUrl
+    );
+    if (plaintext.length > BROADCAST_PLAINTEXT_MAX_CHARS) {
+      return {
+        ok: false,
+        error: `Message with unsubscribe footer exceeds ${String(BROADCAST_PLAINTEXT_MAX_CHARS)} characters. Shorten your message.`,
+      };
+    }
+  }
+
   const tryNip17 =
     deliveryModeUsesNip17GiftWraps(campaign.deliveryMode) &&
     feedbackClientMayAttemptNip17Seals();
@@ -62,9 +80,13 @@ export async function runBroadcastFinalizeFlow(
     i += 1;
     onSigningProgress(i, pendingRecipients.length);
     const peer = r.recipientPubkey.toLowerCase();
+    const plaintext = buildBroadcastPlaintextWithUnsubscribeFooter(
+      campaign.messageBody,
+      r.unsubscribeUrl
+    );
     const signedEvent = await buildAndSignBroadcastKind4({
       recipientPubkeyHex: peer,
-      plaintext: campaign.messageBody,
+      plaintext,
     });
 
     let giftWraps: Array<Record<string, unknown>> | undefined;
@@ -73,7 +95,7 @@ export async function runBroadcastFinalizeFlow(
       if (relay) {
         try {
           const wraps = await buildUserSignedFeedbackNip17GiftWraps({
-            plaintext: campaign.messageBody,
+            plaintext,
             senderPubkeyHex: signedEvent.pubkey.toLowerCase(),
             inboxPubkeyHex: peer,
             preferredInboxRelayUrl: relay,

@@ -3,33 +3,12 @@ import { createHash } from "crypto";
 
 import {
   computeContestFinalizationFeeSats,
+  computePlannedPayoutSats,
   getContestFinalizationFeeRateBps,
+  stableSortRankRewards,
 } from "./contest-finalization-fee.shared";
 import type { ContestPrizeMode, ContestRankReward } from "./types";
 import type { PlanType } from "~/features/payments/types";
-
-function stableSortRankRewards(
-  rankRewards: ContestRankReward[]
-): ContestRankReward[] {
-  return [...rankRewards].sort((a, b) => a.rank - b.rank);
-}
-
-function computePlannedPayoutSats(input: {
-  prizeMode: ContestPrizeMode;
-  winnerCount: number;
-  equalRewardSats?: number | null;
-  rankRewards?: ContestRankReward[] | null;
-}): number {
-  if (input.prizeMode === "EQUAL") {
-    return (
-      Math.max(0, input.winnerCount) * Math.max(0, input.equalRewardSats ?? 0)
-    );
-  }
-  const rewards = stableSortRankRewards(input.rankRewards ?? []);
-  return rewards
-    .slice(0, Math.max(0, input.winnerCount))
-    .reduce((sum, row) => sum + Math.max(0, row.sats), 0);
-}
 
 function buildContestLockConfigHash(payload: Record<string, unknown>): string {
   const canonical = JSON.stringify(payload);

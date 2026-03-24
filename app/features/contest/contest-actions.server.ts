@@ -17,6 +17,7 @@ import { resolveContestEntries } from "./contest-resolver.server";
 import {
   findContestByIdAndUser,
   listContestsByUser,
+  listContestsByUserWithFilters,
   createContest as createContestRow,
   updateContest as updateContestRow,
   deleteContest as deleteContestRow,
@@ -353,6 +354,16 @@ export async function setContestWinnerPayoutStatus(
   await updateContestRow(contestId, {
     status: "PAYOUT_IN_PROGRESS",
     payoutState: state as unknown as Prisma.InputJsonValue,
+    eventLogs: {
+      create: {
+        eventType: "payout_status_updated",
+        message: `Payout status updated (${status})`,
+        metadata: {
+          winnerPubkey,
+          status,
+        } as Prisma.InputJsonValue,
+      },
+    },
   });
   return { success: true };
 }
@@ -445,7 +456,73 @@ export async function deleteContest(
   return { success: true };
 }
 
+export async function getContestKpiCounts(
+  userId: string
+): Promise<Partial<Record<string, number>>> {
+  const rows = await prisma.contest.groupBy({
+    by: ["status"],
+    where: { userId },
+    _count: { _all: true },
+  });
+  const map: Partial<Record<string, number>> = {};
+  for (const r of rows) {
+    map[r.status] = r._count._all;
+  }
+  return map;
+}
+
 export async function listContests(userId: string): Promise<Contest[]> {
   return listContestsByUser(userId);
+}
+
+export async function listContestsFiltered(
+  userId: string,
+  filters: {
+    status?: string;
+    metric?: string;
+    sort?: "newest" | "ending" | "completed";
+  }
+): Promise<Contest[]> {
+  return listContestsByUserWithFilters(userId, filters);
+}
+
+export async function duplicateContest(
+  userId: string,
+  contestId: string
+): Promise<{ success: boolean; error?: string; newId?: string }> {
+  const c = await getContestById(contestId, userId);
+  if (!c) return { success: false, error: "Contest not found" };
+  const rankRewardsJson =
+    c.prizeMode === "RANKED"
+      ? ((c.rankRewards ?? []) as unknown as Prisma.InputJsonValue)
+      : Prisma.JsonNull;
+  const newRow = await createContestRow({
+    user: { connect: { id: userId } },
+    title: c.title ? `${c.title} (copy)` : null,
+    sourceNoteId: c.sourceNoteId,
+    sourcePostId: c.sourcePostId,
+    rankingMetric: c.rankingMetric,
+    contestStartAt: null,
+    contestEndAt: c.contestEndAt,
+    prizeMode: c.prizeMode,
+    winnerCount: Math.max(1, Math.min(c.winnerCount, 50)),
+    equalRewardSats:
+      c.prizeMode === "EQUAL" ? Math.max(0, c.equalRewardSats ?? 0) : null,
+    rankRewards: rankRewardsJson,
+    fairnessConfig: (c.fairnessConfig ?? undefined) as
+      | Prisma.InputJsonValue
+      | undefined,
+    entryType: c.entryType,
+    tieBreakRule: c.tieBreakRule ?? DEFAULT_TIE_BREAK_RULE,
+    status: "DRAFT",
+    eventLogs: {
+      create: {
+        eventType: "contest_duplicated",
+        message: `Duplicated from contest ${contestId.slice(0, 8)}`,
+        metadata: { sourceContestId: contestId } as Prisma.InputJsonValue,
+      },
+    },
+  });
+  return { success: true, newId: newRow.id };
 }
 /* eslint-enable no-restricted-imports, import/order, sonarjs/no-duplicate-string, @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/consistent-type-assertions */

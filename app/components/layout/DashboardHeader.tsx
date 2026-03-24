@@ -111,7 +111,7 @@ const ENGAGEMENT_SECTION_ITEMS = [
     icon: (
       <Gift className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
     ),
-    label: "Giveaway",
+    label: "Giveaways",
   },
   {
     to: "/dashboard/contests",

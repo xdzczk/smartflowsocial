@@ -137,6 +137,24 @@ export const authLimiter = rateLimit({
 });
 
 /**
+ * Public broadcast unsubscribe (capability URLs in DMs).
+ * Limits abuse of the endpoint without blocking legitimate clicks.
+ */
+export const broadcastUnsubscribeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isTestEnvironment() ? 10000 : 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: RATE_LIMIT_MESSAGE,
+  handler: (req: Request, res: Response) => {
+    res.status(429).type("html").send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Too many requests</title></head><body><p>${RATE_LIMIT_MESSAGE}</p></body></html>`);
+  },
+  skip: (_req: Request) => isTestEnvironment(),
+});
+
+/**
  * Check if Redis is available for rate limiting
  */
 function isRedisAvailable(): boolean {

@@ -307,6 +307,20 @@ model BroadcastRecipient {
 
   @@unique([campaignId, recipientPubkey])
   @@index([campaignId, status])
+  unsubscribeToken BroadcastUnsubscribeToken?
+}
+
+/// Per-recipient capability URL for in-DM broadcast unsubscribe (raw secret never stored).
+model BroadcastUnsubscribeToken {
+  id           String              @id @default(cuid())
+  recipientId  String              @unique
+  tokenHash    String
+  createdAt    DateTime            @default(now())
+  expiresAt    DateTime?
+  usedAt       DateTime?
+  recipient    BroadcastRecipient  @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
 }
 
 model BroadcastSuppression {

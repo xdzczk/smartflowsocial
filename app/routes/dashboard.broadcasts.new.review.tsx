@@ -15,6 +15,10 @@ import { runBroadcastFinalizeFlow } from "~/features/broadcast/broadcast-finaliz
 import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import { getBroadcastReviewWarnings } from "~/features/broadcast/broadcast-review-warnings.server";
 import {
+  ensureUnsubscribeTokensForCampaign,
+  getBroadcastUnsubscribeBaseUrl,
+} from "~/features/broadcast/broadcast-unsubscribe.server";
+import {
   getBroadcastPlanLimits,
   getUserPlanType,
   requireFeatureAccess,
@@ -102,6 +106,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return redirect(`/dashboard/broadcasts/${campaign.id}`);
   }
 
+  const baseUrl = getBroadcastUnsubscribeBaseUrl(request);
+  const pendingRecipients = await ensureUnsubscribeTokensForCampaign(
+    userId,
+    campaign.id,
+    baseUrl
+  );
+  if (pendingRecipients.length === 0) {
+    return redirect(`/dashboard/broadcasts/${campaign.id}`);
+  }
+
   const { currentSubscription } = await getSubscriptionData(userId);
   const planType = getUserPlanType(currentSubscription);
   const limits = getBroadcastPlanLimits(planType);
@@ -120,9 +134,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     invalidCustomEstimate: invalidCustom,
     planType,
   });
-  const lintWarnings = getBroadcastMessageLintWarnings(
-    campaign.messageBody
-  ).map((w) => ({ level: w.level as "info" | "warning", message: w.message }));
+  const lintWarnings = getBroadcastMessageLintWarnings(campaign.messageBody, {
+    footerReserveChars: true,
+  }).map((w) => ({
+    level: w.level as "info" | "warning",
+    message: w.message,
+  }));
   const warnings = [...lintWarnings, ...reviewWarnings];
 
   const scheduledIsFuture =
@@ -131,10 +148,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return json({
     campaign,
-    pendingRecipients: pending.map((r) => ({
-      id: r.id,
-      recipientPubkey: r.recipientPubkey,
-    })),
+    pendingRecipients,
     limits,
     planType,
     signerNpub: user?.npub ?? null,

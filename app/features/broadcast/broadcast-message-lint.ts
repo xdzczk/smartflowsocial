@@ -1,3 +1,8 @@
+import {
+  BROADCAST_PLAINTEXT_MAX_CHARS,
+  BROADCAST_UNSUBSCRIBE_FOOTER_RESERVE_CHARS,
+} from "./broadcast-unsubscribe-copy";
+
 export interface BroadcastMessageLint {
   level: "warning";
   message: string;
@@ -24,6 +29,8 @@ function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
 
 export interface BroadcastMessageLintOptions {
   recentBroadcastSnippet?: string | null;
+  /** When true, warn if body may exceed max length once the unsubscribe footer is appended. */
+  footerReserveChars?: boolean;
 }
 
 /** Non-blocking heuristics (pure; safe for client or server). */
@@ -33,6 +40,19 @@ export function getBroadcastMessageLintWarnings(
 ): BroadcastMessageLint[] {
   const t = body.trim();
   const out: BroadcastMessageLint[] = [];
+
+  if (options?.footerReserveChars) {
+    if (
+      t.length + BROADCAST_UNSUBSCRIBE_FOOTER_RESERVE_CHARS >
+      BROADCAST_PLAINTEXT_MAX_CHARS
+    ) {
+      out.push({
+        level: "warning",
+        message:
+          "Message is long enough that the required unsubscribe footer may exceed the maximum length when you sign—shorten the text or links.",
+      });
+    }
+  }
   if (t.length > 0 && t.length < 20) {
     out.push({
       level: "warning",

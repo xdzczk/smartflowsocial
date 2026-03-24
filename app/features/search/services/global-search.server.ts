@@ -507,10 +507,10 @@ const FEATURES: FeatureDefinition[] = [
     keywords: ["engagement", "feed", "activity", "interactions"],
   },
   {
-    label: "Giveaway",
+    label: "Giveaways",
     url: "/dashboard/giveaway",
     feature: "giveaways",
-    keywords: ["giveaway", "contest", "promotion"],
+    keywords: ["giveaway", "giveaways", "contest", "promotion"],
   },
   {
     label: "Contests",

@@ -31,6 +31,7 @@ import {
   strictLimiter,
   authLimiter,
   pollingLimiter,
+  broadcastUnsubscribeLimiter,
 } from "./app/lib/rate-limit.server";
 
 // Only install in production or when explicitly enabled to avoid missing map file errors in dev
@@ -487,6 +488,9 @@ async function run() {
   // Rate limiting
   // More lenient limits for polling endpoints (must come before general API limiter)
   app.use("/api/publish-result", pollingLimiter);
+
+  // Public broadcast unsubscribe (opaque tokens in DMs)
+  app.use("/broadcast/unsubscribe", broadcastUnsubscribeLimiter);
 
   // Apply general API rate limiting to all API routes
   app.use("/api/", apiLimiter);
