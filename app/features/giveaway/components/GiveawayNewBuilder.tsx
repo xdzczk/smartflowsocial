@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Link, useNavigation } from "@remix-run/react";
 import { useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -84,18 +84,6 @@ const SCOPE_TYPE_OPTIONS: ReadonlyArray<{
   },
 ];
 
-function reviewScopeLine(
-  scopeType: BuilderScopeType,
-  periodMode: "days" | "custom"
-): string {
-  if (scopeType === "PERIOD" && periodMode === "days") {
-    return "Last N days (set above)";
-  }
-  if (scopeType === "PERIOD") return "Custom dates";
-  const hit = SCOPE_TYPE_OPTIONS.find((o) => o.value === scopeType);
-  return hit?.title ?? scopeType;
-}
-
 function asideScopeLine(
   scopeType: BuilderScopeType,
   periodMode: "days" | "custom"
@@ -146,6 +134,8 @@ function GiveawayNewBuilderStickySummary({
   plannedPayoutForFee,
   feePreview,
   isFollowGraphScope,
+  actionError,
+  isSubmitting,
 }: {
   scopeType: BuilderScopeType;
   periodMode: "days" | "custom";
@@ -168,10 +158,12 @@ function GiveawayNewBuilderStickySummary({
     rateBps: number;
   } | null;
   isFollowGraphScope: boolean;
+  actionError?: string;
+  isSubmitting: boolean;
 }) {
   return (
-    <aside className="mt-10 space-y-4 lg:mt-0">
-      <Card className="lg:sticky lg:top-20">
+    <aside className="mt-10 space-y-4 lg:mt-0 lg:self-start">
+      <Card className="sticky top-20">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Giveaway summary</CardTitle>
           <CardDescription>Updates as you adjust the builder</CardDescription>
@@ -277,6 +269,19 @@ function GiveawayNewBuilderStickySummary({
               Winner count exceeds typical limits — check your plan cap.
             </p>
           ) : null}
+          <div className="border-border space-y-3 border-t pt-3">
+            {actionError ? (
+              <p className="text-destructive text-sm">{actionError}</p>
+            ) : null}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={isSubmitting}
+            >
+              Create draft & continue to preview
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </aside>
@@ -328,172 +333,68 @@ function GiveawayNewBuilderPresetTemplates({
   );
 }
 
-function GiveawayNewBuilderSelectionAndReview({
-  scopeType,
-  periodMode,
-  summary,
-  winnerCount,
-  rewardMode,
-  simpleSats,
+function GiveawayNewBuilderSelection({
   selectionMode,
   setSelectionMode,
-  plannedPayoutForFee,
-  feePreview,
-  planDisplayName,
-  actionError,
   isFollowGraphScope,
 }: {
-  scopeType: BuilderScopeType;
-  periodMode: "days" | "custom";
-  summary: {
-    maxPayout: number | null;
-    avg: number | null;
-    engagementLine: string;
-  };
-  winnerCount: number;
-  rewardMode: "simple" | "advanced";
-  simpleSats: number;
   selectionMode: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT";
   setSelectionMode: (v: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT") => void;
-  plannedPayoutForFee: number | null;
-  feePreview: {
-    feeSats: number;
-    waivedByPlan: boolean;
-    rateBps: number;
-  } | null;
-  planDisplayName: string;
-  actionError?: string;
   isFollowGraphScope: boolean;
 }) {
   return (
-    <>
-      <section className="space-y-4" aria-labelledby="sel-heading">
-        <h2 id="sel-heading" className="text-foreground text-lg font-semibold">
-          4. How should winners be chosen?
-        </h2>
-        {isFollowGraphScope ? (
-          <>
-            <input type="hidden" name="selectionMode" value="UNIQUE_USER" />
-            <p className="text-muted-foreground max-w-prose text-sm">
-              Winners are picked uniformly at random from eligible accounts in
-              your follower or following list (after filters). This is not based
-              on note reactions or zaps.
-            </p>
-          </>
-        ) : (
-          <div className="max-w-md">
-            <label
-              htmlFor="selectionMode"
-              className="text-muted-foreground text-sm"
-            >
-              Selection mode
-            </label>
-            <select
-              id="selectionMode"
-              name="selectionMode"
-              value={selectionMode}
-              onChange={(e) => {
-                setSelectionMode(
-                  e.target.value === "WEIGHTED_BY_ENGAGEMENT"
-                    ? "WEIGHTED_BY_ENGAGEMENT"
-                    : "UNIQUE_USER"
-                );
-              }}
-              className="border-border bg-background mt-1 block w-full rounded-md border px-2 py-2 text-sm"
-            >
-              <option value="UNIQUE_USER">
-                Unique user — one entry per eligible pubkey
-              </option>
-              <option value="WEIGHTED_BY_ENGAGEMENT">
-                Weighted by engagement — more activity, higher chance
-              </option>
-            </select>
-          </div>
-        )}
-        <div className="border-border rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm">
-          <p className="text-foreground font-medium">Fairness</p>
-          <p className="text-muted-foreground mt-2">
-            {isFollowGraphScope
-              ? "The eligible pool is built from your follow graph at lock time. Each eligible account has one chance to win."
-              : "Winners are picked at random from eligible participants after filters. In unique-user mode each eligible account gets one entry. Locked giveaways cannot be edited — preview first, then lock when you’re satisfied."}
+    <section className="space-y-4" aria-labelledby="sel-heading">
+      <h2 id="sel-heading" className="text-foreground text-lg font-semibold">
+        4. How should winners be chosen?
+      </h2>
+      {isFollowGraphScope ? (
+        <>
+          <input type="hidden" name="selectionMode" value="UNIQUE_USER" />
+          <p className="text-muted-foreground max-w-prose text-sm">
+            Winners are picked uniformly at random from eligible accounts in
+            your follower or following list (after filters). This is not based
+            on note reactions or zaps.
           </p>
+        </>
+      ) : (
+        <div className="max-w-md">
+          <label
+            htmlFor="selectionMode"
+            className="text-muted-foreground text-sm"
+          >
+            Selection mode
+          </label>
+          <select
+            id="selectionMode"
+            name="selectionMode"
+            value={selectionMode}
+            onChange={(e) => {
+              setSelectionMode(
+                e.target.value === "WEIGHTED_BY_ENGAGEMENT"
+                  ? "WEIGHTED_BY_ENGAGEMENT"
+                  : "UNIQUE_USER"
+              );
+            }}
+            className="border-border bg-background mt-1 block w-full rounded-md border px-2 py-2 text-sm"
+          >
+            <option value="UNIQUE_USER">
+              Unique user — one entry per eligible pubkey
+            </option>
+            <option value="WEIGHTED_BY_ENGAGEMENT">
+              Weighted by engagement — more activity, higher chance
+            </option>
+          </select>
         </div>
-      </section>
-
-      <section className="space-y-4" aria-labelledby="rev-heading">
-        <h2 id="rev-heading" className="text-foreground text-lg font-semibold">
-          5. Review
-        </h2>
-        <ul className="text-muted-foreground list-inside list-disc space-y-1 text-sm">
-          <li>
-            Scope:{" "}
-            <span className="text-foreground">
-              {reviewScopeLine(scopeType, periodMode)}
-            </span>
-          </li>
-          <li>
-            {isFollowGraphScope ? "Pool: " : "Engagement: "}
-            <span className="text-foreground">{summary.engagementLine}</span>
-          </li>
-          <li>
-            Winners: <span className="text-foreground">{winnerCount}</span> ·{" "}
-            {rewardMode === "simple" && simpleSats > 0 ? (
-              <span className="text-foreground">
-                {simpleSats.toLocaleString()} sats each · max{" "}
-                {summary.maxPayout?.toLocaleString()} sats
-              </span>
-            ) : rewardMode === "simple" ? (
-              <span className="text-foreground">selection only</span>
-            ) : (
-              <span className="text-foreground">Per-type table (advanced)</span>
-            )}
-          </li>
-          <li>
-            Selection:{" "}
-            <span className="text-foreground">
-              {isFollowGraphScope
-                ? "Uniform random from accounts"
-                : selectionMode === "UNIQUE_USER"
-                  ? "Unique user"
-                  : "Weighted by engagement"}
-            </span>
-          </li>
-          {plannedPayoutForFee != null && feePreview ? (
-            <>
-              <li>
-                Planned payout:{" "}
-                <span className="text-foreground">
-                  {plannedPayoutForFee.toLocaleString()} sats
-                </span>
-              </li>
-              <li>
-                Finalization fee:{" "}
-                <span className="text-foreground">
-                  {plannedPayoutForFee <= 0
-                    ? "0 sats"
-                    : feePreview.waivedByPlan
-                      ? `Included (${planDisplayName})`
-                      : `${feePreview.feeSats.toLocaleString()} sats on ${planDisplayName}`}
-                </span>
-              </li>
-            </>
-          ) : rewardMode === "advanced" ? (
-            <li>
-              Finalization fee:{" "}
-              <span className="text-foreground">
-                Based on per-type rewards at preview
-              </span>
-            </li>
-          ) : null}
-        </ul>
-        {actionError ? (
-          <p className="text-destructive text-sm">{actionError}</p>
-        ) : null}
-        <Button type="submit" size="lg" className="w-full sm:w-auto">
-          Create draft & continue to preview
-        </Button>
-      </section>
-    </>
+      )}
+      <div className="border-border rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm">
+        <p className="text-foreground font-medium">Fairness</p>
+        <p className="text-muted-foreground mt-2">
+          {isFollowGraphScope
+            ? "The eligible pool is built from your follow graph at lock time. Each eligible account has one chance to win."
+            : "Winners are picked at random from eligible participants after filters. In unique-user mode each eligible account gets one entry. Locked giveaways cannot be edited — preview first, then lock when you’re satisfied."}
+        </p>
+      </div>
+    </section>
   );
 }
 
@@ -506,6 +407,9 @@ export function GiveawayNewBuilder({
   planDisplayName,
   actionError,
 }: GiveawayNewBuilderProps) {
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
+
   const [scopeType, setScopeType] = useState<
     "PERIOD" | "SINGLE_POST" | "FOLLOWERS" | "FOLLOWING"
   >("PERIOD");
@@ -1130,19 +1034,9 @@ export function GiveawayNewBuilder({
             )}
           </section>
 
-          <GiveawayNewBuilderSelectionAndReview
-            scopeType={scopeType}
-            periodMode={periodMode}
-            summary={summary}
-            winnerCount={winnerCount}
-            rewardMode={effectiveRewardMode}
-            simpleSats={simpleSats}
+          <GiveawayNewBuilderSelection
             selectionMode={effectiveSelectionMode}
             setSelectionMode={setSelectionMode}
-            plannedPayoutForFee={plannedPayoutForFee}
-            feePreview={feePreview}
-            planDisplayName={planDisplayName}
-            actionError={actionError}
             isFollowGraphScope={isFollowGraphScope}
           />
         </div>
@@ -1161,6 +1055,8 @@ export function GiveawayNewBuilder({
           plannedPayoutForFee={plannedPayoutForFee}
           feePreview={feePreview}
           isFollowGraphScope={isFollowGraphScope}
+          actionError={actionError}
+          isSubmitting={isSubmitting}
         />
       </form>
 

@@ -5,6 +5,7 @@ import {
   Link,
   useActionData,
   useLoaderData,
+  useNavigation,
   useRevalidator,
 } from "@remix-run/react";
 import { useCallback, useMemo, useState } from "react";
@@ -175,11 +176,12 @@ function formatPostOptionLabel(p: {
 const STEP_ACTIVE_BUTTON_CLASSES = "border-primary bg-primary/10";
 const STEP_INACTIVE_BUTTON_CLASSES = "border-border bg-background";
 
-// eslint-disable-next-line sonarjs/cognitive-complexity -- route coordinates many controlled inputs and launch validations in one builder page.
 export default function NewContestRoute() {
   const actionData = useActionData<typeof action>();
   const loaderData = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
   const revalidator = useRevalidator();
+  const isSubmitting = navigation.state === "submitting";
   const [prizeMode, setPrizeMode] = useState<"EQUAL" | "RANKED">("EQUAL");
   const [winnerCount, setWinnerCount] = useState(3);
   const [postSearch, setPostSearch] = useState("");
@@ -233,25 +235,6 @@ export default function NewContestRoute() {
     () => posts.find((p) => p.id === selectedSourcePostId) ?? null,
     [posts, selectedSourcePostId]
   );
-
-  const fairFiltersSummary = useMemo(() => {
-    const labels: string[] = [];
-    if (excludeMuted) labels.push("exclude muted");
-    if (excludeBlocked) labels.push("exclude blocked");
-    if (excludeLowTrust) labels.push("exclude low-trust");
-    if (excludeNonFollowers) labels.push("followers only");
-    if (minAccountAgeDays > 0) labels.push(`min age ${minAccountAgeDays}d`);
-    if (minFollowers > 0) labels.push(`min followers ${minFollowers}`);
-    if (labels.length === 0) return "None";
-    return labels.join(", ");
-  }, [
-    excludeMuted,
-    excludeBlocked,
-    excludeLowTrust,
-    excludeNonFollowers,
-    minAccountAgeDays,
-    minFollowers,
-  ]);
 
   const prizeSummary = useMemo(() => {
     if (prizeMode === "EQUAL") {
@@ -345,8 +328,11 @@ export default function NewContestRoute() {
         </button>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[1fr,minmax(260px,320px)] lg:items-start lg:gap-8">
-        <Form method="post" className="min-w-0 space-y-6">
+      <Form
+        method="post"
+        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-start lg:gap-8"
+      >
+        <div className="min-w-0 space-y-10">
           <section className="space-y-2">
             <label className="text-sm font-medium" htmlFor="title">
               Contest title
@@ -715,103 +701,53 @@ export default function NewContestRoute() {
               />
             </div>
           </section>
+        </div>
 
-          <section className="border-border bg-card space-y-3 rounded-lg border p-4">
-            <h2 className="text-foreground text-lg font-semibold">
-              5. Review and launch
-            </h2>
-            <div className="grid gap-2 text-sm sm:grid-cols-2">
-              <p>
-                <span className="text-muted-foreground">Source:</span>{" "}
-                {selectedSourcePost
-                  ? formatPostOptionLabel(selectedSourcePost)
-                  : "Not selected"}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Metric:</span>{" "}
-                {rankingMetric.toLowerCase()}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Ends:</span>{" "}
-                {contestEndAt
-                  ? new Date(contestEndAt).toLocaleString()
-                  : "Not set"}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Filters:</span>{" "}
-                {fairFiltersSummary}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Tie-break:</span>{" "}
-                {tieBreakPreview}
-              </p>
-              <p>
-                <span className="text-muted-foreground">Prize:</span>{" "}
-                {prizeSummary}
-              </p>
-            </div>
-            <div className="text-muted-foreground text-xs">
-              {entryRuleSummary}
-            </div>
-            {Object.values(stepIssues).some(Boolean) ? (
-              <ul className="text-destructive list-inside list-disc text-xs">
-                {stepIssues.source ? <li>{stepIssues.source}</li> : null}
-                {stepIssues.ranking ? <li>{stepIssues.ranking}</li> : null}
-                {stepIssues.rewards ? <li>{stepIssues.rewards}</li> : null}
-                {!excludeMuted &&
-                !excludeBlocked &&
-                !excludeLowTrust &&
-                !excludeNonFollowers ? (
-                  <li>No eligibility filters enabled.</li>
-                ) : null}
-              </ul>
-            ) : null}
-          </section>
-
-          <div className="flex items-center justify-between gap-3">
-            <div />
-
-            <button
-              type="submit"
-              name="launchNow"
-              value="0"
-              className="border-border bg-background rounded-md border px-4 py-2 text-sm"
-            >
-              Save draft
-            </button>
-            <button
-              type="submit"
-              name="launchNow"
-              value="1"
-              disabled={!canSubmit}
-              className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:pointer-events-none disabled:opacity-50"
-            >
-              Launch contest
-            </button>
-          </div>
-        </Form>
-
-        <ContestBuilderSummaryRail
-          planType={planType}
-          planLabel={planLabel}
-          sourceMode={sourceMode}
-          hasSourcePost={selectedSourcePostId.trim() !== ""}
-          rankingMetric={rankingMetric}
-          contestEndAt={contestEndAt}
-          prizeMode={prizeMode}
-          winnerCount={winnerCount}
-          equalRewardSats={equalRewardSats}
-          rankRewards={rankRewards}
-          fairness={{
-            excludeMuted,
-            excludeBlocked,
-            excludeLowTrust,
-            excludeNonFollowers,
-            minAccountAgeDays,
-            minFollowers,
-          }}
-        />
-      </div>
+        <div className="mt-10 lg:mt-0 lg:self-start">
+          <ContestBuilderSummaryRail
+            planType={planType}
+            planLabel={planLabel}
+            sourceMode={sourceMode}
+            hasSourcePost={selectedSourcePostId.trim() !== ""}
+            rankingMetric={rankingMetric}
+            contestEndAt={contestEndAt}
+            prizeMode={prizeMode}
+            winnerCount={winnerCount}
+            equalRewardSats={equalRewardSats}
+            rankRewards={rankRewards}
+            fairness={{
+              excludeMuted,
+              excludeBlocked,
+              excludeLowTrust,
+              excludeNonFollowers,
+              minAccountAgeDays,
+              minFollowers,
+            }}
+            footerActions={
+              <div className="flex flex-col gap-2">
+                <button
+                  type="submit"
+                  name="launchNow"
+                  value="0"
+                  disabled={isSubmitting}
+                  className="border-border bg-background rounded-md border px-4 py-2 text-sm disabled:pointer-events-none disabled:opacity-50"
+                >
+                  Save draft
+                </button>
+                <button
+                  type="submit"
+                  name="launchNow"
+                  value="1"
+                  disabled={!canSubmit || isSubmitting}
+                  className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:pointer-events-none disabled:opacity-50"
+                >
+                  Launch contest
+                </button>
+              </div>
+            }
+          />
+        </div>
+      </Form>
     </div>
   );
 }

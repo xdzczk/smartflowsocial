@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
 import { CampaignSummaryRailShell } from "~/features/campaign-ui";
@@ -23,6 +24,7 @@ export function ContestBuilderSummaryRail({
   equalRewardSats,
   rankRewards,
   fairness,
+  footerActions,
 }: {
   planType: PlanType;
   planLabel: string;
@@ -42,6 +44,7 @@ export function ContestBuilderSummaryRail({
     minAccountAgeDays: number;
     minFollowers: number;
   };
+  footerActions?: ReactNode;
 }) {
   const [now] = useState(() => Date.now());
 
@@ -153,6 +156,7 @@ export function ContestBuilderSummaryRail({
       ]}
       warningsTitle={contestCopy.railWarningsTitle}
       warnings={warnings}
+      footer={footerActions}
     />
   );
 }

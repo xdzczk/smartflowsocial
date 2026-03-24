@@ -11,15 +11,17 @@ export function CampaignSummaryRailShell({
   rows,
   warningsTitle,
   warnings,
+  footer,
 }: {
   title: string;
   hint: string;
   rows: CampaignSummaryRow[];
   warningsTitle?: string;
   warnings?: string[];
+  footer?: ReactNode;
 }) {
   return (
-    <aside className="border-border bg-card h-fit space-y-4 rounded-lg border p-4 lg:sticky lg:top-6">
+    <aside className="border-border bg-card sticky top-20 h-fit space-y-4 rounded-lg border p-4">
       <div>
         <h2 className="text-sm font-semibold">{title}</h2>
         <p className="text-muted-foreground text-xs">{hint}</p>
@@ -43,6 +45,9 @@ export function CampaignSummaryRailShell({
             ))}
           </ul>
         </div>
+      ) : null}
+      {footer ? (
+        <div className="border-border space-y-3 border-t pt-3">{footer}</div>
       ) : null}
     </aside>
   );
