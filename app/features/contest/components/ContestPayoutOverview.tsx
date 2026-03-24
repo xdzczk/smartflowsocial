@@ -1,5 +1,7 @@
 import { Form } from "@remix-run/react";
 
+import { CampaignPayoutOverviewShell } from "~/features/campaign-ui";
+
 import { contestCopy } from "../contest-copy";
 
 export function ContestPayoutOverview({
@@ -17,49 +19,34 @@ export function ContestPayoutOverview({
 }) {
   const done = summary.paidOrSent;
   const total = summary.winnerSlots;
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div className="border-border bg-card space-y-3 rounded-lg border p-4">
-      <h2 className="text-sm font-semibold">{contestCopy.payoutOverview}</h2>
-      <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-        <div>
-          <dt className="text-muted-foreground">Winners</dt>
-          <dd className="font-semibold">{summary.winnerSlots}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Paid / sent</dt>
-          <dd className="font-semibold text-emerald-600 dark:text-emerald-400">
-            {summary.paidOrSent}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Pending</dt>
-          <dd className="font-semibold">{summary.pending}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Failed</dt>
-          <dd className="text-destructive font-semibold">{summary.failed}</dd>
-        </div>
-      </dl>
-      <div>
-        <div className="text-muted-foreground mb-1 flex justify-between text-xs">
-          <span>Progress</span>
-          <span>
-            {done}/{total} ({pct}%)
-          </span>
-        </div>
-        <div className="bg-muted h-2 overflow-hidden rounded-full">
-          <div
-            className="bg-primary h-full transition-[width]"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-      <p className="text-muted-foreground text-xs">
-        Planned payout: {summary.plannedSats.toLocaleString()} sats · {feeLabel}
-      </p>
-    </div>
+    <CampaignPayoutOverviewShell
+      title={contestCopy.payoutOverview}
+      stats={[
+        { label: "Winners", value: summary.winnerSlots },
+        {
+          label: "Paid / sent",
+          value: summary.paidOrSent,
+          valueClassName:
+            "font-semibold text-emerald-600 dark:text-emerald-400",
+        },
+        { label: "Pending", value: summary.pending },
+        {
+          label: "Failed",
+          value: summary.failed,
+          valueClassName: "font-semibold text-destructive",
+        },
+      ]}
+      done={done}
+      total={total}
+      footer={
+        <>
+          Planned payout: {summary.plannedSats.toLocaleString()} sats ·{" "}
+          {feeLabel}
+        </>
+      }
+    />
   );
 }
 

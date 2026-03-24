@@ -9,6 +9,7 @@ import {
 } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
+import { CampaignFilterRow, CampaignKpiStrip } from "~/features/campaign-ui";
 import {
   contestCopy,
   deleteContest,
@@ -136,30 +137,17 @@ export default function ContestsIndexRoute() {
         </Link>
       </div>
 
-      <div className="border-border bg-muted/30 grid grid-cols-2 gap-3 rounded-lg border p-4 text-sm sm:grid-cols-5">
-        <div>
-          <p className="text-muted-foreground text-xs">Total</p>
-          <p className="text-lg font-semibold">{total}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Draft</p>
-          <p className="text-lg font-semibold">{draft}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Live</p>
-          <p className="text-lg font-semibold">{live}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Review / payout</p>
-          <p className="text-lg font-semibold">{activeReview}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Completed</p>
-          <p className="text-lg font-semibold">{done}</p>
-        </div>
-      </div>
+      <CampaignKpiStrip
+        items={[
+          { id: "total", label: "Total contests", value: total },
+          { id: "draft", label: "Draft", value: draft },
+          { id: "live", label: "Live", value: live },
+          { id: "review", label: "Review / payout", value: activeReview },
+          { id: "done", label: "Completed", value: done },
+        ]}
+      />
 
-      <div className="flex flex-wrap items-end gap-3 text-sm">
+      <CampaignFilterRow>
         <label className="flex flex-col gap-1">
           <span className="text-muted-foreground text-xs">Status</span>
           <select
@@ -208,7 +196,7 @@ export default function ContestsIndexRoute() {
             <option value="completed">Recently completed</option>
           </select>
         </label>
-      </div>
+      </CampaignFilterRow>
 
       {data.contests.length === 0 ? (
         <p className="text-muted-foreground text-sm">

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { CampaignSummaryRailShell } from "~/features/campaign-ui";
 import type { PlanType } from "~/features/payments/types";
 
 import { contestCopy } from "../contest-copy";
@@ -114,65 +115,44 @@ export function ContestBuilderSummaryRail({
   }
 
   return (
-    <aside className="border-border bg-card h-fit space-y-4 rounded-lg border p-4 lg:sticky lg:top-6">
-      <div>
-        <h2 className="text-sm font-semibold">{contestCopy.builderSummary}</h2>
-        <p className="text-muted-foreground text-xs">
-          {contestCopy.builderSummaryHint}
-        </p>
-      </div>
-      <dl className="space-y-2 text-sm">
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Source</dt>
-          <dd className="text-right font-medium">
-            {hasSourcePost
-              ? contestCopy.railSourceOk
-              : contestCopy.railSourceMissing}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Metric</dt>
-          <dd className="text-right">{rankingMetric.toLowerCase()}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Ends</dt>
-          <dd className="text-right">
-            {endValid ? end.toLocaleString() : contestCopy.railEndPlaceholder}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Winners</dt>
-          <dd className="text-right">{winnerCount}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Planned pool</dt>
-          <dd className="text-right font-medium">
-            {plannedPayoutSats.toLocaleString()} sats
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Finalization fee</dt>
-          <dd className="text-right">
-            {feePct} · {feeSats.toLocaleString()} sats due at lock
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Plan</dt>
-          <dd className="text-right">{planLabel}</dd>
-        </div>
-      </dl>
-      {warnings.length > 0 ? (
-        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
-          <p className="mb-1 text-xs font-medium text-amber-900 dark:text-amber-100">
-            {contestCopy.railWarningsTitle}
-          </p>
-          <ul className="text-muted-foreground list-inside list-disc text-xs">
-            {warnings.map((w) => (
-              <li key={w}>{w}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </aside>
+    <CampaignSummaryRailShell
+      title={contestCopy.builderSummary}
+      hint={contestCopy.builderSummaryHint}
+      rows={[
+        {
+          label: "Source",
+          value: (
+            <span className="font-medium">
+              {hasSourcePost
+                ? contestCopy.railSourceOk
+                : contestCopy.railSourceMissing}
+            </span>
+          ),
+        },
+        { label: "Metric", value: rankingMetric.toLowerCase() },
+        {
+          label: "Ends",
+          value: endValid
+            ? end.toLocaleString()
+            : contestCopy.railEndPlaceholder,
+        },
+        { label: "Winners", value: winnerCount },
+        {
+          label: "Planned pool",
+          value: (
+            <span className="font-medium">
+              {plannedPayoutSats.toLocaleString()} sats
+            </span>
+          ),
+        },
+        {
+          label: "Finalization fee",
+          value: `${feePct} · ${feeSats.toLocaleString()} sats due at lock`,
+        },
+        { label: "Plan", value: planLabel },
+      ]}
+      warningsTitle={contestCopy.railWarningsTitle}
+      warnings={warnings}
+    />
   );
 }

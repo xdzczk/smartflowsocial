@@ -2,6 +2,7 @@ import type { SerializeFrom } from "@remix-run/node";
 import { Form, Link, useRouteLoaderData } from "@remix-run/react";
 import { useMemo } from "react";
 
+import { CampaignReceiptProofShell } from "~/features/campaign-ui";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import { contestCopy } from "../contest-copy";
@@ -363,63 +364,59 @@ export function ContestDetailView({
         ) : null}
 
         {isCompleted ? (
-          <div className="space-y-3">
-            <div className="border-border bg-card rounded-lg border p-4">
-              <h2 className="mb-2 text-sm font-semibold">
-                {contestCopy.receipt}
-              </h2>
-              <p className="text-sm">{data.receiptSummaryLine}</p>
-            </div>
-            <div className="border-border bg-card rounded-lg border p-4">
-              <h2 className="mb-2 text-sm font-semibold">
-                {contestCopy.publicProof}
-              </h2>
+          <CampaignReceiptProofShell
+            receiptTitle={contestCopy.receipt}
+            receiptBody={<p className="text-sm">{data.receiptSummaryLine}</p>}
+            proofTitle={contestCopy.publicProof}
+            proofBody={
               <pre className="text-muted-foreground overflow-x-auto text-xs whitespace-pre-wrap">
                 {data.publicSummaryText}
               </pre>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {data.winnerAnnouncementText ? (
-                <button
-                  type="button"
-                  className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
-                  onClick={() =>
-                    void navigator.clipboard.writeText(
-                      data.winnerAnnouncementText ?? ""
-                    )
-                  }
-                >
-                  {contestCopy.copyWinnerAnnouncement}
-                </button>
-              ) : null}
-              {data.publicSummaryText ? (
-                <button
-                  type="button"
-                  className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
-                  onClick={() =>
-                    void navigator.clipboard.writeText(
-                      data.publicSummaryText ?? ""
-                    )
-                  }
-                >
-                  {contestCopy.copyPublicSummary}
-                </button>
-              ) : null}
-              {data.fairnessProofText ? (
-                <button
-                  type="button"
-                  className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
-                  onClick={() =>
-                    void navigator.clipboard.writeText(
-                      data.fairnessProofText ?? ""
-                    )
-                  }
-                >
-                  {contestCopy.copyFairnessProofJson}
-                </button>
-              ) : null}
-            </div>
-          </div>
+            }
+            actions={
+              <>
+                {data.winnerAnnouncementText ? (
+                  <button
+                    type="button"
+                    className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
+                    onClick={() =>
+                      void navigator.clipboard.writeText(
+                        data.winnerAnnouncementText ?? ""
+                      )
+                    }
+                  >
+                    {contestCopy.copyWinnerAnnouncement}
+                  </button>
+                ) : null}
+                {data.publicSummaryText ? (
+                  <button
+                    type="button"
+                    className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
+                    onClick={() =>
+                      void navigator.clipboard.writeText(
+                        data.publicSummaryText ?? ""
+                      )
+                    }
+                  >
+                    {contestCopy.copyPublicSummary}
+                  </button>
+                ) : null}
+                {data.fairnessProofText ? (
+                  <button
+                    type="button"
+                    className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
+                    onClick={() =>
+                      void navigator.clipboard.writeText(
+                        data.fairnessProofText ?? ""
+                      )
+                    }
+                  >
+                    {contestCopy.copyFairnessProofJson}
+                  </button>
+                ) : null}
+              </>
+            }
+          />
         ) : null}
 
         {isDraft || isLive || isReview ? (
