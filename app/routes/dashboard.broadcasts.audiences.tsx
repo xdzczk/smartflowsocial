@@ -1,7 +1,9 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, useLoaderData, useSearchParams } from "@remix-run/react";
+import { useState } from "react";
 
+import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { requireUserId } from "~/features/auth";
 import {
   createBroadcastSavedAudience,
@@ -182,6 +184,16 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function BroadcastAudiencesRoute() {
   const { rows, notice, editingRow } = useLoaderData<typeof loader>();
   const [, setSearchParams] = useSearchParams();
+  const [editAudienceType, setEditAudienceType] = useState<
+    "CUSTOM" | "MUTUALS"
+  >(editingRow?.audienceType === "MUTUALS" ? "MUTUALS" : "CUSTOM");
+  const [editSelectedPubkeys, setEditSelectedPubkeys] = useState<string[]>(
+    editingRow?.audienceType === "CUSTOM" ? editingRow.customNpubLines : []
+  );
+  const [createAudienceType, setCreateAudienceType] = useState("CUSTOM");
+  const [createSelectedPubkeys, setCreateSelectedPubkeys] = useState<string[]>(
+    []
+  );
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -204,7 +216,10 @@ export default function BroadcastAudiencesRoute() {
       ) : null}
 
       {editingRow ? (
-        <section className="border-border rounded-lg border p-4">
+        <section
+          key={editingRow.id}
+          className="border-border rounded-lg border p-4"
+        >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-medium">Edit audience</h2>
             <button
@@ -220,6 +235,11 @@ export default function BroadcastAudiencesRoute() {
           <Form method="post" className="mt-4 space-y-3">
             <input type="hidden" name="intent" value="update" />
             <input type="hidden" name="id" value={editingRow.id} />
+            <input
+              type="hidden"
+              name="customNpubs"
+              value={editSelectedPubkeys.join("\n")}
+            />
             <div>
               <label
                 className="mb-1 block text-sm font-medium"
@@ -246,27 +266,30 @@ export default function BroadcastAudiencesRoute() {
                 id="aud-edit-type"
                 name="audienceType"
                 className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                defaultValue={editingRow.audienceType}
+                value={editAudienceType}
+                onChange={(e) =>
+                  setEditAudienceType(
+                    e.target.value === "MUTUALS" ? "MUTUALS" : "CUSTOM"
+                  )
+                }
               >
                 <option value="CUSTOM">Custom list</option>
                 <option value="MUTUALS">Mutuals</option>
               </select>
             </div>
-            <div>
-              <label
-                className="mb-1 block text-sm font-medium"
-                htmlFor="aud-edit-custom"
-              >
-                Custom npubs / hex (optional for mutuals)
-              </label>
-              <textarea
-                id="aud-edit-custom"
-                name="customNpubs"
-                rows={4}
-                defaultValue={editingRow.customNpubLines.join("\n")}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 font-mono text-sm"
+            {editAudienceType === "CUSTOM" ? (
+              <RecipientPicker
+                savedAudiences={rows.map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  audienceType: r.audienceType,
+                  lastResolvedSize: r.lastResolvedSize,
+                  updatedAt: r.updatedAt,
+                }))}
+                selectedPubkeys={editSelectedPubkeys}
+                onChangeSelected={setEditSelectedPubkeys}
               />
-            </div>
+            ) : null}
             <div>
               <label
                 className="mb-1 block text-sm font-medium"
@@ -283,6 +306,11 @@ export default function BroadcastAudiencesRoute() {
             </div>
             <button
               type="submit"
+              disabled={
+                editAudienceType === "CUSTOM"
+                  ? editSelectedPubkeys.length === 0
+                  : null
+              }
               className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
             >
               Save changes
@@ -295,6 +323,11 @@ export default function BroadcastAudiencesRoute() {
         <h2 className="font-medium">Save new audience</h2>
         <Form method="post" className="mt-4 space-y-3">
           <input type="hidden" name="intent" value="create" />
+          <input
+            type="hidden"
+            name="customNpubs"
+            value={createSelectedPubkeys.join("\n")}
+          />
           <div>
             <label
               className="mb-1 block text-sm font-medium"
@@ -320,25 +353,26 @@ export default function BroadcastAudiencesRoute() {
               id="aud-type"
               name="audienceType"
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              value={createAudienceType}
+              onChange={(e) => setCreateAudienceType(e.target.value)}
             >
               <option value="CUSTOM">Custom list</option>
               <option value="MUTUALS">Mutuals</option>
             </select>
           </div>
-          <div>
-            <label
-              className="mb-1 block text-sm font-medium"
-              htmlFor="aud-custom"
-            >
-              Custom npubs / hex (optional for mutuals)
-            </label>
-            <textarea
-              id="aud-custom"
-              name="customNpubs"
-              rows={4}
-              className="border-input bg-background w-full rounded-md border px-3 py-2 font-mono text-sm"
+          {createAudienceType === "CUSTOM" ? (
+            <RecipientPicker
+              savedAudiences={rows.map((r) => ({
+                id: r.id,
+                name: r.name,
+                audienceType: r.audienceType,
+                lastResolvedSize: r.lastResolvedSize,
+                updatedAt: r.updatedAt,
+              }))}
+              selectedPubkeys={createSelectedPubkeys}
+              onChangeSelected={setCreateSelectedPubkeys}
             />
-          </div>
+          ) : null}
           <div>
             <label
               className="mb-1 block text-sm font-medium"
@@ -354,6 +388,11 @@ export default function BroadcastAudiencesRoute() {
           </div>
           <button
             type="submit"
+            disabled={
+              createAudienceType === "CUSTOM"
+                ? createSelectedPubkeys.length === 0
+                : null
+            }
             className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
           >
             Save audience

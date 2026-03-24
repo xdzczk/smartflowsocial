@@ -50,6 +50,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
 
   if (!campaignId) {
+    const unsubscribePreviewBaseUrl =
+      process.env["APP_URL"]?.trim().replace(/\/$/, "") ??
+      new URL(request.url).origin;
     const [savedAudiences, recentBroadcastMessageSnippet] = await Promise.all([
       listBroadcastSavedAudiences(userId),
       getLatestBroadcastMessageSnippetForUser(userId),
@@ -79,9 +82,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       savedForNew,
       userTimezone,
       recentBroadcastMessageSnippet,
+      unsubscribePreviewBaseUrl,
     });
   }
 
+  const unsubscribePreviewBaseUrl =
+    process.env["APP_URL"]?.trim().replace(/\/$/, "") ??
+    new URL(request.url).origin;
   const campaign = await getBroadcastCampaignForUser(campaignId, userId);
   if (!campaign) {
     return json({
@@ -93,6 +100,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       savedForNew: null,
       userTimezone,
       recentBroadcastMessageSnippet: null,
+      unsubscribePreviewBaseUrl,
     });
   }
 
@@ -105,6 +113,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     savedForNew: null,
     userTimezone,
     recentBroadcastMessageSnippet: null,
+    unsubscribePreviewBaseUrl,
   });
 }
 
@@ -409,6 +418,7 @@ export default function BroadcastNewRoute() {
     savedForNew,
     userTimezone,
     recentBroadcastMessageSnippet,
+    unsubscribePreviewBaseUrl,
   } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
@@ -452,6 +462,7 @@ export default function BroadcastNewRoute() {
           savedForNew={savedForNew}
           userTimezone={userTimezone}
           recentBroadcastMessageSnippet={recentBroadcastMessageSnippet}
+          unsubscribePreviewBaseUrl={unsubscribePreviewBaseUrl}
         />
       ) : (
         <BroadcastNewCampaignPhase

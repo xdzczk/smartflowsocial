@@ -2,10 +2,13 @@ import { BroadcastSuppressionReasonCode } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
+import { useState } from "react";
 
+import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { requireUserId } from "~/features/auth";
 import {
   addBroadcastSuppression,
+  listBroadcastSavedAudiences,
   listSuppressionsByUser,
   removeBroadcastSuppression,
 } from "~/features/broadcast";
@@ -32,8 +35,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const notice = url.searchParams.get("notice");
-  const rows = await listSuppressionsByUser(userId);
-  return json({ rows, notice });
+  const [rows, savedAudiences] = await Promise.all([
+    listSuppressionsByUser(userId),
+    listBroadcastSavedAudiences(userId),
+  ]);
+  return json({ rows, notice, savedAudiences });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -45,7 +51,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = form.get("intent");
 
   if (intent === "add") {
-    const pubkey = String(form.get("recipientPubkey") ?? "").trim();
+    const rawList = String(form.get("recipientPubkeys") ?? "");
+    const pubkeys = rawList
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
     const reason =
       typeof form.get("reason") === "string" ? form.get("reason") : "";
     const reasonCodeRaw = String(form.get("reasonCode") ?? "OTHER");
@@ -59,38 +69,15 @@ export async function action({ request }: ActionFunctionArgs) {
     )
       ? (reasonCodeRaw as BroadcastSuppressionReasonCode)
       : BroadcastSuppressionReasonCode.OTHER;
-    await addBroadcastSuppression(userId, pubkey, {
-      reason: typeof reason === "string" ? reason : undefined,
-      reasonCode,
-      permanent,
-      expiresAt: permanent ? null : expiresAt,
-    });
-    return redirect("/dashboard/broadcasts/suppression");
-  }
-
-  if (intent === "bulk_add") {
-    const raw = String(form.get("bulkLines") ?? "");
-    const lines = raw
-      .split(/[\r\n,]+/)
-      .map((l) => l.trim())
-      .filter(Boolean);
-    let added = 0;
-    for (const line of lines) {
-      try {
-        await addBroadcastSuppression(userId, line, {
-          reasonCode: BroadcastSuppressionReasonCode.IMPORTED,
-          permanent: true,
-        });
-        added += 1;
-      } catch {
-        /* skip invalid */
-      }
+    for (const pubkey of pubkeys) {
+      await addBroadcastSuppression(userId, pubkey, {
+        reason: typeof reason === "string" ? reason : undefined,
+        reasonCode,
+        permanent,
+        expiresAt: permanent ? null : expiresAt,
+      });
     }
-    return redirect(
-      `/dashboard/broadcasts/suppression?notice=${encodeURIComponent(
-        `Imported ${String(added)} of ${String(lines.length)} entries.`
-      )}`
-    );
+    return redirect("/dashboard/broadcasts/suppression");
   }
 
   if (intent === "remove") {
@@ -103,7 +90,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function BroadcastSuppressionRoute() {
-  const { rows, notice } = useLoaderData<typeof loader>();
+  const { rows, notice, savedAudiences } = useLoaderData<typeof loader>();
+  const [selectedPubkeys, setSelectedPubkeys] = useState<string[]>([]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -132,24 +120,25 @@ export default function BroadcastSuppressionRoute() {
       </div>
 
       <section className="border-border rounded-lg border p-4">
-        <h2 className="font-medium">Add manually</h2>
+        <h2 className="font-medium">Add suppressions</h2>
         <Form method="post" className="mt-3 space-y-3">
           <input type="hidden" name="intent" value="add" />
-          <div>
-            <label
-              htmlFor="broadcast-suppression-pubkey"
-              className="mb-1 block text-sm font-medium"
-            >
-              Recipient npub or hex
-            </label>
-            <input
-              id="broadcast-suppression-pubkey"
-              name="recipientPubkey"
-              required
-              className="border-input bg-background w-full rounded-md border px-3 py-2 font-mono text-sm"
-              placeholder="npub1… or 64-char hex"
-            />
-          </div>
+          <input
+            type="hidden"
+            name="recipientPubkeys"
+            value={selectedPubkeys.join("\n")}
+          />
+          <RecipientPicker
+            savedAudiences={savedAudiences.map((s) => ({
+              id: s.id,
+              name: s.name,
+              audienceType: s.audienceType,
+              lastResolvedSize: s.lastResolvedSize,
+              updatedAt: s.updatedAt,
+            }))}
+            selectedPubkeys={selectedPubkeys}
+            onChangeSelected={setSelectedPubkeys}
+          />
           <div>
             <label
               htmlFor="broadcast-suppression-reason-code"
@@ -202,31 +191,11 @@ export default function BroadcastSuppressionRoute() {
           </div>
           <button
             type="submit"
+            disabled={selectedPubkeys.length === 0}
             className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
           >
-            Add
-          </button>
-        </Form>
-      </section>
-
-      <section className="border-border rounded-lg border p-4">
-        <h2 className="font-medium">Bulk import</h2>
-        <p className="text-muted-foreground mt-1 text-xs">
-          One npub or hex per line or comma-separated. Invalid lines are
-          skipped.
-        </p>
-        <Form method="post" className="mt-3 space-y-2">
-          <input type="hidden" name="intent" value="bulk_add" />
-          <textarea
-            name="bulkLines"
-            rows={6}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 font-mono text-sm"
-          />
-          <button
-            type="submit"
-            className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium"
-          >
-            Import
+            Add{" "}
+            {selectedPubkeys.length > 0 ? `(${selectedPubkeys.length})` : ""}
           </button>
         </Form>
       </section>

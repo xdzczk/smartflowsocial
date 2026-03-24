@@ -171,31 +171,20 @@ function formatPostOptionLabel(p: {
   return `${caption} · ${date}`;
 }
 
-type BuilderStep = 1 | 2 | 3 | 4;
 const STEP_ACTIVE_BUTTON_CLASSES = "border-primary bg-primary/10";
 const STEP_INACTIVE_BUTTON_CLASSES = "border-border bg-background";
 
-function stepLabel(step: BuilderStep): string {
-  if (step === 1) return "Source";
-  if (step === 2) return "Ranking";
-  if (step === 3) return "Rewards";
-  return "Review & launch";
-}
-
-// eslint-disable-next-line sonarjs/cognitive-complexity -- route coordinates a 4-step builder with many controlled inputs and validations.
+// eslint-disable-next-line sonarjs/cognitive-complexity -- route coordinates many controlled inputs and launch validations in one builder page.
 export default function NewContestRoute() {
   const actionData = useActionData<typeof action>();
   const loaderData = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
-  const [step, setStep] = useState<BuilderStep>(1);
   const [prizeMode, setPrizeMode] = useState<"EQUAL" | "RANKED">("EQUAL");
   const [winnerCount, setWinnerCount] = useState(3);
   const [postSearch, setPostSearch] = useState("");
   const [selectedSourcePostId, setSelectedSourcePostId] = useState("");
   const [composerSessionKey, setComposerSessionKey] = useState(0);
-  const [sourceMode, setSourceMode] = useState<"create" | "existing">(
-    "existing"
-  );
+  const [sourceMode, setSourceMode] = useState<"create" | "existing">("create");
   const [contestEndAt, setContestEndAt] = useState("");
   const [equalRewardSats, setEqualRewardSats] = useState(1000);
   const [rankRewards, setRankRewards] = useState<number[]>(() =>
@@ -297,9 +286,6 @@ export default function NewContestRoute() {
           : null,
   };
 
-  const canGoNextFromSource = !stepIssues.source;
-  const canGoNextFromRanking = !stepIssues.ranking;
-  const canGoNextFromRewards = !stepIssues.rewards;
   const canSubmit = selectedSourcePostId.trim() !== "";
 
   return (
@@ -316,25 +302,6 @@ export default function NewContestRoute() {
           {actionData.error}
         </div>
       ) : null}
-
-      <div className="border-border bg-card flex flex-wrap gap-2 rounded-lg border p-3">
-        {[1, 2, 3, 4].map((n) => {
-          const current = n as BuilderStep;
-          const isActive = step === current;
-          return (
-            <button
-              key={current}
-              type="button"
-              onClick={() => {
-                setStep(current);
-              }}
-              className={`rounded-md border px-3 py-1.5 text-sm ${isActive ? STEP_ACTIVE_BUTTON_CLASSES : STEP_INACTIVE_BUTTON_CLASSES}`}
-            >
-              {current}. {stepLabel(current)}
-            </button>
-          );
-        })}
-      </div>
 
       <div className="flex flex-wrap gap-2">
         <button
@@ -367,469 +334,422 @@ export default function NewContestRoute() {
 
       <div className="lg:grid lg:grid-cols-[1fr,minmax(260px,320px)] lg:items-start lg:gap-8">
         <Form method="post" className="min-w-0 space-y-6">
-          {step === 1 ? (
-            <section className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="title">
-                Contest title
-              </label>
-              <input
-                id="title"
-                name="title"
-                className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-              />
+          <section className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="title">
+              Contest title
+            </label>
+            <input
+              id="title"
+              name="title"
+              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+            />
+            <p className="text-muted-foreground text-xs">{entryRuleSummary}</p>
+          </section>
+
+          <section className="space-y-3">
+            <div className="space-y-1">
+              <span className="text-sm font-medium">Source post</span>
               <p className="text-muted-foreground text-xs">
-                {entryRuleSummary}
+                Each direct reply to this note is an entry. Publish a new note
+                or pick an existing published post.
               </p>
-            </section>
-          ) : null}
-
-          {step === 1 ? (
-            <section className="space-y-3">
-              <div className="space-y-1">
-                <span className="text-sm font-medium">Source post</span>
-                <p className="text-muted-foreground text-xs">
-                  Each direct reply to this note is an entry. Publish a new note
-                  or pick an existing published post.
-                </p>
-              </div>
-              {sourceMode === "create" ? (
-                <ContestEmbeddedComposer
-                  loaderData={loaderData as Record<string, unknown>}
-                  composerKey={composerSessionKey}
-                  onEmbedPublishSuccess={onContestComposerPublished}
-                />
-              ) : null}
-              {sourceMode === "create" && posts.length === 0 ? (
-                <p className="text-muted-foreground border-border bg-muted/20 rounded-md border px-3 py-2 text-sm">
-                  No eligible published posts yet (last 90 days, with a Nostr
-                  note id). Publish with the composer — your post will appear
-                  here for selection.
-                </p>
-              ) : null}
-              {sourceMode === "existing" || posts.length > 0 ? (
-                <>
-                  <label
-                    className="text-muted-foreground text-sm"
-                    htmlFor="postSearch"
-                  >
-                    Search posts
-                  </label>
-                  <input
-                    id="postSearch"
-                    type="search"
-                    value={postSearch}
-                    onChange={(e) => {
-                      setPostSearch(e.target.value);
-                    }}
-                    placeholder="Filter by caption…"
-                    className="border-border bg-background mb-2 w-full max-w-md rounded-md border px-3 py-2 text-sm"
-                  />
-                  {filteredPosts.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">
-                      {posts.length === 0
-                        ? "No published posts with a Nostr id yet."
-                        : "No posts match your search."}
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {filteredPosts.map((p) => {
-                        const selected = p.id === selectedSourcePostId;
-                        return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedSourcePostId(p.id);
-                            }}
-                            className={`border-border bg-background rounded-md border p-3 text-left ${selected ? "border-primary bg-primary/5" : ""}`}
-                          >
-                            <p className="truncate text-sm font-medium">
-                              {p.caption?.trim() ?? `Post ${p.id.slice(0, 8)}`}
-                            </p>
-                            <p className="text-muted-foreground mt-1 text-xs">
-                              {new Date(p.publishedAt).toLocaleString()}
-                            </p>
-                            <p className="text-muted-foreground mt-1 font-mono text-xs">
-                              {p.id.slice(0, 12)}…
-                            </p>
-                            <input
-                              type="radio"
-                              name="sourcePostId"
-                              value={p.id}
-                              checked={selected}
-                              readOnly
-                              className="sr-only"
-                            />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              ) : null}
-              {selectedSourcePost ? (
-                <div className="border-border bg-muted/30 rounded-md border p-3">
-                  <p className="text-xs font-medium">Selected source</p>
-                  <p className="mt-1 text-sm">
-                    {formatPostOptionLabel(selectedSourcePost)}
-                  </p>
-                </div>
-              ) : null}
-              {stepIssues.source ? (
-                <p className="text-destructive text-xs">{stepIssues.source}</p>
-              ) : null}
-            </section>
-          ) : null}
-
-          {step === 2 ? (
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="rankingMetric">
-                  Ranking metric
-                </label>
-                <select
-                  id="rankingMetric"
-                  name="rankingMetric"
-                  value={rankingMetric}
-                  onChange={(e) => {
-                    setRankingMetric(
-                      e.target.value as "REACTIONS" | "ZAPS" | "SATS_ZAPPED"
-                    );
-                  }}
-                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+            </div>
+            {sourceMode === "create" ? (
+              <ContestEmbeddedComposer
+                loaderData={loaderData as Record<string, unknown>}
+                composerKey={composerSessionKey}
+                onEmbedPublishSuccess={onContestComposerPublished}
+              />
+            ) : null}
+            {sourceMode === "create" && posts.length === 0 ? (
+              <p className="text-muted-foreground border-border bg-muted/20 rounded-md border px-3 py-2 text-sm">
+                No eligible published posts yet (last 90 days, with a Nostr note
+                id). Publish with the composer — your post will appear here for
+                selection.
+              </p>
+            ) : null}
+            {sourceMode === "existing" ? (
+              <>
+                <label
+                  className="text-muted-foreground text-sm"
+                  htmlFor="postSearch"
                 >
-                  <option value="REACTIONS">Most reactions</option>
-                  <option value="ZAPS">Most zaps</option>
-                  <option value="SATS_ZAPPED">Most sats zapped</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="contestEndAt">
-                  Contest end time
+                  Search posts
                 </label>
                 <input
-                  id="contestEndAt"
-                  name="contestEndAt"
-                  type="datetime-local"
-                  required
-                  value={contestEndAt}
+                  id="postSearch"
+                  type="search"
+                  value={postSearch}
                   onChange={(e) => {
-                    setContestEndAt(e.target.value);
+                    setPostSearch(e.target.value);
                   }}
-                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  placeholder="Filter by caption…"
+                  className="border-border bg-background mb-2 w-full max-w-md rounded-md border px-3 py-2 text-sm"
                 />
-              </div>
-            </section>
-          ) : null}
-          {step === 2 ? (
-            <div className="border-border bg-muted/20 space-y-2 rounded-md border p-3 text-xs">
-              <p className="font-medium">Eligibility filters</p>
-              <p className="text-muted-foreground">
-                Low-trust uses your account trust rules.
-                Muted/blocked/non-followers are checked at freeze.
-              </p>
-              <p className="text-muted-foreground">
-                Tie-break: {tieBreakPreview}
-              </p>
-              {stepIssues.ranking ? (
-                <p className="text-destructive">{stepIssues.ranking}</p>
-              ) : null}
-            </div>
-          ) : null}
-
-          {step === 3 ? (
-            <section className="space-y-3">
-              <p className="text-sm font-medium">Prize structure</p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
-                  <input
-                    type="radio"
-                    name="prizeMode"
-                    value="EQUAL"
-                    checked={prizeMode === "EQUAL"}
-                    onChange={() => {
-                      setPrizeMode("EQUAL");
-                    }}
-                  />
-                  Equal rewards
-                </label>
-                <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
-                  <input
-                    type="radio"
-                    name="prizeMode"
-                    value="RANKED"
-                    checked={prizeMode === "RANKED"}
-                    onChange={() => {
-                      setPrizeMode("RANKED");
-                    }}
-                  />
-                  Rank-based rewards
-                </label>
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm" htmlFor="winnerCount">
-                    Number of winners
-                  </label>
-                  <input
-                    id="winnerCount"
-                    name="winnerCount"
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={winnerCount}
-                    onChange={(e) => {
-                      const n = parseInt(e.target.value, 10);
-                      const next = Number.isFinite(n)
-                        ? Math.min(50, Math.max(1, n))
-                        : winnerCount;
-                      setWinnerCount(next);
-                      setRankRewards((prev) => {
-                        const arr = [...prev];
-                        while (arr.length < next) arr.push(0);
-                        return arr.slice(0, next);
-                      });
-                    }}
-                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm" htmlFor="equalRewardSats">
-                    Sats per winner (equal mode)
-                  </label>
-                  <input
-                    id="equalRewardSats"
-                    name="equalRewardSats"
-                    type="number"
-                    min={0}
-                    value={equalRewardSats}
-                    onChange={(e) => {
-                      const n = parseInt(e.target.value, 10);
-                      setEqualRewardSats(
-                        Number.isFinite(n) ? Math.max(0, n) : 0
-                      );
-                    }}
-                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                  />
-                </div>
-              </div>
-              {prizeMode === "RANKED" ? (
-                <div className="space-y-2">
-                  <p className="text-muted-foreground text-xs">
-                    Set sats for each rank from 1 through {winnerCount}. Unused
-                    ranks can be 0.
+                {filteredPosts.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    {posts.length === 0
+                      ? "No published posts with a Nostr id yet."
+                      : "No posts match your search."}
                   </p>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {Array.from({ length: winnerCount }, (_, i) => {
-                      const rank = i + 1;
+                ) : (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {filteredPosts.map((p) => {
+                      const selected = p.id === selectedSourcePostId;
                       return (
-                        <div key={rank} className="space-y-1">
-                          <label
-                            className="text-muted-foreground text-xs"
-                            htmlFor={`rankReward_${rank}`}
-                          >
-                            Rank {rank} (sats)
-                          </label>
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedSourcePostId(p.id);
+                          }}
+                          className={`border-border bg-background rounded-md border p-3 text-left ${selected ? "border-primary bg-primary/5" : ""}`}
+                        >
+                          <p className="truncate text-sm font-medium">
+                            {p.caption?.trim() ?? `Post ${p.id.slice(0, 8)}`}
+                          </p>
+                          <p className="text-muted-foreground mt-1 text-xs">
+                            {new Date(p.publishedAt).toLocaleString()}
+                          </p>
+                          <p className="text-muted-foreground mt-1 font-mono text-xs">
+                            {p.id.slice(0, 12)}…
+                          </p>
                           <input
-                            id={`rankReward_${rank}`}
-                            name={`rankReward_${rank}`}
-                            type="number"
-                            min={0}
-                            value={rankRewards[i] ?? 0}
-                            onChange={(e) => {
-                              const n = parseInt(e.target.value, 10);
-                              const v = Number.isFinite(n) ? Math.max(0, n) : 0;
-                              setRankRewards((prev) => {
-                                const next = [...prev];
-                                next[i] = v;
-                                return next;
-                              });
-                            }}
-                            className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                            type="radio"
+                            name="sourcePostId"
+                            value={p.id}
+                            checked={selected}
+                            readOnly
+                            className="sr-only"
                           />
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-          {step === 3 ? (
-            <div className="border-border bg-muted/20 space-y-2 rounded-md border p-3 text-xs">
-              <p className="font-medium">Reward summary</p>
-              <p className="text-muted-foreground">{prizeSummary}</p>
-              {stepIssues.rewards ? (
-                <p className="text-destructive">{stepIssues.rewards}</p>
-              ) : null}
+                )}
+              </>
+            ) : null}
+            {selectedSourcePost ? (
+              <div className="border-border bg-muted/30 rounded-md border p-3">
+                <p className="text-xs font-medium">Selected source</p>
+                <p className="mt-1 text-sm">
+                  {formatPostOptionLabel(selectedSourcePost)}
+                </p>
+              </div>
+            ) : null}
+            {stepIssues.source ? (
+              <p className="text-destructive text-xs">{stepIssues.source}</p>
+            ) : null}
+          </section>
+
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="rankingMetric">
+                Ranking metric
+              </label>
+              <select
+                id="rankingMetric"
+                name="rankingMetric"
+                value={rankingMetric}
+                onChange={(e) => {
+                  setRankingMetric(
+                    e.target.value as "REACTIONS" | "ZAPS" | "SATS_ZAPPED"
+                  );
+                }}
+                className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              >
+                <option value="REACTIONS">Most reactions</option>
+                <option value="ZAPS">Most zaps</option>
+                <option value="SATS_ZAPPED">Most sats zapped</option>
+              </select>
             </div>
-          ) : null}
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="contestEndAt">
+                Contest end time
+              </label>
+              <input
+                id="contestEndAt"
+                name="contestEndAt"
+                type="datetime-local"
+                required
+                value={contestEndAt}
+                onChange={(e) => {
+                  setContestEndAt(e.target.value);
+                }}
+                className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </div>
+          </section>
+          <div className="border-border bg-muted/20 space-y-2 rounded-md border p-3 text-xs">
+            <p className="font-medium">Eligibility filters</p>
+            <p className="text-muted-foreground">
+              Low-trust uses your account trust rules.
+              Muted/blocked/non-followers are checked at freeze.
+            </p>
+            <p className="text-muted-foreground">
+              Tie-break: {tieBreakPreview}
+            </p>
+            {stepIssues.ranking ? (
+              <p className="text-destructive">{stepIssues.ranking}</p>
+            ) : null}
+          </div>
 
-          {step === 2 ? (
-            <section className="space-y-2">
-              <p className="text-sm font-medium">Eligibility filters</p>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <label>
-                  <input
-                    type="checkbox"
-                    name="excludeMuted"
-                    checked={excludeMuted}
-                    onChange={(e) => {
-                      setExcludeMuted(e.target.checked);
-                    }}
-                  />{" "}
-                  Exclude muted
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    name="excludeBlocked"
-                    checked={excludeBlocked}
-                    onChange={(e) => {
-                      setExcludeBlocked(e.target.checked);
-                    }}
-                  />{" "}
-                  Exclude blocked
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    name="excludeLowTrust"
-                    checked={excludeLowTrust}
-                    onChange={(e) => {
-                      setExcludeLowTrust(e.target.checked);
-                    }}
-                  />{" "}
-                  Exclude low trust
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    name="excludeNonFollowers"
-                    checked={excludeNonFollowers}
-                    onChange={(e) => {
-                      setExcludeNonFollowers(e.target.checked);
-                    }}
-                  />{" "}
-                  Exclude non-followers
-                </label>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+          <section className="space-y-3">
+            <p className="text-sm font-medium">Prize structure</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
                 <input
-                  name="minAccountAgeDays"
+                  type="radio"
+                  name="prizeMode"
+                  value="EQUAL"
+                  checked={prizeMode === "EQUAL"}
+                  onChange={() => {
+                    setPrizeMode("EQUAL");
+                  }}
+                />
+                Equal rewards
+              </label>
+              <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
+                <input
+                  type="radio"
+                  name="prizeMode"
+                  value="RANKED"
+                  checked={prizeMode === "RANKED"}
+                  onChange={() => {
+                    setPrizeMode("RANKED");
+                  }}
+                />
+                Rank-based rewards
+              </label>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm" htmlFor="winnerCount">
+                  Number of winners
+                </label>
+                <input
+                  id="winnerCount"
+                  name="winnerCount"
                   type="number"
-                  min={0}
-                  placeholder="Min account age (days)"
-                  value={minAccountAgeDays}
+                  min={1}
+                  max={50}
+                  value={winnerCount}
                   onChange={(e) => {
                     const n = parseInt(e.target.value, 10);
-                    setMinAccountAgeDays(
-                      Number.isFinite(n) ? Math.max(0, n) : 0
+                    const next = Number.isFinite(n)
+                      ? Math.min(50, Math.max(1, n))
+                      : winnerCount;
+                    setWinnerCount(next);
+                    setRankRewards((prev) => {
+                      const arr = [...prev];
+                      while (arr.length < next) arr.push(0);
+                      return arr.slice(0, next);
+                    });
+                  }}
+                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm" htmlFor="equalRewardSats">
+                  Sats per winner (equal mode)
+                </label>
+                <input
+                  id="equalRewardSats"
+                  name="equalRewardSats"
+                  type="number"
+                  min={0}
+                  value={equalRewardSats}
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    setEqualRewardSats(Number.isFinite(n) ? Math.max(0, n) : 0);
+                  }}
+                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            {prizeMode === "RANKED" ? (
+              <div className="space-y-2">
+                <p className="text-muted-foreground text-xs">
+                  Set sats for each rank from 1 through {winnerCount}. Unused
+                  ranks can be 0.
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: winnerCount }, (_, i) => {
+                    const rank = i + 1;
+                    return (
+                      <div key={rank} className="space-y-1">
+                        <label
+                          className="text-muted-foreground text-xs"
+                          htmlFor={`rankReward_${rank}`}
+                        >
+                          Rank {rank} (sats)
+                        </label>
+                        <input
+                          id={`rankReward_${rank}`}
+                          name={`rankReward_${rank}`}
+                          type="number"
+                          min={0}
+                          value={rankRewards[i] ?? 0}
+                          onChange={(e) => {
+                            const n = parseInt(e.target.value, 10);
+                            const v = Number.isFinite(n) ? Math.max(0, n) : 0;
+                            setRankRewards((prev) => {
+                              const next = [...prev];
+                              next[i] = v;
+                              return next;
+                            });
+                          }}
+                          className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                        />
+                      </div>
                     );
-                  }}
-                  className="border-border bg-background rounded-md border px-3 py-2 text-sm"
-                />
-                <input
-                  name="minFollowers"
-                  type="number"
-                  min={0}
-                  placeholder="Min followers"
-                  value={minFollowers}
-                  onChange={(e) => {
-                    const n = parseInt(e.target.value, 10);
-                    setMinFollowers(Number.isFinite(n) ? Math.max(0, n) : 0);
-                  }}
-                  className="border-border bg-background rounded-md border px-3 py-2 text-sm"
-                />
+                  })}
+                </div>
               </div>
-            </section>
-          ) : null}
+            ) : null}
+          </section>
+          <div className="border-border bg-muted/20 space-y-2 rounded-md border p-3 text-xs">
+            <p className="font-medium">Reward summary</p>
+            <p className="text-muted-foreground">{prizeSummary}</p>
+            {stepIssues.rewards ? (
+              <p className="text-destructive">{stepIssues.rewards}</p>
+            ) : null}
+          </div>
 
-          {step === 4 ? (
-            <section className="border-border bg-card space-y-3 rounded-lg border p-4">
-              <h2 className="text-sm font-semibold">Contest review</h2>
-              <div className="grid gap-2 text-sm sm:grid-cols-2">
-                <p>
-                  <span className="text-muted-foreground">Source:</span>{" "}
-                  {selectedSourcePost
-                    ? formatPostOptionLabel(selectedSourcePost)
-                    : "Not selected"}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Metric:</span>{" "}
-                  {rankingMetric.toLowerCase()}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Ends:</span>{" "}
-                  {contestEndAt
-                    ? new Date(contestEndAt).toLocaleString()
-                    : "Not set"}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Filters:</span>{" "}
-                  {fairFiltersSummary}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Tie-break:</span>{" "}
-                  {tieBreakPreview}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Prize:</span>{" "}
-                  {prizeSummary}
-                </p>
-              </div>
-              <div className="text-muted-foreground text-xs">
-                {entryRuleSummary}
-              </div>
-              {Object.values(stepIssues).some(Boolean) ? (
-                <ul className="text-destructive list-inside list-disc text-xs">
-                  {stepIssues.source ? <li>{stepIssues.source}</li> : null}
-                  {stepIssues.ranking ? <li>{stepIssues.ranking}</li> : null}
-                  {stepIssues.rewards ? <li>{stepIssues.rewards}</li> : null}
-                  {!excludeMuted &&
-                  !excludeBlocked &&
-                  !excludeLowTrust &&
-                  !excludeNonFollowers ? (
-                    <li>No eligibility filters enabled.</li>
-                  ) : null}
-                </ul>
-              ) : null}
-            </section>
-          ) : null}
+          <section className="space-y-2">
+            <p className="text-sm font-medium">Eligibility filters</p>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <label>
+                <input
+                  type="checkbox"
+                  name="excludeMuted"
+                  checked={excludeMuted}
+                  onChange={(e) => {
+                    setExcludeMuted(e.target.checked);
+                  }}
+                />{" "}
+                Exclude muted
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  name="excludeBlocked"
+                  checked={excludeBlocked}
+                  onChange={(e) => {
+                    setExcludeBlocked(e.target.checked);
+                  }}
+                />{" "}
+                Exclude blocked
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  name="excludeLowTrust"
+                  checked={excludeLowTrust}
+                  onChange={(e) => {
+                    setExcludeLowTrust(e.target.checked);
+                  }}
+                />{" "}
+                Exclude low trust
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  name="excludeNonFollowers"
+                  checked={excludeNonFollowers}
+                  onChange={(e) => {
+                    setExcludeNonFollowers(e.target.checked);
+                  }}
+                />{" "}
+                Exclude non-followers
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                name="minAccountAgeDays"
+                type="number"
+                min={0}
+                placeholder="Min account age (days)"
+                value={minAccountAgeDays}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  setMinAccountAgeDays(Number.isFinite(n) ? Math.max(0, n) : 0);
+                }}
+                className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              />
+              <input
+                name="minFollowers"
+                type="number"
+                min={0}
+                placeholder="Min followers"
+                value={minFollowers}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  setMinFollowers(Number.isFinite(n) ? Math.max(0, n) : 0);
+                }}
+                className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              />
+            </div>
+          </section>
+
+          <section className="border-border bg-card space-y-3 rounded-lg border p-4">
+            <h2 className="text-sm font-semibold">Launch readiness</h2>
+            <div className="grid gap-2 text-sm sm:grid-cols-2">
+              <p>
+                <span className="text-muted-foreground">Source:</span>{" "}
+                {selectedSourcePost
+                  ? formatPostOptionLabel(selectedSourcePost)
+                  : "Not selected"}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Metric:</span>{" "}
+                {rankingMetric.toLowerCase()}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Ends:</span>{" "}
+                {contestEndAt
+                  ? new Date(contestEndAt).toLocaleString()
+                  : "Not set"}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Filters:</span>{" "}
+                {fairFiltersSummary}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Tie-break:</span>{" "}
+                {tieBreakPreview}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Prize:</span>{" "}
+                {prizeSummary}
+              </p>
+            </div>
+            <div className="text-muted-foreground text-xs">
+              {entryRuleSummary}
+            </div>
+            {Object.values(stepIssues).some(Boolean) ? (
+              <ul className="text-destructive list-inside list-disc text-xs">
+                {stepIssues.source ? <li>{stepIssues.source}</li> : null}
+                {stepIssues.ranking ? <li>{stepIssues.ranking}</li> : null}
+                {stepIssues.rewards ? <li>{stepIssues.rewards}</li> : null}
+                {!excludeMuted &&
+                !excludeBlocked &&
+                !excludeLowTrust &&
+                !excludeNonFollowers ? (
+                  <li>No eligibility filters enabled.</li>
+                ) : null}
+              </ul>
+            ) : null}
+          </section>
 
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              {step > 1 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep((s) => (s > 1 ? ((s - 1) as BuilderStep) : s));
-                  }}
-                  className="border-border bg-background rounded-md border px-3 py-2 text-sm"
-                >
-                  Back
-                </button>
-              ) : null}
-              {step < 4 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (step === 1 && canGoNextFromSource) setStep(2);
-                    if (step === 2 && canGoNextFromRanking) setStep(3);
-                    if (step === 3 && canGoNextFromRewards) setStep(4);
-                  }}
-                  className="bg-primary text-primary-foreground rounded-md px-3 py-2 text-sm"
-                >
-                  Continue
-                </button>
-              ) : null}
-            </div>
+            <div />
 
             <button
               type="submit"
               name="launchNow"
               value="1"
-              disabled={!canSubmit || step !== 4}
+              disabled={!canSubmit}
               className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:pointer-events-none disabled:opacity-50"
             >
               Launch contest

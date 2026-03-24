@@ -18,6 +18,7 @@ import {
 } from "~/features/broadcast/broadcast-delivery-copy";
 import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import { getBroadcastScheduleTimeLabel } from "~/features/broadcast/broadcast-schedule-label";
+import { formatBroadcastUnsubscribeFooter } from "~/features/broadcast/broadcast-unsubscribe-copy";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
@@ -30,6 +31,7 @@ import {
 const BROADCAST_QUICK_SCHEDULE_INTERVALS_HOURS = [
   0.25, 0.5, 1, 12, 24,
 ] as const;
+const UNSUBSCRIBE_PREVIEW_TOKEN = "your_unique_token";
 
 function normalizeHexLines(lines: string[]): string[] {
   const out: string[] = [];
@@ -113,6 +115,7 @@ export interface BroadcastNewDraftFormProps {
   } | null;
   userTimezone: string;
   recentBroadcastMessageSnippet?: string | null;
+  unsubscribePreviewBaseUrl: string;
 }
 
 /* eslint-disable sonarjs/cognitive-complexity -- guided composer coordinates audience, message, delivery */
@@ -125,6 +128,7 @@ export function BroadcastNewDraftForm({
   savedForNew,
   userTimezone,
   recentBroadcastMessageSnippet = null,
+  unsubscribePreviewBaseUrl,
 }: BroadcastNewDraftFormProps) {
   const savedFiltered = useMemo(
     () =>
@@ -252,15 +256,17 @@ export function BroadcastNewDraftForm({
     hasScheduleTimeForSubmit && scheduleTimeLabel
       ? scheduleTimeLabel
       : "After review";
+  const hasMessage = messageBody.trim().length > 0;
+  const unsubscribePreviewUrl = `${unsubscribePreviewBaseUrl.replace(/\/$/, "")}/broadcast/unsubscribe?t=${UNSUBSCRIBE_PREVIEW_TOKEN}`;
+  const messagePreviewText = hasMessage
+    ? `${messageBody}\n\n${formatBroadcastUnsubscribeFooter(unsubscribePreviewUrl)}`
+    : "";
 
   const canContinue =
-    messageBody.trim().length > 0 &&
-    (audienceMode === "mutuals" || selectedPubkeys.length > 0);
+    hasMessage && (audienceMode === "mutuals" || selectedPubkeys.length > 0);
 
   const canSaveAudience =
-    audienceMode === "selected" &&
-    selectedPubkeys.length > 0 &&
-    messageBody.trim().length > 0;
+    audienceMode === "selected" && selectedPubkeys.length > 0 && hasMessage;
 
   const primaryLabel = broadcastReviewPrimaryLabel(
     busy,
@@ -459,13 +465,19 @@ export function BroadcastNewDraftForm({
                 message. Low-context or overly promotional messages are more
                 likely to be treated as spam.
               </p>
-              {showMessagePreview && messageBody.trim() ? (
+              {showMessagePreview && hasMessage ? (
                 <div
                   className="border-border bg-muted/30 mt-3 rounded-lg border p-4 text-sm whitespace-pre-wrap"
                   aria-live="polite"
                 >
-                  {messageBody}
+                  {messagePreviewText}
                 </div>
+              ) : null}
+              {showMessagePreview && hasMessage ? (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Preview uses a sample unsubscribe link. Final send uses a
+                  unique per-recipient link.
+                </p>
               ) : null}
               {messageLint.length > 0 ? (
                 <ul className="mt-3 space-y-1 text-xs text-amber-800 dark:text-amber-200">
