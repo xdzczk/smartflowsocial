@@ -19,6 +19,7 @@ import {
 } from "../../../repositories/post-queries-data.server";
 import { CreatePostUseCase } from "../../use-cases/create-post.use-case.server";
 
+import { isContestEmbedRequest } from "./contest-embed-response.server";
 import { parseAttachmentMeta } from "./handlers/text-handlers.server";
 import { getHashtagPresetTags } from "./hashtag-preset-utils.server";
 import { resolveContentWithTokens } from "./inline-tokens.server";
@@ -162,6 +163,14 @@ export async function handleSaveDraft(
       },
       userId
     );
+  }
+  if (isContestEmbedRequest(formData)) {
+    return json({
+      ok: true,
+      embedContext: "contest" as const,
+      draftSaved: true,
+      draftId,
+    });
   }
   return redirect("/dashboard/drafts");
 }

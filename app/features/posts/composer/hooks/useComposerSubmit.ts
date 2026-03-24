@@ -85,6 +85,10 @@ export interface UseComposerSubmitOptions {
     showHashTagsinPosts?: boolean;
   } | null;
   defaultTags?: string[];
+  /** When set, all fetcher.submit calls POST to this path (e.g. `/dashboard/newpost` when composer is embedded). */
+  submitAction?: string;
+  /** Sent as `_embedContext` so the newpost action can return JSON instead of redirects. */
+  embedContext?: "contest";
 }
 
 export function useComposerSubmit(options: UseComposerSubmitOptions) {
@@ -115,7 +119,17 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     threadDelayMinutes,
     user,
     defaultTags = [],
+    submitAction,
+    embedContext,
   } = options;
+
+  const fetcherSubmitOptions = React.useMemo(
+    () =>
+      submitAction
+        ? { method: "post" as const, action: submitAction }
+        : { method: "post" as const },
+    [submitAction]
+  );
 
   const [isSigning, setIsSigning] = React.useState(false);
   const [signingError, setSigningError] = React.useState<string | null>(null);
@@ -167,7 +181,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         if (draftAttachmentMeta.length > 0) {
           formData.set("attachmentMeta", JSON.stringify(draftAttachmentMeta));
         }
-        fetcher.submit(formData, { method: "post" });
+        if (embedContext) formData.set("_embedContext", embedContext);
+        fetcher.submit(formData, fetcherSubmitOptions);
       }
 
       function submitDraftSave(): void {
@@ -191,7 +206,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         if (draftAttachmentMeta.length > 0) {
           formData.set("attachmentMeta", JSON.stringify(draftAttachmentMeta));
         }
-        fetcher.submit(formData, { method: "post" });
+        if (embedContext) formData.set("_embedContext", embedContext);
+        fetcher.submit(formData, fetcherSubmitOptions);
       }
 
       if (isTemplateMode && submitType === "save-as-template") {
@@ -284,7 +300,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
 
           setLastPublishFailed(false);
           setPublishSubmitInFlight(true);
-          fetcher.submit(threadPayload, { method: "post" });
+          fetcher.submit(threadPayload, fetcherSubmitOptions);
         } catch (err) {
           if (
             generation != null &&
@@ -472,6 +488,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         }
         if (relayOverride && relayOverride.length > 0)
           threadPayload.set("relays", JSON.stringify(relayOverride));
+        if (embedContext) threadPayload.set("_embedContext", embedContext);
         return threadPayload;
       }
 
@@ -628,9 +645,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           const payloadComplete = await addRepostAndQuoteToPayload(payload);
           if (!payloadComplete) return;
 
+          if (embedContext) payload["_embedContext"] = embedContext;
           setLastPublishFailed(false);
           setPublishSubmitInFlight(true);
-          fetcher.submit(payload, { method: "post" });
+          fetcher.submit(payload, fetcherSubmitOptions);
         } catch (error) {
           if (
             generation != null &&
@@ -700,6 +718,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       threadDelayMinutes,
       user,
       defaultTags,
+      fetcherSubmitOptions,
+      embedContext,
     ]
   );
 
@@ -768,10 +788,11 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     }
     if (relayOverride && relayOverride.length > 0)
       threadPayload.set("relays", JSON.stringify(relayOverride));
+    if (embedContext) threadPayload.set("_embedContext", embedContext);
     setPartialThreadState(null);
     setLastPublishFailed(false);
     setPublishSubmitInFlight(true);
-    fetcher.submit(threadPayload, { method: "post" });
+    fetcher.submit(threadPayload, fetcherSubmitOptions);
   }, [
     partialThreadState,
     threadSegments,
@@ -780,6 +801,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     user?.timezone,
     relayOverride,
     fetcher,
+    fetcherSubmitOptions,
+    embedContext,
     setLastPublishFailed,
     setPublishSubmitInFlight,
   ]);

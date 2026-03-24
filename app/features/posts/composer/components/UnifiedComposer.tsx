@@ -56,6 +56,15 @@ import {
 } from "./composer/composer-helpers";
 import { UnifiedComposerContentSection } from "./composer/unified-composer-sections";
 
+export interface ContestEmbedPublishPayload {
+  ok: true;
+  embedContext: "contest";
+  postId: string;
+  nostrEventId: string | null;
+  caption: string | null;
+  publishedAt: string | null;
+}
+
 export interface UnifiedComposerProps {
   queueTypes?: Array<string | QueueType>;
   hashTagPresets?: Array<{ id: string; name: string; tags: string }>;
@@ -95,6 +104,16 @@ export interface UnifiedComposerProps {
   skipLocalDraftRestore?: boolean;
   /** Schedule intervals from route loader (e.g. new post). Used when user is not yet available so time chips show on first paint. */
   scheduleIntervals?: number[];
+  /** POST target for the composer form (default: current route). Use `/dashboard/newpost` when embedding. */
+  formAction?: string;
+  /** localStorage key for autosave draft (default: composer-newpost-draft). */
+  localDraftStorageKey?: string;
+  /** Base path for "Open draft" navigation (default: /dashboard/newpost). */
+  draftPickerNavigateBase?: string;
+  /** When set, sends `_embedContext` so newpost action can return JSON instead of redirecting. */
+  embedContext?: "contest";
+  /** Called after a successful publish when `embedContext` is set (JSON response from server). */
+  onEmbedPublishSuccess?: (payload: ContestEmbedPublishPayload) => void;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -115,9 +134,15 @@ export function UnifiedComposer({
   editTemplateContext = null,
   initialTemplateName = null,
   scheduleIntervals: scheduleIntervalsProp,
+  formAction,
+  localDraftStorageKey = "composer-newpost-draft",
+  draftPickerNavigateBase = "/dashboard/newpost",
+  embedContext,
+  onEmbedPublishSuccess,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
+  const lastHandledEmbedPostIdRef = React.useRef<string | null>(null);
   const user = useOptionalUser();
   const isTemplateMode = mode === "template";
   const initialAttachmentsFromDraft = React.useMemo(() => {
@@ -233,7 +258,7 @@ export function UnifiedComposer({
     flushSnapshot: flushLocalSnapshot,
     clearSnapshot: clearLocalSnapshot,
   } = useComposerLocalDraft(
-    "composer-newpost-draft",
+    localDraftStorageKey,
     !!initialDraftId || skipLocalDraftRestore
   );
 
@@ -411,6 +436,8 @@ export function UnifiedComposer({
         }
       : null,
     defaultTags: tags,
+    submitAction: formAction,
+    embedContext,
   });
 
   useComposerSignerReconnect(cancelSigningState, isSigning, retryLastSubmit);
@@ -468,6 +495,24 @@ export function UnifiedComposer({
     setLastPublishFailed,
     setPublishSubmitInFlight,
   ]);
+
+  React.useEffect(() => {
+    if (fetcher.state !== "idle" || !embedContext || !onEmbedPublishSuccess)
+      return;
+    const data = fetcher.data as
+      | Partial<ContestEmbedPublishPayload>
+      | undefined;
+    if (
+      !data?.ok ||
+      data.embedContext !== "contest" ||
+      typeof data.postId !== "string"
+    ) {
+      return;
+    }
+    if (lastHandledEmbedPostIdRef.current === data.postId) return;
+    lastHandledEmbedPostIdRef.current = data.postId;
+    onEmbedPublishSuccess(data as ContestEmbedPublishPayload);
+  }, [embedContext, fetcher.state, fetcher.data, onEmbedPublishSuccess]);
 
   const _handleHashtagPresetSelect = (
     presetId: string | null,
@@ -688,12 +733,16 @@ export function UnifiedComposer({
     <div className="flex flex-col gap-6 lg:flex-row">
       <fetcher.Form
         method="post"
+        {...(formAction ? { action: formAction } : {})}
         className="min-w-0 flex-1"
         onSubmit={(e) => {
           e.preventDefault();
           void handleSubmit(e);
         }}
       >
+        {embedContext ? (
+          <input type="hidden" name="_embedContext" value={embedContext} />
+        ) : null}
         <input
           ref={fileInputRef}
           type="file"
@@ -1018,7 +1067,7 @@ export function UnifiedComposer({
         open={draftPickerOpen}
         onClose={() => setDraftPickerOpen(false)}
         type="short"
-        onSelect={(id) => navigate(`/dashboard/newpost?draftId=${id}`)}
+        onSelect={(id) => navigate(`${draftPickerNavigateBase}?draftId=${id}`)}
       />
     </div>
   );

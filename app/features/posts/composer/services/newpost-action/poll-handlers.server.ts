@@ -12,6 +12,10 @@ import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
 import { CreatePostUseCase } from "../../use-cases/create-post.use-case.server";
 
+import {
+  isContestEmbedRequest,
+  jsonContestEmbedPost,
+} from "./contest-embed-response.server";
 import { getHashtagPresetTags } from "./hashtag-preset-utils.server";
 
 const ERROR_INVALID_SIGNED_EVENT_FORMAT =
@@ -117,9 +121,15 @@ export async function handlePostOrSchedulePoll(
       relays: sanitizedRelays,
       correlationId,
     });
+    if (isContestEmbedRequest(formData)) {
+      return await jsonContestEmbedPost(userId, result.post.id);
+    }
     return redirect(`/dashboard/newpost?published=${result.post.id}`);
   }
 
+  if (isContestEmbedRequest(formData)) {
+    return await jsonContestEmbedPost(userId, result.post.id);
+  }
   return redirect(`/dashboard/newpost?scheduled=${result.post.id}`);
 }
 

@@ -13,6 +13,10 @@ import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
 import { CreatePostUseCase } from "../../use-cases/create-post.use-case.server";
 
+import {
+  isContestEmbedRequest,
+  jsonContestEmbedPost,
+} from "./contest-embed-response.server";
 import { getHashtagPresetTags } from "./hashtag-preset-utils.server";
 import { applyHashtags } from "./hashtag-utils.server";
 import { resolveContentWithTokens } from "./inline-tokens.server";
@@ -212,6 +216,9 @@ export async function handleThreadAction(
   const firstId = postIds[0];
   if (firstId == null) {
     return json({ error: "No posts created" }, { status: 500 });
+  }
+  if (isContestEmbedRequest(formData)) {
+    return await jsonContestEmbedPost(userId, firstId);
   }
   if (isSchedule) {
     return redirect(`/dashboard/newpost?scheduled=${firstId}`);

@@ -145,7 +145,7 @@ interface InitialDraftShape {
   hashTagPresetId: string | null;
 }
 
-interface NewPostLoaderParsed {
+export interface NewPostLoaderParsed {
   typedQueueTypes: Array<string | QueueType>;
   typedHashTagPresets: HashTagPreset[];
   scheduleIntervals: number[];
@@ -156,7 +156,9 @@ interface NewPostLoaderParsed {
   nip88PollsEnabled: boolean;
 }
 
-function parseNewPostLoaderData(loaderDataRaw: unknown): NewPostLoaderParsed {
+export function parseNewPostLoaderData(
+  loaderDataRaw: unknown
+): NewPostLoaderParsed {
   const loaderData =
     loaderDataRaw && typeof loaderDataRaw === "object"
       ? (loaderDataRaw as Record<string, unknown>)

@@ -12,6 +12,10 @@ import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invar
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
 import { CreatePostUseCase } from "../../../use-cases/create-post.use-case.server";
+import {
+  isContestEmbedRequest,
+  jsonContestEmbedPost,
+} from "../contest-embed-response.server";
 import { applyHashtags } from "../hashtag-utils.server";
 
 const ERROR_INVALID_SIGNED_EVENT_FORMAT =
@@ -377,11 +381,15 @@ export async function handlePostOrScheduleText({
       correlationId,
     });
 
+    if (isContestEmbedRequest(formData)) {
+      return await jsonContestEmbedPost(userId, result.post.id);
+    }
     // Stay on current page and show modal there
     return redirect(`/dashboard/newpost?published=${result.post.id}`);
-  } else {
-    // schedule-text - post will be scheduled via outbox pattern
-    // Stay on current page and show modal there
-    return redirect(`/dashboard/newpost?scheduled=${result.post.id}`);
   }
+  // schedule-text - post will be scheduled via outbox pattern
+  if (isContestEmbedRequest(formData)) {
+    return await jsonContestEmbedPost(userId, result.post.id);
+  }
+  return redirect(`/dashboard/newpost?scheduled=${result.post.id}`);
 }

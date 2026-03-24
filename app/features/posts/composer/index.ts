@@ -2,7 +2,10 @@
  * Composer submodule: client UI.
  */
 export { UnifiedComposer } from "./components/UnifiedComposer";
-export type { UnifiedComposerProps } from "./components/UnifiedComposer";
+export type {
+  ContestEmbedPublishPayload,
+  UnifiedComposerProps,
+} from "./components/UnifiedComposer";
 export { default as NewPostPage } from "./components/NewPostPage";
 export {
   BulkComposerModal,

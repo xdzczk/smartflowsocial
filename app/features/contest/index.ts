@@ -1,3 +1,4 @@
+export { ContestEmbeddedComposer } from "./components/ContestEmbeddedComposer";
 export { createContestSchema } from "./schemas";
 export type {
   ContestFilters,

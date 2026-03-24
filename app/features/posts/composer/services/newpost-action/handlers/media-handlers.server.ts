@@ -12,6 +12,10 @@ import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invar
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
 import { CreatePostUseCase } from "../../../use-cases/create-post.use-case.server";
+import {
+  isContestEmbedRequest,
+  jsonContestEmbedPost,
+} from "../contest-embed-response.server";
 import { applyHashtags } from "../hashtag-utils.server";
 import { isVideoFile } from "../media-utils.server";
 
@@ -242,6 +246,9 @@ export async function handlePostImages({
     correlationId,
   });
 
+  if (isContestEmbedRequest(formData)) {
+    return await jsonContestEmbedPost(userId, result.post.id);
+  }
   // Stay on current page and show modal there
   return redirect(`/dashboard/newpost?published=${result.post.id}`);
 }
@@ -355,6 +362,9 @@ export async function handleScheduleImages({
     quoteSchedules: quoteSchedules.length > 0 ? quoteSchedules : undefined,
   });
 
+  if (isContestEmbedRequest(formData)) {
+    return await jsonContestEmbedPost(userId, result.post.id);
+  }
   // Stay on current page and show modal there
   return redirect(`/dashboard/newpost?scheduled=${result.post.id}`);
 }
