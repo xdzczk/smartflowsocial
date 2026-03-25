@@ -109,9 +109,10 @@ export function DashboardLayoutPage(): ReactNode {
           isOperatorAdmin={isOperatorAdmin}
         />
 
+        {/* No overflow-x-hidden: it forces overflow-y to compute to auto and breaks position:sticky summary rails in dashboard builders. */}
         <main
           id="page-content"
-          className="flex min-h-0 max-w-full min-w-0 flex-1 flex-col overflow-x-hidden pt-16"
+          className="flex min-h-0 max-w-full min-w-0 flex-1 flex-col pt-16"
         >
           {referredBy != null ? (
             <ReferredByBanner

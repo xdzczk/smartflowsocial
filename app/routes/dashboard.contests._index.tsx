@@ -170,14 +170,6 @@ export default function ContestsIndexRoute() {
   const cancelled = k["CANCELLED"] ?? 0;
   const total = draft + live + activeReview + done + cancelled;
   const review = activeReview;
-  const tabs: Array<{ label: string; value: string }> = [
-    { label: "All", value: "all" },
-    { label: "Draft", value: "DRAFT" },
-    { label: "Live", value: "LIVE" },
-    { label: "Review", value: "ENDED_REVIEW" },
-    { label: "Completed", value: "COMPLETED" },
-    { label: "Canceled", value: "CANCELLED" },
-  ];
   const hasAnyContests = total > 0;
 
   return (
@@ -231,25 +223,6 @@ export default function ContestsIndexRoute() {
             </CardTitle>
           </CardHeader>
         </Card>
-      </div>
-
-      <div className="border-border bg-card flex flex-wrap gap-2 rounded-lg border p-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            className={`rounded-md border px-3 py-1.5 text-sm ${
-              data.filters.status === tab.value
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-background"
-            }`}
-            onClick={() => {
-              setFilter("status", tab.value);
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       <Form

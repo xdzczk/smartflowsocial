@@ -77,7 +77,7 @@ export function AudienceSummaryCard(props: AudienceSummaryCardProps) {
   const audienceIsSelected = props.audienceHeadline === "Selected recipients";
 
   return (
-    <aside className="border-border bg-muted/20 sticky top-20 h-fit space-y-3 self-start rounded-xl border p-3 text-sm">
+    <aside className="border-border bg-muted/20 sticky top-20 h-fit w-full min-w-0 space-y-3 self-start rounded-xl border p-3 text-sm">
       <h2 className="text-foreground px-0.5 text-sm font-semibold tracking-tight">
         Campaign summary
       </h2>

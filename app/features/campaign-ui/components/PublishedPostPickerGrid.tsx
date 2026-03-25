@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getImageUrls, isVideoFile } from "~/lib/helpers";
 
-export const PUBLISHED_POST_PICKER_PAGE_SIZE = 8;
+export const PUBLISHED_POST_PICKER_PAGE_SIZE = 4;
 
 export interface PublishedPostPickerItem {
   id: string;

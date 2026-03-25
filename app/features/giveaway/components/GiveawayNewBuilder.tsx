@@ -165,8 +165,8 @@ function GiveawayNewBuilderStickySummary({
   isSubmitting: boolean;
 }) {
   return (
-    <aside className="mt-10 space-y-4 lg:mt-0">
-      <Card className="sticky top-20">
+    <aside className="sticky top-20 mt-10 h-fit w-full min-w-0 space-y-4 self-start lg:mt-0">
+      <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Giveaway summary</CardTitle>
           <CardDescription>Updates as you adjust the builder</CardDescription>
@@ -504,7 +504,7 @@ export function GiveawayNewBuilder({
 
       <form
         method="post"
-        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-stretch lg:gap-8"
+        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-start lg:gap-8"
       >
         <input type="hidden" name="intent" value="create" />
         <input type="hidden" name="rewardMode" value={effectiveRewardMode} />

@@ -450,7 +450,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
 
       <Form
         method="post"
-        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-stretch lg:gap-8"
+        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-start lg:gap-8"
       >
         <div className="min-w-0 space-y-10">
           <input
@@ -786,7 +786,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
           </section>
         </div>
 
-        <div className="mt-10 lg:mt-0">
+        <div className="mt-10 w-full min-w-0 self-start lg:mt-0">
           <ContestBuilderSummaryRail
             planType={planType}
             planLabel={planLabel}

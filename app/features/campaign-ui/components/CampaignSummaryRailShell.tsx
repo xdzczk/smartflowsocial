@@ -21,7 +21,7 @@ export function CampaignSummaryRailShell({
   footer?: ReactNode;
 }) {
   return (
-    <aside className="border-border bg-card sticky top-20 h-fit space-y-4 rounded-lg border p-4">
+    <aside className="border-border bg-card sticky top-20 h-fit w-full min-w-0 space-y-4 self-start rounded-lg border p-4">
       <div>
         <h2 className="text-sm font-semibold">{title}</h2>
         <p className="text-muted-foreground text-xs">{hint}</p>
